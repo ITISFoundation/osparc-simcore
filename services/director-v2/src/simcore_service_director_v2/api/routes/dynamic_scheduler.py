@@ -4,18 +4,16 @@ from typing import Annotated, Final
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.projects_nodes_io import NodeID
 from pydantic import BaseModel, PositiveInt
-from servicelib.fastapi.long_running_tasks.client import (
+from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
+from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
+from servicelib.long_running_tasks.errors import TaskAlreadyRunningError
+from servicelib.long_running_tasks.models import (
     ProgressMessage,
     ProgressPercent,
-)
-from servicelib.fastapi.long_running_tasks.server import (
-    TaskAlreadyRunningError,
     TaskId,
     TaskProgress,
-    TasksManager,
-    get_tasks_manager,
-    start_task,
 )
+from servicelib.long_running_tasks.task import start_task
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -94,7 +92,9 @@ async def update_service_observation(
 )
 async def delete_service_containers(
     node_uuid: NodeID,
-    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
     dynamic_sidecars_scheduler: Annotated[
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
@@ -113,7 +113,7 @@ async def delete_service_containers(
 
     try:
         return start_task(
-            tasks_manager,
+            long_running_manager.tasks_manager,
             task=_task_remove_service_containers,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
@@ -152,7 +152,9 @@ async def get_service_state(
 )
 async def save_service_state(
     node_uuid: NodeID,
-    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
     dynamic_sidecars_scheduler: Annotated[
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
@@ -172,7 +174,7 @@ async def save_service_state(
 
     try:
         return start_task(
-            tasks_manager,
+            long_running_manager.tasks_manager,
             task=_task_save_service_state,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
@@ -194,7 +196,9 @@ async def save_service_state(
 )
 async def push_service_outputs(
     node_uuid: NodeID,
-    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
     dynamic_sidecars_scheduler: Annotated[
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
@@ -213,7 +217,7 @@ async def push_service_outputs(
 
     try:
         return start_task(
-            tasks_manager,
+            long_running_manager.tasks_manager,
             task=_task_push_service_outputs,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,
@@ -235,7 +239,9 @@ async def push_service_outputs(
 )
 async def delete_service_docker_resources(
     node_uuid: NodeID,
-    tasks_manager: Annotated[TasksManager, Depends(get_tasks_manager)],
+    long_running_manager: Annotated[
+        FastAPILongRunningManager, Depends(get_long_running_manager)
+    ],
     dynamic_sidecars_scheduler: Annotated[
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
@@ -249,7 +255,7 @@ async def delete_service_docker_resources(
 
     try:
         return start_task(
-            tasks_manager,
+            long_running_manager.tasks_manager,
             task=_task_cleanup_service_docker_resources,  # type: ignore[arg-type]
             unique=True,
             node_uuid=node_uuid,

@@ -31,7 +31,11 @@ fi
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
-  uv pip install debugpy
+  if command -v uv >/dev/null 2>&1; then
+    uv pip install debugpy
+  else
+    pip install debugpy
+  fi
 fi
 
 #
@@ -47,7 +51,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/autoscaling/src/simcore_service_autoscaling && \
-    python -m debugpy --listen 0.0.0.0:${AUTOSCALING_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${AUTOSCALING_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages

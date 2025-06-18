@@ -91,6 +91,9 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
   },
 
   statics: {
+    MORE_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/arrows.png",
+    FOLDER_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/folder.png",
+
     createMenuButton: function(icon, title, infoText) {
       title = osparc.utils.Utils.replaceTokens(
         title,
@@ -135,6 +138,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         textColor: "text-darker",
       });
     },
+
+    setIcon: function(menuButton, icon, resourceMetadata) {
+      const source = icon ? icon : osparc.utils.Utils.getIconFromResource(resourceMetadata);
+      if (source) {
+        osparc.utils.Utils.replaceIconWithThumbnail(menuButton, source, 24);
+      }
+    },
   },
 
   members: {
@@ -146,10 +156,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       switch (id) {
         case "new-folder":
           this.addSeparator();
-          control = this.self().createMenuButton(
-            "@FontAwesome5Solid/folder/16",
-            this.tr("New Folder"),
-          );
+          control = this.self().createMenuButton(null, this.tr("New Folder"));
+          this.self().setIcon(control, this.self().FOLDER_ICON);
           osparc.utils.Utils.setIdToWidget(control, "newFolderButton");
           control.addListener("tap", () => this.__createNewFolder());
           this.add(control);
@@ -160,10 +168,8 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
 
     __addItems: function() {
       this.__addUIConfigItems();
-      if (osparc.product.Utils.isS4LProduct()) {
-        this.__addHypertools();
-      }
-      this.__addOtherTabsAccess();
+      this.__addHypertools();
+      this.__addMoreMenu();
       this.getChildControl("new-folder");
     },
 
@@ -188,20 +194,24 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
     },
 
     __addHypertools: function() {
+      const hypertoolsMenuButton = this.self().createMenuButton(null, this.tr("Hypertools"));
+      hypertoolsMenuButton.exclude();
+      this.addAt(hypertoolsMenuButton, this.__itemIdx);
+      this.__itemIdx++;
+      this.self().setIcon(hypertoolsMenuButton, osparc.data.model.StudyUI.HYPERTOOL_ICON);
+
       osparc.store.Templates.getHypertools()
         .then(hypertools => {
+          hypertoolsMenuButton.setVisibility(hypertools.length > 0 ? "visible" : "excluded");
+          // add entry for hypertools if there are any
           if (hypertools.length) {
-            const hypertoolsMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("Hypertools"));
-            this.addAt(hypertoolsMenuButton, this.__itemIdx);
-            this.__itemIdx++;
-
             const hypertoolsMenu = new qx.ui.menu.Menu().set({
               appearance: "menu-wider",
             });
             hypertoolsMenuButton.setMenu(hypertoolsMenu);
 
             hypertools.forEach(templateData => {
-              const hypertoolButton = this.self().createMenuButton(templateData["icon"], templateData["name"]);
+              const hypertoolButton = this.self().createMenuButton(null, templateData["name"]);
               hypertoolButton.addListener("tap", () => {
                 this.fireDataEvent("newStudyFromTemplateClicked", {
                   templateData,
@@ -209,13 +219,21 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 });
               });
               hypertoolsMenu.add(hypertoolButton);
+              osparc.study.Utils.guessIcon(templateData)
+                .then(iconSource => {
+                  if (iconSource) {
+                    const iconSize = 22;
+                    hypertoolButton.getChildControl("icon").set({ minWidth: iconSize+2 });
+                    osparc.utils.Utils.replaceIconWithThumbnail(hypertoolButton, iconSource, iconSize);
+                  }
+                });
             });
           }
         });
     },
 
-    __addOtherTabsAccess: function() {
-      const moreMenuButton = this.self().createMenuButton("@FontAwesome5Solid/star/16", this.tr("More"));
+    __addMoreMenu: function() {
+      const moreMenuButton = this.self().createMenuButton(null, this.tr("More"));
       this.addAt(moreMenuButton, this.__itemIdx);
       this.__itemIdx++;
 
@@ -223,12 +241,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         appearance: "menu-wider",
       });
       moreMenuButton.setMenu(moreMenu);
+      this.self().setIcon(moreMenuButton, this.self().MORE_ICON);
 
       const permissions = osparc.data.Permissions.getInstance();
       if (permissions.canDo("dashboard.templates.read")) {
-        const templatesButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
-        templatesButton.addListener("execute", () => this.fireDataEvent("changeTab", "templatesTab"), this);
-        moreMenu.add(templatesButton);
+        const tutorialsButton = this.self().createMenuButton("@FontAwesome5Solid/copy/16", this.tr("Tutorials..."));
+        tutorialsButton.addListener("execute", () => this.fireDataEvent("changeTab", "tutorialsTab"), this);
+        moreMenu.add(tutorialsButton);
       }
 
       if (permissions.canDo("dashboard.services.read")) {
@@ -262,22 +281,6 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       });
     },
 
-    __addIcon: function(menuButton, icon, resourceMetadata) {
-      const source = icon ? icon : osparc.utils.Utils.getIconFromResource(resourceMetadata);
-      if (source) {
-        const thumbnail = new osparc.ui.basic.Thumbnail(source, 24, 24).set({
-          minHeight: 24,
-          minWidth: 24,
-        });
-        thumbnail.getChildControl("image").set({
-          anonymous: true,
-          decorator: "rounded",
-        });
-        // eslint-disable-next-line no-underscore-dangle
-        menuButton._add(thumbnail, {column: 0});
-      }
-    },
-
     __addFromResourceButton: function(menuButton, category, idx = null) {
       if (category) {
         idx = this.__getLastIdxFromCategory(category);
@@ -298,7 +301,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
       osparc.utils.Utils.setIdToWidget(menuButton, buttonConfig["idToWidget"]);
       menuButton.setEnabled(false);
 
-      this.__addIcon(menuButton, buttonConfig["icon"]);
+      this.self().setIcon(menuButton, buttonConfig["icon"]);
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 
@@ -316,7 +319,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
         });
       });
 
-      this.__addIcon(menuButton, buttonConfig["icon"] || "osparc/icons/diagram.png");
+      this.self().setIcon(menuButton, buttonConfig["icon"] || osparc.data.model.StudyUI.PIPELINE_ICON);
       this.__addFromResourceButton(menuButton, buttonConfig["category"]);
     },
 
@@ -337,7 +340,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                 newStudyLabel: buttonConfig["newStudyLabel"],
               });
             });
-            this.__addIcon(menuButton, buttonConfig["icon"], templateMetadata);
+            this.self().setIcon(menuButton, buttonConfig["icon"], templateMetadata);
             this.__addFromResourceButton(menuButton, buttonConfig["category"]);
           }
         });
@@ -386,7 +389,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           return;
         }
         menuButton.setEnabled(true);
-        this.__addIcon(menuButton, buttonConfig["icon"], latestMetadata);
+        this.self().setIcon(menuButton, buttonConfig["icon"], latestMetadata);
         this.__addFromResourceButton(menuButton, buttonConfig["category"]);
         addListenerToButton(menuButton, latestMetadata);
       } else if ("myMostUsed" in buttonConfig) {
@@ -409,7 +412,7 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
                   font: "text-16",
                   allowGrowX: true,
                 });
-                this.__addIcon(menuButton, null, latestMetadata);
+                this.self().setIcon(menuButton, null, latestMetadata);
                 this.__addFromResourceButton(menuButton, buttonConfig["category"], old+i);
                 addListenerToButton(menuButton, latestMetadata);
               }

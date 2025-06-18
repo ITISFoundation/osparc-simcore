@@ -1,7 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from time import perf_counter
 
 from opentelemetry import trace
 from prometheus_client import (
@@ -41,7 +40,6 @@ class PrometheusMetrics:
     request_count: Counter
     in_flight_requests: Gauge
     response_latency_with_labels: Histogram
-    response_latency_detailed_buckets: Histogram
 
 
 def _get_exemplar() -> dict[str, str] | None:
@@ -88,14 +86,7 @@ def get_prometheus_metrics() -> PrometheusMetrics:
         documentation="Time processing a request with detailed labels",
         labelnames=["method", "endpoint", "simcore_user_agent"],
         registry=registry,
-        buckets=(0.1, 0.5, 1),
-    )
-
-    response_latency_detailed_buckets = Histogram(
-        name="http_request_latency_seconds_detailed_buckets",
-        documentation="Time processing a request with detailed buckets but no labels",
-        registry=registry,
-        buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
+        buckets=(0.1, 1, 5, 10),
     )
 
     return PrometheusMetrics(
@@ -106,7 +97,6 @@ def get_prometheus_metrics() -> PrometheusMetrics:
         request_count=request_count,
         in_flight_requests=in_flight_requests,
         response_latency_with_labels=response_latency_with_labels,
-        response_latency_detailed_buckets=response_latency_detailed_buckets,
     )
 
 
@@ -132,19 +122,7 @@ def record_request_metrics(
     with metrics.in_flight_requests.labels(
         method, endpoint, user_agent
     ).track_inprogress():
-
-        start = perf_counter()
-
         yield
-
-        amount = perf_counter() - start
-        exemplar = _get_exemplar()
-        metrics.response_latency_with_labels.labels(
-            method, endpoint, user_agent
-        ).observe(amount=amount, exemplar=exemplar)
-        metrics.response_latency_detailed_buckets.observe(
-            amount=amount, exemplar=exemplar
-        )
 
 
 def record_response_metrics(
@@ -154,8 +132,12 @@ def record_response_metrics(
     endpoint: str,
     user_agent: str,
     http_status: int,
+    response_latency_seconds: float,
 ) -> None:
     exemplar = _get_exemplar()
     metrics.request_count.labels(method, endpoint, http_status, user_agent).inc(
         exemplar=exemplar
+    )
+    metrics.response_latency_with_labels.labels(method, endpoint, user_agent).observe(
+        amount=response_latency_seconds, exemplar=exemplar
     )

@@ -12,11 +12,9 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectAtDB, ProjectID, ProjectTemplateType
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
-from models_library.users import UserID
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.selectable import CompoundSelect, Select
@@ -32,7 +30,7 @@ from .exceptions import (
     ProjectNotFoundError,
 )
 from .models import ProjectDict
-from .utils import find_changed_node_keys, project_uses_available_services
+from .utils import find_changed_node_keys
 
 logger = logging.getLogger(__name__)
 
@@ -189,10 +187,8 @@ class BaseProjectDB:
     async def _execute_without_permission_check(
         self,
         conn: SAConnection,
-        user_id: UserID,
         *,
         select_projects_query: Select | CompoundSelect,
-        filter_by_services: list[dict] | None = None,
     ) -> tuple[list[dict[str, Any]], list[ProjectType]]:
         api_projects: list[dict] = []  # API model-compatible projects
         db_projects: list[dict] = []  # DB model-compatible projects
@@ -218,19 +214,6 @@ class BaseProjectDB:
             prj: dict[str, Any] = dict(row.items())
             prj.pop("product_name", None)
 
-            if (
-                filter_by_services is not None
-                # This checks only old projects that are not in the projects_to_products table.
-                and row[projects_to_products.c.product_name] is None
-                and not await project_uses_available_services(prj, filter_by_services)
-            ):
-                logger.warning(
-                    "Project %s will not be listed for user %s since it has no access rights"
-                    " for one or more of the services that includes.",
-                    f"{row.id=}",
-                    f"{user_id=}",
-                )
-                continue
             db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!

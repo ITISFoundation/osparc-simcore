@@ -22,19 +22,19 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import (
-    get_task_context,
-    get_tasks_manager,
+    get_long_running_manager,
 )
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.long_running_tasks import http_endpoint_responses
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..long_running_tasks import webserver_request_context_decorator
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ._exception_handlers import handle_export_data_exceptions
@@ -56,11 +56,13 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 @handle_export_data_exceptions
 @webserver_request_context_decorator
 async def get_async_jobs(request: web.Request) -> web.Response:
-    inprocess_task_manager = get_tasks_manager(request.app)
-    inprocess_task_context = get_task_context(request)
-    inprocess_tracked_tasks = inprocess_task_manager.list_tasks(inprocess_task_context)
+    inprocess_long_running_manager = get_long_running_manager(request.app)
+    inprocess_tracked_tasks = http_endpoint_responses.list_tasks(
+        inprocess_long_running_manager.tasks_manager,
+        inprocess_long_running_manager.get_task_context(request),
+    )
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
@@ -109,7 +111,7 @@ class _StorageAsyncJobId(BaseModel):
 @handle_export_data_exceptions
 async def get_async_job_status(request: web.Request) -> web.Response:
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
 
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
@@ -143,7 +145,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
 @handle_export_data_exceptions
 async def cancel_async_job(request: web.Request) -> web.Response:
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_StorageAsyncJobId, request)
@@ -171,7 +173,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         task_id: UUID
 
-    _req_ctx = RequestContext.model_validate(request)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job_get = parse_request_path_parameters_as(_PathParams, request)

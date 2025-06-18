@@ -28,23 +28,21 @@ from servicelib.common_headers import (
 from servicelib.redis import get_project_locked_state
 
 from ..._meta import API_VTAG as VTAG
-from ...catalog import catalog_service
 from ...login.decorators import login_required
 from ...redis import get_redis_lock_manager_client_sdk
 from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from ...security.api import check_user_permission
+from ...security import security_web
 from ...security.decorators import permission_required
 from ...users.api import get_user_fullname
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _crud_api_create, _crud_api_read, _projects_service
 from .._permalink_service import update_or_pop_permalink_in_project
 from ..models import ProjectDict
-from ..utils import get_project_unavailable_services, project_uses_available_services
 from . import _rest_utils
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import (
+    AuthenticatedRequestContext,
     ProjectPathParams,
-    RequestContext,
 )
 from .projects_rest_schemas import (
     ProjectActiveQueryParams,
@@ -54,12 +52,6 @@ from .projects_rest_schemas import (
     ProjectsListQueryParams,
     ProjectsSearchQueryParams,
 )
-
-# When the user requests a project with a repo, the working copy might differ from
-# the repo project. A middleware in the meta module (if active) will resolve
-# the working copy and redirect to the appropriate project entrypoint. Nonetheless, the
-# response needs to refer to the uuid of the request and this is passed through this request key
-RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUID_KEY"
 
 _logger = logging.getLogger(__name__)
 
@@ -76,13 +68,13 @@ async def create_project(request: web.Request):
     #
     # - Create https://google.aip.dev/133
     #
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectCreateQueryParams = parse_request_query_parameters_as(
         ProjectCreateQueryParams, request
     )
     header_params = parse_request_headers_as(ProjectCreateHeaders, request)
     if query_params.as_template:  # create template from
-        await check_user_permission(request, "project.template.create")
+        await security_web.check_user_permission(request, "project.template.create")
 
     # NOTE: Having so many different types of bodys is an indication that
     # this entrypoint are in reality multiple entrypoints in one, namely
@@ -138,7 +130,7 @@ async def list_projects(request: web.Request):
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
 
     """
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectsListQueryParams = parse_request_query_parameters_as(
         ProjectsListQueryParams, request
     )
@@ -183,7 +175,7 @@ async def list_projects(request: web.Request):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_projects_full_search(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectsSearchQueryParams = parse_request_query_parameters_as(
         ProjectsSearchQueryParams, request
     )
@@ -230,7 +222,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         web.HTTPUnprocessableEntity: (422) if validation of request parameters fail
         web.HTTPNotFound: If active project is not found
     """
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ProjectActiveQueryParams = parse_request_query_parameters_as(
         ProjectActiveQueryParams, request
     )
@@ -274,14 +266,8 @@ async def get_project(request: web.Request):
         web.HTTPNotFound: This project was not found
     """
 
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-
-    user_available_services: list[dict] = (
-        await catalog_service.get_services_for_user_in_product(
-            request.app, req_ctx.user_id, req_ctx.product_name, only_key_versions=True
-        )
-    )
 
     project = await _projects_service.get_project_for_user(
         request.app,
@@ -290,23 +276,6 @@ async def get_project(request: web.Request):
         include_state=True,
         include_trashed_by_primary_gid=True,
     )
-    if not await project_uses_available_services(project, user_available_services):
-        unavilable_services = get_project_unavailable_services(
-            project, user_available_services
-        )
-        formatted_services = ", ".join(
-            f"{service}:{version}" for service, version in unavilable_services
-        )
-        # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
-        raise web.HTTPNotFound(
-            reason=(
-                f"Project '{path_params.project_id}' uses unavailable services. Please ask "
-                f"for permission for the following services {formatted_services}"
-            )
-        )
-
-    if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
-        project["uuid"] = new_uuid
 
     # Adds permalink
     await update_or_pop_permalink_in_project(request, project)
@@ -339,7 +308,7 @@ async def patch_project(request: web.Request):
     #
     # Update https://google.aip.dev/134
     #
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
@@ -372,7 +341,7 @@ async def delete_project(request: web.Request):
         web.HTTPConflict: Somethine went wrong while deleting
         web.HTTPNoContent: Sucess
     """
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     await _projects_service.get_project_for_user(
@@ -438,7 +407,7 @@ async def delete_project(request: web.Request):
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 @handle_plugin_requests_exceptions
 async def clone_project(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     return await start_long_running_task(

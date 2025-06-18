@@ -7,6 +7,9 @@
     },
     "newStudies": {
       "$ref": "#/definitions/buttonConfig"
+    },
+    "groupedServices": {
+      "$ref": "#/definitions/groupedServicesConfig"
     }
   },
   "additionalProperties": false,
@@ -92,6 +95,34 @@
         }
       },
       "additionalProperties": false
+    },
+    "groupedServicesConfig": {
+      "type": "object",
+      "properties": {
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "description": { "type": "string" }
+            },
+            "required": ["id", "title"]
+          }
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "serviceKey": { "type": "string" },
+              "category": { "type": "string" }
+            },
+            "required": ["serviceKey", "category"]
+          }
+        }
+      }
     }
   }
 }

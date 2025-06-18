@@ -135,58 +135,69 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     /*
      * <-- Dynamic inputs -->
      */
-    __getEmptyDataLastPorts: function() {
-      let emptyDataPorts = [];
+    //
+    __getHideablePorts: function() {
+      const hideablePorts = [];
       const minVisibleInputs = this.getNode().getMinVisibleInputs();
       if (minVisibleInputs === null) {
-        return emptyDataPorts;
+        return hideablePorts;
       }
+      // start from the last port and check the port types
+      // if all last ports are the same type, then mark them as hideable
+      let hideablePortType = null;
       const portIds = this.getPortIds();
-      // it will always show 1 more, so: -1
-      for (let i=minVisibleInputs-1; i<portIds.length; i++) {
+      for (let i=portIds.length-1; i>=minVisibleInputs; i--) {
         const portId = portIds[i];
         const ctrl = this._form.getControl(portId);
-        if (ctrl && ctrl.type.includes("data:") && !("link" in ctrl)) {
-          emptyDataPorts.push(portId);
+        if (ctrl && hideablePortType === null) {
+          hideablePortType = ctrl.type;
+        }
+        if (ctrl &&
+          ctrl.type === hideablePortType &&
+          // make sure it's not linked
+          !("link" in ctrl)
+        ) {
+          hideablePorts.unshift(portId);
         } else {
-          emptyDataPorts = [];
+          break;
         }
       }
-      return emptyDataPorts;
+      return hideablePorts;
     },
 
-    __getVisibleEmptyDataLastPort: function() {
-      let emptyDataPorts = null;
-      this.getPortIds().forEach(portId => {
-        const ctrl = this._form.getControl(portId);
+    __getVisibleEmptyLastPort: function() {
+      let emptyPorts = null;
+      const hideablePorts = this.__getHideablePorts();
+      for (let i=hideablePorts.length-1; i>=0; i--) {
+        const portId = hideablePorts[i]
         const label = this._getLabelFieldChild(portId).child;
         if (
-          ctrl && ctrl.type.includes("data:") && !("link" in ctrl) &&
-          label && label.isVisible()
+          label && label.isVisible() &&
+          emptyPorts === null
         ) {
-          emptyDataPorts = portId;
+          emptyPorts = portId;
         }
-      });
-      return emptyDataPorts;
+      }
+      return emptyPorts;
     },
 
     __addInputPortButtonClicked: function() {
-      const emptyDataPorts = this.__getEmptyDataLastPorts();
-      const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
-      if (emptyDataPorts.length>1 && lastEmptyDataPort) {
-        const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
-        if (idx+1 < emptyDataPorts.length) {
-          this.__showPort(emptyDataPorts[idx+1]);
+      const emptyPorts = this.__getHideablePorts();
+      const lastEmptyPort = this.__getVisibleEmptyLastPort();
+      if (emptyPorts.length>1 && lastEmptyPort) {
+        const idx = emptyPorts.indexOf(lastEmptyPort);
+        if (idx+1 < emptyPorts.length) {
+          this.__showPort(emptyPorts[idx+1]);
         }
         this.__addInputPortButton.setVisibility(this.__checkAddInputPortButtonVisibility());
       }
     },
 
     __checkAddInputPortButtonVisibility: function() {
-      const emptyDataPorts = this.__getEmptyDataLastPorts();
-      const lastEmptyDataPort = this.__getVisibleEmptyDataLastPort();
-      const idx = emptyDataPorts.indexOf(lastEmptyDataPort);
-      if (idx < emptyDataPorts.length-1) {
+      const emptyPorts = this.__getHideablePorts();
+      const lastEmptyPort = this.__getVisibleEmptyLastPort();
+      const idx = emptyPorts.indexOf(lastEmptyPort);
+      if (idx < emptyPorts.length-1) {
         return "visible";
       }
       return "excluded";
@@ -225,9 +236,9 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     makeInputsDynamic: function() {
       this.getPortIds().forEach(portId => this.__showPort(portId));
 
-      const emptyDataPorts = this.__getEmptyDataLastPorts();
-      for (let i=1; i<emptyDataPorts.length; i++) {
-        const hidePortId = emptyDataPorts[i];
+      const emptyPorts = this.__getHideablePorts();
+      for (let i=1; i<emptyPorts.length; i++) {
+        const hidePortId = emptyPorts[i];
         this.__excludePort(hidePortId);
       }
 
@@ -764,7 +775,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
               destinations[node2Id][portId] = "fetching";
             }
           });
-          osparc.data.Resources.getCompatibleInputs(node1, dragPortId, this.getNode())
+          osparc.data.Resources.getInstance().getCompatibleInputs(node1, dragPortId, this.getNode())
             .then(compatiblePorts => {
               this.getPortIds().forEach(portId => {
                 destinations[node2Id][portId] = compatiblePorts.includes(portId);

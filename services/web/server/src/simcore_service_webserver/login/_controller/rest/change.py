@@ -8,13 +8,14 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
-from ....db.plugin import get_database_engine
+from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....products.models import Product
-from ....security.api import check_password, encrypt_password
+from ....security import security_service
 from ....users import api as users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
@@ -215,7 +216,7 @@ async def initiate_reset_password(request: web.Request):
                     error_context=_get_error_context(user),
                 )
             )
-            raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
+            raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
     # NOTE: Always same response: guideline #1
     return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
@@ -238,9 +239,9 @@ async def initiate_change_email(request: web.Request):
     if user["email"] == request_body.email:
         return flash_response("Email changed")
 
-    async with get_database_engine(request.app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(request.app)) as conn:
         if await UsersRepo.is_email_used(conn, email=request_body.email):
-            raise web.HTTPUnprocessableEntity(reason="This email cannot be used")
+            raise web.HTTPUnprocessableEntity(text="This email cannot be used")
 
     # Reset if previously requested
     confirmation = await db.get_confirmation({"user": user, "action": CHANGE_EMAIL})
@@ -267,7 +268,7 @@ async def initiate_change_email(request: web.Request):
     except Exception as err:  # pylint: disable=broad-except
         _logger.exception("Can not send change_email_email")
         await db.delete_confirmation(confirmation)
-        raise web.HTTPServiceUnavailable(reason=MSG_CANT_SEND_MAIL) from err
+        raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
     return flash_response(MSG_CHANGE_EMAIL_REQUESTED)
 
@@ -292,14 +293,20 @@ async def change_password(request: web.Request):
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
 
-    if not check_password(passwords.current.get_secret_value(), user["password_hash"]):
+    if not security_service.check_password(
+        passwords.current.get_secret_value(), user["password_hash"]
+    ):
         raise web.HTTPUnprocessableEntity(
             reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     await db.update_user(
         dict(user),
-        {"password_hash": encrypt_password(passwords.new.get_secret_value())},
+        {
+            "password_hash": security_service.encrypt_password(
+                passwords.new.get_secret_value()
+            )
+        },
     )
 
     return flash_response(MSG_PASSWORD_CHANGED)

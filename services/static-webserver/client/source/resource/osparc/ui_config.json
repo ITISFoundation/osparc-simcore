@@ -120,6 +120,32 @@
         "newStudyLabel": "New Pipeline",
         "idToWidget": "emptyStudyBtn"
       }]
+    },
+    "groupedServices": {
+      "categories": [{
+        "id": "featured",
+        "title": "Featured",
+        "color": "product-color"
+      }],
+      "services": [{
+        "serviceKey": "simcore/services/dynamic/s4l-ui",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-jupyter",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/iseg-web",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-ui-framework",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner-gpu",
+        "category": "featured"
+      }]
     }
   },
   "s4lacad": {
@@ -146,6 +172,32 @@
         "newStudyLabel": "New Pipeline",
         "idToWidget": "emptyStudyBtn"
       }]
+    },
+    "groupedServices": {
+      "categories": [{
+        "id": "featured",
+        "title": "Featured",
+        "color": "product-color"
+      }],
+      "services": [{
+        "serviceKey": "simcore/services/dynamic/s4l-ui",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-jupyter",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/iseg-web",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/dynamic/s4l-ui-framework",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner",
+        "category": "featured"
+      }, {
+        "serviceKey": "simcore/services/comp/s4l-python-runner-gpu",
+        "category": "featured"
+      }]
     }
   },
   "s4llite": {
@@ -156,6 +208,11 @@
         "title": "${replace_me_product_name}",
         "newStudyLabel": "New Project",
         "idToWidget": "startS4LButton"
+      }, {
+        "resourceType": "service",
+        "expectedKey": "simcore/services/dynamic/s4l-ui-framework",
+        "title": "Sim4Life.framework",
+        "newStudyLabel": "Sim4Life.framework"
       }]
     }
   },

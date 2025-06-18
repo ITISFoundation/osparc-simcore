@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.7.1"
+    "version": "0.9.0"
   },
   "paths": {
     "/v0/meta": {
@@ -1423,7 +1423,7 @@
           "solvers"
         ],
         "summary": "List Solvers",
-        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5.0*",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/page` instead.\n\n\n\nLists all available solvers (latest version)\n\nNew in *version 0.5*",
         "operationId": "list_solvers",
         "responses": {
           "200": {
@@ -1514,7 +1514,7 @@
           "solvers"
         ],
         "summary": "Lists All Releases",
-        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/{solver_key}/releases/page` instead.\n\n\n\nLists all released solvers (not just latest version)\n\nNew in *version 0.5.0*",
+        "description": "\ud83d\udea8 **Deprecated**: This endpoint is deprecated and will be removed in a future release.\nPlease use `GET /v0/solvers/{solver_key}/releases/page` instead.\n\n\n\nLists **all** released solvers (not just latest version)\n\nNew in *version 0.5*",
         "operationId": "list_solvers_releases",
         "responses": {
           "200": {
@@ -1946,7 +1946,7 @@
           "solvers"
         ],
         "summary": "List Solver Ports",
-        "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5.0*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
+        "description": "Lists inputs and outputs of a given solver\n\nNew in *version 0.5*\n\nAdded in *version 0.7.1*: `version_display` field in the response",
         "operationId": "list_solver_ports",
         "security": [
           {
@@ -2184,7 +2184,7 @@
           "solvers"
         ],
         "summary": "Create Solver Job",
-        "description": "Creates a job in a specific release with given inputs.\n\nNOTE: This operation does **not** start the job",
+        "description": "Creates a job in a specific release with given inputs. This operation does not start the job.\n\nNew in *version 0.5*",
         "operationId": "create_solver_job",
         "security": [
           {
@@ -2767,7 +2767,7 @@
           "solvers"
         ],
         "summary": "Start Job",
-        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
+        "description": "Starts job job_id created with the solver solver_key:version\n\nAdded in *version 0.4.3*: query parameter `cluster_id`\n\nAdded in *version 0.6*: responds with a 202 when successfully starting a computation\n\nChanged in *version 0.7*: query parameter `cluster_id` deprecated",
         "operationId": "start_job",
         "security": [
           {
@@ -2945,6 +2945,7 @@
           "solvers"
         ],
         "summary": "Stop Job",
+        "description": "Stops a running job\n\nNew in *version 0.5*",
         "operationId": "stop_job",
         "security": [
           {
@@ -3083,6 +3084,7 @@
           "solvers"
         ],
         "summary": "Inspect Job",
+        "description": "Inspects the current status of a job\n\nNew in *version 0.5*",
         "operationId": "inspect_job",
         "security": [
           {
@@ -3486,9 +3488,9 @@
         "tags": [
           "solvers"
         ],
-        "summary": "Get Jobs Page",
+        "summary": "List Jobs Paginated",
         "description": "List of jobs on a specific released solver (includes pagination)\n\nNew in *version 0.7*",
-        "operationId": "get_jobs_page",
+        "operationId": "list_jobs_paginated",
         "security": [
           {
             "HTTPBasic": []
@@ -3777,7 +3779,7 @@
           "solvers"
         ],
         "summary": "Get Job Output Logfile",
-        "description": "Special extra output with persistent logs file for the solver run.\n\n**NOTE**: this is not a log stream but a predefined output that is only\navailable after the job is done.\n\nNew in *version 0.4.0*",
+        "description": "Special extra output with persistent logs file for the solver run.\n\n**NOTE**: this is not a log stream but a predefined output that is only\navailable after the job is done\n\nNew in *version 0.4*",
         "operationId": "get_job_output_logfile",
         "security": [
           {
@@ -4319,7 +4321,7 @@
           "studies"
         ],
         "summary": "List Studies",
-        "description": "New in *version 0.5.0*",
+        "description": "List all studies\n\nNew in *version 0.5*",
         "operationId": "list_studies",
         "security": [
           {
@@ -4381,7 +4383,7 @@
           "studies"
         ],
         "summary": "Get Study",
-        "description": "New in *version 0.5.0*",
+        "description": "Get study by ID\n\nNew in *version 0.5*",
         "operationId": "get_study",
         "security": [
           {
@@ -4458,6 +4460,16 @@
             }
           },
           {
+            "name": "hidden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Hidden"
+            }
+          },
+          {
             "name": "x-simcore-parent-project-uuid",
             "in": "header",
             "required": false,
@@ -4492,6 +4504,15 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_clone_study_v0_studies__study_id__clone_post"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -4532,7 +4553,7 @@
           "studies"
         ],
         "summary": "List Study Ports",
-        "description": "Lists metadata on ports of a given study\n\nNew in *version 0.5.0*",
+        "description": "Lists metadata on ports of a given study\n\nNew in *version 0.5*",
         "operationId": "list_study_ports",
         "security": [
           {
@@ -4756,7 +4777,7 @@
           "studies"
         ],
         "summary": "Start Study Job",
-        "description": "Changed in *version 0.6.0*: Now responds with a 202 when successfully starting a computation\nChanged in *version 0.8*: query parameter `cluster_id` deprecated",
+        "description": "Changed in *version 0.6*: Now responds with a 202 when successfully starting a computation",
         "operationId": "start_study_job",
         "security": [
           {
@@ -4798,9 +4819,11 @@
                   "type": "null"
                 }
               ],
+              "description": "Changed in *version 0.7*: query parameter `cluster_id` deprecated\n",
               "deprecated": true,
               "title": "Cluster Id"
             },
+            "description": "Changed in *version 0.7*: query parameter `cluster_id` deprecated\n",
             "deprecated": true
           }
         ],
@@ -5282,8 +5305,13 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "list_function_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -5337,8 +5365,13 @@
           "function_jobs"
         ],
         "summary": "Register Function Job",
-        "description": "Create function job",
+        "description": "Create function job\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "register_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5417,8 +5450,13 @@
           "function_jobs"
         ],
         "summary": "Get Function Job",
-        "description": "Get function job",
+        "description": "Get function job\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "get_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_id",
@@ -5488,8 +5526,13 @@
           "function_jobs"
         ],
         "summary": "Delete Function Job",
-        "description": "Delete function job",
+        "description": "Delete function job\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_id",
@@ -5540,7 +5583,7 @@
           "function_jobs"
         ],
         "summary": "Function Job Status",
-        "description": "Get function job status",
+        "description": "Get function job status\n\nNew in *version 0.8.0*",
         "operationId": "function_job_status",
         "security": [
           {
@@ -5599,7 +5642,7 @@
           "function_jobs"
         ],
         "summary": "Function Job Outputs",
-        "description": "Get function job outputs",
+        "description": "Get function job outputs\n\nNew in *version 0.8.0*",
         "operationId": "function_job_outputs",
         "security": [
           {
@@ -5666,8 +5709,13 @@
           "function_job_collections"
         ],
         "summary": "List Function Job Collections",
-        "description": "List function job collections",
+        "description": "List function job collections\n\nNew in *version 0.8.0*",
         "operationId": "list_function_job_collections",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -5690,6 +5738,23 @@
               "minimum": 0,
               "default": 0,
               "title": "Offset"
+            }
+          },
+          {
+            "name": "has_function_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Has Function Id"
             }
           }
         ],
@@ -5721,8 +5786,13 @@
           "function_job_collections"
         ],
         "summary": "Register Function Job Collection",
-        "description": "Register function job collection",
+        "description": "Register function job collection\n\nNew in *version 0.8.0*",
         "operationId": "register_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5763,8 +5833,13 @@
           "function_job_collections"
         ],
         "summary": "Get Function Job Collection",
-        "description": "Get function job collection",
+        "description": "Get function job collection\n\nNew in *version 0.8.0*",
         "operationId": "get_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -5815,8 +5890,13 @@
           "function_job_collections"
         ],
         "summary": "Delete Function Job Collection",
-        "description": "Delete function job collection",
+        "description": "Delete function job collection\n\nNew in *version 0.8.0*",
         "operationId": "delete_function_job_collection",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -5867,8 +5947,13 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection List Function Jobs",
-        "description": "Get the function jobs in function job collection",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_list_function_jobs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_job_collection_id",
@@ -5943,7 +6028,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection Status",
-        "description": "Get function job collection status",
+        "description": "Get function job collection status\n\nNew in *version 0.8.0*",
         "operationId": "function_job_collection_status",
         "security": [
           {
@@ -6217,7 +6302,7 @@
           "wallets"
         ],
         "summary": "Get Available Licensed Items For Wallet",
-        "description": "Get all available licensed items for a given wallet",
+        "description": "Get all available licensed items for a given wallet\n\nNew in *version 0.6*",
         "operationId": "get_available_licensed_items_for_wallet",
         "security": [
           {
@@ -6496,7 +6581,7 @@
           "credits"
         ],
         "summary": "Get Credits Price",
-        "description": "New in *version 0.6.0*",
+        "description": "New in *version 0.6*",
         "operationId": "get_credits_price",
         "responses": {
           "200": {
@@ -6744,8 +6829,13 @@
           "functions"
         ],
         "summary": "Register Function",
-        "description": "Create function",
+        "description": "Create function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "register_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6832,8 +6922,13 @@
           "functions"
         ],
         "summary": "List Functions",
-        "description": "List functions",
+        "description": "List functions\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "list_functions",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -6889,8 +6984,13 @@
           "functions"
         ],
         "summary": "Get Function",
-        "description": "Get function",
+        "description": "Get function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "get_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -6960,8 +7060,13 @@
           "functions"
         ],
         "summary": "Delete Function",
-        "description": "Delete function",
+        "description": "Delete function\n\nNew in *version 0.8.0*",
         "operationId": "delete_function",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7006,14 +7111,91 @@
         }
       }
     },
+    "/v0/functions/{function_id}/jobs": {
+      "get": {
+        "tags": [
+          "functions"
+        ],
+        "summary": "List Function Jobs For Functionid",
+        "description": "List function jobs for a function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
+        "operationId": "list_function_jobs_for_functionid",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/functions/{function_id}/title": {
       "patch": {
         "tags": [
           "functions"
         ],
         "summary": "Update Function Title",
-        "description": "Update function",
+        "description": "Update function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "update_function_title",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7094,8 +7276,13 @@
           "functions"
         ],
         "summary": "Update Function Description",
-        "description": "Update function",
+        "description": "Update function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "update_function_description",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7176,8 +7363,13 @@
           "functions"
         ],
         "summary": "Get Function Inputschema",
-        "description": "Get function input schema",
+        "description": "Get function input schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_inputschema",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7241,8 +7433,13 @@
           "functions"
         ],
         "summary": "Get Function Outputschema",
-        "description": "Get function input schema",
+        "description": "Get function output schema\n\nNew in *version 0.8.0*",
         "operationId": "get_function_outputschema",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7306,8 +7503,13 @@
           "functions"
         ],
         "summary": "Validate Function Inputs",
-        "description": "Validate inputs against the function's input schema",
+        "description": "Validate inputs against the function's input schema\n\nNew in *version 0.8.0*",
         "operationId": "validate_function_inputs",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
         "parameters": [
           {
             "name": "function_id",
@@ -7385,7 +7587,7 @@
           "functions"
         ],
         "summary": "Run Function",
-        "description": "Run function",
+        "description": "Run function\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "run_function",
         "security": [
           {
@@ -7401,6 +7603,42 @@
               "type": "string",
               "format": "uuid",
               "title": "Function Id"
+            }
+          },
+          {
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
+            "name": "x-simcore-parent-node-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
             }
           }
         ],
@@ -7481,7 +7719,7 @@
           "functions"
         ],
         "summary": "Map Function",
-        "description": "Map function over input parameters",
+        "description": "Map function over input parameters\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
         "operationId": "map_function",
         "security": [
           {
@@ -7497,6 +7735,42 @@
               "type": "string",
               "format": "uuid",
               "title": "Function Id"
+            }
+          },
+          {
+            "name": "x-simcore-parent-project-uuid",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Project-Uuid"
+            }
+          },
+          {
+            "name": "x-simcore-parent-node-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "const": "null",
+                  "type": "string"
+                }
+              ],
+              "title": "X-Simcore-Parent-Node-Id"
             }
           }
         ],
@@ -7516,6 +7790,7 @@
                     }
                   ]
                 },
+                "maxItems": 50,
                 "title": "Function Inputs List"
               }
             }
@@ -7577,6 +7852,36 @@
           "client_file"
         ],
         "title": "Body_abort_multipart_upload_v0_files__file_id__abort_post"
+      },
+      "Body_clone_study_v0_studies__study_id__clone_post": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "empty": true
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "empty": true
+          }
+        },
+        "type": "object",
+        "title": "Body_clone_study_v0_studies__study_id__clone_post"
       },
       "Body_complete_multipart_upload_v0_files__file_id__complete_post": {
         "properties": {
@@ -9910,11 +10215,17 @@
             "type": "string",
             "format": "uuid",
             "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
           }
         },
         "type": "object",
         "required": [
-          "uid"
+          "uid",
+          "created_at"
         ],
         "title": "RegisteredFunctionJobCollection"
       },
@@ -9980,6 +10291,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "project_id": {
             "type": "string",
             "format": "uuid",
@@ -9992,6 +10308,7 @@
           "output_schema",
           "default_inputs",
           "uid",
+          "created_at",
           "project_id"
         ],
         "title": "RegisteredProjectFunction"
@@ -10046,6 +10363,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "project_job_id": {
             "type": "string",
             "format": "uuid",
@@ -10058,6 +10380,7 @@
           "inputs",
           "outputs",
           "uid",
+          "created_at",
           "project_job_id"
         ],
         "title": "RegisteredProjectFunctionJob"
@@ -10124,6 +10447,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "code_url": {
             "type": "string",
             "title": "Code Url"
@@ -10135,6 +10463,7 @@
           "output_schema",
           "default_inputs",
           "uid",
+          "created_at",
           "code_url"
         ],
         "title": "RegisteredPythonCodeFunction"
@@ -10188,6 +10517,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Uid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
           }
         },
         "type": "object",
@@ -10195,7 +10529,8 @@
           "function_uid",
           "inputs",
           "outputs",
-          "uid"
+          "uid",
+          "created_at"
         ],
         "title": "RegisteredPythonCodeFunctionJob"
       },
@@ -10261,6 +10596,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "solver_key": {
             "type": "string",
             "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
@@ -10278,6 +10618,7 @@
           "output_schema",
           "default_inputs",
           "uid",
+          "created_at",
           "solver_key",
           "solver_version"
         ],
@@ -10333,6 +10674,11 @@
             "format": "uuid",
             "title": "Uid"
           },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
           "solver_job_id": {
             "type": "string",
             "format": "uuid",
@@ -10345,6 +10691,7 @@
           "inputs",
           "outputs",
           "uid",
+          "created_at",
           "solver_job_id"
         ],
         "title": "RegisteredSolverFunctionJob"

@@ -19,10 +19,17 @@
 qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(latestOnly = true, projectUuid = null) {
+  construct: function(projectUuid = null, includeChildren = false, runningOnly = true) {
     this.base(arguments);
 
-    const model = new osparc.jobs.RunsTableModel(latestOnly, projectUuid);
+    this.set({
+      projectUuid,
+      runningOnly,
+    });
+
+    const model = new osparc.jobs.RunsTableModel(projectUuid, includeChildren);
+    this.bind("projectUuid", model, "projectUuid");
+    this.bind("runningOnly", model, "runningOnly");
     this.setTableModel(model);
 
     this.set({
@@ -47,6 +54,22 @@ qx.Class.define("osparc.jobs.RunsTable", {
     this.__attachHandlers();
   },
 
+  properties: {
+    projectUuid: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeProjectUuid",
+    },
+
+    runningOnly: {
+      check: "Boolean",
+      init: true,
+      nullable: false,
+      event: "changeRunningOnly",
+    },
+  },
+
   events: {
     "runSelected": "qx.event.type.Data",
   },
@@ -64,34 +87,33 @@ qx.Class.define("osparc.jobs.RunsTable", {
         column: 1,
         label: qx.locale.Manager.tr("Project"),
         width: 150,
-        sortable: true
       },
       STATE: {
         id: "state",
         column: 2,
         label: qx.locale.Manager.tr("Status"),
-        width: 150
+        width: 150,
       },
       SUBMIT: {
         id: "submit",
         column: 3,
         label: qx.locale.Manager.tr("Queued"),
         width: 130,
-        sortable: true
+        sortableMap: "submitted_at",
       },
       START: {
         id: "start",
         column: 4,
         label: qx.locale.Manager.tr("Started"),
         width: 130,
-        sortable: true
+        sortableMap: "started_at",
       },
       END: {
         id: "end",
         column: 5,
         label: qx.locale.Manager.tr("Ended"),
         width: 130,
-        sortable: true
+        sortableMap: "ended_at",
       },
       ACTION_CANCEL: {
         id: "action_cancel",
@@ -116,16 +138,19 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     __attachHandlers: function() {
       this.addListener("cellTap", e => {
-        const row = e.getRow();
+        const rowIdx = e.getRow();
         const target = e.getOriginalTarget();
         if (target.closest(".qx-material-button") && (target.tagName === "IMG" || target.tagName === "DIV")) {
           const action = target.closest(".qx-material-button").getAttribute("data-action");
           if (action) {
-            this.__handleButtonClick(action, row);
+            this.__handleButtonClick(action, rowIdx);
           }
         } else {
-          const rowData = this.getTableModel().getRowData(row);
-          this.fireDataEvent("runSelected", rowData);
+          const rowData = this.getTableModel().getRowData(rowIdx);
+          this.fireDataEvent("runSelected", {
+            rowData,
+            rowIdx,
+          });
           this.resetSelection();
         }
       });
@@ -133,6 +158,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     __handleButtonClick: function(action, row) {
       this.resetSelection();
+       // In order to make the button tappable again, the cell needs to be unfocused (blurred)
+      this.resetCellFocus();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {

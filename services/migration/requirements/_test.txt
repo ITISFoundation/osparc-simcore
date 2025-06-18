@@ -38,10 +38,8 @@ pytest==8.3.5
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==0.26.0
+    # via -r requirements/_test.in
 pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-docker==3.2.0

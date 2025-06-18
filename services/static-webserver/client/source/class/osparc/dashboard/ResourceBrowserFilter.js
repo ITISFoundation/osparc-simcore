@@ -60,8 +60,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       switch (this.__resourceType) {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
-          this._add(this.__createTemplates());
-          this._add(this.__createPublicProjects());
+          if (osparc.product.Utils.showTemplates()) {
+            this._add(this.__createTemplates());
+          }
+          if (osparc.product.Utils.showPublicProjects()) {
+            this._add(this.__createPublicProjects());
+          }
           this._add(this.__createTrashBin());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
@@ -132,6 +136,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         icon: "@FontAwesome5Solid/copy/16",
         paddingLeft: 10, // align it with the context
       });
+      osparc.utils.Utils.setIdToWidget(templatesButton, "templatesFilterItem");
       templatesButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {
@@ -149,6 +154,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         icon: "@FontAwesome5Solid/globe/16",
         paddingLeft: 10, // align it with the context
       });
+      osparc.utils.Utils.setIdToWidget(publicProjectsButton, "publicProjectsFilterItem");
       publicProjectsButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {
@@ -416,7 +422,19 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
 
       // hypertools filter
-      const button = new qx.ui.toolbar.RadioButton("Hypertools", "@FontAwesome5Solid/wrench/"+iconSize);
+      const button = new qx.ui.toolbar.RadioButton("Hypertools", null);
+      button.exclude();
+      osparc.store.Templates.getHypertools()
+        .then(hypertools => {
+          button.setVisibility(hypertools.length > 0 ? "visible" : "excluded");
+        });
+      osparc.utils.Utils.replaceIconWithThumbnail(button, osparc.data.model.StudyUI.HYPERTOOL_ICON, 26);
+      // align it with the rest of icons
+      button.set({
+        paddingLeft: 5,
+        paddingTop: 0,
+        paddingBottom: 0,
+      });
       button.appType = "hypertool";
       this.__appTypeButtons.push(button);
 

@@ -20,12 +20,9 @@ from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
 from servicelib.fastapi.http_client_thin import BaseHttpClientError
-from servicelib.fastapi.long_running_tasks.client import (
-    ProgressCallback,
-    TaskClientResultError,
-)
-from servicelib.fastapi.long_running_tasks.server import TaskProgress
 from servicelib.logging_utils import log_context
+from servicelib.long_running_tasks.errors import TaskExceptionError
+from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
@@ -138,7 +135,7 @@ async def service_remove_containers(
         await sidecars_client.stop_service(
             scheduler_data.endpoint, progress_callback=progress_callback
         )
-    except (BaseHttpClientError, TaskClientResultError) as e:
+    except (BaseHttpClientError, TaskExceptionError) as e:
         _logger.info(
             (
                 "Could not remove service containers for %s. "
@@ -155,7 +152,7 @@ async def service_free_reserved_disk_space(
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_id)
     try:
         await sidecars_client.free_reserved_disk_space(scheduler_data.endpoint)
-    except BaseHttpClientError as e:
+    except (BaseHttpClientError, TaskExceptionError) as e:
         _logger.info(
             (
                 "Could not remove service containers for %s. "
@@ -373,7 +370,7 @@ async def attempt_pod_removal_and_data_saving(
             scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
 
             _logger.info("dynamic-sidecar saved: state and output ports")
-        except (BaseHttpClientError, TaskClientResultError) as e:
+        except (BaseHttpClientError, TaskExceptionError) as e:
             _logger.error(  # noqa: TRY400
                 (
                     "Could not contact dynamic-sidecar to save service "

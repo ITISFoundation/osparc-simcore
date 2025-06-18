@@ -4,14 +4,18 @@
 
 import importlib
 from collections.abc import Callable, Iterator
+from functools import partial
 from typing import Any
 
 import pip
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from opentelemetry import trace
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
-from servicelib.aiohttp.tracing import setup_tracing
+from servicelib.aiohttp.tracing import get_tracing_lifespan
+from servicelib.tracing import _OSPARC_TRACE_ID_HEADER
 from settings_library.tracing import TracingSettings
 
 
@@ -24,14 +28,23 @@ def tracing_settings_in(request):
 def set_and_clean_settings_env_vars(
     monkeypatch: pytest.MonkeyPatch, tracing_settings_in
 ):
+    endpoint_mocked = False
     if tracing_settings_in[0]:
+        endpoint_mocked = True
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
         )
+    port_mocked = False
     if tracing_settings_in[1]:
+        port_mocked = True
         monkeypatch.setenv(
             "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
         )
+    yield
+    if endpoint_mocked:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
+    if port_mocked:
+        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
 
 
 @pytest.mark.parametrize(
@@ -50,11 +63,10 @@ async def test_valid_tracing_settings(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    setup_tracing(
-        app,
-        service_name=service_name,
-        tracing_settings=tracing_settings,
-    )
+    async for _ in get_tracing_lifespan(
+        app=app, service_name=service_name, tracing_settings=tracing_settings
+    )(app):
+        pass
 
 
 @pytest.mark.parametrize(
@@ -128,14 +140,65 @@ async def test_tracing_setup_package_detection(
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()
-    setup_tracing(
-        app,
+    async for _ in get_tracing_lifespan(
+        app=app,
         service_name=service_name,
         tracing_settings=tracing_settings,
-    )
-    # idempotency
-    setup_tracing(
-        app,
+    )(app):
+        # idempotency
+        async for _ in get_tracing_lifespan(
+            app=app,
+            service_name=service_name,
+            tracing_settings=tracing_settings,
+        )(app):
+            pass
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318),
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "server_response", [web.Response(text="Hello, world!"), web.HTTPNotFound()]
+)
+async def test_trace_id_in_response_header(
+    mock_otel_collector: InMemorySpanExporter,
+    aiohttp_client: Callable,
+    set_and_clean_settings_env_vars: Callable,
+    tracing_settings_in,
+    uninstrument_opentelemetry: Iterator[None],
+    server_response: web.Response | web.HTTPException,
+) -> None:
+    app = web.Application()
+    service_name = "simcore_service_webserver"
+    tracing_settings = TracingSettings()
+
+    async def handler(handler_data: dict, request: web.Request) -> web.Response:
+        current_span = trace.get_current_span()
+        handler_data[_OSPARC_TRACE_ID_HEADER] = format(
+            current_span.get_span_context().trace_id, "032x"
+        )
+        if isinstance(server_response, web.HTTPException):
+            raise server_response
+        return server_response
+
+    handler_data = dict()
+    app.router.add_get("/", partial(handler, handler_data))
+
+    async for _ in get_tracing_lifespan(
+        app=app,
         service_name=service_name,
         tracing_settings=tracing_settings,
-    )
+        add_response_trace_id_header=True,
+    )(app):
+        client = await aiohttp_client(app)
+        response = await client.get("/")
+        assert _OSPARC_TRACE_ID_HEADER in response.headers
+        trace_id = response.headers[_OSPARC_TRACE_ID_HEADER]
+        assert len(trace_id) == 32  # Ensure trace ID is a 32-character hex string
+        assert (
+            trace_id == handler_data[_OSPARC_TRACE_ID_HEADER]
+        )  # Ensure trace IDs match

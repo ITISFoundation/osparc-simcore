@@ -19,6 +19,12 @@ qx.Class.define("osparc.store.Users", {
   extend: qx.core.Object,
   type: "singleton",
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__unknowns = [];
+  },
+
   properties: {
     users: {
       check: "Array",
@@ -28,6 +34,8 @@ qx.Class.define("osparc.store.Users", {
   },
 
   members: {
+    __unknowns: null,
+
     __fetchUser: function(groupId) {
       const params = {
         url: {
@@ -38,10 +46,17 @@ qx.Class.define("osparc.store.Users", {
         .then(userData => {
           const user = this.addUser(userData[0]);
           return user;
+        })
+        .catch(() => {
+          this.__unknowns.push(groupId);
+          return null;
         });
     },
 
     getUser: async function(groupId, fetchIfNotFound = true) {
+      if (this.__unknowns.includes(groupId)) {
+        return null;
+      }
       const userFound = this.getUsers().find(user => user.getGroupId() === groupId);
       if (userFound) {
         return userFound;

@@ -33,35 +33,29 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    typeToFunctionType: function(type) {
-      switch (type) {
-        case "number":
-          return "float"
-        case "data:*/*":
-          return "FileID"
-      }
-      return type;
-    },
-
     createFunctionData: function(projectData, name, description, exposedInputs, exposedOutputs) {
       const functionData = {
-        "project_id": projectData["uuid"],
-        "name": name,
+        "projectId": projectData["uuid"],
+        "title": name,
         "description": description,
-        "function_class": "project",
-        "input_schema": {
-          "schema_dict": {
+        "function_class": "PROJECT",
+        "inputSchema": {
+          "schema_class": "application/schema+json",
+          "schema_content": {
             "type": "object",
-            "properties": {}
+            "properties": {},
+            "required": []
           }
         },
-        "output_schema": {
-          "schema_dict": {
+        "outputSchema": {
+          "schema_class": "application/schema+json",
+          "schema_content": {
             "type": "object",
-            "properties": {}
+            "properties": {},
+            "required": []
           }
         },
-        "default_inputs": {},
+        "defaultInputs": {},
       };
 
       const parameters = osparc.study.Utils.extractFunctionableParameters(projectData["workbench"]);
@@ -71,11 +65,13 @@ qx.Class.define("osparc.study.CreateFunction", {
           const parameterMetadata = osparc.store.Services.getMetadata(parameter["key"], parameter["version"]);
           if (parameterMetadata) {
             const type = osparc.service.Utils.getParameterType(parameterMetadata);
-            functionData["input_schema"]["schema_dict"]["properties"][parameterLabel] = {
-              "type": this.self().typeToFunctionType(type),
+            functionData["inputSchema"]["schema_content"]["properties"][parameterLabel] = {
+              "type": type,
             };
+            functionData["inputSchema"]["schema_content"]["required"].push(parameterLabel);
           }
-          functionData["default_inputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
+        } else {
+          functionData["defaultInputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
         }
       });
 
@@ -86,9 +82,10 @@ qx.Class.define("osparc.study.CreateFunction", {
           const probeMetadata = osparc.store.Services.getMetadata(probe["key"], probe["version"]);
           if (probeMetadata) {
             const type = osparc.service.Utils.getProbeType(probeMetadata);
-            functionData["output_schema"]["schema_dict"]["properties"][probeLabel] = {
-              "type": this.self().typeToFunctionType(type),
+            functionData["outputSchema"]["schema_content"]["properties"][probeLabel] = {
+              "type": type,
             };
+            functionData["outputSchema"]["schema_content"]["required"].push(probeLabel);
           }
         }
       });
@@ -118,6 +115,7 @@ qx.Class.define("osparc.study.CreateFunction", {
 
       const description = new qx.ui.form.TextField().set({
         required: false,
+        value: this.__studyData.description || ""
       });
       form.add(description, this.tr("Description"), null, "description");
 
@@ -284,11 +282,12 @@ qx.Class.define("osparc.study.CreateFunction", {
     __createFunction: function(exposedInputs, exposedOutputs) {
       this.__createFunctionBtn.setFetching(true);
 
-      // first publish it as a template
+      // first publish it as a hidden template
       const params = {
         url: {
           "study_id": this.__studyData["uuid"],
           "copy_data": true,
+          "hidden": true,
         },
       };
       const options = {
@@ -300,7 +299,8 @@ qx.Class.define("osparc.study.CreateFunction", {
         .then(task => {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
-            this.__doCreateFunction(templateData, exposedInputs, exposedOutputs);
+            this.__updateTemplateMetadata(templateData);
+            this.__registerFunction(templateData, exposedInputs, exposedOutputs);
           });
         })
         .catch(err => {
@@ -309,13 +309,27 @@ qx.Class.define("osparc.study.CreateFunction", {
         });
     },
 
-    __doCreateFunction: function(templateData, exposedInputs, exposedOutputs) {
+    __updateTemplateMetadata: function(templateData) {
+      const patchData = {
+        "custom" : {
+          "hidden": "Base template for function",
+        }
+      };
+      const params = {
+        url: {
+          "studyId": templateData["uuid"],
+        },
+        data: patchData
+      };
+      osparc.data.Resources.fetch("studies", "updateMetadata", params)
+        .catch(err => console.error(err));
+    },
+
+    __registerFunction: function(templateData, exposedInputs, exposedOutputs) {
       const nameField = this.__form.getItem("name");
       const descriptionField = this.__form.getItem("description");
 
       const functionData = this.self().createFunctionData(templateData, nameField.getValue(), descriptionField.getValue(), exposedInputs, exposedOutputs);
-      console.log("functionData", functionData);
-
       const params = {
         data: functionData,
       };

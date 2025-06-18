@@ -1114,7 +1114,7 @@ async def patch_project_node(
         project_id=project_id,
         user_id=user_id,
         product_name=product_name,
-        permission="write",  # NOTE: MD: before only read was sufficient, double check this
+        permission="write",
     )
 
     # 2. If patching service key or version make sure it's valid
@@ -1153,7 +1153,7 @@ async def patch_project_node(
         partial_node=partial_node,
     )
 
-    # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
+    # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
     await director_v2_service.create_or_update_pipeline(
         app,
         user_id,
@@ -1426,7 +1426,10 @@ async def try_open_project_for_user(
                     >= max_number_of_studies_per_user
                 ):
                     raise ProjectTooManyProjectOpenedError(
-                        max_num_projects=max_number_of_studies_per_user
+                        max_num_projects=max_number_of_studies_per_user,
+                        user_id=user_id,
+                        project_uuid=project_uuid,
+                        client_session_id=client_session_id,
                     )
 
                 # Assign project_id to current_session
@@ -1682,7 +1685,11 @@ async def is_service_deprecated(
     product_name: str,
 ) -> bool:
     service = await catalog_service.get_service(
-        app, user_id, service_key, service_version, product_name
+        app,
+        user_id=user_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=product_name,
     )
     if deprecation_date := service.get("deprecated"):
         deprecation_date_bool: bool = datetime.datetime.now(

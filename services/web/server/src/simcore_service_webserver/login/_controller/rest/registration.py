@@ -211,7 +211,10 @@ async def register(request: web.Request):
             app=request.app,
         )
         if invitation.trial_account_days:
-            expires_at = datetime.now(UTC) + timedelta(invitation.trial_account_days)
+            # NOTE: expires_at is currently set as offset-naive
+            expires_at = (
+                datetime.now(UTC) + timedelta(invitation.trial_account_days)
+            ).replace(tzinfo=None)
 
     #  get authorized user or create new
     user = await _auth_service.get_user_by_email(request.app, email=registration.email)
@@ -298,7 +301,7 @@ async def register(request: web.Request):
 
             await db.delete_confirmation_and_user(user, _confirmation)
 
-            raise web.HTTPServiceUnavailable(reason=user_error_msg) from err
+            raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
         return flash_response(
             "You are registered successfully! To activate your account, please, "

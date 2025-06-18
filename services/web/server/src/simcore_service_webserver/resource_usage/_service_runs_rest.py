@@ -30,7 +30,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _service_runs_service as api
@@ -47,38 +47,38 @@ def _handle_resource_usage_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(text=f"{exc}") from exc
 
     return wrapper
 
 
-_ResorceUsagesListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_class(
-    ordering_fields={
-        "wallet_id",
-        "wallet_name",
-        "user_id",
-        "user_email",
-        "project_id",
-        "project_name",
-        "node_id",
-        "node_name",
-        "root_parent_project_id",
-        "root_parent_project_name",
-        "service_key",
-        "service_version",
-        "service_type",
-        "started_at",
-        "stopped_at",
-        "service_run_status",
-        "credit_cost",
-        "transaction_status",
-    },
-    default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
-    ordering_fields_api_to_column_map={
-        "credit_cost": "osparc_credits",
-    },
+_ResorceUsagesListOrderQueryParams: type[RequestParameters] = (
+    create_ordering_query_model_class(
+        ordering_fields={
+            "wallet_id",
+            "wallet_name",
+            "user_id",
+            "user_email",
+            "project_id",
+            "project_name",
+            "node_id",
+            "node_name",
+            "root_parent_project_id",
+            "root_parent_project_name",
+            "service_key",
+            "service_version",
+            "service_type",
+            "started_at",
+            "stopped_at",
+            "service_run_status",
+            "credit_cost",
+            "transaction_status",
+        },
+        default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={
+            "credit_cost": "osparc_credits",
+        },
+    )
 )
 
 
@@ -123,7 +123,7 @@ routes = web.RouteTableDef()
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_resource_usage_services(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ServicesResourceUsagesListQueryParams = (
         parse_request_query_parameters_as(
             ServicesResourceUsagesListQueryParams, request
@@ -166,7 +166,7 @@ async def list_resource_usage_services(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def list_osparc_credits_aggregated_usages(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ServicesAggregatedUsagesListQueryParams = (
         parse_request_query_parameters_as(
             ServicesAggregatedUsagesListQueryParams, request
@@ -206,7 +206,7 @@ async def list_osparc_credits_aggregated_usages(request: web.Request):
 @permission_required("resource-usage.read")
 @_handle_resource_usage_exceptions
 async def export_resource_usage_services(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: ServicesResourceUsagesReportQueryParams = (
         parse_request_query_parameters_as(
             ServicesResourceUsagesReportQueryParams, request

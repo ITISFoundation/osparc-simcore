@@ -27,6 +27,7 @@ ujson>=5.4.0                                  # https://github.com/advisories/GH
 urllib3>=1.26.5                               # https://github.com/advisories/GHSA-q2q7-5pp4-w6pg
 
 
+
 #
 # Breaking changes -----------------------------------------------------------------------------------------
 #
@@ -36,9 +37,6 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 sqlalchemy<2.0
 
 
-# SEE https://github.com/pytest-dev/pytest-asyncio/issues/706
-# Many tests fail with `RuntimeError: There is no current event loop in thread 'MainThread'`
-pytest-asyncio<0.24
 
 #
 # Bugs

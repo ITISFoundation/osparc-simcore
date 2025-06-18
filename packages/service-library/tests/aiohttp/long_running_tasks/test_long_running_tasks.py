@@ -9,7 +9,6 @@ How these tests works:
 
 """
 
-
 import asyncio
 import json
 from collections.abc import Awaitable, Callable
@@ -21,9 +20,9 @@ from aiohttp.test_utils import TestClient
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import long_running_tasks, status
-from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
-from servicelib.long_running_tasks._task import TaskContext
+from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskStatus
+from servicelib.long_running_tasks.task import TaskContext
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -42,16 +41,12 @@ def app(server_routes: web.RouteTableDef) -> web.Application:
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
     app: web.Application,
 ) -> TestClient:
-
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
-    )
+    return await aiohttp_client(app, server_kwargs={"port": unused_tcp_port_factory()})
 
 
 async def test_workflow(
@@ -75,7 +70,7 @@ async def test_workflow(
             data, error = await assert_status(result, status.HTTP_200_OK)
             assert data
             assert not error
-            task_status = long_running_tasks.server.TaskStatus.model_validate(data)
+            task_status = TaskStatus.model_validate(data)
             assert task_status
             progress_updates.append(
                 (task_status.task_progress.message, task_status.task_progress.percent)

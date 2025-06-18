@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 from collections.abc import AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
@@ -58,8 +57,7 @@ def app_environment(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable,
     app_environment: EnvVarsDict,
     postgres_db,
@@ -91,9 +89,7 @@ def client(
     setup_wallets(app)
 
     # server and client
-    return event_loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"host": "localhost"})
-    )
+    return await aiohttp_client(app, server_kwargs={"host": "localhost"})
 
     # teardown here ...
 

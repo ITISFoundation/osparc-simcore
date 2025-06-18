@@ -2,8 +2,8 @@
 
 import asyncio
 import logging
-import time
 from collections.abc import Awaitable, Callable
+from time import perf_counter
 from typing import Final
 
 from aiohttp import web
@@ -67,7 +67,7 @@ def middleware_factory(
         canonical_endpoint = request.path
         if request.match_info.route.resource:
             canonical_endpoint = request.match_info.route.resource.canonical
-        start_time = time.time()
+        start_time = perf_counter()
         try:
             if enter_middleware_cb:
                 with log_catch(logger=log, reraise=False):
@@ -101,17 +101,17 @@ def middleware_factory(
             log_exception = None
             raise resp from exc
         except asyncio.CancelledError as exc:
-            resp = web.HTTPInternalServerError(reason=f"{exc}")
+            resp = web.HTTPInternalServerError(text=f"{exc}")
             log_exception = exc
             raise resp from exc
         except Exception as exc:  # pylint: disable=broad-except
-            resp = web.HTTPInternalServerError(reason=f"{exc}")
+            resp = web.HTTPInternalServerError(text=f"{exc}")
             resp.__cause__ = exc
             log_exception = exc
             raise resp from exc
 
         finally:
-            resp_time_secs: float = time.time() - start_time
+            response_latency_seconds = perf_counter() - start_time
 
             record_response_metrics(
                 metrics=metrics,
@@ -119,6 +119,7 @@ def middleware_factory(
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
                 http_status=resp.status,
+                response_latency_seconds=response_latency_seconds,
             )
 
             if exit_middleware_cb:
@@ -133,7 +134,7 @@ def middleware_factory(
                     request.remote,
                     request.method,
                     request.path,
-                    resp_time_secs,
+                    response_latency_seconds,
                     resp.status,
                     exc_info=log_exception,
                     stack_info=True,

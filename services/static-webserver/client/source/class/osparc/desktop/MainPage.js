@@ -69,7 +69,9 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
     preloadPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
-    preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobsActive());
+    preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
+    preloadPromises.push(osparc.data.Permissions.getInstance().fetchPermissions());
+    preloadPromises.push(osparc.data.Permissions.getInstance().fetchFunctionPermissions());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();
@@ -115,7 +117,9 @@ qx.Class.define("osparc.desktop.MainPage", {
         const preferencesSettings = osparc.Preferences.getInstance();
         if (!isReadOnly && preferencesSettings.getConfirmBackToDashboard()) {
           const studyName = this.__studyEditor.getStudy().getName();
-          const win = new osparc.ui.window.Confirmation();
+          const win = new osparc.ui.window.Confirmation().set({
+            confirmAction: "warning",
+          });
           if (osparc.product.Utils.getProductName().includes("s4l")) {
             let msg = this.tr("Do you want to close ") + "<b>" + studyName + "</b>?";
             msg += "<br><br>";
@@ -238,7 +242,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       const params = {
         url: {
           "study_id": studyId,
-          "copy_data": copyData
+          "copy_data": copyData,
+          "hidden": false,
         },
       };
       const options = {
@@ -339,7 +344,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           osparc.data.Resources.fetch("studies", "getOne", params2)
             .then(studyData => {
               if (!studyData) {
-                const msg = this.tr("Study not found");
+                const msg = this.tr("Project not found");
                 throw new Error(msg);
               }
               osparc.desktop.MainPageHandler.getInstance().loadStudy(studyData);

@@ -40,6 +40,7 @@ from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
 )
 
 _logger = logging.getLogger(__name__)
@@ -85,6 +86,12 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     response_model=Job,
     status_code=status.HTTP_201_CREATED,
     responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="Creates a job in a specific release with given inputs. This operation does not start the job.",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+        ],
+    ),
 )
 async def create_solver_job(  # noqa: PLR0913
     solver_key: SolverKeyId,
@@ -125,8 +132,12 @@ async def create_solver_job(  # noqa: PLR0913
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses=JOBS_STATUS_CODES,
-    description="Deletes an existing solver job\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+    description=create_route_description(
+        base="Deletes an existing solver job",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+        ],
+    ),
 )
 async def delete_job(
     solver_key: SolverKeyId,
@@ -159,13 +170,19 @@ async def delete_job(
             "model": ErrorGet,
         },
     },
-    description="Starts job job_id created with the solver solver_key:version\n\n"
-    + FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.4.3", "query parameter `cluster_id`")
-    + FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-        "0.6", "responds with a 202 when successfully starting a computation"
-    )
-    + FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
-        "0.8", "query parameter `cluster_id` deprecated"
+    description=create_route_description(
+        base="Starts job job_id created with the solver solver_key:version",
+        changelog=[
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.4.3", "query parameter `cluster_id`"
+            ),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.6", "responds with a 202 when successfully starting a computation"
+            ),
+            FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
+                "0.7", "query parameter `cluster_id` deprecated"
+            ),
+        ],
     ),
 )
 async def start_job(
@@ -214,6 +231,12 @@ async def start_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:stop",
     response_model=JobStatus,
     responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="Stops a running job",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+        ],
+    ),
 )
 async def stop_job(
     solver_key: SolverKeyId,
@@ -234,6 +257,12 @@ async def stop_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:inspect",
     response_model=JobStatus,
     responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="Inspects the current status of a job",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.5"),
+        ],
+    ),
 )
 async def inspect_job(
     solver_key: SolverKeyId,
@@ -254,8 +283,12 @@ async def inspect_job(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/metadata",
     response_model=JobMetadata,
     responses=METADATA_STATUS_CODES,
-    description="Updates custom metadata from a job\n\n"
-    + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+    description=create_route_description(
+        base="Updates custom metadata from a job",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+        ],
+    ),
 )
 async def replace_job_custom_metadata(
     solver_key: SolverKeyId,

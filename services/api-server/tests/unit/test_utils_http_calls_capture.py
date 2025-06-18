@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 
-import asyncio
 import re
 from pathlib import Path
 
@@ -17,9 +16,7 @@ from pydantic import HttpUrl
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 
 
-async def test_capture_http_call(
-    event_loop: asyncio.AbstractEventLoop, httpbin_base_url: HttpUrl
-):
+async def test_capture_http_call(httpbin_base_url: HttpUrl):
     # CAPTURE
     async with httpx.AsyncClient() as client:
         response: httpx.Response = await client.get(f"{httpbin_base_url}json")
@@ -56,9 +53,7 @@ async def test_capture_http_call(
             assert response.status_code == captured.status_code
 
 
-async def test_capture_http_dynamic_call(
-    event_loop: asyncio.AbstractEventLoop, faker: Faker, httpbin_base_url: str
-):
+async def test_capture_http_dynamic_call(faker: Faker, httpbin_base_url: str):
     # CAPTURE
     async with httpx.AsyncClient() as client:
         sample_uid = faker.uuid4()  # used during test sampling

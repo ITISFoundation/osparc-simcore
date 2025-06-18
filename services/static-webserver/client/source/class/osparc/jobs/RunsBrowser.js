@@ -24,17 +24,19 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.getChildControl("intro-label");
     const jobsFilter = this.getChildControl("jobs-filter");
-    const jobsTable = this.getChildControl("runs-table");
+    const runningCB = this.getChildControl("running-only-cb");
+    const runsTable = this.getChildControl("runs-table");
 
     jobsFilter.getChildControl("textfield").addListener("input", e => {
       const filterText = e.getData();
-      jobsTable.getTableModel().setFilters({
-        text: filterText,
-      });
+      runsTable.getTableModel().setFilterString(filterText);
     });
 
-    this.__reloadInterval = setInterval(() => this.getChildControl("runs-table").reloadRuns(), 10*1000);
+    runningCB.bind("value", runsTable, "runningOnly");
+
+    this.__reloadInterval = setInterval(() => this.reloadRuns(), 10*1000);
   },
 
   events: {
@@ -51,19 +53,35 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._add(control);
           break;
+        case "intro-label":
+          control = new qx.ui.basic.Label(this.tr("Select a Run to check the details"));
+          this.getChildControl("header-filter").add(control);
+          break;
         case "jobs-filter":
           control = new osparc.filter.TextFilter("text", "jobsList").set({
             allowStretchX: true,
             margin: 0
           });
+          control.getChildControl("textfield").set({
+            placeholder: qx.locale.Manager.tr("Filter by name or ID"),
+          });
+          control.hide(); // @matusdrobuliak66: remove this when the backend is ready
           this.getChildControl("header-filter").add(control, {
             flex: 1
           });
           break;
+        case "running-only-cb":
+          control = new qx.ui.form.CheckBox().set({
+            value: true,
+            label: qx.locale.Manager.tr("Active only"),
+          });
+          this.getChildControl("header-filter").add(control);
+          break;
         case "runs-table": {
-          const latestOnly = true;
           const projectUuid = null;
-          control = new osparc.jobs.RunsTable(latestOnly, projectUuid);
+          const includeChildren = false;
+          const runningOnly = true;
+          control = new osparc.jobs.RunsTable(projectUuid, includeChildren, runningOnly);
           control.addListener("runSelected", e => this.fireDataEvent("runSelected", e.getData()));
           this._add(control);
           break;

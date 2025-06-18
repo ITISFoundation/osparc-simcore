@@ -19,9 +19,19 @@ from asgi_lifespan import LifespanManager
 from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import TypeAdapter
-from servicelib.fastapi import long_running_tasks
-from servicelib.long_running_tasks._models import TaskGet, TaskId
-from servicelib.long_running_tasks._task import TaskContext
+from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
+from servicelib.fastapi.long_running_tasks.client import setup as setup_client
+from servicelib.fastapi.long_running_tasks.server import (
+    get_long_running_manager,
+)
+from servicelib.fastapi.long_running_tasks.server import setup as setup_server
+from servicelib.long_running_tasks.models import (
+    TaskGet,
+    TaskId,
+    TaskProgress,
+    TaskStatus,
+)
+from servicelib.long_running_tasks.task import TaskContext, start_task
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -32,7 +42,7 @@ ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 
 async def _string_list_task(
-    task_progress: long_running_tasks.server.TaskProgress,
+    task_progress: TaskProgress,
     num_strings: int,
     sleep_time: float,
     fail: bool,
@@ -43,7 +53,8 @@ async def _string_list_task(
         await asyncio.sleep(sleep_time)
         task_progress.update(message="generated item", percent=index / num_strings)
         if fail:
-            raise RuntimeError("We were asked to fail!!")
+            msg = "We were asked to fail!!"
+            raise RuntimeError(msg)
 
     return generated_strings
 
@@ -59,12 +70,12 @@ def server_routes() -> APIRouter:
         num_strings: int,
         sleep_time: float,
         fail: bool = False,
-        task_manager: long_running_tasks.server.TasksManager = Depends(
-            long_running_tasks.server.get_tasks_manager
+        long_running_manager: FastAPILongRunningManager = Depends(
+            get_long_running_manager
         ),
-    ) -> long_running_tasks.server.TaskId:
-        task_id = long_running_tasks.server.start_task(
-            task_manager,
+    ) -> TaskId:
+        task_id = start_task(
+            long_running_manager.tasks_manager,
             _string_list_task,
             num_strings=num_strings,
             sleep_time=sleep_time,
@@ -80,8 +91,8 @@ async def app(server_routes: APIRouter) -> AsyncIterator[FastAPI]:
     # overrides fastapi/conftest.py:app
     app = FastAPI(title="test app")
     app.include_router(server_routes)
-    long_running_tasks.server.setup(app)
-    long_running_tasks.client.setup(app)
+    setup_server(app)
+    setup_client(app)
     async with LifespanManager(app):
         yield app
 
@@ -94,18 +105,15 @@ def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[Task
         )
         resp = await client.post(f"{url}")
         assert resp.status_code == status.HTTP_202_ACCEPTED
-        task_id = TypeAdapter(long_running_tasks.server.TaskId).validate_python(
-            resp.json()
-        )
-        return task_id
+        return TypeAdapter(TaskId).validate_python(resp.json())
 
     return _caller
 
 
 @pytest.fixture
-def wait_for_task() -> Callable[
-    [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
-]:
+def wait_for_task() -> (
+    Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]]
+):
     async def _waiter(
         app: FastAPI,
         client: AsyncClient,
@@ -124,9 +132,7 @@ def wait_for_task() -> Callable[
             with attempt:
                 result = await client.get(f"{status_url}")
                 assert result.status_code == status.HTTP_200_OK
-                task_status = long_running_tasks.server.TaskStatus.model_validate(
-                    result.json()
-                )
+                task_status = TaskStatus.model_validate(result.json())
                 assert task_status
                 assert task_status.done
 
@@ -151,9 +157,7 @@ async def test_workflow(
         with attempt:
             result = await client.get(f"{status_url}")
             assert result.status_code == status.HTTP_200_OK
-            task_status = long_running_tasks.server.TaskStatus.model_validate(
-                result.json()
-            )
+            task_status = TaskStatus.model_validate(result.json())
             assert task_status
             progress_updates.append(
                 (task_status.task_progress.message, task_status.task_progress.percent)
@@ -183,9 +187,7 @@ async def test_workflow(
     result = await client.get(f"{result_url}")
     # NOTE: this is DIFFERENT than with aiohttp where we return the real result
     assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
-    assert not task_result.error
-    assert task_result.result == [f"{x}" for x in range(10)]
+    assert result.json() == [f"{x}" for x in range(10)]
     # getting the result again should raise a 404
     result = await client.get(result_url)
     assert result.status_code == status.HTTP_404_NOT_FOUND
@@ -220,19 +222,9 @@ async def test_failing_task_returns_error(
     await wait_for_task(app, client, task_id, {})
     # get the result
     result_url = app.url_path_for("get_task_result", task_id=task_id)
-    result = await client.get(f"{result_url}")
-    assert result.status_code == status.HTTP_200_OK
-    task_result = long_running_tasks.server.TaskResult.model_validate(result.json())
-
-    assert not task_result.result
-    assert task_result.error
-    assert task_result.error.startswith(f"Task {task_id} finished with exception: ")
-    assert 'raise RuntimeError("We were asked to fail!!")' in task_result.error
-    # NOTE: this is not yet happening with fastapi version of long running task
-    # assert "errors" in task_result.error
-    # assert len(task_result.error["errors"]) == 1
-    # assert task_result.error["errors"][0]["code"] == "RuntimeError"
-    # assert task_result.error["errors"][0]["message"] == "We were asked to fail!!"
+    with pytest.raises(RuntimeError) as exec_info:
+        await client.get(f"{result_url}")
+    assert f"{exec_info.value}" == "We were asked to fail!!"
 
 
 async def test_get_results_before_tasks_finishes_returns_404(

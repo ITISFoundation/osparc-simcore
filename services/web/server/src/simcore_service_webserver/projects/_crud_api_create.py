@@ -17,7 +17,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
-from servicelib.aiohttp.long_running_tasks.server import TaskProgress
+from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -62,7 +62,7 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 ]
 
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 CopyFileCoro: TypeAlias = Coroutine[Any, Any, None]
 CopyProjectNodesCoro: TypeAlias = Coroutine[Any, Any, dict[NodeID, ProjectNodeCreate]]
@@ -285,6 +285,13 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
     """
     assert request.app  # nosec
+    _logger.info(
+        "create_project for '%s' with %s %s %s",
+        f"{user_id=}",
+        f"{predefined_project=}",
+        f"{product_name=}",
+        f"{from_study=}",
+    )
 
     _projects_repository = ProjectDBAPI.get_from_app_context(request.app)
 
@@ -459,6 +466,17 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 for gid, access in workspace.access_rights.items()
             }
 
+        _project_product_name = await _projects_repository.get_project_product(
+            project_uuid=new_project["uuid"]
+        )
+        assert (
+            _project_product_name == product_name  # nosec
+        ), "Project product name mismatch"
+        if _project_product_name != product_name:
+            raise web.HTTPBadRequest(
+                text=f"Project product name mismatch {product_name=} {_project_product_name=}"
+            )
+
         data = ProjectGet.from_domain_model(new_project).model_dump(
             **RESPONSE_MODEL_POLICY
         )
@@ -469,10 +487,10 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         )
 
     except JsonSchemaValidationError as exc:
-        raise web.HTTPBadRequest(reason="Invalid project data") from exc
+        raise web.HTTPBadRequest(text="Invalid project data") from exc
 
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason=f"Project {exc.project_uuid} not found") from exc
+        raise web.HTTPNotFound(text=f"Project {exc.project_uuid} not found") from exc
 
     except (ProjectInvalidRightsError, WorkspaceAccessForbiddenError) as exc:
         raise web.HTTPForbidden from exc
@@ -485,10 +503,10 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,
             )
-        raise web.HTTPNotFound(reason=f"{exc}") from exc
+        raise web.HTTPNotFound(text=f"{exc}") from exc
 
     except asyncio.CancelledError:
-        log.warning(
+        _logger.warning(
             "cancelled create_project for '%s'. Cleaning up",
             f"{user_id=}",
         )

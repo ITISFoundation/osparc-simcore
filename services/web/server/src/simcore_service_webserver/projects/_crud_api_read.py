@@ -22,10 +22,10 @@ from simcore_postgres_database.webserver_models import (
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from ..catalog import catalog_service
 from ..folders import _folders_repository
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
+from ._access_rights_repository import batch_get_project_access_rights
 from ._projects_repository import batch_get_trashed_by_primary_gid
 from ._projects_repository_legacy import ProjectDBAPI
 from .models import ProjectDict, ProjectTypeAPI
@@ -66,6 +66,14 @@ async def _aggregate_data_to_projects_from_other_sources(
 
     _batch_update("trashed_by_primary_gid", trashed_by_primary_gid_values, db_projects)
 
+    # Add here get batch Project access rights
+    project_to_access_rights = await batch_get_project_access_rights(
+        app=app,
+        projects_uuids_with_workspace_id=[
+            (ProjectID(p["uuid"]), p["workspaceId"]) for p in db_projects
+        ],
+    )
+
     # udpating `project.state`
     update_state_per_project = [
         _projects_service.add_project_states_for_user(
@@ -80,6 +88,9 @@ async def _aggregate_data_to_projects_from_other_sources(
     updated_projects: list[ProjectDict] = await _paralell_update(
         *update_state_per_project,
     )
+
+    for project in updated_projects:
+        project["accessRights"] = project_to_access_rights[project["uuid"]]
 
     return updated_projects
 
@@ -107,12 +118,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
     order_by: OrderBy,
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
-
-    user_available_services: list[dict] = (
-        await catalog_service.get_services_for_user_in_product(
-            app, user_id, product_name, only_key_versions=True
-        )
-    )
 
     workspace_is_private = True
     if workspace_id:
@@ -155,7 +160,6 @@ async def list_projects(  # pylint: disable=too-many-arguments
         filter_by_template_type=(
             ProjectTemplateTypeDB(template_type) if template_type else None
         ),
-        filter_by_services=user_available_services,
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
@@ -192,19 +196,12 @@ async def list_projects_full_depth(
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    user_available_services: list[dict] = (
-        await catalog_service.get_services_for_user_in_product(
-            app, user_id, product_name, only_key_versions=True
-        )
-    )
-
     db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
-        filter_by_services=user_available_services,
         filter_by_project_type=ProjectType.STANDARD,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,

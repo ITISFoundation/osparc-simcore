@@ -51,7 +51,10 @@ async def test_rpc_list_computation_runs_and_tasks(
         user=user, project=proj, state=StateType.PUBLISHED, progress=None
     )
     comp_runs = await create_comp_run(
-        user=user, project=proj, result=RunningState.PUBLISHED
+        user=user,
+        project=proj,
+        result=RunningState.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
     assert comp_runs
 
@@ -68,6 +71,7 @@ async def test_rpc_list_computation_runs_and_tasks(
         result=RunningState.PENDING,
         started=datetime.now(tz=UTC),
         iteration=2,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
     output = await rpc_computations.list_computations_latest_iteration_page(
         rpc_client, product_name="osparc", user_id=user["id"]
@@ -85,6 +89,7 @@ async def test_rpc_list_computation_runs_and_tasks(
         started=datetime.now(tz=UTC),
         ended=datetime.now(tz=UTC),
         iteration=3,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
     output = await rpc_computations.list_computations_latest_iteration_page(
         rpc_client, product_name="osparc", user_id=user["id"]
@@ -97,7 +102,7 @@ async def test_rpc_list_computation_runs_and_tasks(
     # Tasks
 
     output = await rpc_computations.list_computations_latest_iteration_tasks_page(
-        rpc_client, product_name="osparc", user_id=user["id"], project_id=proj.uuid
+        rpc_client, product_name="osparc", user_id=user["id"], project_ids=[proj.uuid]
     )
     assert output
     assert output.total == 4
@@ -126,7 +131,10 @@ async def test_rpc_list_computation_runs_with_filtering(
         user=user, project=proj_1, state=StateType.PUBLISHED, progress=None
     )
     comp_runs = await create_comp_run(
-        user=user, project=proj_1, result=RunningState.PUBLISHED
+        user=user,
+        project=proj_1,
+        result=RunningState.PUBLISHED,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
 
     proj_2 = await project(user, workbench=fake_workbench_without_outputs)
@@ -138,7 +146,10 @@ async def test_rpc_list_computation_runs_with_filtering(
         user=user, project=proj_2, state=StateType.SUCCESS, progress=None
     )
     comp_runs = await create_comp_run(
-        user=user, project=proj_2, result=RunningState.SUCCESS
+        user=user,
+        project=proj_2,
+        result=RunningState.SUCCESS,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
 
     # Test default behaviour `filter_only_running=False`
@@ -182,6 +193,7 @@ async def test_rpc_list_computation_runs_history(
         started=datetime.now(tz=UTC) - timedelta(minutes=120),
         ended=datetime.now(tz=UTC) - timedelta(minutes=100),
         iteration=1,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
     comp_runs_2 = await create_comp_run(
         user=user,
@@ -190,6 +202,7 @@ async def test_rpc_list_computation_runs_history(
         started=datetime.now(tz=UTC) - timedelta(minutes=90),
         ended=datetime.now(tz=UTC) - timedelta(minutes=60),
         iteration=2,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
     comp_runs_3 = await create_comp_run(
         user=user,
@@ -198,10 +211,11 @@ async def test_rpc_list_computation_runs_history(
         started=datetime.now(tz=UTC) - timedelta(minutes=50),
         ended=datetime.now(tz=UTC),
         iteration=3,
+        dag_adjacency_list=fake_workbench_adjacency,
     )
 
     output = await rpc_computations.list_computations_iterations_page(
-        rpc_client, product_name="osparc", user_id=user["id"], project_id=proj.uuid
+        rpc_client, product_name="osparc", user_id=user["id"], project_ids=[proj.uuid]
     )
     assert output.total == 3
     assert isinstance(output, ComputationRunRpcGetPage)

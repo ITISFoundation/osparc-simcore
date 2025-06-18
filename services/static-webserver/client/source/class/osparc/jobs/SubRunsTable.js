@@ -41,7 +41,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
     columnModel.setDataCellRenderer(this.self().COLS.INFO.column, fontButtonRendererInfo);
 
-    const iconPathLogs = "osparc/icons/logs-text.svg";
+    const iconPathLogs = "osparc/icons/file-download-text.svg";
     const fontButtonRendererLogs = new osparc.ui.table.cellrenderer.ImageButtonRenderer("logs", iconPathLogs);
     columnModel.setDataCellRenderer(this.self().COLS.LOGS.column, fontButtonRendererLogs);
 
@@ -90,7 +90,8 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "start",
         column: 6,
         label: qx.locale.Manager.tr("Started"),
-        width: 130
+        width: 130,
+        sortableMap: "started_at",
       },
       END: {
         id: "end",
@@ -108,7 +109,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         id: "credits",
         column: 9,
         label: qx.locale.Manager.tr("Credits"),
-        width: 50
+        width: 70
       },
       INFO: {
         id: "info",
@@ -146,6 +147,8 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
 
     __handleButtonClick: function(action, row) {
       this.resetSelection();
+       // In order to make the button tappable again, the cell needs to be unfocused (blurred)
+      this.resetCellFocus();
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
@@ -173,7 +176,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           }
           const logDownloadLink = subJob.getLogDownloadLink()
           if (logDownloadLink) {
-            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".logs");
+            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".zip");
           } else {
             osparc.FlashMessenger.logAs(this.tr("No logs available"), "WARNING");
           }

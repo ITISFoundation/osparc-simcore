@@ -5,7 +5,10 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import initialize_tracing
+from servicelib.fastapi.tracing import (
+    initialize_fastapi_app_tracing,
+    setup_tracing,
+)
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import (
@@ -55,6 +58,9 @@ def create_app() -> FastAPI:
     override_fastapi_openapi_method(app)
     app.state.settings = settings
 
+    if settings.AGENT_TRACING:
+        setup_tracing(app, settings.AGENT_TRACING, APP_NAME)
+
     setup_instrumentation(app)
 
     setup_rabbitmq(app)
@@ -64,7 +70,7 @@ def create_app() -> FastAPI:
     setup_rpc_api_routes(app)
 
     if settings.AGENT_TRACING:
-        initialize_tracing(app, settings.AGENT_TRACING, APP_NAME)
+        initialize_fastapi_app_tracing(app)
 
     async def _on_startup() -> None:
         print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201

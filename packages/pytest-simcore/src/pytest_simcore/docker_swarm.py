@@ -15,6 +15,7 @@ from typing import Any
 import aiodocker
 import docker
 import pytest
+import pytest_asyncio
 import yaml
 from common_library.dict_tools import copy_from_dict
 from docker.errors import APIError
@@ -245,8 +246,8 @@ def _make_dask_sidecar_certificates(simcore_service_folder: Path) -> None:
     )
 
 
-@pytest.fixture(scope="module")
-def docker_stack(
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
+async def docker_stack(
     osparc_simcore_services_dir: Path,
     docker_swarm: None,
     docker_client: docker.client.DockerClient,
@@ -254,7 +255,7 @@ def docker_stack(
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
     env_vars_for_docker_compose: EnvVarsDict,
-) -> Iterator[dict]:
+) -> AsyncIterator[dict]:
     """deploys core and ops stacks and returns as soon as all are running"""
 
     # WARNING: keep prefix "pytest-" in stack names
@@ -313,7 +314,7 @@ def docker_stack(
 
             assert not pending, f"some service did not start correctly [{pending}]"
 
-        asyncio.run(_check_all_services_are_running())
+        await _check_all_services_are_running()
 
     finally:
         _fetch_and_print_services(docker_client, "[BEFORE TEST]")

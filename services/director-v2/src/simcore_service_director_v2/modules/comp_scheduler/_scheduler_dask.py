@@ -4,7 +4,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
 import arrow
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
@@ -21,11 +21,9 @@ from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import SimcorePlatformStatus
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
+from pydantic import PositiveInt
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_utils import log_catch
-from simcore_service_director_v2.modules.comp_scheduler._utils import (
-    WAITING_FOR_START_STATES,
-)
+from servicelib.logging_utils import log_catch, log_context
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
@@ -52,8 +50,13 @@ from ..db.repositories.comp_runs import (
 )
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ._scheduler_base import BaseCompScheduler
+from ._utils import (
+    WAITING_FOR_START_STATES,
+)
 
 _logger = logging.getLogger(__name__)
+
+_DASK_CLIENT_RUN_REF: Final[str] = "{user_id}:{run_id}"
 
 
 @asynccontextmanager
@@ -62,6 +65,7 @@ async def _cluster_dask_client(
     scheduler: "DaskScheduler",
     *,
     use_on_demand_clusters: bool,
+    run_id: PositiveInt,
     run_metadata: RunMetadataDict,
 ) -> AsyncIterator[DaskClient]:
     cluster: BaseCluster = scheduler.settings.default_cluster
@@ -71,7 +75,9 @@ async def _cluster_dask_client(
             user_id=user_id,
             wallet_id=run_metadata.get("wallet_id"),
         )
-    async with scheduler.dask_clients_pool.acquire(cluster) as client:
+    async with scheduler.dask_clients_pool.acquire(
+        cluster, ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, run_id=run_id)
+    ) as client:
         yield client
 
 
@@ -100,12 +106,14 @@ class DaskScheduler(BaseCompScheduler):
             user_id,
             self,
             use_on_demand_clusters=comp_run.use_on_demand_clusters,
+            run_id=comp_run.run_id,
             run_metadata=comp_run.metadata,
         ) as client:
             # Change the tasks state to PENDING
             comp_tasks_repo = CompTasksRepository.instance(self.db_engine)
             await comp_tasks_repo.update_project_tasks_state(
                 project_id,
+                comp_run.run_id,
                 list(scheduled_tasks.keys()),
                 RunningState.PENDING,
             )
@@ -131,7 +139,7 @@ class DaskScheduler(BaseCompScheduler):
             await asyncio.gather(
                 *(
                     comp_tasks_repo.update_project_task_job_id(
-                        project_id, task.node_id, task.job_id
+                        project_id, task.node_id, comp_run.run_id, task.job_id
                     )
                     for task_sents in results
                     for task in task_sents
@@ -149,6 +157,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
@@ -169,6 +178,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 task_progresses = await client.get_tasks_progress(
@@ -181,6 +191,7 @@ class DaskScheduler(BaseCompScheduler):
                     ).update_project_task_progress(
                         task_progress_event.task_owner.project_id,
                         task_progress_event.task_owner.node_id,
+                        comp_run.run_id,
                         task_progress_event.progress,
                     )
 
@@ -193,6 +204,7 @@ class DaskScheduler(BaseCompScheduler):
                 comp_tasks_repo.update_project_task_progress(
                     t.task_owner.project_id,
                     t.task_owner.node_id,
+                    comp_run.run_id,
                     t.progress,
                 )
                 for t in task_progresses
@@ -213,6 +225,22 @@ class DaskScheduler(BaseCompScheduler):
             )
         )
 
+    async def _release_resources(
+        self, user_id: UserID, project_id: ProjectID, comp_run: CompRunsAtDB
+    ) -> None:
+        """release resources used by the scheduler for a given user and project"""
+        with (
+            log_catch(_logger, reraise=False),
+            log_context(
+                _logger,
+                logging.INFO,
+                msg=f"releasing resources for {user_id=}, {project_id=}, {comp_run.run_id=}",
+            ),
+        ):
+            await self.dask_clients_pool.release_client_ref(
+                ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, run_id=comp_run.run_id)
+            )
+
     async def _stop_tasks(
         self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
     ) -> None:
@@ -222,6 +250,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 await asyncio.gather(
@@ -255,6 +284,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 tasks_results = await asyncio.gather(
@@ -264,7 +294,7 @@ class DaskScheduler(BaseCompScheduler):
             await asyncio.gather(
                 *[
                     self._process_task_result(
-                        task, result, comp_run.metadata, iteration
+                        task, result, comp_run.metadata, iteration, comp_run.run_id
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ]
@@ -274,6 +304,7 @@ class DaskScheduler(BaseCompScheduler):
                 user_id,
                 self,
                 use_on_demand_clusters=comp_run.use_on_demand_clusters,
+                run_id=comp_run.run_id,
                 run_metadata=comp_run.metadata,
             ) as client:
                 await asyncio.gather(
@@ -286,6 +317,7 @@ class DaskScheduler(BaseCompScheduler):
         result: BaseException | TaskOutputData,
         run_metadata: RunMetadataDict,
         iteration: Iteration,
+        run_id: PositiveInt,
     ) -> None:
         _logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
@@ -366,6 +398,7 @@ class DaskScheduler(BaseCompScheduler):
 
         await CompTasksRepository(self.db_engine).update_project_tasks_state(
             task.project_id,
+            run_id,
             [task.node_id],
             task_final_state,
             errors=errors,
@@ -384,20 +417,21 @@ class DaskScheduler(BaseCompScheduler):
             node_id = task_progress_event.task_owner.node_id
             comp_tasks_repo = CompTasksRepository(self.db_engine)
             task = await comp_tasks_repo.get_task(project_id, node_id)
+            run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
             if task.state in WAITING_FOR_START_STATES:
                 task.state = RunningState.STARTED
                 task.progress = task_progress_event.progress
-                run = await CompRunsRepository(self.db_engine).get(user_id, project_id)
                 await self._process_started_tasks(
                     [task],
                     user_id=user_id,
                     project_id=project_id,
                     iteration=run.iteration,
                     run_metadata=run.metadata,
+                    run_id=run.run_id,
                 )
             else:
                 await comp_tasks_repo.update_project_task_progress(
-                    project_id, node_id, task_progress_event.progress
+                    project_id, node_id, run.run_id, task_progress_event.progress
                 )
             await publish_service_progress(
                 self.rabbitmq_client,

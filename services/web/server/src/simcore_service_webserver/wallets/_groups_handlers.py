@@ -1,6 +1,4 @@
-""" Handlers for project comments operations
-
-"""
+"""Handlers for project comments operations"""
 
 import functools
 import logging
@@ -18,7 +16,7 @@ from servicelib.aiohttp.typing_extension import Handler
 
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import login_required
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _groups_api
@@ -36,10 +34,10 @@ def _handle_wallets_groups_exceptions(handler: Handler):
             return await handler(request)
 
         except WalletGroupNotFoundError as exc:
-            raise web.HTTPNotFound(reason=f"{exc}") from exc
+            raise web.HTTPNotFound(text=f"{exc}") from exc
 
         except WalletAccessForbiddenError as exc:
-            raise web.HTTPForbidden(reason=f"{exc}") from exc
+            raise web.HTTPForbidden(text=f"{exc}") from exc
 
     return wrapper
 
@@ -71,7 +69,7 @@ class _WalletsGroupsBodyParams(BaseModel):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def create_wallet_group(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
     body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
@@ -94,16 +92,16 @@ async def create_wallet_group(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def list_wallet_groups(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WalletsPathParams, request)
 
-    wallets: list[
-        WalletGroupGet
-    ] = await _groups_api.list_wallet_groups_by_user_and_wallet(
-        request.app,
-        user_id=req_ctx.user_id,
-        wallet_id=path_params.wallet_id,
-        product_name=req_ctx.product_name,
+    wallets: list[WalletGroupGet] = (
+        await _groups_api.list_wallet_groups_by_user_and_wallet(
+            request.app,
+            user_id=req_ctx.user_id,
+            wallet_id=path_params.wallet_id,
+            product_name=req_ctx.product_name,
+        )
     )
 
     return envelope_json_response(wallets, web.HTTPOk)
@@ -117,7 +115,7 @@ async def list_wallet_groups(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def update_wallet_group(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
     body_params = await parse_request_body_as(_WalletsGroupsBodyParams, request)
 
@@ -141,7 +139,7 @@ async def update_wallet_group(request: web.Request):
 @permission_required("wallets.*")
 @_handle_wallets_groups_exceptions
 async def delete_wallet_group(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(_WalletsGroupsPathParams, request)
 
     await _groups_api.delete_wallet_group(

@@ -1,8 +1,8 @@
 aiodocker==0.24.0
     # via -r requirements/_test.in
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.18
+aiohttp==3.12.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -68,10 +68,8 @@ pytest==8.3.5
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==0.26.0
+    # via -r requirements/_test.in
 python-dotenv==1.0.1
     # via -r requirements/_test.in
 pyyaml==6.0.2

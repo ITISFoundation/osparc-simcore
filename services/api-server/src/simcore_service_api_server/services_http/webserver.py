@@ -2,10 +2,10 @@
 
 import logging
 import urllib.parse
-from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import timedelta
 from functools import partial
-from typing import Any
+from typing import Any, Final, Self
 from uuid import UUID
 
 import httpx
@@ -36,18 +36,21 @@ from models_library.api_schemas_webserver.users import (
 )
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.rest_pagination import Page
+from models_library.rest_pagination import Page, PageLimitInt, PageOffsetInt
+from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import PositiveInt
-from servicelib.aiohttp.long_running_tasks.server import TaskStatus
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from servicelib.long_running_tasks.models import TaskStatus
+from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.tracing import TracingSettings
-from tenacity import TryAgain
+from tenacity import TryAgain, retry_if_exception_type
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -92,6 +95,8 @@ _logger = logging.getLogger(__name__)
 
 _exception_mapper = partial(service_exception_mapper, service_name="Webserver")
 
+_POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
+
 _JOB_STATUS_MAP = {
     status.HTTP_402_PAYMENT_REQUIRED: PaymentRequiredError,
     status.HTTP_404_NOT_FOUND: JobNotFoundError,
@@ -128,7 +133,7 @@ class LongRunningTasksClient(BaseServiceClientApi):
     "Client for requesting status and results of long running tasks"
 
 
-@dataclass
+@dataclass(frozen=True)
 class AuthSession:
     """
     - wrapper around thin-client to simplify webserver's API
@@ -140,8 +145,12 @@ class AuthSession:
     SEE services/api-server/src/simcore_service_api_server/api/dependencies/webserver.py
     """
 
+    _product_name: ProductName
+    _user_id: UserID
+
     _api: WebserverApi
     _long_running_task_client: LongRunningTasksClient
+
     vtag: str
     session_cookies: dict | None = None
 
@@ -150,25 +159,46 @@ class AuthSession:
         cls,
         app: FastAPI,
         session_cookies: dict,
-        product_extra_headers: Mapping[str, str],
-    ) -> "AuthSession":
-        api = WebserverApi.get_instance(app)
-        assert api  # nosec
-        assert isinstance(api, WebserverApi)  # nosec
+        user_id: UserID,
+        product_name: ProductName,
+    ) -> Self:
 
-        api.client.headers = product_extra_headers  # type: ignore[assignment]
-        long_running_tasks_client = LongRunningTasksClient.get_instance(app=app)
+        # WARNING: this client lifespan is tied to the app
+        app_http_webserver_client = WebserverApi.get_instance(app)
+        assert app_http_webserver_client  # nosec
+        assert isinstance(app_http_webserver_client, WebserverApi)  # nosec
 
-        assert long_running_tasks_client  # nosec
-        assert isinstance(long_running_tasks_client, LongRunningTasksClient)  # nosec
+        # WARNING: this client lifespan is tied to the app
+        app_http_lrt_webserver_client = LongRunningTasksClient.get_instance(app=app)
+        assert app_http_lrt_webserver_client  # nosec
+        assert isinstance(
+            app_http_lrt_webserver_client, LongRunningTasksClient
+        )  # nosec
 
-        long_running_tasks_client.client.headers = product_extra_headers  # type: ignore[assignment]
         return cls(
-            _api=api,
-            _long_running_task_client=long_running_tasks_client,
+            _product_name=product_name,
+            _user_id=user_id,
+            _api=app_http_webserver_client,
+            _long_running_task_client=app_http_lrt_webserver_client,
             vtag=app.state.settings.API_SERVER_WEBSERVER.WEBSERVER_VTAG,
             session_cookies=session_cookies,
         )
+
+    def _get_session_headers(
+        self,
+        *,
+        parent_project_uuid: ProjectID | None = None,
+        parent_node_id: NodeID | None = None,
+    ) -> dict[str, str]:
+        headers = {X_PRODUCT_NAME_HEADER: self._product_name}
+
+        if parent_project_uuid is not None:
+            headers[X_SIMCORE_PARENT_PROJECT_UUID] = str(parent_project_uuid)
+
+        if parent_node_id is not None:
+            headers[X_SIMCORE_PARENT_NODE_ID] = str(parent_node_id)
+
+        return headers
 
     # OPERATIONS
 
@@ -212,6 +242,7 @@ class AuthSession:
                     **optional,
                 },
                 cookies=self.session_cookies,
+                headers=self._get_session_headers(),
             )
             resp.raise_for_status()
 
@@ -223,15 +254,20 @@ class AuthSession:
         # GET task status now until done
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.5),
-            stop=stop_after_delay(60),
+            stop=stop_after_delay(_POLL_TIMEOUT),
             reraise=True,
+            retry=retry_if_exception_type(TryAgain),
             before_sleep=before_sleep_log(_logger, logging.INFO),
         ):
             with attempt:
                 get_response = await self.long_running_task_client.get(
-                    url=status_url, cookies=self.session_cookies
+                    url=status_url,
+                    cookies=self.session_cookies,
+                    headers=self._get_session_headers(),
                 )
-                get_response.raise_for_status()
+                get_response.raise_for_status(
+                    # NOTE: stops retrying if the response in not 2xx
+                )
                 task_status = (
                     Envelope[TaskStatus].model_validate_json(get_response.text).data
                 )
@@ -241,7 +277,9 @@ class AuthSession:
                     raise TryAgain(msg)
 
         result_response = await self.long_running_task_client.get(
-            f"{result_url}", cookies=self.session_cookies
+            f"{result_url}",
+            cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         result_response.raise_for_status()
         return Envelope.model_validate_json(result_response.text).data
@@ -250,7 +288,11 @@ class AuthSession:
 
     @_exception_mapper(http_status_map=_PROFILE_STATUS_MAP)
     async def get_me(self) -> Profile:
-        response = await self.client.get("/me", cookies=self.session_cookies)
+        response = await self.client.get(
+            "/me",
+            cookies=self.session_cookies,
+            headers=self._get_session_headers(),
+        )
         response.raise_for_status()
 
         got: WebProfileGet | None = (
@@ -281,6 +323,7 @@ class AuthSession:
             "/me",
             json=update.model_dump(exclude_unset=True),
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         profile: Profile = await self.get_me()
@@ -299,17 +342,15 @@ class AuthSession:
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
         query_params = {"hidden": is_hidden}
-        headers = {
-            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
-            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
-        }
 
         response = await self.client.post(
             "/projects",
             params=query_params,
-            headers={k: f"{v}" for k, v in headers.items() if v is not None},
             json=jsonable_encoder(project, by_alias=True, exclude={"state"}),
             cookies=self.session_cookies,
+            headers=self._get_session_headers(
+                parent_project_uuid=parent_project_uuid, parent_node_id=parent_node_id
+            ),
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
@@ -326,16 +367,14 @@ class AuthSession:
     ) -> ProjectGet:
         # POST /projects --> 202 Accepted
         query_params = {"from_study": project_id, "hidden": hidden}
-        _headers = {
-            X_SIMCORE_PARENT_PROJECT_UUID: parent_project_uuid,
-            X_SIMCORE_PARENT_NODE_ID: parent_node_id,
-        }
 
         response = await self.client.post(
             "/projects",
             cookies=self.session_cookies,
             params=query_params,
-            headers={k: f"{v}" for k, v in _headers.items() if v is not None},
+            headers=self._get_session_headers(
+                parent_project_uuid=parent_project_uuid, parent_node_id=parent_node_id
+            ),
         )
         response.raise_for_status()
         result = await self._wait_for_long_running_task_results(response)
@@ -346,6 +385,7 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         data = Envelope[ProjectGet].model_validate_json(response.text).data
@@ -353,7 +393,7 @@ class AuthSession:
         return data
 
     async def get_projects_w_solver_page(
-        self, *, solver_name: str, limit: int, offset: int
+        self, *, solver_name: str, limit: PageLimitInt, offset: PageOffsetInt
     ) -> Page[ProjectGet]:
         assert not solver_name.endswith("/")  # nosec
 
@@ -364,7 +404,7 @@ class AuthSession:
             search_by_project_name=solver_name,
         )
 
-    async def get_projects_page(self, *, limit: int, offset: int):
+    async def get_projects_page(self, *, limit: PageLimitInt, offset: PageOffsetInt):
         return await self._page_projects(
             limit=limit,
             offset=offset,
@@ -376,6 +416,7 @@ class AuthSession:
         response = await self.client.delete(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
 
@@ -392,6 +433,7 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}/metadata/ports",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         data = Envelope[list[StudyPort]].model_validate_json(response.text).data
@@ -408,6 +450,7 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}/metadata",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         data = Envelope[ProjectMetadataGet].model_validate_json(response.text).data
@@ -419,6 +462,7 @@ class AuthSession:
         response = await self.client.patch(
             f"/projects/{project_id}",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
             json=jsonable_encoder(patch_params, exclude_unset=True),
         )
         response.raise_for_status()
@@ -432,6 +476,7 @@ class AuthSession:
         response = await self.client.patch(
             f"/projects/{project_id}/metadata",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
             json=jsonable_encoder(ProjectMetadataUpdate(custom=metadata)),
         )
         response.raise_for_status()
@@ -448,6 +493,7 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}/nodes/{node_id}/pricing-unit",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
 
         response.raise_for_status()
@@ -469,6 +515,7 @@ class AuthSession:
         response = await self.client.put(
             f"/projects/{project_id}/nodes/{node_id}/pricing-plan/{pricing_plan}/pricing-unit/{pricing_unit}",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
 
@@ -491,6 +538,7 @@ class AuthSession:
         response = await self.client.post(
             f"/computations/{project_id}:start",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
             json=jsonable_encoder(body, exclude_unset=True, exclude_defaults=True),
         )
         response.raise_for_status()
@@ -505,6 +553,7 @@ class AuthSession:
         response = await self.client.patch(
             f"/projects/{project_id}/inputs",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
             json=jsonable_encoder(new_inputs),
         )
         response.raise_for_status()
@@ -523,6 +572,7 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}/inputs",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
 
         response.raise_for_status()
@@ -544,6 +594,7 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}/outputs",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
 
         response.raise_for_status()
@@ -563,6 +614,7 @@ class AuthSession:
         response = await self.client.patch(
             f"/projects/{project_id}/nodes/{node_id}/outputs",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
             json=jsonable_encoder(new_node_outputs),
         )
         response.raise_for_status()
@@ -574,6 +626,7 @@ class AuthSession:
         response = await self.client.get(
             "/wallets/default",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         data = (
@@ -591,6 +644,7 @@ class AuthSession:
         response = await self.client.get(
             f"/wallets/{wallet_id}",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         data = (
@@ -606,6 +660,7 @@ class AuthSession:
         response = await self.client.get(
             f"/projects/{project_id}/wallet",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         data = Envelope[WalletGet].model_validate_json(response.text).data
@@ -621,6 +676,7 @@ class AuthSession:
         response = await self.client.get(
             "/credits-price",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         data = Envelope[GetCreditPriceLegacy].model_validate_json(response.text).data
@@ -640,6 +696,7 @@ class AuthSession:
         response = await self.client.get(
             f"/catalog/services/{service_key}/{version}/pricing-plan",
             cookies=self.session_cookies,
+            headers=self._get_session_headers(),
         )
         response.raise_for_status()
         pricing_plan_get = (

@@ -17,9 +17,6 @@ from models_library.workspaces import (
     WorkspaceUpdates,
 )
 from simcore_postgres_database.utils_repos import transaction_context
-from simcore_service_webserver.folders.service import list_folders
-from simcore_service_webserver.projects.api import list_projects
-from simcore_service_webserver.projects.models import ProjectTypeAPI
 
 from ..db.plugin import get_asyncpg_engine
 from ..folders._trash_service import (
@@ -27,11 +24,14 @@ from ..folders._trash_service import (
     trash_folder,
     untrash_folder,
 )
+from ..folders.service import list_folders
 from ..projects._trash_service import (
     batch_delete_projects_in_root_workspace_as_admin,
     trash_project,
     untrash_project,
 )
+from ..projects.api import list_projects
+from ..projects.models import ProjectTypeAPI
 from . import _workspaces_repository, _workspaces_service, _workspaces_service_crud_read
 from .errors import WorkspaceBatchDeleteError, WorkspaceNotTrashedError
 
@@ -63,7 +63,9 @@ async def _list_root_child_folders(
 ) -> list[FolderID]:
 
     child_folders: list[FolderID] = []
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             folders,
             page_params.total_number_of_items,
@@ -93,7 +95,9 @@ async def _list_root_child_projects(
 ) -> list[ProjectID]:
 
     child_projects: list[ProjectID] = []
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             projects,
             page_params.total_number_of_items,
@@ -285,7 +289,9 @@ async def list_trashed_workspaces(
 ) -> list[WorkspaceID]:
     trashed_workspace_ids: list[WorkspaceID] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             workspaces,
@@ -326,7 +332,9 @@ async def batch_delete_trashed_workspaces_as_admin(
     deleted_workspace_ids: list[WorkspaceID] = []
     errors: list[tuple[WorkspaceID, Exception]] = []
 
-    for page_params in iter_pagination_params(limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
+    for page_params in iter_pagination_params(
+        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
+    ):
         (
             page_params.total_number_of_items,
             expired_trashed_workspaces,

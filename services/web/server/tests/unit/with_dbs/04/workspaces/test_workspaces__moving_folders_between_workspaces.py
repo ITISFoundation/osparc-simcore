@@ -10,7 +10,6 @@ from http.client import NO_CONTENT
 
 import pytest
 from aiohttp.test_utils import TestClient
-from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import create_project
@@ -186,7 +185,6 @@ async def _move_folder_to_workspace_and_assert(
 async def test_moving_between_private_and_shared_workspaces(
     client: TestClient,
     logged_user: UserInfoDict,
-    mock_catalog_api_get_services_for_user_in_product: MockerFixture,
     fake_project: ProjectDict,
     moving_folder_id: str,
     workspaces_clean_db: None,

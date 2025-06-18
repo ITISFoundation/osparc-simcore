@@ -2,25 +2,26 @@
 
 import logging
 from contextlib import suppress
-from typing import Literal
+from typing import Literal, TypeVar
 
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     MyServiceGet,
     ServiceGetV2,
+    ServiceSummary,
     ServiceUpdateV2,
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.basic_types import VersionStr
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.rest_pagination import PageLimitInt, PageTotalCount
+from models_library.rest_pagination import PageLimitInt, PageOffsetInt, PageTotalCount
 from models_library.services_access import ServiceGroupAccessRightsV2
 from models_library.services_history import Compatibility, ServiceRelease
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import HttpUrl, NonNegativeInt
+from pydantic import HttpUrl
 from servicelib.logging_errors import (
     create_troubleshotting_log_kwargs,
 )
@@ -34,6 +35,7 @@ from ..clients.director import DirectorClient
 from ..models.services_db import (
     ServiceAccessRightsDB,
     ServiceDBFilters,
+    ServiceMetaDataDBGet,
     ServiceMetaDataDBPatch,
     ServiceWithHistoryDBGet,
 )
@@ -46,9 +48,12 @@ from .function_services import is_function_service
 
 _logger = logging.getLogger(__name__)
 
+# Type variable for service models that can be returned from list functions
+T = TypeVar("T", ServiceGetV2, LatestServiceGet)
+
 
 def _aggregate(
-    service_db: ServiceWithHistoryDBGet,
+    service_db: ServiceWithHistoryDBGet | ServiceMetaDataDBGet,
     access_rights_db: list[ServiceAccessRightsDB],
     service_manifest: ServiceMetaDataPublished,
 ) -> dict:
@@ -64,7 +69,8 @@ def _aggregate(
         "service_type": service_manifest.service_type,
         "contact": service_manifest.contact,
         "authors": service_manifest.authors,
-        "owner": (service_db.owner_email if service_db.owner_email else None),
+        # Check if owner attribute is available in the service_db object
+        "owner": getattr(service_db, "owner_email", None),
         "inputs": service_manifest.inputs or {},
         "outputs": service_manifest.outputs or {},
         "boot_options": service_manifest.boot_options,
@@ -79,6 +85,21 @@ def _aggregate(
         "classifiers": service_db.classifiers,
         "quality": service_db.quality,
         # NOTE: history/release field is removed
+    }
+
+
+def _aggregate_summary(
+    service_db: ServiceWithHistoryDBGet | ServiceMetaDataDBGet,
+    service_manifest: ServiceMetaDataPublished,
+) -> dict:
+    """Creates a minimal dictionary with only the fields needed for ServiceSummary"""
+    return {
+        "key": service_db.key,
+        "version": service_db.version,
+        "name": service_db.name,
+        "description": service_db.description,
+        "version_display": service_db.version_display,
+        "contact": service_manifest.contact,
     }
 
 
@@ -129,40 +150,71 @@ def _to_get_schema(
     )
 
 
-async def list_latest_catalog_services(
+async def _get_services_with_access_rights(
     repo: ServicesRepository,
-    director_api: DirectorClient,
-    *,
+    services: list[ServiceWithHistoryDBGet] | list[ServiceMetaDataDBGet],
     product_name: ProductName,
     user_id: UserID,
-    limit: PageLimitInt | None,
-    offset: NonNegativeInt = 0,
-    filters: ServiceDBFilters | None = None,
-) -> tuple[PageTotalCount, list[LatestServiceGet]]:
+) -> dict[tuple[str, str], list[ServiceAccessRightsDB]]:
+    """Common function to get access rights for a list of services.
 
-    # defines the order
-    total_count, services = await repo.list_latest_services(
-        product_name=product_name,
-        user_id=user_id,
-        limit=limit,
-        offset=offset,
-        filters=filters,
+    Args:
+        repo: Repository for services
+        services: List of services to get access rights for
+        product_name: Product name
+        user_id: User ID
+
+    Returns:
+        Dictionary mapping (key, version) to list of access rights
+
+    Raises:
+        CatalogForbiddenError: If no access rights are found for any service
+    """
+    if not services:
+        return {}
+
+    # Inject access-rights
+    access_rights = await repo.batch_get_services_access_rights(
+        ((sc.key, sc.version) for sc in services), product_name=product_name
     )
-
-    if services:
-        # injects access-rights
-        access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]] = (
-            await repo.batch_get_services_access_rights(
-                ((sc.key, sc.version) for sc in services), product_name=product_name
-            )
+    if not access_rights:
+        raise CatalogForbiddenError(
+            name="any service",
+            user_id=user_id,
+            product_name=product_name,
         )
-        if not access_rights:
-            raise CatalogForbiddenError(
-                name="any service",
-                user_id=user_id,
-                product_name=product_name,
-            )
 
+    return access_rights
+
+
+async def _get_services_manifests(
+    services: list[ServiceWithHistoryDBGet] | list[ServiceMetaDataDBGet],
+    access_rights: dict[tuple[str, str], list[ServiceAccessRightsDB]],
+    director_api: DirectorClient,
+    product_name: ProductName,
+    user_id: UserID,
+    filters: ServiceDBFilters | None,
+    limit: PageLimitInt | None,
+    offset: PageOffsetInt | None,
+) -> dict[tuple[str, str], ServiceMetaDataPublished]:
+    """Common function to get service manifests from director.
+
+    Args:
+        services: List of services to get manifests for
+        access_rights: Dictionary mapping (key, version) to list of access rights
+        director_api: Director API client
+        product_name: Product name
+        user_id: User ID
+        filters: Filters that were applied
+        limit: Pagination limit that was applied
+        offset: Pagination offset that was applied
+
+    Returns:
+        Dictionary mapping (key, version) to manifest
+
+    Raises:
+        CatalogInconsistentError: Logs warning if some services are missing from manifest
+    """
     # Get manifest of those with access rights
     got = await manifest.get_batch_services(
         [
@@ -202,6 +254,123 @@ async def list_latest_catalog_services(
         )
         # NOTE: tests should fail if this happens but it is not a critical error so it is ignored in production
         assert len(missing_services) == 0, msg  # nosec
+
+    return service_manifest
+
+
+async def list_all_service_summaries(
+    repo: ServicesRepository,
+    director_api: DirectorClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    limit: PageLimitInt | None,
+    offset: PageOffsetInt = 0,
+    filters: ServiceDBFilters | None = None,
+) -> tuple[PageTotalCount, list[ServiceSummary]]:
+    """Lists all catalog services with minimal information.
+
+    This is different from list_latest_catalog_services which only returns the latest version of each service
+    and includes complete service information.
+
+    Args:
+        repo: Repository for services
+        director_api: Director API client
+        product_name: Product name
+        user_id: User ID
+        limit: Pagination limit
+        offset: Pagination offset
+        filters: Filters to apply
+
+    Returns:
+        Tuple of total count and list of service summaries
+    """
+    # Get all services with pagination
+    total_count, services = await repo.list_all_services(
+        product_name=product_name,
+        user_id=user_id,
+        pagination_limit=limit,
+        pagination_offset=offset,
+        filters=filters,
+    )
+
+    # Get access rights and manifests
+    access_rights = await _get_services_with_access_rights(
+        repo, services, product_name, user_id
+    )
+    service_manifest = await _get_services_manifests(
+        services,
+        access_rights,
+        director_api,
+        product_name,
+        user_id,
+        filters,
+        limit,
+        offset,
+    )
+
+    # Create service summaries
+    items = []
+    for sc in services:
+        sm = service_manifest.get((sc.key, sc.version))
+        if access_rights.get((sc.key, sc.version)) and sm:
+            # Create a minimal ServiceSummary
+            service_data = _aggregate_summary(
+                service_db=sc,
+                service_manifest=sm,
+            )
+            items.append(ServiceSummary.model_validate(service_data))
+
+    return total_count, items
+
+
+async def list_latest_catalog_services(
+    repo: ServicesRepository,
+    director_api: DirectorClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    limit: PageLimitInt | None,
+    offset: PageOffsetInt = 0,
+    filters: ServiceDBFilters | None = None,
+) -> tuple[PageTotalCount, list[LatestServiceGet]]:
+    """Lists latest versions of catalog services.
+
+    Args:
+        repo: Repository for services
+        director_api: Director API client
+        product_name: Product name
+        user_id: UserID
+        limit: Pagination limit
+        offset: Pagination offset
+        filters: Filters to apply
+
+    Returns:
+        Tuple of total count and list of latest services
+    """
+    # defines the order
+    total_count, services = await repo.list_latest_services(
+        product_name=product_name,
+        user_id=user_id,
+        pagination_limit=limit,
+        pagination_offset=offset,
+        filters=filters,
+    )
+
+    # Get access rights and manifests using shared functions
+    access_rights = await _get_services_with_access_rights(
+        repo, services, product_name, user_id
+    )
+    service_manifest = await _get_services_manifests(
+        services,
+        access_rights,
+        director_api,
+        product_name,
+        user_id,
+        filters,
+        limit,
+        offset,
+    )
 
     # Aggregate the services manifest and access-rights
     items = [
@@ -519,11 +688,11 @@ async def list_user_service_release_history(
     # target service
     service_key: ServiceKey,
     # pagination
-    limit: PageLimitInt | None = None,
-    offset: NonNegativeInt | None = None,
+    pagination_limit: PageLimitInt | None = None,
+    pagination_offset: PageOffsetInt | None = None,
     # filters
     filters: ServiceDBFilters | None = None,
-    # options
+    # result options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
 
@@ -533,8 +702,8 @@ async def list_user_service_release_history(
         product_name=product_name,
         user_id=user_id,
         key=service_key,
-        limit=limit,
-        offset=offset,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
         filters=filters,
     )
 

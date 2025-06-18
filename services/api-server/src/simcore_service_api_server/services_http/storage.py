@@ -20,7 +20,8 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
-from pydantic import AnyUrl, PositiveInt
+from models_library.rest_pagination import PageLimitInt, PageOffsetInt
+from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
 from starlette.datastructures import URL
 
@@ -97,8 +98,8 @@ class StorageApi(BaseServiceClientApi):
         user_id: int,
         file_id: UUID | None,
         sha256_checksum: SHA256Str | None = None,
-        limit: PositiveInt | None = None,
-        offset: PositiveInt | None = None,
+        limit: PageLimitInt | None = None,
+        offset: PageOffsetInt | None = None,
     ) -> list[StorageFileMetaData]:
         # NOTE: can NOT use /locations/0/files/metadata with uuid_filter=api/ because
         # logic in storage 'wrongly' assumes that all data is associated to a project and

@@ -139,8 +139,7 @@ async def director_v2_service_mock(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     app_config: dict[str, Any],
     postgres_with_template_db: sa.engine.Engine,
@@ -181,11 +180,9 @@ def client(
     assert setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
-        )
+    return await aiohttp_client(
+        app,
+        server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
     )
 
 

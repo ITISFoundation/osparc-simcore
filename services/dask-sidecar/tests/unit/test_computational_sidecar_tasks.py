@@ -23,7 +23,10 @@ import fsspec
 import pytest
 from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.errors import ServiceRuntimeError
+from dask_task_models_library.container_tasks.errors import (
+    ServiceInputsUseFileToKeyMapButReceivesZipDataError,
+    ServiceRuntimeError,
+)
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
@@ -417,7 +420,9 @@ def sidecar_task(
     task_owner: TaskOwner,
     s3_settings: S3Settings,
 ) -> Callable[..., ServiceExampleParam]:
-    def _creator(command: list[str] | None = None) -> ServiceExampleParam:
+    def _creator(
+        command: list[str] | None = None, input_data: TaskInputData | None = None
+    ) -> ServiceExampleParam:
         return ServiceExampleParam(
             docker_basic_auth=DockerBasicAuth(
                 server_address="docker.io", username="pytest", password=SecretStr("")
@@ -426,7 +431,7 @@ def sidecar_task(
             service_version="latest",
             command=command
             or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
-            input_data=TaskInputData.model_validate({}),
+            input_data=input_data or TaskInputData.model_validate({}),
             output_data_keys=TaskOutputDataSchema.model_validate({}),
             log_file_url=s3_remote_file_url(file_path="log.dat"),
             expected_output_data=TaskOutputData.model_validate({}),
@@ -454,6 +459,30 @@ def sleeper_task_unexpected_output(
 ) -> ServiceExampleParam:
     sleeper_task.command = ["/bin/bash", "-c", "echo we create nothingness"]
     return sleeper_task
+
+
+@pytest.fixture()
+def task_with_file_to_key_map_in_input_data(
+    sidecar_task: Callable[..., ServiceExampleParam],
+) -> ServiceExampleParam:
+    """This task has a file-to-key map in the input data but receives zip data instead"""
+    return sidecar_task(
+        command=["/bin/bash", "-c", "echo we create nothingness"],
+        input_data=TaskInputData.model_validate(
+            {
+                "input_1": 23,
+                "input_23": "a string input",
+                "the_input_43": 15.0,
+                "the_bool_input_54": False,
+                "some_file_input_with_mapping": FileUrl(
+                    url=TypeAdapter(AnyUrl).validate_python(
+                        "s3://myserver/some_file_url.zip"
+                    ),
+                    file_mapping="some_file_mapping",
+                ),
+            }
+        ),
+    )
 
 
 @pytest.fixture()
@@ -537,7 +566,6 @@ async def log_rabbit_client_parser(
 
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: pytest.LogCaptureFixture,
-    event_loop: asyncio.AbstractEventLoop,
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sleeper_task: ServiceExampleParam,
@@ -807,6 +835,21 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
     with pytest.raises(ServiceBadFormattedOutputError):
         run_computational_sidecar(
             **sleeper_task_unexpected_output.sidecar_params(),
+        )
+
+
+@pytest.mark.parametrize(
+    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+)
+def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_raises_exception(
+    caplog_info_level: pytest.LogCaptureFixture,
+    app_environment: EnvVarsDict,
+    dask_subsystem_mock: dict[str, mock.Mock],
+    task_with_file_to_key_map_in_input_data: ServiceExampleParam,
+):
+    with pytest.raises(ServiceInputsUseFileToKeyMapButReceivesZipDataError):
+        run_computational_sidecar(
+            **task_with_file_to_key_map_in_input_data.sidecar_params(),
         )
 
 

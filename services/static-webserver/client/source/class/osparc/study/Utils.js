@@ -60,9 +60,8 @@ qx.Class.define("osparc.study.Utils", {
                 "y": 100
               }
             };
-            // maybe check it's dynamic
             if (!("mode" in minStudyData["ui"])) {
-              minStudyData["ui"]["mode"] = "standalone";
+              minStudyData["ui"]["mode"] = metadata["type"] && metadata["type"] === "dynamic" ? "standalone" : "pipeline";
             }
             const inaccessibleServices = osparc.store.Services.getInaccessibleServices(minStudyData["workbench"])
             if (inaccessibleServices.length) {
@@ -294,7 +293,7 @@ qx.Class.define("osparc.study.Utils", {
       return parameters.length && probes.length;
     },
 
-    getCantExecuteServices: function(studyServices = []) {
+    getCantReadServices: function(studyServices = []) {
       return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
     },
 
@@ -356,8 +355,10 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     __getBlockedState: function(studyData) {
-      if (studyData["services"]) {
-        const cantReadServices = osparc.study.Utils.getCantExecuteServices(studyData["services"]);
+      if (studyData["services"] === null) {
+        return "UNKNOWN_SERVICES";
+      } else if (studyData["services"]) {
+        const cantReadServices = osparc.study.Utils.getCantReadServices(studyData["services"]);
         const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
         if (cantReadServices.length || inaccessibleServices.length) {
           return "UNKNOWN_SERVICES";
@@ -439,10 +440,9 @@ qx.Class.define("osparc.study.Utils", {
     __guessIcon: function(studyData) {
       return new Promise(resolve => {
         if (studyData["ui"]["mode"] === "pipeline") {
-          resolve("osparc/icons/diagram.png");
+          resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
-          const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
-          // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+          const productIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
           const wbServices = this.self().getNonFrontendNodes(studyData);
           if (wbServices.length === 1) {
             const wbService = wbServices[0];
@@ -451,10 +451,11 @@ qx.Class.define("osparc.study.Utils", {
                 if (serviceMetadata && serviceMetadata["icon"]) {
                   resolve(serviceMetadata["icon"]);
                 }
-                resolve(defaultIcon);
-              });
+                resolve(productIcon);
+              })
+              .catch(() => resolve(productIcon));
           } else {
-            resolve("osparc/icons/diagram.png");
+            resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
           }
         }
       });

@@ -108,9 +108,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_FUNCTIONS: Annotated[
         bool,
         Field(
-            json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True},
+            description="Metamodeling functions plugin",
         ),
-    ] = True
+    ] = False
 
     WEBSERVER_LOGLEVEL: Annotated[
         LogLevel,
@@ -462,19 +462,20 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def is_enabled(self, field_name: str) -> bool:
         return bool(getattr(self, field_name, None))
 
-    def _get_disabled_public_plugins(self) -> list[str]:
+    def _get_disabled_advertised_plugins(self) -> list[str]:
+        """List of plugins that are disabled to be advertised to the client"""
         # NOTE: this list is limited for security reasons. An unbounded list
         # might reveal critical info on the settings of a deploy to the client.
-        # TODO: more reliable definition of a "plugin" and whether it can be advertised or not
-        # (extra var? e.g. Field( ... , x_advertise_plugin=True))
-        public_plugin_candidates: Final = {
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7688
+        advertised_plugins: Final = {
             "WEBSERVER_EXPORTER",
             "WEBSERVER_FOLDERS",
+            "WEBSERVER_FUNCTIONS",
             "WEBSERVER_LICENSES",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
         }
-        return [_ for _ in public_plugin_candidates if not self.is_enabled(_)] + [
+        return [_ for _ in advertised_plugins if not self.is_enabled(_)] + [
             # NOTE: Permanently retired in https://github.com/ITISFoundation/osparc-simcore/pull/7182
             # Kept here to disable front-end
             "WEBSERVER_META_MODELING",
@@ -556,7 +557,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             },
             exclude_none=True,
         )
-        data["plugins_disabled"] = self._get_disabled_public_plugins()
+        data["plugins_disabled"] = self._get_disabled_advertised_plugins()
 
         # Alias in addition MUST be camelcase here
         return {snake_to_camel(k): v for k, v in data.items()}

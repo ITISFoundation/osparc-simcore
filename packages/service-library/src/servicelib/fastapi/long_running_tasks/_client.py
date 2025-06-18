@@ -1,8 +1,8 @@
 import asyncio
 import functools
 import logging
-import warnings
-from typing import Any, Awaitable, Callable, Final
+from collections.abc import Awaitable, Callable
+from typing import Any, Final
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient, HTTPError
@@ -13,15 +13,10 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from ...long_running_tasks._errors import GenericClientError, TaskClientResultError
-from ...long_running_tasks._models import (
-    ClientConfiguration,
-    TaskId,
-    TaskResult,
-    TaskStatus,
-)
+from ...long_running_tasks.errors import GenericClientError
+from ...long_running_tasks.models import ClientConfiguration, TaskId, TaskStatus
 
-DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
+_DEFAULT_HTTP_REQUESTS_TIMEOUT: Final[PositiveFloat] = 15
 
 
 logger = logging.getLogger(__name__)
@@ -85,7 +80,7 @@ def _after_log(
 
 
 def retry_on_http_errors(
-    request_func: Callable[..., Awaitable[Any]]
+    request_func: Callable[..., Awaitable[Any]],
 ) -> Callable[..., Awaitable[Any]]:
     """
     Will retry the request on `httpx.HTTPError`.
@@ -125,7 +120,7 @@ class Client:
         """
         self.app = app
         self._async_client = async_client
-        self._base_url = base_url
+        self.base_url = base_url
 
     @property
     def _client_configuration(self) -> ClientConfiguration:
@@ -134,7 +129,7 @@ class Client:
 
     def _get_url(self, path: str) -> str:
         url_path = f"{self._client_configuration.router_prefix}{path}".lstrip("/")
-        url = TypeAdapter(AnyHttpUrl).validate_python(f"{self._base_url}{url_path}")
+        url = TypeAdapter(AnyHttpUrl).validate_python(f"{self.base_url}{url_path}")
         return f"{url}"
 
     @retry_on_http_errors
@@ -173,10 +168,7 @@ class Client:
                 body=result.text,
             )
 
-        task_result = TaskResult.model_validate(result.json())
-        if task_result.error is not None:
-            raise TaskClientResultError(message=task_result.error)
-        return task_result.result
+        return result.json()
 
     @retry_on_http_errors
     async def cancel_and_delete_task(
@@ -187,16 +179,6 @@ class Client:
             self._get_url(f"/task/{task_id}"),
             timeout=timeout,
         )
-
-        if result.status_code == status.HTTP_200_OK:
-            warnings.warn(
-                "returning a 200 when cancelling a task has been deprecated with PR#3236"
-                "and will be removed after 11.2022"
-                "please do close your studies at least once before that date, so that the dy-sidecar"
-                "get replaced",
-                category=DeprecationWarning,
-            )
-            return
 
         if result.status_code not in (
             status.HTTP_204_NO_CONTENT,
@@ -214,7 +196,7 @@ def setup(
     app: FastAPI,
     *,
     router_prefix: str = "",
-    http_requests_timeout: PositiveFloat = DEFAULT_HTTP_REQUESTS_TIMEOUT,
+    http_requests_timeout: PositiveFloat = _DEFAULT_HTTP_REQUESTS_TIMEOUT,
 ):
     """
     - `router_prefix` by default it is assumed the server mounts the APIs on

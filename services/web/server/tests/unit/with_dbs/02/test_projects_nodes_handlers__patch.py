@@ -27,24 +27,6 @@ API_PREFIX = "/" + api_version_prefix
 
 
 @pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.catalog_service.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-
-
-@pytest.fixture
-def mock_project_uses_available_services(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
-        spec=True,
-        return_value=True,
-    )
-
-
-@pytest.fixture
 def mock_catalog_rpc_check_for_service(mocker: MockerFixture):
     mocker.patch(
         "simcore_service_webserver.projects._projects_service.catalog_rpc.check_for_service",
@@ -99,8 +81,6 @@ async def test_patch_project_node(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product: None,
-    mock_project_uses_available_services: None,
     mock_catalog_rpc_check_for_service: None,
 ):
     node_id = next(iter(user_project["workbench"]))
@@ -221,8 +201,6 @@ async def test_patch_project_node_notifies(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
     mock_catalog_rpc_check_for_service,
     mocked_notify_project_node_update,
 ):
@@ -257,8 +235,6 @@ async def test_patch_project_node_inputs_notifies(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
     mocked_notify_project_node_update,
 ):
     node_id = next(iter(user_project["workbench"]))
@@ -297,8 +273,6 @@ async def test_patch_project_node_inputs_with_data_type_change(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
 ):
     node_id = next(iter(user_project["workbench"]))
     assert client.app
@@ -350,8 +324,6 @@ async def test_patch_project_node_service_key_with_error(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
     mocker: MockerFixture,
 ):
     node_id = next(iter(user_project["workbench"]))

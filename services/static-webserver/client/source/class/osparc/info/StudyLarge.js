@@ -57,7 +57,11 @@ qx.Class.define("osparc.info.StudyLarge", {
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
-      if (this.getStudy().getTemplateType() && osparc.data.Permissions.getInstance().isTester()) {
+      if (
+        this.__canIWrite() &&
+        this.getStudy().getTemplateType() &&
+        osparc.data.Permissions.getInstance().isTester()
+      ) {
         // let testers change the template type
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
           alignY: "middle",
@@ -126,7 +130,6 @@ qx.Class.define("osparc.info.StudyLarge", {
     __infoElements: function() {
       const infoLayout = {
         "TITLE": {
-          label: this.tr("Title:"),
           view: osparc.info.StudyUtils.createTitle(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
@@ -135,7 +138,6 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         },
         "THUMBNAIL": {
-          label: this.tr("Thumbnail:"),
           view: this.__createThumbnail(),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
@@ -144,7 +146,6 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         },
         "DESCRIPTION": {
-          label: this.tr("Description:"),
           view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), 150),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
@@ -153,12 +154,12 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         },
         "AUTHOR": {
-          label: this.tr("Author:"),
+          label: this.tr("Author"),
           view: osparc.info.StudyUtils.createOwner(this.getStudy()),
           action: null
         },
         "ACCESS_RIGHTS": {
-          label: this.tr("Access:"),
+          label: this.tr("Access"),
           view: osparc.info.StudyUtils.createAccessRights(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getLinkButton(this.__canIWrite()),
@@ -167,17 +168,17 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         },
         "CREATED": {
-          label: this.tr("Created:"),
+          label: this.tr("Created"),
           view: osparc.info.StudyUtils.createCreationDate(this.getStudy()),
           action: null
         },
         "MODIFIED": {
-          label: this.tr("Modified:"),
+          label: this.tr("Modified"),
           view: osparc.info.StudyUtils.createLastChangeDate(this.getStudy()),
           action: null
         },
         "TAGS": {
-          label: this.tr("Tags:"),
+          label: this.tr("Tags"),
           view: osparc.info.StudyUtils.createTags(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getLinkButton(this.__canIWrite()),

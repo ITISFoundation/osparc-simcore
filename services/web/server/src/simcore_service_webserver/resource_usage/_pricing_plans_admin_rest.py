@@ -40,7 +40,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG as VTAG
 from ..login.decorators import login_required
-from ..models import RequestContext
+from ..models import AuthenticatedRequestContext
 from ..security.decorators import permission_required
 from ..utils_aiohttp import envelope_json_response
 from . import _pricing_plans_admin_service as pricing_plans_admin_service
@@ -58,7 +58,7 @@ def _handle_pricing_plan_admin_exceptions(handler: Handler):
             return await handler(request)
 
         except (ValueError, PricingUnitDuplicationError) as exc:
-            raise web.HTTPBadRequest(reason=f"{exc}") from exc
+            raise web.HTTPBadRequest(text=f"{exc}") from exc
 
         except RPCServerError as exc:
             # NOTE: This will be improved; we will add a mapping between
@@ -86,7 +86,7 @@ routes = web.RouteTableDef()
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def list_pricing_plans_for_admin_user(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     query_params: PageQueryParameters = parse_request_query_parameters_as(
         PageQueryParameters, request
     )
@@ -169,7 +169,7 @@ def pricing_plan_get_to_admin(
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def get_pricing_plan_for_admin_user(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
     pricing_plan_get = await pricing_plans_admin_service.get_pricing_plan(
@@ -190,7 +190,7 @@ async def get_pricing_plan_for_admin_user(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def create_pricing_plan(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     body_params = await parse_request_body_as(CreatePricingPlanBodyParams, request)
 
     _data = PricingPlanCreate(
@@ -217,7 +217,7 @@ async def create_pricing_plan(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def update_pricing_plan(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(UpdatePricingPlanBodyParams, request)
 
@@ -254,7 +254,7 @@ class PricingUnitGetPathParams(BaseModel):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def get_pricing_unit(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingUnitGetPathParams, request)
 
     pricing_unit_get = await pricing_plans_admin_service.get_pricing_unit(
@@ -284,7 +284,7 @@ async def get_pricing_unit(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def create_pricing_unit(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(CreatePricingUnitBodyParams, request)
 
@@ -323,7 +323,7 @@ async def create_pricing_unit(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def update_pricing_unit(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingUnitGetPathParams, request)
     body_params = await parse_request_body_as(UpdatePricingUnitBodyParams, request)
 
@@ -365,7 +365,7 @@ async def update_pricing_unit(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def list_connected_services_to_pricing_plan(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
 
     connected_services_list = (
@@ -396,7 +396,7 @@ async def list_connected_services_to_pricing_plan(request: web.Request):
 @permission_required("resource-usage.write")
 @_handle_pricing_plan_admin_exceptions
 async def connect_service_to_pricing_plan(request: web.Request):
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(PricingPlanGetPathParams, request)
     body_params = await parse_request_body_as(
         ConnectServiceToPricingPlanBodyParams, request

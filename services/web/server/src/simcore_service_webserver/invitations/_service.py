@@ -51,13 +51,19 @@ async def validate_invitation_url(
     """
     if current_product.group_id is None:
         raise InvitationsServiceUnavailableError(
-            reason="Current product is not configured for invitations"
+            reason="Current product is not configured for invitations",
+            current_product=current_product,
+            guest_email=guest_email,
         )
 
     try:
         valid_url = TypeAdapter(AnyHttpUrl).validate_python(invitation_url)
     except ValidationError as err:
-        raise InvalidInvitationError(reason=MSG_INVALID_INVITATION_URL) from err
+        raise InvalidInvitationError(
+            reason=MSG_INVALID_INVITATION_URL,
+            current_product=current_product,
+            guest_email=guest_email,
+        ) from err
 
     # check with service
     invitation: ApiInvitationContent = await get_invitations_service_api(
@@ -67,7 +73,10 @@ async def validate_invitation_url(
     # check email
     if invitation.guest.lower() != guest_email.lower():
         raise InvalidInvitationError(
-            reason="This invitation was issued for a different email"
+            reason="This invitation was issued for a different email",
+            current_product=current_product,
+            guest_email=guest_email,
+            invitation=invitation,
         )
 
     # check product
@@ -75,7 +84,11 @@ async def validate_invitation_url(
     if invitation.product is not None and invitation.product != current_product.name:
         raise InvalidInvitationError(
             reason="This invitation was issued for a different product. "
-            f"Got '{invitation.product}', expected '{current_product.name}'"
+            f"Got '{invitation.product}', expected '{current_product.name}'",
+            guest_email=guest_email,
+            current_product=current_product,
+            invitation=invitation,
+            tip="Check the url of the invitation link and see if it associated to the product in the invitation",
         )
 
     # check invitation used
@@ -87,7 +100,13 @@ async def validate_invitation_url(
     )
     if is_user_registered_in_product:
         # NOTE: a user might be already registered but the invitation is for another product
-        raise InvalidInvitationError(reason=MSG_INVITATION_ALREADY_USED)
+        raise InvalidInvitationError(
+            reason=MSG_INVITATION_ALREADY_USED,
+            guest_email=guest_email,
+            current_product=current_product,
+            invitation=invitation,
+            tip="As soon as the user is registered, the invitation is invalidated",
+        )
 
     return invitation
 

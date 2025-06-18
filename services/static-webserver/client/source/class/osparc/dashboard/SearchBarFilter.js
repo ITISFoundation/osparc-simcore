@@ -261,7 +261,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const serviceTypeMenu = new qx.ui.menu.Menu();
       menuButton.setMenu(serviceTypeMenu);
 
-      const iconSize = 12;
+      const iconSize = 14;
       const serviceTypes = osparc.service.Utils.TYPES;
       Object.keys(serviceTypes).forEach(serviceId => {
         if (!["computational", "dynamic"].includes(serviceId)) {
@@ -269,12 +269,21 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         }
         const serviceType = serviceTypes[serviceId];
         const serviceTypeButton = new qx.ui.menu.Button(serviceType.label, serviceType.icon+iconSize);
+        serviceTypeButton.getChildControl("icon").set({
+          alignX: "center",
+        });
         serviceTypeMenu.add(serviceTypeButton);
         serviceTypeButton.addListener("execute", () => this.__addChip("app-type", serviceId, serviceType.label), this);
       });
 
       // hypertools filter
-      const hypertoolTypeButton = new qx.ui.menu.Button("Hypertools", "@FontAwesome5Solid/wrench/"+iconSize);
+      const hypertoolTypeButton = new qx.ui.menu.Button("Hypertools", null);
+      hypertoolTypeButton.exclude();
+      osparc.store.Templates.getHypertools()
+        .then(hypertools => {
+          hypertoolTypeButton.setVisibility(hypertools.length > 0 ? "visible" : "excluded");
+        });
+      osparc.utils.Utils.replaceIconWithThumbnail(hypertoolTypeButton, osparc.data.model.StudyUI.HYPERTOOL_ICON, 18);
       serviceTypeMenu.add(hypertoolTypeButton);
       hypertoolTypeButton.addListener("execute", () => this.__addChip("app-type", "hypertool", "Hypertools"), this);
     },

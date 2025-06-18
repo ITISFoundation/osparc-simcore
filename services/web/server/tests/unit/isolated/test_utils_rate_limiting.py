@@ -28,14 +28,13 @@ async def get_ok_handler(_request: web.Request):
 
 
 @pytest.fixture
-def client(
-    event_loop,
+async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
 ) -> TestClient:
     app = web.Application()
     app.router.add_get("/", get_ok_handler)
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 def test_rate_limit_route_decorator():
@@ -81,7 +80,6 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
 
     msg = []
     for i, task in enumerate(tasks):
-
         while not task.done():
             await asyncio.sleep(0.01)
 
@@ -101,7 +99,7 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
     # first requests are OK
     assert all(
         t.result().status == expected_status for t in tasks[:MAX_NUM_REQUESTS]
-    ), f" Failed with { msg[:MAX_NUM_REQUESTS]}"
+    ), f" Failed with {msg[:MAX_NUM_REQUESTS]}"
 
     if requests_per_second >= MAX_REQUEST_RATE:
         expected_status = HTTPTooManyRequests.status_code
@@ -109,7 +107,7 @@ async def test_global_rate_limit_route(requests_per_second: float, client: TestC
     # after ...
     assert all(
         t.result().status == expected_status for t in tasks[MAX_NUM_REQUESTS:]
-    ), f" Failed with { msg[MAX_NUM_REQUESTS:]}"
+    ), f" Failed with {msg[MAX_NUM_REQUESTS:]}"
 
     # checks Retry-After header
     failed = []

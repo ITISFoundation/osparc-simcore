@@ -7,24 +7,23 @@
 import asyncio
 import urllib.parse
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Final
 
 import pytest
 from faker import Faker
-from servicelib.long_running_tasks._errors import (
+from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
 )
-from servicelib.long_running_tasks._models import (
+from servicelib.long_running_tasks.models import (
     ProgressPercent,
     TaskProgress,
-    TaskResult,
     TaskStatus,
 )
-from servicelib.long_running_tasks._task import TasksManager, start_task
+from servicelib.long_running_tasks.task import TasksManager, start_task
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -72,11 +71,12 @@ TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
 @pytest.fixture
 async def tasks_manager() -> AsyncIterator[TasksManager]:
     tasks_manager = TasksManager(
-        stale_task_check_interval_s=TEST_CHECK_STALE_INTERVAL_S,
-        stale_task_detect_timeout_s=TEST_CHECK_STALE_INTERVAL_S,
+        stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
+        stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
     )
+    await tasks_manager.setup()
     yield tasks_manager
-    await tasks_manager.close()
+    await tasks_manager.teardown()
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
@@ -108,8 +108,6 @@ async def test_task_is_auto_removed(
         tasks_manager.get_task_status(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_result(task_id, with_task_context=None)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result_old(task_id)
 
 
 async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
@@ -155,9 +153,6 @@ async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager)
     )
     with pytest.raises(TaskNotCompletedError):
         tasks_manager.get_task_result(task_id, with_task_context=None)
-
-    with pytest.raises(TaskNotCompletedError):
-        tasks_manager.get_task_result_old(task_id)
 
 
 async def test_unique_task_already_running(tasks_manager: TasksManager):
@@ -214,13 +209,6 @@ async def test_get_result(tasks_manager: TasksManager):
     assert result == 42
 
 
-async def test_get_result_old(tasks_manager: TasksManager):
-    task_id = start_task(tasks_manager=tasks_manager, task=fast_background_task)
-    await asyncio.sleep(0.1)
-    result = tasks_manager.get_task_result_old(task_id)
-    assert result == TaskResult(result=42, error=None)
-
-
 async def test_get_result_missing(tasks_manager: TasksManager):
     with pytest.raises(TaskNotFoundError) as exec_info:
         tasks_manager.get_task_result("missing_task_id", with_task_context=None)
@@ -236,20 +224,6 @@ async def test_get_result_finished_with_error(tasks_manager: TasksManager):
 
     with pytest.raises(RuntimeError, match="failing asap"):
         tasks_manager.get_task_result(task_id, with_task_context=None)
-
-
-async def test_get_result_old_finished_with_error(tasks_manager: TasksManager):
-    task_id = start_task(tasks_manager=tasks_manager, task=failing_background_task)
-    # wait for result
-    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
-            assert tasks_manager.get_task_status(task_id, with_task_context=None).done
-
-    task_result = tasks_manager.get_task_result_old(task_id)
-    assert task_result.result is None
-    assert task_result.error is not None
-    assert task_result.error.startswith(f"Task {task_id} finished with exception:")
-    assert "failing asap" in task_result.error
 
 
 async def test_get_result_task_was_cancelled_multiple_times(
@@ -270,23 +244,6 @@ async def test_get_result_task_was_cancelled_multiple_times(
         tasks_manager.get_task_result(task_id, with_task_context=None)
 
 
-async def test_get_result_old_task_was_cancelled_multiple_times(
-    tasks_manager: TasksManager,
-):
-    task_id = start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
-        raise_when_finished=False,
-        total_sleep=10,
-    )
-    for _ in range(5):
-        await tasks_manager.cancel_task(task_id, with_task_context=None)
-
-    task_result = tasks_manager.get_task_result_old(task_id)
-    assert task_result.result is None
-    assert task_result.error == f"Task {task_id} was cancelled before completing"
-
-
 async def test_remove_task(tasks_manager: TasksManager):
     task_id = start_task(
         tasks_manager=tasks_manager,
@@ -300,8 +257,6 @@ async def test_remove_task(tasks_manager: TasksManager):
         tasks_manager.get_task_status(task_id, with_task_context=None)
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_result(task_id, with_task_context=None)
-    with pytest.raises(TaskNotFoundError):
-        tasks_manager.get_task_result_old(task_id)
 
 
 async def test_remove_task_with_task_context(tasks_manager: TasksManager):

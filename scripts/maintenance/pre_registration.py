@@ -123,7 +123,7 @@ async def _pre_register_user(
     extras: dict[str, Any] = {},
 ) -> dict[str, Any]:
     """Pre-register a user in the system"""
-    path = "/v0/admin/users:pre-register"
+    path = "/v0/admin/user-accounts:pre-register"
 
     user_data = PreRegisterUserRequest(
         firstName=first_name,

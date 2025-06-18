@@ -16,9 +16,9 @@ aiofiles==24.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aioboto3
-aiohappyeyeballs==2.4.6
+aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.18
+aiohttp==3.12.12
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -145,6 +145,7 @@ opentelemetry-api==1.30.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
@@ -164,10 +165,13 @@ opentelemetry-exporter-otlp-proto-http==1.30.0
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.51b0
     # via
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-botocore
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
+opentelemetry-instrumentation-aio-pika==0.51b0
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-botocore==0.51b0
     # via -r requirements/_base.in
 opentelemetry-instrumentation-logging==0.51b0
@@ -431,6 +435,7 @@ wrapt==1.17.2
     #   aiobotocore
     #   deprecated
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-redis
 yarl==1.18.3
     # via

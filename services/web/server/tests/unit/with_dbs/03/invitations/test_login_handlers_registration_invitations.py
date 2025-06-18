@@ -110,7 +110,7 @@ def _extract_invitation_code_from_url(invitation_url: HttpUrl) -> str:
     return query_params["invitation"]
 
 
-@pytest.mark.acceptance_test()
+@pytest.mark.acceptance_test
 async def test_registration_to_different_product(
     mocker: MockerFixture,
     app_products_names: list[ProductName],

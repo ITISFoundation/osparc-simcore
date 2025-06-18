@@ -230,7 +230,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     // oSPARC only
-    hasExportCMisEnabled: function() {
+    showExportCMis: function() {
       const product = this.getProductName();
       return product === "osparc";
     },
@@ -264,6 +264,10 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showPreferencesTokens: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        return true;
+      }
+
       if (this.isProduct("s4llite") || this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
@@ -284,23 +288,60 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
-    showQuality: function() {
-      if (this.isProduct("osparc")) {
+    showTemplates: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
         return true;
       }
-      return false;
-    },
 
-    showClassifiers: function() {
-      if (this.getProductName().includes("s4l")) {
+      if (this.isProduct("tis") || this.isProduct("tiplite")) {
         return false;
       }
       return true;
     },
 
+    showPublicProjects: function() {
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        return true;
+      }
+
+      if (this.isProduct("tis") || this.isProduct("tiplite")) {
+        return false;
+      }
+      return true;
+    },
+
+    showQuality: function() {
+      return this.isProduct("osparc");
+    },
+
+    showClassifiers: function() {
+      return this.isProduct("osparc");
+    },
+
+    showConvertToPipeline: function() {
+      return this.isS4LProduct() || this.isProduct("osparc");
+    },
+
     showS4LStore: function() {
       const licensesEnabled = osparc.store.StaticInfo.getInstance().areLicensesEnabled();
       return this.isS4LProduct() && licensesEnabled;
+    },
+
+    showComputationalActivity: function() {
+      if (this.isProduct("s4llite") || this.isProduct("tiplite")) {
+        return false;
+      }
+      return true;
+    },
+
+    getDefaultWelcomeCredits: function() {
+      switch (osparc.product.Utils.getProductName()) {
+        case "s4l":
+        case "s4lacad":
+          return 100;
+        default:
+          return 0;
+      }
     },
 
     getIconUrl: function(asset = "Default.png") {
@@ -359,6 +400,10 @@ qx.Class.define("osparc.product.Utils", {
 
     hasNewPlusButton: function() {
       return Boolean(osparc.store.Products.getInstance().getPlusButtonUiConfig());
+    },
+
+    groupServices: function() {
+      return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
     },
   }
 });

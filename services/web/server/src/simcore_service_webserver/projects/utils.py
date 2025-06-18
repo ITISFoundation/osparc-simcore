@@ -189,41 +189,6 @@ def is_graph_equal(
     return True
 
 
-async def project_uses_available_services(
-    project: dict[str, Any], available_services: list[dict[str, Any]]
-) -> bool:
-    if not project["workbench"]:
-        # empty project
-        return True
-    # get project services
-    needed_services: set[tuple[str, str]] = {
-        (s["key"], s["version"]) for _, s in project["workbench"].items()
-    }
-
-    # get available services
-    available_services_set: set[tuple[str, str]] = {
-        (s["key"], s["version"]) for s in available_services
-    }
-
-    return needed_services.issubset(available_services_set)
-
-
-def get_project_unavailable_services(
-    project: dict[str, Any], available_services: list[dict[str, Any]]
-) -> set[tuple[str, str]]:
-    # get project services
-    required: set[tuple[str, str]] = {
-        (s["key"], s["version"]) for _, s in project["workbench"].items()
-    }
-
-    # get available services
-    available: set[tuple[str, str]] = {
-        (s["key"], s["version"]) for s in available_services
-    }
-
-    return required - available
-
-
 def extract_dns_without_default_port(url: URL) -> str:
     port = "" if url.port == 80 else f":{url.port}"
     return f"{url.host}{port}"

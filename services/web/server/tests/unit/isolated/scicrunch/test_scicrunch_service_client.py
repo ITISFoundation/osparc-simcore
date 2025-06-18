@@ -3,10 +3,10 @@
 # pylint:disable=redefined-outer-name
 
 """
-    Use this test to emulate situations with scicrunch service API
+Use this test to emulate situations with scicrunch service API
 
 """
-import asyncio
+
 import json
 import os
 from collections.abc import Callable
@@ -100,18 +100,16 @@ async def mock_scicrunch_service_resolver(
 
 
 @pytest.fixture
-def app(
+async def app(
     mock_env_devel_environment: EnvVarsDict,
-    event_loop: asyncio.AbstractEventLoop,
     aiohttp_server: Callable,
 ) -> web.Application:
-
     app_ = create_safe_application()
 
     setup_settings(app_)
     setup_scicrunch(app_)
 
-    server = event_loop.run_until_complete(aiohttp_server(app_))
+    server = await aiohttp_server(app_)
     assert server.app == app_
     return server.app
 

@@ -19,10 +19,9 @@ aiofiles # i/o
 asgi_lifespan
 asyncpg # database
 celery[redis]
-httpx
+opentelemetry-instrumentation-celery
 opentelemetry-instrumentation-botocore
 packaging
-fastapi[all]
 fastapi-pagination
 orjson
 pydantic[dotenv]

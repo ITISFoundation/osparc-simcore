@@ -217,7 +217,6 @@ async def download_path_from_s3(
         return await download_file_from_link(
             download_link,
             local_path,
-            client_session=session,
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
         )
@@ -229,7 +228,6 @@ async def download_file_from_link(
     *,
     io_log_redirect_cb: LogRedirectCB | None,
     file_name: str | None = None,
-    client_session: ClientSession | None = None,
     progress_bar: ProgressBarData,
 ) -> Path:
     # a download link looks something like:
@@ -242,15 +240,14 @@ async def download_file_from_link(
 
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"downloading {local_file_path}, please wait...")
-    async with ClientSessionContextManager(client_session) as session:
-        await download_link_to_file(
-            session,
-            download_link,
-            local_file_path,
-            num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
-            io_log_redirect_cb=io_log_redirect_cb,
-            progress_bar=progress_bar,
-        )
+
+    await download_link_to_file(
+        download_link,
+        local_file_path,
+        num_retries=NodePortsSettings.create_from_envs().NODE_PORTS_IO_NUM_RETRY_ATTEMPTS,
+        io_log_redirect_cb=io_log_redirect_cb,
+        progress_bar=progress_bar,
+    )
     if io_log_redirect_cb:
         await io_log_redirect_cb(f"download of {local_file_path} complete.")
     return local_file_path
@@ -291,7 +288,7 @@ async def _generate_checksum(
         return checksum
     if isinstance(path_to_upload, Path):
         async with aiofiles.open(path_to_upload, mode="rb") as f:
-            checksum = SHA256Str(await create_sha256_checksum(f))
+            checksum = await create_sha256_checksum(f)
     elif isinstance(path_to_upload, UploadableFileObject):
         checksum = path_to_upload.sha256_checksum
     return checksum

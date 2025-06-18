@@ -509,38 +509,27 @@ def mocked_catalog_rpc_api(
         services as catalog_rpc,  # keep import here
     )
 
-    return {
-        "list_services_paginated": mocker.patch.object(
-            catalog_rpc,
-            "list_services_paginated",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.list_services_paginated,
-        ),
-        "get_service": mocker.patch.object(
-            catalog_rpc,
-            "get_service",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.get_service,
-        ),
-        "update_service": mocker.patch.object(
-            catalog_rpc,
-            "update_service",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.update_service,
-        ),
-        "list_my_service_history_latest_first": mocker.patch.object(
-            catalog_rpc,
-            "list_my_service_history_latest_first",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.list_my_service_history_latest_first,
-        ),
-        "get_service_ports": mocker.patch.object(
-            catalog_rpc,
-            "get_service_ports",
-            autospec=True,
-            side_effect=catalog_rpc_side_effects.get_service_ports,
-        ),
-    }
+    mocks = {}
+
+    # Get all callable methods from the side effects class that are not built-ins
+    side_effect_methods = [
+        method_name
+        for method_name in dir(catalog_rpc_side_effects)
+        if not method_name.startswith("_")
+        and callable(getattr(catalog_rpc_side_effects, method_name))
+    ]
+
+    # Create mocks for each method in catalog_rpc that has a corresponding side effect
+    for method_name in side_effect_methods:
+        if hasattr(catalog_rpc, method_name):
+            mocks[method_name] = mocker.patch.object(
+                catalog_rpc,
+                method_name,
+                autospec=True,
+                side_effect=getattr(catalog_rpc_side_effects, method_name),
+            )
+
+    return mocks
 
 
 #
@@ -721,6 +710,27 @@ def patch_webserver_long_running_project_tasks(
                 name="get_task_result",
             ).mock(side_effect=long_running_task_workflow.get_result)
 
+        return webserver_mock_router
+
+    return _mock
+
+
+@pytest.fixture
+def mock_webserver_patch_project(
+    app: FastAPI, faker: Faker, services_mocks_enabled: bool
+) -> Callable[[MockRouter], MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER is not None
+
+    def _mock(webserver_mock_router: MockRouter) -> MockRouter:
+        def _patch_project(request: httpx.Request, *args, **kwargs):
+            return httpx.Response(status.HTTP_200_OK)
+
+        if services_mocks_enabled:
+            webserver_mock_router.patch(
+                path__regex=r"/projects/(?P<project_id>[\w-]+)$",
+                name="project_patch",
+            ).mock(side_effect=_patch_project)
         return webserver_mock_router
 
     return _mock

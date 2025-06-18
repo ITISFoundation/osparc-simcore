@@ -11,7 +11,6 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
@@ -20,24 +19,6 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
 API_PREFIX = "/" + api_version_prefix
-
-
-@pytest.fixture
-def mock_catalog_api_get_services_for_user_in_product(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.catalog_service.get_services_for_user_in_product",
-        spec=True,
-        return_value=[],
-    )
-
-
-@pytest.fixture
-def mock_project_uses_available_services(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_webserver.projects._controller.projects_rest.project_uses_available_services",
-        spec=True,
-        return_value=True,
-    )
 
 
 @pytest.mark.parametrize(
@@ -81,8 +62,6 @@ async def test_patch_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
-    mock_catalog_api_get_services_for_user_in_product,
-    mock_project_uses_available_services,
 ):
     assert client.app
     base_url = client.app.router["patch_project"].url_for(

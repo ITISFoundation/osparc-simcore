@@ -1,6 +1,10 @@
 from typing import Annotated, Any, Literal, Self, TypeAlias
 
-from models_library.api_schemas_catalog.services import LatestServiceGet, ServiceGetV2
+from models_library.api_schemas_catalog.services import (
+    LatestServiceGet,
+    ServiceGetV2,
+    ServiceSummary,
+)
 from models_library.basic_regex import PUBLIC_VARIABLE_NAME_RE
 from models_library.emails import LowerCaseEmailStr
 from models_library.services import ServiceMetaDataPublished
@@ -72,14 +76,23 @@ class Solver(BaseService):
         )
 
     @classmethod
-    def create_from_service(cls, service: ServiceGetV2 | LatestServiceGet) -> Self:
+    def create_from_service(
+        cls, service: ServiceGetV2 | LatestServiceGet | ServiceSummary
+    ) -> Self:
+        # Common fields in all service types
+        maintainer = ""
+        if hasattr(service, "contact") and service.contact:
+            maintainer = service.contact
+
         return cls(
             id=service.key,
             version=service.version,
             title=service.name,
             description=service.description,
-            maintainer=service.contact or "UNDEFINED",
-            version_display=service.version_display,
+            maintainer=maintainer or "UNDEFINED",
+            version_display=(
+                service.version_display if hasattr(service, "version_display") else None
+            ),
             url=None,
         )
 

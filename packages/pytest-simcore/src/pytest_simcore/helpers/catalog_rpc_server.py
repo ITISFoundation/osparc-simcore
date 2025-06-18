@@ -13,12 +13,17 @@ from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     ServiceGetV2,
     ServiceListFilters,
+    ServiceSummary,
     ServiceUpdateV2,
 )
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
 from models_library.products import ProductName
 from models_library.rest_pagination import PageOffsetInt
-from models_library.rpc_pagination import PageLimitInt, PageRpc
+from models_library.rpc_pagination import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageLimitInt,
+    PageRpc,
+)
 from models_library.services_enums import ServiceType
 from models_library.services_history import ServiceRelease
 from models_library.services_regex import (
@@ -27,7 +32,7 @@ from models_library.services_regex import (
 )
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
-from pydantic import NonNegativeInt, TypeAdapter, validate_call
+from pydantic import TypeAdapter, validate_call
 from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
@@ -50,8 +55,8 @@ class CatalogRpcSideEffects:
         *,
         product_name: ProductName,
         user_id: UserID,
-        limit: PageLimitInt,
-        offset: NonNegativeInt,
+        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        offset: PageOffsetInt = 0,
         filters: ServiceListFilters | None = None,
     ):
         assert rpc_client
@@ -157,8 +162,8 @@ class CatalogRpcSideEffects:
         product_name: ProductName,
         user_id: UserID,
         service_key: ServiceKey,
-        offset: PageOffsetInt,
-        limit: PageLimitInt,
+        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        offset: PageOffsetInt = 0,
         filters: ServiceListFilters | None = None,
     ) -> PageRpc[ServiceRelease]:
 
@@ -200,6 +205,66 @@ class CatalogRpcSideEffects:
             ServicePortGet.model_json_schema()["examples"],
         )
 
+    @validate_call(config={"arbitrary_types_allowed": True})
+    async def list_all_services_summaries_paginated(
+        self,
+        rpc_client: RabbitMQRPCClient | MockType,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        offset: PageOffsetInt = 0,
+        filters: ServiceListFilters | None = None,
+    ):
+        assert rpc_client
+        assert product_name
+        assert user_id
+
+        service_summaries = TypeAdapter(list[ServiceSummary]).validate_python(
+            ServiceSummary.model_json_schema()["examples"],
+        )
+        if filters:
+            filtered_summaries = []
+            for summary in service_summaries:
+                # Match service type if specified
+                if (
+                    filters.service_type
+                    and {
+                        ServiceType.COMPUTATIONAL: "/comp/",
+                        ServiceType.DYNAMIC: "/dynamic/",
+                    }[filters.service_type]
+                    not in summary.key
+                ):
+                    continue
+
+                # Match service key pattern if specified
+                if filters.service_key_pattern and not fnmatch.fnmatch(
+                    summary.key, filters.service_key_pattern
+                ):
+                    continue
+
+                # Match version display pattern if specified
+                if filters.version_display_pattern and (
+                    summary.version_display is None
+                    or not fnmatch.fnmatch(
+                        summary.version_display, filters.version_display_pattern
+                    )
+                ):
+                    continue
+
+                filtered_summaries.append(summary)
+
+            service_summaries = filtered_summaries
+
+        total_count = len(service_summaries)
+
+        return PageRpc[ServiceSummary].create(
+            service_summaries[offset : offset + limit],
+            total=total_count,
+            limit=limit,
+            offset=offset,
+        )
+
 
 @dataclass
 class ZeroListingCatalogRpcSideEffects:
@@ -213,6 +278,14 @@ class ZeroListingCatalogRpcSideEffects:
         return PageRpc[ServiceRelease].create(
             [],
             total=0,
-            limit=10,
+            limit=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+            offset=0,
+        )
+
+    async def list_all_services_summaries_paginated(self, *args, **kwargs):
+        return PageRpc[ServiceSummary].create(
+            [],
+            total=0,
+            limit=DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
             offset=0,
         )

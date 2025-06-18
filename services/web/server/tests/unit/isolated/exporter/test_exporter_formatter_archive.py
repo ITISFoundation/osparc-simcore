@@ -51,6 +51,6 @@ async def test_archive_already_exists(tmp_path, project_id):
 
     assert exc_info.type is SDSException
     assert (
-        exc_info.value.args[0]
+        exc_info.value.text
         == f"Cannot archive '{tmp_path}/nested' because '{tmp_path}/nested/sds_{project_id}.zip' already exists"
     )

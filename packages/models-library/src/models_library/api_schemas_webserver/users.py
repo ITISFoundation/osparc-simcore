@@ -1,13 +1,15 @@
 import re
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 from typing import Annotated, Any, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
-from common_library.users_enums import UserStatus
+from common_library.users_enums import AccountRequestStatus, UserStatus
 from models_library.groups import AccessRightsDict
+from models_library.rest_filters import Filters
+from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
     ConfigDict,
     EmailStr,
@@ -39,6 +41,7 @@ from ._base import (
     OutputSchemaWithoutCamelCase,
 )
 from .groups import MyGroupsGet
+from .products import TrialAccountAnnotated, WelcomeCreditsAnnotated
 from .users_preferences import AggregatedPreferences
 
 #
@@ -238,7 +241,35 @@ class UserGet(OutputSchema):
         return cls.model_validate(data, from_attributes=True)
 
 
-class UsersForAdminSearchQueryParams(RequestParameters):
+class UsersForAdminListFilter(Filters):
+    # 1. account_request_status: PENDING, REJECTED, APPROVED
+    # 2. If APPROVED AND user uses the invitation link, then when user is registered,
+    #  it can be in any of these statuses:
+    #     CONFIRMATION_PENDING, ACTIVE, EXPIRED, BANNED, DELETED
+    #
+    review_status: Literal["PENDING", "REVIEWED"] | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class UsersAccountListQueryParams(UsersForAdminListFilter, PageQueryParameters): ...
+
+
+class _InvitationDetails(InputSchema):
+    trial_account_days: TrialAccountAnnotated = None
+    extra_credits_in_usd: WelcomeCreditsAnnotated = None
+
+
+class UserAccountApprove(InputSchema):
+    email: EmailStr
+    invitation: _InvitationDetails | None = None
+
+
+class UserAccountReject(InputSchema):
+    email: EmailStr
+
+
+class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
         str,
         Field(
@@ -249,7 +280,7 @@ class UsersForAdminSearchQueryParams(RequestParameters):
     ]
 
 
-class UserForAdminGet(OutputSchema):
+class UserAccountGet(OutputSchema):
     # ONLY for admins
     first_name: str | None
     last_name: str | None
@@ -269,8 +300,12 @@ class UserForAdminGet(OutputSchema):
         ),
     ] = DEFAULT_FACTORY
 
-    # authorization
+    # pre-registration
+    pre_registration_id: int | None
     invited_by: str | None = None
+    account_request_status: AccountRequestStatus | None
+    account_request_reviewed_by: UserID | None = None
+    account_request_reviewed_at: datetime | None = None
 
     # user status
     registered: bool
@@ -342,3 +377,7 @@ class MyPermissionGet(OutputSchema):
     @classmethod
     def from_domain_model(cls, permission: UserPermission) -> Self:
         return cls(name=permission.name, allowed=permission.allowed)
+
+
+class MyFunctionPermissionsGet(OutputSchema):
+    write_functions: bool

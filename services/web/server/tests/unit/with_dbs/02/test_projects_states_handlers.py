@@ -7,7 +7,7 @@
 
 import asyncio
 import time
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -104,7 +104,6 @@ async def _list_projects(
     expected: HTTPStatus,
     query_parameters: dict | None = None,
 ) -> list[ProjectDict]:
-
     assert client.app
 
     # GET /v0/projects
@@ -278,7 +277,6 @@ async def test_share_project(
     expected: ExpectedResponse,
     storage_subsystem_mock,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
-    catalog_subsystem_mock: Callable[[list[ProjectDict]], None],
     share_rights: dict,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
@@ -296,8 +294,8 @@ async def test_share_project(
     )
     if new_project:
         assert new_project["accessRights"] == {
-            f'{primary_group["gid"]}': {"read": True, "write": True, "delete": True},
-            f'{(all_group["gid"])}': share_rights,
+            f"{primary_group['gid']}": {"read": True, "write": True, "delete": True},
+            f"{(all_group['gid'])}": share_rights,
         }
 
         # user 1 can always get to his project
@@ -1214,9 +1212,9 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
 
 @pytest.fixture
-def client_on_running_server_factory(
-    client: TestClient, event_loop
-) -> Iterator[Callable]:
+async def client_on_running_server_factory(
+    client: TestClient,
+) -> AsyncIterator[Callable[[], TestClient]]:
     # Creates clients connected to the same server as the reference client
     #
     # Implemented as aihttp_client but creates a client using a running server,
@@ -1226,8 +1224,8 @@ def client_on_running_server_factory(
 
     clients = []
 
-    def go():
-        cli = TestClient(client.server, loop=event_loop)
+    def go() -> TestClient:
+        cli = TestClient(client.server, loop=asyncio.get_event_loop())
         assert client.server.started
         # AVOIDS client.start_server
         clients.append(cli)
@@ -1235,7 +1233,7 @@ def client_on_running_server_factory(
 
     yield go
 
-    async def close_client_but_not_server(cli: TestClient):
+    async def close_client_but_not_server(cli: TestClient) -> None:
         # pylint: disable=protected-access
         if not cli._closed:  # noqa: SLF001
             for resp in cli._responses:  # noqa: SLF001
@@ -1249,7 +1247,7 @@ def client_on_running_server_factory(
         while clients:
             await close_client_but_not_server(clients.pop())
 
-    event_loop.run_until_complete(finalize())
+    await finalize()
 
 
 @pytest.fixture
@@ -1260,7 +1258,7 @@ def clean_redis_table(redis_client) -> None:
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_locked(
     client: TestClient,
-    client_on_running_server_factory: Callable,
+    client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
     shared_project: dict,
     socketio_client_factory: Callable,
@@ -1443,7 +1441,7 @@ async def test_open_shared_project_2_users_locked(
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_at_same_time(
     client: TestClient,
-    client_on_running_server_factory: Callable,
+    client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
     shared_project: ProjectDict,
     socketio_client_factory: Callable,

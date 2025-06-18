@@ -26,6 +26,7 @@ openapi_modules = [
         "_tags_groups",  # after _tags
         "_products",
         "_users",
+        "_users_admin",  # after _users
         "_wallets",
         # add-ons ---
         "_activity",
@@ -35,6 +36,7 @@ openapi_modules = [
         "_computations",
         "_exporter",
         "_folders",
+        "_functions",
         "_long_running_tasks",
         "_long_running_tasks_legacy",
         "_licensed_items",

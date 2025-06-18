@@ -3,7 +3,6 @@
 # pylint: disable=redefined-outer-name
 
 
-import asyncio
 from unittest import mock
 
 import aiodocker
@@ -25,7 +24,6 @@ def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
 
 
 def test_num_available_gpus_returns_0_when_container_not_created(
-    event_loop: asyncio.events.AbstractEventLoop,
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -37,7 +35,6 @@ def test_num_available_gpus_returns_0_when_container_not_created(
 
 
 def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
-    event_loop: asyncio.events.AbstractEventLoop,
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -50,7 +47,6 @@ def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
 
 
 def test_num_available_gpus_returns_0_when_no_status_code_returned(
-    event_loop: asyncio.events.AbstractEventLoop,
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -61,7 +57,6 @@ def test_num_available_gpus_returns_0_when_no_status_code_returned(
 
 
 def test_num_available_gpus_returns_0_when_bad_status_code_returned(
-    event_loop: asyncio.events.AbstractEventLoop,
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -72,7 +67,6 @@ def test_num_available_gpus_returns_0_when_bad_status_code_returned(
 
 
 def test_num_available_gpus_returns_0_when_container_wait_timesout(
-    event_loop: asyncio.events.AbstractEventLoop,
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -87,7 +81,6 @@ def test_num_available_gpus_returns_0_when_container_wait_timesout(
     [([], 0), (["gpu1"], 1), (["gpu1", "gpu2", "gpu4"], 3)],
 )
 def test_num_available_gpus(
-    event_loop: asyncio.events.AbstractEventLoop,
     app_environment: EnvVarsDict,
     container_logs: list[str],
     expected_num_gpus: int,

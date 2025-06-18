@@ -4,12 +4,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 import json
 import logging
 import os
 import time
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterator
 from pprint import pformat
 
 import httpx
@@ -76,16 +75,7 @@ def ops_services_selection(ops_docker_compose: dict) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def event_loop(request: pytest.FixtureRequest) -> Iterable[asyncio.AbstractEventLoop]:
-    """Overrides pytest_asyncio.event_loop and extends to module scope"""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
-    event_loop: asyncio.AbstractEventLoop,
     docker_registry: UrlStr,
     docker_stack: StacksDeployedDict,
     simcore_services_ready_module: None,

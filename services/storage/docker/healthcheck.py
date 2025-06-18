@@ -20,7 +20,6 @@ Q&A:
 
 
 import os
-import socket
 import subprocess
 import sys
 from urllib.request import urlopen
@@ -37,6 +36,7 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 app_settings = ApplicationSettings.create_from_envs()
 
+
 def _is_celery_worker_healthy():
     assert app_settings.STORAGE_CELERY
     broker_url = app_settings.STORAGE_CELERY.CELERY_RABBIT_BROKER.dsn
@@ -50,7 +50,7 @@ def _is_celery_worker_healthy():
                 "inspect",
                 "ping",
                 "--destination",
-                "celery@" + socket.gethostname(),
+                "celery@" + os.getenv("STORAGE_WORKER_NAME", "worker"),
             ],
             capture_output=True,
             text=True,

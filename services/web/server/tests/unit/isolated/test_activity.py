@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 import os
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -62,7 +61,6 @@ def mocked_monitoring_down(mocker: MockerFixture) -> None:
 def app_environment(
     mock_env_devel_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
-
     envs = mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
@@ -99,8 +97,7 @@ def app_environment(
 
 
 @pytest.fixture
-def client(
-    event_loop: asyncio.AbstractEventLoop,
+async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     mock_orphaned_services: MagicMock,
     app_environment: EnvVarsDict,
@@ -119,7 +116,7 @@ def client(
     setup_rest(app)
     assert setup_activity(app)
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 async def test_has_login_required(client: TestClient):

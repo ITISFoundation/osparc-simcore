@@ -106,10 +106,12 @@ async def batch_get_my_services(
             product_name=product_name,
             ids=services_ids,
         )
+
     except RPCServerError as err:
         raise CatalogNotAvailableError(
             user_id=user_id,
             product_name=product_name,
+            services_ids=services_ids,
         ) from err
 
 
@@ -173,7 +175,11 @@ async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: CatalogRequestContext
 ) -> list[ServiceInputGet]:
     service = await _catalog_rest_client_service.get_service(
-        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+        ctx.app,
+        user_id=ctx.user_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=ctx.product_name,
     )
     return [
         await ServiceInputGetFactory.from_catalog_service_api_model(
@@ -190,7 +196,11 @@ async def get_service_input(
     ctx: CatalogRequestContext,
 ) -> ServiceInputGet:
     service = await _catalog_rest_client_service.get_service(
-        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+        ctx.app,
+        user_id=ctx.user_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=ctx.product_name,
     )
     service_input: ServiceInputGet = (
         await ServiceInputGetFactory.from_catalog_service_api_model(
@@ -249,7 +259,11 @@ async def list_service_outputs(
     ctx: CatalogRequestContext,
 ) -> list[ServiceOutputGet]:
     service = await _catalog_rest_client_service.get_service(
-        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+        ctx.app,
+        user_id=ctx.user_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=ctx.product_name,
     )
     return [
         await ServiceOutputGetFactory.from_catalog_service_api_model(
@@ -266,7 +280,11 @@ async def get_service_output(
     ctx: CatalogRequestContext,
 ) -> ServiceOutputGet:
     service = await _catalog_rest_client_service.get_service(
-        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+        ctx.app,
+        user_id=ctx.user_id,
+        service_key=service_key,
+        service_version=service_version,
+        product_name=ctx.product_name,
     )
     return cast(  # mypy -> aiocache is not typed.
         ServiceOutputGet,

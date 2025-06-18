@@ -17,9 +17,11 @@ from models_library.api_schemas_catalog.services import (
     MyServiceGet,
     PageRpcLatestServiceGet,
     PageRpcServiceRelease,
+    PageRpcServiceSummary,
     ServiceGetV2,
     ServiceListFilters,
     ServiceRelease,
+    ServiceSummary,
     ServiceUpdateV2,
 )
 from models_library.api_schemas_catalog.services_ports import ServicePortGet
@@ -256,3 +258,51 @@ async def get_service_ports(
         TypeAdapter(list[ServicePortGet]).validate_python(result) is not None
     )  # nosec
     return cast(list[ServicePortGet], result)
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
+async def list_all_services_summaries_paginated(  # pylint: disable=too-many-arguments
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    offset: PageOffsetInt = 0,
+    filters: ServiceListFilters | None = None,
+) -> PageRpcServiceSummary:
+    """Lists all services with pagination, including all versions of each service.
+
+    Returns a lightweight summary view of services for better performance.
+
+    Args:
+        rpc_client: RPC client instance
+        product_name: Product name
+        user_id: User ID
+        limit: Maximum number of items to return
+        offset: Number of items to skip
+        filters: Optional filters to apply
+
+    Returns:
+        Paginated list of all services as summaries
+
+    Raises:
+        ValidationError: on invalid arguments
+        CatalogForbiddenError: no access-rights to list services
+    """
+    result = await rpc_client.request(
+        CATALOG_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python(
+            list_all_services_summaries_paginated.__name__
+        ),
+        product_name=product_name,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+        filters=filters,
+        timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
+    )
+
+    assert (
+        TypeAdapter(PageRpc[ServiceSummary]).validate_python(result) is not None
+    )  # nosec
+    return cast(PageRpc[ServiceSummary], result)

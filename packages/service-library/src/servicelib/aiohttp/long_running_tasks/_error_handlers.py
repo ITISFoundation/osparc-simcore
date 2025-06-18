@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 
-from ...long_running_tasks._errors import (
+from ...long_running_tasks.errors import (
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
@@ -18,13 +18,13 @@ async def base_long_running_error_handler(request, handler):
         return await handler(request)
     except (TaskNotFoundError, TaskNotCompletedError) as exc:
         _logger.debug("", exc_info=True)
-        error_fields = dict(code=exc.code, message=f"{exc}")
+        error_fields = {"code": exc.code, "message": f"{exc}"}
         raise web.HTTPNotFound(
-            reason=f"{json_dumps(error_fields)}",
+            text=f"{json_dumps(error_fields)}",
         ) from exc
     except TaskCancelledError as exc:
         # NOTE: only use-case would be accessing an already cancelled task
         # which should not happen, so we return a conflict
         _logger.debug("", exc_info=True)
-        error_fields = dict(code=exc.code, message=f"{exc}")
-        raise web.HTTPConflict(reason=f"{json_dumps(error_fields)}") from exc
+        error_fields = {"code": exc.code, "message": f"{exc}"}
+        raise web.HTTPConflict(text=f"{json_dumps(error_fields)}") from exc

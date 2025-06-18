@@ -9,8 +9,6 @@ How these tests works:
 
 """
 
-
-import asyncio
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import Optional
@@ -24,11 +22,11 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.long_running_tasks._server import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
-from servicelib.aiohttp.long_running_tasks.server import TaskGet, TaskId
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.long_running_tasks._task import TaskContext
+from servicelib.long_running_tasks.models import TaskGet, TaskId
+from servicelib.long_running_tasks.task import TaskContext
 
 # WITH TASK CONTEXT
 # NOTE: as the long running task framework may be used in any number of services
@@ -79,17 +77,13 @@ def app_with_task_context(
 
 
 @pytest.fixture
-def client_with_task_context(
-    event_loop: asyncio.AbstractEventLoop,
+async def client_with_task_context(
     aiohttp_client: Callable,
     unused_tcp_port_factory: Callable,
     app_with_task_context: web.Application,
 ) -> TestClient:
-
-    return event_loop.run_until_complete(
-        aiohttp_client(
-            app_with_task_context, server_kwargs={"port": unused_tcp_port_factory()}
-        )
+    return await aiohttp_client(
+        app_with_task_context, server_kwargs={"port": unused_tcp_port_factory()}
     )
 
 

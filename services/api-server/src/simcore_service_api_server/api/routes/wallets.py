@@ -18,7 +18,7 @@ from ...models.schemas.model_adapter import (
 )
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
-from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION
+from ._constants import FMSG_CHANGELOG_NEW_IN_VERSION, create_route_description
 
 _logger = logging.getLogger(__name__)
 
@@ -39,7 +39,12 @@ WALLET_STATUS_CODES: dict[int | str, dict[str, Any]] = {
 
 @router.get(
     "/default",
-    description="Get default wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+    description=create_route_description(
+        base="Get default wallet",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+        ],
+    ),
     response_model=WalletGetWithAvailableCreditsLegacy,
     responses=WALLET_STATUS_CODES,
 )
@@ -53,7 +58,12 @@ async def get_default_wallet(
     "/{wallet_id}",
     response_model=WalletGetWithAvailableCreditsLegacy,
     responses=WALLET_STATUS_CODES,
-    description="Get wallet\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+    description=create_route_description(
+        base="Get wallet",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7"),
+        ],
+    ),
 )
 async def get_wallet(
     wallet_id: int,
@@ -67,7 +77,12 @@ async def get_wallet(
     response_model=Page[LicensedItemGet],
     status_code=status.HTTP_200_OK,
     responses=WALLET_STATUS_CODES,
-    description="Get all available licensed items for a given wallet",
+    description=create_route_description(
+        base="Get all available licensed items for a given wallet",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.6"),
+        ],
+    ),
 )
 async def get_available_licensed_items_for_wallet(
     wallet_id: int,

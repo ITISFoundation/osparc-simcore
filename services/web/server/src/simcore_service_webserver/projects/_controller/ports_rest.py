@@ -29,7 +29,7 @@ from .._access_rights_service import check_user_project_permission
 from .._projects_repository_legacy import ProjectDBAPI
 from ..models import ProjectDict
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_inputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec
@@ -85,7 +85,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 @handle_plugin_requests_exceptions
 async def update_project_inputs(request: web.Request) -> web.Response:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     inputs_updates = await parse_request_body_as(list[ProjectInputUpdate], request)
 
@@ -101,7 +101,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     for input_update in inputs_updates:
         node_id = input_update.key
         if node_id not in current_inputs:
-            raise web.HTTPBadRequest(reason=f"Invalid input key [{node_id}]")
+            raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
 
         workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
         partial_workbench_data[node_id] = workbench[node_id].model_dump(
@@ -150,7 +150,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_outputs(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec
@@ -197,7 +197,7 @@ class ProjectMetadataPortGet(BaseModel):
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def list_project_metadata_ports(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     assert request.app  # nosec

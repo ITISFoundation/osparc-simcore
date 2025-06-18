@@ -20,7 +20,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..._meta import API_VTAG as VTAG
-from ...director_v2.exceptions import DirectorServiceError
+from ...director_v2.exceptions import DirectorV2ServiceError
 from ...login.decorators import login_required
 from ...notifications import project_logs
 from ...products import products_web
@@ -31,7 +31,7 @@ from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
 from ._rest_exceptions import handle_plugin_requests_exceptions
-from ._rest_schemas import ProjectPathParams, RequestContext
+from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 _logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class _OpenProjectQuery(BaseModel):
 @permission_required("project.open")
 @handle_plugin_requests_exceptions
 async def open_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     query_params: _OpenProjectQuery = parse_request_query_parameters_as(
         _OpenProjectQuery, request
@@ -63,7 +63,7 @@ async def open_project(request: web.Request) -> web.Response:
         client_session_id = await request.json()
 
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+        raise web.HTTPBadRequest(text="Invalid request body") from exc
 
     try:
         project_type: ProjectType = await _projects_service.get_project_type(
@@ -74,7 +74,7 @@ async def open_project(request: web.Request) -> web.Response:
         )
         if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
             # only USERS/TESTERS can do that
-            raise web.HTTPForbidden(reason="Wrong user role to open/edit a template")
+            raise web.HTTPForbidden(text="Wrong user role to open/edit a template")
 
         project = await _projects_service.get_project_for_user(
             request.app,
@@ -101,7 +101,7 @@ async def open_project(request: web.Request) -> web.Response:
             app=request.app,
             max_number_of_studies_per_user=product.max_open_studies_per_user,
         ):
-            raise HTTPLockedError(reason="Project is locked, try later")
+            raise HTTPLockedError(text="Project is locked, try later")
 
         # the project can be opened, let's update its product links
         await _projects_service.update_project_linked_product(
@@ -141,7 +141,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         return envelope_json_response(ProjectGet.from_domain_model(project))
 
-    except DirectorServiceError as exc:
+    except DirectorV2ServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
         await _projects_service.try_close_project_for_user(
@@ -168,14 +168,14 @@ async def open_project(request: web.Request) -> web.Response:
 @permission_required("project.close")
 @handle_plugin_requests_exceptions
 async def close_project(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     try:
         client_session_id = await request.json()
 
     except json.JSONDecodeError as exc:
-        raise web.HTTPBadRequest(reason="Invalid request body") from exc
+        raise web.HTTPBadRequest(text="Invalid request body") from exc
 
     # ensure the project exists
     await _projects_service.get_project_for_user(
@@ -207,7 +207,7 @@ async def close_project(request: web.Request) -> web.Response:
 @permission_required("project.read")
 @handle_plugin_requests_exceptions
 async def get_project_state(request: web.Request) -> web.Response:
-    req_ctx = RequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state

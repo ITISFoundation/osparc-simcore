@@ -966,13 +966,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.store.Templates.getHypertools()
             .then(hypertools => {
               if (hypertools) {
-                const newStudies = new osparc.dashboard.NewStudies(newStudiesConfig);
+                const newPlans = new osparc.dashboard.NewPlans(newStudiesConfig);
                 const winTitle = this.tr("New Plan");
-                const win = osparc.ui.window.Window.popUpInWindow(newStudies, winTitle, osparc.dashboard.NewStudies.WIDTH+40, 300).set({
+                const win = osparc.ui.window.Window.popUpInWindow(newPlans, winTitle, osparc.dashboard.NewPlans.WIDTH+40, 300).set({
                   clickAwayClose: false,
                   resizable: true
                 });
-                newStudies.addListener("newStudyClicked", e => {
+                newPlans.addListener("newPlanClicked", e => {
                   win.close();
                   const templateInfo = e.getData();
                   const templateData = hypertools.find(t => t.name === templateInfo.expectedTemplateLabel);
@@ -1598,10 +1598,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
-      const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
-      menu.add(convertToPipelineButton);
+      if (writeAccess && osparc.product.Utils.showConvertToPipeline()) {
+        const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
+        menu.add(convertToPipelineButton);
+      }
 
-      if (osparc.product.Utils.hasExportCMisEnabled()) {
+      if (osparc.product.Utils.showExportCMis()) {
         const exportStudyButton = this.__getExportCMisMenuButton(studyData);
         menu.add(exportStudyButton);
       }

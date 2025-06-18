@@ -1,7 +1,6 @@
 // This is a template. Clone and replace extension ".template.json" by ".json"
 {
   "autoDocstring.docstringFormat": "pep257",
-
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
@@ -34,6 +33,8 @@
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.extraPaths": [
     "./packages/aws-library/src",
+    "./packages/common-library/src",
+    "./packages/dask-task-models-library/src",
     "./packages/models-library/src",
     "./packages/postgres-database/src",
     "./packages/postgres-database/tests",

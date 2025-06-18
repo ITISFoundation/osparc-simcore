@@ -20,7 +20,7 @@
     font-size: 14px;
 
     margin-left: 0px;
-    font-family: 'Roboto';
+    font-family: 'Manrope'; /* osparc */
 }
 
 /* Styles for a list of child nodes */
@@ -31,7 +31,7 @@
     /* line-height: 2; */
 
     margin-left: 0px;
-    line-height: 1.5;
+    /* line-height: 1.5; osparc */
 }
 .jsontree_node_expanded > .jsontree_value-wrapper > .jsontree_value > .jsontree_child-nodes {
     display: block;
@@ -71,7 +71,7 @@
 
     color: transparent;
 }
-.jsontree_value { 
+.jsontree_value {
     vertical-align: top;
     display: inline;
 

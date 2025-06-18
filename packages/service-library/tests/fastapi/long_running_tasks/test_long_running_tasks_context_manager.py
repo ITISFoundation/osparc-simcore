@@ -2,7 +2,8 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import AsyncIterable, Final
+from collections.abc import AsyncIterable
+from typing import Annotated, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -10,25 +11,22 @@ from fastapi import APIRouter, Depends, FastAPI, status
 from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
-from servicelib.fastapi.long_running_tasks.client import (
-    Client,
+from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
+from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import setup as setup_client
+from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
+from servicelib.fastapi.long_running_tasks.server import setup as setup_server
+from servicelib.long_running_tasks.errors import (
+    TaskClientTimeoutError,
+    TaskExceptionError,
+)
+from servicelib.long_running_tasks.models import (
     ProgressMessage,
     ProgressPercent,
-    periodic_task_result,
-)
-from servicelib.fastapi.long_running_tasks.client import setup as setup_client
-from servicelib.fastapi.long_running_tasks.server import (
     TaskId,
     TaskProgress,
-    TasksManager,
-    get_tasks_manager,
 )
-from servicelib.fastapi.long_running_tasks.server import setup as setup_server
-from servicelib.fastapi.long_running_tasks.server import start_task
-from servicelib.long_running_tasks._errors import (
-    TaskClientResultError,
-    TaskClientTimeoutError,
-)
+from servicelib.long_running_tasks.task import start_task
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -59,17 +57,19 @@ def user_routes() -> APIRouter:
 
     @router.get("/api/success", status_code=status.HTTP_200_OK)
     async def create_task_user_defined_route(
-        tasks_manager: TasksManager = Depends(get_tasks_manager),
+        long_running_manager: Annotated[
+            FastAPILongRunningManager, Depends(get_long_running_manager)
+        ],
     ) -> TaskId:
-        task_id = start_task(tasks_manager, task=a_test_task)
-        return task_id
+        return start_task(long_running_manager.tasks_manager, task=a_test_task)
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
-        task_manager: TasksManager = Depends(get_tasks_manager),
+        long_running_manager: Annotated[
+            FastAPILongRunningManager, Depends(get_long_running_manager)
+        ],
     ) -> TaskId:
-        task_id = start_task(task_manager, task=a_failing_test_task)
-        return task_id
+        return start_task(long_running_manager.tasks_manager, task=a_failing_test_task)
 
     return router
 
@@ -149,7 +149,7 @@ async def test_task_result_task_result_is_an_error(
 
     url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
     client = Client(app=bg_task_app, async_client=async_client, base_url=url)
-    with pytest.raises(TaskClientResultError) as exec_info:
+    with pytest.raises(TaskExceptionError, match="I am failing as requested"):
         async with periodic_task_result(
             client,
             task_id,
@@ -157,8 +157,6 @@ async def test_task_result_task_result_is_an_error(
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
-    assert f"{exec_info.value}".startswith(f"Task {task_id} finished with exception:")
-    assert "I am failing as requested" in f"{exec_info.value}"
     await _assert_task_removed(async_client, task_id, router_prefix)
 
 

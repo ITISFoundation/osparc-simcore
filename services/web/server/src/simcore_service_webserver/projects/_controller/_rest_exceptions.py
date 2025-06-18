@@ -9,6 +9,7 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogNotAvailableError,
 )
 
+from ...catalog._controller_rest_exceptions import catalog_exceptions_handlers_map
 from ...conversations.errors import (
     ConversationErrorNotFoundError,
     ConversationMessageErrorNotFoundError,
@@ -19,6 +20,7 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from ...exception_handling._base import ExceptionHandlersMap
 from ...folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ...resource_usage.errors import DefaultPricingPlanNotFoundError
 from ...users.exceptions import UserDefaultWalletNotFoundError
@@ -239,6 +241,9 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_plugin_requests_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+_handlers: ExceptionHandlersMap = {
+    **catalog_exceptions_handlers_map,
+    **to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP),
+}
+
+handle_plugin_requests_exceptions = exception_handling_decorator(_handlers)

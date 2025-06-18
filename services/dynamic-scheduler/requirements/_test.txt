@@ -35,9 +35,13 @@ h11==0.14.0
     #   hypercorn
     #   wsproto
 h2==4.2.0
-    # via hypercorn
+    # via
+    #   -c requirements/_base.txt
+    #   hypercorn
 hpack==4.1.0
-    # via h2
+    # via
+    #   -c requirements/_base.txt
+    #   h2
 httpcore==1.0.7
     # via
     #   -c requirements/_base.txt
@@ -50,7 +54,9 @@ httpx==0.28.1
 hypercorn==0.17.3
     # via -r requirements/_test.in
 hyperframe==6.1.0
-    # via h2
+    # via
+    #   -c requirements/_base.txt
+    #   h2
 icdiff==2.0.7
     # via pytest-icdiff
 idna==3.10
@@ -88,10 +94,8 @@ pytest==8.3.5
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==0.26.0
+    # via -r requirements/_test.in
 pytest-cov==6.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9

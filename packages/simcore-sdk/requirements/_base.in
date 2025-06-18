@@ -13,9 +13,10 @@
 aiocache
 aiofiles
 aiohttp
+httpx
 packaging
 pint
-sqlalchemy[asyncio]
 pydantic[email]
+sqlalchemy[asyncio]
 tenacity
 tqdm

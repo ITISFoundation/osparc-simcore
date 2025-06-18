@@ -70,7 +70,7 @@ docker==7.1.0
     # via moto
 faker==36.1.1
     # via -r requirements/_test.in
-fastapi==0.115.11
+fastapi==0.115.12
     # via -r requirements/_test.in
 flask==3.1.0
     # via
@@ -196,10 +196,8 @@ pytest==8.3.5
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.23.8
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+pytest-asyncio==0.26.0
+    # via -r requirements/_test.in
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-cov==6.0.0

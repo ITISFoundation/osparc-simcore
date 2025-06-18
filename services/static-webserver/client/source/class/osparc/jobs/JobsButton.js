@@ -23,6 +23,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
+    osparc.utils.Utils.setIdToWidget(this, "jobsButton");
+
     this.set({
       width: 30,
       alignX: "center",
@@ -34,7 +36,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
 
     const jobsStore = osparc.store.Jobs.getInstance();
     jobsStore.addListener("changeJobsActive", e => this.__updateJobsButton(e.getData()), this);
-    jobsStore.fetchJobsActive();
+    jobsStore.fetchJobsLatest();
   },
 
   members: {

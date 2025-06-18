@@ -151,7 +151,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           postToTemplate: {
             method: "POST",
-            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}"
+            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}&hidden={hidden}"
           },
           open: {
             method: "POST",
@@ -303,6 +303,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}/workspaces/{workspaceId}:move"
           },
+          updateMetadata: {
+            method: "PATCH",
+            url: statics.API + "/projects/{studyId}/metadata"
+          },
         }
       },
       "conversations": {
@@ -347,25 +351,25 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "jobs": {
-        useCache: false, // handled in osparc.store.Jobs
-        endpoints: {
-          getPageLatestActive: {
-            method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D&filter_only_running=true"
-          },
-          getPageHistory: {
-            method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by=%7B%22field%22:%22submitted_at%22,%22direction%22:%22desc%22%7D"
-          },
-        }
-      },
-      "subJobs": {
+      "runs": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}"
+            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}&filters={filters}"
+          },
+          getPageHistory: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
+          },
+        }
+      },
+      "subRuns": {
+        useCache: false, // handled in osparc.store.Jobs
+        endpoints: {
+          getPageLatest: {
+            method: "GET",
+            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
           },
         }
       },
@@ -834,6 +838,18 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * FUNCTION PERMISSIONS
+       */
+      "functionPermissions": {
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/me/function-permissions"
+          }
+        }
+      },
+      /*
        * API-KEYS
        */
       "apiKeys": {
@@ -1059,27 +1075,31 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           search: {
             method: "GET",
-            url: statics.API + "/admin/users:search?email={email}"
+            url: statics.API + "/admin/user-accounts:search?email={email}"
           },
           getPendingUsers: {
             method: "GET",
-            url: statics.API + "/admin/users?status=PENDING"
+            url: statics.API + "/admin/user-accounts?review_status=PENDING"
+          },
+          getReviewedUsers: {
+            method: "GET",
+            url: statics.API + "/admin/user-accounts?review_status=REVIEWED"
           },
           approveUser: {
             method: "POST",
-            url: statics.API + "/admin/users:approve"
+            url: statics.API + "/admin/user-accounts:approve"
           },
           rejectUser: {
             method: "POST",
-            url: statics.API + "/admin/users:reject"
+            url: statics.API + "/admin/user-accounts:reject"
           },
           resendConfirmationEmail: {
             method: "POST",
-            url: statics.API + "/admin/users:resendConfirmationEmail"
+            url: statics.API + "/admin/user-accounts:resendConfirmationEmail"
           },
           preRegister: {
             method: "POST",
-            url: statics.API + "/admin/users:pre-register"
+            url: statics.API + "/admin/user-accounts:pre-register"
           }
         }
       },
@@ -1426,6 +1446,8 @@ qx.Class.define("osparc.data.Resources", {
   },
 
   members: {
+    __portsCompatibilityPromisesCached: null,
+
     /**
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
@@ -1718,7 +1740,47 @@ qx.Class.define("osparc.data.Resources", {
      */
     __removeCached: function(resource, deleteId) {
       osparc.store.Store.getInstance().remove(resource, this.self().resources[resource].idField || "uuid", deleteId);
-    }
+    },
+
+    getCompatibleInputs: function(node1, portId1, node2) {
+      const url = {
+        "serviceKey2": encodeURIComponent(node2.getKey()),
+        "serviceVersion2": node2.getVersion(),
+        "serviceKey1": encodeURIComponent(node1.getKey()),
+        "serviceVersion1": node1.getVersion(),
+        "portKey1": portId1
+      };
+
+      const cachedCPs = this.__getCached("portsCompatibility") || {};
+      const strUrl = JSON.stringify(url);
+      if (strUrl in cachedCPs) {
+        return Promise.resolve(cachedCPs[strUrl]);
+      }
+
+      // avoid request deduplication
+      if (this.__portsCompatibilityPromisesCached === null) {
+        this.__portsCompatibilityPromisesCached = {};
+      }
+      if (strUrl in this.__portsCompatibilityPromisesCached) {
+        return this.__portsCompatibilityPromisesCached[strUrl];
+      }
+
+      const params = {
+        url
+      };
+      this.__portsCompatibilityPromisesCached[strUrl] = this.fetch("portsCompatibility", "matchInputs", params)
+        .then(data => {
+          cachedCPs[strUrl] = data;
+          this.__setCached("portsCompatibility", cachedCPs);
+          return data;
+        })
+        .finally(() => {
+          // Remove the promise from the cache
+          delete this.__portsCompatibilityPromisesCached[strUrl];
+        });
+
+      return this.__portsCompatibilityPromisesCached[strUrl];
+    },
   },
 
   statics: {
@@ -1737,37 +1799,6 @@ qx.Class.define("osparc.data.Resources", {
       return {
         "key": encodeURIComponent(key),
         "version": version
-      };
-    },
-
-    getCompatibleInputs: function(node1, portId1, node2) {
-      const url = this.__getMatchInputsUrl(node1, portId1, node2);
-
-      // eslint-disable-next-line no-underscore-dangle
-      const cachedCPs = this.getInstance().__getCached("portsCompatibility") || {};
-      const strUrl = JSON.stringify(url);
-      if (strUrl in cachedCPs) {
-        return Promise.resolve(cachedCPs[strUrl]);
-      }
-      const params = {
-        url
-      };
-      return this.fetch("portsCompatibility", "matchInputs", params)
-        .then(data => {
-          cachedCPs[strUrl] = data;
-          // eslint-disable-next-line no-underscore-dangle
-          this.getInstance().__setCached("portsCompatibility", cachedCPs);
-          return data;
-        });
-    },
-
-    __getMatchInputsUrl: function(node1, portId1, node2) {
-      return {
-        "serviceKey2": encodeURIComponent(node2.getKey()),
-        "serviceVersion2": node2.getVersion(),
-        "serviceKey1": encodeURIComponent(node1.getKey()),
-        "serviceVersion1": node1.getVersion(),
-        "portKey1": portId1
       };
     },
 

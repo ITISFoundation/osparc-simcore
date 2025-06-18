@@ -4,8 +4,9 @@ import logging
 import urllib.parse
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Final
 
+from aiocache import Cache, cached  # type: ignore[import-untyped]
 from aiohttp import ClientSession, ClientTimeout, web
 from aiohttp.client_exceptions import (
     ClientConnectionError,
@@ -15,16 +16,21 @@ from aiohttp.client_exceptions import (
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
+from models_library.products import ProductName
 from models_library.services_resources import ServiceResourcesDict
+from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from yarl import URL
 
 from .._meta import api_version_prefix
-from ._constants import MSG_CATALOG_SERVICE_NOT_FOUND, MSG_CATALOG_SERVICE_UNAVAILABLE
+from ._models import ServiceKeyVersionDict
+from .errors import (
+    CatalogConnectionError,
+    CatalogResponseError,
+)
 from .settings import CatalogSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -38,16 +44,17 @@ def _handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
         yield session
 
     except ClientResponseError as err:
-        if err.status == status.HTTP_404_NOT_FOUND:
-            raise web.HTTPNotFound(reason=MSG_CATALOG_SERVICE_NOT_FOUND)
-        raise web.HTTPServiceUnavailable(
-            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        raise CatalogResponseError(
+            status=err.status,
+            message=err.message,
+            headers=err.headers,
+            request_info=err.request_info,
         ) from err
 
     except (TimeoutError, ClientConnectionError) as err:
-        _logger.debug("Request to catalog service failed: %s", err)
-        raise web.HTTPServiceUnavailable(
-            reason=MSG_CATALOG_SERVICE_UNAVAILABLE
+        raise CatalogConnectionError(
+            message=str(err),
+            request_info=getattr(err, "request_info", None),
         ) from err
 
 
@@ -80,10 +87,27 @@ def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
     return origin.with_path(new_path).with_query(rel_url.query)
 
 
+# Cache settings for services rest API
+_SECOND = 1  # in seconds
+_MINUTE = 60 * _SECOND
+_CACHE_TTL: Final = 1 * _MINUTE
+
+
+@cached(
+    ttl=_CACHE_TTL,
+    key_builder=lambda _f, *_args, **kw: f"get_services_for_user_in_product_{kw['user_id']}_{kw['product_name']}",
+    cache=Cache.MEMORY,
+)
 async def get_services_for_user_in_product(
-    app: web.Application, user_id: UserID, product_name: str, *, only_key_versions: bool
-) -> list[dict]:
+    app: web.Application, *, user_id: UserID, product_name: str
+) -> list[ServiceKeyVersionDict]:
+    """
+    DEPRECATED: see instead RPC interface.
+    SEE https://github.com/ITISFoundation/osparc-simcore/issues/7838
+    """
     settings: CatalogSettings = get_plugin_settings(app)
+    only_key_versions = True
+
     url = (URL(settings.api_base_url) / "services").with_query(
         {"user_id": user_id, "details": f"{not only_key_versions}"}
     )
@@ -99,17 +123,33 @@ async def get_services_for_user_in_product(
                     user_id,
                 )
                 return []
-            body: list[dict] = await response.json()
-            return body
+            services: list[dict] = await response.json()
+
+            # This reduces the size cached in the memory
+            return [
+                ServiceKeyVersionDict(key=service["key"], version=service["version"])
+                for service in services
+            ]
 
 
+@cached(
+    ttl=_CACHE_TTL,
+    key_builder=lambda _f, *_args, **kw: f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}",
+    cache=Cache.MEMORY,
+    # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7802
+)
 async def get_service(
     app: web.Application,
+    *,
     user_id: UserID,
-    service_key: str,
-    service_version: str,
-    product_name: str,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    product_name: ProductName,
 ) -> dict[str, Any]:
+    """
+    DEPRECATED: see instead RPC interface.
+    SEE https://github.com/ITISFoundation/osparc-simcore/issues/7838
+    """
     settings: CatalogSettings = get_plugin_settings(app)
     url = URL(
         f"{settings.api_base_url}/services/{urllib.parse.quote_plus(service_key)}/{service_version}",
@@ -121,8 +161,8 @@ async def get_service(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}
         ) as response:
             response.raise_for_status()
-            body: dict[str, Any] = await response.json()
-            return body
+            service: dict[str, Any] = await response.json()
+            return service
 
 
 async def get_service_resources(

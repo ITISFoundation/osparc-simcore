@@ -109,6 +109,10 @@ jobs:
               - 'mypy.ini'
             common-library:
               - 'packages/common-library/**'
+              - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             notifications-library:
               - 'packages/notifications-library/**'
               - 'packages/postgres-database/**'
@@ -331,7 +335,7 @@ jobs:
   unit-test-webserver-02:
     needs: changes
     if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    timeout-minutes: 35 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1695,7 +1699,11 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: install uv
-        uses: yezz123/setup-uv@v4
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.6.x"
+          enable-cache: false
+          cache-dependency-glob: "**/common-library/requirements/ci.txt"
       - name: show system version
         run: ./ci/helpers/show_system_versions.bash
       - name: install
@@ -1705,6 +1713,9 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/common-library.bash test
       - uses: codecov/codecov-action@v5
+        if: ${{ !cancelled() }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           flags: unittests #optional
 
