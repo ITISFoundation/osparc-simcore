@@ -136,7 +136,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           if (resourceId) {
             const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
             if (org) {
-              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'")
+              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'");
             } else {
               this.setEnabled(false);
             }
@@ -185,7 +185,23 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "CONVERSATION_NOTIFICATION":
-          // OM TODO
+          icon.setSource("@FontAwesome5Solid/bell/14");
+          if (resourceId) {
+            const params = {
+              url: {
+                "studyId": resourceId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "getOne", params)
+              .then(study => titleLabel.setValue(`You were notified in '${study["name"]}'`))
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
+            if (user) {
+              descriptionLabel.setValue(user.getLabel() + " wants you to check the conversation");
+            }
+          }
           break;
         case "ANNOTATION_NOTE":
           icon.setSource("@FontAwesome5Solid/file/14");
