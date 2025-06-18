@@ -2,6 +2,7 @@
 
 from typing import Final
 
+from common_library.user_messages import user_message
 from servicelib.aiohttp.application_keys import (
     APP_AIOPG_ENGINE_KEY,
     APP_CONFIG_KEY,
@@ -42,12 +43,11 @@ MSG_UNDER_DEVELOPMENT: Final[str] = (
     "Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current implementation"
 )
 
-
 # Request storage keys
 RQ_PRODUCT_KEY: Final[str] = f"{__name__}.RQ_PRODUCT_KEY"
 
 
-MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = (
+MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
     "Please try again shortly. If the issue persists, contact support."
 )
 
