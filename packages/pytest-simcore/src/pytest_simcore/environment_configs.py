@@ -28,7 +28,9 @@ def pytest_addoption(parser: pytest.Parser):
 
 
 @pytest.fixture(scope="session")
-def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
+def external_envfile_dict(
+    request: pytest.FixtureRequest, osparc_simcore_root_dir: Path
+) -> EnvVarsDict:
     """
     If a file under test folder prefixed with `.env-secret` is present,
     then this fixture captures it.
@@ -46,9 +48,15 @@ def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
         assert envfile.exists()
         assert envfile.is_file()
 
-        if not any(term in envfile.name.lower() for term in ("ignore", "secret")):
+        envfile = envfile.resolve()
+        osparc_simcore_root_dir = osparc_simcore_root_dir.resolve()
+
+        if osparc_simcore_root_dir in envfile.parents and not any(
+            term in envfile.name.lower() for term in ("ignore", "secret")
+        ):
             _logger.warning(
-                "🚨 CAUTION: The provided envfile '%s' might be pushed in this repository. Please rename it with `secret` or `ignore`",
+                "🚨 CAUTION: The file '%s' from '--external-envfile' may be versioned and exposed publicly. "
+                "Add 'secret' or 'ignore' to the filename to exclude it automatically.",
                 envfile.name,
             )
 
