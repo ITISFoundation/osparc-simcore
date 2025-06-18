@@ -34,6 +34,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
+from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.docker_utils import get_container_states
@@ -258,7 +259,7 @@ async def test_user_services_fail_to_start(
     with_compose_down: bool,
     mock_user_services_fail_to_start: None,
 ):
-    with pytest.raises(RuntimeError):
+    with pytest.raises(TaskExceptionError):
         async with periodic_task_result(
             client=client,
             task_id=await _get_task_id_create_service_containers(
@@ -314,7 +315,7 @@ async def test_user_services_fail_to_stop_or_save_data(
     # in case of manual intervention multiple stops will be sent
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(TaskExceptionError):
             async with periodic_task_result(
                 client=client,
                 task_id=await _get_task_id_docker_compose_down(httpx_async_client),
