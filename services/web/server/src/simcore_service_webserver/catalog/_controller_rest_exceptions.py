@@ -86,23 +86,29 @@ async def _handler_catalog_client_errors(
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     RemoteMethodNotRegisteredError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message("Catalog service method unavailable. Please try again shortly."),
+        user_message(
+            "Catalog service method unavailable. Please try again shortly.", _version=1
+        ),
     ),
     CatalogForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message("Access to catalog denied."),
+        user_message(
+            "You do not have permission to access this catalog item.", _version=1
+        ),
     ),
     CatalogItemNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Catalog item not found."),
+        user_message("The requested catalog item could not be found.", _version=1),
     ),
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Default pricing plan not found."),
+        user_message("The default pricing plan could not be found.", _version=1),
     ),
     DefaultPricingUnitForServiceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Default pricing unit for service not found."),
+        user_message(
+            "The default pricing unit for this service could not be found.", _version=1
+        ),
     ),
 }
 
