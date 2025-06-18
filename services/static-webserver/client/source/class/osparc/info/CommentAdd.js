@@ -141,11 +141,13 @@ qx.Class.define("osparc.info.CommentAdd", {
         const userGids = data["selectedGids"];
         if (userGids && userGids.length) {
           const userGid = parseInt(userGids[0]);
-          // Note: this check only works if the project is directly shared with the user.
+          // Note:
+          // This check only works if the project is directly shared with the user.
           // If it's shared through a group, it might be a bit confusing
-          if (userGid in this.__studyData["accessRights"]) {
-            this.__addNotify(userGid);
-          } else {
+          if (
+            !(userGid in this.__studyData["accessRights"]) &&
+            osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])
+          ) {
             const newCollaborators = [{
               userGid: osparc.data.Roles.STUDY["write"].accessRights
             }];
@@ -156,6 +158,8 @@ qx.Class.define("osparc.info.CommentAdd", {
               .catch(err => {
                 console.error("Failed to add collaborator:", err);
               });
+          } else {
+            this.__addNotify(userGid);
           }
         }
       });
