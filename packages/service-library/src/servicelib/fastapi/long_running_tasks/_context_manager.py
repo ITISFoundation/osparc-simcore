@@ -1,12 +1,13 @@
 import asyncio
-from asyncio.log import logger
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
 
 from pydantic import PositiveFloat
+from servicelib.logging_errors import create_troubleshotting_log_message
 
-from ...long_running_tasks.errors import TaskClientTimeoutError
+from ...long_running_tasks.errors import TaskClientTimeoutError, TaskExceptionError
 from ...long_running_tasks.models import (
     ProgressCallback,
     ProgressMessage,
@@ -15,6 +16,8 @@ from ...long_running_tasks.models import (
     TaskStatus,
 )
 from ._client import Client
+
+_logger = logging.getLogger(__name__)
 
 # NOTE: very short running requests are involved
 MAX_CONCURRENCY: Final[int] = 10
@@ -96,7 +99,7 @@ async def periodic_task_result(
 
     async def _status_update() -> TaskStatus:
         task_status: TaskStatus = await client.get_task_status(task_id)
-        logger.debug("Task status %s", task_status.model_dump_json())
+        _logger.debug("Task status %s", task_status.model_dump_json())
         await progress_manager.update(
             task_id=task_id,
             message=task_status.task_progress.message,
@@ -114,7 +117,7 @@ async def periodic_task_result(
 
     try:
         result = await asyncio.wait_for(_wait_for_task_result(), timeout=task_timeout)
-        logger.debug("%s, %s", f"{task_id=}", f"{result=}")
+        _logger.debug("%s, %s", f"{task_id=}", f"{result=}")
 
         yield result
     except TimeoutError as e:
@@ -124,3 +127,13 @@ async def periodic_task_result(
             timeout=task_timeout,
             exception=e,
         ) from e
+    except Exception as e:
+        error = TaskExceptionError(task_id=task_id, exception=e, traceback="")
+        _logger.warning(
+            create_troubleshotting_log_message(
+                user_error_msg=f"{task_id=} raised an exception",
+                error=e,
+                tip=f"Check the logs of the service responding to '{client.base_url}'",
+            )
+        )
+        raise error from e
