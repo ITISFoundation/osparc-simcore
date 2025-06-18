@@ -184,6 +184,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
             }
           }
           break;
+        case "CONVERSATION_NOTIFICATION":
+          // OM TODO
+          break;
         case "ANNOTATION_NOTE":
           icon.setSource("@FontAwesome5Solid/file/14");
           if (resourceId) {
@@ -250,6 +253,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "TEMPLATE_SHARED":
         case "STUDY_SHARED":
+        case "CONVERSATION_NOTIFICATION":
         case "ANNOTATION_NOTE":
           this.__openStudyDetails(resourceId, notification);
           break;

@@ -54,6 +54,7 @@ qx.Class.define("osparc.notification.Notification", {
         "NEW_ORGANIZATION",
         "STUDY_SHARED",
         "TEMPLATE_SHARED",
+        "CONVERSION_NOTIFICATION",
         "ANNOTATION_NOTE",
         "WALLET_SHARED"
       ],
