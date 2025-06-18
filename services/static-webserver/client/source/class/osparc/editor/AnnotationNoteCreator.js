@@ -85,55 +85,7 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
           control = new qx.ui.form.Button(this.tr("Select recipient")).set({
             allowGrowX: false
           });
-          control.addListener("execute", () => {
-            const currentStudy = osparc.store.Store.getInstance().getCurrentStudy().serialize();
-            currentStudy["resourceType"] = "study";
-            const recipientsManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, false).set({
-              acceptOnlyOne: true,
-            });
-            recipientsManager.setCaption("Recipient");
-            recipientsManager.getActionButton().setLabel(this.tr("Add"));
-            recipientsManager.addListener("addCollaborators", e => {
-              const data = e.getData();
-              const recipientGids = data["selectedGids"];
-              if (recipientGids && recipientGids.length) {
-                const recipientGid = parseInt(recipientGids[0]);
-                this.__setRecipientGid(recipientGid);
-                recipientsManager.close();
-
-                const currentAccessRights = this.__study.getAccessRights();
-                const proposeSharing = [];
-                if (!(parseInt(recipientGid) in currentAccessRights)) {
-                  proposeSharing.push(recipientGid);
-                }
-                if (proposeSharing.length) {
-                  const collaboratorsManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, true, proposeSharing);
-                  collaboratorsManager.addListener("addCollaborators", ev => {
-                    const {
-                      selectedGids,
-                      newAccessRights,
-                    } = ev.getData();
-                    const newCollaborators = {};
-                    selectedGids.forEach(gid => {
-                      newCollaborators[gid] = newAccessRights;
-                    });
-                    const studyData = this.__study.serialize();
-                    osparc.store.Study.addCollaborators(studyData, newCollaborators)
-                      .then(() => {
-                        const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
-                        selectedGids.forEach(gid => {
-                          if (gid in potentialCollaborators && "getUserId" in potentialCollaborators[gid]) {
-                            const uid = potentialCollaborators[gid].getUserId();
-                            osparc.notification.Notifications.postNewStudy(uid, studyData["uuid"]);
-                          }
-                        });
-                      })
-                      .finally(() => collaboratorsManager.close());
-                  });
-                }
-              }
-            }, this);
-          }, this);
+          control.addListener("execute", () => this.__selectRecipientTapped(), this);
           this.getChildControl("recipient-layout").add(control);
           break;
         case "selected-recipient":
@@ -177,6 +129,59 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __selectRecipientTapped: function() {
+      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy().serialize();
+      currentStudy["resourceType"] = "study";
+      const usersManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, false).set({
+        acceptOnlyOne: true,
+      });
+      usersManager.setCaption("Recipient");
+      usersManager.getActionButton().setLabel(this.tr("Add"));
+      usersManager.addListener("addCollaborators", e => {
+        usersManager.close();
+        const data = e.getData();
+        const userGids = data["selectedGids"];
+        if (userGids && userGids.length) {
+          const userGid = parseInt(userGids[0]);
+          this.__recipientSelected(userGid);
+        }
+      }, this);
+    },
+
+    __recipientSelected: function(userGid) {
+      this.__setRecipientGid(userGid);
+      const currentAccessRights = this.__study.getAccessRights();
+      const proposeSharing = [];
+      if (!(userGid in currentAccessRights)) {
+        proposeSharing.push(userGid);
+      }
+      if (proposeSharing.length) {
+        const collaboratorsManager = new osparc.share.NewCollaboratorsManager(currentStudy, false, true, proposeSharing);
+        collaboratorsManager.addListener("addCollaborators", ev => {
+          const {
+            selectedGids,
+            newAccessRights,
+          } = ev.getData();
+          const newCollaborators = {};
+          selectedGids.forEach(gid => {
+            newCollaborators[gid] = newAccessRights;
+          });
+          const studyData = this.__study.serialize();
+          osparc.store.Study.addCollaborators(studyData, newCollaborators)
+            .then(() => {
+              const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
+              selectedGids.forEach(gid => {
+                if (gid in potentialCollaborators && "getUserId" in potentialCollaborators[gid]) {
+                  const uid = potentialCollaborators[gid].getUserId();
+                  osparc.notification.Notifications.postNewStudy(uid, studyData["uuid"]);
+                }
+              });
+            })
+            .finally(() => collaboratorsManager.close());
+        });
+      }
     },
 
     __setRecipientGid: function(gid) {
