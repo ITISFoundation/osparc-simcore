@@ -677,10 +677,6 @@ class ProjectDBAPI(BaseProjectDB):
                     combined_query.offset(offset).limit(limit)
                 )
             ]
-            # async for row in conn.execute(combined_query.offset(offset).limit(limit)):
-            #     ProjectListAtDB.model_validate(row)
-            #     prj: dict[str, Any] = dict(row.items())
-            #     prjs_output.append(prj)
 
             return (
                 prjs_output,
@@ -1258,7 +1254,7 @@ class ProjectDBAPI(BaseProjectDB):
                     project["tags"].remove(tag_id)
                 return convert_to_schema_names(project, user_email)
 
-    async def get_tags_by_project(self, project_id: str) -> list:
+    async def get_tags_by_project(self, project_id: str) -> list[int]:
         async with self.engine.acquire() as conn:
             query = sa.select(projects_tags.c.tag_id).where(
                 projects_tags.c.project_id == project_id
