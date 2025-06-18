@@ -140,16 +140,21 @@ qx.Class.define("osparc.info.CommentAdd", {
         const data = e.getData();
         const userGids = data["selectedGids"];
         if (userGids && userGids.length) {
-          // OM: suggest sharing the study first if the user is not a collaborator
           const userGid = parseInt(userGids[0]);
-          if (this.__conversationId) {
-            this.__postNotify(userGid);
+          // Note: this check only works if the project is directly shared with the user.
+          // If it's shared through a group, it might be a bit confusing
+          if (userGid in this.__studyData["accessRights"]) {
+            this.__addNotify(userGid);
           } else {
-            // create new conversation first
-            osparc.study.Conversations.addConversation(this.__studyData["uuid"])
-              .then(data => {
-                this.__conversationId = data["conversationId"];
-                this.__postNotify(userGid);
+            const newCollaborators = [{
+              userGid: osparc.data.Roles.STUDY["write"].accessRights
+            }];
+            osparc.store.Study.addCollaborators(this.__studyData, newCollaborators)
+              .then(() => {
+                this.__addNotify(userGid);
+              })
+              .catch(err => {
+                console.error("Failed to add collaborator:", err);
               });
           }
         }
@@ -166,6 +171,19 @@ qx.Class.define("osparc.info.CommentAdd", {
             this.__conversationId = data["conversationId"];
             this.__postMessage();
           })
+      }
+    },
+
+    __addNotify: function(userGid) {
+      if (this.__conversationId) {
+        this.__postNotify(userGid);
+      } else {
+        // create new conversation first
+        osparc.study.Conversations.addConversation(this.__studyData["uuid"])
+          .then(data => {
+            this.__conversationId = data["conversationId"];
+            this.__postNotify(userGid);
+          });
       }
     },
 
