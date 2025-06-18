@@ -80,7 +80,7 @@ async def _aggregate_data_to_projects_from_other_sources(
         _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=prj,
-            is_template=prj["type"] == ProjectTypeDB.TEMPLATE,
+            is_template=prj["type"] == ProjectTypeDB.TEMPLATE.value,
             app=app,
         )
         for prj in db_projects
