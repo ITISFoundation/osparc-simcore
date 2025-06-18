@@ -23,39 +23,40 @@ from ..exception_handling import (
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     InvalidFileIdentifierError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Could not find file {file_id}"),
+        user_message("File {file_id} could not be found", _version=1),
     ),
     AccessRightError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "Accessright error: user {user_id} does not have access to file {file_id} with location {location_id}"
+            "Access denied: User {user_id} does not have permission to access file {file_id} in location {location_id}",
+            _version=1,
         ),
     ),
     JobAbortedError: HttpErrorInfo(
         status.HTTP_410_GONE,
-        user_message("Task {job_id} is aborted"),
+        user_message("Task {job_id} has been aborted", _version=1),
     ),
     JobError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         user_message(
-            "Task '{job_id}' failed with exception type '{exc_type}' and message: {exc_msg}"
+            "Task '{job_id}' failed with error type '{exc_type}': {exc_msg}", _version=1
         ),
     ),
     JobNotDoneError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("task {job_id} is not done yet"),
+        user_message("Task {job_id} is still in progress", _version=1),
     ),
     JobMissingError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("No task with id: {job_id}"),
+        user_message("Task with ID {job_id} was not found", _version=1),
     ),
     JobSchedulerError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        user_message("Encountered an error with the task scheduling system"),
+        user_message("An error occurred in the task scheduling system", _version=1),
     ),
     JobStatusError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        user_message("Encountered an error while getting the status of task {job_id}"),
+        user_message("Failed to retrieve status for task {job_id}", _version=1),
     ),
 }
 
