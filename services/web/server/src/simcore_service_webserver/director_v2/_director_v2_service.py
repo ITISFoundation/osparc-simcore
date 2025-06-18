@@ -21,7 +21,6 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
     GroupExtraPropertiesRepo,
 )
-from simcore_service_webserver.director_v2._client import DirectorV2RestClient
 
 from ..application_settings import get_application_settings
 from ..db.plugin import get_database_engine
@@ -31,6 +30,7 @@ from ..projects import projects_wallets_service
 from ..users import preferences_api as user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
+from ._client import DirectorV2RestClient
 from ._client_base import DataType, request_director_v2
 from .exceptions import ComputationNotFoundError, DirectorV2ServiceError
 from .settings import DirectorV2Settings, get_plugin_settings
@@ -66,6 +66,7 @@ async def create_or_update_pipeline(
             user_id=user_id,
             project_id=project_id,
             product_name=product_name,
+            check_user_wallet_permission=False,
         ),
     }
 
@@ -203,6 +204,7 @@ async def get_wallet_info(
     user_id: UserID,
     project_id: ProjectID,
     product_name: ProductName,
+    check_user_wallet_permission: bool = True,
 ) -> WalletInfo | None:
     app_settings = get_application_settings(app)
     if not (
@@ -234,13 +236,24 @@ async def get_wallet_info(
     else:
         project_wallet_id = project_wallet.wallet_id
 
-    # Check whether user has access to the wallet
-    wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
-        app,
-        user_id=user_id,
-        wallet_id=project_wallet_id,
-        product_name=product_name,
-    )
+    if check_user_wallet_permission:
+        # Check whether user has access to the wallet
+        wallet = (
+            await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+                app,
+                user_id=user_id,
+                wallet_id=project_wallet_id,
+                product_name=product_name,
+            )
+        )
+    else:
+        # This function is used also when we are synchronizing the projects/projects_nodes with the comp_pipelines/comp_tasks tables in director-v2
+        # In situations where a project is connected to a wallet, but the user does not have access to it and is performing an action such as
+        # upgrading the service version, we still want to retrieve the wallet info and pass it to director-v2.
+        wallet = await wallets_service.get_wallet_with_available_credits(
+            app, wallet_id=project_wallet_id, product_name=product_name
+        )
+
     return WalletInfo(
         wallet_id=project_wallet_id,
         wallet_name=wallet.name,

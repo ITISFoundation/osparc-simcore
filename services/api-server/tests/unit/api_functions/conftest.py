@@ -26,7 +26,10 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
 )
-from models_library.functions import RegisteredFunctionJobCollection
+from models_library.functions import (
+    RegisteredFunctionJobCollection,
+    RegisteredSolverFunction,
+)
 from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
@@ -119,7 +122,7 @@ def mock_function(
 
 
 @pytest.fixture
-def mock_registered_function(mock_function: Function) -> RegisteredFunction:
+def mock_registered_project_function(mock_function: Function) -> RegisteredFunction:
     return RegisteredProjectFunction(
         **{
             **mock_function.dict(),
@@ -130,9 +133,33 @@ def mock_registered_function(mock_function: Function) -> RegisteredFunction:
 
 
 @pytest.fixture
-def mock_function_job(mock_registered_function: RegisteredFunction) -> FunctionJob:
+def mock_registered_solver_function(
+    mock_function: Function,
+    sample_input_schema: JSONFunctionInputSchema,
+    sample_output_schema: JSONFunctionOutputSchema,
+) -> RegisteredFunction:
+    return RegisteredSolverFunction(
+        **{
+            "title": "test_function",
+            "function_class": FunctionClass.SOLVER,
+            "description": "A test function",
+            "input_schema": sample_input_schema,
+            "output_schema": sample_output_schema,
+            "default_inputs": None,
+            "uid": str(uuid4()),
+            "created_at": datetime.datetime.now(datetime.UTC),
+            "solver_key": "simcore/services/comp/ans-model",
+            "solver_version": "1.0.1",
+        }
+    )
+
+
+@pytest.fixture
+def mock_function_job(
+    mock_registered_project_function: RegisteredFunction,
+) -> FunctionJob:
     mock_function_job = {
-        "function_uid": mock_registered_function.uid,
+        "function_uid": mock_registered_project_function.uid,
         "title": "Test Function Job",
         "description": "A test function job",
         "inputs": {"key": "value"},

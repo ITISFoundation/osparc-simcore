@@ -716,6 +716,27 @@ def patch_webserver_long_running_project_tasks(
 
 
 @pytest.fixture
+def mock_webserver_patch_project(
+    app: FastAPI, faker: Faker, services_mocks_enabled: bool
+) -> Callable[[MockRouter], MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER is not None
+
+    def _mock(webserver_mock_router: MockRouter) -> MockRouter:
+        def _patch_project(request: httpx.Request, *args, **kwargs):
+            return httpx.Response(status.HTTP_200_OK)
+
+        if services_mocks_enabled:
+            webserver_mock_router.patch(
+                path__regex=r"/projects/(?P<project_id>[\w-]+)$",
+                name="project_patch",
+            ).mock(side_effect=_patch_project)
+        return webserver_mock_router
+
+    return _mock
+
+
+@pytest.fixture
 def openapi_dev_specs(project_slug_dir: Path) -> dict[str, Any]:
     openapi_file = (project_slug_dir / "openapi-dev.json").resolve()
     if openapi_file.is_file():

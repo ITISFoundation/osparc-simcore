@@ -38,7 +38,12 @@ async function runTutorial () {
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     const nodeIdViewer = workbenchData["nodeIds"][1];
-    await tutorial.waitForServices(workbenchData["studyId"], [nodeIdViewer], startTimeout);
+    await tutorial.waitForServices(
+      workbenchData["studyId"],
+      [nodeIdViewer],
+      startTimeout,
+      false
+    );
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     // Some time for setting up service's frontend

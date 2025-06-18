@@ -11,6 +11,7 @@ from models_library.functions import (
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionOutputSchema,
+    FunctionUserApiAccessRights,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -19,10 +20,17 @@ from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionJobCollectionIDNotFoundError,
     FunctionJobCollectionReadAccessDeniedError,
+    FunctionJobCollectionsReadApiAccessDeniedError,
+    FunctionJobCollectionsWriteApiAccessDeniedError,
+    FunctionJobCollectionWriteAccessDeniedError,
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
+    FunctionJobsReadApiAccessDeniedError,
+    FunctionJobsWriteApiAccessDeniedError,
     FunctionJobWriteAccessDeniedError,
     FunctionReadAccessDeniedError,
+    FunctionsReadApiAccessDeniedError,
+    FunctionsWriteApiAccessDeniedError,
     FunctionWriteAccessDeniedError,
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
@@ -38,7 +46,12 @@ from .. import _functions_repository, _functions_service
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(UnsupportedFunctionClassError,))
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionClassError,
+        FunctionsWriteApiAccessDeniedError,
+    )
+)
 async def register_function(
     app: web.Application,
     *,
@@ -51,7 +64,12 @@ async def register_function(
     )
 
 
-@router.expose(reraise_if_error_type=(UnsupportedFunctionJobClassError,))
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
+    )
+)
 async def register_function_job(
     app: web.Application,
     *,
@@ -64,7 +82,7 @@ async def register_function_job(
     )
 
 
-@router.expose(reraise_if_error_type=())
+@router.expose(reraise_if_error_type=(FunctionJobCollectionsWriteApiAccessDeniedError,))
 async def register_function_job_collection(
     app: web.Application,
     *,
@@ -81,7 +99,11 @@ async def register_function_job_collection(
 
 
 @router.expose(
-    reraise_if_error_type=(FunctionIDNotFoundError, FunctionReadAccessDeniedError)
+    reraise_if_error_type=(
+        FunctionIDNotFoundError,
+        FunctionReadAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
+    )
 )
 async def get_function(
     app: web.Application,
@@ -99,7 +121,11 @@ async def get_function(
 
 
 @router.expose(
-    reraise_if_error_type=(FunctionJobIDNotFoundError, FunctionJobReadAccessDeniedError)
+    reraise_if_error_type=(
+        FunctionJobIDNotFoundError,
+        FunctionJobReadAccessDeniedError,
+        FunctionJobsReadApiAccessDeniedError,
+    )
 )
 async def get_function_job(
     app: web.Application,
@@ -120,6 +146,7 @@ async def get_function_job(
     reraise_if_error_type=(
         FunctionJobCollectionIDNotFoundError,
         FunctionJobCollectionReadAccessDeniedError,
+        FunctionJobCollectionsReadApiAccessDeniedError,
     )
 )
 async def get_function_job_collection(
@@ -137,7 +164,7 @@ async def get_function_job_collection(
     )
 
 
-@router.expose()
+@router.expose(reraise_if_error_type=(FunctionsReadApiAccessDeniedError,))
 async def list_functions(
     app: web.Application,
     *,
@@ -155,7 +182,12 @@ async def list_functions(
     )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobsReadApiAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
+    )
+)
 async def list_function_jobs(
     app: web.Application,
     *,
@@ -175,7 +207,13 @@ async def list_function_jobs(
     )
 
 
-@router.expose()
+@router.expose(
+    reraise_if_error_type=(
+        FunctionJobCollectionsReadApiAccessDeniedError,
+        FunctionJobsReadApiAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
+    )
+)
 async def list_function_job_collections(
     app: web.Application,
     *,
@@ -200,6 +238,8 @@ async def list_function_job_collections(
         FunctionIDNotFoundError,
         FunctionReadAccessDeniedError,
         FunctionWriteAccessDeniedError,
+        FunctionsWriteApiAccessDeniedError,
+        FunctionsReadApiAccessDeniedError,
     )
 )
 async def delete_function(
@@ -222,6 +262,7 @@ async def delete_function(
         FunctionJobIDNotFoundError,
         FunctionJobReadAccessDeniedError,
         FunctionJobWriteAccessDeniedError,
+        FunctionJobsWriteApiAccessDeniedError,
     )
 )
 async def delete_function_job(
@@ -243,6 +284,8 @@ async def delete_function_job(
     reraise_if_error_type=(
         FunctionJobCollectionIDNotFoundError,
         FunctionJobCollectionReadAccessDeniedError,
+        FunctionJobCollectionWriteAccessDeniedError,
+        FunctionJobCollectionsWriteApiAccessDeniedError,
     )
 )
 async def delete_function_job_collection(
@@ -264,6 +307,7 @@ async def delete_function_job_collection(
     reraise_if_error_type=(
         FunctionIDNotFoundError,
         FunctionReadAccessDeniedError,
+        FunctionWriteAccessDeniedError,
     )
 )
 async def update_function_title(
@@ -284,7 +328,11 @@ async def update_function_title(
 
 
 @router.expose(
-    reraise_if_error_type=(FunctionIDNotFoundError, FunctionReadAccessDeniedError)
+    reraise_if_error_type=(
+        FunctionIDNotFoundError,
+        FunctionReadAccessDeniedError,
+        FunctionWriteAccessDeniedError,
+    )
 )
 async def update_function_description(
     app: web.Application,
@@ -353,7 +401,7 @@ async def get_function_output_schema(
     )
 
 
-@router.expose(reraise_if_error_type=(FunctionIDNotFoundError,))
+@router.expose(reraise_if_error_type=())
 async def get_function_user_permissions(
     app: web.Application,
     *,
@@ -369,6 +417,23 @@ async def get_function_user_permissions(
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+    )
+
+
+@router.expose(reraise_if_error_type=())
+async def get_functions_user_api_access_rights(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+) -> FunctionUserApiAccessRights:
+    """
+    Returns a dictionary with the user's abilities for all function related objects.
+    """
+    return await _functions_service.get_functions_user_api_access_rights(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
     )
 
 

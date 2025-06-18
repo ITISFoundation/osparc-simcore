@@ -23,14 +23,14 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
-from simcore_service_webserver.catalog.errors import (
-    CatalogConnectionError,
-    CatalogResponseError,
-)
 from yarl import URL
 
 from .._meta import api_version_prefix
 from ._models import ServiceKeyVersionDict
+from .errors import (
+    CatalogConnectionError,
+    CatalogResponseError,
+)
 from .settings import CatalogSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)

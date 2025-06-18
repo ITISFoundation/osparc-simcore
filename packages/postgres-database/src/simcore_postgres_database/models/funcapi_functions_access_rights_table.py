@@ -22,7 +22,6 @@ functions_access_rights_table = sa.Table(
             ondelete=RefActions.CASCADE,
         ),
         nullable=False,
-        doc="Unique identifier of the function",
     ),
     sa.Column(
         "group_id",
@@ -33,7 +32,6 @@ functions_access_rights_table = sa.Table(
             ondelete=RefActions.CASCADE,
         ),
         nullable=False,
-        doc="Group id",
     ),
     sa.Column(
         "product_name",
@@ -44,25 +42,21 @@ functions_access_rights_table = sa.Table(
             ondelete=RefActions.CASCADE,
         ),
         nullable=False,
-        doc="Name of the product",
     ),
     sa.Column(
         "read",
         sa.Boolean,
         default=False,
-        doc="Read access right for the function",
     ),
     sa.Column(
         "write",
         sa.Boolean,
         default=False,
-        doc="Write access right for the function",
     ),
     sa.Column(
         "execute",
         sa.Boolean,
         default=False,
-        doc="Execute access right for the function",
     ),
     column_created_datetime(),
     column_modified_datetime(),

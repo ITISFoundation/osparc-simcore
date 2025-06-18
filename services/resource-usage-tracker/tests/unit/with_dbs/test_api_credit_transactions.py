@@ -1,12 +1,12 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Callable
 
 import httpx
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from fastapi import FastAPI
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     CreditTransactionCreateBody,
     WalletTotalCredits,
@@ -31,6 +31,9 @@ from simcore_postgres_database.models.resource_tracker_credit_transactions impor
 )
 from simcore_postgres_database.models.resource_tracker_service_runs import (
     resource_tracker_service_runs,
+)
+from simcore_service_resource_usage_tracker.services.modules.db import (
+    credit_transactions_db,
 )
 from simcore_service_resource_usage_tracker.services.service_runs import ServiceRunPage
 from starlette import status
@@ -520,3 +523,32 @@ async def test_list_service_runs_with_transaction_status_filter(
     assert isinstance(result, ServiceRunPage)
     assert len(result.items) == 1
     assert result.total == 1
+
+
+async def test_sum_wallet_credits_db(
+    mocked_redis_server: None,
+    resource_tracker_setup_db: None,
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    initialized_app: FastAPI,
+):
+    engine = initialized_app.state.engine
+    output_including_pending_transaction = (
+        await credit_transactions_db.sum_wallet_credits(
+            engine, product_name=product_name, wallet_id=_WALLET_ID
+        )
+    )
+    assert output_including_pending_transaction.available_osparc_credits == Decimal(
+        "-310.00"
+    )
+    output_excluding_pending_transaction = (
+        await credit_transactions_db.sum_wallet_credits(
+            engine,
+            product_name=product_name,
+            wallet_id=_WALLET_ID,
+            include_pending_transactions=False,
+        )
+    )
+    assert output_excluding_pending_transaction.available_osparc_credits == Decimal(
+        "-240.00"
+    )

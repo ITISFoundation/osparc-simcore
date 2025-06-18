@@ -16,6 +16,8 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import FunctionJobCollectionsListFilters
 from models_library.functions_errors import (
     FunctionJobCollectionReadAccessDeniedError,
+    FunctionJobCollectionsReadApiAccessDeniedError,
+    FunctionJobCollectionWriteAccessDeniedError,
     FunctionJobIDNotFoundError,
 )
 from models_library.products import ProductName
@@ -34,10 +36,12 @@ pytest_simcore_core_services_selection = ["rabbit"]
 )
 async def test_function_job_collection(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     mock_function: ProjectFunction,
     rpc_client: RabbitMQRPCClient,
     logged_user: UserInfoDict,
     other_logged_user: UserInfoDict,
+    user_without_function_api_access_rights: UserInfoDict,
     osparc_product_name: ProductName,
 ):
     # Register the function first
@@ -115,8 +119,17 @@ async def test_function_job_collection(
             product_name=osparc_product_name,
         )
 
+    # Test denied access for another user
+    with pytest.raises(FunctionJobCollectionsReadApiAccessDeniedError):
+        await functions_rpc.get_function_job_collection(
+            rabbitmq_rpc_client=rpc_client,
+            function_job_collection_id=registered_collection.uid,
+            user_id=user_without_function_api_access_rights["id"],
+            product_name=osparc_product_name,
+        )
+
     # Test denied access for another product
-    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+    with pytest.raises(FunctionJobCollectionsReadApiAccessDeniedError):
         await functions_rpc.get_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection_id=registered_collection.uid,
@@ -125,7 +138,7 @@ async def test_function_job_collection(
         )
 
     # Attempt to delete the function job collection by another user
-    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+    with pytest.raises(FunctionJobCollectionWriteAccessDeniedError):
         await functions_rpc.delete_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection_id=registered_collection.uid,
@@ -155,6 +168,7 @@ async def test_function_job_collection(
 )
 async def test_list_function_job_collections(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     mock_function: ProjectFunction,
     rpc_client: RabbitMQRPCClient,
     clean_functions: None,
@@ -256,6 +270,7 @@ async def test_list_function_job_collections(
 )
 async def test_list_function_job_collections_filtered_function_id(
     client: TestClient,
+    add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
     clean_functions: None,

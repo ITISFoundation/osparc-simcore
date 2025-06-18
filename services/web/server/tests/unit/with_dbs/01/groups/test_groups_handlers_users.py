@@ -32,7 +32,7 @@ from simcore_service_webserver.groups._groups_service import (
     delete_standard_group,
 )
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
-from simcore_service_webserver.security.api import clean_auth_policy_cache
+from simcore_service_webserver.security import security_service
 
 
 def _assert_group(group: dict[str, str]):
@@ -213,9 +213,11 @@ async def test_add_remove_users_from_group(
                     expected_user,
                     expected_access_rigths,
                     user,
-                    group_owner_id=the_owner["id"]
-                    if expected_user.get("is_private", False)
-                    else user["id"],
+                    group_owner_id=(
+                        the_owner["id"]
+                        if expected_user.get("is_private", False)
+                        else user["id"]
+                    ),
                 )
 
         # PATCH the user and REMOVE them from the group
@@ -456,7 +458,7 @@ async def test_add_user_gets_added_to_group(
                 assert len(data["organizations"]) == (0 if "bad" in email else 1)
 
     # NOTE: here same email are used for different users! Therefore sessions get mixed!
-    await clean_auth_policy_cache(client.app)
+    await security_service.clean_auth_policy_cache(client.app)
 
 
 @pytest.fixture

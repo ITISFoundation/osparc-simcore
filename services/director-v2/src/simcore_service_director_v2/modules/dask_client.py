@@ -120,43 +120,42 @@ class DaskClient:
         tasks_file_link_type: FileLinkType,
         cluster_type: ClusterTypeInModel,
     ) -> "DaskClient":
-        _logger.info(
-            "Initiating connection to %s with auth: %s, type: %s",
-            f"dask-scheduler at {endpoint}",
-            authentication,
-            cluster_type,
-        )
-        async for attempt in AsyncRetrying(
-            reraise=True,
-            before_sleep=before_sleep_log(_logger, logging.INFO),
-            wait=wait_fixed(0.3),
-            stop=stop_after_attempt(3),
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg=f"create dask client to dask-scheduler at {endpoint=} with {authentication=}, {cluster_type=}",
         ):
-            with attempt:
-                _logger.debug(
-                    "Connecting to %s, attempt %s...",
-                    endpoint,
-                    attempt.retry_state.attempt_number,
-                )
-                backend = await connect_to_dask_scheduler(endpoint, authentication)
-                dask_utils.check_scheduler_status(backend.client)
-                instance = cls(
-                    app=app,
-                    backend=backend,
-                    settings=settings,
-                    tasks_file_link_type=tasks_file_link_type,
-                    cluster_type=cluster_type,
-                )
-                _logger.info(
-                    "Connection to %s succeeded [%s]",
-                    f"dask-scheduler at {endpoint}",
-                    json_dumps(attempt.retry_state.retry_object.statistics),
-                )
-                _logger.info(
-                    "Scheduler info:\n%s",
-                    json_dumps(backend.client.scheduler_info(), indent=2),
-                )
-                return instance
+            async for attempt in AsyncRetrying(
+                reraise=True,
+                before_sleep=before_sleep_log(_logger, logging.INFO),
+                wait=wait_fixed(0.3),
+                stop=stop_after_attempt(3),
+            ):
+                with attempt:
+                    _logger.debug(
+                        "Connecting to %s, attempt %s...",
+                        endpoint,
+                        attempt.retry_state.attempt_number,
+                    )
+                    backend = await connect_to_dask_scheduler(endpoint, authentication)
+                    dask_utils.check_scheduler_status(backend.client)
+                    instance = cls(
+                        app=app,
+                        backend=backend,
+                        settings=settings,
+                        tasks_file_link_type=tasks_file_link_type,
+                        cluster_type=cluster_type,
+                    )
+                    _logger.info(
+                        "Connection to %s succeeded [%s]",
+                        f"dask-scheduler at {endpoint}",
+                        json_dumps(attempt.retry_state.retry_object.statistics),
+                    )
+                    _logger.info(
+                        "Scheduler info:\n%s",
+                        json_dumps(backend.client.scheduler_info(), indent=2),
+                    )
+                    return instance
         # this is to satisfy pylance
         err_msg = "Could not create client"
         raise ValueError(err_msg)

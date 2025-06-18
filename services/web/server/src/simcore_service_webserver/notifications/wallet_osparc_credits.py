@@ -7,28 +7,37 @@ from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..rabbitmq import get_rabbitmq_client
+from ._rabbitmq_exclusive_queue_consumers import (
+    APP_WALLET_SUBSCRIPTION_LOCK_KEY,
+    APP_WALLET_SUBSCRIPTIONS_KEY,
+)
 
 _logger = logging.getLogger(__name__)
 
 
-_SUBSCRIBABLE_EXCHANGES = [
-    WalletCreditsMessage,
-]
-
-
 async def subscribe(app: web.Application, wallet_id: WalletID) -> None:
-    rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
 
-    for exchange in _SUBSCRIBABLE_EXCHANGES:
-        exchange_name = exchange.get_channel_name()
-        await rabbit_client.add_topics(exchange_name, topics=[f"{wallet_id}"])
+    async with app[APP_WALLET_SUBSCRIPTION_LOCK_KEY]:
+        counter = app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id]
+        app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id] += 1
+
+        if counter == 0:  # First subscriber
+            rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+            await rabbit_client.add_topics(
+                WalletCreditsMessage.get_channel_name(), topics=[f"{wallet_id}"]
+            )
 
 
 async def unsubscribe(app: web.Application, wallet_id: WalletID) -> None:
-    rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-    for exchange in _SUBSCRIBABLE_EXCHANGES:
-        exchange_name = exchange.get_channel_name()
-        with log_catch(_logger, reraise=False):
-            # NOTE: in case something bad happenned with the connection to the RabbitMQ server
-            # such as a network disconnection. this call can fail.
-            await rabbit_client.remove_topics(exchange_name, topics=[f"{wallet_id}"])
+
+    async with app[APP_WALLET_SUBSCRIPTION_LOCK_KEY]:
+        counter = app[APP_WALLET_SUBSCRIPTIONS_KEY].get(wallet_id, 0)
+        if counter > 0:
+            app[APP_WALLET_SUBSCRIPTIONS_KEY][wallet_id] -= 1
+
+            if counter == 1:  # Last subscriber
+                rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
+                with log_catch(_logger, reraise=False):
+                    await rabbit_client.remove_topics(
+                        WalletCreditsMessage.get_channel_name(), topics=[f"{wallet_id}"]
+                    )

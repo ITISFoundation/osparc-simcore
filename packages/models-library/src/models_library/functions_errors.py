@@ -99,3 +99,62 @@ class FunctionJobCollectionExecuteAccessDeniedError(FunctionBaseError):
         "Function job collection {function_job_collection_id} execute access denied for user {user_id}"
     )
     status_code: int = 403  # Forbidden
+
+
+class FunctionsReadApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = "User {user_id} does not have the permission to read functions"
+    status_code: int = 403  # Forbidden
+
+
+class FunctionsWriteApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = "User {user_id} does not have the permission to write functions"
+    status_code: int = 403  # Forbidden
+
+
+class FunctionsExecuteApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to execute functions"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobsReadApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to read function jobs"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobsWriteApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to write function jobs"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobsExecuteApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to execute function jobs"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobCollectionsReadApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to read function job collections"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobCollectionsWriteApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to write function job collections"
+    )
+    status_code: int = 403  # Forbidden
+
+
+class FunctionJobCollectionsExecuteApiAccessDeniedError(FunctionBaseError):
+    msg_template: str = (
+        "User {user_id} does not have the permission to execute function job collections"
+    )
+    status_code: int = 403  # Forbidden

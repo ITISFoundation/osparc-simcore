@@ -164,11 +164,11 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
                 cluster_type=ClusterTypeInModel.ON_PREMISE,
             )
         )
-        async with clients_pool.acquire(cluster):
+        async with clients_pool.acquire(cluster, ref=f"test-ref-{cluster.name}"):
             # on start it is created
             mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
 
-        async with clients_pool.acquire(cluster):
+        async with clients_pool.acquire(cluster, ref=f"test-ref-{cluster.name}-2"):
             # the connection already exists, so there is no new call to create
             mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
 
@@ -196,7 +196,9 @@ async def test_acquiring_wrong_cluster_raises_exception(
 
     non_existing_cluster = fake_clusters(1)[0]
     with pytest.raises(DaskClientAcquisisitonError):
-        async with clients_pool.acquire(non_existing_cluster):
+        async with clients_pool.acquire(
+            non_existing_cluster, ref="test-non-existing-ref"
+        ):
             ...
 
 
@@ -239,7 +241,9 @@ async def test_acquire_default_cluster(
     dask_scheduler_settings = the_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
-    async with dask_clients_pool.acquire(default_cluster) as dask_client:
+    async with dask_clients_pool.acquire(
+        default_cluster, ref="test-default-cluster-ref"
+    ) as dask_client:
 
         def just_a_quick_fct(x, y):
             return x + y
@@ -252,3 +256,63 @@ async def test_acquire_default_cluster(
         assert future
         result = await future.result(timeout=10)
     assert result == 35
+
+
+async def test_dask_clients_pool_reference_counting(
+    minimal_dask_config: None,
+    mocker: MockerFixture,
+    client: TestClient,
+    fake_clusters: Callable[[int], list[BaseCluster]],
+):
+    """Test that the reference counting mechanism works correctly."""
+    assert client.app
+    the_app = cast(FastAPI, client.app)
+    mocked_dask_client = mocker.patch(
+        "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
+        autospec=True,
+    )
+    mocked_dask_client.create.return_value = mocked_dask_client
+    clients_pool = DaskClientsPool.instance(the_app)
+
+    # Create a cluster
+    cluster = fake_clusters(1)[0]
+
+    # Acquire the client with first reference
+    ref1 = "test-ref-1"
+    async with clients_pool.acquire(cluster, ref=ref1):
+        # Client should be created
+        mocked_dask_client.create.assert_called_once()
+        # Reset the mock to check the next call
+        mocked_dask_client.create.reset_mock()
+    mocked_dask_client.delete.assert_not_called()
+
+    # calling again with the same reference should not create a new client
+    async with clients_pool.acquire(cluster, ref=ref1):
+        # Client should NOT be re-created
+        mocked_dask_client.create.assert_not_called()
+
+    mocked_dask_client.delete.assert_not_called()
+
+    # Acquire the same client with second reference
+    ref2 = "test-ref-2"
+    async with clients_pool.acquire(cluster, ref=ref2):
+        # No new client should be created
+        mocked_dask_client.create.assert_not_called()
+    mocked_dask_client.delete.assert_not_called()
+
+    # Release first reference, client should still exist
+    await clients_pool.release_client_ref(ref1)
+    mocked_dask_client.delete.assert_not_called()
+
+    # Release second reference, which should delete the client
+    await clients_pool.release_client_ref(ref2)
+    mocked_dask_client.delete.assert_called_once()
+
+    # calling again should not raise and not delete more
+    await clients_pool.release_client_ref(ref2)
+    mocked_dask_client.delete.assert_called_once()
+
+    # Acquire again should create a new client
+    mocked_dask_client.create.reset_mock()
+    async with clients_pool.acquire(cluster, ref="test-ref-3"):
+        mocked_dask_client.create.assert_called_once()

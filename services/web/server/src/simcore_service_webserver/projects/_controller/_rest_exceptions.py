@@ -8,7 +8,6 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogItemNotFoundError,
     CatalogNotAvailableError,
 )
-from simcore_service_webserver.exception_handling._base import ExceptionHandlersMap
 
 from ...catalog._controller_rest_exceptions import catalog_exceptions_handlers_map
 from ...conversations.errors import (
@@ -21,6 +20,7 @@ from ...exception_handling import (
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
+from ...exception_handling._base import ExceptionHandlersMap
 from ...folders.errors import FolderAccessForbiddenError, FolderNotFoundError
 from ...resource_usage.errors import DefaultPricingPlanNotFoundError
 from ...users.exceptions import UserDefaultWalletNotFoundError
