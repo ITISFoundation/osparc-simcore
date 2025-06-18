@@ -122,13 +122,64 @@ qx.Class.define("osparc.notification.NotificationUI", {
         const actionablePath = notification.getActionablePath();
         resourceId = actionablePath.split("/")[1];
       }
-      const userFromId = notification.getUserFromId();
 
       const icon = this.getChildControl("icon");
+      const notification = this.getNotification();
+      switch (notification.getCategory()) {
+        case "NEW_ORGANIZATION":
+          icon.setSource("@FontAwesome5Solid/users/14");
+          break;
+        case "STUDY_SHARED":
+          icon.setSource("@FontAwesome5Solid/file/14");
+          break;
+        case "TEMPLATE_SHARED":
+          icon.setSource("@FontAwesome5Solid/copy/14");
+          break;
+        case "CONVERSATION_NOTIFICATION":
+          icon.setSource("@FontAwesome5Solid/bell/14");
+          break;
+        case "ANNOTATION_NOTE":
+          icon.setSource("@FontAwesome5Solid/file/14");
+          break;
+        case "WALLET_SHARED":
+          icon.setSource("@MaterialIcons/account_balance_wallet/14");
+          break;
+      }
+
       const titleLabel = this.getChildControl("title");
       titleLabel.setValue(notification.getTitle());
+
       const descriptionLabel = this.getChildControl("text");
       descriptionLabel.setValue(notification.getText());
+
+      const date = this.getChildControl("date");
+      notification.bind("date", date, "value", {
+        converter: value => {
+          if (value) {
+            return osparc.utils.Utils.formatDateAndTime(new Date(value));
+          }
+          return "";
+        }
+      });
+
+      const highlight = mouseOn => {
+        this.set({
+          backgroundColor: mouseOn ? "strong-main" : "transparent"
+        })
+      };
+      this.addListener("mouseover", () => highlight(true));
+      this.addListener("mouseout", () => highlight(false));
+      highlight(false);
+
+      // this will trigger calls to the backend, so only make them if necessary
+      this.addListenerOnce("appear", () => this.__enrichTexts());
+    },
+
+    __enrichTexts: function() {
+      const notification = this.getNotification();
+      const userFromId = notification.getUserFromId();
+      const titleLabel = this.getChildControl("title");
+      const descriptionLabel = this.getChildControl("text");
 
       switch (notification.getCategory()) {
         case "NEW_ORGANIZATION":
@@ -226,25 +277,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
           icon.setSource("@MaterialIcons/account_balance_wallet/14");
           break;
       }
-
-      const date = this.getChildControl("date");
-      notification.bind("date", date, "value", {
-        converter: value => {
-          if (value) {
-            return osparc.utils.Utils.formatDateAndTime(new Date(value));
-          }
-          return "";
-        }
-      });
-
-      const highlight = mouseOn => {
-        this.set({
-          backgroundColor: mouseOn ? "strong-main" : "transparent"
-        })
-      };
-      this.addListener("mouseover", () => highlight(true));
-      this.addListener("mouseout", () => highlight(false));
-      highlight(false);
     },
 
     __notificationTapped: function() {
