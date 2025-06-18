@@ -187,7 +187,7 @@ qx.Class.define("osparc.info.CommentAdd", {
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
                 if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
                   const uid = potentialCollaborators[userGid].getUserId();
-                  osparc.notification.Notifications.postNewStudy(uid, studyData["uuid"]);
+                  osparc.notification.Notifications.postStudyShared(uid, studyData["uuid"]);
                 }
               })
               .catch(err => osparc.FlashMessenger.logError(err));

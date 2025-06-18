@@ -217,7 +217,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
           const uid = potentialCollaborators[gid].getUserId();
           switch (this._resourceType) {
             case "study":
-              osparc.notification.Notifications.postNewStudy(uid, this._serializedDataCopy["uuid"]);
+              osparc.notification.Notifications.postStudyShared(uid, this._serializedDataCopy["uuid"]);
               break;
             case "template":
             case "tutorial":
