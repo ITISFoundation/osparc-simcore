@@ -19,7 +19,11 @@ from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.projects import (
+    ProjectID,
+    ProjectIDStr,
+    ProjectListAtDB,
+)
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -584,7 +588,7 @@ class ProjectDBAPI(BaseProjectDB):
         limit: int | None = None,
         # order
         order_by: OrderBy = DEFAULT_ORDER_BY,
-    ) -> tuple[list[ProjectAtDB], int]:
+    ) -> tuple[list[ProjectListAtDB], int]:
         async with self.engine.acquire() as conn:
             user_groups_proxy: list[RowProxy] = await self._list_user_groups(
                 conn, user_id
@@ -667,15 +671,19 @@ class ProjectDBAPI(BaseProjectDB):
                     projects.c.id,
                 )
 
-            prjs_at_db = [
-                ProjectAtDB.model_validate(row)
+            prjs_output = [
+                ProjectListAtDB.model_validate(row)
                 async for row in conn.execute(
                     combined_query.offset(offset).limit(limit)
                 )
             ]
+            # async for row in conn.execute(combined_query.offset(offset).limit(limit)):
+            #     ProjectListAtDB.model_validate(row)
+            #     prj: dict[str, Any] = dict(row.items())
+            #     prjs_output.append(prj)
 
             return (
-                prjs_at_db,
+                prjs_output,
                 cast(int, total_count),
             )
 

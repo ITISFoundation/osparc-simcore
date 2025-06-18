@@ -8,9 +8,6 @@ from typing import Annotated, Any, Final, TypeAlias
 from uuid import UUID
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.basic_types import ConstrainedStr
-from models_library.folders import FolderID
-from models_library.workspaces import WorkspaceID
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -21,8 +18,11 @@ from pydantic import (
 )
 
 from .basic_regex import DATE_RE, UUID_RE_BASE
+from .basic_types import ConstrainedStr
 from .emails import LowerCaseEmailStr
+from .folders import FolderID
 from .groups import GroupID
+from .products import ProductName
 from .projects_access import AccessRights, GroupIDStr
 from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
@@ -33,6 +33,7 @@ from .utils.common_validators import (
     none_to_empty_str_pre_validator,
 )
 from .utils.enums import StrAutoEnum
+from .workspaces import WorkspaceID
 
 ProjectID: TypeAlias = UUID
 CommitID: TypeAlias = int
@@ -145,6 +146,32 @@ class ProjectAtDB(BaseProjectModel):
     model_config = ConfigDict(
         from_attributes=True, use_enum_values=True, populate_by_name=True
     )
+
+
+class ProjectListAtDB(BaseProjectModel):
+    # uuid  <- BaseProjectModel
+    # name  <- BaseProjectModel
+    # description  <- BaseProjectModel
+    # thumbnail  <- BaseProjectModel
+    # workbench  <- BaseProjectModel
+    # creation_date  <- BaseProjectModel
+    # last_change_date  <- BaseProjectModel
+    id: int
+    type: ProjectType
+    template_type: ProjectTemplateType | None
+    prj_owner: int | None
+    ui: dict[str, Any] | None
+    classifiers: list[ClassifierID] | None
+    dev: dict[str, Any] | None
+    quality: dict[str, Any]
+    published: bool | None
+    hidden: bool
+    workspace_id: WorkspaceID | None
+    trashed: datetime | None
+    trashed_by: UserID | None
+    trashed_explicitly: bool
+    product_name: ProductName
+    folder_id: FolderID | None
 
 
 class Project(BaseProjectModel):

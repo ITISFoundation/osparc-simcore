@@ -10,7 +10,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
-from models_library.projects import ProjectID, ProjectTemplateType
+from models_library.projects import ProjectTemplateType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
@@ -21,14 +21,15 @@ from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.users.api import get_user_email_legacy
 
 from ..folders import _folders_repository
+from ..users.api import get_user_email_legacy
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
 from ._access_rights_repository import batch_get_project_access_rights
 from ._projects_repository import batch_get_trashed_by_primary_gid
-from ._projects_repository_legacy import ProjectDBAPI, convert_to_schema_names
+from ._projects_repository_legacy import ProjectDBAPI
+from ._projects_repository_legacy_utils import convert_to_schema_names
 from .models import ProjectDict, ProjectTypeAPI
 
 
@@ -61,7 +62,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     """
     # updating `project.trashed_by_primary_gid`
     trashed_by_primary_gid_values = await batch_get_trashed_by_primary_gid(
-        app, projects_uuids=[ProjectID(p["uuid"]) for p in db_projects]
+        app, projects_uuids=[p["uuid"] for p in db_projects]
     )
 
     _batch_update("trashed_by_primary_gid", trashed_by_primary_gid_values, db_projects)
@@ -70,7 +71,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     project_to_access_rights = await batch_get_project_access_rights(
         app=app,
         projects_uuids_with_workspace_id=[
-            (ProjectID(p["uuid"]), p["workspaceId"]) for p in db_projects
+            (p["uuid"], p["workspaceId"]) for p in db_projects
         ],
     )
 
@@ -90,7 +91,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     )
 
     for project in updated_projects:
-        project["accessRights"] = project_to_access_rights[project["uuid"]]
+        project["accessRights"] = project_to_access_rights[f"{project['uuid']}"]
 
     return updated_projects
 
