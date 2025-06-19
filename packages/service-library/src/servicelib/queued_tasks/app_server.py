@@ -9,16 +9,16 @@ from servicelib.queued_tasks.task_manager import TaskManager
 
 STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
-AppType = TypeVar("AppType")
+T = TypeVar("T")
 
 
-class BaseAppServer(ABC, Generic[AppType]):
-    def __init__(self, app: AppType) -> None:
-        self._app: AppType = app
+class BaseAppServer(ABC, Generic[T]):
+    def __init__(self, app: T) -> None:
+        self._app: T = app
         self._shutdown_event: asyncio.Event | None = None
 
     @property
-    def app(self) -> AppType:
+    def app(self) -> T:
         return self._app
 
     @property
