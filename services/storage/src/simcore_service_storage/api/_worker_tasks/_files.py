@@ -1,6 +1,6 @@
 import logging
 
-from celery import Task
+from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
