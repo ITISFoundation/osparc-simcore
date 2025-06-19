@@ -236,11 +236,9 @@ async def test_get_upload_links(
     follow_up_request: str,
     client: AsyncClient,
     auth: httpx.BasicAuth,
-    storage_v0_service_mock: AioResponsesMock,
+    mocked_storage_rest_api_base: MockRouter,
 ):
     """Test that we can get data needed for performing multipart upload directly to S3"""
-
-    assert storage_v0_service_mock  # nosec
 
     msg = {
         "filename": DummyFileData.file().filename,

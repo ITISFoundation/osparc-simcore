@@ -18,6 +18,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteFutureResponse,
+    FileUploadCompleteResponse,
     FileUploadCompleteState,
     FileUploadSchema,
     LinkType,
@@ -30,7 +31,6 @@ from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
 from simcore_service_api_server.models.schemas.files import UserFile
 from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
-from simcore_service_storage.api.rest._files import FileUploadCompleteResponse
 from starlette.datastructures import URL
 from tenacity import (
     AsyncRetrying,
@@ -208,7 +208,7 @@ class StorageApi(BaseServiceClientApi):
         response.raise_for_status()
         file_upload_complete_response = Envelope[
             FileUploadCompleteResponse
-        ].model_validate_json(await response.json())
+        ].model_validate_json(response.text)
         assert file_upload_complete_response.data  # nosec
         state_url = f"{file_upload_complete_response.data.links.state}"
         async for attempt in AsyncRetrying(
@@ -223,7 +223,7 @@ class StorageApi(BaseServiceClientApi):
                 resp.raise_for_status()
                 future_enveloped = Envelope[
                     FileUploadCompleteFutureResponse
-                ].model_validate_json(await resp.json())
+                ].model_validate_json(resp.text)
                 assert future_enveloped.data  # nosec
                 if future_enveloped.data.state == FileUploadCompleteState.NOK:
                     msg = "upload not ready yet"

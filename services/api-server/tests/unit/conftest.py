@@ -12,6 +12,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
+from urllib.parse import urlparse, urlunparse
 
 import aiohttp.test_utils
 import httpx
@@ -22,13 +23,16 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from httpx import ASGITransport
+from httpx import ASGITransport, Request, Response
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskProgress,
     TaskStatus,
 )
 from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadCompleteFutureResponse,
+    FileUploadCompleteResponse,
+    FileUploadCompleteState,
     FileUploadSchema,
     HealthCheck,
 )
@@ -443,15 +447,51 @@ def mocked_storage_rest_api_base(
         )
 
         # Add mocks for completion and abort endpoints
+        def generate_future_link(request: Request, **kwargs):
+            parsed_url = urlparse(f"{request.url}")
+            stripped_url = urlunparse(
+                (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
+            )
+
+            payload = FileUploadCompleteResponse.model_validate(
+                {
+                    "links": {
+                        "state": stripped_url
+                        + ":complete/futures/"
+                        + str(faker.uuid4())
+                    },
+                },
+            )
+            return Response(
+                status_code=status.HTTP_200_OK,
+                json=jsonable_encoder(
+                    Envelope[FileUploadCompleteResponse](data=payload)
+                ),
+            )
+
         respx_mock.post(
             re.compile(
-                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete"
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete(?:\?.*)?$"
             ),
             name="complete_upload_file_v0_locations__location_id__files__file_id__complete_post",
+        ).side_effect = generate_future_link
+
+        respx_mock.post(
+            re.compile(
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+"
+            )
         ).respond(
-            status.HTTP_202_ACCEPTED,
-            json=Envelope[dict](data={"state": "ok"}).model_dump(mode="json"),
+            status_code=status.HTTP_200_OK,
+            json=jsonable_encoder(
+                Envelope[FileUploadCompleteFutureResponse](
+                    data=FileUploadCompleteFutureResponse(
+                        state=FileUploadCompleteState.OK,
+                        e_tag="07d1c1a4-b073-4be7-b022-f405d90e99aa",
+                    )
+                )
+            ),
         )
+
         respx_mock.post(
             re.compile(
                 r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+:abort$"
