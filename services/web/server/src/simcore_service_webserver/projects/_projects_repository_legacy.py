@@ -19,7 +19,11 @@ from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.projects import ProjectID, ProjectIDStr
+from models_library.projects import (
+    ProjectID,
+    ProjectIDStr,
+    ProjectListAtDB,
+)
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -584,7 +588,7 @@ class ProjectDBAPI(BaseProjectDB):
         limit: int | None = None,
         # order
         order_by: OrderBy = DEFAULT_ORDER_BY,
-    ) -> tuple[list[ProjectDict], list[ProjectType], int]:
+    ) -> tuple[list[dict[str, Any]], int]:
         async with self.engine.acquire() as conn:
             user_groups_proxy: list[RowProxy] = await self._list_user_groups(
                 conn, user_id
@@ -667,14 +671,18 @@ class ProjectDBAPI(BaseProjectDB):
                     projects.c.id,
                 )
 
-            prjs, prj_types = await self._execute_without_permission_check(
-                conn,
-                select_projects_query=combined_query.offset(offset).limit(limit),
-            )
+            prjs_output = []
+            async for row in conn.execute(combined_query.offset(offset).limit(limit)):
+                # NOTE: Historically, projects were returned as a dictionary. I have created a model that
+                # validates the DB row, but this model includes some default values inside the Workbench Node model.
+                # Therefore, if we use this model, it will return those default values, which is not backward-compatible
+                # with the frontend. The frontend would need to check and adapt how it handles default values in
+                # Workbench nodes, which are currently not returned if not set in the DB.
+                ProjectListAtDB.model_validate(row)
+                prjs_output.append(dict(row.items()))
 
             return (
-                prjs,
-                prj_types,
+                prjs_output,
                 cast(int, total_count),
             )
 
@@ -1248,6 +1256,13 @@ class ProjectDBAPI(BaseProjectDB):
                 if tag_id in project["tags"]:
                     project["tags"].remove(tag_id)
                 return convert_to_schema_names(project, user_email)
+
+    async def get_tags_by_project(self, project_id: str) -> list[int]:
+        async with self.engine.acquire() as conn:
+            query = sa.select(projects_tags.c.tag_id).where(
+                projects_tags.c.project_id == project_id
+            )
+            return [row.tag_id async for row in conn.execute(query)]
 
     #
     # Project Comments

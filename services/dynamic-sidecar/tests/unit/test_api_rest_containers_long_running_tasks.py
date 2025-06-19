@@ -30,6 +30,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
+from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
@@ -42,10 +43,7 @@ from simcore_service_dynamic_sidecar.models.schemas.containers import (
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
-from simcore_service_dynamic_sidecar.modules.outputs._manager import (
-    OutputsManager,
-    UploadPortsFailedError,
-)
+from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
 
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -681,7 +679,7 @@ async def test_container_push_output_ports_missing_node(
     if not mock_port_keys:
         await _test_code()
     else:
-        with pytest.raises(UploadPortsFailedError) as exec_info:
+        with pytest.raises(TaskExceptionError) as exec_info:
             await _test_code()
         assert f"the node id {missing_node_uuid} was not found" in f"{exec_info.value}"
 

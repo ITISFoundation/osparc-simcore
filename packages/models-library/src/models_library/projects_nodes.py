@@ -168,7 +168,7 @@ class Node(BaseModel):
         ),
     ] = None
 
-    thumbnail: Annotated[
+    thumbnail: Annotated[  # <-- (DEPRECATED) Can be removed
         str | HttpUrl | None,
         Field(
             description="url of the latest screenshot of the node",
@@ -232,10 +232,10 @@ class Node(BaseModel):
     ] = DEFAULT_FACTORY
 
     output_node: Annotated[bool | None, Field(deprecated=True, alias="outputNode")] = (
-        None
+        None  # <-- (DEPRECATED) Can be removed
     )
 
-    output_nodes: Annotated[
+    output_nodes: Annotated[  # <-- (DEPRECATED) Can be removed
         list[NodeID] | None,
         Field(
             description="Used in group-nodes. Node IDs of those connected to the output",
@@ -243,7 +243,7 @@ class Node(BaseModel):
         ),
     ] = None
 
-    parent: Annotated[
+    parent: Annotated[  # <-- (DEPRECATED) Can be removed
         NodeID | None,
         Field(
             description="Parent's (group-nodes') node ID s. Used to group",
