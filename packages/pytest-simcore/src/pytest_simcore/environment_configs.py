@@ -58,12 +58,22 @@ def external_envfile_dict(
             term in envfile.name.lower() for term in ("ignore", "secret")
         ):
             _logger.warning(
-                "🚨 CAUTION: The file '%s' from '--external-envfile' may be versioned and exposed publicly. "
-                "Add 'secret' or 'ignore' to the filename to exclude it automatically.",
+                "🚨 CAUTION: The external envfile '%s' may contain sensitive data and could be accidentally versioned. "
+                "To prevent this, include the words 'secret' or 'ignore' in the filename.",
                 envfile.name,
             )
 
         envs = load_dotenv(envfile)
+
+    if envs:
+        response = input(
+            f"🚨 CAUTION: You are about to run tests using environment variables loaded from '{envfile}'.\n"
+            "This may cause tests to interact with or modify real external systems (e.g., production or staging environments).\n"
+            "Proceeding could result in data loss or unintended side effects.\n"
+            "Are you sure you want to continue? [y/N]: "
+        )
+        if response.strip().lower() not in ("y", "yes"):
+            pytest.exit("Aborted by user due to external envfile usage.")
 
     return envs
 
