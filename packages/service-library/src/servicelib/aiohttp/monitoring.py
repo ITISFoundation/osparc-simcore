@@ -1,6 +1,5 @@
 """Enables monitoring of some quantities needed for diagnostics"""
 
-import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from time import perf_counter
@@ -95,18 +94,15 @@ def middleware_factory(
         except web.HTTPServerError as exc:
             resp = exc
             log_exception = exc
-            raise resp from exc
+            raise
+
         except web.HTTPException as exc:
             resp = exc
             log_exception = None
-            raise resp from exc
-        except asyncio.CancelledError as exc:
-            resp = web.HTTPInternalServerError(text=f"{exc}")
-            log_exception = exc
-            raise resp from exc
+            raise
+
         except Exception as exc:  # pylint: disable=broad-except
-            resp = web.HTTPInternalServerError(text=f"{exc}")
-            resp.__cause__ = exc
+            resp = web.HTTPInternalServerError()
             log_exception = exc
             raise resp from exc
 
