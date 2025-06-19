@@ -319,8 +319,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
@@ -358,8 +356,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/webserver/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -391,8 +387,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/webserver/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -424,8 +418,6 @@ jobs:
           with:
             python-version: ${{ matrix.python }}
             cache-dependency-glob: "**/webserver/requirements/ci.txt"
-            setup-docker: 'true'
-            show-system-versions: 'true'
         - name: install webserver
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
@@ -456,8 +448,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/storage/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: typecheck
@@ -492,8 +482,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/agent/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
@@ -529,8 +517,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/notifications/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/notifications.bash install
       - name: typecheck
@@ -564,8 +550,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/api/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -597,8 +581,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/api-server/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
@@ -636,8 +618,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/autoscaling.bash install
       - name: typecheck
@@ -672,8 +652,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/catalog/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: typecheck
@@ -714,8 +692,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: |
           make devenv
@@ -761,8 +737,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
       - name: typecheck
@@ -803,8 +777,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: typecheck
@@ -845,8 +817,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: typecheck
@@ -887,8 +857,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/aws-library/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/aws-library.bash install
       - name: typecheck
@@ -966,8 +934,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
       - name: typecheck
@@ -1002,8 +968,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: typecheck
@@ -1038,8 +1002,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/payments/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
@@ -1074,8 +1036,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dynamic-scheduler.bash install
       - name: typecheck
@@ -1110,8 +1070,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: |
           make devenv
@@ -1156,8 +1114,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
@@ -1192,8 +1148,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: |
           make devenv
@@ -1239,8 +1193,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/pylint/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
@@ -1265,8 +1217,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
@@ -1301,8 +1251,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/invitations/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/invitations.bash install
       - name: typecheck
@@ -1337,8 +1285,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/service-integration/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
@@ -1373,8 +1319,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/service-library/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: typecheck
@@ -1409,8 +1353,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/settings-library/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: typecheck
@@ -1445,8 +1387,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/models-library/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
       - name: typecheck
@@ -1480,8 +1420,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/common-library/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/common-library.bash install
       - name: typecheck
@@ -1514,8 +1452,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/notifications-library.bash install
       - name: typecheck
@@ -1550,8 +1486,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
@@ -1638,8 +1572,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -1682,9 +1614,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -1727,9 +1656,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -1776,9 +1702,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: setup rclone docker volume plugin
         run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
       - name: Download and load Docker images
@@ -1825,9 +1748,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -1873,9 +1793,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/docker-api-proxy/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -1918,8 +1835,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: Download and load Docker images
@@ -1988,9 +1903,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -2029,9 +1941,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -2076,9 +1985,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - uses: actions/setup-node@v4.1.0
         with:
           node-version: ${{ matrix.node }}
@@ -2139,9 +2045,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
-          expose-github-runtime: 'true'
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:
@@ -2187,8 +2090,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
-          setup-docker: 'true'
-          show-system-versions: 'true'
       - name: install
         run: ./ci/github/system-testing/environment-setup.bash install
       - name: test
@@ -2241,7 +2142,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-          setup-docker: 'true'
           show-system-versions: false
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images

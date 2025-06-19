@@ -30,7 +30,7 @@ inputs:
   expose-github-runtime:
     description: 'Whether to expose GitHub runtime for buildx (needed for some integration tests)'
     required: false
-    default: 'false'
+    default: 'true'
 
 runs:
   using: 'composite'
