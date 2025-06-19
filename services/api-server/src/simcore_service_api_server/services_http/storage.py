@@ -31,7 +31,6 @@ from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
 from simcore_service_api_server.models.schemas.files import UserFile
 from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
-from starlette.datastructures import URL
 from tenacity import (
     AsyncRetrying,
     before_sleep_log,
@@ -249,26 +248,6 @@ class StorageApi(BaseServiceClientApi):
             params={"user_id": f"{user_id}"},
         )
         response.raise_for_status()
-
-    async def create_complete_upload_link(
-        self, *, file: File, query: dict[str, str] | None = None
-    ) -> URL:
-        url = URL(
-            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete"
-        )
-        if query is not None:
-            url = url.include_query_params(**query)
-        return url
-
-    async def create_abort_upload_link(
-        self, *, file: File, query: dict[str, str] | None = None
-    ) -> URL:
-        url = URL(
-            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort"
-        )
-        if query is not None:
-            url = url.include_query_params(**query)
-        return url
 
     @_exception_mapper(http_status_map={})
     async def create_soft_link(
