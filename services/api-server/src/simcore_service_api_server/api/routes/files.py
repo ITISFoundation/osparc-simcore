@@ -5,8 +5,6 @@ import logging
 from typing import IO, Annotated, Any, Final
 from uuid import UUID
 
-from aiohttp import ClientSession, ClientTimeout, TCPConnector
-from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Body, Depends
 from fastapi import File as FileParam
 from fastapi import Header, Request, UploadFile, status
@@ -15,23 +13,18 @@ from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileUploadCompletionBody,
-    LinkType,
 )
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import NodeID
-from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
-from servicelib.aiohttp import client_session
+from pydantic import AnyUrl, PositiveInt, TypeAdapter, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
-from simcore_sdk.node_ports_common.exceptions import StorageServerIssue
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
     UploadedFile,
     UploadedFolder,
     abort_upload,
     complete_file_upload,
-    get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.datastructures import URL
@@ -304,6 +297,7 @@ async def get_upload_links(
     client_file: UserFileToProgramJob | UserFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
@@ -311,41 +305,10 @@ async def get_upload_links(
         webserver_api=webserver_api, file_id=None, client_file=client_file
     )
 
-    try:
-        async with ClientSession(
-            connector=TCPConnector(force_close=True),
-            timeout=ClientTimeout(
-                total=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
-                connect=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
-                sock_connect=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
-                sock_read=_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS,
-            ),
-        ) as client_session:
-            _, upload_links = await get_upload_links_from_s3(
-                user_id=user_id,
-                store_name=None,
-                store_id=SIMCORE_LOCATION,
-                s3_object=file_meta.storage_file_id,
-                client_session=client_session,
-                link_type=LinkType.PRESIGNED,
-                file_size=ByteSize(client_file.filesize),
-                is_directory=False,
-                sha256_checksum=file_meta.sha256_checksum,
-            )
-    except StorageServerIssue as exc:
-        error_code = create_error_code(exc)
-        msg = f"Request to storage service timed out [{error_code}]"
-        status_code = status.HTTP_504_GATEWAY_TIMEOUT
+    upload_links = await storage_client.get_file_upload_links(
+        user_id=user_id, file=file_meta, client_file=client_file
+    )
 
-        _logger.exception(
-            **create_troubleshotting_log_kwargs(
-                msg,
-                error=exc,
-                error_code=error_code,
-                tip="Check if storage service is healthy",
-            )
-        )
-        raise HTTPException(status_code=status_code, detail=msg) from exc
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
     )

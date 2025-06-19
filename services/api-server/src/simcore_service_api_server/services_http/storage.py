@@ -169,7 +169,7 @@ class StorageApi(BaseServiceClientApi):
             "link_type": LinkType.PRESIGNED.value,
             "file_size": int(client_file.filesize),
             "is_directory": "false",
-            "sha256_checksum": client_file.sha256_checksum,
+            "sha256_checksum": f"{client_file.sha256_checksum}",
         }
 
         # complete_upload_file
