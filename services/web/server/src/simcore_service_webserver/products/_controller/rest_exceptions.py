@@ -1,3 +1,4 @@
+from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
 from ...constants import MSG_TRY_AGAIN_OR_SUPPORT
@@ -12,11 +13,14 @@ from ..errors import MissingStripeConfigError, ProductNotFoundError
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProductNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "{product_name} was not found",
+        user_message("{product_name} was not found"),
     ),
     MissingStripeConfigError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        "{product_name} service is currently unavailable." + MSG_TRY_AGAIN_OR_SUPPORT,
+        user_message(
+            "{product_name} service is currently unavailable."
+            + MSG_TRY_AGAIN_OR_SUPPORT
+        ),
     ),
 }
 
