@@ -19,7 +19,6 @@ from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
 from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
-from ..utils import is_production_environ
 from . import status
 from .rest_responses import (
     create_data_response,
@@ -49,8 +48,6 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 def _handle_unexpected_exception_as_500(
     request: web.BaseRequest,
     exception: Exception,
-    *,
-    skip_internal_error_details: bool,
 ) -> web.HTTPInternalServerError:
     """Process unexpected exceptions and return them as HTTP errors with proper formatting.
 
@@ -69,7 +66,6 @@ def _handle_unexpected_exception_as_500(
         exception,
         user_error_msg,
         web.HTTPInternalServerError,
-        skip_internal_error_details=skip_internal_error_details,
         error_code=error_code,
     )
 
@@ -137,10 +133,8 @@ def _handle_http_successful(
 
 def _handle_exception_as_http_error(
     request: web.Request,
-    exception: Exception,
+    exception: NotImplementedError | TimeoutError,
     status_code: int,
-    *,
-    skip_internal_error_details: bool,
 ) -> HTTPError:
     """
     Generic handler for exceptions that map to specific HTTP status codes.
@@ -155,16 +149,16 @@ def _handle_exception_as_http_error(
         )
         raise ValueError(msg)
 
+    error_message = f"{exception}"  # FIXME: do not log exception message directly!!!!
+
     return create_http_error(
         exception,
-        f"{exception}",
+        error_message,
         http_error_cls,
-        skip_internal_error_details=skip_internal_error_details,
     )
 
 
 def error_middleware_factory(api_version: str) -> Middleware:
-    _is_prod: bool = is_production_environ()
 
     @web.middleware
     async def _middleware_handler(request: web.Request, handler: Handler):
@@ -189,27 +183,19 @@ def error_middleware_factory(api_version: str) -> Middleware:
 
             except NotImplementedError as exc:
                 result = _handle_exception_as_http_error(
-                    request,
-                    exc,
-                    status.HTTP_501_NOT_IMPLEMENTED,
-                    skip_internal_error_details=_is_prod,
+                    request, exc, status.HTTP_501_NOT_IMPLEMENTED
                 )
 
             except TimeoutError as exc:
                 result = _handle_exception_as_http_error(
-                    request,
-                    exc,
-                    status.HTTP_504_GATEWAY_TIMEOUT,
-                    skip_internal_error_details=_is_prod,
+                    request, exc, status.HTTP_504_GATEWAY_TIMEOUT
                 )
 
         except Exception as exc:  # pylint: disable=broad-except
             #
             # Last resort for unexpected exceptions (including those raise by the exception handlers!)
             #
-            result = _handle_unexpected_exception_as_500(
-                request, exc, skip_internal_error_details=_is_prod
-            )
+            result = _handle_unexpected_exception_as_500(request, exc)
 
         return result
 
@@ -230,7 +216,6 @@ def envelope_middleware_factory(
     api_version: str,
 ) -> Callable[..., Awaitable[StreamResponse]]:
     # FIXME: This data conversion is very error-prone. Use decorators instead!
-    _is_prod: bool = is_production_environ()
 
     @web.middleware
     async def _middleware_handler(
