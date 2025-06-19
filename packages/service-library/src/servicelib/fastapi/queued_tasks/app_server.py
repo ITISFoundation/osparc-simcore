@@ -14,7 +14,11 @@ class FastAPIAppServer(BaseAppServer):
     def __init__(self, app: FastAPI):
         super().__init__()
         self._app = app
-        self._lifespan_manager: LifespanManager | None = None
+        self._lifespan_manager = LifespanManager(
+            self.fastapi_app,
+            startup_timeout=_STARTUP_TIMEOUT,
+            shutdown_timeout=_SHUTDOWN_TIMEOUT,
+        )
 
     @property
     def fastapi_app(self) -> FastAPI:
@@ -22,11 +26,6 @@ class FastAPIAppServer(BaseAppServer):
         return self._app
 
     async def on_startup(self) -> None:
-        self._lifespan_manager = LifespanManager(
-            self.fastapi_app,
-            startup_timeout=_STARTUP_TIMEOUT,
-            shutdown_timeout=_SHUTDOWN_TIMEOUT,
-        )
         await self._lifespan_manager.__aenter__()
 
     async def on_shutdown(self) -> None:

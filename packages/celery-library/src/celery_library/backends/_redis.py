@@ -12,7 +12,7 @@ from servicelib.queued_tasks.models import (
     TaskMetadata,
     TaskUUID,
 )
-from servicelib.redis._client import RedisClientSDK
+from servicelib.redis import RedisClientSDK
 
 from ..utils import build_task_id_prefix
 
