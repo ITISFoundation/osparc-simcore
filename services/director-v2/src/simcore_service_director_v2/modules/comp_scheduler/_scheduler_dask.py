@@ -232,21 +232,21 @@ class DaskScheduler(BaseCompScheduler):
             )
         )
 
-    async def _release_resources(
-        self, user_id: UserID, project_id: ProjectID, comp_run: CompRunsAtDB
-    ) -> None:
+    async def _release_resources(self, comp_run: CompRunsAtDB) -> None:
         """release resources used by the scheduler for a given user and project"""
         with (
             log_catch(_logger, reraise=False),
             log_context(
                 _logger,
                 logging.INFO,
-                msg=f"releasing resources for {user_id=}, {project_id=}, {comp_run.run_id=}",
+                msg=f"releasing resources for {comp_run.user_id=}, {comp_run.project_uuid=}, {comp_run.run_id=}",
             ),
         ):
             await self.dask_clients_pool.release_client_ref(
                 ref=_DASK_CLIENT_RUN_REF.format(
-                    user_id=user_id, project_id=project_id, run_id=comp_run.run_id
+                    user_id=comp_run.user_id,
+                    project_id=comp_run.project_uuid,
+                    run_id=comp_run.run_id,
                 )
             )
 
