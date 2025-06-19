@@ -138,6 +138,7 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/service-integration/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             service-library:
               - 'packages/pytest-simcore/**'
               - 'packages/service-library/**'
@@ -148,9 +149,11 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/settings-library/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             simcore-sdk:
               - 'packages/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             agent:
               - 'packages/**'
               - 'services/agent/**'
@@ -165,6 +168,7 @@ jobs:
               - 'mypy.ini'
             api:
               - 'api/**'
+              - 'mypy.ini'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
@@ -235,6 +239,7 @@ jobs:
               - 'packages/**'
               - 'services/migration/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             payments:
                 - 'packages/**'
                 - 'services/payments/**'
@@ -250,6 +255,7 @@ jobs:
             docker-api-proxy:
                 - 'packages/**'
                 - 'services/docker-api-proxy/**'
+                - 'mypy.ini'
             resource-usage-tracker:
               - 'packages/**'
               - 'services/resource-usage-tracker/**'
@@ -269,12 +275,15 @@ jobs:
               - 'packages/**'
               - 'services/web/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             anything:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'mypy.ini'
             anything-py:
               - '**/*.py'
+              - 'mypy.ini'
             anything-js:
               - '**/*.js'
   build-test-images:
