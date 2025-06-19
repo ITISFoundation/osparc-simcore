@@ -79,7 +79,7 @@ def external_envfile_dict(
 
 
 @pytest.fixture(scope="session")
-def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
+def skip_if_no_external_envfile(external_envfile_dict: EnvVarsDict) -> None:
     if not external_envfile_dict:
         pytest.skip(reason="Skipping test since external-envfile is not set")
 
