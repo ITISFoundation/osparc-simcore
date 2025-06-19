@@ -17,6 +17,7 @@ from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+from servicelib.logging_utils import log_context
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
@@ -302,9 +303,12 @@ async def get_upload_links(
         webserver_api=webserver_api, file_id=None, client_file=client_file
     )
 
-    upload_links = await storage_client.get_file_upload_links(
-        user_id=user_id, file=file_meta, client_file=client_file
-    )
+    with log_context(
+        logger=_logger, level=logging.DEBUG, msg=f"Getting upload links for {file_meta}"
+    ):
+        upload_links = await storage_client.get_file_upload_links(
+            user_id=user_id, file=file_meta, client_file=client_file
+        )
 
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id

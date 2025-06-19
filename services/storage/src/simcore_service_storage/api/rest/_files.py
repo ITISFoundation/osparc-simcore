@@ -20,6 +20,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
+from servicelib.logging_utils import log_context
 from yarl import URL
 
 from ...dsm import get_dsm_provider
@@ -185,17 +186,17 @@ async def upload_file(
     """
     # NOTE: Used by legacy dynamic services with single presigned link -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
-    _logger.debug(
-        "creating upload links for file %s at location %s", file_id, location_id
-    )
-    links: UploadLinks = await dsm.create_file_upload_links(
-        user_id=query_params.user_id,
-        file_id=file_id,
-        link_type=query_params.link_type,
-        file_size_bytes=query_params.file_size or ByteSize(0),
-        is_directory=query_params.is_directory,
-        sha256_checksum=query_params.sha256_checksum,
-    )
+    with log_context(
+        logger=_logger, level=logging.DEBUG, msg=f"Creating upload links for {file_id=}"
+    ):
+        links: UploadLinks = await dsm.create_file_upload_links(
+            user_id=query_params.user_id,
+            file_id=file_id,
+            link_type=query_params.link_type,
+            file_size_bytes=query_params.file_size or ByteSize(0),
+            is_directory=query_params.is_directory,
+            sha256_checksum=query_params.sha256_checksum,
+        )
     if query_params.is_v1_upload:
         # return v1 response
         assert len(links.urls) == 1  # nosec
