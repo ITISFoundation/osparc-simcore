@@ -456,6 +456,7 @@ qx.Class.define("osparc.store.Store", {
     },
 
     setStudyDebt: function(studyId, debt) {
+      // init object if it does not exist
       if (this.__studiesInDebt === null) {
         this.__studiesInDebt = {};
       }
