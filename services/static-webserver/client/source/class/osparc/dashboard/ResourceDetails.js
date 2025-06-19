@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "tutorial":
           case "hypertool":
             // when getting the latest study data, the debt information was lost
-            if (osparc.study.Utils.isInDebt(this.__studyData)) {
+            if (osparc.study.Utils.isInDebt(this.__resourceData)) {
               const mainStore = qx.store.Store.getInstance();
               this.__resourceData["debt"] = mainStore.getStudyDebt(this.__resourceData["uuid"]);
             }
