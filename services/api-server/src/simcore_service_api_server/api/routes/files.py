@@ -11,7 +11,6 @@ from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage.storage_schemas import (
-    ETag,
     FileUploadCompletionBody,
 )
 from models_library.basic_types import SHA256Str
@@ -24,7 +23,6 @@ from simcore_sdk.node_ports_common.filemanager import (
     UploadedFile,
     UploadedFolder,
     abort_upload,
-    complete_file_upload,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.datastructures import URL
@@ -444,14 +442,7 @@ async def complete_multipart_upload(
     file = await _create_domain_file(
         webserver_api=webserver_api, file_id=file_id, client_file=client_file
     )
-    complete_link: URL = await storage_client.create_complete_upload_link(
-        file=file, query={"user_id": str(user_id)}
-    )
-
-    e_tag: ETag | None = await complete_file_upload(
-        uploaded_parts=uploaded_parts.parts,
-        upload_completion_link=TypeAdapter(AnyUrl).validate_python(f"{complete_link}"),
-    )
+    e_tag = await storage_client.complete_file_upload(user_id=user_id, file=file)
     assert e_tag is not None  # nosec
 
     file.e_tag = e_tag

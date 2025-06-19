@@ -1,20 +1,24 @@
 import logging
 import re
 import urllib.parse
+from datetime import timedelta
 from functools import partial
 from mimetypes import guess_type
-from typing import Literal
+from typing import Final, Literal
 from uuid import UUID
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_storage.storage_schemas import (
+    ETag,
     FileMetaDataArray,
 )
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet as StorageFileMetaData,
 )
 from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadCompleteFutureResponse,
+    FileUploadCompleteState,
     FileUploadSchema,
     LinkType,
     PresignedLink,
@@ -26,12 +30,23 @@ from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
 from simcore_service_api_server.models.schemas.files import UserFile
 from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
+from simcore_service_storage.api.rest._files import FileUploadCompleteResponse
 from starlette.datastructures import URL
+from tenacity import (
+    AsyncRetrying,
+    before_sleep_log,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.domain.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+
+_POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
+
 
 _logger = logging.getLogger(__name__)
 
@@ -182,6 +197,50 @@ class StorageApi(BaseServiceClientApi):
         enveloped_data = Envelope[FileUploadSchema].model_validate_json(response.text)
         assert enveloped_data.data  # nosec
         return enveloped_data.data
+
+    @_exception_mapper(http_status_map={})
+    async def complete_file_upload(self, *, user_id: int, file: File) -> ETag:
+
+        response = await self.client.post(
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete",
+            params={"user_id": f"{user_id}"},
+        )
+        response.raise_for_status()
+        file_upload_complete_response = Envelope[
+            FileUploadCompleteResponse
+        ].model_validate_json(await response.json())
+        assert file_upload_complete_response.data  # nosec
+        state_url = f"{file_upload_complete_response.data.links.state}"
+        async for attempt in AsyncRetrying(
+            reraise=False,
+            wait=wait_fixed(1),
+            stop=stop_after_delay(_POLL_TIMEOUT),
+            retry=retry_if_exception_type(ValueError),
+            before_sleep=before_sleep_log(_logger, logging.DEBUG),
+        ):
+            with attempt:
+                resp = await self.client.post(state_url)
+                resp.raise_for_status()
+                future_enveloped = Envelope[
+                    FileUploadCompleteFutureResponse
+                ].model_validate_json(await resp.json())
+                assert future_enveloped.data  # nosec
+                if future_enveloped.data.state == FileUploadCompleteState.NOK:
+                    msg = "upload not ready yet"
+                    raise ValueError(msg)
+
+                assert future_enveloped.data.e_tag  # nosec
+                _logger.debug(
+                    "multipart upload completed in %s, received %s",
+                    attempt.retry_state.retry_object.statistics,
+                    f"{future_enveloped.data.e_tag=}",
+                )
+                return future_enveloped.data.e_tag
+        msg = f"Could not complete the upload for file '{file.filename}' (id: {file.id}) within the allocated time."
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=msg,
+        )
 
     async def create_complete_upload_link(
         self, *, file: File, query: dict[str, str] | None = None

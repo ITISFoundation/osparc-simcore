@@ -5,6 +5,7 @@
 # pylint: disable=broad-exception-caught
 
 import json
+import re
 import subprocess
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
@@ -27,7 +28,10 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskProgress,
     TaskStatus,
 )
-from models_library.api_schemas_storage.storage_schemas import HealthCheck
+from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadSchema,
+    HealthCheck,
+)
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
@@ -420,6 +424,41 @@ def mocked_storage_rest_api_base(
                     "diagnostics_url": faker.url(),
                 }
             ).model_dump(mode="json"),
+        )
+
+        assert (
+            openapi["paths"]["/v0/locations/{location_id}/files/{file_id}"]["put"][
+                "operationId"
+            ]
+            == "upload_file_v0_locations__location_id__files__file_id__put"
+        )
+        respx_mock.put(
+            re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"),
+            name="upload_file_v0_locations__location_id__files__file_id__put",
+        ).respond(
+            status.HTTP_200_OK,
+            json=Envelope[FileUploadSchema](
+                data=FileUploadSchema.model_json_schema()["examples"][0]
+            ).model_dump(mode="json"),
+        )
+
+        # Add mocks for completion and abort endpoints
+        respx_mock.post(
+            re.compile(
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete"
+            ),
+            name="complete_upload_file_v0_locations__location_id__files__file_id__complete_post",
+        ).respond(
+            status.HTTP_202_ACCEPTED,
+            json=Envelope[dict](data={"state": "ok"}).model_dump(mode="json"),
+        )
+        respx_mock.post(
+            re.compile(
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+:abort$"
+            ),
+            name="abort_upload_file_v0_locations__location_id__files__file_id__abort_post",
+        ).respond(
+            status.HTTP_204_NO_CONTENT,
         )
 
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
