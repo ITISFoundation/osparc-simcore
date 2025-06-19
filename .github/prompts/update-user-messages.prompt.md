@@ -43,7 +43,7 @@ When modifying user messages, follow these rules:
    user_message("Unable to load project.", _version=1)
    ```
 
-3. **Message Style**: Follow the guidelines in `${workspaceFolder}/docs/user-messages-guidelines.md`
+3. **Message Style**: Follow *strictly* the guidelines in `${workspaceFolder}/docs/user-messages-guidelines.md`
 
 4. **Preserve Context**: Ensure the modified message conveys the same meaning and context as the original.
 
