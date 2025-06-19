@@ -113,6 +113,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         width: this.WIDTH,
         height: this.HEIGHT,
       });
+      resourceDetails.addListener("closeWindow", () => {
+        win.close();
+      });
       return win;
     },
 
@@ -487,7 +490,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           })
           billingSettings.addListener("closeWindow", () => {
             this.fireEvent("closeWindow");
-          });
+          }, this);
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
         }
