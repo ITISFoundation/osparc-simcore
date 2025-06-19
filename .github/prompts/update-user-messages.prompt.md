@@ -26,8 +26,8 @@ When modifying user messages, follow these rules:
    # Before modification
    user_message("Error: Unable to connect to the server.")
 
-   # After modification
-   user_message("Error: Cannot establish connection to the server.", _version=1)
+   # After modification, add _version or increment it if it already exists
+   user_message("Currently unable to establish connection to the server.", _version=1)
    ```
 
 2. **F-String Preservation**: When modifying messages that use f-strings, preserve all parameters and their formatting:
@@ -66,7 +66,7 @@ When modifying user messages, follow these rules:
 error_dialog(user_message("Failed to save changes."))
 
 # After
-error_dialog(user_message("Failed to save your changes. Please try again.", _version=1))
+error_dialog(user_message("Unable to save your changes. Please try again.", _version=1))
 ```
 
 ### Example 2: F-string Message Update
@@ -76,7 +76,7 @@ error_dialog(user_message("Failed to save your changes. Please try again.", _ver
 raise ValueError(user_message(f"Invalid input parameter: {param_name}"))
 
 # After
-raise ValueError(user_message(f"The parameter '{param_name}' contains an invalid value.", _version=1))
+raise ValueError(user_message(f"The parameter '{param_name}' contains a value that is not allowed.", _version=1))
 ```
 
 ### Example 3: Already Versioned Message
