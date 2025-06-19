@@ -315,10 +315,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "web/server"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
@@ -352,10 +354,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "webserver"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/webserver/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -383,10 +387,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "webserver"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/webserver/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -414,10 +420,12 @@ jobs:
         - name: Checkout code
           uses: actions/checkout@v4
         - name: Setup environment
-          uses: ./.github/actions/setup-unit-tests
+          uses: ./.github/actions/setup-simcore-env
           with:
-            service-name: "webserver"
             python-version: ${{ matrix.python }}
+            cache-dependency-glob: "**/webserver/requirements/ci.txt"
+            setup-docker: 'true'
+            show-system-versions: 'true'
         - name: install webserver
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
@@ -444,10 +452,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "storage"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/storage/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: typecheck
@@ -478,10 +488,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "agent"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/agent/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
@@ -513,10 +525,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "notifications"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/notifications/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/notifications.bash install
       - name: typecheck
@@ -546,10 +560,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "api"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/api/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -577,10 +593,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "api-server"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/api-server/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
@@ -614,10 +632,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "autoscaling"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/autoscaling.bash install
       - name: typecheck
@@ -648,10 +668,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "catalog"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/catalog/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: typecheck
@@ -688,10 +710,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "clusters-keeper"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: |
           make devenv
@@ -733,10 +757,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "datcore-adapter"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
       - name: typecheck
@@ -773,10 +799,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "director"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/director/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: typecheck
@@ -813,10 +841,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "director-v2"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: typecheck
@@ -853,10 +883,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "aws-library"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/aws-library/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/aws-library.bash install
       - name: typecheck
@@ -930,10 +962,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "dask-task-models-library"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
       - name: typecheck
@@ -964,10 +998,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "dask-sidecar"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: typecheck
@@ -998,10 +1034,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "payments"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/payments/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
@@ -1032,10 +1070,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "dynamic-scheduler"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dynamic-scheduler.bash install
       - name: typecheck
@@ -1066,10 +1106,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "resource-usage-tracker"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: |
           make devenv
@@ -1110,10 +1152,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "dynamic-sidecar"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
@@ -1144,10 +1188,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "efs-guardian"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: |
           make devenv
@@ -1189,10 +1235,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "pylint"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/pylint/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
@@ -1213,10 +1261,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "postgres-database"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
@@ -1247,10 +1297,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "invitations"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/invitations/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/invitations.bash install
       - name: typecheck
@@ -1281,10 +1333,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "service-integration"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/service-integration/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
@@ -1315,10 +1369,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "service-library"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/service-library/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: typecheck
@@ -1349,10 +1405,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "settings-library"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/settings-library/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: typecheck
@@ -1383,10 +1441,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "models-library"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/models-library/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
       - name: typecheck
@@ -1416,10 +1476,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "common-library"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/common-library/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/common-library.bash install
       - name: typecheck
@@ -1448,10 +1510,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "notifications-library"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/unit-testing/notifications-library.bash install
       - name: typecheck
@@ -1482,10 +1546,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Setup environment
-        uses: ./.github/actions/setup-unit-tests
+        uses: ./.github/actions/setup-simcore-env
         with:
-          service-name: "simcore-sdk"
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
@@ -1567,35 +1633,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          setup-docker: 'true'
+          show-system-versions: 'true'
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
