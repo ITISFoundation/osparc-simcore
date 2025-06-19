@@ -303,24 +303,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "web/server"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
@@ -351,24 +338,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "webserver"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -393,24 +367,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "webserver"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -435,24 +396,11 @@ jobs:
           os: [ubuntu-24.04]
         fail-fast: false
       steps:
-        - uses: actions/checkout@v4
-        - name: setup docker buildx
-          id: buildx
-          uses: docker/setup-buildx-action@v3
+        - name: Setup environment
+          uses: ./.github/actions/setup-unit-tests
           with:
-            driver: docker-container
-        - name: setup python environment
-          uses: actions/setup-python@v5
-          with:
+            service-name: "webserver"
             python-version: ${{ matrix.python }}
-        - name: install uv
-          uses: astral-sh/setup-uv@v6
-          with:
-            version: "0.6.x"
-            enable-cache: false
-            cache-dependency-glob: "**/web/server/requirements/ci.txt"
-        - name: show system version
-          run: ./ci/helpers/show_system_versions.bash
         - name: install webserver
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
@@ -480,24 +428,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "storage"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/storage/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: typecheck
@@ -525,26 +460,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "agent"
           python-version: ${{ matrix.python }}
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/agent/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/agent.bash install
       - name: typecheck
@@ -571,24 +493,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "notifications"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/notifications/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/notifications.bash install
       - name: typecheck
@@ -615,24 +524,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "api"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/api/tests/requirements.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -657,24 +553,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "api-server"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/api-server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
@@ -705,24 +588,11 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup environment
+        uses: ./.github/actions/setup-unit-tests
         with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
+          service-name: "autoscaling"
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/autoscaling.bash install
       - name: typecheck
