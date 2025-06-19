@@ -286,7 +286,12 @@ qx.Class.define("osparc.study.BillingSettings", {
           const msg = this.tr("Credit Account saved");
           osparc.FlashMessenger.logAs(msg, "INFO");
         })
-        .catch(err => osparc.FlashMessenger.logError(err))
+        .catch(err => {
+          if ("status" in err && err["status"] == 402) {
+            osparc.study.Utils.extractDebtFromError(this.__studyData["uuid"], err);
+          }
+          osparc.FlashMessenger.logError(err);
+        })
         .finally(() => {
           creditAccountBox.setEnabled(true);
         });
