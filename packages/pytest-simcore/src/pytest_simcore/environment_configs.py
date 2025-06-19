@@ -23,7 +23,10 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         type=Path,
         default=None,
-        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
+        help="Path to an env file. Replaces .env-devel in the tests by an external envfile."
+        "e.g. consider "
+        " `ln -s /path/to/osparc-ops-config/repo.config .secrets` and then "
+        " `pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py`",
     )
 
 
