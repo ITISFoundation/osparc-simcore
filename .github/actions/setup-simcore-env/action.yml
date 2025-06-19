@@ -30,9 +30,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Setup Docker BuildX
       if: inputs.setup-docker == 'true'
       id: buildx
