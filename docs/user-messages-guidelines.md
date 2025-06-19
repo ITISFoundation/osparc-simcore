@@ -1,6 +1,6 @@
-# Error and Warning Message Guidelines
+# User Message Guidelines
 
-These guidelines ensure that messages are user-friendly, clear, and helpful while maintaining a professional tone. 🚀
+These guidelines ensure that error and warnings user-facing messages are user-friendly, clear, and helpful while maintaining a professional tone. 🚀
 
 Some details:
 

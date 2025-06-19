@@ -1,5 +1,6 @@
 import logging
 
+from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
 from ...exception_handling import (
@@ -17,19 +18,21 @@ _logger = logging.getLogger(__name__)
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     LicensedItemNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Market item {licensed_item_id} not found.",
+        user_message("Market item {licensed_item_id} not found."),
     ),
     WalletAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Credit account {wallet_id} forbidden.",
+        user_message("Credit account {wallet_id} forbidden."),
     ),
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
-        "Not enough credits in the credit account.",
+        user_message("Not enough credits in the credit account."),
     ),
     LicensedItemPricingPlanMatchError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
-        "The provided pricing plan does not match the one associated with the licensed item.",
+        user_message(
+            "The provided pricing plan does not match the one associated with the licensed item."
+        ),
     ),
 }
 

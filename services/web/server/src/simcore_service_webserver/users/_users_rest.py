@@ -3,6 +3,7 @@ from contextlib import suppress
 from typing import Any
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
@@ -54,25 +55,33 @@ _logger = logging.getLogger(__name__)
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     PendingPreRegistrationNotFoundError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
-        PendingPreRegistrationNotFoundError.msg_template,
+        user_message(PendingPreRegistrationNotFoundError.msg_template),
     ),
     UserNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "This user cannot be found. Either it is not registered or has enabled privacy settings.",
+        user_message(
+            "This user cannot be found. Either it is not registered or has enabled privacy settings."
+        ),
     ),
     UserNameDuplicateError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Username '{user_name}' is already taken. "
-        "Consider '{alternative_user_name}' instead.",
+        user_message(
+            "Username '{user_name}' is already taken. "
+            "Consider '{alternative_user_name}' instead."
+        ),
     ),
     AlreadyPreRegisteredError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Found {num_found} matches for '{email}'. Cannot pre-register existing user",
+        user_message(
+            "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
+        ),
     ),
     MissingGroupExtraPropertiesForProductError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        "The product is not ready for use until the configuration is fully completed. "
-        "Please wait and try again. ",
+        user_message(
+            "The product is not ready for use until the configuration is fully completed. "
+            "Please wait and try again. "
+        ),
     ),
 }
 
