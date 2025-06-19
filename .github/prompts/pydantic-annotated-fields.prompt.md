@@ -58,13 +58,10 @@ class ProjectModel(BaseModel):
     name: str = Field(default="Untitled Project", min_length=3, max_length=50)
     created_at: datetime = Field(default_factory=datetime.now)
     value: int = Field(..., description="Project value")
+    str_with_default: str = Field(default="foo")
+
     config: dict = Field(default={"version": "1.0", "theme": "default"})
 
-    @field_validator("name")
-    def validate_name(cls, v):
-        if v.isdigit():
-            raise ValueError("Name cannot be only digits")
-        return v
 ```
 
 ### After:
@@ -80,11 +77,8 @@ class ProjectModel(BaseModel):
     name: Annotated[str, Field(min_length=3, max_length=50)] = "Untitled Project"
     created_at: Annotated[datetime, Field(default_factory=datetime.now)] = DEFAULT_FACTORY
     value: Annotated[int, Field(description="Project value")]
+    str_with_default: str = "foo"
+
     config: dict = {"version": "1.0", "theme": "default"}
 
-    @field_validator("name")
-    def validate_name(cls, v):
-        if v.isdigit():
-            raise ValueError("Name cannot be only digits")
-        return v
 ```
