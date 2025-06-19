@@ -11,6 +11,7 @@ file_meta_data = sa.Table(
     sa.Column("bucket_name", sa.String()),
     sa.Column("object_name", sa.String()),
     sa.Column("project_id", sa.String(), index=True),
+    sa.Column("node_id", sa.String()),
     sa.Column(
         "user_id",
         sa.BigInteger(),
@@ -21,9 +22,9 @@ file_meta_data = sa.Table(
             ondelete=RefActions.CASCADE,
         ),
         nullable=False,
+        index=True,
         doc="The user id with which the run entry is associated",
     ),
-    sa.Column("user_id", sa.String(), index=True),
     sa.Column("file_id", sa.String(), primary_key=True),
     sa.Column("created_at", sa.String()),
     sa.Column("last_modified", sa.String()),
@@ -68,5 +69,4 @@ file_meta_data = sa.Table(
         doc="SHA256 checksum of the file content",
         index=True,
     ),
-    ###
 )

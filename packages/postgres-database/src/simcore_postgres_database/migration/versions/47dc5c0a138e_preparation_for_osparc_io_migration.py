@@ -127,7 +127,22 @@ def upgrade():
         onupdate="CASCADE",
         ondelete="CASCADE",
     )
-    op.drop_column("file_meta_data", "node_id")
+    op.alter_column(
+        "file_meta_data",
+        "user_id",
+        existing_type=sa.VARCHAR(),
+        type_=sa.BigInteger(),
+        nullable=False,
+    )
+    op.create_foreign_key(
+        "fk_file_meta_data_user_id_users",
+        "file_meta_data",
+        "users",
+        ["user_id"],
+        ["id"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+    )
     op.drop_constraint("fk_new_folders_to_folders_id", "folders_v2", type_="foreignkey")
     op.drop_constraint("fk_new_folders_to_groups_gid", "folders_v2", type_="foreignkey")
     op.create_foreign_key(
@@ -275,9 +290,15 @@ def downgrade():
         ["parent_folder_id"],
         ["folder_id"],
     )
-    op.add_column(
+    op.drop_constraint(
+        "fk_file_meta_data_user_id_users", "file_meta_data", type_="foreignkey"
+    )
+    op.alter_column(
         "file_meta_data",
-        sa.Column("node_id", sa.VARCHAR(), autoincrement=False, nullable=True),
+        "user_id",
+        existing_type=sa.BigInteger(),
+        type_=sa.VARCHAR(),
+        nullable=True,
     )
     op.drop_constraint("user_confirmation_fkey", "confirmations", type_="foreignkey")
     op.create_foreign_key(
