@@ -1,6 +1,6 @@
 ---
 mode: 'edit'
-description: 'Update user messages'
+description: 'Convert Pydantic model fields to use Annotated pattern'
 ---
 
 
