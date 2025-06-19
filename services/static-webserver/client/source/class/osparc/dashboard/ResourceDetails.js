@@ -57,8 +57,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "template":
           case "tutorial":
           case "hypertool":
-            const mainStore = qx.store.Store.getInstance();
-            if (mainStore.getStudyDebt(this.__resourceData["uuid"])) {
+            if (osparc.study.Utils.isInDebt(this.__studyData)) {
+              const mainStore = qx.store.Store.getInstance();
               this.__resourceData["debt"] = mainStore.getStudyDebt(this.__resourceData["uuid"]);
             }
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
