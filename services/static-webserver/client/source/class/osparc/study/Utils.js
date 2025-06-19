@@ -347,6 +347,25 @@ qx.Class.define("osparc.study.Utils", {
       return osparc.store.Store.getInstance().isStudyInDebt(studyData["uuid"]);
     },
 
+    extractDebtFromError: function(studyId, err) {
+      const msg = err["message"];
+      // The backend might have thrown a 402 because the wallet was negative
+      const match = msg.match(/last transaction of\s([-]?\d+(\.\d+)?)\sresulted/);
+      let debt = null;
+      if ("debtAmount" in err) {
+        // the study has some debt that needs to be paid
+        debt = err["debtAmount"];
+      } else if (match) {
+        // the study has some debt that needs to be paid
+        debt = parseFloat(match[1]); // Convert the captured string to a number
+      }
+      if (debt) {
+        // if get here, it means that the 402 was thrown due to the debt
+        osparc.store.Store.getInstance().setStudyDebt(studyId, debt);
+      }
+      return debt;
+    },
+
     getUiMode: function(studyData) {
       if ("ui" in studyData && "mode" in studyData["ui"]) {
         return studyData["ui"]["mode"];
