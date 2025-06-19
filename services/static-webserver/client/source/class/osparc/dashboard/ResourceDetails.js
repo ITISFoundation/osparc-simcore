@@ -51,16 +51,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           return;
         }
         this.__resourceData = osparc.utils.Utils.deepCloneObject(latestResourceData);
-        // quick solution
-        if ("debt" in resourceData) {
-          this.__resourceData["debt"] = resourceData["debt"];
-        }
         this.__resourceData["resourceType"] = resourceData["resourceType"];
         switch (resourceData["resourceType"]) {
           case "study":
           case "template":
           case "tutorial":
           case "hypertool":
+            const mainStore = qx.store.Store.getInstance();
+            if (mainStore.getStudyDebt(this.__resourceData["uuid"])) {
+              this.__resourceData["debt"] = mainStore.getStudyDebt(this.__resourceData["uuid"]);
+            }
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
