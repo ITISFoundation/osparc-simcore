@@ -94,6 +94,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
+    "closeWindow": "qx.event.type.Event",
   },
 
 
@@ -484,6 +485,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             const enabled = osparc.study.Utils.canBeOpened(resourceData);
             page.openButton.setEnabled(enabled);
           })
+          billingSettings.addListener("closeWindow", () => {
+            this.fireEvent("closeWindow");
+          });
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
         }

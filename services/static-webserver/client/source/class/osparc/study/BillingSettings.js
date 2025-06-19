@@ -33,6 +33,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
   events: {
     "debtPayed": "qx.event.type.Event",
+    "closeWindow": "qx.event.type.Event",
   },
 
   members: {
@@ -291,6 +292,7 @@ qx.Class.define("osparc.study.BillingSettings", {
             osparc.study.Utils.extractDebtFromError(this.__studyData["uuid"], err);
           }
           osparc.FlashMessenger.logError(err);
+          this.fireEvent("closeWindow");
         })
         .finally(() => {
           creditAccountBox.setEnabled(true);

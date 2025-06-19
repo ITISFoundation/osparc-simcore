@@ -1044,6 +1044,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         win.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
+      resourceDetails.addListener("closeWindow", () => {
+        win.close();
+      });
       resourceDetails.addListener("openStudy", e => {
         const openCB = () => win.close();
         const studyId = e.getData()["uuid"];
