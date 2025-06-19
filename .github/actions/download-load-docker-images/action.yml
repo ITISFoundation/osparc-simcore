@@ -1,0 +1,31 @@
+name: 'Download and Load Docker Images'
+description: 'Downloads and loads Docker images for integration/system tests'
+
+inputs:
+  artifact-name-pattern:
+    description: 'Artifact name pattern for docker images (e.g., backend, or * for all)'
+    required: false
+    default: 'backend'
+
+  download-path:
+    description: 'Path to download artifacts to'
+    required: false
+    default: '/${{ runner.temp }}/build'
+
+runs:
+  using: 'composite'
+  steps:
+    # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
+    - name: download docker images with retry
+      uses: Wandalen/wretry.action@master
+      with:
+        action: actions/download-artifact@v4
+        with: |
+          ${{ inputs.artifact-name-pattern == '*' && 'pattern' || 'name' }}: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-${{ inputs.artifact-name-pattern }}
+          path: ${{ inputs.download-path }}
+        attempt_limit: 5
+        attempt_delay: 1000
+
+    - name: load docker images
+      shell: bash
+      run: make load-images local-src=${{ inputs.download-path }}
