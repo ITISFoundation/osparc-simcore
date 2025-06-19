@@ -1,4 +1,4 @@
-def user_message(msg: str, *, _version=None) -> str:
+def user_message(msg: str, *, _version: int | None = None) -> str:
     """Marks a message as user-facing
 
     Arguments:
