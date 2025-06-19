@@ -87,27 +87,33 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     RemoteMethodNotRegisteredError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
-            "Catalog service method unavailable. Please try again shortly.", _version=1
+            "The catalog service is temporarily unavailable. Please try again later.",
+            _version=2,
         ),
     ),
     CatalogForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "You do not have permission to access this catalog item.", _version=1
+            "Access denied: You don't have permission to view this catalog item.",
+            _version=2,
         ),
     ),
     CatalogItemNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("The requested catalog item could not be found.", _version=1),
+        user_message(
+            "This catalog item does not exist or has been removed.", _version=2
+        ),
     ),
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("The default pricing plan could not be found.", _version=1),
+        user_message(
+            "No default pricing plan is available for this operation.", _version=2
+        ),
     ),
     DefaultPricingUnitForServiceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
-            "The default pricing unit for this service could not be found.", _version=1
+            "No default pricing unit is defined for this service.", _version=2
         ),
     ),
 }
