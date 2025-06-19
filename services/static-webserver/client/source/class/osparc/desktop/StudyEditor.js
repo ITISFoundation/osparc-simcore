@@ -179,20 +179,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if ("status" in err && err["status"]) {
             if (err["status"] == 402) {
               msg = err["message"];
-              // The backend might have thrown a 402 because the wallet was negative
-              const match = msg.match(/last transaction of\s([-]?\d+(\.\d+)?)\sresulted/);
-              let debt = null;
-              if ("debtAmount" in err) {
-                // the study has some debt that needs to be paid
-                debt = err["debtAmount"];
-              } else if (match) {
-                // the study has some debt that needs to be paid
-                debt = parseFloat(match[1]); // Convert the captured string to a number
-              }
-              if (debt) {
-                // if get here, it means that the 402 was thrown due to the debt
-                osparc.store.Store.getInstance().setStudyDebt(study.getUuid(), debt);
-              }
+              osparc.study.Utils.extractDebtFromError(study.getUuid(), err);
             } else if (err["status"] == 409) { // max_open_studies_per_user
               msg = err["message"];
             } else if (err["status"] == 423) { // Locked
