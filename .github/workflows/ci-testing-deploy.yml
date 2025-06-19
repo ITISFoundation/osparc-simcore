@@ -1983,37 +1983,18 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          setup-docker: 'true'
+          show-system-versions: 'true'
+          expose-github-runtime: 'true'
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: '*'
       - name: install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -2043,37 +2024,18 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          setup-docker: 'true'
+          show-system-versions: 'true'
+          expose-github-runtime: 'true'
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: '*'
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -2109,42 +2071,23 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
+          setup-docker: 'true'
+          show-system-versions: 'true'
+          expose-github-runtime: 'true'
       - uses: actions/setup-node@v4.1.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          artifact-name-pattern: '*'
       - name: setup
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
@@ -2191,34 +2134,20 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      - name: download docker images
-        uses: actions/download-artifact@v4
+          setup-docker: 'true'
+          show-system-versions: 'true'
+          expose-github-runtime: 'true'
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
+          artifact-name-pattern: '*'
       - name: prepare devenv
         run: make devenv
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: setup
         run: |
           ./ci/github/system-testing/e2e-playwright.bash install
@@ -2253,23 +2182,13 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          setup-docker: 'true'
+          show-system-versions: 'true'
       - name: install
         run: ./ci/github/system-testing/environment-setup.bash install
       - name: test
@@ -2317,30 +2236,17 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
-          driver: docker-container
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
+          python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+          setup-docker: 'true'
+          show-system-versions: false
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: load docker images
-        run: |
-          make load-images local-src=/${{ runner.temp }}/build
+          artifact-name-pattern: '*'
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'
