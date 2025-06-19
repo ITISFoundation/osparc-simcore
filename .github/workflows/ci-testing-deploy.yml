@@ -355,7 +355,7 @@ jobs:
         uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/webserver/requirements/ci.txt"
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -386,7 +386,7 @@ jobs:
         uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/webserver/requirements/ci.txt"
+          cache-dependency-glob: "**/web/server/requirements/ci.txt"
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -417,7 +417,7 @@ jobs:
           uses: ./.github/actions/setup-simcore-env
           with:
             python-version: ${{ matrix.python }}
-            cache-dependency-glob: "**/webserver/requirements/ci.txt"
+            cache-dependency-glob: "**/web/server/requirements/ci.txt"
         - name: install webserver
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
