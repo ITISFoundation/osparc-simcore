@@ -344,7 +344,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isInDebt: function(studyData) {
-      return Boolean("debt" in studyData && studyData["debt"] < 0);
+      return osparc.store.Store.getInstance().isStudyInDebt(studyData["uuid"]);
     },
 
     getUiMode: function(studyData) {

@@ -488,6 +488,10 @@ qx.Class.define("osparc.store.Store", {
       return null;
     },
 
+    isStudyInDebt: function(studyId) {
+      return Boolean(this.getStudyDebt(studyId));
+    },
+
     trashStudy: function(studyId) {
       const params = {
         url: {
