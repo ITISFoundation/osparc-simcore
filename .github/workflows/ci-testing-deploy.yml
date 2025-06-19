@@ -303,6 +303,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -338,6 +340,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -367,6 +371,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -396,6 +402,8 @@ jobs:
           os: [ubuntu-24.04]
         fail-fast: false
       steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
         - name: Setup environment
           uses: ./.github/actions/setup-unit-tests
           with:
@@ -428,6 +436,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -460,6 +470,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -493,6 +505,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -524,6 +538,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -553,6 +569,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
@@ -588,6 +606,8 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup environment
         uses: ./.github/actions/setup-unit-tests
         with:
