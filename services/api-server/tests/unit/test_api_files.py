@@ -14,8 +14,6 @@ import httpx
 import pytest
 import respx
 import yarl
-from aiohttp import client_exceptions as aiohttp_client_exceptions
-from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -286,15 +284,12 @@ async def test_get_upload_links(
 async def test_get_upload_links_timeout(
     client: AsyncClient,
     auth: httpx.BasicAuth,
-    aioresponses_mocker: AioResponsesMock,
+    mocked_storage_rest_api_base: MockRouter,
     mocker: MockerFixture,
 ):
-    assert aioresponses_mocker  # nosec
-    aioresponses_mocker.put(
+    mocked_endpoint = mocked_storage_rest_api_base.put(
         re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"),
-        repeat=True,
-        exception=aiohttp_client_exceptions.ServerTimeoutError(),
-    )
+    ).mock(side_effect=httpx.ReadTimeout("Mocked timeout error"))
 
     msg = {
         "filename": DummyFileData.file().filename,
@@ -304,6 +299,7 @@ async def test_get_upload_links_timeout(
 
     response = await client.post(f"{API_VTAG}/files/content", json=msg, auth=auth)
 
+    assert mocked_endpoint.called
     assert response.status_code == status.HTTP_504_GATEWAY_TIMEOUT
 
 

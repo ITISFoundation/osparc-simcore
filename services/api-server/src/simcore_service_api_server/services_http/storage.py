@@ -189,7 +189,7 @@ class StorageApi(BaseServiceClientApi):
 
         # complete_upload_file
         response = await self.client.put(
-            f"/locations/{self.SIMCORE_S3_ID}/files/{file.storage_file_id}",
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:upload",
             params=query_params,
         )
         response.raise_for_status()
@@ -241,6 +241,14 @@ class StorageApi(BaseServiceClientApi):
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail=msg,
         )
+
+    @_exception_mapper(http_status_map={})
+    async def abort_file_upload(self, *, user_id: int, file: File) -> None:
+        response = await self.client.post(
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort",
+            params={"user_id": f"{user_id}"},
+        )
+        response.raise_for_status()
 
     async def create_complete_upload_link(
         self, *, file: File, query: dict[str, str] | None = None

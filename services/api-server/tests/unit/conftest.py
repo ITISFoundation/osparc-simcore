@@ -494,7 +494,7 @@ def mocked_storage_rest_api_base(
 
         respx_mock.post(
             re.compile(
-                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+:abort$"
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+:abort(?:\?.*)?$"
             ),
             name="abort_upload_file_v0_locations__location_id__files__file_id__abort_post",
         ).respond(

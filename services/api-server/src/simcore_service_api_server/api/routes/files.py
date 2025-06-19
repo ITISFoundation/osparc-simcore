@@ -15,14 +15,13 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import NodeID
-from pydantic import AnyUrl, PositiveInt, TypeAdapter, ValidationError
+from pydantic import PositiveInt, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
     UploadedFile,
     UploadedFolder,
-    abort_upload,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.datastructures import URL
@@ -413,12 +412,7 @@ async def abort_multipart_upload(
     file = await _create_domain_file(
         webserver_api=webserver_api, file_id=file_id, client_file=client_file
     )
-    abort_link: URL = await storage_client.create_abort_upload_link(
-        file=file, query={"user_id": str(user_id)}
-    )
-    await abort_upload(
-        abort_upload_link=TypeAdapter(AnyUrl).validate_python(str(abort_link))
-    )
+    await storage_client.abort_file_upload(user_id=user_id, file=file)
 
 
 @router.post(
