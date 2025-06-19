@@ -10,20 +10,14 @@ _SHUTDOWN_TIMEOUT: Final[float] = timedelta(seconds=10).total_seconds()
 _STARTUP_TIMEOUT: Final[float] = timedelta(minutes=1).total_seconds()
 
 
-class FastAPIAppServer(BaseAppServer):
+class FastAPIAppServer(BaseAppServer[FastAPI]):
     def __init__(self, app: FastAPI):
-        super().__init__()
-        self._app = app
+        super().__init__(app)
         self._lifespan_manager = LifespanManager(
-            self.fastapi_app,
+            app,
             startup_timeout=_STARTUP_TIMEOUT,
             shutdown_timeout=_SHUTDOWN_TIMEOUT,
         )
-
-    @property
-    def fastapi_app(self) -> FastAPI:
-        assert isinstance(self._app, FastAPI)  # nosec
-        return self._app
 
     async def on_startup(self) -> None:
         await self._lifespan_manager.__aenter__()

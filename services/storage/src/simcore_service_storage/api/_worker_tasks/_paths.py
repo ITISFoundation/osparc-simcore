@@ -25,7 +25,7 @@ async def compute_path_size(
         logging.INFO,
         msg=f"computing path size {user_id=}, {location_id=}, {path=}",
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(location_id)
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
         return await dsm.compute_path_size(user_id, path=Path(path))
 
 
@@ -42,7 +42,7 @@ async def delete_paths(
         logging.INFO,
         msg=f"delete {paths=} in {location_id=} for {user_id=}",
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(location_id)
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
         files_ids: set[StorageFileID] = {
             TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths
         }

@@ -73,7 +73,7 @@ def celery_settings(
 
 @pytest.fixture
 def app_server() -> BaseAppServer:
-    return FakeAppServer()
+    return FakeAppServer(app=None)
 
 
 @pytest.fixture(scope="session")

@@ -3,32 +3,23 @@ import datetime
 import threading
 from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
-from contextlib import suppress
-from typing import TYPE_CHECKING, Final
+from typing import Final, Generic, TypeVar
 
 from servicelib.queued_tasks.task_manager import TaskManager
 
-if TYPE_CHECKING:
-    with suppress(ImportError):
-        from fastapi import FastAPI
-    with suppress(ImportError):
-        from aiohttp.web import Application
-
-
 STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
+AppType = TypeVar("AppType")
 
-class BaseAppServer(ABC):
-    def __init__(self) -> None:
+
+class BaseAppServer(ABC, Generic[AppType]):
+    def __init__(self, app: AppType) -> None:
+        self._app: AppType = app
         self._shutdown_event: asyncio.Event | None = None
 
     @property
-    def fastapi_app(self) -> "FastAPI":
-        raise NotImplementedError
-
-    @property
-    def aiohttp_app(self) -> "Application":
-        raise NotImplementedError
+    def app(self) -> AppType:
+        return self._app
 
     @property
     def event_loop(self) -> AbstractEventLoop:

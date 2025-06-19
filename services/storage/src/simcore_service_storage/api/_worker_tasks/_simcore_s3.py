@@ -40,7 +40,7 @@ async def deep_copy_files_from_project(
         logging.INFO,
         msg=f"copying {body.source['uuid']} -> {body.destination['uuid']} with {task.request.id}",
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(
             SimcoreS3DataManager.get_location_id()
         )
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
@@ -75,7 +75,7 @@ async def export_data(
         logging.INFO,
         f"'{task_id}' export data (for {user_id=}) fom selection: {paths_to_export}",
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).fastapi_app).get(
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(
             SimcoreS3DataManager.get_location_id()
         )
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
