@@ -77,8 +77,34 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 
 def suppress_exceptions(
-    exceptions: tuple[type[BaseException], ...], *, reason: str
+    exceptions: tuple[type[BaseException], ...],
+    *,
+    reason: str,
+    predicate: Callable[[BaseException], bool] | None = None,
 ) -> Callable[[F], F]:
+    """
+    Decorator to suppress specified exceptions.
+
+    Args:
+        exceptions: Tuple of exception types to suppress
+        reason: Reason for suppression (for logging)
+        predicate: Optional function to check exception attributes.
+                  If provided, exception is only suppressed if predicate returns True.
+
+    Example:
+        # Suppress all ConnectionError exceptions
+        @suppress_exceptions((ConnectionError,), reason="Network issues")
+        def my_func(): ...
+
+        # Suppress only ConnectionError with specific errno
+        @suppress_exceptions(
+            (ConnectionError,),
+            reason="Specific network error",
+            predicate=lambda e: hasattr(e, 'errno') and e.errno == 104
+        )
+        def my_func(): ...
+    """
+
     def _decorator(func_or_coro: F) -> F:
         if inspect.iscoroutinefunction(func_or_coro):
 
@@ -88,6 +114,10 @@ def suppress_exceptions(
                     assert inspect.iscoroutinefunction(func_or_coro)  # nosec
                     return await func_or_coro(*args, **kwargs)
                 except exceptions as exc:
+                    # Check predicate if provided
+                    if predicate is not None and not predicate(exc):
+                        raise  # Re-raise if predicate returns False
+
                     _logger.debug(
                         "Caught suppressed exception %s in %s: TIP: %s",
                         exc,
@@ -103,6 +133,10 @@ def suppress_exceptions(
             try:
                 return func_or_coro(*args, **kwargs)
             except exceptions as exc:
+                # Check predicate if provided
+                if predicate is not None and not predicate(exc):
+                    raise  # Re-raise if predicate returns False
+
                 _logger.debug(
                     "Caught suppressed exception %s in %s: TIP: %s",
                     exc,
