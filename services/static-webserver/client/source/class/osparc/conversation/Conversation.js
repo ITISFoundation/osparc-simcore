@@ -32,7 +32,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.setConversationId(conversationId);
     }
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(5));
 
     this.set({
       padding: 10,
@@ -152,7 +152,9 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__messagesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         alignY: "middle"
       });
-      this._add(this.__messagesList, {
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(this.__messagesList);
+      this._add(scrollView, {
         flex: 1
       });
 
