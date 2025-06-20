@@ -231,7 +231,7 @@ qx.Class.define("osparc.info.Conversation", {
       }
 
       messages.forEach(message => {
-        const messageUi = new osparc.info.CommentUI(message);
+        const messageUi = new osparc.info.MessageUI(message);
         this.__messagesList.add(messageUi);
       });
     },

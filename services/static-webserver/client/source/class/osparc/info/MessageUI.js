@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.info.CommentUI", {
+qx.Class.define("osparc.info.MessageUI", {
   extend: qx.ui.core.Widget,
 
   /**
