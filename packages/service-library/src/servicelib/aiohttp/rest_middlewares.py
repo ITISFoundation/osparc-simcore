@@ -20,6 +20,7 @@ from servicelib.status_codes_utils import is_5xx_server_error
 from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
+from ..status_codes_utils import get_code_description
 from . import status
 from .rest_responses import (
     create_data_response,
@@ -46,6 +47,23 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
+def _create_error_context(
+    request: web.BaseRequest, exception: Exception
+) -> tuple[str, dict[str, Any]]:
+    """Create error code and context for logging purposes.
+
+    Returns:
+        Tuple of (error_code, error_context)
+    """
+    error_code = create_error_code(exception)
+    error_context: dict[str, Any] = {
+        "request.remote": f"{request.remote}",
+        "request.method": f"{request.method}",
+        "request.path": f"{request.path}",
+    }
+    return error_code, error_context
+
+
 def _handle_unexpected_exception_as_500(
     request: web.BaseRequest,
     exception: Exception,
@@ -54,13 +72,7 @@ def _handle_unexpected_exception_as_500(
 
     IMPORTANT: this function cannot throw exceptions, as it is called
     """
-    error_code = create_error_code(exception)
-    error_context: dict[str, Any] = {
-        "request.remote": f"{request.remote}",
-        "request.method": f"{request.method}",
-        "request.path": f"{request.path}",
-    }
-
+    error_code, error_context = _create_error_context(request, exception)
     user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
 
     http_error = create_http_error(
@@ -113,12 +125,7 @@ def _handle_http_error(
         exception.text = EnvelopeFactory(error=error_model).as_text()
 
         if is_5xx_server_error(exception.status):
-            error_code = create_error_code(exception)
-            error_context: dict[str, Any] = {
-                "request.remote": f"{request.remote}",
-                "request.method": f"{request.method}",
-                "request.path": f"{request.path}",
-            }
+            error_code, error_context = _create_error_context(request, exception)
 
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
@@ -171,13 +178,21 @@ def _handle_exception_as_http_error(
         )
         raise ValueError(msg)
 
-    error_message = f"{exception}"  # FIXME: do not log exception message directly!!!!
+    user_error_msg = get_code_description(status_code)
 
-    return create_http_error(
-        exception,
-        error_message,
-        http_error_cls,
-    )
+    if is_5xx_server_error(status_code):
+        error_code, error_context = _create_error_context(request, exception)
+
+        _logger.exception(
+            **create_troubleshotting_log_kwargs(
+                user_error_msg,
+                error=exception,
+                error_context=error_context,
+                error_code=error_code,
+            )
+        )
+
+    return create_http_error(exception, user_error_msg, http_error_cls)
 
 
 def error_middleware_factory(api_version: str) -> Middleware:
