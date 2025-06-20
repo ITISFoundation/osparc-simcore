@@ -117,8 +117,7 @@ def _handle_http_error(
 
     if not exception.text or not is_enveloped_from_text(exception.text):
         # NOTE: aiohttp.HTTPException creates `text = f"{self.status}: {self.reason}"`
-        # We do not like for the user to pop up a message like "401: You are not authorized"
-        user_error_msg = exception.reason or exception.text or "Unexpected error"
+        user_error_msg = exception.text or "Unexpected error"
         error_model = ErrorGet(
             errors=[
                 ErrorItemType.from_error(exception),
