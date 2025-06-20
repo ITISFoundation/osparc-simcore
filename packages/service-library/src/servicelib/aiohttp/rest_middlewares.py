@@ -87,6 +87,8 @@ def _handle_http_error(
 ) -> web.HTTPError:
     """Handle standard HTTP errors by ensuring they're properly formatted."""
     assert request  # nosec
+    assert not exception.empty_body, "HTTPError should not have an empty body"  # nosec
+
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
         exception.set_status(
@@ -94,7 +96,9 @@ def _handle_http_error(
         )
 
     if not exception.text or not is_enveloped_from_text(exception.text):
-        error_message = exception.text or exception.reason or "Unexpected error"
+        # NOTE: aiohttp.HTTPException creates `text = f"{self.status}: {self.reason}"`
+        # We do not like for the user to pop up a message like "401: You are not authorized"
+        error_message = exception.reason or exception.text or "Unexpected error"
         error_model = ErrorGet(
             errors=[
                 ErrorItemType.from_error(exception),
