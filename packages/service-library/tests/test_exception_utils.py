@@ -4,7 +4,7 @@ from typing import Final
 
 import pytest
 from pydantic import PositiveFloat, PositiveInt
-from servicelib.exception_utils import DelayedExceptionHandler, silence_exceptions
+from servicelib.exception_utils import DelayedExceptionHandler, suppress_exceptions
 
 TOLERANCE: Final[PositiveFloat] = 0.1
 SLEEP_FOR: Final[PositiveFloat] = TOLERANCE * 0.1
@@ -60,7 +60,7 @@ class AnotherCustomError(Exception):
     pass
 
 
-@silence_exceptions((CustomError,))
+@suppress_exceptions((CustomError,), reason="CustomError is silenced")
 def sync_function(*, raise_error: bool, raise_another_error: bool) -> str:
     if raise_error:
         raise CustomError
@@ -69,7 +69,7 @@ def sync_function(*, raise_error: bool, raise_another_error: bool) -> str:
     return "Success"
 
 
-@silence_exceptions((CustomError,))
+@suppress_exceptions((CustomError,), reason="CustomError is silenced")
 async def async_function(*, raise_error: bool, raise_another_error: bool) -> str:
     if raise_error:
         raise CustomError

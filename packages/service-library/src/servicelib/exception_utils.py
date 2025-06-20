@@ -76,9 +76,10 @@ R = TypeVar("R")
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def silence_exceptions(exceptions: tuple[type[BaseException], ...]) -> Callable[[F], F]:
+def suppress_exceptions(
+    exceptions: tuple[type[BaseException], ...], *, reason: str
+) -> Callable[[F], F]:
     def _decorator(func_or_coro: F) -> F:
-
         if inspect.iscoroutinefunction(func_or_coro):
 
             @wraps(func_or_coro)
@@ -86,7 +87,13 @@ def silence_exceptions(exceptions: tuple[type[BaseException], ...]) -> Callable[
                 try:
                     assert inspect.iscoroutinefunction(func_or_coro)  # nosec
                     return await func_or_coro(*args, **kwargs)
-                except exceptions:
+                except exceptions as exc:
+                    _logger.debug(
+                        "Caught suppressed exception %s in %s: TIP: %s",
+                        exc,
+                        func_or_coro.__name__,
+                        reason,
+                    )
                     return None
 
             return _async_wrapper  # type: ignore[return-value] # decorators typing is hard
@@ -95,7 +102,13 @@ def silence_exceptions(exceptions: tuple[type[BaseException], ...]) -> Callable[
         def _sync_wrapper(*args, **kwargs) -> Any:
             try:
                 return func_or_coro(*args, **kwargs)
-            except exceptions:
+            except exceptions as exc:
+                _logger.debug(
+                    "Caught suppressed exception %s in %s: TIP: %s",
+                    exc,
+                    func_or_coro.__name__,
+                    reason,
+                )
                 return None
 
         return _sync_wrapper  # type: ignore[return-value] # decorators typing is hard
