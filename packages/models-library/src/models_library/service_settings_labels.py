@@ -518,7 +518,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         cls, v: CallbacksMapping, info: ValidationInfo
     ):
         if v is None:
-            return {}
+            return {}  # type: ignore[unreachable]
 
         defined_services: set[str] = {x.service for x in v.before_shutdown}
         if v.metrics:
