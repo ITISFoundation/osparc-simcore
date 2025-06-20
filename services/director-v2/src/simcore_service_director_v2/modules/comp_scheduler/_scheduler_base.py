@@ -590,9 +590,7 @@ class BaseCompScheduler(ABC):
         """process executing tasks from the 3rd party backend"""
 
     @abstractmethod
-    async def _release_resources(
-        self, user_id: UserID, project_id: ProjectID, comp_run: CompRunsAtDB
-    ) -> None:
+    async def _release_resources(self, comp_run: CompRunsAtDB) -> None:
         """release resources used by the scheduler for a given user and project"""
 
     async def apply(
@@ -660,7 +658,7 @@ class BaseCompScheduler(ABC):
 
                 # 7. Are we done scheduling that pipeline?
                 if not dag.nodes() or pipeline_result in COMPLETED_STATES:
-                    await self._release_resources(user_id, project_id, comp_run)
+                    await self._release_resources(comp_run)
                     # there is nothing left, the run is completed, we're done here
                     _logger.info(
                         "pipeline %s scheduling completed with result %s",
