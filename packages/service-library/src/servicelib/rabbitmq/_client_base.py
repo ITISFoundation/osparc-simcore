@@ -67,7 +67,7 @@ class RabbitMQClientBase:
             async with await aio_pika.connect(self.settings.dsn, timeout=1):
                 ...
             return True
-        return False
+        return False  # type: ignore[unreachable]
 
     @abstractmethod
     async def close(self) -> None: ...

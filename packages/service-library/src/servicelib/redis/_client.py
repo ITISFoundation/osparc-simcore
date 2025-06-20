@@ -99,7 +99,7 @@ class RedisClientSDK:
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
             await self._client.ping()
             return True
-        return False
+        return False  # type: ignore[unreachable]
 
     @property
     def is_healthy(self) -> bool:

@@ -25,7 +25,7 @@ def is_enveloped(payload: Mapping | str) -> bool:
         return is_enveloped_from_map(payload)
     if isinstance(payload, str):
         return is_enveloped_from_text(text=payload)
-    return False
+    return False  # type: ignore[unreachable]
 
 
 def unwrap_envelope(payload: Mapping[str, Any]) -> tuple:

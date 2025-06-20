@@ -97,4 +97,4 @@ async def retrieve_image_layer_information(
                 return TypeAdapter(DockerImageManifestsV2).validate_python(
                     json_response
                 )
-    return None
+    return None  # type: ignore[unreachable]
