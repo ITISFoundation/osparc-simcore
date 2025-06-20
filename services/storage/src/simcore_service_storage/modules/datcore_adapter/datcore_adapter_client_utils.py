@@ -33,8 +33,6 @@ async def request(
     session = get_client_session(app)
 
     try:
-        if request_kwargs is None:
-            request_kwargs = {}
         response = await session.request(
             method.upper(),
             url,
