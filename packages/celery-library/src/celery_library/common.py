@@ -1,12 +1,13 @@
-import logging
 import ssl
 from typing import Any
 
 from celery import Celery  # type: ignore[import-untyped]
+from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
 
-_logger = logging.getLogger(__name__)
+from .backends._redis import RedisTaskInfoStore
+from .task_manager import CeleryTaskManager
 
 
 def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
@@ -25,13 +26,30 @@ def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
     return base_config
 
 
-def create_app(celery_settings: CelerySettings) -> Celery:
-    assert celery_settings
+def create_app(settings: CelerySettings) -> Celery:
+    assert settings
 
     return Celery(
-        broker=celery_settings.CELERY_RABBIT_BROKER.dsn,
-        backend=celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
+        broker=settings.CELERY_RABBIT_BROKER.dsn,
+        backend=settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
             RedisDatabase.CELERY_TASKS,
         ),
-        **_celery_configure(celery_settings),
+        **_celery_configure(settings),
+    )
+
+
+async def create_task_manager(
+    app: Celery, settings: CelerySettings
+) -> CeleryTaskManager:
+    redis_client_sdk = RedisClientSDK(
+        settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
+            RedisDatabase.CELERY_TASKS
+        ),
+        client_name="celery_tasks",
+    )
+
+    return CeleryTaskManager(
+        app,
+        settings,
+        RedisTaskInfoStore(redis_client_sdk),
     )

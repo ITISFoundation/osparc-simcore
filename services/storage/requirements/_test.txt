@@ -59,7 +59,7 @@ botocore==1.37.3
     #   boto3
     #   moto
     #   s3transfer
-celery==5.4.0
+celery==5.5.2
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -199,7 +199,7 @@ jsonschema-specifications==2024.10.1
     #   -c requirements/_base.txt
     #   jsonschema
     #   openapi-schema-validator
-kombu==5.4.2
+kombu==5.5.3
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -408,10 +408,9 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   sqlalchemy2-stubs
-tzdata==2025.1
+tzdata==2025.2
     # via
     #   -c requirements/_base.txt
-    #   celery
     #   faker
     #   kombu
     #   pandas

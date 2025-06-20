@@ -33,6 +33,7 @@
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.extraPaths": [
     "./packages/aws-library/src",
+    "./packages/celery-library/src",
     "./packages/common-library/src",
     "./packages/dask-task-models-library/src",
     "./packages/models-library/src",

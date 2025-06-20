@@ -1,17 +1,20 @@
 """Main application to be deployed in for example uvicorn."""
 
 import logging
+from functools import partial
 
 from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
-from servicelib.logging_utils import config_all_loggers
-from simcore_service_storage.api._worker_tasks.tasks import setup_worker_tasks
-
-from ...core.settings import ApplicationSettings
-from ._common import create_app as create_celery_app
-from .signals import (
+from celery_library.common import create_app as create_celery_app
+from celery_library.signals import (
     on_worker_init,
     on_worker_shutdown,
 )
+from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from servicelib.logging_utils import config_all_loggers
+
+from ...api._worker_tasks.tasks import setup_worker_tasks
+from ...core.application import create_app
+from ...core.settings import ApplicationSettings
 
 _settings = ApplicationSettings.create_from_envs()
 
@@ -24,9 +27,20 @@ config_all_loggers(
 )
 
 
-assert _settings.STORAGE_CELERY
+assert _settings.STORAGE_CELERY  # nosec
 app = create_celery_app(_settings.STORAGE_CELERY)
-worker_init.connect(on_worker_init)
+
+app_server = FastAPIAppServer(app=create_app(_settings))
+
+
+def worker_init_wrapper(sender, **_kwargs):
+    assert _settings.STORAGE_CELERY  # nosec
+    return partial(on_worker_init, app_server, _settings.STORAGE_CELERY)(
+        sender, **_kwargs
+    )
+
+
+worker_init.connect(worker_init_wrapper)
 worker_shutdown.connect(on_worker_shutdown)
 
 
