@@ -169,6 +169,7 @@ async def create_project_conversation_message(
     return await conversations_service.create_message(
         app,
         user_id=user_id,
+        project_id=project_uuid,
         conversation_id=conversation_id,
         content=content,
         type_=message_type,
