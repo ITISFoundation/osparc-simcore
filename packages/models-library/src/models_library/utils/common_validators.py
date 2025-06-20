@@ -27,7 +27,7 @@ from pydantic.alias_generators import to_camel
 
 
 def trim_string_before(max_length: int) -> BeforeValidator:
-    def _trim(value: str):
+    def _trim(value: str | Any) -> str | Any:
         if isinstance(value, str):
             return value[:max_length]
         return value
@@ -125,14 +125,16 @@ def create__check_only_one_is_set__root_validator(
         }
 
         if not functools.reduce(operator.xor, (v is not None for v in got.values())):
-            msg = f"Either { ' or '.join(got.keys()) } must be set, but not both. Got {got}"
+            msg = (
+                f"Either {' or '.join(got.keys())} must be set, but not both. Got {got}"
+            )
             raise ValueError(msg)
         return values
 
     return _validator
 
 
-def to_camel_recursive(data: dict[str, Any]) -> dict[str, Any]:
+def to_camel_recursive(data: dict[str, Any] | Any) -> dict[str, Any] | Any:
     """Recursively convert dictionary keys to camelCase"""
     if not isinstance(data, dict):
         return data  # Return as-is if it's not a dictionary

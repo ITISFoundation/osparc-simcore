@@ -1,4 +1,4 @@
-from typing import Literal, TypeAlias
+from typing import Final, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict
 
@@ -43,7 +43,7 @@ class ProgressStructuredMessage(BaseModel):
     )
 
 
-UNITLESS = None
+UNITLESS: Final[None] = None
 
 
 class ProgressReport(BaseModel):
@@ -96,7 +96,11 @@ class ProgressReport(BaseModel):
                 {
                     "actual_value": 0.3,
                     "total": 1.0,
-                    "message": ProgressStructuredMessage.model_config["json_schema_extra"]["examples"][2],  # type: ignore [index]
+                    "message": ProgressStructuredMessage.model_config[
+                        "json_schema_extra"
+                    ]["examples"][
+                        2
+                    ],  # type: ignore [index]
                 },
             ]
         },

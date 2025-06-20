@@ -5,15 +5,16 @@
 #
 import dataclasses
 from collections import defaultdict, deque
+from collections.abc import Callable
 from enum import Enum
 from pathlib import PurePath
 from types import GeneratorType
-from typing import Any, Callable, Union, get_origin
+from typing import Annotated, Any, Union, get_origin
 
 from common_library.json_serialization import ENCODERS_BY_TYPE
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
-from typing_extensions import Annotated, Doc
+from typing_extensions import Doc
 
 Undefined = PydanticUndefined
 UndefinedType = PydanticUndefinedType
@@ -142,14 +143,13 @@ def jsonable_encoder(
     if custom_encoder:
         if type(obj) in custom_encoder:
             return custom_encoder[type(obj)](obj)
-        else:
-            for encoder_type, encoder_instance in custom_encoder.items():
-                if isinstance(obj, encoder_type):
-                    return encoder_instance(obj)
-    if include is not None and not isinstance(include, (set, dict)):
-        include = set(include)
-    if exclude is not None and not isinstance(exclude, (set, dict)):
-        exclude = set(exclude)
+        for encoder_type, encoder_instance in custom_encoder.items():
+            if isinstance(obj, encoder_type):
+                return encoder_instance(obj)
+    if include is not None and not isinstance(include, set | dict):
+        include = set(include)  # type: ignore[unreachable]
+    if exclude is not None and not isinstance(exclude, set | dict):
+        exclude = set(exclude)  # type: ignore[unreachable]
     if isinstance(obj, BaseModel):
         obj_dict = BaseModel.model_dump(
             obj,
