@@ -192,7 +192,7 @@ class StorageApi(BaseServiceClientApi):
 
         # complete_upload_file
         response = await self.client.put(
-            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:upload",
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}",
             params=query_params,
         )
         response.raise_for_status()
@@ -207,7 +207,7 @@ class StorageApi(BaseServiceClientApi):
     ) -> ETag:
 
         response = await self.client.post(
-            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete",
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.storage_file_id}:complete",
             params={"user_id": f"{user_id}"},
             json=jsonable_encoder(FileUploadCompletionBody(parts=uploaded_parts)),
         )
