@@ -11,10 +11,12 @@ from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from common_library.error_codes import create_error_code
+from common_library.error_codes import ErrorCodeStr, create_error_code
 from common_library.json_serialization import json_dumps, json_loads
 from common_library.user_messages import user_message
+from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.status_codes_utils import is_5xx_server_error
 
 from ..logging_errors import create_troubleshotting_log_kwargs
@@ -28,7 +30,6 @@ from .rest_responses import (
     safe_status_message,
     wrap_as_envelope,
 )
-from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 from .web_exceptions_extension import get_http_error_class_or_none
 
@@ -49,7 +50,7 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 
 def _create_error_context(
     request: web.BaseRequest, exception: Exception
-) -> tuple[str, dict[str, Any]]:
+) -> tuple[ErrorCodeStr, dict[str, Any]]:
     """Create error code and context for logging purposes.
 
     Returns:
@@ -66,7 +67,7 @@ def _create_error_context(
 
 def _log_5xx_server_error(
     request: web.BaseRequest, exception: Exception, user_error_msg: str
-) -> None:
+) -> ErrorCodeStr:
     """Log 5XX server errors with error code and context."""
     error_code, error_context = _create_error_context(request, exception)
 
@@ -78,6 +79,7 @@ def _log_5xx_server_error(
             error_code=error_code,
         )
     )
+    return error_code
 
 
 def _handle_unexpected_exception_as_500(
@@ -105,7 +107,10 @@ def _handle_unexpected_exception_as_500(
 def _handle_http_error(
     request: web.BaseRequest, exception: web.HTTPError
 ) -> web.HTTPError:
-    """Handle standard HTTP errors by ensuring they're properly formatted."""
+    """Handle standard HTTP errors by ensuring they're properly formatted.
+
+    NOTE: this needs further refactoring to avoid code duplication
+    """
     assert request  # nosec
     assert not exception.empty_body, "HTTPError should not have an empty body"  # nosec
 
@@ -118,6 +123,12 @@ def _handle_http_error(
     if not exception.text or not is_enveloped_from_text(exception.text):
         # NOTE: aiohttp.HTTPException creates `text = f"{self.status}: {self.reason}"`
         user_error_msg = exception.text or "Unexpected error"
+
+        error_code = None
+        if is_5xx_server_error(exception.status):
+            error_code = _log_5xx_server_error(request, exception, user_error_msg)
+            error_code = IDStr(error_code)
+
         error_model = ErrorGet(
             errors=[
                 ErrorItemType.from_error(exception),
@@ -127,11 +138,13 @@ def _handle_http_error(
                 LogMessageType(message=user_error_msg, level="ERROR"),
             ],
             message=user_error_msg,
+            support_id=error_code,
         )
-        exception.text = EnvelopeFactory(error=error_model).as_text()
-
-        if is_5xx_server_error(exception.status):
-            _log_5xx_server_error(request, exception, user_error_msg)
+        exception.text = json_dumps(
+            wrap_as_envelope(
+                error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
+            )
+        )
 
     return exception
 
