@@ -38,8 +38,8 @@ class GracefulKiller:
     """
 
     kill_now = False
-    worker = None
-    task = None
+    worker: distributed.Worker | None = None
+    task: asyncio.Task | None = None
 
     def __init__(self, worker: distributed.Worker):
         signal.signal(signal.SIGINT, self.exit_gracefully)
