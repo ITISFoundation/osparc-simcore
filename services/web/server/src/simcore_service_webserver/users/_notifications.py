@@ -20,6 +20,7 @@ class NotificationCategory(StrAutoEnum):
     NEW_ORGANIZATION = auto()
     STUDY_SHARED = auto()
     TEMPLATE_SHARED = auto()
+    CONVERSATION_NOTIFICATION = auto()
     ANNOTATION_NOTE = auto()
     WALLET_SHARED = auto()
 
@@ -41,8 +42,7 @@ class BaseUserNotification(BaseModel):
         return value.upper()
 
 
-class UserNotificationCreate(BaseUserNotification):
-    ...
+class UserNotificationCreate(BaseUserNotification): ...
 
 
 class UserNotificationPatch(BaseModel):
@@ -99,6 +99,19 @@ class UserNotification(BaseUserNotification):
                     "date": "2023-02-23T16:28:13.122Z",
                     "product": "osparc",
                     "read": False,
+                },
+                {
+                    "id": "390053c9-3931-40e1-839f-585268f6fd3d",
+                    "user_id": "1",
+                    "category": "CONVERSATION_NOTIFICATION",
+                    "actionable_path": "study/27edd65c-b360-11ed-93d7-02420a000014",
+                    "title": "New notification",
+                    "text": "You were notified in a conversation",
+                    "date": "2023-02-23T16:28:13.122Z",
+                    "product": "s4l",
+                    "read": False,
+                    "resource_id": "3fb96d89-ff5d-4d27-b5aa-d20d46e20e12",
+                    "user_from_id": "2",
                 },
                 {
                     "id": "390053c9-3931-40e1-839f-585268f6fd3d",
