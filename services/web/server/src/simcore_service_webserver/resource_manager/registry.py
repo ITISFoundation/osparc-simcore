@@ -130,9 +130,6 @@ class RedisResourceRegistry:
         return resources
 
     async def find_keys(self, resource: tuple[str, str]) -> list[UserSessionDict]:
-        if not resource:
-            return []
-
         field, value = resource
         return [
             self._decode_hash_key(hash_key)

@@ -124,11 +124,11 @@ DEFAULT_ORDER_BY = OrderBy(
 class ProjectDBAPI(BaseProjectDB):
     def __init__(self, app: web.Application) -> None:
         self._app = app
-        self._engine = cast(Engine, app.get(APP_AIOPG_ENGINE_KEY))
+        self._engine = cast(Engine | None, app.get(APP_AIOPG_ENGINE_KEY))
 
     def _init_engine(self) -> None:
         # Delays creation of engine because it setup_db does it on_startup
-        self._engine = cast(Engine, self._app.get(APP_AIOPG_ENGINE_KEY))
+        self._engine = cast(Engine | None, self._app.get(APP_AIOPG_ENGINE_KEY))
         if self._engine is None:
             msg = "Database subsystem was not initialized"
             raise ValueError(msg)
@@ -435,7 +435,6 @@ class ProjectDBAPI(BaseProjectDB):
         is_search_by_multi_columns: bool,
         user_groups: list[GroupID],
     ) -> sql.Select | None:
-
         if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
             assert workspace_query.workspace_scope in (  # nosec
                 WorkspaceScope.SHARED,
