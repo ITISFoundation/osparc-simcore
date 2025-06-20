@@ -124,10 +124,11 @@ def _handle_http_error(
         # NOTE: aiohttp.HTTPException creates `text = f"{self.status}: {self.reason}"`
         user_error_msg = exception.text or "Unexpected error"
 
-        error_code = None
+        error_code: IDStr | None = None
         if is_5xx_server_error(exception.status):
-            error_code = _log_5xx_server_error(request, exception, user_error_msg)
-            error_code = IDStr(error_code)
+            error_code = IDStr(
+                _log_5xx_server_error(request, exception, user_error_msg)
+            )
 
         error_model = ErrorGet(
             errors=[
