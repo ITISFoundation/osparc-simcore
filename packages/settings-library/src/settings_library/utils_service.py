@@ -120,11 +120,9 @@ class MixinServiceSettings:
             if value is not None:
                 kwargs[k] = value
 
-        assert all(
-            isinstance(v, str | int) or v is None for v in kwargs.values()
-        )  # nosec
+        assert all(isinstance(v, str | int) or v is None for v in kwargs.values())  # nosec
 
-        composed_url = str(AnyUrl.build(**kwargs))
+        composed_url = str(AnyUrl.build(**kwargs))  # pylint: disable=missing-kwoa
         return composed_url.rstrip("/")
 
     def _build_api_base_url(self, *, prefix: str) -> str:
