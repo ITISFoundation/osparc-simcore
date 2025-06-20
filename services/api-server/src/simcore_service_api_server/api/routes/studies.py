@@ -111,8 +111,9 @@ async def clone_study(
             description=description,
         )
         await webserver_api.patch_project(
-            project_id=study_id, patch_params=patch_params
+            project_id=project.uuid, patch_params=patch_params
         )
+        project = await webserver_api.get_project(project_id=project.uuid)
     return _create_study_from_project(project)
 
 
