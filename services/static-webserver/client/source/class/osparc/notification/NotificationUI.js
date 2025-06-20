@@ -340,6 +340,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
                 osparc.dashboard.ResourceBrowserBase.startStudyById(studyId, openCB);
               }
             });
+            if (notification.getCategory() === "CONVERSATION_NOTIFICATION") {
+              resourceDetails.openConversations();
+            }
           }
         })
         .catch(err => {
