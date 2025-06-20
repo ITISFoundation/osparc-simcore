@@ -17,6 +17,11 @@ class BaseBackEndError(ApiServerBaseError):
         )
 
 
+class BackendTimeoutError(BaseBackEndError):
+    msg_template = "Backend request timed out"
+    status_code = status.HTTP_504_GATEWAY_TIMEOUT
+
+
 class InvalidInputError(BaseBackEndError):
     msg_template = "Invalid input"
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY

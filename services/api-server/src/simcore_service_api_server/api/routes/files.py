@@ -11,22 +11,18 @@ from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage.storage_schemas import (
-    ETag,
     FileUploadCompletionBody,
-    LinkType,
 )
 from models_library.basic_types import SHA256Str
 from models_library.projects_nodes_io import NodeID
-from pydantic import AnyUrl, ByteSize, PositiveInt, TypeAdapter, ValidationError
+from pydantic import PositiveInt, ValidationError
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+from servicelib.logging_utils import log_context
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
 from simcore_sdk.node_ports_common.file_io_utils import UploadableFileObject
 from simcore_sdk.node_ports_common.filemanager import (
     UploadedFile,
     UploadedFolder,
-    abort_upload,
-    complete_file_upload,
-    get_upload_links_from_s3,
 )
 from simcore_sdk.node_ports_common.filemanager import upload_path as storage_upload_path
 from starlette.datastructures import URL
@@ -297,23 +293,21 @@ async def get_upload_links(
     client_file: UserFileToProgramJob | UserFile,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
     file_meta = await _create_domain_file(
         webserver_api=webserver_api, file_id=None, client_file=client_file
     )
-    _, upload_links = await get_upload_links_from_s3(
-        user_id=user_id,
-        store_name=None,
-        store_id=SIMCORE_LOCATION,
-        s3_object=file_meta.storage_file_id,
-        client_session=None,
-        link_type=LinkType.PRESIGNED,
-        file_size=ByteSize(client_file.filesize),
-        is_directory=False,
-        sha256_checksum=file_meta.sha256_checksum,
-    )
+
+    with log_context(
+        logger=_logger, level=logging.DEBUG, msg=f"Getting upload links for {file_meta}"
+    ):
+        upload_links = await storage_client.get_file_upload_links(
+            user_id=user_id, file=file_meta, client_file=client_file
+        )
+
     completion_url: URL = request.url_for(
         "complete_multipart_upload", file_id=file_meta.id
     )
@@ -420,12 +414,7 @@ async def abort_multipart_upload(
     file = await _create_domain_file(
         webserver_api=webserver_api, file_id=file_id, client_file=client_file
     )
-    abort_link: URL = await storage_client.create_abort_upload_link(
-        file=file, query={"user_id": str(user_id)}
-    )
-    await abort_upload(
-        abort_upload_link=TypeAdapter(AnyUrl).validate_python(str(abort_link))
-    )
+    await storage_client.abort_file_upload(user_id=user_id, file=file)
 
 
 @router.post(
@@ -449,13 +438,8 @@ async def complete_multipart_upload(
     file = await _create_domain_file(
         webserver_api=webserver_api, file_id=file_id, client_file=client_file
     )
-    complete_link: URL = await storage_client.create_complete_upload_link(
-        file=file, query={"user_id": str(user_id)}
-    )
-
-    e_tag: ETag | None = await complete_file_upload(
-        uploaded_parts=uploaded_parts.parts,
-        upload_completion_link=TypeAdapter(AnyUrl).validate_python(f"{complete_link}"),
+    e_tag = await storage_client.complete_file_upload(
+        user_id=user_id, file=file, uploaded_parts=uploaded_parts.parts
     )
     assert e_tag is not None  # nosec
 
