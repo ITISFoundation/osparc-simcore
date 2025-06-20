@@ -341,7 +341,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
               }
             });
             if (notification.getCategory() === "CONVERSATION_NOTIFICATION") {
-              resourceDetails.openConversations();
+              resourceDetails.addListener("pagesAdded", () => resourceDetails.openConversations());
             }
           }
         })
