@@ -297,7 +297,7 @@ async def change_password(request: web.Request):
         passwords.current.get_secret_value(), user["password_hash"]
     ):
         raise web.HTTPUnprocessableEntity(
-            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     await db.update_user(

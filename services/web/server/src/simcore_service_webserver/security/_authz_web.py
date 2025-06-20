@@ -53,4 +53,4 @@ async def check_user_permission(
             msg += f" {context.get('product_name')}"
         else:
             msg += f" {permission}"
-        raise web.HTTPForbidden(reason=msg)
+        raise web.HTTPForbidden(text=msg)

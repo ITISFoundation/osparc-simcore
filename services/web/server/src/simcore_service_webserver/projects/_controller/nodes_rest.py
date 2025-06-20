@@ -104,7 +104,7 @@ async def create_node(request: web.Request) -> web.Response:
         req_ctx.product_name,
     ):
         raise web.HTTPNotAcceptable(
-            reason=f"Service {body.service_key}:{body.service_version} is deprecated"
+            text=f"Service {body.service_key}:{body.service_version} is deprecated"
         )
 
     # ensure the project exists
@@ -155,7 +155,7 @@ async def get_node(request: web.Request) -> web.Response:
     ):
         project_node = project["workbench"][f"{path_params.node_id}"]
         raise web.HTTPNotAcceptable(
-            reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
+            text=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
         )
 
     service_data: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet = (
@@ -447,13 +447,11 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         return envelope_json_response(new_node_resources)
     except ProjectNodeResourcesInvalidError as exc:
         raise web.HTTPUnprocessableEntity(  # 422
-            reason=f"{exc}",
             text=f"{exc}",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from exc
     except ProjectNodeResourcesInsufficientRightsError as exc:
         raise web.HTTPForbidden(
-            reason=f"{exc}",
             text=f"{exc}",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from exc
