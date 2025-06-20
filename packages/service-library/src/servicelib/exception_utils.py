@@ -87,7 +87,7 @@ def _should_suppress_exception(
 
     try:
         return predicate(exc)
-    except Exception as predicate_exc:
+    except Exception as predicate_exc:  # pylint: disable=broad-except
         # the predicate function raised an exception
         # log it and do not suppress the original exception
         _logger.warning(
