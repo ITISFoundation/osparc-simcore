@@ -717,7 +717,7 @@ def patch_webserver_long_running_project_tasks(
 
 @pytest.fixture
 def mock_webserver_patch_project(
-    app: FastAPI, faker: Faker, services_mocks_enabled: bool
+    app: FastAPI, services_mocks_enabled: bool
 ) -> Callable[[MockRouter], MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
@@ -731,6 +731,30 @@ def mock_webserver_patch_project(
                 path__regex=r"/projects/(?P<project_id>[\w-]+)$",
                 name="project_patch",
             ).mock(side_effect=_patch_project)
+        return webserver_mock_router
+
+    return _mock
+
+
+@pytest.fixture
+def mock_webserver_get_project(
+    app: FastAPI, services_mocks_enabled: bool
+) -> Callable[[MockRouter], MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER is not None
+
+    def _mock(webserver_mock_router: MockRouter) -> MockRouter:
+        def _get_project(request: httpx.Request, *args, **kwargs):
+            result = Envelope[ProjectGet].model_validate(
+                {"data": ProjectGet.model_json_schema()["examples"][0]}
+            )
+            return httpx.Response(status.HTTP_200_OK, json=result.model_dump())
+
+        if services_mocks_enabled:
+            webserver_mock_router.get(
+                path__regex=r"/projects/(?P<project_id>[\w-]+)$",
+                name="project_get",
+            ).mock(side_effect=_get_project)
         return webserver_mock_router
 
     return _mock
