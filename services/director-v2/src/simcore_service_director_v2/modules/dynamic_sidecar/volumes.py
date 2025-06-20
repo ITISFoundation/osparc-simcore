@@ -78,7 +78,7 @@ def _get_s3_volume_driver_config(
             "s3-acl": "private",
         }
     else:
-        msg = f"Unexpected, all {S3Provider.__name__} should be covered"
+        msg = f"Unexpected, all {S3Provider.__name__} should be covered"  # type: ignore[unreachable]
         raise DynamicSidecarError(msg=msg)
 
     assert extra_options is not None  # nosec

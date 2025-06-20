@@ -86,14 +86,14 @@ def extract_service_port_from_settings(
             return PortInt(param.value)
         # REST-API compatible
         if (
-            param.setting_type == "EndpointSpec"
+            param.setting_type == "EndpointSpec"  # type: ignore[unreachable]
             and "Ports" in param.value
             and (
                 isinstance(param.value["Ports"], list)
                 and "TargetPort" in param.value["Ports"][0]
             )
         ):
-            return PortInt(param.value["Ports"][0]["TargetPort"])
+            return PortInt(param.value["Ports"][0]["TargetPort"])  # type: ignore[unreachable]
     msg = "service port not found!"
     raise ValueError(msg)
 
