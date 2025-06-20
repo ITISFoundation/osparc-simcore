@@ -4,7 +4,7 @@ from typing import Final
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 
-from ...queued_tasks.app_server import BaseAppServer
+from ...celery.app_server import BaseAppServer
 
 _SHUTDOWN_TIMEOUT: Final[float] = timedelta(seconds=10).total_seconds()
 _STARTUP_TIMEOUT: Final[float] = timedelta(minutes=1).total_seconds()

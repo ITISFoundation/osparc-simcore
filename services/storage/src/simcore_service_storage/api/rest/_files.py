@@ -20,8 +20,8 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.queued_tasks.models import TaskMetadata, TaskUUID
-from servicelib.queued_tasks.task_manager import TaskManager
+from servicelib.celery.models import TaskMetadata, TaskUUID
+from servicelib.celery.task_manager import TaskManager
 from yarl import URL
 
 from ...dsm import get_dsm_provider

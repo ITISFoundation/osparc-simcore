@@ -5,7 +5,7 @@ from typing import Final
 
 from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
-from servicelib.queued_tasks.models import (
+from servicelib.celery.models import (
     Task,
     TaskContext,
     TaskID,

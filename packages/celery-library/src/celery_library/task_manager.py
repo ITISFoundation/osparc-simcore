@@ -9,8 +9,7 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 )
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from servicelib.logging_utils import log_context
-from servicelib.queued_tasks.models import (
+from servicelib.celery.models import (
     Task,
     TaskContext,
     TaskID,
@@ -20,6 +19,7 @@ from servicelib.queued_tasks.models import (
     TaskStatus,
     TaskUUID,
 )
+from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
 from .utils import build_task_id

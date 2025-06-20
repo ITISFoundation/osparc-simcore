@@ -1,8 +1,8 @@
 from typing import Final
 
 from celery import Celery  # type: ignore[import-untyped]
-from servicelib.queued_tasks.app_server import BaseAppServer
-from servicelib.queued_tasks.models import TaskContext, TaskID, TaskUUID
+from servicelib.celery.app_server import BaseAppServer
+from servicelib.celery.models import TaskContext, TaskID, TaskUUID
 
 _APP_SERVER_KEY = "app_server"
 

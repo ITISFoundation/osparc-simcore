@@ -11,9 +11,9 @@ from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
+from servicelib.celery.models import TaskID
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
-from servicelib.queued_tasks.models import TaskID
 
 from ...dsm import get_dsm_provider
 from ...simcore_s3_dsm import SimcoreS3DataManager

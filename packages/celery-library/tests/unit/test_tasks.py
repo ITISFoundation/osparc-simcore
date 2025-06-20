@@ -19,13 +19,13 @@ from celery_library.task_manager import CeleryTaskManager
 from celery_library.utils import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.progress_bar import ProgressReport
-from servicelib.logging_utils import log_context
-from servicelib.queued_tasks.models import (
+from servicelib.celery.models import (
     TaskContext,
     TaskID,
     TaskMetadata,
     TaskState,
 )
+from servicelib.logging_utils import log_context
 from tenacity import Retrying, retry_if_exception_type, stop_after_delay, wait_fixed
 
 _logger = logging.getLogger(__name__)

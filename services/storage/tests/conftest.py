@@ -63,7 +63,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
-from servicelib.fastapi.queued_tasks.app_server import FastAPIAppServer
+from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings

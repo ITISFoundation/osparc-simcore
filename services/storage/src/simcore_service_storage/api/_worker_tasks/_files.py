@@ -7,8 +7,8 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
+from servicelib.celery.models import TaskID
 from servicelib.logging_utils import log_context
-from servicelib.queued_tasks.models import TaskID
 
 from ...dsm import get_dsm_provider
 from ...models import FileMetaData

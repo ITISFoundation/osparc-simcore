@@ -2,7 +2,7 @@ from typing import Any, Protocol
 
 from models_library.progress_bar import ProgressReport
 
-from ..queued_tasks.models import (
+from ..celery.models import (
     Task,
     TaskContext,
     TaskID,

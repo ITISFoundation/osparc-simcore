@@ -25,7 +25,7 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.queued_tasks.models import TaskID, TaskMetadata
+from servicelib.celery.models import TaskID, TaskMetadata
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_storage.api.rpc.routes import get_rabbitmq_rpc_server

@@ -21,8 +21,8 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
+from servicelib.celery.models import TaskState
 from servicelib.logging_utils import log_catch
-from servicelib.queued_tasks.models import TaskState
 from servicelib.rabbitmq import RPCRouter
 
 from ...modules.celery import get_task_manager_from_app

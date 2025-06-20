@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
 from typing import Final, Generic, TypeVar
 
-from servicelib.queued_tasks.task_manager import TaskManager
+from servicelib.celery.task_manager import TaskManager
 
 STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
