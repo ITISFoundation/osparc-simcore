@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _wrap_client_async_routine(
-    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None,
 ) -> Any:
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""
@@ -96,7 +96,7 @@ def _dask_worker_from_ec2_instance(
 
     # dict is of type dask_worker_address: worker_details
     def _find_by_worker_host(
-        dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails]
+        dask_worker: tuple[DaskWorkerUrl, DaskWorkerDetails],
     ) -> bool:
         _, details = dask_worker
         if match := re.match(DASK_NAME_PATTERN, details["name"]):
@@ -108,9 +108,9 @@ def _dask_worker_from_ec2_instance(
         raise DaskWorkerNotFoundError(
             worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address
         )
-    assert (
-        len(filtered_workers) == 1
-    ), f"returned workers {filtered_workers}, {node_hostname=}"  # nosec
+    assert len(filtered_workers) == 1, (
+        f"returned workers {filtered_workers}, {node_hostname=}"
+    )  # nosec
     return next(iter(filtered_workers.items()))
 
 
@@ -147,8 +147,8 @@ async def is_worker_retired(
 
 
 def _dask_key_to_dask_task_id(key: dask.typing.Key) -> DaskTaskId:
-    if isinstance(key, bytes):
-        return key.decode("utf-8")
+    if isinstance(key, bytes):  # type: ignore[unreachable]
+        return key.decode("utf-8")  # type: ignore[unreachable]
     if isinstance(key, tuple):
         return "(" + ", ".join(_dask_key_to_dask_task_id(k) for k in key) + ")"
     return f"{key}"
