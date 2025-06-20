@@ -2,7 +2,7 @@ import asyncio
 import datetime
 import io
 import logging
-from typing import IO, Annotated, Any, Final
+from typing import IO, Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends
@@ -65,8 +65,6 @@ router = APIRouter()
 # - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
 #
 #
-
-_AIOHTTP_CLIENT_SESSION_TIMEOUT_SECONDS: Final[float] = 60.0
 
 _FILE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_404_NOT_FOUND: {

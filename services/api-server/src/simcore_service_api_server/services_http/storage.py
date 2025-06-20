@@ -7,7 +7,7 @@ from mimetypes import guess_type
 from typing import Final, Literal
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
@@ -29,10 +29,12 @@ from models_library.generics import Envelope
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
+from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutError
 from simcore_service_api_server.models.schemas.files import UserFile
 from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 from tenacity import (
     AsyncRetrying,
+    TryAgain,
     before_sleep_log,
     retry_if_exception_type,
     stop_after_delay,
@@ -210,36 +212,34 @@ class StorageApi(BaseServiceClientApi):
         ].model_validate_json(response.text)
         assert file_upload_complete_response.data  # nosec
         state_url = f"{file_upload_complete_response.data.links.state}"
-        async for attempt in AsyncRetrying(
-            reraise=False,
-            wait=wait_fixed(1),
-            stop=stop_after_delay(_POLL_TIMEOUT),
-            retry=retry_if_exception_type(ValueError),
-            before_sleep=before_sleep_log(_logger, logging.DEBUG),
-        ):
-            with attempt:
-                resp = await self.client.post(state_url)
-                resp.raise_for_status()
-                future_enveloped = Envelope[
-                    FileUploadCompleteFutureResponse
-                ].model_validate_json(resp.text)
-                assert future_enveloped.data  # nosec
-                if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                    msg = "upload not ready yet"
-                    raise ValueError(msg)
+        try:
+            async for attempt in AsyncRetrying(
+                reraise=True,
+                wait=wait_fixed(1),
+                stop=stop_after_delay(_POLL_TIMEOUT),
+                retry=retry_if_exception_type(TryAgain),
+                before_sleep=before_sleep_log(_logger, logging.DEBUG),
+            ):
+                with attempt:
+                    resp = await self.client.post(state_url)
+                    resp.raise_for_status()
+                    future_enveloped = Envelope[
+                        FileUploadCompleteFutureResponse
+                    ].model_validate_json(resp.text)
+                    assert future_enveloped.data  # nosec
+                    if future_enveloped.data.state == FileUploadCompleteState.NOK:
+                        msg = "upload not ready yet"
+                        raise TryAgain()
 
-                assert future_enveloped.data.e_tag  # nosec
-                _logger.debug(
-                    "multipart upload completed in %s, received %s",
-                    attempt.retry_state.retry_object.statistics,
-                    f"{future_enveloped.data.e_tag=}",
-                )
-                return future_enveloped.data.e_tag
-        msg = f"Could not complete the upload for file '{file.filename}' (id: {file.id}) within the allocated time."
-        raise HTTPException(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail=msg,
-        )
+                    assert future_enveloped.data.e_tag  # nosec
+                    _logger.debug(
+                        "multipart upload completed in %s, received %s",
+                        attempt.retry_state.retry_object.statistics,
+                        f"{future_enveloped.data.e_tag=}",
+                    )
+                    return future_enveloped.data.e_tag
+        except TryAgain as exc:
+            raise BackendTimeoutError() from exc
 
     @_exception_mapper(http_status_map={})
     async def abort_file_upload(self, *, user_id: int, file: File) -> None:
