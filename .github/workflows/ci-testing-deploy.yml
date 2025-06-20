@@ -131,6 +131,7 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/service-integration/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             service-library:
               - 'packages/pytest-simcore/**'
               - 'packages/service-library/**'
@@ -141,9 +142,11 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/settings-library/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             simcore-sdk:
               - 'packages/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             agent:
               - 'packages/**'
               - 'services/agent/**'
@@ -158,6 +161,7 @@ jobs:
               - 'mypy.ini'
             api:
               - 'api/**'
+              - 'mypy.ini'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
@@ -228,6 +232,7 @@ jobs:
               - 'packages/**'
               - 'services/migration/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             payments:
                 - 'packages/**'
                 - 'services/payments/**'
@@ -243,6 +248,7 @@ jobs:
             docker-api-proxy:
                 - 'packages/**'
                 - 'services/docker-api-proxy/**'
+                - 'mypy.ini'
             resource-usage-tracker:
               - 'packages/**'
               - 'services/resource-usage-tracker/**'
@@ -262,12 +268,15 @@ jobs:
               - 'packages/**'
               - 'services/web/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             anything:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'mypy.ini'
             anything-py:
               - '**/*.py'
+              - 'mypy.ini'
             anything-js:
               - '**/*.js'
   build-test-images:
@@ -296,24 +305,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
@@ -344,24 +342,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -386,24 +373,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
@@ -428,24 +404,13 @@ jobs:
           os: [ubuntu-24.04]
         fail-fast: false
       steps:
-        - uses: actions/checkout@v4
-        - name: setup docker buildx
-          id: buildx
-          uses: docker/setup-buildx-action@v3
-          with:
-            driver: docker-container
-        - name: setup python environment
-          uses: actions/setup-python@v5
+        - name: Checkout code
+          uses: actions/checkout@v4
+        - name: Setup environment
+          uses: ./.github/actions/setup-simcore-env
           with:
             python-version: ${{ matrix.python }}
-        - name: install uv
-          uses: astral-sh/setup-uv@v6
-          with:
-            version: "0.6.x"
-            enable-cache: false
             cache-dependency-glob: "**/web/server/requirements/ci.txt"
-        - name: show system version
-          run: ./ci/helpers/show_system_versions.bash
         - name: install webserver
           run: ./ci/github/unit-testing/webserver.bash install
         - name: test
@@ -455,11 +420,7 @@ jobs:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           with:
             flags: unittests #optional
-        - name: Upload test results to Codecov
-          if: ${{ !cancelled() }}
-          uses: codecov/test-results-action@v1
-          with:
-            token: ${{ secrets.CODECOV_TOKEN }}
+
 
   unit-test-storage:
     needs: changes
@@ -473,24 +434,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/storage/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/storage.bash install
       - name: typecheck
@@ -518,26 +468,15 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/agent/requirements/ci.txt"
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/agent/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/agent.bash install
       - name: typecheck
@@ -564,24 +503,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/notifications/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/notifications.bash install
       - name: typecheck
@@ -608,24 +536,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/api/tests/requirements.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          cache-dependency-glob: "**/api/requirements/ci.txt"
       - name: install api
         run: ./ci/github/unit-testing/api.bash install
       - name: test
@@ -650,24 +567,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/api-server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/api-server.bash install
       - name: typecheck
@@ -698,24 +604,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/autoscaling.bash install
       - name: typecheck
@@ -743,24 +638,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/catalog/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/catalog.bash install
       - name: typecheck
@@ -794,24 +678,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -850,24 +723,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/datcore-adapter.bash install
       - name: typecheck
@@ -901,24 +763,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/director/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/director.bash install
       - name: typecheck
@@ -952,24 +803,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/director-v2.bash install
       - name: typecheck
@@ -1003,24 +843,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/aws-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/aws-library.bash install
       - name: typecheck
@@ -1048,24 +877,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
       - name: typecheck
@@ -1093,24 +911,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: typecheck
@@ -1138,24 +945,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/payments/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
@@ -1183,24 +979,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-scheduler.bash install
       - name: typecheck
@@ -1228,24 +1013,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -1283,24 +1057,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
@@ -1328,24 +1091,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -1384,24 +1136,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/ci/helpers/requirements.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          cache-dependency-glob: "**/pylint/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
@@ -1419,24 +1160,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
@@ -1464,24 +1194,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          cache-dependency-glob: "**/invitations/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/invitations.bash install
       - name: typecheck
@@ -1509,24 +1228,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/service-integration/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
@@ -1554,24 +1262,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          cache-dependency-glob: "**/service-library/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: typecheck
@@ -1599,24 +1296,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/settings-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: typecheck
@@ -1644,24 +1330,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/models-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
       - name: typecheck
@@ -1688,24 +1363,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/common-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/common-library.bash install
       - name: typecheck
@@ -1731,24 +1395,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/notifications-library.bash install
       - name: typecheck
@@ -1776,26 +1429,15 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: typecheck
@@ -1874,35 +1516,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -1936,37 +1558,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -2000,37 +1600,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -2066,44 +1644,21 @@ jobs:
       # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
       DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
-      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup rclone docker volume plugin
-        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: setup rclone docker volume plugin
+        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
+          artifact-name-pattern: 'backend'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -2137,39 +1692,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
+          artifact-name-pattern: 'backend'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/integration-testing/dynamic-sidecar.bash install
       - name: test
@@ -2204,37 +1737,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/docker-api-proxy/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/docker-api-proxy.bash install
       - name: test
@@ -2268,37 +1779,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
@@ -2356,37 +1847,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: '*'
       - name: install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -2416,37 +1885,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: '*'
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -2482,42 +1929,20 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
       - uses: actions/setup-node@v4.1.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          artifact-name-pattern: '*'
       - name: setup
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
@@ -2564,34 +1989,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      - name: download docker images
-        uses: actions/download-artifact@v4
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
+          artifact-name-pattern: '*'
       - name: prepare devenv
         run: make devenv
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: setup
         run: |
           ./ci/github/system-testing/e2e-playwright.bash install
@@ -2626,23 +2034,11 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/system-testing/environment-setup.bash install
       - name: test
@@ -2690,30 +2086,16 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
-          driver: docker-container
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
+          python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+          show-system-versions: false
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: load docker images
-        run: |
-          make load-images local-src=/${{ runner.temp }}/build
+          artifact-name-pattern: '*'
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'

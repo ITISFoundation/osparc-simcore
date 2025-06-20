@@ -37,7 +37,8 @@ def is_lifespan_called(state: State, lifespan_name: str) -> bool:
     # Valid signatures include: `()`, `(app)`, `(app, state)`, or even `(_, state)`.
     # It's easy to accidentally swap or misplace these arguments.
     assert not isinstance(  # nosec
-        state, FastAPI
+        state,  # type: ignore[unreachable]
+        FastAPI,
     ), "Did you swap arguments? `lifespan(app, state)` expects (app: FastAPI, state: State)"
 
     called_lifespans = state.get(_CALLED_LIFESPANS_KEY, set())

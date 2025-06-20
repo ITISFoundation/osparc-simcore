@@ -131,8 +131,8 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     async def permits(
         self,
-        identity: IdentityStr,
-        permission: str,
+        identity: IdentityStr | None,
+        permission: str | None,
         context: OptionalContext = None,
     ) -> bool:
         """Implements Interface: Determines whether an identified user has permission

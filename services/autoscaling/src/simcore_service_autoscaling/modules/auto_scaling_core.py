@@ -343,10 +343,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         allowed_instance_type_names
     ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"
 
-    allowed_instance_types: list[EC2InstanceType] = (
-        await ec2_client.get_ec2_instance_capabilities(
-            cast(set[InstanceTypeType], set(allowed_instance_type_names))
-        )
+    allowed_instance_types: list[
+        EC2InstanceType
+    ] = await ec2_client.get_ec2_instance_capabilities(
+        cast(set[InstanceTypeType], set(allowed_instance_type_names))
     )
 
     def _as_selection(instance_type: EC2InstanceType) -> int:
@@ -844,7 +844,7 @@ async def _launch_instances(
         elif isinstance(r, list):
             new_pending_instances.extend(r)
         else:
-            new_pending_instances.append(r)
+            new_pending_instances.append(r)  # type: ignore[unreachable]
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
@@ -1078,9 +1078,9 @@ async def _notify_based_on_machine_type(
     launch_time_to_tasks: dict[datetime.datetime, list] = collections.defaultdict(list)
     now = datetime.datetime.now(datetime.UTC)
     for instance in instances:
-        launch_time_to_tasks[
-            instance.ec2_instance.launch_time
-        ] += instance.assigned_tasks
+        launch_time_to_tasks[instance.ec2_instance.launch_time] += (
+            instance.assigned_tasks
+        )
 
     for launch_time, tasks in launch_time_to_tasks.items():
         time_since_launch = now - launch_time

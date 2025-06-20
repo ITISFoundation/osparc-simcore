@@ -26,15 +26,11 @@ jobs:
     runs-on: ${{ inputs.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
-          driver: docker-container
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      - name: show system environs
-        run: ./ci/helpers/show_system_versions.bash
+          python-version: ${{ inputs.python-version }}
+          expose-github-runtime: 'true'
       - name: build backend images
         if: ${{ inputs.build-backend }}
         run: |

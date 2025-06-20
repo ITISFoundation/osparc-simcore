@@ -215,7 +215,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         api_secret: str,
         dataset_id: str,
         page_size: int,
-        cursor: str,
+        cursor: str | None,
     ) -> dict[str, Any]:
         packages = cast(
             dict[str, Any],
@@ -227,7 +227,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                 params={
                     "includeSourceFiles": False,
                     "pageSize": page_size,
-                    "cursor": cursor,
+                    "cursor": cursor if cursor is not None else "",
                 },
             ),
         )
@@ -464,8 +464,8 @@ class PennsieveApiClient(BaseServiceClientApi):
     ) -> list[FileMetaData]:
         """returns ALL the files belonging to the dataset, can be slow if there are a lot of files"""
 
-        file_meta_data = []
-        cursor = ""
+        file_meta_data: list[FileMetaData] = []
+        cursor: str | None = ""
         PAGE_SIZE = 1000
 
         num_packages, dataset_details = await logged_gather(
@@ -480,7 +480,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         while resp := await self._get_dataset_packages(
             api_key, api_secret, dataset_id, PAGE_SIZE, cursor
         ):
-            cursor = resp.get("cursor")  # type: ignore[assignment]
+            cursor = resp.get("cursor")
             assert isinstance(cursor, str | None)  # nosec
             all_packages.update(
                 {p["content"]["id"]: p for p in resp.get("packages", [])}
@@ -491,6 +491,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                 num_packages,
                 cursor,
             )
+
             if cursor is None:
                 # the whole collection is there now
                 break

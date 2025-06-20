@@ -52,7 +52,7 @@ class FunctionServices:
         raises ValueError
         """
         if not isinstance(meta, ServiceMetaDataPublished):
-            msg = f"Expected ServiceDockerData, got {type(meta)}"
+            msg = f"Expected ServiceDockerData, got {type(meta)}"  # type: ignore[unreachable]
             raise ValueError(msg)
 
         # ensure unique

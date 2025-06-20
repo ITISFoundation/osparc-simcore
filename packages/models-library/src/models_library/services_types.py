@@ -97,5 +97,5 @@ class ServiceRunID(str):
             return v
         if isinstance(v, str):
             return cls(v)
-        msg = f"Invalid value for RunID: {v}"
+        msg = f"Invalid value for RunID: {v}"  # type: ignore[unreachable]
         raise TypeError(msg)
