@@ -1,8 +1,14 @@
 from celery_library.common import create_app, create_task_manager
 from celery_library.task_manager import CeleryTaskManager
-from celery_library.types import register_celery_types
+from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
+from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadCompletionBody,
+    FoldersBody,
+)
 from settings_library.celery import CelerySettings
+
+from ...models import FileMetaData
 
 
 def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
@@ -12,6 +18,7 @@ def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
         )
 
         register_celery_types()
+        register_pydantic_types(FileUploadCompletionBody, FileMetaData, FoldersBody)
 
     app.add_event_handler("startup", on_startup)
 
