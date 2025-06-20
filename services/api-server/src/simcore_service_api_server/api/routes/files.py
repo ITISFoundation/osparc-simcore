@@ -438,7 +438,9 @@ async def complete_multipart_upload(
     file = await _create_domain_file(
         webserver_api=webserver_api, file_id=file_id, client_file=client_file
     )
-    e_tag = await storage_client.complete_file_upload(user_id=user_id, file=file)
+    e_tag = await storage_client.complete_file_upload(
+        user_id=user_id, file=file, uploaded_parts=uploaded_parts.parts
+    )
     assert e_tag is not None  # nosec
 
     file.e_tag = e_tag

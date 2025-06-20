@@ -20,9 +20,11 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
+    FileUploadCompletionBody,
     FileUploadSchema,
     LinkType,
     PresignedLink,
+    UploadedPart,
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
@@ -200,11 +202,14 @@ class StorageApi(BaseServiceClientApi):
         return enveloped_data.data
 
     @_exception_mapper(http_status_map={})
-    async def complete_file_upload(self, *, user_id: int, file: File) -> ETag:
+    async def complete_file_upload(
+        self, *, user_id: int, file: File, uploaded_parts: list[UploadedPart]
+    ) -> ETag:
 
         response = await self.client.post(
             f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete",
             params={"user_id": f"{user_id}"},
+            json=jsonable_encoder(FileUploadCompletionBody(parts=uploaded_parts)),
         )
         response.raise_for_status()
         file_upload_complete_response = Envelope[
@@ -228,7 +233,6 @@ class StorageApi(BaseServiceClientApi):
                     ].model_validate_json(resp.text)
                     assert future_enveloped.data  # nosec
                     if future_enveloped.data.state == FileUploadCompleteState.NOK:
-                        msg = "upload not ready yet"
                         raise TryAgain()
 
                     assert future_enveloped.data.e_tag  # nosec
@@ -240,6 +244,7 @@ class StorageApi(BaseServiceClientApi):
                     return future_enveloped.data.e_tag
         except TryAgain as exc:
             raise BackendTimeoutError() from exc
+        raise BackendTimeoutError()
 
     @_exception_mapper(http_status_map={})
     async def abort_file_upload(self, *, user_id: int, file: File) -> None:
