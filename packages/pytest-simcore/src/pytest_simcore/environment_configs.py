@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 
+import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,8 @@ import pytest
 from .helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from .helpers.typing_env import EnvVarsDict
 
+_logger = logging.getLogger(__name__)
+
 
 def pytest_addoption(parser: pytest.Parser):
     simcore_group = parser.getgroup("simcore")
@@ -20,12 +23,17 @@ def pytest_addoption(parser: pytest.Parser):
         action="store",
         type=Path,
         default=None,
-        help="Path to an env file. Consider passing a link to repo configs, i.e. `ln -s /path/to/osparc-ops-config/repo.config`",
+        help="Path to an env file. Replaces .env-devel in the tests by an external envfile."
+        "e.g. consider "
+        " `ln -s /path/to/osparc-ops-config/repo.config .secrets` and then "
+        " `pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py`",
     )
 
 
 @pytest.fixture(scope="session")
-def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
+def external_envfile_dict(
+    request: pytest.FixtureRequest, osparc_simcore_root_dir: Path
+) -> EnvVarsDict:
     """
     If a file under test folder prefixed with `.env-secret` is present,
     then this fixture captures it.
@@ -35,19 +43,43 @@ def external_envfile_dict(request: pytest.FixtureRequest) -> EnvVarsDict:
     """
     envs = {}
     if envfile := request.config.getoption("--external-envfile"):
-        print("🚨 EXTERNAL `envfile` option detected. Loading", envfile, "...")
+        _logger.warning(
+            "🚨 EXTERNAL `envfile` option detected. Loading '%s' ...", envfile
+        )
 
         assert isinstance(envfile, Path)
         assert envfile.exists()
         assert envfile.is_file()
 
+        envfile = envfile.resolve()
+        osparc_simcore_root_dir = osparc_simcore_root_dir.resolve()
+
+        if osparc_simcore_root_dir in envfile.parents and not any(
+            term in envfile.name.lower() for term in ("ignore", "secret")
+        ):
+            _logger.warning(
+                "🚨 CAUTION: The external envfile '%s' may contain sensitive data and could be accidentally versioned. "
+                "To prevent this, include the words 'secret' or 'ignore' in the filename.",
+                envfile.name,
+            )
+
         envs = load_dotenv(envfile)
+
+    if envs:
+        response = input(
+            f"🚨 CAUTION: You are about to run tests using environment variables loaded from '{envfile}'.\n"
+            "This may cause tests to interact with or modify real external systems (e.g., production or staging environments).\n"
+            "Proceeding could result in data loss or unintended side effects.\n"
+            "Are you sure you want to continue? [y/N]: "
+        )
+        if response.strip().lower() not in ("y", "yes"):
+            pytest.exit("Aborted by user due to external envfile usage.")
 
     return envs
 
 
 @pytest.fixture(scope="session")
-def skip_if_external_envfile_dict(external_envfile_dict: EnvVarsDict) -> None:
+def skip_if_no_external_envfile(external_envfile_dict: EnvVarsDict) -> None:
     if not external_envfile_dict:
         pytest.skip(reason="Skipping test since external-envfile is not set")
 

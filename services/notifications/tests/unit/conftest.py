@@ -14,11 +14,11 @@ from simcore_service_notifications.core.application import create_app
 
 
 @pytest.fixture
-def service_env(
+def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     mock_environment: EnvVarsDict,
     rabbit_service: RabbitSettings,
-    postgres_db: sa.engine.Engine,
+    postgres_db: sa.engine.Engine,  # waiting for postgres service to start
     postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
@@ -36,7 +36,7 @@ def service_env(
 
 
 @pytest.fixture
-async def initialized_app(service_env: EnvVarsDict) -> AsyncIterator[FastAPI]:
+async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     app: FastAPI = create_app()
 
     async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):

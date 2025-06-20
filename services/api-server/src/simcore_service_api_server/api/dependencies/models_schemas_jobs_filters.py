@@ -18,7 +18,9 @@ def get_job_metadata_filter(
             *Format*: `key:pattern` where pattern can contain glob wildcards
             """
             ),
-            example=["key1:val*", "key2:exactval"],
+            examples=[
+                ["key1:val*", "key2:exactval"],
+            ],
         ),
     ] = None,
 ) -> JobMetadataFilter | None:

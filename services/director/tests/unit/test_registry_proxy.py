@@ -278,7 +278,7 @@ def configure_number_concurrency_calls(
 
 
 def test_list_services_performance(
-    skip_if_external_envfile_dict: None,
+    skip_if_no_external_envfile: None,
     configure_external_registry_access: EnvVarsDict,
     configure_number_concurrency_calls: EnvVarsDict,
     registry_settings: RegistrySettings,

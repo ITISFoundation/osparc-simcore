@@ -1069,7 +1069,7 @@ async def test_cluster_scaling_up_and_down(
     ],
 )
 async def test_cluster_scaling_up_and_down_against_aws(
-    skip_if_external_envfile_dict: None,
+    skip_if_no_external_envfile: None,
     external_ec2_instances_allowed_types: None | dict[str, EC2InstanceBootSpecific],
     with_labelize_drain_nodes: EnvVarsDict,
     app_with_docker_join_drained: EnvVarsDict,

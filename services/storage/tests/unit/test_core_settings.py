@@ -1,10 +1,12 @@
-# pylint: disable=redefined-outer-name
-# pylint: disable=unused-argument
 # pylint: disable=unused-variable
-# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
 
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_catalog.core.settings import ApplicationSettings
+
+from pytest_simcore.helpers.monkeypatch_envs import (
+    EnvVarsDict,
+)
+from simcore_service_storage.core.settings import ApplicationSettings
 
 
 def test_valid_application_settings(app_environment: EnvVarsDict):
