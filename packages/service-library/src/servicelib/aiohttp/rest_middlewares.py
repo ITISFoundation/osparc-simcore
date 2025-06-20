@@ -132,7 +132,12 @@ def _handle_http_error(
 
         error_model = ErrorGet(
             errors=[
-                ErrorItemType.from_error(exception),
+                ErrorItemType(
+                    code=exception.__class__.__name__,
+                    message=user_error_msg,
+                    resource=None,
+                    field=None,
+                ),
             ],
             status=exception.status,
             logs=[
