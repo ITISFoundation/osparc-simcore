@@ -1935,7 +1935,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           serializeData.attributes.text = noteEditor.getNote();
           const user = osparc.store.Groups.getInstance().getUserByGroupId(gid)
           if (user) {
-            osparc.notification.Notifications.postNewAnnotationNote(user.getUserId(), this.getStudy().getUuid());
+            osparc.notification.Notifications.pushNewAnnotationNote(user.getUserId(), this.getStudy().getUuid());
           }
           this.__addAnnotation(serializeData);
           win.close();

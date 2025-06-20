@@ -144,6 +144,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __resourceModel: null,
     __infoPage: null,
     __servicesUpdatePage: null,
+    __conversationsPage: null,
     __permissionsPage: null,
     __tagsPage: null,
     __billingSettings: null,
@@ -292,6 +293,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     openUpdateServices: function() {
       this._openPage(this.__servicesUpdatePage);
+    },
+
+    openConversations: function() {
+      this._openPage(this.__conversationsPage);
     },
 
     openAccessRights: function() {
@@ -556,7 +561,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const id = "Conversations";
       const title = this.tr("Conversations");
       const iconSrc = "@FontAwesome5Solid/comments/22";
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__conversationsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {
