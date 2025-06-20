@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.info.CommentAdd", {
+qx.Class.define("osparc.conversation.AddMessage", {
   extend: qx.ui.core.Widget,
 
   /**

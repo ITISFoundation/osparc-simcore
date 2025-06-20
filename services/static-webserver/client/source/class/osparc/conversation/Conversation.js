@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.info.Conversation", {
+qx.Class.define("osparc.conversation.Conversation", {
   extend: qx.ui.tabview.Page,
 
   /**
@@ -161,7 +161,7 @@ qx.Class.define("osparc.info.Conversation", {
       this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addMessages = new osparc.info.CommentAdd(this.__studyData, this.getConversationId());
+        const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId());
         addMessages.setPaddingLeft(10);
         addMessages.addListener("commentAdded", e => {
           const data = e.getData();
@@ -231,7 +231,7 @@ qx.Class.define("osparc.info.Conversation", {
       }
 
       messages.forEach(message => {
-        const messageUi = new osparc.info.MessageUI(message);
+        const messageUi = new osparc.conversation.MessageUI(message);
         this.__messagesList.add(messageUi);
       });
     },

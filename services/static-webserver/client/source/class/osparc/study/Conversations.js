@@ -166,7 +166,7 @@ qx.Class.define("osparc.study.Conversations", {
       };
 
       if (conversations.length === 0) {
-        const noConversationTab = new osparc.info.Conversation(studyData);
+        const noConversationTab = new osparc.conversation.Conversation(studyData);
         conversationPages.push(noConversationTab);
         noConversationTab.setLabel(this.tr("new"));
         noConversationTab.addListener("conversationDeleted", () => reloadConversations());
@@ -174,7 +174,7 @@ qx.Class.define("osparc.study.Conversations", {
       } else {
         conversations.forEach(conversation => {
           const conversationId = conversation["conversationId"];
-          const conversationTab = new osparc.info.Conversation(studyData, conversationId);
+          const conversationTab = new osparc.conversation.Conversation(studyData, conversationId);
           conversationPages.push(conversationTab);
           conversationTab.setLabel(conversation["name"]);
           conversationTab.addListener("conversationDeleted", () => reloadConversations());
