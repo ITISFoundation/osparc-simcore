@@ -312,7 +312,6 @@ async def create_standard_group(
     user_id: UserID,
     create: StandardGroupCreate,
 ) -> tuple[Group, AccessRightsDict]:
-
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         user = await conn.scalar(
             sa.select(
@@ -358,7 +357,6 @@ async def update_standard_group(
     group_id: GroupID,
     update: StandardGroupUpdate,
 ) -> tuple[Group, AccessRightsDict]:
-
     values = update.model_dump(mode="json", exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
@@ -560,12 +558,7 @@ async def update_user_in_group(
     the_user_id_in_group: UserID,
     access_rights: AccessRightsDict,
 ) -> GroupMember:
-    if not access_rights:
-        msg = f"Cannot update empty {access_rights}"
-        raise ValueError(msg)
-
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-
         # first check if the group exists
         await _get_group_and_access_rights_or_raise(
             conn, caller_id=caller_id, group_id=group_id, permission="write"
@@ -715,7 +708,6 @@ async def auto_add_user_to_groups(
     *,
     user: dict,
 ) -> None:
-
     user_id: UserID = user["id"]
 
     # auto add user to the groups with the right rules

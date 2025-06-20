@@ -145,9 +145,9 @@ async def replace_current_owner(
         )
         return
 
-    # the result might me none
+    # the result might me none (really? that is not what the function is supposed to do)
     if new_project_owner_id is None:
-        _logger.warning(
+        _logger.warning(  # type: ignore[unreachable]
             "Could not recover a new user id from gid %s", new_project_owner_gid
         )
         return
