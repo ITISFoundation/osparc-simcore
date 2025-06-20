@@ -111,7 +111,7 @@ async def result(
             exc_msg = f"{exception}"
 
         if exception is None:
-            _logger.warning("Was not expecting '%s': '%s'", exc_type, exc_msg)
+            _logger.warning("Was not expecting '%s': '%s'", exc_type, exc_msg)  # type: ignore[unreachable]
 
         # NOTE: cannot transfer original exception since this will not be able to be serialized
         # outside of storage

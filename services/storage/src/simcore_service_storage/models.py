@@ -48,8 +48,7 @@ from pydantic import (
 )
 
 
-class DatasetMetaData(DatasetMetaDataGet):
-    ...
+class DatasetMetaData(DatasetMetaDataGet): ...
 
 
 def is_uuid(value: str) -> bool:
@@ -305,7 +304,7 @@ class FilePathParams(LocationPathParams):
     def unquote(cls, v: str) -> str:
         if v is not None:
             return urllib.parse.unquote(f"{v}")
-        return v
+        return v  # type: ignore[unreachable]
 
 
 class FilePathIsUploadCompletedParams(FilePathParams):
@@ -324,7 +323,7 @@ class CopyAsSoftLinkParams(BaseModel):
     def unquote(cls, v: str) -> str:
         if v is not None:
             return urllib.parse.unquote(f"{v}")
-        return v
+        return v  # type: ignore[unreachable]
 
 
 class UserOrProjectFilter(NamedTuple):
@@ -395,9 +394,11 @@ class PathMetaData(BaseModel):
             node_id=dir_fmd.node_id,
             created_at=dir_fmd.created_at,
             last_modified=dir_fmd.last_modified,
-            file_meta_data=None
-            if isinstance(s3_object, S3DirectoryMetaData)
-            else FileMetaData.from_s3_object_in_dir(s3_object, dir_fmd),
+            file_meta_data=(
+                None
+                if isinstance(s3_object, S3DirectoryMetaData)
+                else FileMetaData.from_s3_object_in_dir(s3_object, dir_fmd)
+            ),
         )
 
     def to_api_model(self) -> PathMetaDataGet:
