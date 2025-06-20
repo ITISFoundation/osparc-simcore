@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import sys
 import time
 from asyncio import CancelledError
@@ -47,22 +46,22 @@ _KEY_VALUE_FILE_NAME = "key_values.json"
 
 _logger = logging.getLogger(__name__)
 
-# OUTPUTS section
 
-
-def _get_size_of_value(value: tuple[ItemConcreteValue | None, SetKWargs | None]) -> int:
-    if value is None:
+def _get_size_of_value(
+    value: tuple[ItemConcreteValue | None, SetKWargs | None],
+) -> int:
+    concrete_value, _ = value
+    if concrete_value is None:
         return 0
-    if isinstance(value, Path):
+    if isinstance(concrete_value, Path):
         # if symlink we need to fetch the pointer to the file
         # relative symlink need to know which their parent is
         # in oder to properly resolve the path since the workdir
         # does not equal to their parent dir
-        path = value
-        if value.is_symlink():
-            path = Path(value.parent) / Path(os.readlink(value))
-        size_bytes = path.stat().st_size
-        return size_bytes
+        path = concrete_value
+        if concrete_value.is_symlink():
+            path = Path(concrete_value.parent) / Path(Path.readlink(concrete_value))
+        return path.stat().st_size
     return sys.getsizeof(value)
 
 
