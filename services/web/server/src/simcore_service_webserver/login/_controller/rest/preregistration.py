@@ -72,7 +72,7 @@ async def request_product_account(request: web.Request):
 
     if body.captcha != session.get(CAPTCHA_SESSION_KEY):
         raise web.HTTPUnprocessableEntity(
-            reason=MSG_WRONG_CAPTCHA__INVALID, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_WRONG_CAPTCHA__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
     session.pop(CAPTCHA_SESSION_KEY, None)
 
@@ -113,7 +113,7 @@ async def unregister_account(request: web.Request):
         body.password.get_secret_value(), credentials.password_hash
     ):
         raise web.HTTPConflict(
-            reason="Wrong email or password. Please try again to delete this account"
+            text="Wrong email or password. Please try again to delete this account"
         )
 
     with log_context(

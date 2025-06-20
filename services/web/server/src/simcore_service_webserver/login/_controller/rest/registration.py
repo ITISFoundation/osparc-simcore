@@ -168,7 +168,7 @@ async def register(request: web.Request):
         < settings.LOGIN_PASSWORD_MIN_LENGTH
     ):
         raise web.HTTPUnauthorized(
-            reason=MSG_WEAK_PASSWORD.format(
+            text=MSG_WEAK_PASSWORD.format(
                 LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH
             ),
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -198,7 +198,7 @@ async def register(request: web.Request):
         invitation_code = registration.invitation
         if invitation_code is None:
             raise web.HTTPBadRequest(
-                reason="invitation field is required",
+                text="invitation field is required",
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
@@ -374,7 +374,7 @@ async def register_phone(request: web.Request):
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
-            reason="Phone registration is not available",
+            text="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
@@ -436,6 +436,6 @@ async def register_phone(request: web.Request):
         )
 
         raise web.HTTPServiceUnavailable(
-            reason=user_error_msg,
+            text=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err

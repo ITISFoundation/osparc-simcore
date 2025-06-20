@@ -1,6 +1,5 @@
 """Enables monitoring of some quantities needed for diagnostics"""
 
-import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from time import perf_counter
@@ -61,9 +60,8 @@ def middleware_factory(
         # See https://prometheus.io/docs/concepts/metric_types
 
         log_exception: BaseException | None = None
-        resp: web.StreamResponse = web.HTTPInternalServerError(
-            reason="Unexpected exception"
-        )
+        response: web.StreamResponse = web.HTTPInternalServerError()
+
         canonical_endpoint = request.path
         if request.match_info.route.resource:
             canonical_endpoint = request.match_info.route.resource.canonical
@@ -86,29 +84,25 @@ def middleware_factory(
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
             ):
-                resp = await handler(request)
+                response = await handler(request)
 
             assert isinstance(  # nosec
-                resp, web.StreamResponse
+                response, web.StreamResponse
             ), "Forgot envelope middleware?"
 
         except web.HTTPServerError as exc:
-            resp = exc
+            response = exc
             log_exception = exc
-            raise resp from exc
+            raise
+
         except web.HTTPException as exc:
-            resp = exc
+            response = exc
             log_exception = None
-            raise resp from exc
-        except asyncio.CancelledError as exc:
-            resp = web.HTTPInternalServerError(text=f"{exc}")
-            log_exception = exc
-            raise resp from exc
+            raise
+
         except Exception as exc:  # pylint: disable=broad-except
-            resp = web.HTTPInternalServerError(text=f"{exc}")
-            resp.__cause__ = exc
             log_exception = exc
-            raise resp from exc
+            raise
 
         finally:
             response_latency_seconds = perf_counter() - start_time
@@ -118,13 +112,13 @@ def middleware_factory(
                 method=request.method,
                 endpoint=canonical_endpoint,
                 user_agent=user_agent,
-                http_status=resp.status,
+                http_status=response.status,
                 response_latency_seconds=response_latency_seconds,
             )
 
             if exit_middleware_cb:
                 with log_catch(logger=log, reraise=False):
-                    await exit_middleware_cb(request, resp)
+                    await exit_middleware_cb(request, response)
 
             if log_exception:
                 log.error(
@@ -135,12 +129,12 @@ def middleware_factory(
                     request.method,
                     request.path,
                     response_latency_seconds,
-                    resp.status,
+                    response.status,
                     exc_info=log_exception,
                     stack_info=True,
                 )
 
-        return resp
+        return response
 
     setattr(  # noqa: B010
         middleware_handler, "__middleware_name__", f"{__name__}.monitor_{app_name}"

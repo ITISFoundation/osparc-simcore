@@ -127,6 +127,7 @@ async def test_failing_task_returns_error(
     client: TestClient,
     start_long_running_task: Callable[[TestClient, Any], Awaitable[TaskId]],
     wait_for_task: Callable[[TestClient, TaskId, TaskContext], Awaitable[None]],
+    caplog: pytest.LogCaptureFixture,
 ):
     assert client.app
     task_id = await start_long_running_task(client, fail=f"{True}")
@@ -138,10 +139,17 @@ async def test_failing_task_returns_error(
     data, error = await assert_status(result, status.HTTP_500_INTERNAL_SERVER_ERROR)
     assert not data
     assert error
-    assert "errors" in error
-    assert len(error["errors"]) == 1
-    assert error["errors"][0]["code"] == "RuntimeError"
-    assert error["errors"][0]["message"] == "We were asked to fail!!"
+
+    # The error should contain a supportId field for tracking
+    assert "supportId" in error
+    assert isinstance(error["supportId"], str)
+    assert len(error["supportId"]) > 0
+
+    # The actual error details should be logged, not returned in response
+    log_messages = caplog.text
+    assert "OEC" in log_messages
+    assert "RuntimeError" in log_messages
+    assert "We were asked to fail!!" in log_messages
 
 
 async def test_get_results_before_tasks_finishes_returns_404(
