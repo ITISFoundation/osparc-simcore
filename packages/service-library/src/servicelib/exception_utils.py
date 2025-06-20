@@ -76,6 +76,30 @@ R = TypeVar("R")
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+def _should_suppress_exception(
+    exc: BaseException,
+    predicate: Callable[[BaseException], bool] | None,
+    func_name: str,
+) -> bool:
+    if predicate is None:
+        # No predicate provided, suppress all exceptions
+        return True
+
+    try:
+        return predicate(exc)
+    except Exception as predicate_exc:
+        # the predicate function raised an exception
+        # log it and do not suppress the original exception
+        _logger.warning(
+            "Predicate function raised exception %s in %s. "
+            "Original exception will be re-raised: %s",
+            predicate_exc,
+            func_name,
+            exc,
+        )
+        return False
+
+
 def suppress_exceptions(
     exceptions: tuple[type[BaseException], ...],
     *,
@@ -114,9 +138,11 @@ def suppress_exceptions(
                     assert inspect.iscoroutinefunction(func_or_coro)  # nosec
                     return await func_or_coro(*args, **kwargs)
                 except exceptions as exc:
-                    # Check predicate if provided
-                    if predicate is not None and not predicate(exc):
-                        raise  # Re-raise if predicate returns False
+                    # Check if exception should be suppressed
+                    if not _should_suppress_exception(
+                        exc, predicate, func_or_coro.__name__
+                    ):
+                        raise  # Re-raise if predicate returns False or fails
 
                     _logger.debug(
                         "Caught suppressed exception %s in %s: TIP: %s",
@@ -133,9 +159,11 @@ def suppress_exceptions(
             try:
                 return func_or_coro(*args, **kwargs)
             except exceptions as exc:
-                # Check predicate if provided
-                if predicate is not None and not predicate(exc):
-                    raise  # Re-raise if predicate returns False
+                # Check if exception should be suppressed
+                if not _should_suppress_exception(
+                    exc, predicate, func_or_coro.__name__
+                ):
+                    raise  # Re-raise if predicate returns False or fails
 
                 _logger.debug(
                     "Caught suppressed exception %s in %s: TIP: %s",
