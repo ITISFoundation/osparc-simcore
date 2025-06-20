@@ -231,8 +231,16 @@ qx.Class.define("osparc.conversation.Conversation", {
       }
 
       messages.forEach(message => {
-        const messageUi = new osparc.conversation.MessageUI(message);
-        this.__messagesList.add(messageUi);
+        let control = null;
+        switch (message["type"]) {
+          case "MESSAGE":
+            control = new osparc.conversation.MessageUI(message);
+            break;
+          case "NOTIFICATION":
+            control = new osparc.conversation.NotificationUI(message);
+            break;
+        }
+        this.__messagesList.add(control);
       });
     },
   }

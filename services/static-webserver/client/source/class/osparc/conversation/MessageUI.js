@@ -20,31 +20,34 @@ qx.Class.define("osparc.conversation.MessageUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param comment {Object} comment
+    * @param message {Object} message
     */
-  construct: function(comment) {
+  construct: function(message) {
     this.base(arguments);
 
-    this.__comment = comment;
+    this.__message = message;
 
-    const isMyComment = this.__isMyComment();
+    const isMyMessage = this.self().isMyMessage(this.__message);
     const layout = new qx.ui.layout.Grid(12, 4);
-    layout.setColumnFlex(1, 1); // comment
-    layout.setColumnFlex(isMyComment ? 0 : 2, 3); // spacer
+    layout.setColumnFlex(1, 1); // content
+    layout.setColumnFlex(isMyMessage ? 0 : 2, 3); // spacer
     this._setLayout(layout);
     this.setPadding(5);
 
     this.__buildLayout();
   },
 
-  members: {
-    __comment: null,
+  statics: {
+    isMyMessage: function(message) {
+      return message && osparc.auth.Data.getInstance().getGroupId() === message["userGroupId"];
+    }
+  },
 
-    __isMyComment: function() {
-      return this.__comment && osparc.auth.Data.getInstance().getGroupId() === this.__comment["userGroupId"];
-    },
+  members: {
+    __message: null,
 
     _createChildControlImpl: function(id) {
+      const isMyMessage = this.self().isMyMessage(this.__message);
       let control;
       switch (id) {
         case "thumbnail":
@@ -53,17 +56,17 @@ qx.Class.define("osparc.conversation.MessageUI", {
             maxWidth: 32,
             maxHeight: 32,
             decorator: "rounded",
-            marginTop: 2,
+            marginTop: 4,
           });
           this._add(control, {
             row: 0,
-            column: this.__isMyComment() ? 2 : 0,
+            column: isMyMessage ? 2 : 0,
             rowSpan: 2,
           });
           break;
         case "header-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignX: this.__isMyComment() ? "right" : "left"
+            alignX: isMyMessage ? "right" : "left"
           }));
           control.addAt(new qx.ui.basic.Label("-"), 1);
           this._add(control, {
@@ -75,15 +78,15 @@ qx.Class.define("osparc.conversation.MessageUI", {
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
-          this.getChildControl("header-layout").addAt(control, this.__isMyComment() ? 2 : 0);
+          this.getChildControl("header-layout").addAt(control, isMyMessage ? 2 : 0);
           break;
         case "last-updated":
           control = new qx.ui.basic.Label().set({
             font: "text-12"
           });
-          this.getChildControl("header-layout").addAt(control, this.__isMyComment() ? 0 : 2);
+          this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "comment-content":
+        case "message-content":
           control = new osparc.ui.markdown.Markdown().set({
             decorator: "rounded",
             noMargin: true,
@@ -92,7 +95,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowX: true,
           });
           control.getContentElement().setStyles({
-            "text-align": this.__isMyComment() ? "right" : "left",
+            "text-align": isMyMessage ? "right" : "left",
           });
           this._add(control, {
             row: 1,
@@ -103,7 +106,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           control = new qx.ui.core.Spacer();
           this._add(control, {
             row: 1,
-            column: this.__isMyComment() ? 0 : 2,
+            column: isMyMessage ? 0 : 2,
           });
           break;
       }
@@ -116,31 +119,31 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       const userName = this.getChildControl("user-name");
 
-      const date = new Date(this.__comment["modified"]);
+      const date = new Date(this.__message["modified"]);
       const date2 = osparc.utils.Utils.formatDateAndTime(date);
       const lastUpdate = this.getChildControl("last-updated");
       lastUpdate.setValue(date2);
 
-      const commentContent = this.getChildControl("comment-content");
-      if (this.__comment["type"] === "NOTIFICATION") {
-        const userGroupId = parseInt(this.__comment["content"]);
-        commentContent.setValue("🔔 " + this.tr("Notified") + ": ");
+      const messageContent = this.getChildControl("message-content");
+      if (this.__message["type"] === "NOTIFICATION") {
+        const userGroupId = parseInt(this.__message["content"]);
+        messageContent.setValue("🔔 " + this.tr("Notified") + ": ");
         osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
             if (user) {
-              commentContent.setValue(commentContent.getValue() + user.getLabel());
+              messageContent.setValue(messageContent.getValue() + user.getLabel());
             } else {
-              commentContent.setValue(commentContent.getValue() + userGroupId);
+              messageContent.setValue(messageContent.getValue() + userGroupId);
             }
           })
           .catch(() => {
-            commentContent.setValue(commentContent.getValue() + userGroupId);
+            messageContent.setValue(messageContent.getValue() + userGroupId);
           });
-      } else if (this.__comment["type"] === "MESSAGE") {
-        commentContent.setValue(this.__comment["content"]);
+      } else if (this.__message["type"] === "MESSAGE") {
+        messageContent.setValue(this.__message["content"]);
       }
 
-      osparc.store.Users.getInstance().getUser(this.__comment["userGroupId"])
+      osparc.store.Users.getInstance().getUser(this.__message["userGroupId"])
         .then(user => {
           if (user) {
             thumbnail.setSource(user.getThumbnail());
