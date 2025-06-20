@@ -151,7 +151,7 @@ async def test_get_task_result(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
     # calling with context should find the task
     resp = await client_with_task_context.get(f"{result_url.with_query(task_context)}")
-    await assert_status(resp, status.HTTP_201_CREATED)
+    await assert_status(resp, status.HTTP_200_OK)
 
 
 async def test_cancel_task(
