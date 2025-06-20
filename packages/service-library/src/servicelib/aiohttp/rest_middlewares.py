@@ -15,6 +15,7 @@ from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps, json_loads
 from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
+from servicelib.status_codes_utils import is_5xx_server_error
 
 from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -98,18 +99,35 @@ def _handle_http_error(
     if not exception.text or not is_enveloped_from_text(exception.text):
         # NOTE: aiohttp.HTTPException creates `text = f"{self.status}: {self.reason}"`
         # We do not like for the user to pop up a message like "401: You are not authorized"
-        error_message = exception.reason or exception.text or "Unexpected error"
+        user_error_msg = exception.reason or exception.text or "Unexpected error"
         error_model = ErrorGet(
             errors=[
                 ErrorItemType.from_error(exception),
             ],
             status=exception.status,
             logs=[
-                LogMessageType(message=error_message, level="ERROR"),
+                LogMessageType(message=user_error_msg, level="ERROR"),
             ],
-            message=error_message,
+            message=user_error_msg,
         )
         exception.text = EnvelopeFactory(error=error_model).as_text()
+
+        if is_5xx_server_error(exception.status):
+            error_code = create_error_code(exception)
+            error_context: dict[str, Any] = {
+                "request.remote": f"{request.remote}",
+                "request.method": f"{request.method}",
+                "request.path": f"{request.path}",
+            }
+
+            _logger.exception(
+                **create_troubleshotting_log_kwargs(
+                    user_error_msg,
+                    error=exception,
+                    error_context=error_context,
+                    error_code=error_code,
+                )
+            )
 
     return exception
 
