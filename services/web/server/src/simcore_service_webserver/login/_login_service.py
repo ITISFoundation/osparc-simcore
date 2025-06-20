@@ -56,25 +56,25 @@ def validate_user_status(*, user: dict, support_email: str):
 
     if user_status == DELETED:
         raise web.HTTPUnauthorized(
-            reason=MSG_USER_DELETED.format(support_email=support_email),
+            text=MSG_USER_DELETED.format(support_email=support_email),
             content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
     if user_status == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
-            reason=MSG_USER_BANNED.format(support_email=support_email),
+            text=MSG_USER_BANNED.format(support_email=support_email),
             content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
     if user_status == EXPIRED:
         raise web.HTTPUnauthorized(
-            reason=MSG_USER_EXPIRED.format(support_email=support_email),
+            text=MSG_USER_EXPIRED.format(support_email=support_email),
             content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 
     if user_status == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(
-            reason=MSG_ACTIVATION_REQUIRED,
+            text=MSG_ACTIVATION_REQUIRED,
             content_type=MIMETYPE_APPLICATION_JSON,
         )  # 401
 

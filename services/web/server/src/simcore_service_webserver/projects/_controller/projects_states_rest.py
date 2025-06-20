@@ -154,7 +154,7 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
         raise web.HTTPServiceUnavailable(
-            reason="Unexpected error while starting services."
+            text="Unexpected error while starting services."
         ) from exc
 
 

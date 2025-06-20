@@ -102,7 +102,7 @@ async def _raise_if_registered_in_product(app: web.Application, user_email, prod
         app, user_email=user_email, group_id=product.group_id
     ):
         raise web.HTTPConflict(
-            reason=MSG_EMAIL_ALREADY_REGISTERED,
+            text=MSG_EMAIL_ALREADY_REGISTERED,
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
@@ -163,7 +163,7 @@ async def check_other_registrations(
                     UserStatus.DELETED,
                 )
                 raise web.HTTPConflict(
-                    reason=MSG_USER_DISABLED.format(
+                    text=MSG_USER_DISABLED.format(
                         support_email=current_product.support_email
                     ),
                     content_type=MIMETYPE_APPLICATION_JSON,
@@ -230,7 +230,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
             )
         )
         raise web.HTTPForbidden(
-            reason=user_error_msg,
+            text=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
@@ -247,7 +247,7 @@ def _invitations_request_context(invitation_code: str) -> Iterator[URL]:
             )
         )
         raise web.HTTPServiceUnavailable(
-            reason=user_error_msg,
+            text=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
@@ -323,7 +323,7 @@ async def check_and_consume_invitation(
             _logger.info("Invitation with %s was consumed", f"{confirmation_token=}")
 
     raise web.HTTPForbidden(
-        reason=(
+        text=(
             "Invalid invitation code."
             "Your invitation was already used or might have expired."
             + MSG_INVITATIONS_CONTACT_SUFFIX

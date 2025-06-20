@@ -46,11 +46,13 @@ async def service_submission(request: web.Request):
             maxsize = 10 * 1024 * 1024  # 10MB
             actualsize = len(filedata)
             if actualsize > maxsize:
-                raise web.HTTPRequestEntityTooLarge(maxsize, actualsize)
+                raise web.HTTPRequestEntityTooLarge(
+                    max_size=maxsize, actual_size=actualsize
+                )
             filename = part.filename  # type: ignore[union-attr] # PC, IP Whoever is in charge of this. please have a look
             continue
         raise web.HTTPUnsupportedMediaType(
-            reason=f"One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}"
+            text=f"One part had an unexpected type: {part.headers[hdrs.CONTENT_TYPE]}"
         )
 
     support_email_address = product.support_email

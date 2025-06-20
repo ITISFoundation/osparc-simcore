@@ -33,7 +33,7 @@ def _handle_tokens_errors(handler: Handler):
 
         except TokenNotFoundError as exc:
             raise web.HTTPNotFound(
-                reason=f"Token for {exc.service_id} not found"
+                text=f"Token for {exc.service_id} not found"
             ) from exc
 
     return _wrapper
