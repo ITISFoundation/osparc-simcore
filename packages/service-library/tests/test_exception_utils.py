@@ -53,7 +53,10 @@ def test_workflow_raises() -> None:
 
 # Define some custom exceptions for testing
 class CustomError(Exception):
-    pass
+    def __init__(self, code: int = 0, message: str = ""):
+        self.code = code
+        self.message = message
+        super().__init__(message)
 
 
 class AnotherCustomError(Exception):
@@ -75,6 +78,29 @@ async def async_function(*, raise_error: bool, raise_another_error: bool) -> str
         raise CustomError
     if raise_another_error:
         raise AnotherCustomError
+    return "Success"
+
+
+# Test functions with predicate
+@suppress_exceptions(
+    (CustomError,),
+    reason="Only suppress CustomError with code >= 100",
+    predicate=lambda e: hasattr(e, "code") and e.code >= 100,
+)
+def sync_function_with_predicate(error_code: int = 0) -> str:
+    if error_code > 0:
+        raise CustomError(code=error_code, message=f"Error {error_code}")
+    return "Success"
+
+
+@suppress_exceptions(
+    (CustomError,),
+    reason="Only suppress CustomError with code >= 100",
+    predicate=lambda e: hasattr(e, "code") and e.code >= 100,
+)
+async def async_function_with_predicate(error_code: int = 0) -> str:
+    if error_code > 0:
+        raise CustomError(code=error_code, message=f"Error {error_code}")
     return "Success"
 
 
@@ -106,3 +132,78 @@ def test_sync_function_with_different_exception():
 async def test_async_function_with_different_exception():
     with pytest.raises(AnotherCustomError):
         await async_function(raise_error=False, raise_another_error=True)
+
+
+# Tests for predicate functionality
+def test_sync_function_predicate_suppresses_matching_exception():
+    """Test that predicate suppresses exception when condition is met"""
+    result = sync_function_with_predicate(
+        error_code=150
+    )  # code >= 100, should be suppressed
+    assert result is None
+
+
+def test_sync_function_predicate_raises_non_matching_exception():
+    """Test that predicate does not suppress exception when condition is not met"""
+    with pytest.raises(CustomError):
+        sync_function_with_predicate(error_code=50)  # code < 100, should be raised
+
+
+def test_sync_function_predicate_no_exception():
+    """Test that function works normally when no exception is raised"""
+    result = sync_function_with_predicate(error_code=0)
+    assert result == "Success"
+
+
+async def test_async_function_predicate_suppresses_matching_exception():
+    """Test that predicate suppresses exception when condition is met"""
+    result = await async_function_with_predicate(
+        error_code=200
+    )  # code >= 100, should be suppressed
+    assert result is None
+
+
+async def test_async_function_predicate_raises_non_matching_exception():
+    """Test that predicate does not suppress exception when condition is not met"""
+    with pytest.raises(CustomError):
+        await async_function_with_predicate(
+            error_code=25
+        )  # code < 100, should be raised
+
+
+async def test_async_function_predicate_no_exception():
+    """Test that function works normally when no exception is raised"""
+    result = await async_function_with_predicate(error_code=0)
+    assert result == "Success"
+
+
+# Test edge cases for predicate
+@suppress_exceptions(
+    (ValueError, TypeError),
+    reason="Complex predicate test",
+    predicate=lambda e: "suppress" in str(e).lower(),
+)
+def function_with_complex_predicate(message: str) -> str:
+    if "value" in message:
+        raise ValueError(message)
+    if "type" in message:
+        raise TypeError(message)
+    return "Success"
+
+
+def test_complex_predicate_suppresses_matching():
+    """Test complex predicate that checks exception message"""
+    result = function_with_complex_predicate("please suppress this value error")
+    assert result is None
+
+
+def test_complex_predicate_raises_non_matching():
+    """Test complex predicate raises when condition not met"""
+    with pytest.raises(ValueError):
+        function_with_complex_predicate("value error without keyword")
+
+
+def test_complex_predicate_different_exception_type():
+    """Test complex predicate with different exception type"""
+    result = function_with_complex_predicate("type error with suppress keyword")
+    assert result is None
