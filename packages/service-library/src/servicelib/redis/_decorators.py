@@ -23,9 +23,9 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 _EXCLUSIVE_TASK_NAME: Final[str] = "exclusive/{module_name}.{func_name}"
-_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[
-    str
-] = "exclusive/autoextend_lock_{redis_lock_key}"
+_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = (
+    "exclusive/autoextend_lock_{redis_lock_key}"
+)
 
 
 @periodic(interval=DEFAULT_LOCK_TTL / 2, raise_on_error=True)
@@ -134,10 +134,15 @@ def exclusive(
                 assert len(lock_lost_errors.exceptions) == 1  # nosec
                 raise lock_lost_errors.exceptions[0] from eg
             finally:
-                with contextlib.suppress(redis.exceptions.LockNotOwnedError):
+                try:
                     # in the case where the lock would have been lost,
                     # this would raise again and is not necessary
                     await lock.release()
+                except redis.exceptions.LockNotOwnedError:
+                    _logger.exception(
+                        "Unexpected error with lock '%s', cannot release it",
+                        redis_lock_key,
+                    )
 
         return _wrapper
 
