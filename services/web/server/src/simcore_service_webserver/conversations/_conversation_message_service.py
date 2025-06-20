@@ -41,13 +41,7 @@ async def notify_project_conversation_message_created(
         event_type=SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
         data={
             "project_id": project_id,
-            "conversation_id": conversation_message.conversation_id,
-            "message_id": conversation_message.message_id,
-            "user_group_id": conversation_message.user_group_id,
-            "content": conversation_message.content,
-            "type": conversation_message.type,
-            "created": conversation_message.created.isoformat(),
-            "modified": conversation_message.modified.isoformat(),
+            **conversation_message.model_dump(mode="json"),
         },
     )
 
