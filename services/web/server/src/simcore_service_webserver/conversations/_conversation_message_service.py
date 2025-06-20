@@ -15,6 +15,7 @@ from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
+from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 
 from ..projects._groups_repository import list_project_groups
@@ -22,7 +23,6 @@ from ..projects._groups_repository import list_project_groups
 # Import or define SocketMessageDict
 from ..socketio.messages import (
     SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
-    SocketMessageDict,
     send_message_to_standard_group,
 )
 from ..users.api import get_user_primary_group_id
