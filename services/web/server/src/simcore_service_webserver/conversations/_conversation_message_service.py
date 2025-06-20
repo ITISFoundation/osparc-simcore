@@ -11,20 +11,55 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
 )
+from models_library.groups import GroupID
+from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
+from ..projects._groups_repository import list_project_groups
+
+# Import or define SocketMessageDict
+from ..socketio.messages import (
+    SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
+    SocketMessageDict,
+    send_message_to_standard_group,
+)
 from ..users.api import get_user_primary_group_id
 from . import _conversation_message_repository
 
 _logger = logging.getLogger(__name__)
 
 
+async def notify_project_conversation_message_created(
+    app: web.Application,
+    project_id: ProjectID,
+    conversation_message: ConversationMessageGetDB,
+    recipients: list[GroupID],
+) -> None:
+    message = SocketMessageDict(
+        event_type=SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
+        data={
+            "project_id": project_id,
+            "conversation_id": conversation_message.conversation_id,
+            "message_id": conversation_message.message_id,
+            "user_group_id": conversation_message.user_group_id,
+            "content": conversation_message.content,
+            "type": conversation_message.type,
+            "created": conversation_message.created.isoformat(),
+            "modified": conversation_message.modified.isoformat(),
+        },
+    )
+
+    for recipient in recipients:
+        await send_message_to_standard_group(app, recipient, message)
+
+
 async def create_message(
     app: web.Application,
     *,
     user_id: UserID,
+    project_id: ProjectID,
     conversation_id: ConversationID,
     # Creation attributes
     content: str,
@@ -32,13 +67,25 @@ async def create_message(
 ) -> ConversationMessageGetDB:
     _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
 
-    return await _conversation_message_repository.create(
+    created_message = await _conversation_message_repository.create(
         app,
         conversation_id=conversation_id,
         user_group_id=_user_group_id,
         content=content,
         type_=type_,
     )
+
+    recipients = [
+        project_to_group.gid
+        for project_to_group in await list_project_groups(app, project_id=project_id)
+        if project_to_group.read
+    ]
+
+    await notify_project_conversation_message_created(
+        app, project_id, created_message, recipients
+    )
+
+    return created_message
 
 
 async def get_message(
