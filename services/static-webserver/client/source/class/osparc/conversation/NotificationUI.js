@@ -28,9 +28,9 @@ qx.Class.define("osparc.conversation.NotificationUI", {
     this.__message = message;
 
     const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.__message);
-    const layout = new qx.ui.layout.Grid(12, 4);
-    layout.setColumnFlex(1, 1); // content
+    const layout = new qx.ui.layout.Grid(4, 4);
     layout.setColumnFlex(isMyMessage ? 0 : 3, 3); // spacer
+    layout.setRowAlign(0, "center", "middle");
     this._setLayout(layout);
     this.setPadding(5);
 
@@ -40,7 +40,7 @@ qx.Class.define("osparc.conversation.NotificationUI", {
   members: {
     __message: null,
 
-    // spacer - content - date - (thumbnail-spacer)
+    // spacer - date - content - (thumbnail-spacer)
     // (thumbnail-spacer) - content - date - spacer
     _createChildControlImpl: function(id) {
       const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.__message);
@@ -56,20 +56,14 @@ qx.Class.define("osparc.conversation.NotificationUI", {
           });
           break;
         case "message-content":
-          control = new osparc.ui.markdown.Markdown().set({
-            decorator: "rounded",
-            noMargin: true,
-            paddingLeft: 8,
-            paddingRight: 8,
-            minWidth: 200,
-            width: 200,
+          control = new qx.ui.basic.Label().set({
           });
           control.getContentElement().setStyles({
             "text-align": isMyMessage ? "right" : "left",
           });
           this._add(control, {
             row: 0,
-            column: 1,
+            column: isMyMessage ? 2 : 1,
           });
           break;
         case "last-updated":
@@ -78,7 +72,7 @@ qx.Class.define("osparc.conversation.NotificationUI", {
           });
           this._add(control, {
             row: 0,
-            column: 2,
+            column: isMyMessage ? 1 : 2,
           });
           break;
         case "spacer":
@@ -96,28 +90,37 @@ qx.Class.define("osparc.conversation.NotificationUI", {
     __buildLayout: function() {
       this.getChildControl("thumbnail-spacer");
 
-      const date = new Date(this.__message["modified"]);
-      const date2 = osparc.utils.Utils.formatDateAndTime(date);
+      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.__message);
+
+      const modifiedDate = new Date(this.__message["modified"]);
+      const date = osparc.utils.Utils.formatDateAndTime(modifiedDate);
       const lastUpdate = this.getChildControl("last-updated");
-      lastUpdate.setValue(date2);
+      lastUpdate.setValue(isMyMessage ? date + " -" : " - " + date);
 
       const messageContent = this.getChildControl("message-content");
+      const notifierUserGroupId = parseInt(this.__message["userGroupId"]);
       const notifiedUserGroupId = parseInt(this.__message["content"]);
       let msgContent = "🔔 ";
       Promise.all([
-        osparc.store.Users.getInstance().getUser(this.__message["userGroupId"]),
+        osparc.store.Users.getInstance().getUser(notifierUserGroupId),
         osparc.store.Users.getInstance().getUser(notifiedUserGroupId),
       ])
         .then(values => {
           const notifierUser = values[0];
-          const notifiedUser = values[1];
-          if (notifierUser) {
+          if (isMyMessage) {
+            msgContent += "You";
+          } else if (notifierUser) {
             msgContent += notifierUser.getLabel();
           } else {
             msgContent += "unknown user";
           }
+
           msgContent += " notified ";
-          if (notifiedUser) {
+
+          const notifiedUser = values[1];
+          if (osparc.auth.Data.getInstance().getGroupId() === notifiedUserGroupId) {
+            msgContent += "You";
+          } else if (notifiedUser) {
             msgContent += notifiedUser.getLabel();
           } else {
             msgContent += "unknown user";
