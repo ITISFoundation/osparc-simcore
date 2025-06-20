@@ -242,7 +242,9 @@ qx.Class.define("osparc.conversation.Conversation", {
             control = new osparc.conversation.NotificationUI(message);
             break;
         }
-        this.__messagesList.add(control);
+        if (control) {
+          this.__messagesList.add(control);
+        }
       });
     },
   }
