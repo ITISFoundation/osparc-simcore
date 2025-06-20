@@ -64,25 +64,11 @@ def _create_error_context(
     return error_code, error_context
 
 
-def _handle_unexpected_exception_as_500(
-    request: web.BaseRequest,
-    exception: Exception,
-) -> web.HTTPInternalServerError:
-    """Process unexpected exceptions and return them as HTTP errors with proper formatting.
-
-    IMPORTANT: this function cannot throw exceptions, as it is called
-    """
+def _log_5xx_server_error(
+    request: web.BaseRequest, exception: Exception, user_error_msg: str
+) -> None:
+    """Log 5XX server errors with error code and context."""
     error_code, error_context = _create_error_context(request, exception)
-    user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
-
-    http_error = create_http_error(
-        exception,
-        user_error_msg,
-        web.HTTPInternalServerError,
-        error_code=error_code,
-    )
-
-    error_context["http_error"] = http_error
 
     _logger.exception(
         **create_troubleshotting_log_kwargs(
@@ -92,6 +78,27 @@ def _handle_unexpected_exception_as_500(
             error_code=error_code,
         )
     )
+
+
+def _handle_unexpected_exception_as_500(
+    request: web.BaseRequest, exception: Exception
+) -> web.HTTPInternalServerError:
+    """Process unexpected exceptions and return them as HTTP errors with proper formatting.
+
+    IMPORTANT: this function cannot throw exceptions, as it is called
+    """
+    error_code, error_context = _create_error_context(request, exception)
+    user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
+
+    error_context["http_error"] = http_error = create_http_error(
+        exception,
+        user_error_msg,
+        web.HTTPInternalServerError,
+        error_code=error_code,
+    )
+
+    _log_5xx_server_error(request, exception, user_error_msg)
+
     return http_error
 
 
@@ -125,16 +132,7 @@ def _handle_http_error(
         exception.text = EnvelopeFactory(error=error_model).as_text()
 
         if is_5xx_server_error(exception.status):
-            error_code, error_context = _create_error_context(request, exception)
-
-            _logger.exception(
-                **create_troubleshotting_log_kwargs(
-                    user_error_msg,
-                    error=exception,
-                    error_context=error_context,
-                    error_code=error_code,
-                )
-            )
+            _log_5xx_server_error(request, exception, user_error_msg)
 
     return exception
 
@@ -181,16 +179,7 @@ def _handle_exception_as_http_error(
     user_error_msg = get_code_description(status_code)
 
     if is_5xx_server_error(status_code):
-        error_code, error_context = _create_error_context(request, exception)
-
-        _logger.exception(
-            **create_troubleshotting_log_kwargs(
-                user_error_msg,
-                error=exception,
-                error_context=error_context,
-                error_code=error_code,
-            )
-        )
+        _log_5xx_server_error(request, exception, user_error_msg)
 
     return create_http_error(exception, user_error_msg, http_error_cls)
 
