@@ -134,9 +134,7 @@ async def test_async_function_with_different_exception():
         await async_function(raise_error=False, raise_another_error=True)
 
 
-# Tests for predicate functionality
 def test_sync_function_predicate_suppresses_matching_exception():
-    """Test that predicate suppresses exception when condition is met"""
     result = sync_function_with_predicate(
         error_code=150
     )  # code >= 100, should be suppressed
@@ -144,19 +142,16 @@ def test_sync_function_predicate_suppresses_matching_exception():
 
 
 def test_sync_function_predicate_raises_non_matching_exception():
-    """Test that predicate does not suppress exception when condition is not met"""
     with pytest.raises(CustomError):
         sync_function_with_predicate(error_code=50)  # code < 100, should be raised
 
 
 def test_sync_function_predicate_no_exception():
-    """Test that function works normally when no exception is raised"""
     result = sync_function_with_predicate(error_code=0)
     assert result == "Success"
 
 
 async def test_async_function_predicate_suppresses_matching_exception():
-    """Test that predicate suppresses exception when condition is met"""
     result = await async_function_with_predicate(
         error_code=200
     )  # code >= 100, should be suppressed
@@ -164,7 +159,6 @@ async def test_async_function_predicate_suppresses_matching_exception():
 
 
 async def test_async_function_predicate_raises_non_matching_exception():
-    """Test that predicate does not suppress exception when condition is not met"""
     with pytest.raises(CustomError):
         await async_function_with_predicate(
             error_code=25
@@ -172,12 +166,10 @@ async def test_async_function_predicate_raises_non_matching_exception():
 
 
 async def test_async_function_predicate_no_exception():
-    """Test that function works normally when no exception is raised"""
     result = await async_function_with_predicate(error_code=0)
     assert result == "Success"
 
 
-# Test edge cases for predicate
 @suppress_exceptions(
     (ValueError, TypeError),
     reason="Complex predicate test",
@@ -192,18 +184,92 @@ def function_with_complex_predicate(message: str) -> str:
 
 
 def test_complex_predicate_suppresses_matching():
-    """Test complex predicate that checks exception message"""
     result = function_with_complex_predicate("please suppress this value error")
     assert result is None
 
 
 def test_complex_predicate_raises_non_matching():
-    """Test complex predicate raises when condition not met"""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="value error without keyword"):
         function_with_complex_predicate("value error without keyword")
 
 
 def test_complex_predicate_different_exception_type():
-    """Test complex predicate with different exception type"""
     result = function_with_complex_predicate("type error with suppress keyword")
+    assert result is None
+
+
+# Test predicate exception handling
+@suppress_exceptions(
+    (ValueError,),
+    reason="Predicate that raises exception",
+    predicate=lambda _: bool(1 / 0),  # This will raise ZeroDivisionError
+)
+def function_with_failing_predicate() -> str:
+    msg = "Original error"
+    raise ValueError(msg)
+
+
+@suppress_exceptions(
+    (ValueError,),
+    reason="Predicate that raises exception",
+    predicate=lambda _: bool(1 / 0),  # This will raise ZeroDivisionError
+)
+async def async_function_with_failing_predicate() -> str:
+    msg = "Original error"
+    raise ValueError(msg)
+
+
+def test_sync_function_predicate_exception_reraised(caplog):
+    with pytest.raises(ValueError, match="Original error"):
+        function_with_failing_predicate()
+
+    # Check that warning was logged
+    assert "Predicate function raised exception" in caplog.text
+    assert "ZeroDivisionError" in caplog.text
+
+
+async def test_async_function_predicate_exception_reraised(caplog):
+    with pytest.raises(ValueError, match="Original error"):
+        await async_function_with_failing_predicate()
+
+    # Check that warning was logged
+    assert "Predicate function raised exception" in caplog.text
+    assert "ZeroDivisionError" in caplog.text
+
+
+@suppress_exceptions(
+    (ValueError,),
+    reason="Predicate that accesses invalid attribute",
+    predicate=lambda e: e.nonexistent_attribute == "test",
+)
+def function_with_attribute_error_predicate() -> str:
+    msg = "Original error"
+    raise ValueError(msg)
+
+
+def test_predicate_attribute_error_reraised(caplog):
+    with pytest.raises(ValueError, match="Original error"):
+        function_with_attribute_error_predicate()
+
+    # Check that warning was logged about predicate failure
+    assert "Predicate function raised exception" in caplog.text
+    assert "AttributeError" in caplog.text
+
+
+@suppress_exceptions(
+    (ValueError,),
+    reason="Predicate that sometimes works",
+    predicate=lambda e: len(str(e)) > 5,  # Safe predicate
+)
+def function_with_working_predicate(message: str) -> str:
+    raise ValueError(message)
+
+
+def test_predicate_works_normally():
+    # Short message - predicate returns False, exception re-raised
+    with pytest.raises(ValueError):
+        function_with_working_predicate("Hi")
+
+    # Long message - predicate returns True, exception suppressed
+    result = function_with_working_predicate("This is a long error message")
     assert result is None

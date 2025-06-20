@@ -91,8 +91,9 @@ def _should_suppress_exception(
         # the predicate function raised an exception
         # log it and do not suppress the original exception
         _logger.warning(
-            "Predicate function raised exception %s in %s. "
+            "Predicate function raised exception %s:%s in %s. "
             "Original exception will be re-raised: %s",
+            type(predicate_exc).__name__,
             predicate_exc,
             func_name,
             exc,
