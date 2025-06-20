@@ -125,23 +125,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       lastUpdate.setValue(date2);
 
       const messageContent = this.getChildControl("message-content");
-      if (this.__message["type"] === "NOTIFICATION") {
-        const userGroupId = parseInt(this.__message["content"]);
-        messageContent.setValue("🔔 " + this.tr("Notified") + ": ");
-        osparc.store.Users.getInstance().getUser(userGroupId)
-          .then(user => {
-            if (user) {
-              messageContent.setValue(messageContent.getValue() + user.getLabel());
-            } else {
-              messageContent.setValue(messageContent.getValue() + userGroupId);
-            }
-          })
-          .catch(() => {
-            messageContent.setValue(messageContent.getValue() + userGroupId);
-          });
-      } else if (this.__message["type"] === "MESSAGE") {
-        messageContent.setValue(this.__message["content"]);
-      }
+      messageContent.setValue(this.__message["content"]);
 
       osparc.store.Users.getInstance().getUser(this.__message["userGroupId"])
         .then(user => {
