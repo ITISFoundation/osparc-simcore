@@ -1,8 +1,7 @@
-""" Helpers to build settings for services with http API
+"""Helpers to build settings for services with http API"""
 
-
-"""
 from enum import Enum, auto
+from typing import Any
 
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
@@ -97,7 +96,7 @@ class MixinServiceSettings:
 
         port_value = self._safe_getattr(f"{prefix}_PORT", port)
 
-        parts = {
+        parts: dict[str, Any] = {
             "scheme": (
                 "https"
                 if self._safe_getattr(f"{prefix}_SECURE", URLPart.OPTIONAL)
@@ -114,21 +113,18 @@ class MixinServiceSettings:
                 parts["path"] = f"{v}"
 
         # post process parts dict
-        kwargs = {}
-        for k, v in parts.items():  # type: ignore[assignment]
-            if isinstance(v, SecretStr):
-                value = v.get_secret_value()
-            else:
-                value = v
+        kwargs: dict[str, Any] = {}
+        for k, v in parts.items():
+            value = v.get_secret_value() if isinstance(v, SecretStr) else v
 
             if value is not None:
                 kwargs[k] = value
 
         assert all(
-            isinstance(v, (str, int)) or v is None for v in kwargs.values()
+            isinstance(v, str | int) or v is None for v in kwargs.values()
         )  # nosec
 
-        composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type] # pylint: disable=missing-kwoa
+        composed_url = str(AnyUrl.build(**kwargs))
         return composed_url.rstrip("/")
 
     def _build_api_base_url(self, *, prefix: str) -> str:
