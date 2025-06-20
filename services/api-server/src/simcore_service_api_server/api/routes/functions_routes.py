@@ -223,9 +223,9 @@ async def update_function_title(
     returned_function = await wb_api_rpc.update_function_title(
         function_id=function_id, title=title, user_id=user_id, product_name=product_name
     )
-    assert (
-        returned_function.title == title
-    ), f"Function title was not updated. Expected {title} but got {returned_function.title}"  # nosec
+    assert returned_function.title == title, (
+        f"Function title was not updated. Expected {title} but got {returned_function.title}"
+    )  # nosec
     return returned_function
 
 
@@ -251,9 +251,9 @@ async def update_function_description(
         user_id=user_id,
         product_name=product_name,
     )
-    assert (
-        returned_function.description == description
-    ), f"Function description was not updated. Expected {description} but got {returned_function.description}"  # nosec
+    assert returned_function.description == description, (
+        f"Function description was not updated. Expected {description} but got {returned_function.description}"
+    )  # nosec
     return returned_function
 
 
@@ -337,7 +337,7 @@ async def validate_function_inputs(
     )
 
     if function.input_schema is None or function.input_schema.schema_content is None:
-        return True, "No input schema defined for this function"
+        return True, "No input schema defined for this function"  # type: ignore[unreachable]
 
     if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
         try:
@@ -348,7 +348,7 @@ async def validate_function_inputs(
             return False, str(err)
         return True, "Inputs are valid"
 
-    return (
+    return (  # type: ignore[unreachable]
         False,
         f"Unsupported function schema class {function.input_schema.schema_class}",
     )
@@ -378,7 +378,6 @@ async def run_function(  # noqa: PLR0913
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
-
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)

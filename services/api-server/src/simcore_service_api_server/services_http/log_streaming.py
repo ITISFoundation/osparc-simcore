@@ -66,7 +66,7 @@ class LogDistributor:
                 raise LogStreamerNotRegisteredError(job_id=item.job_id, details=msg)
             await queue.put(item)
             return True
-        return False
+        return False  # type: ignore[unreachable]
 
     async def register(self, job_id: JobID, queue: Queue[JobLog]):
         _logger.debug("Registering log streamer for job_id=%s", job_id)

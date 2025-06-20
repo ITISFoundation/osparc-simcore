@@ -40,7 +40,7 @@ def get_project_and_file_inputs_from_job_inputs(
     for name, value in job_inputs.values.items():
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
-            file_inputs[InputID(name)] = SimCoreFileLink(
+            file_inputs[InputID(name)] = SimCoreFileLink(  # type: ignore[unreachable]
                 store=0,
                 path=SimcoreS3FileID(f"api/{value.id}/{value.filename}"),
                 label=value.filename,
