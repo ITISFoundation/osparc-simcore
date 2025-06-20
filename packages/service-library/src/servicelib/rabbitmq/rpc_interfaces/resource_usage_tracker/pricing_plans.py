@@ -114,7 +114,7 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
 ) -> list[PricingPlanToServiceGet]:
-    result: RutPricingPlanGet = await rabbitmq_rpc_client.request(
+    result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python(
             "list_connected_services_to_pricing_plan_by_pricing_plan"

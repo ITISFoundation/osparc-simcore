@@ -1,11 +1,11 @@
+from collections.abc import Iterator
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Iterator
 
 # only gets created on use and is guaranteed to be the s
 # ame for the entire lifetime of the application
-__shared_process_pool_executor = {}
-__shared_thread_pool_executor = {}
+__shared_process_pool_executor: dict[str, ProcessPoolExecutor] = {}
+__shared_thread_pool_executor: dict[str, ThreadPoolExecutor] = {}
 
 
 def _get_shared_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
