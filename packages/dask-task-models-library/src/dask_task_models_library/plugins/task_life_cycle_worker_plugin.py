@@ -15,12 +15,12 @@ _logger = logging.getLogger(__name__)
 
 class TaskLifecycleWorkerPlugin(WorkerPlugin):
     def __init__(self) -> None:
-        self._worker = None
+        self._worker: Worker | None = None
         _logger.info("TaskLifecycleWorkerPlugin initialized")
 
     def setup(self, worker: Worker) -> Awaitable[None]:
         async def _() -> None:
-            self._worker = worker  # type: ignore[assignment]
+            self._worker = worker
             _logger.info("TaskLifecycleWorkerPlugin setup completed")
 
         return _()

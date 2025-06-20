@@ -21,8 +21,8 @@ class BaseTaskEvent(BaseModel, ABC):
 
 
 def _dask_key_to_dask_task_id(key: dask.typing.Key) -> str:
-    if isinstance(key, bytes):
-        return key.decode("utf-8")
+    if isinstance(key, bytes):  # type: ignore[unreachable]
+        return key.decode("utf-8")  # type: ignore[unreachable]
     if isinstance(key, tuple):
         return "(" + ", ".join(_dask_key_to_dask_task_id(k) for k in key) + ")"
     return f"{key}"
