@@ -44,6 +44,28 @@
       "justMyCode": false
     },
     {
+      // This test adds --external-envfile and expects a file named ".secrets" in the workspace root.
+      "name": "Python: Test w/ repo.config",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "--ff",
+        "--log-cli-level=INFO",
+        "--external-envfile=${workspaceFolder}/.secrets",
+        "--pdb",
+        "--setup-show",
+        "--durations=5",
+        "-s",
+        "-vv",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      // This tests enables the httpx spy and dumps captures in a json. Mainly for api-server
       "name": "Python: Test-Httpx-Spy",
       "type": "debugpy",
       "request": "launch",
