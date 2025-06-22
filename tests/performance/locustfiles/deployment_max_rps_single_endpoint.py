@@ -9,6 +9,8 @@
 #
 
 
+from collections.abc import Callable
+
 from common.base_user import OsparcWebUserBase
 from locust import events, task
 from locust.argument_parser import LocustArgumentParser
@@ -23,9 +25,30 @@ def _(parser: LocustArgumentParser) -> None:
         default="/",
         help="The endpoint to test (e.g., /v0/health)",
     )
+    parser.add_argument(
+        "--http-method",
+        type=str,
+        default="GET",
+        help="The HTTP method to test ('GET', 'POST', 'PUT', 'PATCH' or 'DELETE')",
+    )
+    parser.add_argument(
+        "--body",
+        type=str,
+        default="",
+        help="The optional HTTP body as json string",
+    )
 
 
 class WebApiUser(OsparcWebUserBase):
     @task
     def get_endpoint(self) -> None:
-        self.authenticated_get(self.environment.parsed_options.endpoint)
+        http_method = self.environment.parsed_options.http_method.lower()
+        method = getattr(self, f"authenticated_{http_method}")
+        if not isinstance(method, Callable):
+            msg = f"Unsupported HTTP method: {http_method}"
+            raise TypeError(msg)
+
+        kwargs = {}
+        if len(self.environment.parsed_options.body) > 0:
+            kwargs["data"] = self.environment.parsed_options.body
+        method(self.environment.parsed_options.endpoint, **kwargs)
