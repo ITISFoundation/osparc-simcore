@@ -17,3 +17,5 @@ WARNING: do not name this file as README.md since it will be rendered in the mai
 2. **Iterate**: Review and refine Copilot's suggestions to ensure they meet project standards.
 3. **Split Tasks**: Break down complex tasks into smaller, manageable parts for better suggestions.
 4. **Test Suggestions**: Always test Copilot-generated code to ensure it works as expected.
+
+-  SEE https://code.visualstudio.com/docs/copilot/copilot-customization#_custom-instructions
