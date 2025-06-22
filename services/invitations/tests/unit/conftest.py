@@ -10,7 +10,7 @@ import simcore_service_invitations
 from cryptography.fernet import Fernet
 from faker import Faker
 from models_library.products import ProductName
-from pydantic import PositiveInt
+from pydantic import PositiveInt, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_invitations.services.invitations import InvitationInputs
@@ -86,8 +86,9 @@ def is_trial_account(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
+@pytest.fixture
 def extra_credits_in_usd(is_trial_account: bool) -> PositiveInt | None:
-    return PositiveInt(123) if is_trial_account else None
+    return TypeAdapter(PositiveInt).validate_python(123) if is_trial_account else None
 
 
 @pytest.fixture

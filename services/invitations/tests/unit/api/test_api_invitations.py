@@ -62,6 +62,7 @@ def test_check_invitation(
             "issuer": invitation_data.issuer,
             "guest": invitation_data.guest,
             "trial_account_days": invitation_data.trial_account_days,
+            "extra_credits_in_usd": invitation_data.extra_credits_in_usd,
         },
         auth=basic_auth,
     )
@@ -86,6 +87,7 @@ def test_check_invitation(
     assert invitation.issuer == invitation_data.issuer
     assert invitation.guest == invitation_data.guest
     assert invitation.trial_account_days == invitation_data.trial_account_days
+    assert invitation.extra_credits_in_usd == invitation_data.extra_credits_in_usd
 
 
 def test_check_valid_invitation(
