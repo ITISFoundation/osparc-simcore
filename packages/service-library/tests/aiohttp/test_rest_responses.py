@@ -62,7 +62,6 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
     assert issubclass(http_error_cls, HTTPError)
 
 
-@pytest.mark.parametrize("skip_details", [True, False])
 @pytest.mark.parametrize("error_code", [None, create_error_code(Exception("fake"))])
 @pytest.mark.parametrize(
     "http_error_cls",
@@ -88,7 +87,7 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
     ],
 )
 def tests_exception_to_response(
-    skip_details: bool, error_code: ErrorCodeStr | None, http_error_cls: type[HTTPError]
+    error_code: ErrorCodeStr | None, http_error_cls: type[HTTPError]
 ):
     expected_status_reason = "SHORT REASON"
     expected_error_message = "Something whent wrong !"
@@ -99,8 +98,6 @@ def tests_exception_to_response(
         error_message=expected_error_message,
         status_reason=expected_status_reason,
         http_error_cls=http_error_cls,
-        skip_internal_error_details=skip_details
-        and (http_error_cls == web.HTTPInternalServerError),
         error_code=error_code,
     )
 

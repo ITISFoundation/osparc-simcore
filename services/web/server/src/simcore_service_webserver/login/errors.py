@@ -41,7 +41,7 @@ def handle_login_exceptions(handler: Handler):
                 )
             )
             raise web.HTTPServiceUnavailable(
-                reason=front_end_msg,
+                text=front_end_msg,
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from exc
 
