@@ -40,6 +40,7 @@ def test_create_invitation(
     assert invitation.issuer == invitation_input.issuer
     assert invitation.guest == invitation_input.guest
     assert invitation.trial_account_days == invitation_input.trial_account_days
+    assert invitation.extra_credits_in_usd == invitation_input.extra_credits_in_usd
 
     # checks issue with `//` reported in https://github.com/ITISFoundation/osparc-simcore/issues/7055
     assert invitation.invitation_url
