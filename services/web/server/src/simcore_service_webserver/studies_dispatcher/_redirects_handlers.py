@@ -102,14 +102,14 @@ def _handle_errors_with_error_page(handler: Handler):
         except web.HTTPUnauthorized as err:
             raise _create_redirect_response_to_error_page(
                 request.app,
-                message=f"{err.reason}. Please reload this page to login/register.",
+                message=f"{err.text}. Please reload this page to login/register.",
                 status_code=err.status_code,
             ) from err
 
         except web.HTTPUnprocessableEntity as err:
             raise _create_redirect_response_to_error_page(
                 request.app,
-                message=f"Invalid parameters in link: {err.reason}",
+                message=f"Invalid parameters in link: {err.text}",
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
             ) from err
 
