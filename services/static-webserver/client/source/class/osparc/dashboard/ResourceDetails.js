@@ -57,6 +57,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "template":
           case "tutorial":
           case "hypertool":
+            // when getting the latest study data, the debt information was lost
+            if (osparc.study.Utils.isInDebt(this.__resourceData)) {
+              const mainStore = osparc.store.Store.getInstance();
+              this.__resourceData["debt"] = mainStore.getStudyDebt(this.__resourceData["uuid"]);
+            }
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
@@ -89,6 +94,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
+    "closeWindow": "qx.event.type.Event",
   },
 
 
@@ -106,6 +112,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       win.set({
         width: this.WIDTH,
         height: this.HEIGHT,
+      });
+      resourceDetails.addListener("closeWindow", () => {
+        win.close();
       });
       return win;
     },
@@ -135,6 +144,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __resourceModel: null,
     __infoPage: null,
     __servicesUpdatePage: null,
+    __conversationsPage: null,
     __permissionsPage: null,
     __tagsPage: null,
     __billingSettings: null,
@@ -283,6 +293,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     openUpdateServices: function() {
       this._openPage(this.__servicesUpdatePage);
+    },
+
+    openConversations: function() {
+      this._openPage(this.__conversationsPage);
     },
 
     openAccessRights: function() {
@@ -479,6 +493,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             const enabled = osparc.study.Utils.canBeOpened(resourceData);
             page.openButton.setEnabled(enabled);
           })
+          billingSettings.addListener("closeWindow", () => {
+            this.fireEvent("closeWindow");
+          }, this);
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
         }
@@ -544,7 +561,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const id = "Conversations";
       const title = this.tr("Conversations");
       const iconSrc = "@FontAwesome5Solid/comments/22";
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__conversationsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {

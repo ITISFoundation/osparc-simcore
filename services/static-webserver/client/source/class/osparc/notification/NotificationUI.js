@@ -114,6 +114,60 @@ qx.Class.define("osparc.notification.NotificationUI", {
     },
 
     __applyNotification: function(notification) {
+      const icon = this.getChildControl("icon");
+      switch (notification.getCategory()) {
+        case "NEW_ORGANIZATION":
+          icon.setSource("@FontAwesome5Solid/users/14");
+          break;
+        case "STUDY_SHARED":
+          icon.setSource("@FontAwesome5Solid/file/14");
+          break;
+        case "TEMPLATE_SHARED":
+          icon.setSource("@FontAwesome5Solid/copy/14");
+          break;
+        case "CONVERSATION_NOTIFICATION":
+          icon.setSource("@FontAwesome5Solid/bell/14");
+          break;
+        case "ANNOTATION_NOTE":
+          icon.setSource("@FontAwesome5Solid/file/14");
+          break;
+        case "WALLET_SHARED":
+          icon.setSource("@MaterialIcons/account_balance_wallet/14");
+          break;
+      }
+
+      const titleLabel = this.getChildControl("title");
+      titleLabel.setValue(notification.getTitle());
+
+      const descriptionLabel = this.getChildControl("text");
+      descriptionLabel.setValue(notification.getText());
+
+      const date = this.getChildControl("date");
+      notification.bind("date", date, "value", {
+        converter: value => {
+          if (value) {
+            return osparc.utils.Utils.formatDateAndTime(new Date(value));
+          }
+          return "";
+        }
+      });
+
+      const highlight = mouseOn => {
+        this.set({
+          backgroundColor: mouseOn ? "strong-main" : "transparent"
+        })
+      };
+      this.addListener("mouseover", () => highlight(true));
+      this.addListener("mouseout", () => highlight(false));
+      highlight(false);
+
+      // this will trigger calls to the backend, so only make them if necessary
+      this.addListenerOnce("appear", () => this.__enrichTexts());
+    },
+
+    __enrichTexts: function() {
+      const notification = this.getNotification();
+
       let resourceId = null;
       if (notification.getResourceId()) {
         resourceId = notification.getResourceId();
@@ -122,28 +176,23 @@ qx.Class.define("osparc.notification.NotificationUI", {
         const actionablePath = notification.getActionablePath();
         resourceId = actionablePath.split("/")[1];
       }
-      const userFromId = notification.getUserFromId();
 
-      const icon = this.getChildControl("icon");
+      const userFromId = notification.getUserFromId();
       const titleLabel = this.getChildControl("title");
-      titleLabel.setValue(notification.getTitle());
       const descriptionLabel = this.getChildControl("text");
-      descriptionLabel.setValue(notification.getText());
 
       switch (notification.getCategory()) {
         case "NEW_ORGANIZATION":
-          icon.setSource("@FontAwesome5Solid/users/14");
           if (resourceId) {
             const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
             if (org) {
-              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'")
+              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'");
             } else {
               this.setEnabled(false);
             }
           }
           break;
         case "STUDY_SHARED":
-          icon.setSource("@FontAwesome5Solid/file/14");
           if (resourceId) {
             const params = {
               url: {
@@ -167,7 +216,6 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "TEMPLATE_SHARED":
-          icon.setSource("@FontAwesome5Solid/copy/14");
           if (resourceId) {
             osparc.store.Templates.fetchTemplate(resourceId)
               .then(templateData => {
@@ -184,8 +232,25 @@ qx.Class.define("osparc.notification.NotificationUI", {
             }
           }
           break;
+        case "CONVERSATION_NOTIFICATION":
+          if (resourceId) {
+            const params = {
+              url: {
+                "studyId": resourceId
+              }
+            };
+            osparc.data.Resources.fetch("studies", "getOne", params)
+              .then(study => titleLabel.setValue(`You were notified in '${study["name"]}'`))
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
+            if (user) {
+              descriptionLabel.setValue(user.getLabel() + " wants you to check the conversation");
+            }
+          }
+          break;
         case "ANNOTATION_NOTE":
-          icon.setSource("@FontAwesome5Solid/file/14");
           if (resourceId) {
             const params = {
               url: {
@@ -204,28 +269,8 @@ qx.Class.define("osparc.notification.NotificationUI", {
           }
           break;
         case "WALLET_SHARED":
-          icon.setSource("@MaterialIcons/account_balance_wallet/14");
           break;
       }
-
-      const date = this.getChildControl("date");
-      notification.bind("date", date, "value", {
-        converter: value => {
-          if (value) {
-            return osparc.utils.Utils.formatDateAndTime(new Date(value));
-          }
-          return "";
-        }
-      });
-
-      const highlight = mouseOn => {
-        this.set({
-          backgroundColor: mouseOn ? "strong-main" : "transparent"
-        })
-      };
-      this.addListener("mouseover", () => highlight(true));
-      this.addListener("mouseout", () => highlight(false));
-      highlight(false);
     },
 
     __notificationTapped: function() {
@@ -250,6 +295,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "TEMPLATE_SHARED":
         case "STUDY_SHARED":
+        case "CONVERSATION_NOTIFICATION":
         case "ANNOTATION_NOTE":
           this.__openStudyDetails(resourceId, notification);
           break;
@@ -294,6 +340,9 @@ qx.Class.define("osparc.notification.NotificationUI", {
                 osparc.dashboard.ResourceBrowserBase.startStudyById(studyId, openCB);
               }
             });
+            if (notification.getCategory() === "CONVERSATION_NOTIFICATION") {
+              resourceDetails.addListener("pagesAdded", () => resourceDetails.openConversations());
+            }
           }
         })
         .catch(err => {
