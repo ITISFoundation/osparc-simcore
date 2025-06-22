@@ -2,7 +2,6 @@ import functools
 import logging
 
 from aiohttp import web
-from common_library.error_codes import create_error_code
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     PutWalletBodyParams,
@@ -18,7 +17,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG as VTAG
@@ -95,19 +93,9 @@ def handle_wallets_exceptions(handler: Handler):
             raise web.HTTPPaymentRequired(text=f"{exc}") from exc
 
         except BillingDetailsNotFoundError as exc:
-
-            error_code = create_error_code(exc)
-            user_error_msg = MSG_BILLING_DETAILS_NOT_DEFINED_ERROR
-
-            _logger.exception(
-                **create_troubleshotting_log_kwargs(
-                    user_error_msg,
-                    error=exc,
-                    error_code=error_code,
-                )
-            )
-
-            raise web.HTTPServiceUnavailable(text=user_error_msg) from exc
+            raise web.HTTPServiceUnavailable(
+                text=MSG_BILLING_DETAILS_NOT_DEFINED_ERROR
+            ) from exc
 
     return wrapper
 

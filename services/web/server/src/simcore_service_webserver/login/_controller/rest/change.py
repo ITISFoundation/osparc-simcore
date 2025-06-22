@@ -150,9 +150,9 @@ async def initiate_reset_password(request: web.Request):
             # do not want to forward but rather log due to the special rules in this entrypoint
             _logger.warning(
                 **create_troubleshotting_log_kwargs(
-                    f"{_error_msg_prefix} for invalid user. {_error_msg_suffix}.",
+                    f"{_error_msg_prefix} for invalid user. {err.text}. {_error_msg_suffix}",
                     error=err,
-                    error_context=_get_error_context(user),
+                    error_context={**_get_error_context(user), "error.text": err.text},
                 )
             )
             ok = False
@@ -168,7 +168,7 @@ async def initiate_reset_password(request: web.Request):
         ):
             _logger.warning(
                 **create_troubleshotting_log_kwargs(
-                    f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}.",
+                    f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}",
                     error=Exception("User cannot access this product"),
                     error_context=_get_error_context(user),
                 )
@@ -297,7 +297,7 @@ async def change_password(request: web.Request):
         passwords.current.get_secret_value(), user["password_hash"]
     ):
         raise web.HTTPUnprocessableEntity(
-            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     await db.update_user(

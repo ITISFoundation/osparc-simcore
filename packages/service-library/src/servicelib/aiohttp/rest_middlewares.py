@@ -11,14 +11,17 @@ from aiohttp import web
 from aiohttp.web_exceptions import HTTPError
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
-from common_library.error_codes import create_error_code
+from common_library.error_codes import ErrorCodeStr, create_error_code
 from common_library.json_serialization import json_dumps, json_loads
+from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.status_codes_utils import is_5xx_server_error
 
 from ..logging_errors import create_troubleshotting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
-from ..utils import is_production_environ
+from ..status_codes_utils import get_code_description
 from . import status
 from .rest_responses import (
     create_data_response,
@@ -26,7 +29,6 @@ from .rest_responses import (
     safe_status_message,
     wrap_as_envelope,
 )
-from .rest_utils import EnvelopeFactory
 from .typing_extension import Handler, Middleware
 from .web_exceptions_extension import get_http_error_class_or_none
 
@@ -45,15 +47,13 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
     return bool(request.path.startswith(base_path))
 
 
-def _handle_unexpected_exception_as_500(
-    request: web.BaseRequest,
-    exception: Exception,
-    *,
-    skip_internal_error_details: bool,
-) -> web.HTTPInternalServerError:
-    """Process unexpected exceptions and return them as HTTP errors with proper formatting.
+def _create_error_context(
+    request: web.BaseRequest, exception: Exception
+) -> tuple[ErrorCodeStr, dict[str, Any]]:
+    """Create error code and context for logging purposes.
 
-    IMPORTANT: this function cannot throw exceptions, as it is called
+    Returns:
+        Tuple of (error_code, error_context)
     """
     error_code = create_error_code(exception)
     error_context: dict[str, Any] = {
@@ -61,18 +61,14 @@ def _handle_unexpected_exception_as_500(
         "request.method": f"{request.method}",
         "request.path": f"{request.path}",
     }
+    return error_code, error_context
 
-    user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
 
-    http_error = create_http_error(
-        exception,
-        user_error_msg,
-        web.HTTPInternalServerError,
-        skip_internal_error_details=skip_internal_error_details,
-        error_code=error_code,
-    )
-
-    error_context["http_error"] = http_error
+def _log_5xx_server_error(
+    request: web.BaseRequest, exception: Exception, user_error_msg: str
+) -> ErrorCodeStr:
+    """Log 5XX server errors with error code and context."""
+    error_code, error_context = _create_error_context(request, exception)
 
     _logger.exception(
         **create_troubleshotting_log_kwargs(
@@ -82,14 +78,41 @@ def _handle_unexpected_exception_as_500(
             error_code=error_code,
         )
     )
+    return error_code
+
+
+def _handle_unexpected_exception_as_500(
+    request: web.BaseRequest, exception: Exception
+) -> web.HTTPInternalServerError:
+    """Process unexpected exceptions and return them as HTTP errors with proper formatting.
+
+    IMPORTANT: this function cannot throw exceptions, as it is called
+    """
+    error_code, error_context = _create_error_context(request, exception)
+    user_error_msg = _FMSG_INTERNAL_ERROR_USER_FRIENDLY
+
+    error_context["http_error"] = http_error = create_http_error(
+        exception,
+        user_error_msg,
+        web.HTTPInternalServerError,
+        error_code=error_code,
+    )
+
+    _log_5xx_server_error(request, exception, user_error_msg)
+
     return http_error
 
 
 def _handle_http_error(
     request: web.BaseRequest, exception: web.HTTPError
 ) -> web.HTTPError:
-    """Handle standard HTTP errors by ensuring they're properly formatted."""
+    """Handle standard HTTP errors by ensuring they're properly formatted.
+
+    NOTE: this needs further refactoring to avoid code duplication
+    """
     assert request  # nosec
+    assert not exception.empty_body, "HTTPError should not have an empty body"  # nosec
+
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
         exception.set_status(
@@ -97,18 +120,36 @@ def _handle_http_error(
         )
 
     if not exception.text or not is_enveloped_from_text(exception.text):
-        error_message = exception.text or exception.reason or "Unexpected error"
+        # NOTE: aiohttp.HTTPException creates `text = f"{self.status}: {self.reason}"`
+        user_error_msg = exception.text or "Unexpected error"
+
+        error_code: IDStr | None = None
+        if is_5xx_server_error(exception.status):
+            error_code = IDStr(
+                _log_5xx_server_error(request, exception, user_error_msg)
+            )
+
         error_model = ErrorGet(
             errors=[
-                ErrorItemType.from_error(exception),
+                ErrorItemType(
+                    code=exception.__class__.__name__,
+                    message=user_error_msg,
+                    resource=None,
+                    field=None,
+                ),
             ],
             status=exception.status,
             logs=[
-                LogMessageType(message=error_message, level="ERROR"),
+                LogMessageType(message=user_error_msg, level="ERROR"),
             ],
-            message=error_message,
+            message=user_error_msg,
+            support_id=error_code,
         )
-        exception.text = EnvelopeFactory(error=error_model).as_text()
+        exception.text = json_dumps(
+            wrap_as_envelope(
+                error=error_model.model_dump(mode="json", **RESPONSE_MODEL_POLICY)
+            )
+        )
 
     return exception
 
@@ -136,10 +177,8 @@ def _handle_http_successful(
 
 def _handle_exception_as_http_error(
     request: web.Request,
-    exception: Exception,
+    exception: NotImplementedError | TimeoutError,
     status_code: int,
-    *,
-    skip_internal_error_details: bool,
 ) -> HTTPError:
     """
     Generic handler for exceptions that map to specific HTTP status codes.
@@ -154,16 +193,15 @@ def _handle_exception_as_http_error(
         )
         raise ValueError(msg)
 
-    return create_http_error(
-        exception,
-        f"{exception}",
-        http_error_cls,
-        skip_internal_error_details=skip_internal_error_details,
-    )
+    user_error_msg = get_code_description(status_code)
+
+    if is_5xx_server_error(status_code):
+        _log_5xx_server_error(request, exception, user_error_msg)
+
+    return create_http_error(exception, user_error_msg, http_error_cls)
 
 
 def error_middleware_factory(api_version: str) -> Middleware:
-    _is_prod: bool = is_production_environ()
 
     @web.middleware
     async def _middleware_handler(request: web.Request, handler: Handler):
@@ -188,27 +226,19 @@ def error_middleware_factory(api_version: str) -> Middleware:
 
             except NotImplementedError as exc:
                 result = _handle_exception_as_http_error(
-                    request,
-                    exc,
-                    status.HTTP_501_NOT_IMPLEMENTED,
-                    skip_internal_error_details=_is_prod,
+                    request, exc, status.HTTP_501_NOT_IMPLEMENTED
                 )
 
             except TimeoutError as exc:
                 result = _handle_exception_as_http_error(
-                    request,
-                    exc,
-                    status.HTTP_504_GATEWAY_TIMEOUT,
-                    skip_internal_error_details=_is_prod,
+                    request, exc, status.HTTP_504_GATEWAY_TIMEOUT
                 )
 
         except Exception as exc:  # pylint: disable=broad-except
             #
             # Last resort for unexpected exceptions (including those raise by the exception handlers!)
             #
-            result = _handle_unexpected_exception_as_500(
-                request, exc, skip_internal_error_details=_is_prod
-            )
+            result = _handle_unexpected_exception_as_500(request, exc)
 
         return result
 
@@ -229,7 +259,6 @@ def envelope_middleware_factory(
     api_version: str,
 ) -> Callable[..., Awaitable[StreamResponse]]:
     # FIXME: This data conversion is very error-prone. Use decorators instead!
-    _is_prod: bool = is_production_environ()
 
     @web.middleware
     async def _middleware_handler(

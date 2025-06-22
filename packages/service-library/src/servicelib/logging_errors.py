@@ -39,10 +39,10 @@ def create_troubleshotting_log_message(
     debug_data = json_dumps(
         {
             "exception_type": f"{type(error)}",
-            "exception_details": f"{error}",
+            "exception_string": f"{error}",
+            "exception_causes": _collect_causes(error),
             "error_code": error_code,
             "context": error_context,
-            "causes": _collect_causes(error),
             "tip": tip,
         },
         default=representation_encoder,

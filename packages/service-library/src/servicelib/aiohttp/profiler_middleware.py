@@ -13,7 +13,7 @@ async def profiling_middleware(request: Request, handler):
         try:
             if _profiler.is_running or (_profiler.last_session is not None):
                 raise HTTPInternalServerError(
-                    reason="Profiler is already running. Only a single request can be profiled at any given time.",
+                    text="Profiler is already running. Only a single request can be profiled at any given time.",
                     headers={},
                 )
             _profiler.reset()
@@ -24,7 +24,7 @@ async def profiling_middleware(request: Request, handler):
 
             if response.content_type != MIMETYPE_APPLICATION_JSON:
                 raise HTTPInternalServerError(
-                    reason=f"Profiling middleware is not compatible with {response.content_type=}",
+                    text=f"Profiling middleware is not compatible with {response.content_type=}",
                     headers={},
                 )
 

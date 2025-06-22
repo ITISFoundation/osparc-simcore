@@ -58,7 +58,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
 
         # ERROR    root:test_logging_utils.py:417 Nice message to user [OEC:126055703573984].
         # {
-        # "exception_details": "My error 123",
+        # "exception_string": "My error 123",
         # "error_code": "OEC:126055703573984",
         # "context": {
         #     "user_id": 123,

@@ -139,7 +139,7 @@ async def _forward_request_to_storage(
         match resp.status:
             case status.HTTP_422_UNPROCESSABLE_ENTITY:
                 raise web.HTTPUnprocessableEntity(
-                    reason=await resp.text(), content_type=resp.content_type
+                    text=await resp.text(), content_type=resp.content_type
                 )
             case status.HTTP_404_NOT_FOUND:
                 raise web.HTTPNotFound(text=await resp.text())
