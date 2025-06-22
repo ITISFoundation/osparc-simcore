@@ -47,17 +47,18 @@ def test_invite_user_and_check_invitation(
 
     expected = {
         **invitation_data.model_dump(exclude={"product"}),
+        "extra_credits_in_usd": None,  # Cannot be set from CLI
         "product": environs["INVITATIONS_DEFAULT_PRODUCT"],
     }
 
     # invitations-maker invite guest@email.com --issuer=me --trial-account-days=3
-    trial_account = ""
+    other_options = ""
     if invitation_data.trial_account_days:
-        trial_account = f"--trial-account-days={invitation_data.trial_account_days}"
+        other_options = f"--trial-account-days={invitation_data.trial_account_days}"
 
     result = cli_runner.invoke(
         main,
-        f"invite {invitation_data.guest} --issuer={invitation_data.issuer} {trial_account}",
+        f"invite {invitation_data.guest} --issuer={invitation_data.issuer} {other_options}",
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
