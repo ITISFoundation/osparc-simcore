@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from httpx import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataArray,
@@ -182,13 +183,13 @@ class StorageApi(BaseServiceClientApi):
         self, *, user_id: int, file: File, client_file: UserFileToProgramJob | UserFile
     ) -> FileUploadSchema:
 
-        query_params = {
-            "user_id": f"{user_id}",
-            "link_type": LinkType.PRESIGNED.value,
-            "file_size": int(client_file.filesize),
-            "is_directory": "false",
-            "sha256_checksum": f"{client_file.sha256_checksum}",
-        }
+        query_params = QueryParams(
+            user_id=f"{user_id}",
+            link_type=LinkType.PRESIGNED.value,
+            file_size=int(client_file.filesize),
+            is_directory="false",
+            sha256_checksum=f"{client_file.sha256_checksum}",
+        )
 
         # complete_upload_file
         response = await self.client.put(
