@@ -34,11 +34,12 @@ qx.Class.define("osparc.study.StudyPreview", {
   statics: {
     __popUpPreview: function(studyData) {
       const cantReadServices = osparc.study.Utils.getCantReadServices(studyData["services"]);
-      if (cantReadServices.length) {
-        unknownServices(cantReadServices);
+      if (cantReadServices && cantReadServices.length) {
+        osparc.FlashMessenger.logError("Function Data not available");
+        return;
       }
-      const templateModel = new osparc.data.model.Study(studyData);
-      const preview = new osparc.study.StudyPreview(templateModel);
+      const study = new osparc.data.model.Study(studyData);
+      const preview = new osparc.study.StudyPreview(study);
       const title = this.tr("Function Preview");
       const width = osparc.dashboard.ResourceDetails.WIDTH;
       const height = osparc.dashboard.ResourceDetails.HEIGHT;
@@ -49,13 +50,14 @@ qx.Class.define("osparc.study.StudyPreview", {
       if ("services" in studyData) {
         this.__popUpPreview(studyData);
       } else {
-        osparc.store.Services.getStudyServices(resourceData.uuid)
+        osparc.store.Services.getStudyServices(studyData)
           .then(resp => {
             const services = resp["services"];
             studyData["services"] = services;
             this.__popUpPreview(studyData);
           });
       }
+    }
   },
 
   members: {
