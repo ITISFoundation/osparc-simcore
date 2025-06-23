@@ -36,13 +36,28 @@ qx.Class.define("osparc.study.StudyPreview", {
 
     __buildPreview: function() {
       const study = this.__study;
+
+      const workbenchReady = () => {
+        if (!study.isPipelineEmpty()) {
+          const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
+          workbenchUIPreview.setStudy(study);
+          workbenchUIPreview.loadModel(study.getWorkbench());
+          workbenchUIPreview.setMaxHeight(550);
+          this._add(workbenchUIPreview);
+        }
+      };
+
       const uiMode = study.getUi().getMode();
-      if (["workbench", "pipeline"].includes(uiMode) && !study.isPipelineEmpty()) {
-        const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
-        workbenchUIPreview.setStudy(study);
-        workbenchUIPreview.loadModel(study.getWorkbench());
-        workbenchUIPreview.setMaxHeight(550);
-        this._add(workbenchUIPreview);
+      if (["workbench", "pipeline"].includes(uiMode)) {
+        if (study.getWorkbench().isDeserialized()) {
+          workbenchReady();
+        } else {
+          study.getWorkbench().addListenerOnce("changeDeserialized", e => {
+            if (e.getData()) {
+              workbenchReady();
+            }
+          }, this);
+        }
       }
     }
   }

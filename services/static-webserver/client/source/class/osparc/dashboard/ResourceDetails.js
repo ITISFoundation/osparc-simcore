@@ -37,6 +37,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         latestPromise = osparc.data.Resources.fetch("studies", "getOne", params);
         break;
       }
+      case "function": {
+        latestPromise = osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
+        break;
+      }
       case "service": {
         latestPromise = osparc.store.Services.getService(resourceData["key"], resourceData["version"]);
         break;
@@ -57,6 +61,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "template":
           case "tutorial":
           case "hypertool":
+          case "function":
             // when getting the latest study data, the debt information was lost
             if (osparc.study.Utils.isInDebt(this.__resourceData)) {
               const mainStore = osparc.store.Store.getInstance();
@@ -366,6 +371,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       // removeAll
       osparc.utils.Utils.removeAllChildren(tabsView);
+
+      if (this.__resourceData["resourceType"] === "function") {
+        // for now, we only want the preview page
+        const page = this.__getPreviewPage();
+        if (page) {
+          tabsView.add(page);
+        }
+        this.fireEvent("pagesAdded");
+        return;
+      }
 
       // add Open service button
       [
