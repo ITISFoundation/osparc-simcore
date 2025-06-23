@@ -1,4 +1,5 @@
 import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -98,11 +99,12 @@ async def test_maybe_await_with_result_proxy():
 
 async def test_cancel_and_wait():
     state = {"started": False, "cancelled": False, "cleaned_up": False}
+    SLEEP_TIME = 5  # seconds
 
     async def coro():
         try:
             state["started"] = True
-            await asyncio.sleep(5)
+            await asyncio.sleep(SLEEP_TIME)
         except asyncio.CancelledError:
             state["cancelled"] = True
             raise
@@ -112,8 +114,11 @@ async def test_cancel_and_wait():
     task = asyncio.create_task(coro())
     await asyncio.sleep(0.1)  # Let coro start
 
+    start = time.time()
     await cancel_and_wait(task)
 
+    elapsed = time.time() - start
+    assert elapsed < SLEEP_TIME, "Task should be cancelled quickly"
     assert task.done()
     assert task.cancelled()
     assert state["started"]
@@ -142,7 +147,7 @@ async def test_cancel_and_wait_propagates_external_cancel():
         except asyncio.CancelledError:
             assert (
                 not inner_task.cancelled()
-            ), "Internal Task should not be cancelled yet (shielded)"
+            ), "Internal Task DOES NOT RAISE CancelledError"
             raise
 
     # Cancel the wrapper after a short delay
