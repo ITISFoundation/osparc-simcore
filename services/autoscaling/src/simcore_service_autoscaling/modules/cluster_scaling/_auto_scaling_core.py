@@ -61,7 +61,7 @@ from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
 from ..ssm import get_ssm_client
-from .auto_scaling_mode_base import AutoscalingProvider
+from ._provider_protocol import AutoscalingProvider
 
 _logger = logging.getLogger(__name__)
 
