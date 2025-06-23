@@ -192,7 +192,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       const addMessage = new osparc.conversation.AddMessage(this.__studyData, this.__message["conversationId"], this.__message);
       addMessage.addListener("messageEdited", () => this.fireDataEvent("messageEdited"));
       const title = this.tr("Edit message");
-      osparc.ui.window.Window.popUpInWindow(addMessage, title, 550, 135).set({
+      osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
         clickAwayClose: false,
         resizable: true,
         showClose: true,
