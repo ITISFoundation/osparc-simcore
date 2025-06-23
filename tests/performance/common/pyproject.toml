@@ -1,8 +1,0 @@
-[project]
-name = "common"
-version = "0.1.0"
-description = "Common utilities for performance tests"
-requires-python = ">=3.11"
-
-[tool.setuptools.packages.find]
-where = ["."]
