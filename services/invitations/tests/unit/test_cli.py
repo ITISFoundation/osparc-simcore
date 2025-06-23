@@ -45,9 +45,8 @@ def test_invite_user_and_check_invitation(
         "INVITATIONS_DEFAULT_PRODUCT": default_product,
     }
 
-    expected = {
+    expected_invitation = {
         **invitation_data.model_dump(exclude={"product"}),
-        "extra_credits_in_usd": None,  # Cannot be set from CLI
         "product": environs["INVITATIONS_DEFAULT_PRODUCT"],
     }
 
@@ -55,6 +54,11 @@ def test_invite_user_and_check_invitation(
     other_options = ""
     if invitation_data.trial_account_days:
         other_options = f"--trial-account-days={invitation_data.trial_account_days}"
+
+    if invitation_data.extra_credits_in_usd:
+        other_options += (
+            f" --extra-credits-in-usd={invitation_data.extra_credits_in_usd}"
+        )
 
     result = cli_runner.invoke(
         main,
@@ -74,7 +78,7 @@ def test_invite_user_and_check_invitation(
     )
     assert result.exit_code == os.EX_OK, result.output
     assert (
-        expected
+        expected_invitation
         == TypeAdapter(InvitationInputs).validate_json(result.stdout).model_dump()
     )
 

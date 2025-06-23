@@ -106,6 +106,10 @@ def invite(
         None,
         help=InvitationInputs.model_fields["trial_account_days"].description,
     ),
+    extra_credits_in_usd: int = typer.Option(
+        None,
+        help=InvitationInputs.model_fields["extra_credits_in_usd"].description,
+    ),
     product: str = typer.Option(
         None,
         help=InvitationInputs.model_fields["product"].description,
@@ -119,7 +123,7 @@ def invite(
         issuer=issuer,
         guest=TypeAdapter(EmailStr).validate_python(email),
         trial_account_days=trial_account_days,
-        extra_credits_in_usd=None,
+        extra_credits_in_usd=extra_credits_in_usd,
         product=product,
     )
 
