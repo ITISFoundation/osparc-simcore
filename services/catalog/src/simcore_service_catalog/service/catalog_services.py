@@ -23,7 +23,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_errors import (
-    create_troubleshotting_log_kwargs,
+    create_troubleshootting_log_kwargs,
 )
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
@@ -239,7 +239,7 @@ async def _get_services_manifests(
     if missing_services:
         msg = f"Found {len(missing_services)} services that are in the database but missing in the registry manifest"
         _logger.warning(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 msg,
                 error=CatalogInconsistentError(
                     missing_services=missing_services,

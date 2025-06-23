@@ -3,7 +3,7 @@ import logging
 from common_library.error_codes import create_error_code
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ._utils import ExceptionHandler, create_error_json_response
 
@@ -40,7 +40,7 @@ def make_handler_for_exception(
             user_error_msg += f" [{error_code}]"
 
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=exception,
                 error_code=error_code,
