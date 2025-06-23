@@ -24,7 +24,7 @@ from common_library.error_codes import create_error_code
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2 import director_v2_service
@@ -268,7 +268,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
             )
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,
@@ -341,7 +341,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
             user_error_msg = MSG_TOO_MANY_GUESTS
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     user_error_msg,
                     error=exc,
                     error_code=error_code,
@@ -373,7 +373,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
         user_error_msg = MSG_UNEXPECTED_DISPATCH_ERROR
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=exc,
                 error_code=error_code,

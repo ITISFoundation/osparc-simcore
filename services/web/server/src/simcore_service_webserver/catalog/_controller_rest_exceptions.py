@@ -6,7 +6,7 @@ from aiohttp import web
 from common_library.error_codes import create_error_code
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
@@ -63,7 +63,7 @@ async def _handler_catalog_client_errors(
         # Log for further investigation
         oec = create_error_code(exception)
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_msg,
                 error=exception,
                 error_code=oec,

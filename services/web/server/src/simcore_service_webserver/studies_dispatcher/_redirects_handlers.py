@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
@@ -128,7 +128,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
             )
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,

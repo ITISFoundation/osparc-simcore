@@ -8,7 +8,7 @@ from typing import NamedTuple
 
 import psutil
 from common_library.error_codes import create_error_code
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..modules.mounted_fs import MountedVolumes
 
@@ -110,7 +110,7 @@ async def async_command(
         error_code = create_error_code(err)
         user_error_msg = f"Unexpected error [{error_code}]"
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_context={"command": command, "proc.returncode": proc.returncode},
