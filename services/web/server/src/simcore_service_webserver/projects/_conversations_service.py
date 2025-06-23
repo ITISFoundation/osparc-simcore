@@ -222,6 +222,7 @@ async def update_project_conversation_message(
     )
     return await conversations_service.update_message(
         app,
+        project_id=project_uuid,
         conversation_id=conversation_id,
         message_id=message_id,
         updates=ConversationMessagePatchDB(content=content),
@@ -245,7 +246,10 @@ async def delete_project_conversation_message(
         permission="read",
     )
     await conversations_service.delete_message(
-        app, conversation_id=conversation_id, message_id=message_id
+        app,
+        project_id=project_uuid,
+        conversation_id=conversation_id,
+        message_id=message_id,
     )
 
 

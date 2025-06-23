@@ -1,6 +1,5 @@
 # pylint: disable=unused-argument
 
-import asyncio
 import logging
 
 from aiohttp import web
@@ -15,33 +14,28 @@ from models_library.conversations import (
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
-from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 
 from ..projects._groups_repository import list_project_groups
 
 # Import or define SocketMessageDict
-from ..socketio.messages import (
-    SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
-    send_message_to_standard_group,
-)
 from ..users.api import get_user_primary_group_id
 from . import _conversation_message_repository
+from ._socketio import (
+    notify_conversation_message_created,
+    notify_conversation_message_deleted,
+    notify_conversation_message_updated,
+)
 
 _logger = logging.getLogger(__name__)
 
 
-def _make_project_conversation_message_created_message(
-    project_id: ProjectID,
-    conversation_message: ConversationMessageGetDB,
-) -> SocketMessageDict:
-    return SocketMessageDict(
-        event_type=SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
-        data={
-            "project_id": project_id,
-            **conversation_message.model_dump(mode="json"),
-        },
-    )
+async def _get_recipients(app, project_id):
+    return [
+        project_to_group.gid
+        for project_to_group in await list_project_groups(app, project_id=project_id)
+        if project_to_group.read
+    ]
 
 
 async def create_message(
@@ -64,20 +58,11 @@ async def create_message(
         type_=type_,
     )
 
-    notification_recipients = [
-        project_to_group.gid
-        for project_to_group in await list_project_groups(app, project_id=project_id)
-        if project_to_group.read
-    ]
-
-    notification_message = _make_project_conversation_message_created_message(
-        project_id, created_message
-    )
-    await asyncio.gather(
-        *[
-            send_message_to_standard_group(app, recipient, notification_message)
-            for recipient in notification_recipients
-        ]
+    await notify_conversation_message_created(
+        app,
+        recipients=await _get_recipients(app, project_id),
+        project_id=project_id,
+        conversation_message=created_message,
     )
 
     return created_message
@@ -97,27 +82,46 @@ async def get_message(
 async def update_message(
     app: web.Application,
     *,
+    project_id: ProjectID,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
     # Update attributes
     updates: ConversationMessagePatchDB,
 ) -> ConversationMessageGetDB:
-    return await _conversation_message_repository.update(
+    updated_message = await _conversation_message_repository.update(
         app,
         conversation_id=conversation_id,
         message_id=message_id,
         updates=updates,
     )
 
+    await notify_conversation_message_updated(
+        app,
+        recipients=await _get_recipients(app, project_id),
+        project_id=project_id,
+        conversation_message=updated_message,
+    )
+
+    return updated_message
+
 
 async def delete_message(
     app: web.Application,
     *,
+    project_id: ProjectID,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> None:
     await _conversation_message_repository.delete(
         app,
+        conversation_id=conversation_id,
+        message_id=message_id,
+    )
+
+    await notify_conversation_message_deleted(
+        app,
+        recipients=await _get_recipients(app, project_id),
+        project_id=project_id,
         conversation_id=conversation_id,
         message_id=message_id,
     )
