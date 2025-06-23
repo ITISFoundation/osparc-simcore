@@ -6,6 +6,7 @@
 # pylint: disable=too-many-statements
 
 
+from collections.abc import Callable
 from http import HTTPStatus
 from unittest.mock import MagicMock
 
@@ -32,33 +33,14 @@ API_PREFIX = "/" + api_version_prefix
 
 
 @pytest.fixture
-def mocked_notify_conversation_message_created(
-    mocker: MockerFixture,
-) -> MagicMock:
-    return mocker.patch.object(
-        simcore_service_webserver.conversations._conversation_message_service,
-        "notify_conversation_message_created",
-    )
+def mock_notify_function(mocker: MockerFixture) -> Callable[[str], MagicMock]:
+    def _mock(function_name: str) -> MagicMock:
+        return mocker.patch.object(
+            simcore_service_webserver.conversations._conversation_message_service,
+            function_name,
+        )
 
-
-@pytest.fixture
-def mocked_notify_conversation_message_updated(
-    mocker: MockerFixture,
-) -> MagicMock:
-    return mocker.patch.object(
-        simcore_service_webserver.conversations._conversation_message_service,
-        "notify_conversation_message_updated",
-    )
-
-
-@pytest.fixture
-def mocked_notify_conversation_message_deleted(
-    mocker: MockerFixture,
-) -> MagicMock:
-    return mocker.patch.object(
-        simcore_service_webserver.conversations._conversation_message_service,
-        "notify_conversation_message_deleted",
-    )
+    return _mock
 
 
 @pytest.mark.parametrize(
@@ -196,10 +178,18 @@ async def test_project_conversation_messages_full_workflow(
     user_project: ProjectDict,
     expected: HTTPStatus,
     postgres_db: sa.engine.Engine,
-    mocked_notify_conversation_message_created: MagicMock,
-    mocked_notify_conversation_message_updated: MagicMock,
-    mocked_notify_conversation_message_deleted: MagicMock,
+    mock_notify_function: Callable[[str], MagicMock],
 ):
+    mocked_notify_conversation_message_created = mock_notify_function(
+        "notify_conversation_message_created"
+    )
+    mocked_notify_conversation_message_updated = mock_notify_function(
+        "notify_conversation_message_updated"
+    )
+    mocked_notify_conversation_message_deleted = mock_notify_function(
+        "notify_conversation_message_deleted"
+    )
+
     base_project_url = client.app.router["list_project_conversations"].url_for(
         project_id=user_project["uuid"]
     )
