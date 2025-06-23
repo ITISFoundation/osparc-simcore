@@ -9,7 +9,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 from ...models import AssociatedInstance
 
 
-class BaseAutoscaling(Protocol):
+class AutoscalingProvider(Protocol):
     async def get_monitored_nodes(self, app: FastAPI) -> list[DockerNode]: ...
 
     def get_ec2_tags(self, app: FastAPI) -> EC2Tags: ...
