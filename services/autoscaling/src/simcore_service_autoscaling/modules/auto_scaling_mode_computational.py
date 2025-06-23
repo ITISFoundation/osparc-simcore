@@ -24,7 +24,6 @@ from ..models import AssociatedInstance, DaskTask
 from ..utils import computational_scaling as utils
 from ..utils import utils_docker, utils_ec2
 from . import dask
-from .auto_scaling_mode_base import BaseAutoscaling
 from .docker import get_docker_client
 
 _logger = logging.getLogger(__name__)
@@ -42,27 +41,23 @@ def _scheduler_auth(app: FastAPI) -> ClusterAuthentication:
     return app_settings.AUTOSCALING_DASK.DASK_SCHEDULER_AUTH
 
 
-class ComputationalAutoscaling(BaseAutoscaling):
-    @staticmethod
-    async def get_monitored_nodes(app: FastAPI) -> list[Node]:
+class ComputationalAutoscaling:
+    async def get_monitored_nodes(self, app: FastAPI) -> list[Node]:
         return await utils_docker.get_worker_nodes(get_docker_client(app))
 
-    @staticmethod
-    def get_ec2_tags(app: FastAPI) -> EC2Tags:
+    def get_ec2_tags(self, app: FastAPI) -> EC2Tags:
         app_settings = get_application_settings(app)
         return utils_ec2.get_ec2_tags_computational(app_settings)
 
-    @staticmethod
     def get_new_node_docker_tags(
-        app: FastAPI, ec2_instance_data: EC2InstanceData
+        self, app: FastAPI, ec2_instance_data: EC2InstanceData
     ) -> dict[DockerLabelKey, str]:
         assert app  # nosec
         return {
             DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance_data.type
         }
 
-    @staticmethod
-    async def list_unrunnable_tasks(app: FastAPI) -> list[DaskTask]:
+    async def list_unrunnable_tasks(self, app: FastAPI) -> list[DaskTask]:
         try:
             unrunnable_tasks = await dask.list_unrunnable_tasks(
                 _scheduler_url(app), _scheduler_auth(app)
@@ -87,18 +82,17 @@ class ComputationalAutoscaling(BaseAutoscaling):
             )
             return []
 
-    @staticmethod
-    def get_task_required_resources(task) -> Resources:
+    def get_task_required_resources(self, task) -> Resources:
         return utils.resources_from_dask_task(task)
 
-    @staticmethod
-    async def get_task_defined_instance(app: FastAPI, task) -> InstanceTypeType | None:
+    async def get_task_defined_instance(
+        self, app: FastAPI, task
+    ) -> InstanceTypeType | None:
         assert app  # nosec
         return cast(InstanceTypeType | None, utils.get_task_instance_restriction(task))
 
-    @staticmethod
     async def compute_node_used_resources(
-        app: FastAPI, instance: AssociatedInstance
+        self, app: FastAPI, instance: AssociatedInstance
     ) -> Resources:
         try:
             resource = await dask.get_worker_used_resources(
@@ -127,24 +121,19 @@ class ComputationalAutoscaling(BaseAutoscaling):
             _logger.debug("no resource found for %s", f"{instance.ec2_instance.id}")
             return Resources.create_as_empty()
 
-    @staticmethod
     async def compute_cluster_used_resources(
-        app: FastAPI, instances: list[AssociatedInstance]
+        self, app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
         list_of_used_resources: list[Resources] = await logged_gather(
-            *(
-                ComputationalAutoscaling.compute_node_used_resources(app, i)
-                for i in instances
-            )
+            *(self.compute_node_used_resources(app, i) for i in instances)
         )
         counter = collections.Counter({k: 0 for k in Resources.model_fields})
         for result in list_of_used_resources:
             counter.update(result.model_dump())
         return Resources.model_validate(dict(counter))
 
-    @staticmethod
     async def compute_cluster_total_resources(
-        app: FastAPI, instances: list[AssociatedInstance]
+        self, app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
         try:
             return await dask.compute_cluster_total_resources(
@@ -153,8 +142,9 @@ class ComputationalAutoscaling(BaseAutoscaling):
         except DaskNoWorkersError:
             return Resources.create_as_empty()
 
-    @staticmethod
-    async def is_instance_active(app: FastAPI, instance: AssociatedInstance) -> bool:
+    async def is_instance_active(
+        self, app: FastAPI, instance: AssociatedInstance
+    ) -> bool:
         if not utils_docker.is_node_osparc_ready(instance.node):
             return False
 
@@ -163,14 +153,14 @@ class ComputationalAutoscaling(BaseAutoscaling):
             _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
         )
 
-    @staticmethod
-    async def is_instance_retired(app: FastAPI, instance: AssociatedInstance) -> bool:
+    async def is_instance_retired(
+        self, app: FastAPI, instance: AssociatedInstance
+    ) -> bool:
         if not utils_docker.is_node_osparc_ready(instance.node):
             return False
         return await dask.is_worker_retired(
             _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
         )
 
-    @staticmethod
-    async def try_retire_nodes(app: FastAPI) -> None:
+    async def try_retire_nodes(self, app: FastAPI) -> None:
         await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))
