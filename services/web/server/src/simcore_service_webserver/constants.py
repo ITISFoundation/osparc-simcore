@@ -40,7 +40,7 @@ assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE  # nosec
 # main index route name = front-end
 INDEX_RESOURCE_NAME: Final[str] = "get_cached_frontend_index"
 
-MSG_UNDER_DEVELOPMENT: Final[str] = (
+MSG_UNDER_DEVELOPMENT: Final[str] = user_message(
     "Under development. Use WEBSERVER_DEV_FEATURES_ENABLED=1 to enable current implementation"
 )
 
