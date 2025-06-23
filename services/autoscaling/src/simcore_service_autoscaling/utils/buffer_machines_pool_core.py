@@ -32,7 +32,7 @@ def get_deactivated_buffer_ec2_tags(
     base_ec2_tags = (
         auto_scaling_mode.get_ec2_tags(app) | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
-    base_ec2_tags[_NAME_EC2_TAG_KEY] = AWSTagValue(
+    base_ec2_tags[_NAME_EC2_TAG_KEY] = TypeAdapter(AWSTagValue).validate_python(
         f"{base_ec2_tags[_NAME_EC2_TAG_KEY]}-buffer"
     )
     return base_ec2_tags
