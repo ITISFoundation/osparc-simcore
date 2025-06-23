@@ -49,7 +49,7 @@ from simcore_service_autoscaling.models import EC2InstanceData
 from simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core import (
     auto_scale_cluster,
 )
-from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_computational import (
+from simcore_service_autoscaling.modules.cluster_scaling._provider_computational import (
     ComputationalAutoscaling,
 )
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
