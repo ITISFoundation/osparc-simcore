@@ -55,6 +55,14 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     "shareWithEmails": "qx.event.type.Data",
   },
 
+  properties: {
+    acceptOnlyOne: {
+      check: "Boolean",
+      init: false,
+      event: "changeAcceptOnlyOne"
+    }
+  },
+
   members: {
     __resourceData: null,
     __showOrganizations: null,
@@ -276,6 +284,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     __collaboratorButton: function(collaborator) {
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
+      collaborator.button = collaboratorButton;
       collaboratorButton.groupId = collaborator.getGroupId();
       collaboratorButton.subscribeToFilterGroup("collaboratorsManager");
 
@@ -298,6 +307,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       };
       const collaborator = qx.data.marshal.Json.createModel(collaboratorData);
       const collaboratorButton = new osparc.filter.CollaboratorToggleButton(collaborator);
+      collaborator.button = collaboratorButton;
       collaboratorButton.setIconSrc("@FontAwesome5Solid/envelope/14");
 
       collaboratorButton.addListener("changeValue", e => {
@@ -309,6 +319,11 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
     __collaboratorSelected: function(selected, collaboratorGidOrEmail, collaborator, collaboratorButton) {
       if (selected) {
+        if (this.isAcceptOnlyOne() && Object.keys(this.__selectedCollaborators).length) {
+          // unselect the previous collaborator
+          const id = Object.keys(this.__selectedCollaborators)[0];
+          this.__selectedCollaborators[id].button.setValue(false);
+        }
         this.__selectedCollaborators[collaboratorGidOrEmail] = collaborator;
         collaboratorButton.unsubscribeToFilterGroup("collaboratorsManager");
       } else if (collaborator.getGroupId() in this.__selectedCollaborators) {

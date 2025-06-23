@@ -85,6 +85,21 @@ qx.Class.define("osparc.notification.Notifications", {
       };
     },
 
+    __newConversationNotificationObj: function(userId, studyId) {
+      const baseNotification = this.__newNotificationBase(userId);
+      const specNotification = {
+        "category": "CONVERSATION_NOTIFICATION",
+        "actionable_path": "study/"+studyId,
+        "resource_id": studyId,
+        "title": "New notification",
+        "text": "You were notified in a conversation"
+      };
+      return {
+        ...baseNotification,
+        ...specNotification
+      };
+    },
+
     __newAnnotationNoteObj: function(userId, studyId) {
       const baseNotification = this.__newNotificationBase(userId);
       const specNotification = {
@@ -122,7 +137,7 @@ qx.Class.define("osparc.notification.Notifications", {
       return osparc.data.Resources.fetch("notifications", "post", params);
     },
 
-    postNewStudy: function(userId, studyId) {
+    pushStudyShared: function(userId, studyId) {
       const params = {
         data: this.__newStudyObj(userId, studyId)
       };
@@ -136,7 +151,14 @@ qx.Class.define("osparc.notification.Notifications", {
       return osparc.data.Resources.fetch("notifications", "post", params);
     },
 
-    postNewAnnotationNote: function(userId, studyId) {
+    pushConversationNotification: function(userId, studyId) {
+      const params = {
+        data: this.__newConversationNotificationObj(userId, studyId)
+      };
+      return osparc.data.Resources.fetch("notifications", "post", params);
+    },
+
+    pushNewAnnotationNote: function(userId, studyId) {
       const params = {
         data: this.__newAnnotationNoteObj(userId, studyId)
       };

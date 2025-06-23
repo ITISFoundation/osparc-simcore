@@ -13519,6 +13519,7 @@ components:
       - NEW_ORGANIZATION
       - STUDY_SHARED
       - TEMPLATE_SHARED
+      - CONVERSATION_NOTIFICATION
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory

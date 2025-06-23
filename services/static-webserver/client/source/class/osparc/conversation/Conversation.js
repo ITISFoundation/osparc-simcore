@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.info.Conversation", {
+qx.Class.define("osparc.conversation.Conversation", {
   extend: qx.ui.tabview.Page,
 
   /**
@@ -32,7 +32,7 @@ qx.Class.define("osparc.info.Conversation", {
       this.setConversationId(conversationId);
     }
 
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(5));
 
     this.set({
       padding: 10,
@@ -152,7 +152,9 @@ qx.Class.define("osparc.info.Conversation", {
       this.__messagesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         alignY: "middle"
       });
-      this._add(this.__messagesList, {
+      const scrollView = new qx.ui.container.Scroll();
+      scrollView.add(this.__messagesList);
+      this._add(scrollView, {
         flex: 1
       });
 
@@ -161,7 +163,7 @@ qx.Class.define("osparc.info.Conversation", {
       this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addMessages = new osparc.info.CommentAdd(this.__studyData["uuid"], this.getConversationId());
+        const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId());
         addMessages.setPaddingLeft(10);
         addMessages.addListener("commentAdded", e => {
           const data = e.getData();
@@ -223,15 +225,26 @@ qx.Class.define("osparc.info.Conversation", {
     },
 
     __addMessages: function(messages) {
-      if (messages.length === 1) {
+      const nMessages = messages.filter(msg => msg["type"] === "MESSAGE").length;
+      if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));
-      } else if (messages.length > 1) {
-        this.__messagesTitle.setValue(messages.length + this.tr(" Messages"));
+      } else if (nMessages > 1) {
+        this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
       }
 
       messages.forEach(message => {
-        const messageUi = new osparc.info.CommentUI(message);
-        this.__messagesList.add(messageUi);
+        let control = null;
+        switch (message["type"]) {
+          case "MESSAGE":
+            control = new osparc.conversation.MessageUI(message);
+            break;
+          case "NOTIFICATION":
+            control = new osparc.conversation.NotificationUI(message);
+            break;
+        }
+        if (control) {
+          this.__messagesList.add(control);
+        }
       });
     },
   }

@@ -240,7 +240,7 @@ async def test_raised_unhandled_exception(
         #
         # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:75 We apologize ... [OEC:128594540599840].
         # {
-        # "exception_details": "Unexpected error",
+        # "exception_string": "Unexpected error",
         # "error_code": "OEC:128594540599840",
         # "context": {
         #     "request.remote": "127.0.0.1",
@@ -262,7 +262,7 @@ async def test_raised_unhandled_exception(
 
         assert response.method in caplog.text
         assert response.url.path in caplog.text
-        assert "exception_details" in caplog.text
+        assert "exception_string" in caplog.text
         assert "request.remote" in caplog.text
         assert "context" in caplog.text
         assert SomeUnexpectedError.__name__ in caplog.text

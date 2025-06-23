@@ -7,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
-from servicelib.exception_utils import silence_exceptions
+from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_context
 from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
@@ -191,7 +191,10 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
 
 async def setup_manager(app: FastAPI) -> None:
     app.state.scheduler_manager = create_periodic_task(
-        silence_exceptions((CouldNotAcquireLockError,))(schedule_all_pipelines),
+        suppress_exceptions(
+            (CouldNotAcquireLockError,),
+            reason="Multiple instances of the periodic task `computational scheduler manager` are running.",
+        )(schedule_all_pipelines),
         interval=SCHEDULER_INTERVAL,
         task_name=MODULE_NAME_SCHEDULER,
         app=app,

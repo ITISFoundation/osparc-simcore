@@ -58,9 +58,9 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
 
       // Populate the grid with the cantReadServicesData
       cantReadServicesData.forEach((cantReadServiceData, idx) => {
-        const group = osparc.store.Groups.getInstance().getGroup(cantReadServiceData["owner"]);
-        if (group) {
-          const username = new qx.ui.basic.Label(group.getLabel()).set({
+        const userGroupId = cantReadServiceData["owner"];
+        if (userGroupId) {
+          const username = new qx.ui.basic.Label().set({
             rich: true,
             selectable: true,
           });
@@ -68,7 +68,7 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
             row: idx+1,
             column: 0
           });
-          const email = new qx.ui.basic.Label(group.getEmail()).set({
+          const email = new qx.ui.basic.Label().set({
             rich: true,
             selectable: true,
           });
@@ -85,6 +85,16 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
             row: idx+1,
             column: 2
           });
+
+          osparc.store.Users.getInstance().getUser(userGroupId)
+            .then(user => {
+              username.setValue(user ? user.getLabel() : this.tr("Unknown user"));
+              email.setValue(user ? user.getEmail() : "Unknown email");
+            })
+            .catch(() => {
+              username.setValue(this.tr("Unknown user"));
+              email.setValue("Unknown email");
+            });
         }
       });
     }

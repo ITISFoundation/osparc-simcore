@@ -2,6 +2,7 @@ import itertools
 import logging
 from collections import Counter
 
+from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
@@ -54,11 +55,11 @@ _logger = logging.getLogger(__name__)
 _FOLDER_ERRORS: ExceptionToHttpErrorMap = {
     FolderAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Access to folder forbidden",
+        user_message("Access to folder forbidden"),
     ),
     FolderNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Folder not found: {reason}",
+        user_message("Folder not found: {reason}"),
     ),
 }
 
@@ -66,15 +67,15 @@ _FOLDER_ERRORS: ExceptionToHttpErrorMap = {
 _NODE_ERRORS: ExceptionToHttpErrorMap = {
     NodeNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Node '{node_uuid}' not found in project '{project_uuid}'",
+        user_message("Node '{node_uuid}' not found in project '{project_uuid}'"),
     ),
     ParentNodeNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Parent node '{node_uuid}' not found",
+        user_message("Parent node '{node_uuid}' not found"),
     ),
     ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Project node is required but input is not set",
+        user_message("Project node is required but input is not set"),
     ),
 }
 
