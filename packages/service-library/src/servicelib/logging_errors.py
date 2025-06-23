@@ -10,7 +10,7 @@ from .logging_utils import LogExtra, get_log_record_extra
 _logger = logging.getLogger(__name__)
 
 
-def create_troubleshotting_log_message(
+def create_troubleshootting_log_message(
     user_error_msg: str,
     *,
     error: BaseException,
@@ -92,7 +92,7 @@ def create_troubleshootting_log_kwargs(
         context.update(error.error_context())
 
     # compose as log message
-    log_msg = create_troubleshotting_log_message(
+    log_msg = create_troubleshootting_log_message(
         user_error_msg,
         error=error,
         error_code=error_code,
