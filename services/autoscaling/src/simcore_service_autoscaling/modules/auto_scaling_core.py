@@ -92,7 +92,7 @@ async def _analyze_current_cluster(
 
     buffer_ec2_instances = await get_ec2_client(app).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped"],
     )
 
@@ -476,7 +476,7 @@ async def _start_warm_buffer_instances(
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
         await get_ec2_client(app).set_instances_tags(
             started_instances,
-            tags=get_activated_buffer_ec2_tags(app, auto_scaling_mode),
+            tags=get_activated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         )
     started_instance_ids = [i.id for i in started_instances]
 
