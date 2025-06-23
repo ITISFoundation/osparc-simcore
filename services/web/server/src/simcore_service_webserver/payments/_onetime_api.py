@@ -38,8 +38,10 @@ _logger = logging.getLogger(__name__)
 
 
 MSG_WALLET_NO_ACCESS_ERROR = user_message(
-    "User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
+    "You do not have the necessary permissions to make payments to wallet {wallet_id}.",
+    _version=1,
 )
+
 _FAKE_PAYMENT_TRANSACTION_ID_PREFIX = "fpt"
 
 
