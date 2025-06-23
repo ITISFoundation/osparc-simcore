@@ -6,7 +6,7 @@ import pytest
 from common_library.error_codes import create_error_code, parse_error_code_parts
 from common_library.errors_classes import OsparcErrorMixin
 from servicelib.logging_errors import (
-    create_troubleshotting_log_kwargs,
+    create_troubleshootting_log_kwargs,
     create_troubleshotting_log_message,
 )
 
@@ -37,7 +37,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
         tip="This is a test error",
     )
 
-    log_kwargs = create_troubleshotting_log_kwargs(
+    log_kwargs = create_troubleshootting_log_kwargs(
         msg,
         error=exc,
         error_code=error_code,

@@ -6,7 +6,7 @@ from functools import wraps
 from typing import Any, Final, ParamSpec, TypeVar
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 _logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ def _should_suppress_exception(
         # the predicate function raised an exception
         # log it and do not suppress the original exception
         _logger.warning(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 f"Predicate function raised exception {type(predicate_exc).__name__}:{predicate_exc} in {func_name}. "
                 f"Original exception will be re-raised: {type(exc).__name__}",
                 error=predicate_exc,

@@ -57,7 +57,7 @@ class LogKwargs(TypedDict):
     extra: LogExtra | None
 
 
-def create_troubleshotting_log_kwargs(
+def create_troubleshootting_log_kwargs(
     user_error_msg: str,
     *,
     error: BaseException,

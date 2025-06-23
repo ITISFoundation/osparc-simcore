@@ -7,7 +7,7 @@ import arrow
 from aiohttp import web
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
 
 from ..folders import folders_trash_service
@@ -50,7 +50,7 @@ async def _empty_explicitly_trashed_projects(
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 _logger.warning(
-                    **create_troubleshotting_log_kwargs(
+                    **create_troubleshootting_log_kwargs(
                         "Error deleting a trashed project while emptying trash.",
                         error=exc,
                         error_context={
@@ -87,7 +87,7 @@ async def _empty_explicitly_trashed_folders_and_content(
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 _logger.warning(
-                    **create_troubleshotting_log_kwargs(
+                    **create_troubleshootting_log_kwargs(
                         "Error deleting a trashed folders (and content) while emptying trash.",
                         error=exc,
                         error_context={
@@ -124,7 +124,7 @@ async def _empty_explicitely_trashed_workspaces_and_content(
 
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 _logger.warning(
-                    **create_troubleshotting_log_kwargs(
+                    **create_troubleshootting_log_kwargs(
                         "Error deleting a trashed workspace (and content) while emptying trash.",
                         error=exc,
                         error_context={
@@ -187,7 +187,7 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
 
         except Exception as exc:  # pylint: disable=broad-exception-caught
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     "Unexpected error while batch deleting expired workspaces as admin:",
                     error=exc,
                     error_context=ctx,
@@ -206,7 +206,7 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 ctx_with_product = {**ctx, "product_name": product_name}
                 _logger.exception(
-                    **create_troubleshotting_log_kwargs(
+                    **create_troubleshootting_log_kwargs(
                         "Unexpected error while batch deleting expired trashed folders as admin:",
                         error=exc,
                         error_context=ctx_with_product,
@@ -226,7 +226,7 @@ async def safe_delete_expired_trash_as_admin(app: web.Application) -> None:
 
         except Exception as exc:  # pylint: disable=broad-exception-caught
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     "Unexpected error while batch deleting expired projects as admin:",
                     error=exc,
                     error_context=ctx,
