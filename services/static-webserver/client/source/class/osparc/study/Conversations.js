@@ -103,7 +103,6 @@ qx.Class.define("osparc.study.Conversations", {
         },
         data: {
           "content": message,
-          "type": "MESSAGE",
         },
       };
       return osparc.data.Resources.fetch("conversations", "editMessage", params)
