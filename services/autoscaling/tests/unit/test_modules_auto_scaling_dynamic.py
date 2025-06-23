@@ -53,13 +53,13 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_autoscaling.constants import BUFFER_MACHINE_TAG_KEY
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
-from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_core import (
+from simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core import (
     _activate_drained_nodes,
     _find_terminateable_instances,
     _try_scale_down_cluster,
     auto_scale_cluster,
 )
-from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
+from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.docker import (
@@ -591,13 +591,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     assert fake_attached_node.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = {
-        tag_key: "true"
-        for tag_key in (
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-        )
-    } | {
+    expected_docker_node_tags = dict.fromkeys(
+        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+        "true",
+    ) | {
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
     }
     fake_attached_node.spec.labels |= expected_docker_node_tags | {
@@ -2154,13 +2152,11 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     )
     assert fake_attached_node_base.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = {
-        tag_key: "true"
-        for tag_key in (
-            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-        )
-    } | {
+    expected_docker_node_tags = dict.fromkeys(
+        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+        + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+        "true",
+    ) | {
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{hot_buffer_instance_type}"
     }
     fake_attached_node_base.spec.labels |= expected_docker_node_tags | {

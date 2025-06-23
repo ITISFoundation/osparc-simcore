@@ -20,7 +20,9 @@ from ..api.routes import setup_api_routes
 from ..modules.cluster_scaling.auto_scaling_task import (
     setup as setup_auto_scaler_background_task,
 )
-from ..modules.buffer_machines_pool_task import setup as setup_buffer_machines_pool_task
+from ..modules.cluster_scaling.buffer_machines_pool_task import (
+    setup as setup_buffer_machines_pool_task,
+)
 from ..modules.docker import setup as setup_docker
 from ..modules.ec2 import setup as setup_ec2
 from ..modules.instrumentation import setup as setup_instrumentation

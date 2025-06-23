@@ -27,9 +27,12 @@ from dask_task_models_library.resource_constraints import (
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY
-from models_library.generated_models.docker_rest_api import Availability
+from models_library.generated_models.docker_rest_api import (
+    Availability,
+    NodeState,
+    NodeStatus,
+)
 from models_library.generated_models.docker_rest_api import Node as DockerNode
-from models_library.generated_models.docker_rest_api import NodeState, NodeStatus
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture, MockType
@@ -41,10 +44,10 @@ from pytest_simcore.helpers.aws_ec2 import assert_autoscaled_computational_ec2_i
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import EC2InstanceData
-from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_core import (
+from simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core import (
     auto_scale_cluster,
 )
-from simcore_service_autoscaling.modules.auto_scaling_mode_computational import (
+from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_computational import (
     ComputationalAutoscaling,
 )
 from simcore_service_autoscaling.modules.dask import DaskTaskResources
