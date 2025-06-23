@@ -8,7 +8,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
-from common_library.async_utils import cancel_and_wait
+from common_library.async_tools import cancel_and_wait
 from servicelib.logging_utils import log_context
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log

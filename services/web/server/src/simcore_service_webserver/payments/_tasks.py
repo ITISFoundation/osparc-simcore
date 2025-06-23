@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from aiohttp import web
-from common_library.async_utils import cancel_and_wait
+from common_library.async_tools import cancel_and_wait
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import HttpUrl, TypeAdapter
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
