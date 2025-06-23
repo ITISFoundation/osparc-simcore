@@ -52,7 +52,7 @@ async def _send_message_to_recipients(app, recipients, notification_message):
 async def notify_conversation_message_created(
     app: web.Application,
     *,
-    recipients: list[UserID],
+    recipients: set[UserID],
     project_id: ProjectID,
     conversation_message: ConversationMessageGetDB,
 ) -> None:
@@ -72,7 +72,7 @@ async def notify_conversation_message_created(
 async def notify_conversation_message_updated(
     app: web.Application,
     *,
-    recipients: list[UserID],
+    recipients: set[UserID],
     project_id: ProjectID,
     conversation_message: ConversationMessageGetDB,
 ) -> None:
@@ -93,7 +93,7 @@ async def notify_conversation_message_updated(
 async def notify_conversation_message_deleted(
     app: web.Application,
     *,
-    recipients: list[UserID],
+    recipients: set[UserID],
     project_id: ProjectID,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
