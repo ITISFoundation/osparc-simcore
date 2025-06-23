@@ -14,7 +14,7 @@ from simcore_service_autoscaling.constants import (
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
 )
-from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_computational import (
+from simcore_service_autoscaling.modules.cluster_scaling._provider_computational import (
     ComputationalAutoscaling,
 )
 from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_dynamic import (
