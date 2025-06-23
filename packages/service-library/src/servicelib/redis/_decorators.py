@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import functools
 import logging
 import socket
@@ -10,6 +9,7 @@ from typing import Any, Final, ParamSpec, TypeVar
 import arrow
 import redis.exceptions
 from redis.asyncio.lock import Lock
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..background_task import periodic
 from ._client import RedisClientSDK
@@ -138,10 +138,21 @@ def exclusive(
                     # in the case where the lock would have been lost,
                     # this would raise again and is not necessary
                     await lock.release()
-                except redis.exceptions.LockNotOwnedError:
+                except redis.exceptions.LockNotOwnedError as exc:
                     _logger.exception(
-                        "Unexpected error with lock '%s', cannot release it",
-                        redis_lock_key,
+                        **create_troubleshootting_log_kwargs(
+                            f"Unexpected error while releasing lock '{redis_lock_key}'",
+                            error=exc,
+                            error_context={
+                                "redis_lock_key": redis_lock_key,
+                                "lock_value": lock_value,
+                                "client_name": client.client_name,
+                                "hostname": socket.gethostname(),
+                                "coroutine": coro.__name__,
+                            },
+                            tip="This might happen if the lock was lost before releasing it. "
+                            "Look for synchronous code that prevents refreshing the lock or asyncio loop overload.",
+                        )
                     )
 
         return _wrapper
