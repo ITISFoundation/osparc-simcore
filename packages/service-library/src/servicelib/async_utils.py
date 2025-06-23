@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import datetime
 import logging
 from collections import deque
@@ -8,6 +7,8 @@ from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+
+from common_library.async_tools import cancel_and_wait
 
 from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
@@ -244,8 +245,5 @@ async def cancel_wait_task(
         up the cancellation. If None it waits forever.
     :raises TimeoutError: raised if cannot cancel the task.
     """
-
-    task.cancel()
     async with asyncio.timeout(max_delay):
-        with contextlib.suppress(asyncio.CancelledError):
-            await task
+        await cancel_and_wait(task)
