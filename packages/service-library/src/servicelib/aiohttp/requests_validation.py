@@ -67,7 +67,7 @@ def handle_validation_as_http_error(
                 }
                 for e in details
             ]
-            error_str = json_dumps(
+            error_json_str = json_dumps(
                 {
                     "error": {
                         "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -77,7 +77,7 @@ def handle_validation_as_http_error(
             )
         else:
             # NEW proposed error for https://github.com/ITISFoundation/osparc-simcore/issues/443
-            error_str = json_dumps(
+            error_json_str = json_dumps(
                 {
                     "error": {
                         "msg": user_error_message,
@@ -88,7 +88,7 @@ def handle_validation_as_http_error(
             )
 
         raise web.HTTPUnprocessableEntity(  # 422
-            text=error_str,
+            text=error_json_str,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err
 
