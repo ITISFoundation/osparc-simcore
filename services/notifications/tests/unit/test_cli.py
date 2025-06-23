@@ -21,7 +21,7 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.fixture
-def cli_runner(service_env: EnvVarsDict) -> CliRunner:
+def cli_runner(app_environment: EnvVarsDict) -> CliRunner:
     return CliRunner()
 
 

@@ -11,7 +11,7 @@ from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from ..logging_errors import create_troubleshotting_log_kwargs
+from ..logging_errors import create_troubleshootting_log_kwargs
 from ..status_codes_utils import is_5xx_server_error
 
 validation_error_response_definition["properties"] = {
@@ -50,7 +50,7 @@ def make_http_error_handler_for_exception(
 
         if is_5xx_server_error(status_code):
             _logger.exception(
-                create_troubleshotting_log_kwargs(
+                create_troubleshootting_log_kwargs(
                     "Unexpected error happened in the Resource Usage Tracker. Please contact support.",
                     error=exc,
                     error_context={

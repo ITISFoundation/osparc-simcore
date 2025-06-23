@@ -92,7 +92,7 @@ async def _prepare_project_copy(
         )
         if project_data_size >= max_bytes:
             raise web.HTTPUnprocessableEntity(
-                reason=f"Source project data size is {project_data_size.human_readable()}."
+                text=f"Source project data size is {project_data_size.human_readable()}."
                 f"This is larger than the maximum {max_bytes.human_readable()} allowed for copying."
                 "TIP: Please reduce the study size or contact application support."
             )

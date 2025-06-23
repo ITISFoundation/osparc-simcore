@@ -9,7 +9,10 @@ import random
 import pytest
 from aws_library.ec2 import EC2InstanceBootSpecific
 from pydantic import ValidationError
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.monkeypatch_envs import (
+    EnvVarsDict,
+    setenvs_from_dict,
+)
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -110,3 +113,17 @@ def test_valid_primary_custom_tags(
         {"PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(valid_tag)},
     )
     ApplicationSettings.create_from_envs()
+
+
+def test_valid_application_settings(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment: EnvVarsDict,
+):
+    # Mock
+    assert app_environment
+
+    # Test
+    settings = ApplicationSettings()  # type: ignore
+    assert settings
+
+    assert settings == ApplicationSettings.create_from_envs()

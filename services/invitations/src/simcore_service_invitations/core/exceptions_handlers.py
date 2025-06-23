@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..services.invitations import InvalidInvitationCodeError
 
@@ -16,7 +16,7 @@ def handle_invalid_invitation_code_error(request: Request, exception: Exception)
     user_msg = INVALID_INVITATION_URL_MSG
 
     _logger.warning(
-        **create_troubleshotting_log_kwargs(
+        **create_troubleshootting_log_kwargs(
             user_msg,
             error=exception,
             error_context={
