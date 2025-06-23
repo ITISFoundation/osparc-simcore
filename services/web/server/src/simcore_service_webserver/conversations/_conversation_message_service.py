@@ -1,5 +1,6 @@
 # pylint: disable=unused-argument
 
+import asyncio
 import logging
 
 from aiohttp import web
@@ -69,11 +70,15 @@ async def create_message(
         if project_to_group.read
     ]
 
-    for recipient in recipients:
-        message = _make_project_conversation_message_created_message(
-            project_id, created_message
-        )
-        await send_message_to_standard_group(app, recipient, message)
+    notification_message = _make_project_conversation_message_created_message(
+        project_id, created_message
+    )
+    await asyncio.gather(
+        *[
+            send_message_to_standard_group(app, recipient, notification_message)
+            for recipient in recipients
+        ]
+    )
 
     return created_message
 
