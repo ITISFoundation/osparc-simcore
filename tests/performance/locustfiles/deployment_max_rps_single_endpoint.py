@@ -12,7 +12,7 @@
 from collections.abc import Callable
 
 from common.base_user import OsparcWebUserBase
-from locust import events, task
+from locust import events, run_single_user, task
 from locust.argument_parser import LocustArgumentParser
 
 
@@ -52,3 +52,7 @@ class WebApiUser(OsparcWebUserBase):
         if len(self.environment.parsed_options.body) > 0:
             kwargs["data"] = self.environment.parsed_options.body
         method(self.environment.parsed_options.endpoint, **kwargs)
+
+
+if __name__ == "__main__":
+    run_single_user(WebApiUser)
