@@ -4,6 +4,7 @@ import re
 from typing import Final
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2InstanceType
+from aws_library.ec2._models import Resources
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -14,7 +15,6 @@ from ..core.errors import (
 )
 from ..core.settings import ApplicationSettings
 from ..models import AssociatedInstance
-from ..modules.auto_scaling_mode_base import BaseAutoscaling
 from . import utils_docker
 
 _EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+).*$")
@@ -138,8 +138,8 @@ def _instance_type_by_type_name(
 def find_selected_instance_type_for_task(
     instance_type_name: InstanceTypeType,
     available_ec2_types: list[EC2InstanceType],
-    auto_scaling_mode: BaseAutoscaling,
     task,
+    task_required_resources: Resources,
 ) -> EC2InstanceType:
     filtered_instances = list(
         filter(
@@ -158,14 +158,11 @@ def find_selected_instance_type_for_task(
     selected_instance = filtered_instances[0]
 
     # check that the assigned resources and the machine resource fit
-    if (
-        auto_scaling_mode.get_task_required_resources(task)
-        > selected_instance.resources
-    ):
+    if task_required_resources > selected_instance.resources:
         raise TaskRequirementsAboveRequiredEC2InstanceTypeError(
             task=task,
             instance_type=selected_instance,
-            resources=auto_scaling_mode.get_task_required_resources(task),
+            resources=task_required_resources,
         )
 
     return selected_instance
