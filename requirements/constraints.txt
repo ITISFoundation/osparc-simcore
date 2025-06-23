@@ -71,4 +71,4 @@ pytest-lazy-fixture>=999999999
 referencing<=0.35.1
 
 # See issue https://github.com/ITISFoundation/osparc-simcore/issues/7300
-pydantic-settings<2.7.1
+pydantic-settings<2.10.1
