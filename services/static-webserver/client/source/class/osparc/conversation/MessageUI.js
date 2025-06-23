@@ -109,6 +109,25 @@ qx.Class.define("osparc.conversation.MessageUI", {
             column: isMyMessage ? 0 : 2,
           });
           break;
+        case "edit-options-menu-button": {
+          const buttonSize = 22;
+          control = new qx.ui.form.MenuButton().set({
+            width: buttonSize,
+            height: buttonSize,
+            allowGrowX: false,
+            allowGrowY: false,
+            marginTop: 4,
+            alignY: "top",
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            focusable: false
+          });
+          this._add(control, {
+            row: 0,
+            column: 3,
+            rowSpan: 2,
+          });
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
@@ -143,6 +162,10 @@ qx.Class.define("osparc.conversation.MessageUI", {
         });
 
       this.getChildControl("spacer");
+
+      if (this.self().isMyMessage(this.__message)) {
+        this.getChildControl("edit-options-menu-button");
+      }
     }
   }
 });
