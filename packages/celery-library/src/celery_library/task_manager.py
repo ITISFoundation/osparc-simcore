@@ -9,10 +9,7 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 )
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from servicelib.logging_utils import log_context
-from settings_library.celery import CelerySettings
-
-from .models import (
+from servicelib.celery.models import (
     Task,
     TaskContext,
     TaskID,
@@ -21,8 +18,11 @@ from .models import (
     TaskState,
     TaskStatus,
     TaskUUID,
-    build_task_id,
 )
+from servicelib.logging_utils import log_context
+from settings_library.celery import CelerySettings
+
+from .utils import build_task_id
 
 _logger = logging.getLogger(__name__)
 
@@ -31,8 +31,8 @@ _MIN_PROGRESS_VALUE = 0.0
 _MAX_PROGRESS_VALUE = 1.0
 
 
-@dataclass
-class CeleryTaskClient:
+@dataclass(frozen=True)
+class CeleryTaskManager:
     _celery_app: Celery
     _celery_settings: CelerySettings
     _task_info_store: TaskInfoStore
@@ -54,7 +54,7 @@ class CeleryTaskClient:
             self._celery_app.send_task(
                 task_metadata.name,
                 task_id=task_id,
-                kwargs=task_params,
+                kwargs={"task_id": task_id} | task_params,
                 queue=task_metadata.queue.value,
             )
 
@@ -155,3 +155,9 @@ class CeleryTaskClient:
             msg=f"Listing tasks: {task_context=}",
         ):
             return await self._task_info_store.list_tasks(task_context)
+
+    async def set_task_progress(self, task_id: TaskID, report: ProgressReport) -> None:
+        await self._task_info_store.set_task_progress(
+            task_id=task_id,
+            report=report,
+        )

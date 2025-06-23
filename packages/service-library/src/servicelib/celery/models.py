@@ -1,6 +1,6 @@
-from datetime import timedelta
+import datetime
 from enum import StrEnum
-from typing import Annotated, Any, Final, Protocol, TypeAlias
+from typing import Annotated, Any, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
@@ -12,20 +12,6 @@ TaskName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
 TaskUUID: TypeAlias = UUID
-
-_CELERY_TASK_ID_KEY_SEPARATOR: Final[str] = ":"
-
-
-def build_task_id_prefix(task_context: TaskContext) -> str:
-    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
-        [f"{task_context[key]}" for key in sorted(task_context)]
-    )
-
-
-def build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
-    return _CELERY_TASK_ID_KEY_SEPARATOR.join(
-        [build_task_id_prefix(task_context), f"{task_uuid}"]
-    )
 
 
 class TaskState(StrEnum):
@@ -61,7 +47,7 @@ class TaskInfoStore(Protocol):
         self,
         task_id: TaskID,
         task_metadata: TaskMetadata,
-        expiry: timedelta,
+        expiry: datetime.timedelta,
     ) -> None: ...
 
     async def exists_task(self, task_id: TaskID) -> bool: ...
@@ -87,6 +73,3 @@ class TaskStatus(BaseModel):
     @property
     def is_done(self) -> bool:
         return self.task_state in _TASK_DONE
-
-
-TaskId: TypeAlias = str

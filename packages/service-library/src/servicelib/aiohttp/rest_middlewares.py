@@ -19,7 +19,7 @@ from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.status_codes_utils import is_5xx_server_error
 
-from ..logging_errors import create_troubleshotting_log_kwargs
+from ..logging_errors import create_troubleshootting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
 from ..status_codes_utils import get_code_description
@@ -72,7 +72,7 @@ def _log_5xx_server_error(
     error_code, error_context = _create_error_context(request, exception)
 
     _logger.exception(
-        **create_troubleshotting_log_kwargs(
+        **create_troubleshootting_log_kwargs(
             user_error_msg,
             error=exception,
             error_context=error_context,

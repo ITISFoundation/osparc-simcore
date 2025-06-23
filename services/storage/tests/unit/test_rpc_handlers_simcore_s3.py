@@ -20,6 +20,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from celery.contrib.testing.worker import TestWorkController
+from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
@@ -57,7 +58,6 @@ from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     start_export_data,
 )
 from simcore_postgres_database.storage_models import file_meta_data
-from simcore_service_storage.modules.celery.worker import CeleryTaskWorker
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
@@ -113,7 +113,7 @@ async def test_copy_folders_from_non_existing_project(
     product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: TestWorkController,
 ):
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
@@ -154,7 +154,7 @@ async def test_copy_folders_from_empty_project(
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    with_storage_celery_worker: CeleryTaskWorker,
+    with_storage_celery_worker: TestWorkController,
 ):
     # we will copy from src to dst
     src_project = await create_project()
@@ -547,7 +547,7 @@ async def _request_start_export_data(
 
 @pytest.fixture
 def task_progress_spy(mocker: MockerFixture) -> Mock:
-    return mocker.spy(CeleryTaskWorker, "set_task_progress")
+    return mocker.spy(CeleryTaskManager, "set_task_progress")
 
 
 @pytest.mark.parametrize(
@@ -575,7 +575,7 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
 async def test_start_export_data(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker_controller: TestWorkController,
+    with_storage_celery_worker: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
@@ -621,7 +621,7 @@ async def test_start_export_data(
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker_controller: TestWorkController,
+    with_storage_celery_worker: TestWorkController,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     product_name: ProductName,
