@@ -228,7 +228,7 @@ async def test_project_conversation_messages_full_workflow(
     _first_message_id = data["messageId"]
 
     assert mocked_notify_conversation_message_created.call_count == 1
-    kwargs = mocked_notify_conversation_message_created.await_args[1]
+    kwargs = mocked_notify_conversation_message_created.call_args.kwargs
 
     assert f"{kwargs['project_id']}" == user_project["uuid"]
     assert kwargs["conversation_message"].content == "My first message"
@@ -244,7 +244,7 @@ async def test_project_conversation_messages_full_workflow(
     _second_message_id = data["messageId"]
 
     assert mocked_notify_conversation_message_created.call_count == 2
-    kwargs = mocked_notify_conversation_message_created.await_args[1]
+    kwargs = mocked_notify_conversation_message_created.call_args.kwargs
 
     assert user_project["uuid"] == f"{kwargs['project_id']}"
     assert kwargs["conversation_message"].content == "My second message"
@@ -276,7 +276,7 @@ async def test_project_conversation_messages_full_workflow(
     )
 
     assert mocked_notify_conversation_message_updated.call_count == 1
-    kwargs = mocked_notify_conversation_message_updated.await_args[1]
+    kwargs = mocked_notify_conversation_message_updated.call_args.kwargs
 
     assert user_project["uuid"] == f"{kwargs['project_id']}"
     assert kwargs["conversation_message"].content == updated_content
@@ -312,7 +312,7 @@ async def test_project_conversation_messages_full_workflow(
     )
 
     assert mocked_notify_conversation_message_deleted.call_count == 1
-    kwargs = mocked_notify_conversation_message_deleted.await_args[1]
+    kwargs = mocked_notify_conversation_message_deleted.call_args.kwargs
 
     assert f"{kwargs['project_id']}" == user_project["uuid"]
     assert f"{kwargs['conversation_id']}" == _conversation_id
@@ -410,7 +410,7 @@ async def test_project_conversation_messages_full_workflow(
         )
 
         assert mocked_notify_conversation_message_deleted.call_count == 2
-        kwargs = mocked_notify_conversation_message_deleted.await_args[1]
+        kwargs = mocked_notify_conversation_message_deleted.call_args.kwargs
 
         assert f"{kwargs['project_id']}" == user_project["uuid"]
         assert f"{kwargs['conversation_id']}" == _conversation_id
