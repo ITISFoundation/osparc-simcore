@@ -195,6 +195,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__getNextRequest()
         .then(resp => {
           const messages = resp["data"];
+          // it's not provided by the backend
+          messages.forEach(message => message["studyId"] = this.__studyData["uuid"]);
           this.__addMessages(messages);
           this.__nextRequestParams = resp["_links"]["next"];
           if (this.__nextRequestParams === null) {
@@ -236,7 +238,9 @@ qx.Class.define("osparc.conversation.Conversation", {
         let control = null;
         switch (message["type"]) {
           case "MESSAGE":
-            control = new osparc.conversation.MessageUI(message);
+            control = new osparc.conversation.MessageUI(message, this.__studyData);
+            control.addListener("messageEdited", () => this.fetchMessages());
+            control.addListener("messageDeleted", () => this.fetchMessages());
             break;
           case "NOTIFICATION":
             control = new osparc.conversation.NotificationUI(message);
