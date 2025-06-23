@@ -238,7 +238,7 @@ qx.Class.define("osparc.conversation.Conversation", {
         let control = null;
         switch (message["type"]) {
           case "MESSAGE":
-            control = new osparc.conversation.MessageUI(message);
+            control = new osparc.conversation.MessageUI(message, this.__studyData);
             control.addListener("messageEdited", () => this.fetchMessages());
             control.addListener("messageDeleted", () => this.fetchMessages());
             break;

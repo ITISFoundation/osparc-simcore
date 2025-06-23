@@ -23,11 +23,12 @@ qx.Class.define("osparc.conversation.AddMessage", {
     * @param studyData {Object} serialized Study Data
     * @param conversationId {String} Conversation Id
     */
-  construct: function(studyData, conversationId = null) {
+  construct: function(studyData, conversationId = null, message = null) {
     this.base(arguments);
 
     this.__studyData = studyData;
     this.__conversationId = conversationId;
+    this.__message = message;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
@@ -36,11 +37,13 @@ qx.Class.define("osparc.conversation.AddMessage", {
 
   events: {
     "commentAdded": "qx.event.type.Data",
+    "messageEdited": "qx.event.type.Data",
   },
 
   members: {
     __studyData: null,
     __conversationId: null,
+    __message: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -120,13 +123,22 @@ qx.Class.define("osparc.conversation.AddMessage", {
 
     __buildLayout: function() {
       this.getChildControl("thumbnail");
-      this.getChildControl("comment-field");
+      const commentField = this.getChildControl("comment-field");
 
       const addMessageButton = this.getChildControl("add-comment-button");
-      addMessageButton.addListener("execute", () => this.__addComment());
+      if (this.__message) {
+        // edit mode
+        addMessageButton.setLabel(this.tr("Edit message"));
+        addMessageButton.addListener("execute", () => this.__editComment());
 
-      const notifyUserButton = this.getChildControl("notify-user-button");
-      notifyUserButton.addListener("execute", () => this.__notifyUserTapped());
+        commentField.setText(this.__message["content"]);
+      } else {
+        // new message
+        addMessageButton.addListener("execute", () => this.__addComment());
+
+        const notifyUserButton = this.getChildControl("notify-user-button");
+        notifyUserButton.addListener("execute", () => this.__notifyUserTapped());
+      }
     },
 
     __addComment: function() {
@@ -211,13 +223,24 @@ qx.Class.define("osparc.conversation.AddMessage", {
 
     __postMessage: function() {
       const commentField = this.getChildControl("comment-field");
-      const comment = commentField.getChildControl("text-area").getValue();
-      if (comment) {
-        osparc.study.Conversations.addMessage(this.__studyData["uuid"], this.__conversationId, comment)
+      const content = commentField.getChildControl("text-area").getValue();
+      if (content) {
+        osparc.study.Conversations.addMessage(this.__studyData["uuid"], this.__conversationId, content)
           .then(data => {
             this.fireDataEvent("commentAdded", data);
             commentField.getChildControl("text-area").setValue("");
-            osparc.FlashMessenger.logAs(this.tr("Message added"), "INFO");
+          });
+      }
+    },
+
+    __editComment: function() {
+      const commentField = this.getChildControl("comment-field");
+      const content = commentField.getChildControl("text-area").getValue();
+      if (content) {
+        osparc.study.Conversations.editMessage(this.__studyData["uuid"], this.__conversationId, this.__message["messageId"], content)
+          .then(data => {
+            this.fireDataEvent("messageEdited", data);
+            commentField.getChildControl("text-area").setValue("");
           });
       }
     },
