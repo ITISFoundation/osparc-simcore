@@ -40,9 +40,6 @@ from models_library.docker import (
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
-)
-from models_library.generated_models.docker_rest_api import Node as DockerNode
-from models_library.generated_models.docker_rest_api import (
     NodeDescription,
     NodeSpec,
     NodeState,
@@ -52,6 +49,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -78,8 +76,8 @@ from simcore_service_autoscaling.models import (
     Cluster,
     DaskTaskResources,
 )
-from simcore_service_autoscaling.modules.cluster_scaling import auto_scaling_core
-from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
+from simcore_service_autoscaling.modules.cluster_scaling import _auto_scaling_core
+from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
@@ -445,10 +443,10 @@ def service_monitored_labels(
     app_settings: ApplicationSettings,
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    return {
-        key: "true"
-        for key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
-    }
+    return dict.fromkeys(
+        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+        "true",
+    )
 
 
 @pytest.fixture
@@ -1072,7 +1070,7 @@ def with_short_ec2_instances_max_start_time(
 
 @pytest.fixture
 async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
-    return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
+    return mocker.spy(_auto_scaling_core, "_analyze_current_cluster")
 
 
 @pytest.fixture

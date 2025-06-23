@@ -9,10 +9,10 @@ from servicelib.redis import exclusive
 
 from ...core.settings import ApplicationSettings
 from ...utils.redis import create_lock_key_and_value
-from .auto_scaling_core import auto_scale_cluster
-from ..auto_scaling_mode_computational import ComputationalAutoscaling
-from ..auto_scaling_mode_dynamic import DynamicAutoscaling
 from ..redis import get_redis_client
+from ._auto_scaling_core import auto_scale_cluster
+from .auto_scaling_mode_computational import ComputationalAutoscaling
+from .auto_scaling_mode_dynamic import DynamicAutoscaling
 
 _TASK_NAME: Final[str] = "Autoscaling EC2 instances"
 
