@@ -195,6 +195,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__getNextRequest()
         .then(resp => {
           const messages = resp["data"];
+          // it's not provided by the backend
+          messages.forEach(message => message["studyId"] = this.__studyData["uuid"]);
           this.__addMessages(messages);
           this.__nextRequestParams = resp["_links"]["next"];
           if (this.__nextRequestParams === null) {
