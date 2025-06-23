@@ -9,6 +9,7 @@
 #
 
 
+import json
 from collections.abc import Callable
 
 from common.base_user import OsparcWebUserBase
@@ -50,7 +51,7 @@ class WebApiUser(OsparcWebUserBase):
 
         kwargs = {}
         if len(self.environment.parsed_options.body) > 0:
-            kwargs["data"] = self.environment.parsed_options.body
+            kwargs["json"] = json.loads(self.environment.parsed_options.body)
         method(self.environment.parsed_options.endpoint, **kwargs)
 
 
