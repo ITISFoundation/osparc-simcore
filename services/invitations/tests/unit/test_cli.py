@@ -45,19 +45,24 @@ def test_invite_user_and_check_invitation(
         "INVITATIONS_DEFAULT_PRODUCT": default_product,
     }
 
-    expected = {
+    expected_invitation = {
         **invitation_data.model_dump(exclude={"product"}),
         "product": environs["INVITATIONS_DEFAULT_PRODUCT"],
     }
 
     # invitations-maker invite guest@email.com --issuer=me --trial-account-days=3
-    trial_account = ""
+    other_options = ""
     if invitation_data.trial_account_days:
-        trial_account = f"--trial-account-days={invitation_data.trial_account_days}"
+        other_options = f"--trial-account-days={invitation_data.trial_account_days}"
+
+    if invitation_data.extra_credits_in_usd:
+        other_options += (
+            f" --extra-credits-in-usd={invitation_data.extra_credits_in_usd}"
+        )
 
     result = cli_runner.invoke(
         main,
-        f"invite {invitation_data.guest} --issuer={invitation_data.issuer} {trial_account}",
+        f"invite {invitation_data.guest} --issuer={invitation_data.issuer} {other_options}",
         env=environs,
     )
     assert result.exit_code == os.EX_OK, result.output
@@ -73,7 +78,7 @@ def test_invite_user_and_check_invitation(
     )
     assert result.exit_code == os.EX_OK, result.output
     assert (
-        expected
+        expected_invitation
         == TypeAdapter(InvitationInputs).validate_json(result.stdout).model_dump()
     )
 
@@ -99,3 +104,24 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     print(result.output)
     settings = ApplicationSettings.model_validate_json(result.output)
     assert settings == ApplicationSettings.create_from_envs()
+
+
+def test_extract_invalid_invitation_code(
+    cli_runner: CliRunner, faker: Faker, app_environment: EnvVarsDict
+):
+    """Test that extract command handles invalid invitation codes properly"""
+    # Create an invalid invitation URL
+    invalid_invitation_url = f"{faker.url()}#invitation=invalid_code_123"
+
+    # Run extract command with invalid invitation URL
+    result = cli_runner.invoke(
+        main,
+        f'extract "{invalid_invitation_url}"',
+        env=app_environment,
+    )
+
+    # Verify command exits with correct error code
+    assert result.exit_code == os.EX_DATAERR
+
+    # Verify error message is displayed via stderr
+    assert "Invalid code" in result.stdout
