@@ -60,19 +60,20 @@ MSG_PHONE_MISSING: Final[str] = user_message(
     "No phone number is associated with this account.", _version=1
 )
 MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
-    "You can no longer resend the code. Please restart the verification process.",
-    _version=1,
+    "You can no longer resend the verification code. Please restart the verification process.",
+    _version=2,
 )
 MSG_UNAUTHORIZED_LOGIN_2FA: Final[str] = user_message(
-    "You can no longer submit a code. Please restart the login process.", _version=1
+    "You can no longer submit a verification code. Please restart the login process.",
+    _version=2,
 )
 MSG_UNAUTHORIZED_REGISTER_PHONE: Final[str] = user_message(
     "Phone registration is no longer allowed. Please restart the registration process.",
     _version=1,
 )
 MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[str] = user_message(
-    "You can no longer submit a code. Please restart the confirmation process.",
-    _version=1,
+    "You can no longer submit a verification code. Please restart the confirmation process.",
+    _version=2,
 )
 MSG_UNKNOWN_EMAIL: Final[str] = user_message(
     "This email address is not registered.", _version=1
@@ -94,11 +95,12 @@ MSG_USER_DISABLED: Final[str] = user_message(
     _version=1,
 )
 MSG_WRONG_2FA_CODE__INVALID: Final[str] = user_message(
-    "The code entered is not valid. Please enter a valid code or generate a new one.",
-    _version=1,
+    "The verification code entered is not valid. Please enter a valid verification code or generate a new one.",
+    _version=2,
 )
 MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = user_message(
-    "The code has expired. Please generate a new code.", _version=1
+    "The verification code is either incorrect or has expired. Please request a new verification code and try again.",
+    _version=3,
 )
 MSG_WRONG_CAPTCHA__INVALID: Final[str] = user_message(
     "The CAPTCHA entered is incorrect. Please try again.", _version=1
