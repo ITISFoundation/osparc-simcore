@@ -71,7 +71,7 @@ qx.Class.define("osparc.study.CreateFunction", {
             functionData["inputSchema"]["schema_content"]["required"].push(parameterKey);
           }
         }
-        if (defaultInputs[parameterKey]) {
+        if (parameterKey in defaultInputs) {
           functionData["defaultInputs"][parameterKey] = defaultInputs[parameterKey];
         }
       });
