@@ -8,7 +8,6 @@ from models_library.generated_models.docker_rest_api import Node as DockerNode
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..models import AssociatedInstance
-from ..utils import utils_docker
 
 
 @dataclass
@@ -70,10 +69,6 @@ class BaseAutoscaling(ABC):  # pragma: no cover
     async def is_instance_retired(
         app: FastAPI, instance: AssociatedInstance
     ) -> bool: ...
-
-    @staticmethod
-    def is_instance_drained(instance: AssociatedInstance) -> bool:
-        return not utils_docker.is_node_osparc_ready(instance.node)
 
     @staticmethod
     @abstractmethod
