@@ -35,7 +35,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
   },
 
   events: {
-    "commentAdded": "qx.event.type.Event"
+    "commentAdded": "qx.event.type.Data",
   },
 
   members: {

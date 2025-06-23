@@ -239,6 +239,8 @@ qx.Class.define("osparc.conversation.Conversation", {
         switch (message["type"]) {
           case "MESSAGE":
             control = new osparc.conversation.MessageUI(message);
+            control.addListener("messageEdited", () => this.fetchMessages());
+            control.addListener("messageDeleted", () => this.fetchMessages());
             break;
           case "NOTIFICATION":
             control = new osparc.conversation.NotificationUI(message);

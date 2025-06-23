@@ -43,6 +43,11 @@ qx.Class.define("osparc.conversation.MessageUI", {
     }
   },
 
+  events: {
+    "messageEdited": "qx.event.type.Event",
+    "messageDeleted": "qx.event.type.Event",
+  },
+
   members: {
     __message: null,
 
@@ -202,8 +207,8 @@ qx.Class.define("osparc.conversation.MessageUI", {
         if (win.getConfirmed()) {
           console.log(this.__message);
           osparc.study.Conversations.deleteMessage(this.__message["studyId"], this.__message["conversationId"], this.__message["messageId"])
-            .then(data => {
-              this.fireDataEvent("commentAdded", data);
+            .then(() => {
+              this.fireEvent("messageDeleted");
               osparc.FlashMessenger.logAs(this.tr("Message deleted"), "INFO");
             });
         }
