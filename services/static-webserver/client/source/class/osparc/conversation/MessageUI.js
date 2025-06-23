@@ -109,7 +109,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
             column: isMyMessage ? 0 : 2,
           });
           break;
-        case "edit-options-menu-button": {
+        case "menu-button": {
           const buttonSize = 22;
           control = new qx.ui.form.MenuButton().set({
             width: buttonSize,
@@ -164,8 +164,50 @@ qx.Class.define("osparc.conversation.MessageUI", {
       this.getChildControl("spacer");
 
       if (this.self().isMyMessage(this.__message)) {
-        this.getChildControl("edit-options-menu-button");
+        const menuButton = this.getChildControl("menu-button");
+
+        const menu = new qx.ui.menu.Menu().set({
+          position: "bottom-right",
+        });
+        menuButton.setMenu(menu);
+
+        const editButton = new qx.ui.menu.Button(this.tr("Edit..."));
+        editButton.addListener("execute", () => this.__editMessage(), this);
+        menu.add(editButton);
+
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."));
+        deleteButton.addListener("execute", () => this.__deleteMessage(), this);
+        menu.add(deleteButton);
       }
-    }
+    },
+
+    __editMessage: function() {
+      const messageContent = this.getChildControl("message-content");
+      const editDialog = new osparc.ui.dialog.EditMessageDialog(this.__message, messageContent.getValue());
+      editDialog.addListener("messageEdited", e => {
+        messageContent.setValue(e.getData());
+        this.fireDataEvent("messageEdited", e.getData());
+      });
+      editDialog.open();
+    },
+
+    __deleteMessage: function() {
+      const win = new osparc.ui.window.Confirmation(this.tr("Delete message?")).set({
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete",
+      });
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          console.log(this.__message);
+          osparc.study.Conversations.deleteMessage(this.__message["studyId"], this.__message["conversationId"], this.__message["messageId"])
+            .then(data => {
+              this.fireDataEvent("commentAdded", data);
+              osparc.FlashMessenger.logAs(this.tr("Message deleted"), "INFO");
+            });
+        }
+      });
+    },
   }
 });

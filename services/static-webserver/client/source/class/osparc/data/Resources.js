@@ -332,6 +332,14 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages"
           },
+          editMessage: {
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages/{messageId}"
+          },
+          deleteMessage: {
+            method: "DELETE",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages/{messageId}"
+          },
           getMessagesPage: {
             method: "GET",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
