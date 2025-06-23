@@ -64,7 +64,7 @@ async def create_message(
         type_=type_,
     )
 
-    recipients = [
+    notification_recipients = [
         project_to_group.gid
         for project_to_group in await list_project_groups(app, project_id=project_id)
         if project_to_group.read
@@ -76,7 +76,7 @@ async def create_message(
     await asyncio.gather(
         *[
             send_message_to_standard_group(app, recipient, notification_message)
-            for recipient in recipients
+            for recipient in notification_recipients
         ]
     )
 
