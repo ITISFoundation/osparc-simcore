@@ -68,19 +68,22 @@ async def maybe_await(
 
 
 async def cancel_and_wait(task: asyncio.Task) -> None:
-    """Cancels the given task and waits for it to finish.
+    """Cancels the given task and waits for it to complete.
 
-    Accounts for the case where the tasks's owner function is being cancelled
+    Accounts for the case where the tasks's owner function is being cancelled.
+    In that case, it propagates the cancellation exception upstream.
     """
     task.cancel()
     try:
         # NOTE shield ensures that cancellation of the caller function won’t stop you
         # from observing the cancellation/finalization of task.
         await asyncio.shield(task)
+
     except asyncio.CancelledError:
         if not task.cancelled():
             # task owner function is being cancelled -> propagate cancellation
             raise
+
         # else: task cancellation is complete, we can safely ignore it
         _logger.debug(
             "Task %s cancellation is complete",
