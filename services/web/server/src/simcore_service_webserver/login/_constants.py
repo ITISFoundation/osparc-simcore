@@ -3,89 +3,114 @@ from typing import Final
 from common_library.user_messages import user_message
 
 MSG_2FA_CODE_SENT: Final[str] = user_message(
-    "A code was sent by SMS to {phone_number}."
+    "A verification code has been sent via SMS to {phone_number}.", _version=1
 )
 MSG_2FA_UNAVAILABLE: Final[str] = user_message(
-    "Two-factor authentication is temporarily unavailable"
+    "Two-factor authentication is temporarily unavailable. Please try again later.",
+    _version=1,
 )
-MSG_ACTIVATED: Final[str] = user_message("Your account has been activated.")
+MSG_ACTIVATED: Final[str] = user_message(
+    "Your account has been successfully activated.", _version=1
+)
 MSG_ACTIVATION_REQUIRED: Final[str] = user_message(
-    "Please activate your account via the email we sent before logging in."
+    "Please activate your account using the activation link we sent to your email before logging in.",
+    _version=1,
 )
 MSG_AUTH_FAILED: Final[str] = user_message(
-    "Authorization was not successful. Please check your credentials and try again."
+    "We couldn't sign you in with those credentials. Please check your email and password and try again.",
+    _version=1,
 )
 MSG_CANT_SEND_MAIL: Final[str] = user_message(
-    "Unable to send email at this time. Please try again later."
+    "We're unable to send emails at this time. Please try again later.", _version=1
 )
 MSG_CHANGE_EMAIL_REQUESTED: Final[str] = user_message(
-    "Please click the verification link sent to your new email address."
+    "Please check your new email address and click the verification link we sent you.",
+    _version=1,
 )
-MSG_EMAIL_CHANGED: Final[str] = user_message("Your email address has been updated.")
+MSG_EMAIL_CHANGED: Final[str] = user_message(
+    "Your email address has been successfully updated.", _version=1
+)
 MSG_EMAIL_ALREADY_REGISTERED: Final[str] = user_message(
-    "This email address is already registered. Try logging in or use a different address."
+    "This email address is already associated with an account. Please sign in or use a different email address.",
+    _version=1,
 )
 MSG_EMAIL_SENT: Final[str] = user_message(
-    "An email was sent to {email} with further instructions."
+    "We've sent an email to {email} with further instructions.", _version=1
 )
-MSG_LOGGED_IN: Final[str] = user_message("You have successfully logged in.")
-MSG_LOGGED_OUT: Final[str] = user_message("You have successfully logged out.")
+MSG_LOGGED_IN: Final[str] = user_message("You have successfully signed in.", _version=1)
+MSG_LOGGED_OUT: Final[str] = user_message(
+    "You have successfully signed out.", _version=1
+)
 MSG_OFTEN_RESET_PASSWORD: Final[str] = user_message(
-    "You've requested a password reset recently. Please use the link we sent you or wait before requesting again."
+    "You've recently requested a password reset. Please check your email for the reset link or wait before requesting another one.",
+    _version=1,
 )
 MSG_PASSWORD_CHANGE_NOT_ALLOWED: Final[str] = user_message(
     "Unable to reset password. Permissions may have expired or been removed. "
-    "Please try again, or contact support if the problem continues: {support_email}"
+    "Please try again, or contact support if the problem continues: {support_email}",
+    _version=1,
 )
-MSG_PASSWORD_CHANGED: Final[str] = user_message("Your password has been updated.")
+MSG_PASSWORD_CHANGED: Final[str] = user_message(
+    "Your password has been updated.", _version=1
+)
 MSG_PASSWORD_MISMATCH: Final[str] = user_message(
-    "Password and confirmation do not match. Please try again."
+    "Password and confirmation do not match. Please try again.", _version=1
 )
 MSG_PHONE_MISSING: Final[str] = user_message(
-    "No phone number is associated with this account."
+    "No phone number is associated with this account.", _version=1
 )
 MSG_UNAUTHORIZED_CODE_RESEND_2FA: Final[str] = user_message(
-    "You can no longer resend the code. Please restart the verification process."
+    "You can no longer resend the code. Please restart the verification process.",
+    _version=1,
 )
 MSG_UNAUTHORIZED_LOGIN_2FA: Final[str] = user_message(
-    "You can no longer submit a code. Please restart the login process."
+    "You can no longer submit a code. Please restart the login process.", _version=1
 )
 MSG_UNAUTHORIZED_REGISTER_PHONE: Final[str] = user_message(
-    "Phone registration is no longer allowed. Please restart the registration process."
+    "Phone registration is no longer allowed. Please restart the registration process.",
+    _version=1,
 )
 MSG_UNAUTHORIZED_PHONE_CONFIRMATION: Final[str] = user_message(
-    "You can no longer submit a code. Please restart the confirmation process."
+    "You can no longer submit a code. Please restart the confirmation process.",
+    _version=1,
 )
-MSG_UNKNOWN_EMAIL: Final[str] = user_message("This email address is not registered.")
+MSG_UNKNOWN_EMAIL: Final[str] = user_message(
+    "This email address is not registered.", _version=1
+)
 MSG_USER_DELETED: Final[str] = user_message(
-    "This account is scheduled for deletion. To reactivate it or for more information, please contact support: {support_email}"
+    "This account is scheduled for deletion. To reactivate it or for more information, please contact support: {support_email}",
+    _version=1,
 )
 MSG_USER_BANNED: Final[str] = user_message(
-    "Access to this account is no longer available. Please contact support for more information: {support_email}"
+    "Access to this account is no longer available. Please contact support for more information: {support_email}",
+    _version=1,
 )
 MSG_USER_EXPIRED: Final[str] = user_message(
-    "This account has expired and access is no longer available. Please contact support for assistance: {support_email}"
+    "This account has expired and access is no longer available. Please contact support for assistance: {support_email}",
+    _version=1,
 )
 MSG_USER_DISABLED: Final[str] = user_message(
-    "This account has been disabled and cannot be registered again. Please contact support for details: {support_email}"
+    "This account has been disabled and cannot be registered again. Please contact support for details: {support_email}",
+    _version=1,
 )
 MSG_WRONG_2FA_CODE__INVALID: Final[str] = user_message(
-    "The code entered is not valid. Please enter a valid code or generate a new one."
+    "The code entered is not valid. Please enter a valid code or generate a new one.",
+    _version=1,
 )
 MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = user_message(
-    "The code has expired. Please generate a new code."
+    "The code has expired. Please generate a new code.", _version=1
 )
 MSG_WRONG_CAPTCHA__INVALID: Final[str] = user_message(
-    "The CAPTCHA entered is incorrect. Please try again."
+    "The CAPTCHA entered is incorrect. Please try again.", _version=1
 )
 MSG_WRONG_PASSWORD: Final[str] = user_message(
-    "The password is incorrect. Please try again."
+    "The password is incorrect. Please try again.", _version=1
 )
 MSG_WEAK_PASSWORD: Final[str] = user_message(
-    "Password must be at least {LOGIN_PASSWORD_MIN_LENGTH} characters long."
+    "Password must be at least {LOGIN_PASSWORD_MIN_LENGTH} characters long.", _version=1
 )
 MSG_INVITATIONS_CONTACT_SUFFIX: Final[str] = user_message(
-    "Please contact our support team to request a new invitation."
+    "Please contact our support team to request a new invitation.", _version=1
 )
 
 # Login Accepted Response Codes:

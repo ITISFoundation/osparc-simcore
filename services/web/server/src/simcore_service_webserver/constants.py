@@ -1,5 +1,6 @@
 # pylint:disable=unused-import
 
+from sys import version
 from typing import Final
 
 from common_library.user_messages import user_message
@@ -48,7 +49,7 @@ RQ_PRODUCT_KEY: Final[str] = f"{__name__}.RQ_PRODUCT_KEY"
 
 
 MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
-    "Please try again shortly. If the issue persists, contact support."
+    "Please try again shortly. If the issue persists, contact support.", _version=1
 )
 
 __all__: tuple[str, ...] = (
