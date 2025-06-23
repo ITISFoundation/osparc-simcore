@@ -193,3 +193,12 @@ def test_backwards_compatibility_with_bool_env_vars_turned_into_objects(
 
         settings = ApplicationSettings.create_from_envs()
         assert settings.WEBSERVER_LICENSES is None
+
+
+def test_valid_application_settings(mock_webserver_service_environment: EnvVarsDict):
+    assert mock_webserver_service_environment
+
+    settings = ApplicationSettings()  # type: ignore
+    assert settings
+
+    assert settings == ApplicationSettings.create_from_envs()

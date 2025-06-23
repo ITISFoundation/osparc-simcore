@@ -16,7 +16,7 @@ from pydantic import (
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
@@ -168,7 +168,7 @@ async def register(request: web.Request):
         < settings.LOGIN_PASSWORD_MIN_LENGTH
     ):
         raise web.HTTPUnauthorized(
-            reason=MSG_WEAK_PASSWORD.format(
+            text=MSG_WEAK_PASSWORD.format(
                 LOGIN_PASSWORD_MIN_LENGTH=settings.LOGIN_PASSWORD_MIN_LENGTH
             ),
             content_type=MIMETYPE_APPLICATION_JSON,
@@ -198,7 +198,7 @@ async def register(request: web.Request):
         invitation_code = registration.invitation
         if invitation_code is None:
             raise web.HTTPBadRequest(
-                reason="invitation field is required",
+                text="invitation field is required",
                 content_type=MIMETYPE_APPLICATION_JSON,
             )
 
@@ -284,7 +284,7 @@ async def register(request: web.Request):
             user_error_msg = MSG_CANT_SEND_MAIL
 
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,
@@ -374,7 +374,7 @@ async def register_phone(request: web.Request):
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
-            reason="Phone registration is not available",
+            text="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
@@ -426,7 +426,7 @@ async def register_phone(request: web.Request):
         user_error_msg = "Currently we cannot register phone numbers"
 
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,
@@ -436,6 +436,6 @@ async def register_phone(request: web.Request):
         )
 
         raise web.HTTPServiceUnavailable(
-            reason=user_error_msg,
+            text=user_error_msg,
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from err

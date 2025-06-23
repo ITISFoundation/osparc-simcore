@@ -80,7 +80,6 @@ def create_http_error(
     ] = web.HTTPInternalServerError,  # type: ignore[assignment]
     *,
     status_reason: str | None = None,
-    skip_internal_error_details: bool = False,
     error_code: ErrorCodeStr | None = None,
 ) -> T_HTTPError:
     """
@@ -99,7 +98,7 @@ def create_http_error(
     # changing the workflows in this function
 
     is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
-    if is_internal_error and skip_internal_error_details:
+    if is_internal_error:
         error_model = ErrorGet.model_validate(
             {
                 "status": http_error_cls.status_code,

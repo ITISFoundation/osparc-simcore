@@ -14,11 +14,10 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from pydantic import NonNegativeInt
 from servicelib.async_utils import cancel_wait_task
+from servicelib.celery.models import TaskID
 
-from . import get_event_loop
-from .errors import encore_celery_transferrable_error
-from .models import TaskID, TaskId
-from .utils import get_fastapi_app
+from .errors import encode_celery_transferrable_error
+from .utils import get_app_server
 
 _logger = logging.getLogger(__name__)
 
@@ -40,15 +39,15 @@ class TaskAbortedError(Exception): ...
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
-    [Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]],
+    [Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]]],
     Callable[Concatenate[AbortableTask, P], R],
 ]:
     def decorator(
-        coro: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
+        coro: Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[AbortableTask, P], R]:
         @wraps(coro)
         def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
-            fastapi_app = get_fastapi_app(app)
+            app_server = get_app_server(app)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
@@ -56,7 +55,7 @@ def _async_task_wrapper(
                 try:
                     async with asyncio.TaskGroup() as tg:
                         main_task = tg.create_task(
-                            coro(task, task_id, *args, **kwargs),
+                            coro(task, *args, **kwargs),
                         )
 
                         async def abort_monitor():
@@ -90,7 +89,7 @@ def _async_task_wrapper(
 
             return asyncio.run_coroutine_threadsafe(
                 run_task(task.request.id),
-                get_event_loop(fastapi_app),
+                app_server.event_loop,
             ).result()
 
         return wrapper
@@ -120,7 +119,7 @@ def _error_handling(
                 if isinstance(exc, dont_autoretry_for):
                     _logger.debug("Not retrying for exception %s", type(exc).__name__)
                     # propagate without retry
-                    raise encore_celery_transferrable_error(exc) from exc
+                    raise encode_celery_transferrable_error(exc) from exc
 
                 exc_type = type(exc).__name__
                 exc_message = f"{exc}"
@@ -134,7 +133,7 @@ def _error_handling(
                 raise task.retry(
                     max_retries=max_retries,
                     countdown=delay_between_retries.total_seconds(),
-                    exc=encore_celery_transferrable_error(exc),
+                    exc=encode_celery_transferrable_error(exc),
                 ) from exc
 
         return wrapper
@@ -145,7 +144,7 @@ def _error_handling(
 @overload
 def register_task(
     app: Celery,
-    fn: Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]],
+    fn: Callable[Concatenate[AbortableTask, TaskID, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -169,7 +168,7 @@ def register_task(
 def register_task(  # type: ignore[misc]
     app: Celery,
     fn: (
-        Callable[Concatenate[AbortableTask, TaskId, P], Coroutine[Any, Any, R]]
+        Callable[Concatenate[AbortableTask, TaskID, P], Coroutine[Any, Any, R]]
         | Callable[Concatenate[AbortableTask, P], R]
     ),
     task_name: str | None = None,
@@ -205,4 +204,5 @@ def register_task(  # type: ignore[misc]
         bind=True,
         base=AbortableTask,
         time_limit=None if timeout is None else timeout.total_seconds(),
+        pydantic=True,
     )(wrapped_fn)

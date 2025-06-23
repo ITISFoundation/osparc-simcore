@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from common_library.error_codes import create_error_code
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from .errors import TaskNotCompletedError, TaskNotFoundError
 from .models import TaskBase, TaskId, TaskStatus
@@ -43,7 +43,7 @@ async def get_task_result(
         raise
     except Exception as exc:
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_error_msg=f"{task_id=} raised an exception",
                 error=exc,
                 error_code=create_error_code(exc),

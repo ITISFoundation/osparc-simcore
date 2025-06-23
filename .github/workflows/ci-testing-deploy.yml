@@ -47,6 +47,7 @@ jobs:
     # Set job outputs to values from filter step
     outputs:
       aws-library: ${{ steps.filter.outputs.aws-library }}
+      celery-library: ${{ steps.filter.outputs.celery-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
       models-library: ${{ steps.filter.outputs.models-library }}
       common-library: ${{ steps.filter.outputs.common-library }}
@@ -90,6 +91,12 @@ jobs:
           filters: |
             aws-library:
               - 'packages/aws-library/**'
+              - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
+            celery-library:
+              - 'packages/celery-library/**'
               - 'packages/pytest-simcore/**'
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
@@ -1035,6 +1042,49 @@ jobs:
         with:
           flags: unittests #optional
 
+  unit-test-celery-library:
+      needs: changes
+      if: ${{ needs.changes.outputs.celery-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+      timeout-minutes: 18 # if this timeout gets too small, then split the tests
+      name: "[unit] celery-library"
+      runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          python: ["3.11"]
+          os: [ubuntu-24.04]
+        fail-fast: false
+      steps:
+        - uses: actions/checkout@v4
+        - name: setup docker buildx
+          id: buildx
+          uses: docker/setup-buildx-action@v3
+          with:
+            driver: docker-container
+        - name: setup python environment
+          uses: actions/setup-python@v5
+          with:
+            python-version: ${{ matrix.python }}
+        - name: install uv
+          uses: astral-sh/setup-uv@v6
+          with:
+            version: "0.6.x"
+            enable-cache: false
+            cache-dependency-glob: "**/celery-library/requirements/ci.txt"
+        - name: show system version
+          run: ./ci/helpers/show_system_versions.bash
+        - name: install
+          run: ./ci/github/unit-testing/celery-library.bash install
+        - name: typecheck
+          run: ./ci/github/unit-testing/celery-library.bash typecheck
+        - name: test
+          if: ${{ !cancelled() }}
+          run: ./ci/github/unit-testing/celery-library.bash test
+        - uses: codecov/codecov-action@v5
+          if: ${{ !cancelled() }}
+          env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          with:
+            flags: unittests #optional
 
   unit-test-dask-task-models-library:
     needs: changes
@@ -1824,6 +1874,7 @@ jobs:
         unit-test-clusters-keeper,
         unit-test-dask-sidecar,
         unit-test-aws-library,
+        unit-test-celery-library,
         unit-test-dask-task-models-library,
         unit-test-datcore-adapter,
         unit-test-director-v2,
