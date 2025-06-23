@@ -31,6 +31,33 @@ qx.Class.define("osparc.study.StudyPreview", {
     this.__buildPreview();
   },
 
+  statics: {
+    __popUpPreview: function(studyData) {
+      const cantReadServices = osparc.study.Utils.getCantReadServices(studyData["services"]);
+      if (cantReadServices.length) {
+        unknownServices(cantReadServices);
+      }
+      const templateModel = new osparc.data.model.Study(studyData);
+      const preview = new osparc.study.StudyPreview(templateModel);
+      const title = this.tr("Function Preview");
+      const width = osparc.dashboard.ResourceDetails.WIDTH;
+      const height = osparc.dashboard.ResourceDetails.HEIGHT;
+      osparc.ui.window.Window.popUpInWindow(preview, title, width, height);
+    },
+
+    popUpPreview: function(studyData) {
+      if ("services" in studyData) {
+        this.__popUpPreview(studyData);
+      } else {
+        osparc.store.Services.getStudyServices(resourceData.uuid)
+          .then(resp => {
+            const services = resp["services"];
+            studyData["services"] = services;
+            this.__popUpPreview(studyData);
+          });
+      }
+  },
+
   members: {
     __study: null,
 
