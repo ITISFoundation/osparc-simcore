@@ -133,13 +133,19 @@ def create_http_error(
     )
 
 
-def exception_to_response(exc: HTTPError) -> web.Response:
+def exception_to_response(exception: HTTPError) -> web.Response:
     # Returning web.HTTPException is deprecated so here we have a converter to a response
     # so it can be used as
     # SEE https://github.com/aio-libs/aiohttp/issues/2415
+
+    if exception.reason:
+        reason = safe_status_message(exception.reason)
+    else:
+        reason = get_code_description(exception.status)
+
     return web.Response(
-        status=exc.status,
-        headers=exc.headers,
-        reason=exc.reason,
-        text=exc.text,
+        status=exception.status,
+        headers=exception.headers,
+        reason=reason,
+        text=exception.text,
     )
