@@ -12,7 +12,7 @@ from aiohttp.web_exceptions import HTTPError
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import ErrorCodeStr, create_error_code
-from common_library.json_serialization import json_dumps
+from common_library.json_serialization import json_dumps, json_loads
 from common_library.user_messages import user_message
 from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
@@ -168,8 +168,9 @@ def _handle_http_successful(
         )
 
     if exception.text and not is_enveloped_from_text(exception.text):
-        payload = wrap_as_envelope(data=exception.text)
-        exception.text = json_dumps(payload)
+        # Ensures that the response is enveloped
+        data = json_loads(exception.text)
+        exception.text = json_dumps({"data": data})
 
     return exception
 
