@@ -57,11 +57,11 @@ from ...utils.rabbitmq import (
     post_tasks_log_message,
     post_tasks_progress_message,
 )
-from ..auto_scaling_mode_base import BaseAutoscaling
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
 from ..ssm import get_ssm_client
+from .auto_scaling_mode_base import BaseAutoscaling
 
 _logger = logging.getLogger(__name__)
 
