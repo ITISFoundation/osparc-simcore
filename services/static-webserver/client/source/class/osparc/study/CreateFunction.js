@@ -33,7 +33,7 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    createFunctionData: function(projectData, name, description, exposedInputs, exposedOutputs) {
+    createFunctionData: function(projectData, name, description, defaultInputs = {}, exposedInputs = {}, exposedOutputs = {}) {
       const functionData = {
         "projectId": projectData["uuid"],
         "title": name,
@@ -70,8 +70,9 @@ qx.Class.define("osparc.study.CreateFunction", {
             };
             functionData["inputSchema"]["schema_content"]["required"].push(parameterKey);
           }
-        } else {
-          functionData["defaultInputs"][parameterKey] = osparc.service.Utils.getParameterValue(parameter);
+        }
+        if (defaultInputs[parameterKey]) {
+          functionData["defaultInputs"][parameterKey] = defaultInputs[parameterKey];
         }
       });
 
@@ -293,12 +294,12 @@ qx.Class.define("osparc.study.CreateFunction", {
       });
       createFunctionBtn.addListener("execute", () => {
         if (this.__form.validate()) {
-          this.__createFunction(exposedInputs, exposedOutputs);
+          this.__createFunction(defaultInputs, exposedInputs, exposedOutputs);
         }
       }, this);
     },
 
-    __createFunction: function(exposedInputs, exposedOutputs) {
+    __createFunction: function(defaultInputs, exposedInputs, exposedOutputs) {
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a hidden template
@@ -319,7 +320,7 @@ qx.Class.define("osparc.study.CreateFunction", {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
             this.__updateTemplateMetadata(templateData);
-            this.__registerFunction(templateData, exposedInputs, exposedOutputs);
+            this.__registerFunction(templateData, defaultInputs, exposedInputs, exposedOutputs);
           });
         })
         .catch(err => {
@@ -344,11 +345,11 @@ qx.Class.define("osparc.study.CreateFunction", {
         .catch(err => console.error(err));
     },
 
-    __registerFunction: function(templateData, exposedInputs, exposedOutputs) {
+    __registerFunction: function(templateData, defaultInputs, exposedInputs, exposedOutputs) {
       const nameField = this.__form.getItem("name");
       const descriptionField = this.__form.getItem("description");
 
-      const functionData = this.self().createFunctionData(templateData, nameField.getValue(), descriptionField.getValue(), exposedInputs, exposedOutputs);
+      const functionData = this.self().createFunctionData(templateData, nameField.getValue(), descriptionField.getValue(), defaultInputs, exposedInputs, exposedOutputs);
       const params = {
         data: functionData,
       };
