@@ -32,18 +32,13 @@ _logger = logging.getLogger(__name__)
 
 
 async def _get_recipients(app, project_id) -> set[UserID]:
-    groups = [
-        project_to_group.gid
-        for project_to_group in await list_project_groups(app, project_id=project_id)
-        if project_to_group.read
-    ]
-
-    recipients = set()
-    for group_id in groups:
-        group_users = await get_users_in_group(app, gid=group_id)
-        recipients.update(group_users)
-
-    return recipients
+    groups = await list_project_groups(app, project_id=project_id)
+    return {
+        user
+        for group in groups
+        if group.read
+        for user in await get_users_in_group(app, gid=group.gid)
+    }
 
 
 async def create_message(
