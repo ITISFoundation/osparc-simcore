@@ -12,7 +12,7 @@ from ...utils.redis import create_lock_key_and_value
 from ..redis import get_redis_client
 from ._auto_scaling_core import auto_scale_cluster
 from ._provider_computational import ComputationalAutoscaling
-from .auto_scaling_mode_dynamic import DynamicAutoscaling
+from ._provider_dynamic import DynamicAutoscaling
 
 _TASK_NAME: Final[str] = "Autoscaling EC2 instances"
 

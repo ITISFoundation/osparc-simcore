@@ -59,7 +59,7 @@ from simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core impo
     _try_scale_down_cluster,
     auto_scale_cluster,
 )
-from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_dynamic import (
+from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.docker import (
