@@ -113,7 +113,7 @@ def mock_find_node_with_name_returns_fake_node(
     mocker: MockerFixture, fake_node: Node
 ) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.find_node_with_name",
         autospec=True,
         return_value=fake_node,
     )
@@ -122,7 +122,7 @@ def mock_find_node_with_name_returns_fake_node(
 @pytest.fixture
 def mock_remove_nodes(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.remove_nodes",
         autospec=True,
     )
 
@@ -130,7 +130,7 @@ def mock_remove_nodes(mocker: MockerFixture) -> mock.Mock:
 @pytest.fixture
 def mock_compute_node_used_resources(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.compute_node_used_resources",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.compute_node_used_resources",
         autospec=True,
         return_value=Resources.create_as_empty(),
     )
@@ -520,9 +520,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances["Reservations"]
 
-    assert scale_up_params.expected_num_instances == 1, (
-        "This test is not made to work with more than 1 expected instance. so please adapt if needed"
-    )
+    assert (
+        scale_up_params.expected_num_instances == 1
+    ), "This test is not made to work with more than 1 expected instance. so please adapt if needed"
 
     # create the service(s)
     created_docker_services = await create_services_batch(scale_up_params)
@@ -860,7 +860,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
     )
     mocked_docker_remove_node = mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.remove_nodes",
         return_value=None,
         autospec=True,
     )
@@ -1281,9 +1281,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     assert (
         scale_up_params1.num_services
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), (
-        "this test requires to run a first batch of more services than the maximum number of instances allowed"
-    )
+    ), "this test requires to run a first batch of more services than the maximum number of instances allowed"
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -1380,7 +1378,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     # first call to auto_scale_cluster will mark 1 node as empty
     with mock.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_found_empty",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.set_node_found_empty",
         autospec=True,
     ) as mock_docker_set_node_found_empty:
         await auto_scale_cluster(
@@ -1402,7 +1400,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     # now we mock the get_node_found_empty so the next call will actually drain the machine
     with mock.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_empty_since",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_empty_since",
         autospec=True,
         return_value=arrow.utcnow().datetime
         - 1.5
@@ -1437,7 +1435,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     # this will initiate termination now
     with mock.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_last_readyness_update",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_last_readyness_update",
         autospec=True,
         return_value=arrow.utcnow().datetime
         - 1.5
@@ -1477,14 +1475,14 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     # now this will terminate it and straight away start a new machine type
     with mock.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.get_node_termination_started_since",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_termination_started_since",
         autospec=True,
         return_value=arrow.utcnow().datetime
         - 1.5
         * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION,
     ):
         mocked_docker_remove_node = mocker.patch(
-            "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.remove_nodes",
+            "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.remove_nodes",
             return_value=None,
             autospec=True,
         )
@@ -1500,9 +1498,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     assert "Instances" in reservation1
     assert len(reservation1["Instances"]) == (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), (
-        f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
-    )
+    ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
     for instance in reservation1["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params1.expected_instance_type
@@ -1516,9 +1512,9 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     reservation2 = all_instances["Reservations"][1]
     assert "Instances" in reservation2
-    assert len(reservation2["Instances"]) == 1, (
-        f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
-    )
+    assert (
+        len(reservation2["Instances"]) == 1
+    ), f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
     for instance in reservation2["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params2.expected_instance_type
@@ -2245,9 +2241,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # BUG REPRODUCTION
     #
     # start a service that imposes same type as the hot buffer
-    assert hot_buffer_instance_type == "t2.xlarge", (
-        "the test is hard-coded for this type and accordingly resource. If this changed then the resource shall be changed too"
-    )
+    assert (
+        hot_buffer_instance_type == "t2.xlarge"
+    ), "the test is hard-coded for this type and accordingly resource. If this changed then the resource shall be changed too"
     scale_up_params = _ScaleUpParams(
         imposed_instance_type=hot_buffer_instance_type,
         service_resources=Resources(
