@@ -21,11 +21,13 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   /**
     * @param message {Object} message
+    * @param studyData {Object?null} serialized Study Data
     */
-  construct: function(message) {
+  construct: function(message, studyData = null) {
     this.base(arguments);
 
     this.__message = message;
+    this.__studyData = studyData;
 
     const isMyMessage = this.self().isMyMessage(this.__message);
     const layout = new qx.ui.layout.Grid(12, 4);
@@ -41,6 +43,11 @@ qx.Class.define("osparc.conversation.MessageUI", {
     isMyMessage: function(message) {
       return message && osparc.auth.Data.getInstance().getGroupId() === message["userGroupId"];
     }
+  },
+
+  events: {
+    "messageEdited": "qx.event.type.Event",
+    "messageDeleted": "qx.event.type.Event",
   },
 
   members: {
@@ -109,6 +116,25 @@ qx.Class.define("osparc.conversation.MessageUI", {
             column: isMyMessage ? 0 : 2,
           });
           break;
+        case "menu-button": {
+          const buttonSize = 22;
+          control = new qx.ui.form.MenuButton().set({
+            width: buttonSize,
+            height: buttonSize,
+            allowGrowX: false,
+            allowGrowY: false,
+            marginTop: 4,
+            alignY: "top",
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            focusable: false
+          });
+          this._add(control, {
+            row: 0,
+            column: 3,
+            rowSpan: 2,
+          });
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
@@ -143,6 +169,53 @@ qx.Class.define("osparc.conversation.MessageUI", {
         });
 
       this.getChildControl("spacer");
-    }
+
+      if (this.self().isMyMessage(this.__message)) {
+        const menuButton = this.getChildControl("menu-button");
+
+        const menu = new qx.ui.menu.Menu().set({
+          position: "bottom-right",
+        });
+        menuButton.setMenu(menu);
+
+        const editButton = new qx.ui.menu.Button(this.tr("Edit..."));
+        editButton.addListener("execute", () => this.__editMessage(), this);
+        menu.add(editButton);
+
+        const deleteButton = new qx.ui.menu.Button(this.tr("Delete..."));
+        deleteButton.addListener("execute", () => this.__deleteMessage(), this);
+        menu.add(deleteButton);
+      }
+    },
+
+    __editMessage: function() {
+      const addMessage = new osparc.conversation.AddMessage(this.__studyData, this.__message["conversationId"], this.__message);
+      const title = this.tr("Edit message");
+      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
+        clickAwayClose: false,
+        resizable: true,
+        showClose: true,
+      });
+      addMessage.addListener("messageEdited", () => {
+        win.close();
+        this.fireDataEvent("messageEdited");
+      });
+    },
+
+    __deleteMessage: function() {
+      const win = new osparc.ui.window.Confirmation(this.tr("Delete message?")).set({
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete",
+      });
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          osparc.study.Conversations.deleteMessage(this.__message["studyId"], this.__message["conversationId"], this.__message["messageId"])
+            .then(() => this.fireEvent("messageDeleted"))
+            .catch(err => osparc.FlashMessenger.logError(err));
+        }
+      });
+    },
   }
 });
