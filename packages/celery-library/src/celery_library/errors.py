@@ -11,7 +11,7 @@ class TransferrableCeleryError(Exception):
         return f"{decode_celery_transferrable_error(self)}"
 
 
-def encore_celery_transferrable_error(error: Exception) -> TransferrableCeleryError:
+def encode_celery_transferrable_error(error: Exception) -> TransferrableCeleryError:
     # NOTE: Celery modifies exceptions during serialization, which can cause
     # the original error context to be lost. This mechanism ensures the same
     # error can be recreated on the caller side exactly as it was raised here.
