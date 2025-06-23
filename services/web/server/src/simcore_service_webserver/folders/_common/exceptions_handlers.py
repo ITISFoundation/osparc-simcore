@@ -32,43 +32,49 @@ _logger = logging.getLogger(__name__)
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     FolderNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Folder was not found"),
+        user_message("The requested folder could not be found.", _version=1),
     ),
     WorkspaceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Workspace was not found"),
+        user_message("The requested workspace could not be found.", _version=1),
     ),
     FolderAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message("Does not have access to this folder"),
+        user_message("You do not have permission to access this folder.", _version=1),
     ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message("Does not have access to this workspace"),
+        user_message(
+            "You do not have permission to access this workspace.", _version=1
+        ),
     ),
     WorkspaceFolderInconsistencyError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message("This folder does not exist in this workspace"),
+        user_message(
+            "This folder is not available in the selected workspace.", _version=1
+        ),
     ),
     FolderValueNotPermittedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        user_message("Provided folder value is not permitted: {reason}"),
+        user_message("The folder operation cannot be completed: {reason}", _version=1),
     ),
     FoldersValueError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        user_message("Invalid folder value set: {reason}"),
+        user_message("The folder configuration is invalid: {reason}", _version=1),
     ),
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "Access Denied: You do not have permission to move the project with UUID: {project_uuid}. Tip: Copy and paste the UUID into the search bar to locate the project."
+            "You do not have permission to move the project with UUID: {project_uuid}. To locate this project, copy and paste the UUID into the search bar.",
+            _version=1,
         ),
     ),
     # Trashing
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "One or more studies in this folder are in use and cannot be trashed. Please stop all services first and try again"
+            "Cannot move folder to trash because it contains studies that are currently running. Please stop all running services first and try again.",
+            _version=1,
         ),
     ),
     ProjectStoppingError: HttpErrorInfo(
