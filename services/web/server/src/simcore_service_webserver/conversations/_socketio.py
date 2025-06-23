@@ -11,33 +11,46 @@ from models_library.conversations import (
 from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
-from pydantic import BaseModel
+from pydantic import AliasGenerator, BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 
 from ..socketio.messages import send_message_to_standard_group
 
-SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT: Final[str] = "conversationMessageCreated"
+SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT: Final[str] = (
+    "conversation:message:created"
+)
+SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT: Final[str] = (
+    "conversation:message:deleted"
+)
+SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT: Final[str] = (
+    "conversation:message:updated"
+)
 
-SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT: Final[str] = "conversationMessageDeleted"
 
-SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT: Final[str] = "conversationMessageUpdated"
-
-
-class ConversationMessage(BaseModel):
+class BaseConversationMessage(BaseModel):
     conversation_id: ConversationID
     message_id: ConversationMessageID
 
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel,
+        ),
+    )
 
-class ConversationMessageCreated(ConversationMessage):
+
+class ConversationMessageCreated(BaseConversationMessage):
     content: str
     created: datetime.datetime
 
 
-class ConversationMessageUpdated(ConversationMessage):
+class ConversationMessageUpdated(BaseConversationMessage):
     content: str
     modified: datetime.datetime
 
 
-class ConversationMessageDeleted(ConversationMessage): ...
+class ConversationMessageDeleted(BaseConversationMessage): ...
 
 
 async def _send_message_to_recipients(app, recipients, notification_message):
