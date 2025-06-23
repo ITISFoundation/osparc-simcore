@@ -4,7 +4,6 @@ from typing import Final
 
 from aws_library.ec2 import AWS_TAG_VALUE_MAX_LENGTH, AWSTagKey, AWSTagValue, EC2Tags
 from common_library.json_serialization import json_dumps
-from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from pydantic import TypeAdapter
 
@@ -15,27 +14,20 @@ from ..constants import (
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
     PRE_PULLED_IMAGES_RE,
 )
-from ..modules.auto_scaling_mode_base import BaseAutoscaling
 
 _NAME_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
-def get_activated_buffer_ec2_tags(
-    app: FastAPI, auto_scaling_mode: BaseAutoscaling
-) -> EC2Tags:
-    return auto_scaling_mode.get_ec2_tags(app) | ACTIVATED_BUFFER_MACHINE_EC2_TAGS
+def get_activated_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
+    return base_ec2_tags | ACTIVATED_BUFFER_MACHINE_EC2_TAGS
 
 
-def get_deactivated_buffer_ec2_tags(
-    app: FastAPI, auto_scaling_mode: BaseAutoscaling
-) -> EC2Tags:
-    base_ec2_tags = (
-        auto_scaling_mode.get_ec2_tags(app) | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
+def get_deactivated_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
+    new_base_ec2_tags = base_ec2_tags | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
+    new_base_ec2_tags[_NAME_EC2_TAG_KEY] = TypeAdapter(AWSTagValue).validate_python(
+        f"{new_base_ec2_tags[_NAME_EC2_TAG_KEY]}-buffer"
     )
-    base_ec2_tags[_NAME_EC2_TAG_KEY] = TypeAdapter(AWSTagValue).validate_python(
-        f"{base_ec2_tags[_NAME_EC2_TAG_KEY]}-buffer"
-    )
-    return base_ec2_tags
+    return new_base_ec2_tags
 
 
 def is_buffer_machine(tags: EC2Tags) -> bool:
