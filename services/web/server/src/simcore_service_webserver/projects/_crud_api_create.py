@@ -263,7 +263,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     simcore_user_agent: str,
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
-) -> None:
+) -> web.HTTPCreated:
     """Implements TaskProtocol for 'create_projects' handler
 
     Arguments:
@@ -278,7 +278,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         predefined_project -- project in request body
 
     Raises:
-        web.HTTPCreated: succeeded
         web.HTTPBadRequest:
         web.HTTPNotFound:
         web.HTTPUnauthorized:
@@ -481,7 +480,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             **RESPONSE_MODEL_POLICY
         )
 
-        raise web.HTTPCreated(
+        return web.HTTPCreated(
             text=json_dumps({"data": data}),
             content_type=MIMETYPE_APPLICATION_JSON,
         )

@@ -128,6 +128,10 @@ class Handlers:
         # NOTE: explicitly NOT enveloped!
         raise web.HTTPOk(reason="I'm ok", text=json.dumps({"ok": True}))
 
+    @staticmethod
+    async def raise_success_with_raw_text(_request: web.Request):
+        raise web.HTTPOk(text="I'm ok")  # NOT ALLOWED!
+
 
 @pytest.fixture
 async def client(
@@ -158,6 +162,10 @@ async def client(
                 ("/v1/raise_success", Handlers.raise_success),
                 ("/v1/raise_success_with_reason", Handlers.raise_success_with_reason),
                 ("/v1/raise_success_with_text", Handlers.raise_success_with_text),
+                (
+                    "/v1/raise_success_with_raw_text",
+                    Handlers.raise_success_with_raw_text,
+                ),
             ]
         ]
     )
@@ -330,6 +338,7 @@ async def test_http_ok_with_text_is_enveloped(client: TestClient):
     """Test that HTTPOk with text is properly enveloped."""
     response = await client.get("/v1/raise_success_with_text")
     assert response.status == status.HTTP_200_OK
+    assert response.reason == "I'm ok"
 
     # Should be enveloped
     payload = await response.json()
@@ -340,6 +349,11 @@ async def test_http_ok_with_text_is_enveloped(client: TestClient):
     assert not error
     assert data
     assert data.get("ok") is True
+
+
+async def test_http_ok_with_raw_text_is_not_allowed(client: TestClient):
+    response = await client.get("/v1/raise_success_with_raw_text")
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 async def test_exception_in_handler_returns_500(
