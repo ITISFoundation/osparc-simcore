@@ -52,7 +52,7 @@ qx.Class.define("osparc.study.StudyPreview", {
         if (study.getWorkbench().isDeserialized()) {
           workbenchReady();
         } else {
-          study.getWorkbench().addListener("changeDeserialized", e => {
+          study.getWorkbench().addListenerOnce("changeDeserialized", e => {
             if (e.getData()) {
               workbenchReady();
             }
