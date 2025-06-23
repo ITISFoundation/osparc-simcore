@@ -1,4 +1,4 @@
-""" Setup and running of periodic background task
+"""Setup and running of periodic background task
 
 
 Specifics of the gc implementation should go into garbage_collector_core.py
@@ -9,6 +9,7 @@ import logging
 from collections.abc import AsyncGenerator
 
 from aiohttp import web
+from common_library.async_tools import cancel_and_wait
 from servicelib.logging_utils import log_context
 
 from ._core import collect_garbage
@@ -49,18 +50,14 @@ async def run_background_task(app: web.Application) -> AsyncGenerator:
 
     # TEAR-DOWN -----
     # controlled cancelation of the gc task
-    try:
-        _logger.info("Stopping garbage collector...")
+    _logger.info("Stopping garbage collector...")
 
-        ack = gc_bg_task.cancel()
-        assert ack  # nosec
+    ack = gc_bg_task.cancel()
+    assert ack  # nosec
 
-        app[_GC_TASK_CONFIG]["force_stop"] = True
+    app[_GC_TASK_CONFIG]["force_stop"] = True
 
-        await gc_bg_task
-
-    except asyncio.CancelledError:
-        assert gc_bg_task.cancelled()  # nosec
+    await cancel_and_wait(gc_bg_task)
 
 
 async def _collect_garbage_periodically(app: web.Application):
