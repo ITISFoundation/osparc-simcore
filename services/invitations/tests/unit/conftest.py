@@ -10,6 +10,7 @@ import simcore_service_invitations
 from cryptography.fernet import Fernet
 from faker import Faker
 from models_library.products import ProductName
+from pydantic import PositiveInt, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_invitations.services.invitations import InvitationInputs
@@ -86,6 +87,11 @@ def is_trial_account(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture
+def extra_credits_in_usd(is_trial_account: bool) -> PositiveInt | None:
+    return TypeAdapter(PositiveInt).validate_python(123) if is_trial_account else None
+
+
+@pytest.fixture
 def default_product() -> ProductName:
     return "s4llite"
 
@@ -98,7 +104,10 @@ def product(request: pytest.FixtureRequest) -> ProductName | None:
 
 @pytest.fixture
 def invitation_data(
-    is_trial_account: bool, faker: Faker, product: ProductName | None
+    is_trial_account: bool,
+    faker: Faker,
+    product: ProductName | None,
+    extra_credits_in_usd: PositiveInt | None,
 ) -> InvitationInputs:
     # first version
     kwargs = {
@@ -109,5 +118,8 @@ def invitation_data(
     # next version, can include product
     if product:
         kwargs["product"] = product
+
+    if extra_credits_in_usd is not None:
+        kwargs["extra_credits_in_usd"] = extra_credits_in_usd
 
     return InvitationInputs.model_validate(kwargs)
