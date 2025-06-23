@@ -17,7 +17,7 @@ from simcore_service_autoscaling.constants import (
 from simcore_service_autoscaling.modules.cluster_scaling._provider_computational import (
     ComputationalAutoscaling,
 )
-from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_dynamic import (
+from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.utils.buffer_machines_pool_core import (

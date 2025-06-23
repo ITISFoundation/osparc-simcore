@@ -40,6 +40,9 @@ from models_library.docker import (
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
+)
+from models_library.generated_models.docker_rest_api import Node as DockerNode
+from models_library.generated_models.docker_rest_api import (
     NodeDescription,
     NodeSpec,
     NodeState,
@@ -49,7 +52,6 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
-from models_library.generated_models.docker_rest_api import Node as DockerNode
 from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -77,7 +79,7 @@ from simcore_service_autoscaling.models import (
     DaskTaskResources,
 )
 from simcore_service_autoscaling.modules.cluster_scaling import _auto_scaling_core
-from simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_mode_dynamic import (
+from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
     DynamicAutoscaling,
 )
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
@@ -752,9 +754,9 @@ async def _assert_wait_for_service_state(
             assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
             assert len(tasks) == 1
             service_task = tasks[0]
-            assert service_task["Status"]["State"] in expected_states, (
-                f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
-            )
+            assert (
+                service_task["Status"]["State"] in expected_states
+            ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
             ctx.logger.info(
                 "%s",
                 f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.' * number_of_success['count']}",
@@ -981,9 +983,7 @@ def create_associated_instance(
         assert (
             datetime.timedelta(seconds=10)
             < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        ), (
-            "this tests relies on the fact that the time before termination is above 10 seconds"
-        )
+        ), "this tests relies on the fact that the time before termination is above 10 seconds"
         assert app_settings.AUTOSCALING_EC2_INSTANCES
         seconds_delta = (
             -datetime.timedelta(seconds=10)
@@ -1124,12 +1124,12 @@ def ec2_instances_allowed_types_with_only_1_buffered(
             allowed_ec2_types.items(),
         )
     )
-    assert allowed_ec2_types_with_buffer_defined, (
-        "one type with buffer is needed for the tests!"
-    )
-    assert len(allowed_ec2_types_with_buffer_defined) == 1, (
-        "more than one type with buffer is disallowed in this test!"
-    )
+    assert (
+        allowed_ec2_types_with_buffer_defined
+    ), "one type with buffer is needed for the tests!"
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
     return {
         TypeAdapter(InstanceTypeType).validate_python(k): v
         for k, v in allowed_ec2_types_with_buffer_defined.items()
@@ -1153,9 +1153,9 @@ def buffer_count(
         filter(_by_buffer_count, allowed_ec2_types.items())
     )
     assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
-    assert len(allowed_ec2_types_with_buffer_defined) == 1, (
-        "more than one type with buffer is disallowed in this test!"
-    )
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
     return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
 
 
