@@ -60,18 +60,18 @@ qx.Class.define("osparc.study.CreateFunction", {
 
       const parameters = osparc.study.Utils.extractFunctionableParameters(projectData["workbench"]);
       parameters.forEach(parameter => {
-        const parameterLabel = parameter["label"];
-        if (exposedInputs[parameterLabel]) {
+        const parameterKey = parameter["label"];
+        if (exposedInputs[parameterKey]) {
           const parameterMetadata = osparc.store.Services.getMetadata(parameter["key"], parameter["version"]);
           if (parameterMetadata) {
             const type = osparc.service.Utils.getParameterType(parameterMetadata);
-            functionData["inputSchema"]["schema_content"]["properties"][parameterLabel] = {
+            functionData["inputSchema"]["schema_content"]["properties"][parameterKey] = {
               "type": type,
             };
-            functionData["inputSchema"]["schema_content"]["required"].push(parameterLabel);
+            functionData["inputSchema"]["schema_content"]["required"].push(parameterKey);
           }
         } else {
-          functionData["defaultInputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
+          functionData["defaultInputs"][parameterKey] = osparc.service.Utils.getParameterValue(parameter);
         }
       });
 
@@ -164,7 +164,8 @@ qx.Class.define("osparc.study.CreateFunction", {
 
       const parameters = osparc.study.Utils.extractFunctionableParameters(this.__studyData["workbench"]);
       parameters.forEach(parameter => {
-        const parameterLabel = new qx.ui.basic.Label(parameter["label"]);
+        const parameterKey = parameter["label"];
+        const parameterLabel = new qx.ui.basic.Label(parameterKey);
         inputsLayout.add(parameterLabel, {
           row,
           column,
@@ -186,15 +187,25 @@ qx.Class.define("osparc.study.CreateFunction", {
           row,
           column,
         });
-        exposedInputs[parameter["label"]] = true;
-        parameterExposed.addListener("changeValue", e => exposedInputs[parameter["label"]] = e.getData());
+        exposedInputs[parameterKey] = true;
+        parameterExposed.addListener("changeValue", e => exposedInputs[parameterKey] = e.getData());
         column++;
 
         const paramValue = osparc.service.Utils.getParameterValue(parameter);
-        defaultInputs[parameter["label"]] = paramValue;
+        defaultInputs[parameterKey] = paramValue;
         let ctrl = null;
         if (parameterMetadata && osparc.service.Utils.getParameterType(parameterMetadata) === "number") {
           ctrl = new qx.ui.form.TextField(String(paramValue));
+          ctrl.addListener("changeValue", e => {
+            const newValue = e.getData();
+            const oldValue = e.getOldData();
+            if (newValue === oldValue) {
+              return;
+            }
+            const curatedValue = (!isNaN(parseFloat(newValue))) ? parseFloat(newValue) : parseFloat(oldValue);
+            defaultInputs[parameterKey] = curatedValue;
+            ctrl.setValue(String(curatedValue));
+          });
         } else {
           ctrl = new qx.ui.basic.Label(String(paramValue));
         }
