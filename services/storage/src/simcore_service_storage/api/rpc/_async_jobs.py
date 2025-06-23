@@ -3,6 +3,10 @@
 import logging
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
+from celery_library.errors import (
+    TransferrableCeleryError,
+    decode_celery_transferrable_error,
+)
 from fastapi import FastAPI
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -17,15 +21,11 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
+from servicelib.celery.models import TaskState
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
 
-from ...modules.celery import get_celery_client
-from ...modules.celery.errors import (
-    TransferrableCeleryError,
-    decode_celery_transferrable_error,
-)
-from ...modules.celery.models import TaskState
+from ...modules.celery import get_task_manager_from_app
 
 _logger = logging.getLogger(__name__)
 router = RPCRouter()
@@ -36,7 +36,7 @@ async def cancel(app: FastAPI, job_id: AsyncJobId, job_id_data: AsyncJobNameData
     assert app  # nosec
     assert job_id_data  # nosec
     try:
-        await get_celery_client(app).cancel_task(
+        await get_task_manager_from_app(app).cancel_task(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
@@ -52,7 +52,7 @@ async def status(
     assert job_id_data  # nosec
 
     try:
-        task_status = await get_celery_client(app).get_task_status(
+        task_status = await get_task_manager_from_app(app).get_task_status(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
@@ -82,13 +82,13 @@ async def result(
     assert job_id_data  # nosec
 
     try:
-        _status = await get_celery_client(app).get_task_status(
+        _status = await get_task_manager_from_app(app).get_task_status(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
         if not _status.is_done:
             raise JobNotDoneError(job_id=job_id)
-        _result = await get_celery_client(app).get_task_result(
+        _result = await get_task_manager_from_app(app).get_task_result(
             task_context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
@@ -127,7 +127,7 @@ async def list_jobs(
     _ = filter_
     assert app  # nosec
     try:
-        tasks = await get_celery_client(app).list_tasks(
+        tasks = await get_task_manager_from_app(app).list_tasks(
             task_context=job_id_data.model_dump(),
         )
     except CeleryError as exc:
