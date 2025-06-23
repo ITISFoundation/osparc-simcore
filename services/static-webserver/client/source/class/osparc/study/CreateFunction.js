@@ -120,11 +120,12 @@ qx.Class.define("osparc.study.CreateFunction", {
       form.add(description, this.tr("Description"), null, "description");
 
 
+      const defaultInputs = {};
       const exposedInputs = {};
       const exposedOutputs = {};
 
       // INPUTS
-      const inGrid = new qx.ui.layout.Grid(10, 6);
+      const inGrid = new qx.ui.layout.Grid(12, 6);
       const inputsLayout = new qx.ui.container.Composite(inGrid).set({
         allowGrowX: false,
         alignX: "left",
@@ -189,8 +190,15 @@ qx.Class.define("osparc.study.CreateFunction", {
         parameterExposed.addListener("changeValue", e => exposedInputs[parameter["label"]] = e.getData());
         column++;
 
-        const parameterDefaultValue = new qx.ui.basic.Label(String(osparc.service.Utils.getParameterValue(parameter)));
-        inputsLayout.add(parameterDefaultValue, {
+        const paramValue = osparc.service.Utils.getParameterValue(parameter);
+        defaultInputs[parameter["label"]] = paramValue;
+        let ctrl = null;
+        if (parameterMetadata && osparc.service.Utils.getParameterType(parameterMetadata) === "number") {
+          ctrl = new qx.ui.form.TextField(String(paramValue));
+        } else {
+          ctrl = new qx.ui.basic.Label(String(paramValue));
+        }
+        inputsLayout.add(ctrl, {
           row,
           column,
         });
