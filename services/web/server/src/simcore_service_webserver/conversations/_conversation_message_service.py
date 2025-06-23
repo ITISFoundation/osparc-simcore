@@ -38,7 +38,6 @@ def _make_project_conversation_message_created_message(
     return SocketMessageDict(
         event_type=SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
         data={
-            "action": "create",
             "project_id": project_id,
             **conversation_message.model_dump(mode="json"),
         },
