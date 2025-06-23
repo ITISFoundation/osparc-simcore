@@ -12,7 +12,7 @@ from aiohttp.web_exceptions import HTTPError
 from aiohttp.web_request import Request
 from aiohttp.web_response import StreamResponse
 from common_library.error_codes import ErrorCodeStr, create_error_code
-from common_library.json_serialization import json_dumps, json_loads
+from common_library.json_serialization import json_dumps
 from common_library.user_messages import user_message
 from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
@@ -21,7 +21,7 @@ from servicelib.status_codes_utils import is_5xx_server_error
 
 from ..logging_errors import create_troubleshootting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
-from ..rest_responses import is_enveloped_from_map, is_enveloped_from_text
+from ..rest_responses import is_enveloped_from_text
 from ..status_codes_utils import get_code_description
 from . import status
 from .rest_responses import (
@@ -167,11 +167,9 @@ def _handle_http_successful(
             exception.status, safe_status_message(message=exception.reason)
         )
 
-    if exception.text:
-        payload = json_loads(exception.text)
-        if not is_enveloped_from_map(payload):
-            payload = wrap_as_envelope(data=payload)
-            exception.text = json_dumps(payload)
+    if exception.text and not is_enveloped_from_text(exception.text):
+        payload = wrap_as_envelope(data=exception.text)
+        exception.text = json_dumps(payload)
 
     return exception
 

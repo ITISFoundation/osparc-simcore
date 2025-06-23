@@ -44,7 +44,7 @@ async def get_task_result(
     except Exception as exc:
         _logger.exception(
             **create_troubleshootting_log_kwargs(
-                user_error_msg=f"{task_id=} raised an exception",
+                user_error_msg=f"{task_id=} raised an exception while getting its result",
                 error=exc,
                 error_code=create_error_code(exc),
                 error_context={"task_context": task_context, "task_id": task_id},
