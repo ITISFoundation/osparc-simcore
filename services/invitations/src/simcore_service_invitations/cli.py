@@ -1,5 +1,6 @@
 import getpass
 import logging
+import os
 
 import typer
 from cryptography.fernet import Fernet
@@ -14,7 +15,6 @@ from settings_library.utils_cli import (
     print_as_envfile,
 )
 
-from . import web_server
 from ._meta import PROJECT_NAME, __version__
 from .core.settings import ApplicationSettings, MinimalApplicationSettings
 from .services.invitations import (
@@ -50,7 +50,7 @@ def generate_key(
         export INVITATIONS_SECRET_KEY=$(invitations-maker generate-key)
     """
     assert ctx  # nosec
-    print(Fernet.generate_key().decode())  # noqa: T201
+    typer.echo(Fernet.generate_key().decode())
 
 
 @main.command()
@@ -133,7 +133,7 @@ def invite(
         base_url=settings.INVITATIONS_OSPARC_URL,
         default_product=settings.INVITATIONS_DEFAULT_PRODUCT,
     )
-    print(invitation_link)  # noqa: T201
+    typer.echo(invitation_link)
 
 
 @main.command()
@@ -153,18 +153,8 @@ def extract(ctx: typer.Context, invitation_url: str):
         )
         assert invitation.product is not None  # nosec
 
-        print(invitation.model_dump_json(indent=1))  # noqa: T201
+        typer.echo(invitation.model_dump_json(indent=1))
 
-    except (InvalidInvitationCodeError, ValidationError):
-        _err_console.print("[bold red]Invalid code[/bold red]")
-
-
-@main.command()
-def serve(
-    ctx: typer.Context,
-    *,
-    reload: bool = False,
-):
-    """Starts server with http API"""
-    assert ctx  # nosec
-    web_server.start(log_level="info", reload=reload)
+    except (InvalidInvitationCodeError, ValidationError) as err:
+        typer.secho("Invalid code", fg=typer.colors.RED, bold=True, err=True)
+        raise typer.Exit(os.EX_DATAERR) from err

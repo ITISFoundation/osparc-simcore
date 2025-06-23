@@ -104,3 +104,24 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
     print(result.output)
     settings = ApplicationSettings.model_validate_json(result.output)
     assert settings == ApplicationSettings.create_from_envs()
+
+
+def test_extract_invalid_invitation_code(
+    cli_runner: CliRunner, faker: Faker, app_environment: EnvVarsDict
+):
+    """Test that extract command handles invalid invitation codes properly"""
+    # Create an invalid invitation URL
+    invalid_invitation_url = f"{faker.url()}#invitation=invalid_code_123"
+
+    # Run extract command with invalid invitation URL
+    result = cli_runner.invoke(
+        main,
+        f'extract "{invalid_invitation_url}"',
+        env=app_environment,
+    )
+
+    # Verify command exits with correct error code
+    assert result.exit_code == os.EX_DATAERR
+
+    # Verify error message is displayed via stderr
+    assert "Invalid code" in result.stdout
