@@ -3,8 +3,12 @@ import logging
 import re
 from typing import Final
 
-from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, EC2InstanceType
-from aws_library.ec2._models import Resources
+from aws_library.ec2 import (
+    EC2InstanceBootSpecific,
+    EC2InstanceData,
+    EC2InstanceType,
+    Resources,
+)
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
