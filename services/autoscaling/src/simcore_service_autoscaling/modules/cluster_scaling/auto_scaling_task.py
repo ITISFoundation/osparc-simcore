@@ -11,8 +11,8 @@ from ...core.settings import ApplicationSettings
 from ...utils.redis import create_lock_key_and_value
 from ..redis import get_redis_client
 from ._auto_scaling_core import auto_scale_cluster
-from ._provider_computational import ComputationalAutoscaling
-from ._provider_dynamic import DynamicAutoscaling
+from ._provider_computational import ComputationalAutoscalingProvider
+from ._provider_dynamic import DynamicAutoscalingProvider
 
 _TASK_NAME: Final[str] = "Autoscaling EC2 instances"
 
@@ -33,9 +33,9 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             task_name=_TASK_NAME,
             app=app,
             auto_scaling_mode=(
-                DynamicAutoscaling()
+                DynamicAutoscalingProvider()
                 if app_settings.AUTOSCALING_NODES_MONITORING is not None
-                else ComputationalAutoscaling()
+                else ComputationalAutoscalingProvider()
             ),
         )
 
