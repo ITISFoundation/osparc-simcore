@@ -37,7 +37,7 @@ qx.Class.define("osparc.study.StudyPreview", {
     __buildPreview: function() {
       const study = this.__study;
 
-      const studyReady = () => {
+      const workbenchReady = () => {
         if (!study.isPipelineEmpty()) {
           const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
           workbenchUIPreview.setStudy(study);
@@ -50,11 +50,11 @@ qx.Class.define("osparc.study.StudyPreview", {
       const uiMode = study.getUi().getMode();
       if (["workbench", "pipeline"].includes(uiMode)) {
         if (study.getWorkbench().isDeserialized()) {
-          studyReady();
+          workbenchReady();
         } else {
           study.getWorkbench().addListener("changeDeserialized", e => {
             if (e.getData()) {
-              studyReady();
+              workbenchReady();
             }
           }, this);
         }
