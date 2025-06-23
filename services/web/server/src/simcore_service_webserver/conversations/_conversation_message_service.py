@@ -11,7 +11,6 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
 )
-from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
@@ -31,22 +30,17 @@ from . import _conversation_message_repository
 _logger = logging.getLogger(__name__)
 
 
-async def notify_project_conversation_message_created(
-    app: web.Application,
+def _make_project_conversation_message_created_message(
     project_id: ProjectID,
     conversation_message: ConversationMessageGetDB,
-    recipients: list[GroupID],
-) -> None:
-    message = SocketMessageDict(
+) -> SocketMessageDict:
+    return SocketMessageDict(
         event_type=SOCKET_IO_PROJECT_CONVERSATION_MESSAGE_CREATED_EVENT,
         data={
             "project_id": project_id,
             **conversation_message.model_dump(mode="json"),
         },
     )
-
-    for recipient in recipients:
-        await send_message_to_standard_group(app, recipient, message)
 
 
 async def create_message(
@@ -75,9 +69,11 @@ async def create_message(
         if project_to_group.read
     ]
 
-    await notify_project_conversation_message_created(
-        app, project_id, created_message, recipients
-    )
+    for recipient in recipients:
+        message = _make_project_conversation_message_created_message(
+            project_id, created_message
+        )
+        await send_message_to_standard_group(app, recipient, message)
 
     return created_message
 

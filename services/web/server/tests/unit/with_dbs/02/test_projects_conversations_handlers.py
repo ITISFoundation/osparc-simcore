@@ -7,6 +7,7 @@
 
 
 from http import HTTPStatus
+from unittest.mock import MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -15,6 +16,7 @@ from models_library.api_schemas_webserver.projects_conversations import (
     ConversationMessageRestGet,
     ConversationRestGet,
 )
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
@@ -26,6 +28,15 @@ from simcore_service_webserver.projects._groups_repository import (
 from simcore_service_webserver.projects.models import ProjectDict
 
 API_PREFIX = "/" + api_version_prefix
+
+
+@pytest.fixture
+def mocked_notify_project_conversation_message_created(
+    mocker: MockerFixture,
+) -> MagicMock:
+    return mocker.patch(
+        "simcore_service_webserver.conversations._conversation_message_service._make_project_conversation_message_created_message",
+    )
 
 
 @pytest.mark.parametrize(
@@ -163,6 +174,7 @@ async def test_project_conversation_messages_full_workflow(
     user_project: ProjectDict,
     expected: HTTPStatus,
     postgres_db: sa.engine.Engine,
+    mocked_notify_project_conversation_message_created: MagicMock,
 ):
     base_project_url = client.app.router["list_project_conversations"].url_for(
         project_id=user_project["uuid"]
@@ -191,6 +203,13 @@ async def test_project_conversation_messages_full_workflow(
     assert ConversationMessageRestGet.model_validate(data)
     _first_message_id = data["messageId"]
 
+    assert mocked_notify_project_conversation_message_created.call_count == 1
+    args = mocked_notify_project_conversation_message_created.call_args
+
+    assert user_project["uuid"] == f"{args[0][0]}"
+    assert args[0][1].content == "My first message"
+    assert args[0][1].type == "MESSAGE"
+
     # Now we will add second message
     body = {"content": "My second message", "type": "MESSAGE"}
     resp = await client.post(f"{base_project_conversation_url}", json=body)
@@ -200,6 +219,13 @@ async def test_project_conversation_messages_full_workflow(
     )
     assert ConversationMessageRestGet.model_validate(data)
     _second_message_id = data["messageId"]
+
+    assert mocked_notify_project_conversation_message_created.call_count == 2
+    args = mocked_notify_project_conversation_message_created.call_args
+
+    assert user_project["uuid"] == f"{args[0][0]}"
+    assert args[0][1].content == "My second message"
+    assert args[0][1].type == "MESSAGE"
 
     # Now we will list all message for the project conversation
     resp = await client.get(f"{base_project_conversation_url}")
