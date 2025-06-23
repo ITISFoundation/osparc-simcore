@@ -1,9 +1,12 @@
 import asyncio
 import functools
+import logging
 from collections.abc import Awaitable, Callable
 from concurrent.futures import Executor
 from inspect import isawaitable
 from typing import ParamSpec, TypeVar, overload
+
+_logger = logging.getLogger(__name__)
 
 R = TypeVar("R")
 P = ParamSpec("P")
@@ -67,17 +70,19 @@ async def maybe_await(
 async def cancel_and_wait(task: asyncio.Task) -> None:
     """Cancels the given task and waits for it to finish.
 
-    Accounts for the case where the parent function is being cancelled
-    and the task is cancelled as a result. In that case, it suppresses the
-    `asyncio.CancelledError` if the task was cancelled, but propagates it
-    if the task was not cancelled (i.e., it was still running when the parent
-    function was cancelled).
+    Accounts for the case where the tasks's owner function is being cancelled
     """
     task.cancel()
     try:
+        # NOTE shield ensures that cancellation of the caller function won’t stop you
+        # from observing the cancellation/finalization of task.
         await asyncio.shield(task)
     except asyncio.CancelledError:
         if not task.cancelled():
-            # parent function is being cancelled -> propagate cancellation
+            # task owner function is being cancelled -> propagate cancellation
             raise
-        # else: task was cancelled, suppress
+        # else: task cancellation is complete, we can safely ignore it
+        _logger.debug(
+            "Task %s cancellation is complete",
+            task.get_name(),
+        )

@@ -13,7 +13,8 @@ def sync_function(x: int, y: int) -> int:
 
 @make_async()
 def sync_function_with_exception() -> None:
-    raise ValueError("This is an error!")
+    msg = "This is an error!"
+    raise ValueError(msg)
 
 
 @pytest.mark.asyncio
@@ -126,17 +127,23 @@ async def test_cancel_and_wait_propagates_external_cancel():
     the CancelledError is not swallowed.
     """
 
-    async def inner_coro():
+    async def coro():
         try:
-            await asyncio.sleep(10)
+            await asyncio.sleep(4)
         except asyncio.CancelledError:
-            await asyncio.sleep(0.1)  # simulate cleanup
+            await asyncio.sleep(1)  # simulate cleanup
             raise
 
-    task = asyncio.create_task(inner_coro())
+    inner_task = asyncio.create_task(coro())
 
     async def outer_coro():
-        await cancel_and_wait(task)
+        try:
+            await cancel_and_wait(inner_task)
+        except asyncio.CancelledError:
+            assert (
+                not inner_task.cancelled()
+            ), "Internal Task should not be cancelled yet (shielded)"
+            raise
 
     # Cancel the wrapper after a short delay
     outer_task = asyncio.create_task(outer_coro())
@@ -146,4 +153,13 @@ async def test_cancel_and_wait_propagates_external_cancel():
     with pytest.raises(asyncio.CancelledError):
         await outer_task
 
-    assert task.cancelled()
+    # Ensure the task was cancelled
+    assert inner_task.cancelled() is False, "Task should not be cancelled initially"
+
+    done_event = asyncio.Event()
+
+    def on_done(_):
+        done_event.set()
+
+    inner_task.add_done_callback(on_done)
+    await done_event.wait()
