@@ -52,7 +52,7 @@ from ...utils.buffer_machines_pool_core import (
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
 from ..ssm import get_ssm_client
-from .auto_scaling_mode_base import BaseAutoscaling
+from .auto_scaling_mode_base import AutoscalingProvider
 
 _logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ async def _analyze_running_instance_state(
 
 
 async def _analyse_current_state(
-    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, *, auto_scaling_mode: AutoscalingProvider
 ) -> BufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
@@ -229,7 +229,7 @@ async def _add_remove_buffer_instances(
     app: FastAPI,
     buffers_manager: BufferPoolManager,
     *,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
 ) -> BufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
@@ -399,7 +399,7 @@ async def _handle_image_pre_pulling(
 
 
 async def monitor_buffer_machines(
-    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, *, auto_scaling_mode: AutoscalingProvider
 ) -> None:
     """Buffer machine creation works like so:
     1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm
