@@ -41,7 +41,7 @@ def _scheduler_auth(app: FastAPI) -> ClusterAuthentication:
     return app_settings.AUTOSCALING_DASK.DASK_SCHEDULER_AUTH
 
 
-class ComputationalAutoscaling:
+class ComputationalAutoscalingProvider:
     async def get_monitored_nodes(self, app: FastAPI) -> list[Node]:
         return await utils_docker.get_worker_nodes(get_docker_client(app))
 
