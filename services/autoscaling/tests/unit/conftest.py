@@ -1185,7 +1185,7 @@ async def create_buffer_machines(
         resource_tags: list[TagTypeDef] = [
             {"Key": tag_key, "Value": tag_value}
             for tag_key, tag_value in get_deactivated_buffer_ec2_tags(
-                initialized_app, DynamicAutoscaling()
+                DynamicAutoscaling().get_ec2_tags(initialized_app)
             ).items()
         ]
         if pre_pull_images is not None and instance_state_name == "stopped":

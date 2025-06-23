@@ -39,7 +39,7 @@ def test_get_activated_buffer_ec2_tags_dynamic(
 ):
     auto_scaling_mode = DynamicAutoscaling()
     activated_buffer_tags = get_activated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     assert (
         auto_scaling_mode.get_ec2_tags(initialized_app)
@@ -57,7 +57,7 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
 ):
     auto_scaling_mode = DynamicAutoscaling()
     deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix
     expected_tags = (
@@ -81,7 +81,7 @@ def test_get_activated_buffer_ec2_tags_computational(
 ):
     auto_scaling_mode = ComputationalAutoscaling()
     activated_buffer_tags = get_activated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     assert (
         auto_scaling_mode.get_ec2_tags(initialized_app)
@@ -99,7 +99,7 @@ def test_get_deactivated_buffer_ec2_tags_computational(
 ):
     auto_scaling_mode = ComputationalAutoscaling()
     deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix
     expected_tags = (
