@@ -42,3 +42,5 @@ def test_valid_application_settings(app_environment: EnvVarsDict):
     assert settings
 
     assert settings == ApplicationSettings.create_from_envs()
+
+    assert settings.LOG_LEVEL == "INFO"

@@ -19,6 +19,7 @@ _WALLET_DESCRIPTION_TEMPLATE = "Credits purchased by {} end up in here"
 
 async def _auto_add_default_wallet(
     app: web.Application,
+    *,
     user_id: UserID,
     product_name: ProductName,
     extra_credits_in_usd: PositiveInt | None = None,
