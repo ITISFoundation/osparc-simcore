@@ -80,7 +80,7 @@ from simcore_service_autoscaling.models import (
 )
 from simcore_service_autoscaling.modules.cluster_scaling import _auto_scaling_core
 from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
-    DynamicAutoscaling,
+    DynamicAutoscalingProvider,
 )
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
@@ -1186,7 +1186,7 @@ async def create_buffer_machines(
         resource_tags: list[TagTypeDef] = [
             {"Key": tag_key, "Value": tag_value}
             for tag_key, tag_value in get_deactivated_buffer_ec2_tags(
-                DynamicAutoscaling().get_ec2_tags(initialized_app)
+                DynamicAutoscalingProvider().get_ec2_tags(initialized_app)
             ).items()
         ]
         if pre_pull_images is not None and instance_state_name == "stopped":

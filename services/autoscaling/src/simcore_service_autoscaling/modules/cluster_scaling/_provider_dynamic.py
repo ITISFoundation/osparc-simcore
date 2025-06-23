@@ -10,7 +10,7 @@ from ...utils import utils_docker, utils_ec2
 from ..docker import get_docker_client
 
 
-class DynamicAutoscaling:
+class DynamicAutoscalingProvider:
     async def get_monitored_nodes(self, app: FastAPI) -> list[Node]:
         app_settings = get_application_settings(app)
         assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec

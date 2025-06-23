@@ -32,7 +32,7 @@ from simcore_service_autoscaling.modules.cluster_scaling._buffer_machines_pool_c
     monitor_buffer_machines,
 )
 from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
-    DynamicAutoscaling,
+    DynamicAutoscalingProvider,
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -95,7 +95,7 @@ async def test_if_send_command_is_mocked_by_moto(
 
     # 1. run, this will create as many buffer machines as needed
     await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
@@ -112,7 +112,7 @@ async def test_if_send_command_is_mocked_by_moto(
 
     # 2. this should generate a failure as current version of moto does not handle this
     await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
 
 
@@ -168,7 +168,7 @@ async def _test_monitor_buffer_machines(
     # 1. run, this will create as many buffer machines as needed
     with log_context(logging.INFO, "create buffer machines"):
         await monitor_buffer_machines(
-            initialized_app, auto_scaling_mode=DynamicAutoscaling()
+            initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
         )
         with log_context(
             logging.INFO, f"waiting for {buffer_count} buffer instances to be running"
@@ -211,7 +211,7 @@ async def _test_monitor_buffer_machines(
         )
         async def _assert_run_ssm_command_for_pulling() -> None:
             await monitor_buffer_machines(
-                initialized_app, auto_scaling_mode=DynamicAutoscaling()
+                initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
             )
             await assert_autoscaled_dynamic_warm_pools_ec2_instances(
                 ec2_client,
@@ -248,7 +248,7 @@ async def _test_monitor_buffer_machines(
         )
         async def _assert_wait_for_ssm_command_to_finish() -> None:
             await monitor_buffer_machines(
-                initialized_app, auto_scaling_mode=DynamicAutoscaling()
+                initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
             )
             await assert_autoscaled_dynamic_warm_pools_ec2_instances(
                 ec2_client,
@@ -354,7 +354,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
     )
     # this will terminate the supernumerary instances and start new ones
     await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
@@ -414,7 +414,7 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
     )
     # this will terminate the wrong instances and start new ones and pre-pull the new set of images
     await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
@@ -491,7 +491,7 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
 
     # this will terminate the unwanted buffer pool and replace with the expected ones
     await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscaling()
+        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
