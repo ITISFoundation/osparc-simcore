@@ -193,10 +193,10 @@ qx.Class.define("osparc.study.CreateFunction", {
 
         const paramValue = osparc.service.Utils.getParameterValue(parameter);
         defaultInputs[parameterKey] = paramValue;
-        let ctrl = null;
+        let parameterDefaultValue = null;
         if (parameterMetadata && osparc.service.Utils.getParameterType(parameterMetadata) === "number") {
-          ctrl = new qx.ui.form.TextField(String(paramValue));
-          ctrl.addListener("changeValue", e => {
+          parameterDefaultValue = new qx.ui.form.TextField(String(paramValue));
+          parameterDefaultValue.addListener("changeValue", e => {
             const newValue = e.getData();
             const oldValue = e.getOldData();
             if (newValue === oldValue) {
@@ -204,12 +204,12 @@ qx.Class.define("osparc.study.CreateFunction", {
             }
             const curatedValue = (!isNaN(parseFloat(newValue))) ? parseFloat(newValue) : parseFloat(oldValue);
             defaultInputs[parameterKey] = curatedValue;
-            ctrl.setValue(String(curatedValue));
+            parameterDefaultValue.setValue(String(curatedValue));
           });
         } else {
-          ctrl = new qx.ui.basic.Label(String(paramValue));
+          parameterDefaultValue = new qx.ui.basic.Label(String(paramValue));
         }
-        inputsLayout.add(ctrl, {
+        inputsLayout.add(parameterDefaultValue, {
           row,
           column,
         });
