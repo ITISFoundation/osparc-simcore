@@ -25,11 +25,11 @@ def handle_client_exceptions(app: web.Application) -> Iterator[ClientSession]:
         if err.status == status.HTTP_404_NOT_FOUND:
             raise web.HTTPNotFound(text=MSG_RESOURCE_USAGE_TRACKER_NOT_FOUND)
         raise web.HTTPServiceUnavailable(
-            reason=MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
+            text=MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
         ) from err
 
     except (TimeoutError, ClientConnectionError) as err:
         _logger.debug("Request to resource usage tracker service failed: %s", err)
         raise web.HTTPServiceUnavailable(
-            reason=MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
+            text=MSG_RESOURCE_USAGE_TRACKER_SERVICE_UNAVAILABLE
         ) from err

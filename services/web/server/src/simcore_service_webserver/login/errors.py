@@ -3,7 +3,7 @@ import logging
 
 from aiohttp import web
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ..errors import WebServerBaseError
@@ -34,14 +34,14 @@ def handle_login_exceptions(handler: Handler):
             front_end_msg = MSG_2FA_UNAVAILABLE
             # in these cases I want to log the cause
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     front_end_msg,
                     error=exc,
                     error_code=error_code,
                 )
             )
             raise web.HTTPServiceUnavailable(
-                reason=front_end_msg,
+                text=front_end_msg,
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from exc
 

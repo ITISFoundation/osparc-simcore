@@ -10,7 +10,7 @@ from .logging_utils import LogExtra, get_log_record_extra
 _logger = logging.getLogger(__name__)
 
 
-def create_troubleshotting_log_message(
+def create_troubleshootting_log_message(
     user_error_msg: str,
     *,
     error: BaseException,
@@ -39,10 +39,10 @@ def create_troubleshotting_log_message(
     debug_data = json_dumps(
         {
             "exception_type": f"{type(error)}",
-            "exception_details": f"{error}",
+            "exception_string": f"{error}",
+            "exception_causes": _collect_causes(error),
             "error_code": error_code,
             "context": error_context,
-            "causes": _collect_causes(error),
             "tip": tip,
         },
         default=representation_encoder,
@@ -57,7 +57,7 @@ class LogKwargs(TypedDict):
     extra: LogExtra | None
 
 
-def create_troubleshotting_log_kwargs(
+def create_troubleshootting_log_kwargs(
     user_error_msg: str,
     *,
     error: BaseException,
@@ -76,7 +76,11 @@ def create_troubleshotting_log_kwargs(
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
                     user_error_msg=frontend_msg,
-                    exception=exc,
+                    error=exc,
+                    error_context={
+                        "user_id": user_id,
+                        "product_name": product_name,
+                    },
                     tip="Check row in `groups_extra_properties` for this product. It might be missing.",
                 )
             )
@@ -88,7 +92,7 @@ def create_troubleshotting_log_kwargs(
         context.update(error.error_context())
 
     # compose as log message
-    log_msg = create_troubleshotting_log_message(
+    log_msg = create_troubleshootting_log_message(
         user_error_msg,
         error=error,
         error_code=error_code,
