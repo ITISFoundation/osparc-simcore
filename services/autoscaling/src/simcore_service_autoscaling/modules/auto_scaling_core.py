@@ -17,7 +17,7 @@ from aws_library.ec2 import (
 )
 from aws_library.ec2._errors import EC2TooManyInstancesError
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Node, NodeState
+from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
@@ -64,11 +64,6 @@ from .instrumentation import get_instrumentation, has_instrumentation
 from .ssm import get_ssm_client
 
 _logger = logging.getLogger(__name__)
-
-
-def _node_not_ready(node: Node) -> bool:
-    assert node.status  # nosec
-    return bool(node.status.state != NodeState.ready)
 
 
 async def _analyze_current_cluster(
@@ -141,7 +136,7 @@ async def _analyze_current_cluster(
                     - node_used_resources,
                 )
             )
-        elif auto_scaling_mode.is_instance_drained(instance):
+        elif utils_docker.is_instance_drained(instance):
             all_drained_nodes.append(instance)
         elif await auto_scaling_mode.is_instance_retired(app, instance):
             # it should be drained, but it is not, so we force it to be drained such that it might be re-used if needed
@@ -166,7 +161,9 @@ async def _analyze_current_cluster(
         terminated_instances=[
             NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
         ],
-        disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
+        disconnected_nodes=[
+            n for n in docker_nodes if not utils_docker.is_node_ready(n)
+        ],
         retired_nodes=retired_nodes,
     )
     _logger.info("current state: %s", f"{cluster!r}")
@@ -343,10 +340,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         allowed_instance_type_names
     ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"
 
-    allowed_instance_types: list[
-        EC2InstanceType
-    ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(set[InstanceTypeType], set(allowed_instance_type_names))
+    allowed_instance_types: list[EC2InstanceType] = (
+        await ec2_client.get_ec2_instance_capabilities(
+            cast(set[InstanceTypeType], set(allowed_instance_type_names))
+        )
     )
 
     def _as_selection(instance_type: EC2InstanceType) -> int:
@@ -1078,9 +1075,9 @@ async def _notify_based_on_machine_type(
     launch_time_to_tasks: dict[datetime.datetime, list] = collections.defaultdict(list)
     now = datetime.datetime.now(datetime.UTC)
     for instance in instances:
-        launch_time_to_tasks[instance.ec2_instance.launch_time] += (
-            instance.assigned_tasks
-        )
+        launch_time_to_tasks[
+            instance.ec2_instance.launch_time
+        ] += instance.assigned_tasks
 
     for launch_time, tasks in launch_time_to_tasks.items():
         time_since_launch = now - launch_time
