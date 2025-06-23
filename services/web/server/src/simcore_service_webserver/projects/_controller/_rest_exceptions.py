@@ -130,8 +130,8 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectTooManyProjectOpenedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "You cannot open more than {max_num_projects} project/s at once. Please close another study and retry.",
-            _version=1,
+            "You cannot open more than {max_num_projects} project/s at once. Please close another project and retry.",
+            _version=2,
         ),
     ),
     ProjectStartsTooManyDynamicNodesError: HttpErrorInfo(
