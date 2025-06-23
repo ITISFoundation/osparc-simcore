@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
-from common_library.async_tools import make_async, maybe_await
+from common_library.async_tools import cancel_and_wait, make_async, maybe_await
 
 
 @make_async()
@@ -93,3 +93,57 @@ async def test_maybe_await_with_result_proxy():
 
     sync_result = await maybe_await(SyncResultProxy().fetchone())
     assert sync_result == {"id": 2, "name": "test2"}
+
+
+async def test_cancel_and_wait():
+    state = {"started": False, "cancelled": False, "cleaned_up": False}
+
+    async def coro():
+        try:
+            state["started"] = True
+            await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            state["cancelled"] = True
+            raise
+        finally:
+            state["cleaned_up"] = True
+
+    task = asyncio.create_task(coro())
+    await asyncio.sleep(0.1)  # Let coro start
+
+    await cancel_and_wait(task)
+
+    assert task.done()
+    assert task.cancelled()
+    assert state["started"]
+    assert state["cancelled"]
+    assert state["cleaned_up"]
+
+
+async def test_cancel_and_wait_propagates_external_cancel():
+    """
+    This test ensures that if the caller of cancel_and_wait is cancelled,
+    the CancelledError is not swallowed.
+    """
+
+    async def inner_coro():
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            await asyncio.sleep(0.1)  # simulate cleanup
+            raise
+
+    task = asyncio.create_task(inner_coro())
+
+    async def outer_coro():
+        await cancel_and_wait(task)
+
+    # Cancel the wrapper after a short delay
+    outer_task = asyncio.create_task(outer_coro())
+    await asyncio.sleep(0.1)
+    outer_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await outer_task
+
+    assert task.cancelled()
