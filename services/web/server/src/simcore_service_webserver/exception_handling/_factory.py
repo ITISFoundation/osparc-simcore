@@ -5,10 +5,11 @@ from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
 from models_library.rest_error import ErrorGet
+from servicelib.aiohttp.rest_responses import safe_status_message
 from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.status_codes_utils import (
-    get_code_description,
+    get_code_display_name,
     is_5xx_server_error,
     is_error,
 )
@@ -53,7 +54,7 @@ def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     return web.json_response(
         data={"error": error.model_dump(exclude_unset=True, mode="json")},
         dumps=json_dumps,
-        reason=get_code_description(status_code),
+        reason=safe_status_message(get_code_display_name(status_code)),
         status=status_code,
     )
 
