@@ -76,7 +76,11 @@ def create_troubleshotting_log_kwargs(
             _logger.exception(
                 **create_troubleshotting_log_kwargs(
                     user_error_msg=frontend_msg,
-                    exception=exc,
+                    error=exc,
+                    error_context={
+                        "user_id": user_id,
+                        "product_name": product_name,
+                    },
                     tip="Check row in `groups_extra_properties` for this product. It might be missing.",
                 )
             )
