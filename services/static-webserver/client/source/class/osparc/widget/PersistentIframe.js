@@ -341,7 +341,8 @@ qx.Class.define("osparc.widget.PersistentIframe", {
               const resourceDetails = new osparc.dashboard.ResourceDetails(functionData).set({
                 showOpenButton: false,
               });
-              osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+              const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+              win.setCaption("Function Details");
             }
             break;
           }

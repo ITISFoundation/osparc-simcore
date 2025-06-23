@@ -939,20 +939,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _openResourceDetails: function(resourceData) {
-      // OM: remove this
-      const hack = true;
-      if (hack) {
-        const functionData = {
-          "uuid": resourceData["uuid"],
-          "resourceType": "function",
-        };
-        const resourceDetails = new osparc.dashboard.ResourceDetails(functionData).set({
-          showOpenButton: false,
-        });
-        osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
-        return;
-      }
-
       const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
       const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
       resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
