@@ -35,24 +35,24 @@ from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..constants import (
+from ...constants import (
     BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
     BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
     DOCKER_PULL_COMMAND,
     PREPULL_COMMAND_NAME,
 )
-from ..core.settings import get_application_settings
-from ..models import BufferPool, BufferPoolManager
-from ..utils.auto_scaling_core import ec2_buffer_startup_script
-from ..utils.buffer_machines_pool_core import (
+from ...core.settings import get_application_settings
+from ...models import BufferPool, BufferPoolManager
+from ...utils.auto_scaling_core import ec2_buffer_startup_script
+from ...utils.buffer_machines_pool_core import (
     dump_pre_pulled_images_as_tags,
     get_deactivated_buffer_ec2_tags,
     load_pre_pulled_images_from_tags,
 )
+from ..ec2 import get_ec2_client
+from ..instrumentation import get_instrumentation, has_instrumentation
+from ..ssm import get_ssm_client
 from .auto_scaling_mode_base import BaseAutoscaling
-from .ec2 import get_ec2_client
-from .instrumentation import get_instrumentation, has_instrumentation
-from .ssm import get_ssm_client
 
 _logger = logging.getLogger(__name__)
 

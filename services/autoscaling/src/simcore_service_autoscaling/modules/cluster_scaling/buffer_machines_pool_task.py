@@ -7,11 +7,11 @@ from fastapi import FastAPI
 from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 
-from ..core.settings import ApplicationSettings
-from ..utils.redis import create_lock_key_and_value
+from ...core.settings import ApplicationSettings
+from ...utils.redis import create_lock_key_and_value
+from ..redis import get_redis_client
+from ._buffer_machines_pool_core import monitor_buffer_machines
 from .auto_scaling_mode_dynamic import DynamicAutoscaling
-from .buffer_machines_pool_core import monitor_buffer_machines
-from .redis import get_redis_client
 
 _TASK_NAME_BUFFER: Final[str] = "Autoscaling Buffer Machines Pool"
 
