@@ -62,3 +62,22 @@ async def maybe_await(
         return await obj
     assert not isawaitable(obj)  # nosec
     return obj
+
+
+async def cancel_and_wait(task: asyncio.Task) -> None:
+    """Cancels the given task and waits for it to finish.
+
+    Accounts for the case where the parent function is being cancelled
+    and the task is cancelled as a result. In that case, it suppresses the
+    `asyncio.CancelledError` if the task was cancelled, but propagates it
+    if the task was not cancelled (i.e., it was still running when the parent
+    function was cancelled).
+    """
+    task.cancel()
+    try:
+        await asyncio.shield(task)
+    except asyncio.CancelledError:
+        if not task.cancelled():
+            # parent function is being cancelled -> propagate cancellation
+            raise
+        # else: task was cancelled, suppress
