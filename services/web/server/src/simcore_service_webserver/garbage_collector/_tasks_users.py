@@ -4,7 +4,7 @@ Scheduled tasks addressing users
 """
 
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from datetime import timedelta
 
 from aiohttp import web
@@ -19,8 +19,6 @@ from ..users.api import update_expired_users
 from ._tasks_utils import CleanupContextFunc, setup_periodic_task
 
 _logger = logging.getLogger(__name__)
-
-CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
 
 async def notify_user_logout_all_sessions(

@@ -23,7 +23,7 @@ async def setup_periodic_task(
         periodic_task_coro: The periodic task coroutine function (already decorated with @exclusive_periodic)
     """
     # setup
-    task_name = periodic_task_coro.__name__
+    task_name = f"{periodic_task_coro.__module__}.{periodic_task_coro.__name__}"
 
     task = asyncio.create_task(
         periodic_task_coro(),
@@ -32,6 +32,10 @@ async def setup_periodic_task(
 
     # prevents premature garbage collection of the task
     app_task_key = f"tasks.{task_name}"
+    if app_task_key in app:
+        msg = f"Task {task_name} is already registered in the app state"
+        raise ValueError(msg)
+
     app[app_task_key] = task
 
     yield
