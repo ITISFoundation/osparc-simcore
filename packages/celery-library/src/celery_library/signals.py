@@ -26,8 +26,6 @@ def on_worker_init(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        shutdown_event = asyncio.Event()
-
         async def _setup_task_manager():
             assert sender.app  # nosec
             assert isinstance(sender.app, Celery)  # nosec
@@ -42,9 +40,7 @@ def on_worker_init(
         app_server.event_loop = loop
 
         loop.run_until_complete(_setup_task_manager())
-        loop.run_until_complete(
-            app_server.startup(startup_complete_event, shutdown_event)
-        )
+        loop.run_until_complete(app_server.lifespan(startup_complete_event))
 
     thread = threading.Thread(
         group=None,
@@ -63,4 +59,4 @@ def on_worker_shutdown(sender, **_kwargs) -> None:
         assert isinstance(sender.app, Celery)
         app_server = get_app_server(sender.app)
 
-        app_server.event_loop.run_until_complete(app_server.shutdown())
+        app_server.shutdown_event.set()

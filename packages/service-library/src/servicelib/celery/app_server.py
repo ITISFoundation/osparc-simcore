@@ -12,7 +12,7 @@ T = TypeVar("T")
 class BaseAppServer(ABC, Generic[T]):
     def __init__(self, app: T) -> None:
         self._app: T = app
-        self._shutdown_event: asyncio.Event | None = None
+        self._shutdown_event: asyncio.Event = asyncio.Event()
 
     @property
     def app(self) -> T:
@@ -27,6 +27,10 @@ class BaseAppServer(ABC, Generic[T]):
         self._event_loop = loop
 
     @property
+    def shutdown_event(self) -> asyncio.Event:
+        return self._shutdown_event
+
+    @property
     def task_manager(self) -> TaskManager:
         return self._task_manager
 
@@ -35,23 +39,8 @@ class BaseAppServer(ABC, Generic[T]):
         self._task_manager = manager
 
     @abstractmethod
-    async def on_startup(self) -> None:
-        raise NotImplementedError
-
-    async def startup(
-        self, startup_completed_event: threading.Event, shutdown_event: asyncio.Event
+    async def lifespan(
+        self,
+        startup_completed_event: threading.Event,
     ) -> None:
-        self._shutdown_event = shutdown_event
-        await self.on_startup()
-        startup_completed_event.set()
-        await self._shutdown_event.wait()
-
-    @abstractmethod
-    async def on_shutdown(self) -> None:
         raise NotImplementedError
-
-    async def shutdown(self) -> None:
-        if self._shutdown_event is not None:
-            self._shutdown_event.set()
-
-        await self.on_shutdown()
