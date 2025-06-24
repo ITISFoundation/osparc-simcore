@@ -93,7 +93,6 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
             app,
             rabbit_message.user_id,
             message=message,
-            ignore_queue=False,
         )
     return True
 
@@ -107,7 +106,6 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
             event_type=SOCKET_IO_LOG_EVENT,
             data=rabbit_message.model_dump(exclude={"user_id", "channel_name"}),
         ),
-        ignore_queue=False,
     )
     return True
 
@@ -124,7 +122,6 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
                 "node_id": f"{rabbit_message.node_id}",
             },
         ),
-        ignore_queue=False,
     )
     return True
 
