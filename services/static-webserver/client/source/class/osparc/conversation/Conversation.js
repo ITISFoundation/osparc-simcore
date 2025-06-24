@@ -47,7 +47,7 @@ qx.Class.define("osparc.conversation.Conversation", {
 
     this.__buildLayout();
 
-    this.reloadMessages();
+    this.__reloadMessages();
   },
 
   properties: {
@@ -161,7 +161,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       });
 
       this.__loadMoreMessages = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-      this.__loadMoreMessages.addListener("execute", () => this.reloadMessages(false));
+      this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
@@ -197,7 +197,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
     },
 
-    reloadMessages: function(removeMessages = true) {
+    __reloadMessages: function(removeMessages = true) {
       if (this.getConversationId() === null) {
         this.__messagesTitle.setValue(this.tr("No messages yet"));
         this.__messagesList.hide();
