@@ -93,7 +93,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
             app,
             rabbit_message.user_id,
             message=message,
-            ignore_queue=True,
+            ignore_queue=False,
         )
     return True
 
@@ -107,7 +107,7 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
             event_type=SOCKET_IO_LOG_EVENT,
             data=rabbit_message.model_dump(exclude={"user_id", "channel_name"}),
         ),
-        ignore_queue=True,
+        ignore_queue=False,
     )
     return True
 
@@ -124,7 +124,7 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
                 "node_id": f"{rabbit_message.node_id}",
             },
         ),
-        ignore_queue=True,
+        ignore_queue=False,
     )
     return True
 
@@ -178,9 +178,10 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:
-    with log_context(
-        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
-    ), log_catch(_logger, reraise=False):
+    with (
+        log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"),
+        log_catch(_logger, reraise=False),
+    ):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(
