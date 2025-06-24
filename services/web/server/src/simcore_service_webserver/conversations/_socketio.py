@@ -14,7 +14,7 @@ from pydantic import AliasGenerator, BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from servicelib.utils import limited_as_completed
 
-from ..socketio.messages import send_message_to_standard_group
+from ..socketio.messages import send_message_to_user
 
 _MAX_CONCURRENT_SENDS: Final[int] = 3
 
@@ -62,7 +62,9 @@ async def _send_message_to_recipients(
 ):
     async for _ in limited_as_completed(
         (
-            send_message_to_standard_group(app, recipient, notification_message)
+            send_message_to_user(
+                app, recipient, notification_message, ignore_queue=True
+            )
             for recipient in recipients
         ),
         limit=_MAX_CONCURRENT_SENDS,
