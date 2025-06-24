@@ -6,13 +6,14 @@ Scheduled tasks addressing users
 import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
+from datetime import timedelta
 
 from aiohttp import web
 from models_library.users import UserID
+from servicelib.async_utils import cancel_wait_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import get_log_record_extra, log_context
-from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.wait import wait_exponential
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ..login import login_service
 from ..security import security_service
@@ -21,10 +22,6 @@ from ..users.api import update_expired_users
 _logger = logging.getLogger(__name__)
 
 CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
-
-
-_PERIODIC_TASK_NAME = f"{__name__}.update_expired_users_periodically"
-_APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
 
 
 async def notify_user_logout_all_sessions(
@@ -49,15 +46,7 @@ async def notify_user_logout_all_sessions(
             )
 
 
-@retry(
-    wait=wait_exponential(min=5, max=20),
-    before_sleep=before_sleep_log(_logger, logging.WARNING),
-    # NOTE: this function does suppresses all exceptions and retry indefinitly
-)
 async def _update_expired_users(app: web.Application):
-    """
-    It is resilient, i.e. if update goes wrong, it waits a bit and retries
-    """
 
     if updated := await update_expired_users(app):
         # expired users might be cached in the auth. If so, any request
@@ -81,36 +70,36 @@ async def _update_expired_users(app: web.Application):
         _logger.info("No users expired")
 
 
-async def _update_expired_users_periodically(
-    app: web.Application, wait_interval_s: float
-):
-    """Periodically checks expiration dates and updates user status"""
+def create_background_task_for_trial_accounts(wait_s: float) -> CleanupContextFunc:
 
-    while True:
-        await _update_expired_users(app)
-        await asyncio.sleep(wait_interval_s)
+    async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
 
+        @exclusive_periodic(
+            # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
+            get_redis_lock_manager_client_sdk(app),
+            task_interval=timedelta(seconds=wait_s),
+            retry_after=timedelta(minutes=5),
+        )
+        async def _update_expired_users_periodically() -> None:
+            with log_context(_logger, logging.INFO, "Updating expired users"):
+                await _update_expired_users(app)
 
-def create_background_task_for_trial_accounts(
-    wait_s: float, task_name: str = _PERIODIC_TASK_NAME
-) -> CleanupContextFunc:
-    async def _cleanup_ctx_fun(
-        app: web.Application,
-    ) -> AsyncIterator[None]:
         # setup
+        task_name = _update_expired_users_periodically.__name__
+
         task = asyncio.create_task(
-            _update_expired_users_periodically(app, wait_s),
+            _update_expired_users_periodically(),
             name=task_name,
         )
-        app[_APP_TASK_KEY] = task
+
+        # prevents premature garbage collection of the task
+        app_task_key = f"tasks.{task_name}"
+        app[app_task_key] = task
 
         yield
 
         # tear-down
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            assert task.cancelled()  # nosec
+        await cancel_wait_task(task)
+        app.pop(app_task_key, None)
 
     return _cleanup_ctx_fun
