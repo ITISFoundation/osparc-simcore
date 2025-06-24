@@ -90,7 +90,10 @@ async def cancel_wait_task(
         CancelledError: raised ONLY if owner is being cancelled.
     """
 
-    task.cancel()
+    cancelling = task.cancel()
+    if not cancelling:
+        return  # task was alredy cancelled
+
     assert task.cancelling()  # nosec
     assert not task.cancelled()  # nosec
 
