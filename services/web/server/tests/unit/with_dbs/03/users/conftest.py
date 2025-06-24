@@ -23,8 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-def web_server(
-    event_loop: asyncio.AbstractEventLoop,
+async def web_server(
     app_environment: EnvVarsDict,  # configs
     postgres_db: sa.engine.Engine,  # db-ready
     webserver_test_server_port: int,
@@ -37,7 +36,7 @@ def web_server(
     setup_settings(app)
     setup_db(app)
 
-    return event_loop.run_until_complete(
+    return asyncio.get_running_loop().run_until_complete(
         aiohttp_server(app, port=webserver_test_server_port)
     )
 

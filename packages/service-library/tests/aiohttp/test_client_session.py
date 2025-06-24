@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -19,7 +20,7 @@ from servicelib.aiohttp.client_session import (
 
 
 @pytest.fixture
-def server(event_loop, aiohttp_server: Callable) -> Iterator[TestServer]:
+def server(aiohttp_server: Callable) -> Iterator[TestServer]:
     async def echo(request):
         got = await request.json()
         return web.json_response(data=got)
@@ -31,7 +32,7 @@ def server(event_loop, aiohttp_server: Callable) -> Iterator[TestServer]:
 
     assert not app.get(APP_CLIENT_SESSION_KEY)
 
-    test_server = event_loop.run_until_complete(aiohttp_server(app))
+    test_server = asyncio.get_event_loop().run_until_complete(aiohttp_server(app))
 
     assert isinstance(app[APP_CLIENT_SESSION_KEY], ClientSession)
     assert not app[APP_CLIENT_SESSION_KEY].closed

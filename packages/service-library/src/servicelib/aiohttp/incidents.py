@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from typing import Any, Generic, TypeVar
 
@@ -26,6 +26,9 @@ class LimitedOrderedStack(Generic[ItemT]):
     def __len__(self) -> int:
         # called also for __bool__
         return len(self._items)
+
+    def __iter__(self) -> Iterator[ItemT]:
+        return iter(self._items)
 
     def clear(self) -> None:
         self._items.clear()
@@ -72,3 +75,9 @@ class BaseIncident:
 @dataclass
 class SlowCallback(BaseIncident):
     delay_secs: float
+
+    def __lt__(self, other: "SlowCallback") -> bool:
+        """Enable sorting by delay_secs (shorter delays are considered 'less than' longer delays)"""
+        if not isinstance(other, SlowCallback):
+            return NotImplemented
+        return self.delay_secs < other.delay_secs

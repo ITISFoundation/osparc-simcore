@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 from collections.abc import Callable
 from uuid import UUID
@@ -99,7 +100,7 @@ class MyBody(BaseModel):
 
 
 @pytest.fixture
-def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
+def client(aiohttp_client: Callable, faker: Faker) -> TestClient:
     """
     Some app that:
 
@@ -162,7 +163,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
     # adds handler
     app.add_routes([web.get("/projects/{project_uuid}", _handler)])
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return asyncio.get_event_loop().run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture
@@ -219,7 +220,6 @@ async def test_parse_request_with_invalid_path_params(
     body: MyBody,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         "/projects/invalid-uuid",
         params=query_params.as_params(),
@@ -250,7 +250,6 @@ async def test_parse_request_with_invalid_query_params(
     body: MyBody,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params={},
@@ -281,7 +280,6 @@ async def test_parse_request_with_invalid_body(
     query_params: MyRequestQueryParams,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
@@ -319,7 +317,6 @@ async def test_parse_request_with_invalid_json_body(
     query_params: MyRequestQueryParams,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
@@ -338,7 +335,6 @@ async def test_parse_request_with_invalid_headers_params(
     body: MyBody,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
@@ -364,7 +360,6 @@ async def test_parse_request_with_invalid_headers_params(
 
 
 def test_parse_request_query_parameters_as_with_order_by_query_models():
-
     OrderQueryModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name"}, default=OrderBy(field="name")
     )
