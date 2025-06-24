@@ -3,12 +3,12 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import set_parent_module_log_level
-from simcore_service_webserver.redis import setup_redis
 
 from ..application_settings import get_application_settings
 from ..login.plugin import setup_login_storage
 from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
+from ..redis import setup_redis
 from ..socketio.plugin import setup_socketio
 from . import _tasks_api_keys, _tasks_core, _tasks_trash, _tasks_users
 from .settings import get_plugin_settings
@@ -23,17 +23,19 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_garbage_collector(app: web.Application) -> None:
+    # distributed exclusive periodic tasks
+    setup_redis(app)
+
     # for trashing
     setup_products(app)
 
     # - project-api needs access to db
     setup_projects_db(app)
+
     # - project needs access to socketio via notify_project_state_update
     setup_socketio(app)
     # - project needs access to user-api that is connected to login plugin
     setup_login_storage(app)
-
-    setup_redis(app)
 
     settings = get_plugin_settings(app)
 
