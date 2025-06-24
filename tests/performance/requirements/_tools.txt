@@ -27,7 +27,7 @@ isort==6.0.1
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.15.0
+mypy==1.16.1
     # via -r requirements/../../../requirements/devenv.txt
 mypy-extensions==1.1.0
     # via
@@ -40,7 +40,9 @@ packaging==25.0
     #   black
     #   build
 pathspec==0.12.1
-    # via black
+    # via
+    #   black
+    #   mypy
 pip==25.1.1
     # via pip-tools
 pip-tools==7.4.1
@@ -63,15 +65,16 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pre-commit
-ruff==0.11.11
+ruff==0.12.0
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==80.9.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pip-tools
-tomlkit==0.13.2
+tomlkit==0.13.3
     # via pylint
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   -c requirements/_test.txt
     #   mypy

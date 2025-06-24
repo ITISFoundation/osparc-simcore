@@ -1,8 +1,8 @@
-certifi==2025.1.31
+certifi==2025.6.15
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.4.1
+charset-normalizer==3.4.2
     # via requests
 docker==7.1.0
     # via -r requirements/requirements.in
@@ -12,11 +12,11 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-requests==2.32.3
+requests==2.32.4
     # via docker
-tenacity==9.0.0
+tenacity==9.1.2
     # via -r requirements/requirements.in
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
