@@ -270,10 +270,13 @@ qx.Class.define("osparc.conversation.Conversation", {
       }
       this.__messages.splice(messageIndex, 1);
 
-      // remove the ui element
-      const index = this.__messagesList.getChildren().findIndex(control => ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]));
-      if (index > -1) {
-        this.__messagesList.getChildren().removeAt(index);
+      // Remove the UI element from the messages list
+      const children = this.__messagesList.getChildren();
+      const controlIndex = children.findIndex(
+        ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === message["messageId"])
+      );
+      if (controlIndex > -1) {
+        this.__messagesList.remove(children[controlIndex]);
       }
 
       this.__updateMessagesNumber();
