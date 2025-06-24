@@ -290,7 +290,6 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
                 "event_type": SOCKET_IO_LOG_EVENT,
                 "data": log_message.model_dump(exclude={"user_id", "channel_name"}),
             },
-            ignore_queue=False,
         ),
     )
     mocked_send_messages.reset_mock()
