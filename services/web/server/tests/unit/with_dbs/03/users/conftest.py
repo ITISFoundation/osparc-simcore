@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 from collections.abc import AsyncGenerator, AsyncIterable, Callable
 from typing import Any
 
@@ -36,9 +35,7 @@ async def web_server(
     setup_settings(app)
     setup_db(app)
 
-    return asyncio.get_running_loop().run_until_complete(
-        aiohttp_server(app, port=webserver_test_server_port)
-    )
+    return await aiohttp_server(app, port=webserver_test_server_port)
 
 
 @pytest.fixture
