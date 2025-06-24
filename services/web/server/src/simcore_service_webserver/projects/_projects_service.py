@@ -1961,7 +1961,6 @@ async def notify_project_state_update(
             app,
             user_id=notify_only_user,
             message=message,
-            ignore_queue=True,
         )
     else:
         rooms_to_notify: Generator[GroupID, None, None] = (
