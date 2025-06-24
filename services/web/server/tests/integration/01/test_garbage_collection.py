@@ -198,7 +198,7 @@ def disable_garbage_collector_task(mocker: MockerFixture) -> mock.MagicMock:
         await asyncio.sleep(0.1)
 
     return mocker.patch(
-        "simcore_service_webserver.garbage_collector.plugin._tasks_core.run_background_task",
+        "simcore_service_webserver.garbage_collector.plugin._tasks_core.create_background_task_for_garbage_collection",
         side_effect=_fake_background_task,
     )
 
