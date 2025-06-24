@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 import json
 from collections.abc import Callable
 from uuid import UUID
@@ -100,7 +99,7 @@ class MyBody(BaseModel):
 
 
 @pytest.fixture
-def client(aiohttp_client: Callable, faker: Faker) -> TestClient:
+async def client(aiohttp_client: Callable, faker: Faker) -> TestClient:
     """
     Some app that:
 
@@ -163,7 +162,7 @@ def client(aiohttp_client: Callable, faker: Faker) -> TestClient:
     # adds handler
     app.add_routes([web.get("/projects/{project_uuid}", _handler)])
 
-    return asyncio.get_event_loop().run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 @pytest.fixture
