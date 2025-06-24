@@ -24,6 +24,7 @@ from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login._constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_UNAVAILABLE,
+    MSG_LOGGED_IN,
 )
 from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login._twofa_service import (
@@ -307,7 +308,7 @@ async def test_workflow_register_and_login_with_2fa(
         },
     )
     data, _ = await assert_status(response, status.HTTP_200_OK)
-    assert "logged in" in data["message"]
+    assert MSG_LOGGED_IN in data["message"]
 
 
 async def test_can_register_same_phone_in_different_accounts(

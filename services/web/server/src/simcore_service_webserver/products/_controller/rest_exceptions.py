@@ -13,13 +13,16 @@ from ..errors import MissingStripeConfigError, ProductNotFoundError
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProductNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("{product_name} was not found"),
+        user_message(
+            "This product could not be found." + MSG_TRY_AGAIN_OR_SUPPORT, _version=1
+        ),
     ),
     MissingStripeConfigError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
-            "{product_name} service is currently unavailable."
-            + MSG_TRY_AGAIN_OR_SUPPORT
+            "This service is temporarily unavailable due to a configuration issue. "
+            + MSG_TRY_AGAIN_OR_SUPPORT,
+            _version=1,
         ),
     ),
 }

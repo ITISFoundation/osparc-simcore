@@ -18,7 +18,7 @@ error_msg = user_message("Operation failed. Please try again later.")
 
 ## Guidelines for Updating User Messages
 
-When modifying user messages, follow these rules:
+When modifying user messages, follow **as close as possible** these rules:
 
 1. **Version Tracking**: Every modification to a user message must include an incremented `_version` parameter:
 
@@ -43,7 +43,7 @@ When modifying user messages, follow these rules:
    user_message("Unable to load project.", _version=1)
    ```
 
-3. **Message Style**: Follow *strictly* the guidelines in `${workspaceFolder}/docs/user-messages-guidelines.md`
+3. **Message Style**: Follow **strictly** the guidelines in `${workspaceFolder}/docs/user-messages-guidelines.md`
 
 4. **Preserve Context**: Ensure the modified message conveys the same meaning and context as the original.
 
@@ -56,6 +56,8 @@ When modifying user messages, follow these rules:
    # After
    user_message("Your session has expired. Please log in again.", _version=3)
    ```
+6. **Replace 'Study' by 'Project'**: If the message contains the word 'Study', replace it with 'Project' to align with our terminology.
+
 
 ## Examples
 
@@ -63,10 +65,10 @@ When modifying user messages, follow these rules:
 
 ```python
 # Before
-error_dialog(user_message("Failed to save changes."))
+error_dialog(user_message("Failed to save changes in this study."))
 
 # After
-error_dialog(user_message("Unable to save your changes. Please try again.", _version=1))
+error_dialog(user_message("Unable to save your changes in this project.", _version=1))
 ```
 
 ### Example 2: F-string Message Update
