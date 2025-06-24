@@ -198,7 +198,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__getNextRequest()
         .then(resp => {
           const messages = resp["data"];
-          this.__addMessages(messages);
+          messages.forEach(message => this.addMessage(message));
           this.__nextRequestParams = resp["_links"]["next"];
           if (this.__nextRequestParams === null) {
             this.__loadMoreMessages.exclude();
@@ -227,35 +227,33 @@ qx.Class.define("osparc.conversation.Conversation", {
       return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
     },
 
-    __addMessages: function(messages) {
+    addMessage: function(message) {
       // it's not provided by the backend
-      messages.forEach(message => message["projectId"] = this.__studyData["uuid"]);
+      message["projectId"] = this.__studyData["uuid"];
 
-      this.__messages = this.__messages.concat(messages);
+      this.__messages.push(message);
 
-      const nMessages = messages.filter(msg => msg["type"] === "MESSAGE").length;
+      const nMessages = this.__messages.filter(msg => msg["type"] === "MESSAGE").length;
       if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));
       } else if (nMessages > 1) {
         this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
       }
 
-      messages.forEach(message => {
-        let control = null;
-        switch (message["type"]) {
-          case "MESSAGE":
-            control = new osparc.conversation.MessageUI(message, this.__studyData);
-            control.addListener("messageEdited", () => this.fetchMessages());
-            control.addListener("messageDeleted", () => this.fetchMessages());
-            break;
-          case "NOTIFICATION":
-            control = new osparc.conversation.NotificationUI(message);
-            break;
-        }
-        if (control) {
-          this.__messagesList.add(control);
-        }
-      });
+      let control = null;
+      switch (message["type"]) {
+        case "MESSAGE":
+          control = new osparc.conversation.MessageUI(message, this.__studyData);
+          control.addListener("messageEdited", () => this.fetchMessages());
+          control.addListener("messageDeleted", () => this.fetchMessages());
+          break;
+        case "NOTIFICATION":
+          control = new osparc.conversation.NotificationUI(message);
+          break;
+      }
+      if (control) {
+        this.__messagesList.add(control);
+      }
     },
   }
 });

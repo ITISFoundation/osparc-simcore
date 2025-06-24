@@ -30,6 +30,8 @@ qx.Class.define("osparc.study.Conversations", {
     this.__conversations = [];
 
     this.fetchConversations(studyData);
+
+    this.__listenToConversationWS();
   },
 
   statics: {
@@ -163,32 +165,36 @@ qx.Class.define("osparc.study.Conversations", {
     __listenToConversationWS: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
-      socket.on("conversation:message:created", data => {
-        if (data) {
-          const projectId = data["projectId"];
-          const conversationId = data["conversationId"];
-          const messageId = data["messageId"];
-          console.log("Conversation message created", projectId, conversationId, messageId);
-        }
-      }, this);
+      [
+        "conversation:message:created",
+        "conversation:message:update",
+        "conversation:message:deleted",
+      ].forEach(eventName => {
+        socket.on(eventName, data => {
+          console.log("Conversation message", eventName, data);
+          if (data) {
+            const conversationId = data["conversationId"];
+            const conversation = this.__getConversation(conversationId);
+            if (conversation) {
+              switch (eventName) {
+                case "conversation:message:created":
+                  conversation.addMessage(data);
+                  break;
+                case "conversation:message:update":
+                  conversation.updateMessage(data);
+                  break;
+                case "conversation:message:deleted":
+                  conversation.deleteMessage(data);
+                  break;
+              }
+            }
+          }
+        }, this);
+      });
+    },
 
-      socket.on("conversation:message:update", data => {
-        if (data) {
-          const projectId = data["projectId"];
-          const conversationId = data["conversationId"];
-          const messageId = data["messageId"];
-          console.log("Conversation message created", projectId, conversationId, messageId);
-        }
-      }, this);
-
-      socket.on("conversation:message:deleted", data => {
-        if (data) {
-          const projectId = data["projectId"];
-          const conversationId = data["conversationId"];
-          const messageId = data["messageId"];
-          console.log("Conversation message created", projectId, conversationId, messageId);
-        }
-      }, this);
+    __getConversation: function(conversationId) {
+      return this.__conversations.find(conversation => conversation.getConversationId() === conversationId);
     },
 
     fetchConversations: function(studyData) {
