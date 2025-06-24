@@ -43,7 +43,7 @@ def exclusive_periodic(
             # Replicas will raise CouldNotAcquireLockError
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/7574
             (CouldNotAcquireLockError,),
-            reason="Multiple instances of the periodic task `{coro.__module__}.{coro.__name__}` are running.",
+            reason=f"Multiple instances of the periodic task `{coro.__module__}.{coro.__name__}` are running.",
         )
         @exclusive(
             redis_client,

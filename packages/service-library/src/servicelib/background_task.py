@@ -38,11 +38,14 @@ def periodic(
     *,
     interval: datetime.timedelta,
     raise_on_error: bool = False,
-    early_wake_up_event: asyncio.Event | None = None,
+    early_wake_up_event: (
+        asyncio.Event | None
+    ) = None,  # TODO: i would argue that this should be a different decorator instead of an optional arguments since with this event,
+    # the funciton is not periodic anymore but rahter repeatedly triggered by the event
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]
 ]:
-    """Calls the function periodically with a given interval.
+    """Calls the function periodically with a given interval or triggered by an early wake-up event.
 
     Arguments:
         interval -- the interval between calls
@@ -58,7 +61,7 @@ def periodic(
     """
 
     def _decorator(
-        func: Callable[P, Coroutine[Any, Any, None]],
+        coro: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         class _InternalTryAgain(TryAgain):
             # Local exception to prevent reacting to similarTryAgain exceptions raised by the wrapped func
@@ -82,10 +85,10 @@ def periodic(
             ),
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
-        @functools.wraps(func)
+        @functools.wraps(coro)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             with log_catch(_logger, reraise=True):
-                await func(*args, **kwargs)
+                await coro(*args, **kwargs)
             raise _InternalTryAgain
 
         return _wrapper
