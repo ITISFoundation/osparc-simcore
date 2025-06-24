@@ -3,6 +3,8 @@
 #
 #
 
+--constraint _base.in
+
 aiohttp
 aiopg[sa]
 attrs
