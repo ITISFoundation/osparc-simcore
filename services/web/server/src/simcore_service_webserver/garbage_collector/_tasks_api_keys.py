@@ -33,12 +33,13 @@ def create_background_task_to_prune_api_keys(
 ) -> CleanupContextFunc:
 
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
+        interval = timedelta(seconds=wait_period_s)
 
         @exclusive_periodic(
             # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
             get_redis_lock_manager_client_sdk(app),
-            task_interval=timedelta(seconds=wait_period_s),
-            retry_after=timedelta(minutes=5),
+            task_interval=interval,
+            retry_after=interval,
         )
         async def _prune_expired_api_keys_periodically() -> None:
             with log_context(_logger, logging.INFO, "Pruning expired API keys"):

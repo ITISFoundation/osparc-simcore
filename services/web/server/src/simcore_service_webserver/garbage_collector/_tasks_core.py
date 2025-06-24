@@ -24,12 +24,13 @@ def create_background_task_for_garbage_collection() -> CleanupContextFunc:
 
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
         settings: GarbageCollectorSettings = get_plugin_settings(app)
+        interval = timedelta(seconds=settings.GARBAGE_COLLECTOR_INTERVAL_S)
 
         @exclusive_periodic(
             # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
             get_redis_lock_manager_client_sdk(app),
-            task_interval=timedelta(seconds=settings.GARBAGE_COLLECTOR_INTERVAL_S),
-            retry_after=timedelta(minutes=5),
+            task_interval=interval,
+            retry_after=interval,
         )
         async def _collect_garbage_periodically() -> None:
             with log_context(_logger, logging.INFO, "Garbage collect cycle"):
