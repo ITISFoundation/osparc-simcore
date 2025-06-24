@@ -41,9 +41,6 @@ qx.Class.define("osparc.study.Conversations", {
       const viewWidth = 600;
       const viewHeight = 700;
       const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
-      win.addListener("close", () => {
-        conversations.dispose(); // this will remove the WebSocket listeners
-      }, this);
       return win;
     },
 
