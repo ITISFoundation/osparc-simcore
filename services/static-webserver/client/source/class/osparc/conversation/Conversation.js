@@ -47,7 +47,7 @@ qx.Class.define("osparc.conversation.Conversation", {
 
     this.__buildLayout();
 
-    this.fetchMessages();
+    this.reloadMessages();
   },
 
   properties: {
@@ -161,7 +161,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       });
 
       this.__loadMoreMessages = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-      this.__loadMoreMessages.addListener("execute", () => this.fetchMessages(false));
+      this.__loadMoreMessages.addListener("execute", () => this.reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
@@ -172,13 +172,33 @@ qx.Class.define("osparc.conversation.Conversation", {
           if (data["conversationId"]) {
             this.setConversationId(data["conversationId"]);
           }
-          this.fetchMessages();
+          this.reloadMessages();
         });
         this._add(addMessages);
       }
     },
 
-    fetchMessages: function(removeMessages = true) {
+    __getNextRequest: function() {
+      const params = {
+        url: {
+          studyId: this.__studyData["uuid"],
+          conversationId: this.getConversationId(),
+          offset: 0,
+          limit: 42
+        }
+      };
+      const nextRequestParams = this.__nextRequestParams;
+      if (nextRequestParams) {
+        params.url.offset = nextRequestParams.offset;
+        params.url.limit = nextRequestParams.limit;
+      }
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
+    },
+
+    reloadMessages: function(removeMessages = true) {
       if (this.getConversationId() === null) {
         this.__messagesTitle.setValue(this.tr("No messages yet"));
         this.__messagesList.hide();
@@ -207,26 +227,6 @@ qx.Class.define("osparc.conversation.Conversation", {
         .finally(() => this.__loadMoreMessages.setFetching(false));
     },
 
-    __getNextRequest: function() {
-      const params = {
-        url: {
-          studyId: this.__studyData["uuid"],
-          conversationId: this.getConversationId(),
-          offset: 0,
-          limit: 42
-        }
-      };
-      const nextRequestParams = this.__nextRequestParams;
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
-      }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
-    },
-
     addMessage: function(message) {
       // it's not provided by the backend
       message["projectId"] = this.__studyData["uuid"];
@@ -244,8 +244,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       switch (message["type"]) {
         case "MESSAGE":
           control = new osparc.conversation.MessageUI(message, this.__studyData);
-          control.addListener("messageEdited", () => this.fetchMessages());
-          control.addListener("messageDeleted", () => this.fetchMessages());
+          control.addListener("messageEdited", () => this.reloadMessages());
+          control.addListener("messageDeleted", () => this.reloadMessages());
           break;
         case "NOTIFICATION":
           control = new osparc.conversation.NotificationUI(message);
