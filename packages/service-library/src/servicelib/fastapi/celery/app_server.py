@@ -1,7 +1,12 @@
+import datetime
+from typing import Final
+
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 
 from ...celery.app_server import BaseAppServer
+
+_SHUTDOWN_TIMEOUT: Final[float] = datetime.timedelta(seconds=10).total_seconds()
 
 
 class FastAPIAppServer(BaseAppServer[FastAPI]):
@@ -13,7 +18,7 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
         self._lifespan_manager = LifespanManager(
             self.app,
             startup_timeout=None,  # waits for full app initialization (DB migrations, etc.)
-            shutdown_timeout=None,
+            shutdown_timeout=_SHUTDOWN_TIMEOUT,
         )
         await self._lifespan_manager.__aenter__()
 
