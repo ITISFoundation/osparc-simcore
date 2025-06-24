@@ -4,7 +4,7 @@ import threading
 
 from celery import Celery  # type: ignore[import-untyped]
 from celery.worker.worker import WorkController  # type: ignore[import-untyped]
-from servicelib.celery.app_server import STARTUP_TIMEOUT, BaseAppServer
+from servicelib.celery.app_server import BaseAppServer
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
@@ -55,7 +55,7 @@ def on_worker_init(
     )
     thread.start()
 
-    startup_complete_event.wait(STARTUP_TIMEOUT * 1.1)
+    startup_complete_event.wait()
 
 
 def on_worker_shutdown(sender, **_kwargs) -> None:

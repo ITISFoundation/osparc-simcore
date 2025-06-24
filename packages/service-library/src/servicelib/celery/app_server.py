@@ -1,13 +1,10 @@
 import asyncio
-import datetime
 import threading
 from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
-from typing import Final, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from servicelib.celery.task_manager import TaskManager
-
-STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
 T = TypeVar("T")
 
@@ -42,11 +39,11 @@ class BaseAppServer(ABC, Generic[T]):
         raise NotImplementedError
 
     async def startup(
-        self, completed_event: threading.Event, shutdown_event: asyncio.Event
+        self, startup_completed_event: threading.Event, shutdown_event: asyncio.Event
     ) -> None:
         self._shutdown_event = shutdown_event
-        completed_event.set()
         await self.on_startup()
+        startup_completed_event.set()
         await self._shutdown_event.wait()
 
     @abstractmethod
