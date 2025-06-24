@@ -17,29 +17,29 @@ from aws_library.ec2 import (
 )
 from aws_library.ec2._errors import EC2TooManyInstancesError
 from fastapi import FastAPI
-from models_library.generated_models.docker_rest_api import Node, NodeState
+from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_gather
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..constants import DOCKER_JOIN_COMMAND_EC2_TAG_KEY, DOCKER_JOIN_COMMAND_NAME
-from ..core.errors import (
+from ...constants import DOCKER_JOIN_COMMAND_EC2_TAG_KEY, DOCKER_JOIN_COMMAND_NAME
+from ...core.errors import (
     Ec2InvalidDnsNameError,
     TaskBestFittingInstanceNotFoundError,
     TaskRequirementsAboveRequiredEC2InstanceTypeError,
     TaskRequiresUnauthorizedEC2InstanceTypeError,
 )
-from ..core.settings import ApplicationSettings, get_application_settings
-from ..models import (
+from ...core.settings import ApplicationSettings, get_application_settings
+from ...models import (
     AssignedTasksToInstanceType,
     AssociatedInstance,
     Cluster,
     NonAssociatedInstance,
 )
-from ..utils import utils_docker, utils_ec2
-from ..utils.auto_scaling_core import (
+from ...utils import utils_docker, utils_ec2
+from ...utils.auto_scaling_core import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
     find_selected_instance_type_for_task,
@@ -47,33 +47,28 @@ from ..utils.auto_scaling_core import (
     node_host_name_from_ec2_private_dns,
     sort_drained_nodes,
 )
-from ..utils.buffer_machines_pool_core import (
+from ...utils.buffer_machines_pool_core import (
     get_activated_buffer_ec2_tags,
     get_deactivated_buffer_ec2_tags,
     is_buffer_machine,
 )
-from ..utils.rabbitmq import (
+from ...utils.rabbitmq import (
     post_autoscaling_status_message,
     post_tasks_log_message,
     post_tasks_progress_message,
 )
-from .auto_scaling_mode_base import BaseAutoscaling
-from .docker import get_docker_client
-from .ec2 import get_ec2_client
-from .instrumentation import get_instrumentation, has_instrumentation
-from .ssm import get_ssm_client
+from ..docker import get_docker_client
+from ..ec2 import get_ec2_client
+from ..instrumentation import get_instrumentation, has_instrumentation
+from ..ssm import get_ssm_client
+from ._provider_protocol import AutoscalingProvider
 
 _logger = logging.getLogger(__name__)
 
 
-def _node_not_ready(node: Node) -> bool:
-    assert node.status  # nosec
-    return bool(node.status.state != NodeState.ready)
-
-
 async def _analyze_current_cluster(
     app: FastAPI,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
     allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     app_settings = get_application_settings(app)
@@ -97,7 +92,7 @@ async def _analyze_current_cluster(
 
     buffer_ec2_instances = await get_ec2_client(app).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped"],
     )
 
@@ -141,7 +136,7 @@ async def _analyze_current_cluster(
                     - node_used_resources,
                 )
             )
-        elif auto_scaling_mode.is_instance_drained(instance):
+        elif utils_docker.is_instance_drained(instance):
             all_drained_nodes.append(instance)
         elif await auto_scaling_mode.is_instance_retired(app, instance):
             # it should be drained, but it is not, so we force it to be drained such that it might be re-used if needed
@@ -166,7 +161,9 @@ async def _analyze_current_cluster(
         terminated_instances=[
             NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
         ],
-        disconnected_nodes=[n for n in docker_nodes if _node_not_ready(n)],
+        disconnected_nodes=[
+            n for n in docker_nodes if not utils_docker.is_node_ready(n)
+        ],
         retired_nodes=retired_nodes,
     )
     _logger.info("current state: %s", f"{cluster!r}")
@@ -278,7 +275,7 @@ async def _make_pending_buffer_ec2s_join_cluster(
 async def _try_attach_pending_ec2s(
     app: FastAPI,
     cluster: Cluster,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
     allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     """label the drained instances that connected to the swarm which are missing the monitoring labels"""
@@ -424,7 +421,7 @@ async def _activate_drained_nodes(
 
 
 async def _start_warm_buffer_instances(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, cluster: Cluster, auto_scaling_mode: AutoscalingProvider
 ) -> Cluster:
     """starts warm buffer if there are assigned tasks, or if a hot buffer of the same type is needed"""
 
@@ -479,7 +476,7 @@ async def _start_warm_buffer_instances(
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
         await get_ec2_client(app).set_instances_tags(
             started_instances,
-            tags=get_activated_buffer_ec2_tags(app, auto_scaling_mode),
+            tags=get_activated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         )
     started_instance_ids = [i.id for i in started_instances]
 
@@ -547,7 +544,7 @@ async def _assign_tasks_to_current_cluster(
     app: FastAPI,
     tasks: list,
     cluster: Cluster,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
 ) -> tuple[list, Cluster]:
     """
         Evaluates whether a task can be executed on any instance within the cluster. If the task's resource requirements are met, the task is *denoted* as assigned to the cluster.
@@ -605,7 +602,7 @@ async def _find_needed_instances(
     unassigned_tasks: list,
     available_ec2_types: list[EC2InstanceType],
     cluster: Cluster,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
 ) -> dict[EC2InstanceType, int]:
     # 1. check first the pending task needs
     needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType] = []
@@ -634,8 +631,8 @@ async def _find_needed_instances(
                     defined_ec2 = find_selected_instance_type_for_task(
                         task_required_ec2_instance,
                         available_ec2_types,
-                        auto_scaling_mode,
                         task,
+                        auto_scaling_mode.get_task_required_resources(task),
                     )
                     needed_new_instance_types_for_tasks.append(
                         AssignedTasksToInstanceType(
@@ -778,7 +775,7 @@ async def _launch_instances(
     app: FastAPI,
     needed_instances: dict[EC2InstanceType, int],
     tasks: list,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
 ) -> list[EC2InstanceData]:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
@@ -844,7 +841,7 @@ async def _launch_instances(
         elif isinstance(r, list):
             new_pending_instances.extend(r)
         else:
-            new_pending_instances.append(r)
+            new_pending_instances.append(r)  # type: ignore[unreachable]
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
@@ -1150,7 +1147,7 @@ async def _drain_retired_nodes(
 async def _scale_down_unused_cluster_instances(
     app: FastAPI,
     cluster: Cluster,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
 ) -> Cluster:
     await auto_scaling_mode.try_retire_nodes(app)
     cluster = await _deactivate_empty_nodes(app, cluster)
@@ -1160,7 +1157,7 @@ async def _scale_down_unused_cluster_instances(
 async def _scale_up_cluster(
     app: FastAPI,
     cluster: Cluster,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
     allowed_instance_types: list[EC2InstanceType],
     unassigned_tasks: list,
 ) -> Cluster:
@@ -1212,7 +1209,7 @@ async def _scale_up_cluster(
 async def _autoscale_cluster(
     app: FastAPI,
     cluster: Cluster,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
     allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     # 1. check if we have pending tasks
@@ -1245,7 +1242,7 @@ async def _autoscale_cluster(
 
 
 async def _notify_autoscaling_status(
-    app: FastAPI, cluster: Cluster, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, cluster: Cluster, auto_scaling_mode: AutoscalingProvider
 ) -> None:
     monitored_instances = list(
         itertools.chain(
@@ -1274,7 +1271,7 @@ async def _notify_autoscaling_status(
 
 
 async def auto_scale_cluster(
-    *, app: FastAPI, auto_scaling_mode: BaseAutoscaling
+    *, app: FastAPI, auto_scaling_mode: AutoscalingProvider
 ) -> None:
     """Check that there are no pending tasks requiring additional resources in the cluster (docker swarm)
     If there are such tasks, this method will allocate new machines in AWS to cope with

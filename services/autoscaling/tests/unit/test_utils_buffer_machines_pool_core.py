@@ -14,11 +14,11 @@ from simcore_service_autoscaling.constants import (
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
 )
-from simcore_service_autoscaling.modules.auto_scaling_mode_computational import (
-    ComputationalAutoscaling,
+from simcore_service_autoscaling.modules.cluster_scaling._provider_computational import (
+    ComputationalAutoscalingProvider,
 )
-from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
-    DynamicAutoscaling,
+from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
+    DynamicAutoscalingProvider,
 )
 from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
     dump_pre_pulled_images_as_tags,
@@ -37,9 +37,9 @@ def test_get_activated_buffer_ec2_tags_dynamic(
     enabled_dynamic_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = DynamicAutoscaling()
+    auto_scaling_mode = DynamicAutoscalingProvider()
     activated_buffer_tags = get_activated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     assert (
         auto_scaling_mode.get_ec2_tags(initialized_app)
@@ -55,9 +55,9 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
     enabled_dynamic_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = DynamicAutoscaling()
+    auto_scaling_mode = DynamicAutoscalingProvider()
     deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix
     expected_tags = (
@@ -79,9 +79,9 @@ def test_get_activated_buffer_ec2_tags_computational(
     enabled_computational_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = ComputationalAutoscaling()
+    auto_scaling_mode = ComputationalAutoscalingProvider()
     activated_buffer_tags = get_activated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     assert (
         auto_scaling_mode.get_ec2_tags(initialized_app)
@@ -97,9 +97,9 @@ def test_get_deactivated_buffer_ec2_tags_computational(
     enabled_computational_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = ComputationalAutoscaling()
+    auto_scaling_mode = ComputationalAutoscalingProvider()
     deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix
     expected_tags = (

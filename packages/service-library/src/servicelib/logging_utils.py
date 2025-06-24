@@ -9,7 +9,7 @@ import asyncio
 import functools
 import logging
 from asyncio import iscoroutinefunction
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator, Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
@@ -339,7 +339,6 @@ def log_decorator(
     logger_obj = logger or _logger
 
     def _decorator(func_or_coro: F) -> F:
-
         _log_exc_kwargs = LogExceptionsKwargsDict(
             logger=logger_obj,
             level=level,
@@ -378,7 +377,14 @@ def log_decorator(
 
 
 @contextmanager
-def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]:
+def log_catch(
+    logger: logging.Logger, *, reraise: bool = True
+) -> Generator[None, None, None]:
+    """Context manager that catches and logs exceptions.
+
+    When reraise=False, exceptions are caught and suppressed, allowing
+    execution to continue after the with block.
+    """
     try:
         yield
     except asyncio.CancelledError:
@@ -388,6 +394,7 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
         logger.exception("Unhandled exception:")
         if reraise:
             raise exc from exc
+        # When reraise=False, exceptions are suppressed and execution continues
 
 
 LogLevelInt: TypeAlias = int
@@ -420,7 +427,7 @@ def log_context(
     logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
     yield
     duration = (
-        f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
+        f" in {(datetime.now() - start).total_seconds()}s"  # noqa: DTZ005
         if log_duration
         else ""
     )

@@ -14,11 +14,11 @@ _logger = logging.getLogger(__name__)
 
 class TaskLifecycleSchedulerPlugin(SchedulerPlugin):
     def __init__(self) -> None:
-        self.scheduler = None
+        self.scheduler: Scheduler | None = None
         _logger.info("initialized TaskLifecycleSchedulerPlugin")
 
     async def start(self, scheduler: Scheduler) -> None:
-        self.scheduler = scheduler  # type: ignore[assignment]
+        self.scheduler = scheduler
         _logger.info("started TaskLifecycleSchedulerPlugin")
 
     def transition(

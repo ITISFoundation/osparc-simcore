@@ -17,19 +17,17 @@ from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
-APP_SETUP_COMPLETED_KEY = f"{__name__ }.setup"
+APP_SETUP_COMPLETED_KEY = f"{__name__}.setup"
 
 
 class _SetupFunc(Protocol):
     __name__: str
 
-    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool:
-        ...
+    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool: ...
 
 
 class _ApplicationSettings(Protocol):
-    def is_enabled(self, field_name: str) -> bool:
-        ...
+    def is_enabled(self, field_name: str) -> bool: ...
 
 
 class ModuleCategory(Enum):
@@ -46,12 +44,10 @@ class SkipModuleSetupError(Exception):
         super().__init__(reason)
 
 
-class ApplicationSetupError(Exception):
-    ...
+class ApplicationSetupError(Exception): ...
 
 
-class DependencyError(ApplicationSetupError):
-    ...
+class DependencyError(ApplicationSetupError): ...
 
 
 class SetupMetadataDict(TypedDict):
@@ -91,9 +87,9 @@ def _is_addon_enabled_from_config(
     cfg: dict[str, Any], dotted_section: str, section
 ) -> bool:
     try:
-        parts: list[str] = dotted_section.split(".")
+        parts = dotted_section.split(".")
         # navigates app_config (cfg) searching for section
-        searched_config = deepcopy(cfg)
+        searched_config: Any = deepcopy(cfg)
         for part in parts:
             if section and part == "enabled":
                 # if section exists, no need to explicitly enable it
@@ -278,7 +274,7 @@ def app_module_setup(
 
                 # post-setup
                 if completed is None:
-                    completed = True
+                    completed = True  # type: ignore[unreachable]
 
                 if completed:  # registers completed setup
                     app[APP_SETUP_COMPLETED_KEY].append(module_name)

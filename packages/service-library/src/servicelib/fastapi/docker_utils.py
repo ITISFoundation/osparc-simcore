@@ -104,7 +104,7 @@ async def retrieve_image_layer_information(
                 return TypeAdapter(DockerImageManifestsV2).validate_python(
                     json_response
                 )
-    return None
+    return None  # type: ignore[unreachable]
 
 
 async def pull_images(
@@ -130,7 +130,6 @@ async def pull_images(
         progress_unit="Byte",
         description=f"pulling {len(images)} images",
     ) as pbar:
-
         await asyncio.gather(
             *[
                 pull_image(

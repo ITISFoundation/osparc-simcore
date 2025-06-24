@@ -84,10 +84,10 @@ async def _get_file(
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: list[StorageFileMetaData] = (
-            await storage_client.search_owned_files(
-                user_id=user_id, file_id=file_id, limit=1
-            )
+        stored_files: list[
+            StorageFileMetaData
+        ] = await storage_client.search_owned_files(
+            user_id=user_id, file_id=file_id, limit=1
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -128,7 +128,7 @@ async def _create_domain_file(
             project_id=project.uuid, node_id=NodeID(node_id)
         )
     else:
-        err_msg = f"Invalid client_file type passed: {type(client_file)=}"
+        err_msg = f"Invalid client_file type passed: {type(client_file)=}"  # type: ignore[unreachable]
         raise TypeError(err_msg)
     return file
 

@@ -7,11 +7,11 @@ from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 
-from ..core.settings import ApplicationSettings
-from ..utils.redis import create_lock_key_and_value
-from .auto_scaling_mode_dynamic import DynamicAutoscaling
-from .buffer_machines_pool_core import monitor_buffer_machines
-from .redis import get_redis_client
+from ...core.settings import ApplicationSettings
+from ...utils.redis import create_lock_key_and_value
+from ..redis import get_redis_client
+from ._buffer_machines_pool_core import monitor_buffer_machines
+from ._provider_dynamic import DynamicAutoscalingProvider
 
 _TASK_NAME_BUFFER: Final[str] = "Autoscaling Buffer Machines Pool"
 
@@ -35,7 +35,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
             task_name=_TASK_NAME_BUFFER,
             app=app,
-            auto_scaling_mode=(DynamicAutoscaling()),
+            auto_scaling_mode=(DynamicAutoscalingProvider()),
         )
 
     return _startup

@@ -135,7 +135,7 @@ def _validate_pricing_unit(classification: PricingPlanClassification, unit_extra
             msg = "Expected UnitExtraInfoTier (CPU, RAM, VRAM) for TIER classification"
             raise ValueError(msg)
     else:
-        msg = "Not known pricing plan classification"
+        msg = "Not known pricing plan classification"  # type: ignore[unreachable]
         raise ValueError(msg)
 
 
