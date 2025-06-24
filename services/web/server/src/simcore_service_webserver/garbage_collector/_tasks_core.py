@@ -32,7 +32,7 @@ def create_background_task_for_garbage_collection() -> CleanupContextFunc:
             # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
             get_redis_lock_manager_client_sdk(app),
             task_interval=interval,
-            retry_after=interval,
+            retry_after=min(timedelta(seconds=10), interval / 10),
         )
         async def _collect_garbage_periodically() -> None:
             with log_context(_logger, logging.INFO, "Garbage collect cycle"):

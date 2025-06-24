@@ -76,7 +76,7 @@ def create_background_task_for_trial_accounts(wait_s: float) -> CleanupContextFu
             # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
             get_redis_lock_manager_client_sdk(app),
             task_interval=interval,
-            retry_after=interval,
+            retry_after=min(timedelta(seconds=10), interval / 10),
         )
         async def _update_expired_users_periodically() -> None:
             with log_context(_logger, logging.INFO, "Updating expired users"):
