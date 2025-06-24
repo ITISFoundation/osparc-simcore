@@ -6,7 +6,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine
 from typing import Any, Final, ParamSpec, TypeVar
 
-from common_library.async_tools import cancel_and_shielded_wait, delayed_start
+from common_library.async_tools import cancel_wait_task, delayed_start
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
@@ -142,4 +142,4 @@ async def periodic_task(
         if asyncio_task is not None:
             # NOTE: this stopping is shielded to prevent the cancellation to propagate
             # into the stopping procedure
-            await cancel_and_shielded_wait(asyncio_task, max_delay=stop_timeout)
+            await cancel_wait_task(asyncio_task, max_delay=stop_timeout)

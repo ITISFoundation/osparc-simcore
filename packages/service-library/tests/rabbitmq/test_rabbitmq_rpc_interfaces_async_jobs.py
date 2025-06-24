@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 
 import pytest
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -137,7 +137,7 @@ async def async_job_rpc_server(  # noqa: C901
     yield
 
     for task in fake_server.tasks:
-        await cancel_and_shielded_wait(task)
+        await cancel_wait_task(task)
 
 
 @pytest.mark.parametrize("method", ["result", "status", "cancel"])

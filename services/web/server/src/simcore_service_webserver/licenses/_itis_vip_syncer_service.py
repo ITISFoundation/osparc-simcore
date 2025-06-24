@@ -4,7 +4,7 @@ import logging
 from datetime import timedelta
 
 from aiohttp import web
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from httpx import AsyncClient
 from models_library.licenses import LicensedResourceType
 from servicelib.background_task_utils import exclusive_periodic
@@ -115,6 +115,6 @@ def setup_itis_vip_syncer(
 
             yield
 
-            await cancel_and_shielded_wait(background_task)
+            await cancel_wait_task(background_task)
 
     app.cleanup_ctx.append(_lifespan)

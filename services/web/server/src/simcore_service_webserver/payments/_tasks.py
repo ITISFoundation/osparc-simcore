@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from aiohttp import web
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_webserver.wallets import PaymentID, PaymentMethodID
 from pydantic import HttpUrl, TypeAdapter
 from servicelib.aiohttp.typing_extension import CleanupContextFunc
@@ -144,6 +144,6 @@ def create_background_task_to_fake_payment_completion(
         yield
 
         # tear-down
-        await cancel_and_shielded_wait(task)
+        await cancel_wait_task(task)
 
     return _cleanup_ctx_fun

@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import Final
 
 import arrow
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat, NonNegativeInt
@@ -149,6 +149,4 @@ class Monitor:
 
     async def shutdown(self) -> None:
         if getattr(self.app.state, "status_monitor_background_task", None):
-            await cancel_and_shielded_wait(
-                self.app.state.status_monitor_background_task
-            )
+            await cancel_wait_task(self.app.state.status_monitor_background_task)

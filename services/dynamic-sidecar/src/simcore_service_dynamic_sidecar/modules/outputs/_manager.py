@@ -6,7 +6,7 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
@@ -204,7 +204,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         with log_context(_logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
-                await cancel_and_shielded_wait(
+                await cancel_wait_task(
                     self._task_scheduler_worker, max_delay=self.task_monitor_interval_s
                 )
 

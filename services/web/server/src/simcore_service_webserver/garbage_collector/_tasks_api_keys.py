@@ -8,7 +8,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.wait import wait_exponential
@@ -68,6 +68,6 @@ def create_background_task_to_prune_api_keys(
         yield
 
         # tear-down
-        await cancel_and_shielded_wait(task)
+        await cancel_wait_task(task)
 
     return _cleanup_ctx_fun

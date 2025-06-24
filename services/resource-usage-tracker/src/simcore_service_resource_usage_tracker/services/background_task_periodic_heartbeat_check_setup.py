@@ -3,7 +3,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import TypedDict
 
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
@@ -69,7 +69,7 @@ def _on_app_shutdown(
         ):
             assert _app  # nosec
             if _app.state.rut_background_task__periodic_check_of_running_services:
-                await cancel_and_shielded_wait(
+                await cancel_wait_task(
                     _app.state.rut_background_task__periodic_check_of_running_services
                 )
 

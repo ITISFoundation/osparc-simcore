@@ -8,7 +8,7 @@ from typing import Any, Final, cast
 
 import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
 from servicelib.background_task import create_periodic_task
@@ -255,7 +255,7 @@ def setup(app: FastAPI) -> None:
 
     async def on_shutdown() -> None:
         if app.state.auto_cache_task:
-            await cancel_and_shielded_wait(app.state.auto_cache_task)
+            await cancel_wait_task(app.state.auto_cache_task)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

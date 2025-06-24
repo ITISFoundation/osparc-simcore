@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Annotated, Final, cast
 from uuid import uuid4
 
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
@@ -63,7 +63,7 @@ class ApiServerHealthChecker:
     async def teardown(self):
         if self._background_task:
             with log_catch(_logger, reraise=False):
-                await cancel_and_shielded_wait(
+                await cancel_wait_task(
                     self._background_task, max_delay=self._timeout_seconds
                 )
         await self._log_distributor.deregister(job_id=self._dummy_job_id)

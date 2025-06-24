@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Final
 
 import arrow
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI, status
 from models_library.callbacks_mapping import CallbacksMapping, UserServiceCommand
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
@@ -143,7 +143,7 @@ class UserServicesMetrics:
     async def stop(self) -> None:
         with log_context(_logger, logging.INFO, "shutdown service metrics recovery"):
             if self._metrics_recovery_task:
-                await cancel_and_shielded_wait(
+                await cancel_wait_task(
                     self._metrics_recovery_task, max_delay=_TASK_CANCELLATION_TIMEOUT_S
                 )
 

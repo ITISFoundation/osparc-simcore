@@ -8,7 +8,7 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
@@ -88,7 +88,7 @@ class RedisClientSDK:
                 assert self._health_check_task_started_event  # nosec
                 # NOTE: wait for the health check task to have started once before we can cancel it
                 await self._health_check_task_started_event.wait()
-                await cancel_and_shielded_wait(
+                await cancel_wait_task(
                     self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
                 )
 

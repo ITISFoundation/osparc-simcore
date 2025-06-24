@@ -4,7 +4,7 @@ from asyncio import Task
 from datetime import timedelta
 from typing import Final, Generic, TypeVar
 
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from pydantic import NonNegativeInt
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
@@ -76,7 +76,7 @@ class BaseDistributedIdentifierManager(
 
     async def shutdown(self) -> None:
         if self._cleanup_task:
-            await cancel_and_shielded_wait(self._cleanup_task, max_delay=5)
+            await cancel_wait_task(self._cleanup_task, max_delay=5)
 
     @classmethod
     def class_path(cls) -> str:

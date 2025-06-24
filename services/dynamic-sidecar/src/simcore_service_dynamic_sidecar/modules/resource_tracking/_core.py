@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Final
 
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import (
@@ -62,7 +62,7 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
 async def stop_heart_beat_task(app: FastAPI) -> None:
     resource_tracking: ResourceTrackingState = app.state.resource_tracking
     if resource_tracking.heart_beat_task:
-        await cancel_and_shielded_wait(
+        await cancel_wait_task(
             resource_tracking.heart_beat_task, max_delay=_STOP_WORKER_TIMEOUT_S
         )
 

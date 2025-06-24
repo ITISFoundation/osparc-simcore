@@ -9,7 +9,7 @@ import logging
 from collections.abc import AsyncGenerator
 
 from aiohttp import web
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from servicelib.logging_utils import log_context
 
 from ._core import collect_garbage
@@ -57,7 +57,7 @@ async def run_background_task(app: web.Application) -> AsyncGenerator:
 
     app[_GC_TASK_CONFIG]["force_stop"] = True
 
-    await cancel_and_shielded_wait(gc_bg_task)
+    await cancel_wait_task(gc_bg_task)
 
 
 async def _collect_garbage_periodically(app: web.Application):

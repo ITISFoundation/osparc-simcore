@@ -13,7 +13,7 @@ from unittest import mock
 
 import arrow
 import pytest
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
@@ -71,7 +71,7 @@ async def _assert_task_completes_once(
 
     await _assert_on_sleep_done(sleep_events, stop_after=stop_after)
 
-    await cancel_and_shielded_wait(task, max_delay=5)
+    await cancel_wait_task(task, max_delay=5)
 
     events_timestamps: tuple[float, ...] = tuple(
         x.args[0].timestamp() for x in sleep_events.call_args_list

@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 import arrow
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
@@ -125,7 +125,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         self._to_observe = {}
 
         if self._scheduler_task is not None:
-            await cancel_and_shielded_wait(self._scheduler_task, max_delay=5)
+            await cancel_wait_task(self._scheduler_task, max_delay=5)
             self._scheduler_task = None
 
         if self._trigger_observation_queue_task is not None:
@@ -364,7 +364,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                     self._service_observation_task[service_name]
                 )
                 if isinstance(service_task, asyncio.Task):
-                    await cancel_and_shielded_wait(service_task, max_delay=10)
+                    await cancel_wait_task(service_task, max_delay=10)
 
             if skip_observation_recreation:
                 return

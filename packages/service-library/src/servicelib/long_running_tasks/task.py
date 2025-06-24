@@ -9,7 +9,7 @@ from contextlib import suppress
 from typing import Any, Final, Protocol, TypeAlias
 from uuid import uuid4
 
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
 from servicelib.background_task import create_periodic_task
@@ -105,7 +105,7 @@ class TasksManager:
 
         if self._stale_tasks_monitor_task:
             with log_catch(_logger, reraise=False):
-                await cancel_and_shielded_wait(
+                await cancel_wait_task(
                     self._stale_tasks_monitor_task, max_delay=_CANCEL_TASK_TIMEOUT
                 )
 

@@ -10,7 +10,7 @@ from unittest import mock
 from uuid import UUID
 
 import pytest
-from common_library.async_tools import cancel_and_shielded_wait
+from common_library.async_tools import cancel_wait_task
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
@@ -141,4 +141,4 @@ async def test_lock_already_locked_project_raises(
     with pytest.raises(ProjectLockError):
         await _locked_fct()
 
-    await cancel_and_shielded_wait(task1)
+    await cancel_wait_task(task1)
