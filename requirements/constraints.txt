@@ -12,20 +12,22 @@
 aiohttp>=3.7.4, !=3.11.13                     # https://github.com/advisories/GHSA-v6wp-4m6f-gcjg, 3.11.13 was yanked https://github.com/aio-libs/aiohttp/issues/10617
 certifi>=2023.7.22                            # https://github.com/advisories/GHSA-xqr8-7jwr-rhp7
 cryptography>=41.0.6                          # https://github.com/advisories/GHSA-v8gr-m533-ghj9
+h11>=0.16.0                                   # https://github.com/advisories/GHSA-vqfr-h8mv-ghfj
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
 mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp
 orjson>=3.9.15                                # https://github.com/advisories/GHSA-pwr2-4v36-6qpr
 paramiko>=2.10.1                              # https://github.com/advisories/GHSA-f8q4-jwww-x3wv
+protobuf>=5.29.5                              # https://github.com/advisories/GHSA-8qvm-5x2c-j2w7
 py>=1.11.0                                    # https://github.com/advisories/GHSA-w596-4wvx-j9j6 / CVE-2022-42969
 pyyaml>=5.4                                   # https://github.com/advisories/GHSA-8q59-q68h-6hv4
 redis>=4.5.4                                  # https://github.com/advisories/GHSA-24wv-mv5m-xv4h
 rsa>=4.1                                      # https://github.com/advisories/GHSA-537h-rv9q-vvph
+setuptools>=78.1.1                            # https://github.com/advisories/GHSA-5rjg-fvgr-3xxf
 sqlalchemy>=1.3.3                             # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 starlette>=0.27.0                             # https://github.com/advisories/GHSA-qj8w-rv5x-2v9h
 ujson>=5.4.0                                  # https://github.com/advisories/GHSA-fh56-85cw-5pq6, https://github.com/advisories/GHSA-wpqr-jcpx-745r
 urllib3>=1.26.5                               # https://github.com/advisories/GHSA-q2q7-5pp4-w6pg
-
 
 
 #
