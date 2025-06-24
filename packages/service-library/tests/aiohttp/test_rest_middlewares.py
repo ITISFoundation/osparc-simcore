@@ -128,6 +128,10 @@ class Handlers:
         # NOTE: explicitly NOT enveloped!
         raise web.HTTPOk(reason="I'm ok", text=json.dumps({"ok": True}))
 
+    @staticmethod
+    async def raise_success_with_raw_text(_request: web.Request):
+        raise web.HTTPOk(text="I'm ok")  # NOT ALLOWED!
+
 
 @pytest.fixture
 async def client(
@@ -158,6 +162,10 @@ async def client(
                 ("/v1/raise_success", Handlers.raise_success),
                 ("/v1/raise_success_with_reason", Handlers.raise_success_with_reason),
                 ("/v1/raise_success_with_text", Handlers.raise_success_with_text),
+                (
+                    "/v1/raise_success_with_raw_text",
+                    Handlers.raise_success_with_raw_text,
+                ),
             ]
         ]
     )
@@ -240,7 +248,7 @@ async def test_raised_unhandled_exception(
         #
         # ERROR    servicelib.aiohttp.rest_middlewares:rest_middlewares.py:75 We apologize ... [OEC:128594540599840].
         # {
-        # "exception_details": "Unexpected error",
+        # "exception_string": "Unexpected error",
         # "error_code": "OEC:128594540599840",
         # "context": {
         #     "request.remote": "127.0.0.1",
@@ -262,7 +270,7 @@ async def test_raised_unhandled_exception(
 
         assert response.method in caplog.text
         assert response.url.path in caplog.text
-        assert "exception_details" in caplog.text
+        assert "exception_string" in caplog.text
         assert "request.remote" in caplog.text
         assert "context" in caplog.text
         assert SomeUnexpectedError.__name__ in caplog.text
@@ -330,6 +338,7 @@ async def test_http_ok_with_text_is_enveloped(client: TestClient):
     """Test that HTTPOk with text is properly enveloped."""
     response = await client.get("/v1/raise_success_with_text")
     assert response.status == status.HTTP_200_OK
+    assert response.reason == "I'm ok"
 
     # Should be enveloped
     payload = await response.json()
@@ -340,6 +349,11 @@ async def test_http_ok_with_text_is_enveloped(client: TestClient):
     assert not error
     assert data
     assert data.get("ok") is True
+
+
+async def test_http_ok_with_raw_text_is_not_allowed(client: TestClient):
+    response = await client.get("/v1/raise_success_with_raw_text")
+    assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 async def test_exception_in_handler_returns_500(

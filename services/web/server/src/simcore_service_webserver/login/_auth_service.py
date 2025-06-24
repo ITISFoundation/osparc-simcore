@@ -53,14 +53,14 @@ async def check_authorized_user_credentials_or_raise(
 
     if not user:
         raise web.HTTPUnauthorized(
-            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     _login_service.validate_user_status(user=user, support_email=product.support_email)
 
     if not security_service.check_password(password, user["password_hash"]):
         raise web.HTTPUnauthorized(
-            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
     return user
 
@@ -83,5 +83,5 @@ async def check_authorized_user_in_product_or_raise(
         )
     ):
         raise web.HTTPUnauthorized(
-            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )

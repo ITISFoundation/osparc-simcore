@@ -55,12 +55,12 @@ async def resend_2fa_code(request: web.Request):
     user = await db.get_user({"email": resend_2fa_.email})
     if not user:
         raise web.HTTPUnauthorized(
-            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
-            reason="2FA login is not available",
+            text="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 

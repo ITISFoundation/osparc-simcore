@@ -333,6 +333,7 @@ async def test_billing_info_missing_error(
 
     assert not data
     assert MSG_BILLING_DETAILS_NOT_DEFINED_ERROR in error["message"]
+    assert error["supportId"] is not None
 
 
 async def test_payment_not_found(

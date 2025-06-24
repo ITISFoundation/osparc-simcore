@@ -360,7 +360,7 @@ async def delete_project(request: web.Request):
     # that project is still in use
     if req_ctx.user_id in project_users:
         raise web.HTTPForbidden(
-            reason="Project is still open in another tab/browser."
+            text="Project is still open in another tab/browser."
             "It cannot be deleted until it is closed."
         )
     if project_users:
@@ -369,7 +369,7 @@ async def delete_project(request: web.Request):
             for uid in project_users
         }
         raise web.HTTPForbidden(
-            reason=f"Project is open by {other_user_names}. "
+            text=f"Project is open by {other_user_names}. "
             "It cannot be deleted until the project is closed."
         )
 
@@ -379,7 +379,7 @@ async def delete_project(request: web.Request):
         project_uuid=path_params.project_id,
     ):
         raise web.HTTPConflict(
-            reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
+            text=f"Project {path_params.project_id} is locked: {project_locked_state=}"
         )
 
     await _projects_service.submit_delete_project_task(

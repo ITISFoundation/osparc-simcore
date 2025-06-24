@@ -6,8 +6,8 @@ import pytest
 from common_library.error_codes import create_error_code, parse_error_code_parts
 from common_library.errors_classes import OsparcErrorMixin
 from servicelib.logging_errors import (
-    create_troubleshotting_log_kwargs,
-    create_troubleshotting_log_message,
+    create_troubleshootting_log_kwargs,
+    create_troubleshootting_log_message,
 )
 
 
@@ -29,7 +29,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
 
     msg = f"Nice message to user [{error_code}]"
 
-    log_msg = create_troubleshotting_log_message(
+    log_msg = create_troubleshootting_log_message(
         msg,
         error=exc,
         error_code=error_code,
@@ -37,7 +37,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
         tip="This is a test error",
     )
 
-    log_kwargs = create_troubleshotting_log_kwargs(
+    log_kwargs = create_troubleshootting_log_kwargs(
         msg,
         error=exc,
         error_code=error_code,
@@ -58,7 +58,7 @@ def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
 
         # ERROR    root:test_logging_utils.py:417 Nice message to user [OEC:126055703573984].
         # {
-        # "exception_details": "My error 123",
+        # "exception_string": "My error 123",
         # "error_code": "OEC:126055703573984",
         # "context": {
         #     "user_id": 123,
