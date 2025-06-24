@@ -19,6 +19,8 @@ from .settings import GarbageCollectorSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
+_GC_TASK_NAME = f"{__name__}._collect_garbage_periodically"
+
 
 def create_background_task_for_garbage_collection() -> CleanupContextFunc:
 
@@ -36,7 +38,9 @@ def create_background_task_for_garbage_collection() -> CleanupContextFunc:
             with log_context(_logger, logging.INFO, "Garbage collect cycle"):
                 await collect_garbage(app)
 
-        async for _ in setup_periodic_task(app, _collect_garbage_periodically):
+        async for _ in setup_periodic_task(
+            app, _collect_garbage_periodically, task_name=_GC_TASK_NAME
+        ):
             yield
 
     return _cleanup_ctx_fun
