@@ -38,10 +38,7 @@ def periodic(
     *,
     interval: datetime.timedelta,
     raise_on_error: bool = False,
-    early_wake_up_event: (
-        asyncio.Event | None
-    ) = None,  # TODO: i would argue that this should be a different decorator instead of an optional arguments since with this event,
-    # the funciton is not periodic anymore but rahter repeatedly triggered by the event
+    early_wake_up_event: asyncio.Event | None = None,
 ) -> Callable[
     [Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]
 ]:
