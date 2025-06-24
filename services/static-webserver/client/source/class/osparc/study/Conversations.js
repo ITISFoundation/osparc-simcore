@@ -27,6 +27,8 @@ qx.Class.define("osparc.study.Conversations", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    this.__conversations = [];
+
     this.fetchConversations(studyData);
   },
 
@@ -138,6 +140,8 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   members: {
+    __conversations: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -154,6 +158,37 @@ qx.Class.define("osparc.study.Conversations", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __listenToConversationWS: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      socket.on("conversation:message:created", data => {
+        if (data) {
+          const projectId = data["projectId"];
+          const conversationId = data["conversationId"];
+          const messageId = data["messageId"];
+          console.log("Conversation message created", projectId, conversationId, messageId);
+        }
+      }, this);
+
+      socket.on("conversation:message:update", data => {
+        if (data) {
+          const projectId = data["projectId"];
+          const conversationId = data["conversationId"];
+          const messageId = data["messageId"];
+          console.log("Conversation message created", projectId, conversationId, messageId);
+        }
+      }, this);
+
+      socket.on("conversation:message:deleted", data => {
+        if (data) {
+          const projectId = data["projectId"];
+          const conversationId = data["conversationId"];
+          const messageId = data["messageId"];
+          console.log("Conversation message created", projectId, conversationId, messageId);
+        }
+      }, this);
     },
 
     fetchConversations: function(studyData) {
@@ -192,6 +227,7 @@ qx.Class.define("osparc.study.Conversations", {
         this.fetchConversations(studyData);
       };
 
+      this.__conversations = [];
       if (conversations.length === 0) {
         const noConversationTab = new osparc.conversation.Conversation(studyData);
         conversationPages.push(noConversationTab);
@@ -199,13 +235,14 @@ qx.Class.define("osparc.study.Conversations", {
         noConversationTab.addListener("conversationDeleted", () => reloadConversations());
         conversationsLayout.add(noConversationTab);
       } else {
-        conversations.forEach(conversation => {
-          const conversationId = conversation["conversationId"];
-          const conversationTab = new osparc.conversation.Conversation(studyData, conversationId);
-          conversationPages.push(conversationTab);
-          conversationTab.setLabel(conversation["name"]);
-          conversationTab.addListener("conversationDeleted", () => reloadConversations());
-          conversationsLayout.add(conversationTab);
+        conversations.forEach(conversationData => {
+          const conversationId = conversationData["conversationId"];
+          const conversation = new osparc.conversation.Conversation(studyData, conversationId);
+          this.__conversations.push(conversation);
+          conversationPages.push(conversation);
+          conversation.setLabel(conversationData["name"]);
+          conversation.addListener("conversationDeleted", () => reloadConversations());
+          conversationsLayout.add(conversation);
         });
       }
 

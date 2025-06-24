@@ -27,6 +27,7 @@ qx.Class.define("osparc.conversation.Conversation", {
     this.base(arguments);
 
     this.__studyData = studyData;
+    this.__messages = [];
 
     if (conversationId) {
       this.setConversationId(conversationId);
@@ -64,6 +65,7 @@ qx.Class.define("osparc.conversation.Conversation", {
 
   members: {
     __studyData: null,
+    __messages: null,
     __nextRequestParams: null,
     __messagesTitle: null,
     __messagesList: null,
@@ -189,14 +191,13 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__loadMoreMessages.setFetching(true);
 
       if (removeMessages) {
+        this.__messages = [];
         this.__messagesList.removeAll();
       }
 
       this.__getNextRequest()
         .then(resp => {
           const messages = resp["data"];
-          // it's not provided by the backend
-          messages.forEach(message => message["studyId"] = this.__studyData["uuid"]);
           this.__addMessages(messages);
           this.__nextRequestParams = resp["_links"]["next"];
           if (this.__nextRequestParams === null) {
@@ -227,6 +228,11 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
 
     __addMessages: function(messages) {
+      // it's not provided by the backend
+      messages.forEach(message => message["projectId"] = this.__studyData["uuid"]);
+
+      this.__messages = this.__messages.concat(messages);
+
       const nMessages = messages.filter(msg => msg["type"] === "MESSAGE").length;
       if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));

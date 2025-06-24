@@ -211,7 +211,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       win.open();
       win.addListener("close", () => {
         if (win.getConfirmed()) {
-          osparc.study.Conversations.deleteMessage(this.__message["studyId"], this.__message["conversationId"], this.__message["messageId"])
+          osparc.study.Conversations.deleteMessage(this.__message["projectId"], this.__message["conversationId"], this.__message["messageId"])
             .then(() => this.fireEvent("messageDeleted"))
             .catch(err => osparc.FlashMessenger.logError(err));
         }
