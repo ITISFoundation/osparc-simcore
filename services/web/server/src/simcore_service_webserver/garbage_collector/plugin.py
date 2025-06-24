@@ -34,7 +34,7 @@ def setup_garbage_collector(app: web.Application) -> None:
 
     settings = get_plugin_settings(app)
 
-    app.cleanup_ctx.append(_tasks_core.run_background_task)
+    app.cleanup_ctx.append(_tasks_core.create_background_task_for_garbage_collection())
 
     set_parent_module_log_level(
         _logger.name, min(logging.INFO, get_application_settings(app).log_level)
