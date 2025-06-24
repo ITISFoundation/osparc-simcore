@@ -1,17 +1,17 @@
 annotated-types==0.7.0
     # via pydantic
-click==8.1.8
+click==8.2.1
     # via typer
 markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-orjson==3.10.15
+orjson==3.10.18
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -19,30 +19,33 @@ pydantic==2.10.6
     #   -r requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.2
+pydantic-extra-types==2.10.5
     # via -r requirements/../../../packages/common-library/requirements/_base.in
 pydantic-settings==2.7.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pygments==2.19.1
+pygments==2.19.2
     # via rich
-python-dotenv==1.0.1
+python-dotenv==1.1.1
     # via pydantic-settings
-rich==13.9.4
+rich==14.0.0
     # via
     #   -r requirements/_base.in
     #   typer
 shellingham==1.5.4
     # via typer
-typer==0.15.2
+typer==0.16.0
     # via -r requirements/_base.in
-typing-extensions==4.12.2
+typing-extensions==4.14.0
     # via
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic

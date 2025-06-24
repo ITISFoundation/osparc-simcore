@@ -45,11 +45,11 @@ charset-normalizer==3.4.1
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.6.12
+coverage==7.9.1
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==36.2.2
+faker==37.4.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -67,7 +67,7 @@ idna==3.10
     #   -c requirements/_base.txt
     #   requests
     #   yarl
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 jmespath==1.0.1
     # via
@@ -81,32 +81,40 @@ multidict==6.1.0
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-pluggy==1.5.0
-    # via pytest
+pathspec==0.12.1
+    # via mypy
+pluggy==1.6.0
+    # via
+    #   pytest
+    #   pytest-cov
 propcache==0.3.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via
@@ -139,13 +147,13 @@ sqlalchemy==1.4.54
     #   -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-types-aiobotocore-s3==2.21.1
+types-aiobotocore-s3==2.23.0
     # via -r requirements/_test.in
-types-aiofiles==24.1.0.20241221
+types-aiofiles==24.1.0.20250606
     # via -r requirements/_test.in
-types-psutil==7.0.0.20250218
+types-psutil==7.0.0.20250601
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20241230
+types-pyyaml==6.0.12.20250516
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
@@ -153,7 +161,7 @@ typing-extensions==4.12.2
     #   mypy
     #   sqlalchemy2-stubs
     #   types-aiobotocore-s3
-tzdata==2025.1
+tzdata==2025.2
     # via faker
 urllib3==2.3.0
     # via

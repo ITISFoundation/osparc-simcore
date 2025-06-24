@@ -27,7 +27,7 @@ isort==6.0.1
     #   pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.15.0
+mypy==1.16.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
@@ -45,11 +45,12 @@ packaging==24.2
     #   black
     #   build
 pathspec==0.12.1
-    # via black
-pip==25.0.1
     # via
     #   -c requirements/_test.txt
-    #   pip-tools
+    #   black
+    #   mypy
+pip==25.0.1
+    # via pip-tools
 pip-tools==7.4.1
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==4.3.8

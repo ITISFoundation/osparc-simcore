@@ -8,7 +8,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.1.8
+click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   black
@@ -75,7 +75,7 @@ setuptools==80.9.0
     # via pip-tools
 tomlkit==0.13.3
     # via pylint
-typing-extensions==4.13.2
+typing-extensions==4.14.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
