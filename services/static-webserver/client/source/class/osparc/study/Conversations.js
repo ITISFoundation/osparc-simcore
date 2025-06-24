@@ -113,12 +113,12 @@ qx.Class.define("osparc.study.Conversations", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    deleteMessage: function(studyId, conversationId, messageId) {
+    deleteMessage: function(message) {
       const params = {
         url: {
-          studyId,
-          conversationId,
-          messageId,
+          studyId: message["projectId"],
+          conversationId: message["conversationId"],
+          messageId: message["messageId"],
         },
       };
       return osparc.data.Resources.fetch("conversations", "deleteMessage", params)
@@ -170,21 +170,21 @@ qx.Class.define("osparc.study.Conversations", {
         "conversation:message:update",
         "conversation:message:deleted",
       ].forEach(eventName => {
-        socket.on(eventName, data => {
-          console.log("Conversation message", eventName, data);
-          if (data) {
-            const conversationId = data["conversationId"];
+        socket.on(eventName, message => {
+          console.log("Conversation message", eventName, message);
+          if (message) {
+            const conversationId = message["conversationId"];
             const conversation = this.__getConversation(conversationId);
             if (conversation) {
               switch (eventName) {
                 case "conversation:message:created":
-                  conversation.addMessage(data);
+                  conversation.addMessage(message);
                   break;
                 case "conversation:message:update":
-                  conversation.updateMessage(data);
+                  conversation.updateMessage(message);
                   break;
                 case "conversation:message:deleted":
-                  conversation.deleteMessage(data);
+                  conversation.deleteMessage(message);
                   break;
               }
             }

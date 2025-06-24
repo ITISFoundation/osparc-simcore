@@ -25,10 +25,6 @@ qx.Class.define("osparc.conversation.NotificationUI", {
   construct: function(message) {
     this.base(arguments);
 
-    this.set({
-      message,
-    });
-
     const isMyMessage = osparc.conversation.MessageUI.isMyMessage(message);
     const layout = new qx.ui.layout.Grid(4, 4);
     layout.setColumnFlex(isMyMessage ? 0 : 3, 3); // spacer
@@ -36,7 +32,9 @@ qx.Class.define("osparc.conversation.NotificationUI", {
     this._setLayout(layout);
     this.setPadding(5);
 
-    this.__buildLayout();
+    this.set({
+      message,
+    });
   },
 
   properties: {
@@ -44,6 +42,7 @@ qx.Class.define("osparc.conversation.NotificationUI", {
       check: "Object",
       init: null,
       nullable: false,
+      apply: "__applyMessage",
     },
   },
 
@@ -95,19 +94,21 @@ qx.Class.define("osparc.conversation.NotificationUI", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
+    __applyMessage: function(message) {
+      this._removeAll();
+
       this.getChildControl("thumbnail-spacer");
 
-      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.getMessage());
+      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(message);
 
-      const modifiedDate = new Date(this.getMessage()["modified"]);
+      const modifiedDate = new Date(message["modified"]);
       const date = osparc.utils.Utils.formatDateAndTime(modifiedDate);
       const lastUpdate = this.getChildControl("last-updated");
       lastUpdate.setValue(isMyMessage ? date + " -" : " - " + date);
 
       const messageContent = this.getChildControl("message-content");
-      const notifierUserGroupId = parseInt(this.getMessage()["userGroupId"]);
-      const notifiedUserGroupId = parseInt(this.getMessage()["content"]);
+      const notifierUserGroupId = parseInt(message["userGroupId"]);
+      const notifiedUserGroupId = parseInt(message["content"]);
       let msgContent = "🔔 ";
       Promise.all([
         osparc.store.Users.getInstance().getUser(notifierUserGroupId),

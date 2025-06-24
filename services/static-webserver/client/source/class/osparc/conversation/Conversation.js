@@ -262,8 +262,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       }
     },
 
-    deleteMessage: function(messageId) {
-      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === messageId);
+    deleteMessage: function(message) {
+      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
       if (messageIndex !== -1) {
         this.__messages.splice(messageIndex, 1);
 
@@ -271,6 +271,15 @@ qx.Class.define("osparc.conversation.Conversation", {
 
         console.log(this.__messagesList.getChildren());
       }
+    },
+
+    updateMessage: function(message) {
+      this.__messagesList.getChildren().forEach(control => {
+        if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
+          control.setMessage(message);
+          return;
+        }
+      });
     },
   }
 });
