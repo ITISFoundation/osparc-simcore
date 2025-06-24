@@ -6,7 +6,7 @@ from collections.abc import Awaitable
 from typing import Final
 
 import distributed
-from common_library.async_tools import cancel_and_wait
+from common_library.async_tools import cancel_and_shielded_wait
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from servicelib.rabbitmq._models import RabbitMessage
@@ -104,7 +104,9 @@ class RabbitMQPlugin(distributed.WorkerPlugin):
                 # Cancel the message processor task
                 if self._message_processor:
                     with log_catch(_logger, reraise=False):
-                        await cancel_and_wait(self._message_processor, max_delay=5)
+                        await cancel_and_shielded_wait(
+                            self._message_processor, max_delay=5
+                        )
                     self._message_processor = None
 
                 # close client

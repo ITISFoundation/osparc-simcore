@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Awaitable, Callable
 
-from common_library.async_tools import cancel_and_wait
+from common_library.async_tools import cancel_and_shielded_wait
 from fastapi import FastAPI
 from servicelib.logging_utils import log_catch, log_context
 
@@ -32,7 +32,7 @@ def _on_app_shutdown(
             assert _app  # nosec
             if _app.state.rut_fire_and_forget_tasks:
                 for task in _app.state.rut_fire_and_forget_tasks:
-                    await cancel_and_wait(task)
+                    await cancel_and_shielded_wait(task)
 
     return _stop
 

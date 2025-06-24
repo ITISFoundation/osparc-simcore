@@ -2,7 +2,7 @@ import logging
 from typing import Final
 
 import networkx as nx
-from common_library.async_tools import cancel_and_wait
+from common_library.async_tools import cancel_and_shielded_wait
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
@@ -202,4 +202,4 @@ async def setup_manager(app: FastAPI) -> None:
 
 
 async def shutdown_manager(app: FastAPI) -> None:
-    await cancel_and_wait(app.state.scheduler_manager)
+    await cancel_and_shielded_wait(app.state.scheduler_manager)

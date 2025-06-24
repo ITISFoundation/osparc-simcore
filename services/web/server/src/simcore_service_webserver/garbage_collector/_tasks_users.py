@@ -8,7 +8,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
-from common_library.async_tools import cancel_and_wait
+from common_library.async_tools import cancel_and_shielded_wait
 from models_library.users import UserID
 from servicelib.logging_utils import get_log_record_extra, log_context
 from tenacity import retry
@@ -108,6 +108,6 @@ def create_background_task_for_trial_accounts(
         yield
 
         # tear-down
-        await cancel_and_wait(task)
+        await cancel_and_shielded_wait(task)
 
     return _cleanup_ctx_fun

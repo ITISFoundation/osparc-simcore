@@ -6,7 +6,7 @@ from typing import Final
 
 import arrow
 from aiodocker.docker import Docker
-from common_library.async_tools import cancel_and_wait
+from common_library.async_tools import cancel_and_shielded_wait
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
@@ -61,10 +61,10 @@ class VolumesManager(  # pylint:disable=too-many-instance-attributes
         await self.docker.close()
 
         if self._task_bookkeeping:
-            await cancel_and_wait(self._task_bookkeeping)
+            await cancel_and_shielded_wait(self._task_bookkeeping)
 
         if self._task_periodic_volume_cleanup:
-            await cancel_and_wait(self._task_periodic_volume_cleanup)
+            await cancel_and_shielded_wait(self._task_periodic_volume_cleanup)
 
     async def _bookkeeping_task(self) -> None:
         with log_context(_logger, logging.DEBUG, "volume bookkeeping"):

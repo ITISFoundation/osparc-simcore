@@ -69,7 +69,7 @@ async def maybe_await(
     return obj
 
 
-async def cancel_and_wait(
+async def cancel_and_shielded_wait(
     task: asyncio.Task, *, max_delay: float | None = None
 ) -> None:
     """Cancels the given task and waits for it to complete.

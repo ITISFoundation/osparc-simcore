@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 from common_library.async_tools import (
-    cancel_and_wait,
+    cancel_and_shielded_wait,
     delayed_start,
     make_async,
     maybe_await,
@@ -121,7 +121,7 @@ async def test_cancel_and_wait():
     await asyncio.sleep(0.1)  # Let coro start
 
     start = time.time()
-    await cancel_and_wait(task)
+    await cancel_and_shielded_wait(task)
 
     elapsed = time.time() - start
     assert elapsed < SLEEP_TIME, "Task should be cancelled quickly"
@@ -149,7 +149,7 @@ async def test_cancel_and_wait_propagates_external_cancel():
 
     async def outer_coro():
         try:
-            await cancel_and_wait(inner_task)
+            await cancel_and_shielded_wait(inner_task)
         except asyncio.CancelledError:
             assert (
                 not inner_task.cancelled()
@@ -194,7 +194,7 @@ async def test_cancel_and_wait_timeout_on_slow_cleanup():
 
     # Cancel with a max_delay shorter than cleanup time
     with pytest.raises(TimeoutError):
-        await cancel_and_wait(
+        await cancel_and_shielded_wait(
             task, max_delay=CLEANUP_TIME / 10
         )  # 0.2 seconds < 2 seconds cleanup
 

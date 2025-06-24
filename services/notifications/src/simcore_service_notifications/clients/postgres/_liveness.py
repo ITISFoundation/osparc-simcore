@@ -3,7 +3,7 @@ from asyncio import Task
 from datetime import timedelta
 from typing import Final
 
-from common_library.async_tools import cancel_and_wait
+from common_library.async_tools import cancel_and_shielded_wait
 from fastapi import FastAPI
 from models_library.healthchecks import IsResponsive, LivenessResult
 from servicelib.background_task import create_periodic_task
@@ -40,4 +40,4 @@ class PostgresLiveness:
     async def teardown(self) -> None:
         if self._task is not None:
             with log_catch(_logger, reraise=False):
-                await cancel_and_wait(self._task, max_delay=5)
+                await cancel_and_shielded_wait(self._task, max_delay=5)
