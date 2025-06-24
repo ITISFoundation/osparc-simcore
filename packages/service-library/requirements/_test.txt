@@ -138,6 +138,8 @@ pathspec==0.12.1
     # via mypy
 pillow==11.2.1
     # via -r requirements/_test.in
+pip==25.1.1
+    # via -r requirements/_test.in
 pluggy==1.6.0
     # via
     #   pytest

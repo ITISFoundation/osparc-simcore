@@ -21,6 +21,7 @@ flaky
 numpy
 openapi-spec-validator
 pillow
+pip
 pytest
 pytest-aiohttp
 pytest-asyncio

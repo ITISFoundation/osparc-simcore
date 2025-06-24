@@ -50,7 +50,9 @@ pathspec==0.12.1
     #   black
     #   mypy
 pip==25.1.1
-    # via pip-tools
+    # via
+    #   -c requirements/_test.txt
+    #   pip-tools
 pip-tools==7.4.1
     # via -r requirements/../../../requirements/devenv.txt
 platformdirs==4.3.8
