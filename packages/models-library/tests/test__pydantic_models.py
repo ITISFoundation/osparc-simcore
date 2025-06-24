@@ -1,4 +1,4 @@
-""" This test suite does not intend to re-test pydantic but rather
+"""This test suite does not intend to re-test pydantic but rather
 check some "corner cases" or critical setups with pydantic model such that:
 
 - we can ensure a given behaviour is preserved through updates
@@ -120,7 +120,7 @@ def test_union_types_coercion():
             {"$ref": "#/$defs/DatCoreFileLink"},
             {"$ref": "#/$defs/DownloadLink"},
             {"type": "array", "items": {}},
-            {"type": "object"},
+            {"additionalProperties": True, "type": "object"},
         ],
     }
 
@@ -183,7 +183,9 @@ def test_nullable_fields_from_pydantic_v1():
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/6751
     class MyModel(BaseModel):
         # pydanticv1 would add a default to fields set as nullable
-        nullable_required: str | None  # <--- This was default to =None in pydantic 1 !!!
+        nullable_required: (
+            str | None
+        )  # <--- This was default to =None in pydantic 1 !!!
         nullable_required_with_hyphen: str | None = Field(default=...)
         nullable_optional: str | None = None
 
