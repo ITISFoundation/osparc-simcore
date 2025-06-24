@@ -6,15 +6,19 @@
 # pylint: disable=too-many-statements
 
 
+from collections.abc import Callable
 from http import HTTPStatus
+from unittest.mock import MagicMock
 
 import pytest
+import simcore_service_webserver.conversations._conversation_message_service
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.projects_conversations import (
     ConversationMessageRestGet,
     ConversationRestGet,
 )
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
@@ -26,6 +30,17 @@ from simcore_service_webserver.projects._groups_repository import (
 from simcore_service_webserver.projects.models import ProjectDict
 
 API_PREFIX = "/" + api_version_prefix
+
+
+@pytest.fixture
+def mock_notify_function(mocker: MockerFixture) -> Callable[[str], MagicMock]:
+    def _mock(function_name: str) -> MagicMock:
+        return mocker.patch.object(
+            simcore_service_webserver.conversations._conversation_message_service,
+            function_name,
+        )
+
+    return _mock
 
 
 @pytest.mark.parametrize(
@@ -163,7 +178,18 @@ async def test_project_conversation_messages_full_workflow(
     user_project: ProjectDict,
     expected: HTTPStatus,
     postgres_db: sa.engine.Engine,
+    mock_notify_function: Callable[[str], MagicMock],
 ):
+    mocked_notify_conversation_message_created = mock_notify_function(
+        "notify_conversation_message_created"
+    )
+    mocked_notify_conversation_message_updated = mock_notify_function(
+        "notify_conversation_message_updated"
+    )
+    mocked_notify_conversation_message_deleted = mock_notify_function(
+        "notify_conversation_message_deleted"
+    )
+
     base_project_url = client.app.router["list_project_conversations"].url_for(
         project_id=user_project["uuid"]
     )
@@ -191,6 +217,12 @@ async def test_project_conversation_messages_full_workflow(
     assert ConversationMessageRestGet.model_validate(data)
     _first_message_id = data["messageId"]
 
+    assert mocked_notify_conversation_message_created.call_count == 1
+    kwargs = mocked_notify_conversation_message_created.call_args.kwargs
+
+    assert f"{kwargs['project_id']}" == user_project["uuid"]
+    assert kwargs["conversation_message"].content == "My first message"
+
     # Now we will add second message
     body = {"content": "My second message", "type": "MESSAGE"}
     resp = await client.post(f"{base_project_conversation_url}", json=body)
@@ -200,6 +232,12 @@ async def test_project_conversation_messages_full_workflow(
     )
     assert ConversationMessageRestGet.model_validate(data)
     _second_message_id = data["messageId"]
+
+    assert mocked_notify_conversation_message_created.call_count == 2
+    kwargs = mocked_notify_conversation_message_created.call_args.kwargs
+
+    assert user_project["uuid"] == f"{kwargs['project_id']}"
+    assert kwargs["conversation_message"].content == "My second message"
 
     # Now we will list all message for the project conversation
     resp = await client.get(f"{base_project_conversation_url}")
@@ -226,6 +264,12 @@ async def test_project_conversation_messages_full_workflow(
         resp,
         expected,
     )
+
+    assert mocked_notify_conversation_message_updated.call_count == 1
+    kwargs = mocked_notify_conversation_message_updated.call_args.kwargs
+
+    assert user_project["uuid"] == f"{kwargs['project_id']}"
+    assert kwargs["conversation_message"].content == updated_content
 
     # Get the second message
     resp = await client.get(f"{base_project_conversation_url}/{_second_message_id}")
@@ -256,6 +300,13 @@ async def test_project_conversation_messages_full_workflow(
         resp,
         status.HTTP_204_NO_CONTENT,
     )
+
+    assert mocked_notify_conversation_message_deleted.call_count == 1
+    kwargs = mocked_notify_conversation_message_deleted.call_args.kwargs
+
+    assert f"{kwargs['project_id']}" == user_project["uuid"]
+    assert f"{kwargs['conversation_id']}" == _conversation_id
+    assert f"{kwargs['message_id']}" == _second_message_id
 
     # Now we will list all message for the project conversation
     resp = await client.get(f"{base_project_conversation_url}")
@@ -347,3 +398,10 @@ async def test_project_conversation_messages_full_workflow(
             resp,
             status.HTTP_204_NO_CONTENT,
         )
+
+        assert mocked_notify_conversation_message_deleted.call_count == 2
+        kwargs = mocked_notify_conversation_message_deleted.call_args.kwargs
+
+        assert f"{kwargs['project_id']}" == user_project["uuid"]
+        assert f"{kwargs['conversation_id']}" == _conversation_id
+        assert f"{kwargs['message_id']}" == _first_message_id
