@@ -18,9 +18,9 @@ class TaskProgress(BaseModel):
     defined as a float bound between 0.0 and 1.0
     """
 
-    task_id: TaskId | None = Field(default=None)
-    message: ProgressMessage = Field(default="")
-    percent: ProgressPercent = Field(default=0.0)
+    task_id: TaskId | None = None
+    message: ProgressMessage = ""
+    percent: ProgressPercent = 0.0
 
     @validate_call
     def update(
