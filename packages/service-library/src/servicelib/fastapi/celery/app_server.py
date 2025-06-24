@@ -12,7 +12,7 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
     async def on_startup(self) -> None:
         self._lifespan_manager = LifespanManager(
             self.app,
-            startup_timeout=None,
+            startup_timeout=None,  # waits for full app initialization (DB migrations, etc.)
             shutdown_timeout=None,
         )
         await self._lifespan_manager.__aenter__()
