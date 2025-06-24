@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import set_parent_module_log_level
+from simcore_service_webserver.redis import setup_redis
 
 from ..application_settings import get_application_settings
 from ..login.plugin import setup_login_storage
@@ -31,6 +32,8 @@ def setup_garbage_collector(app: web.Application) -> None:
     setup_socketio(app)
     # - project needs access to user-api that is connected to login plugin
     setup_login_storage(app)
+
+    setup_redis(app)
 
     settings = get_plugin_settings(app)
 
