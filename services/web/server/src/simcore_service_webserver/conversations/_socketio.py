@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 from typing import Final
 
@@ -13,8 +12,11 @@ from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from pydantic import AliasGenerator, BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
+from servicelib.utils import limited_as_completed
 
 from ..socketio.messages import send_message_to_standard_group
+
+_MAX_CONCURRENT_SENDS: Final[int] = 3
 
 SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT: Final[str] = (
     "conversation:message:created"
@@ -53,13 +55,19 @@ class ConversationMessageUpdated(BaseConversationMessage):
 class ConversationMessageDeleted(BaseConversationMessage): ...
 
 
-async def _send_message_to_recipients(app, recipients, notification_message):
-    await asyncio.gather(
-        *[
+async def _send_message_to_recipients(
+    app: web.Application,
+    recipients: set[UserID],
+    notification_message: SocketMessageDict,
+):
+    async for _ in limited_as_completed(
+        (
             send_message_to_standard_group(app, recipient, notification_message)
             for recipient in recipients
-        ]
-    )
+        ),
+        limit=_MAX_CONCURRENT_SENDS,
+    ):
+        ...
 
 
 async def notify_conversation_message_created(
@@ -72,10 +80,10 @@ async def notify_conversation_message_created(
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT,
         data={
-            "project_id": project_id,
+            "projectId": project_id,
             **ConversationMessageCreated(
                 **conversation_message.model_dump()
-            ).model_dump(mode="json"),
+            ).model_dump(mode="json", by_alias=True),
         },
     )
 
@@ -93,10 +101,10 @@ async def notify_conversation_message_updated(
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT,
         data={
-            "project_id": project_id,
+            "projectId": project_id,
             **ConversationMessageUpdated(
                 **conversation_message.model_dump()
-            ).model_dump(mode="json"),
+            ).model_dump(mode="json", by_alias=True),
         },
     )
 
@@ -115,10 +123,10 @@ async def notify_conversation_message_deleted(
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT,
         data={
-            "project_id": project_id,
+            "projectId": project_id,
             **ConversationMessageDeleted(
                 conversation_id=conversation_id, message_id=message_id
-            ).model_dump(mode="json"),
+            ).model_dump(mode="json", by_alias=True),
         },
     )
 

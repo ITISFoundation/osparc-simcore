@@ -31,7 +31,7 @@ from ._socketio import (
 _logger = logging.getLogger(__name__)
 
 
-async def _get_recipients(app, project_id) -> set[UserID]:
+async def _get_recipients(app: web.Application, project_id: ProjectID) -> set[UserID]:
     groups = await list_project_groups(app, project_id=project_id)
     return {
         user
