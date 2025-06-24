@@ -1,7 +1,7 @@
 import functools
 import logging
 import re
-from typing import Final
+from typing import Final, TypeAlias
 
 from aws_library.ec2 import (
     EC2InstanceBootSpecific,
@@ -134,9 +134,7 @@ def ec2_buffer_startup_script(
 def _instance_type_by_type_name(
     ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
-    if type_name is None:
-        return True
-    return bool(ec2_type.name == type_name)
+    return type_name is None or ec2_type.name == type_name
 
 
 def find_selected_instance_type_for_task(
@@ -179,9 +177,9 @@ def get_machine_buffer_type(
     return available_ec2_types[0]
 
 
-DrainedNodes = list[AssociatedInstance]
-BufferDrainedNodes = list[AssociatedInstance]
-TerminatingNodes = list[AssociatedInstance]
+DrainedNodes: TypeAlias = list[AssociatedInstance]
+BufferDrainedNodes: TypeAlias = list[AssociatedInstance]
+TerminatingNodes: TypeAlias = list[AssociatedInstance]
 
 
 def sort_drained_nodes(
