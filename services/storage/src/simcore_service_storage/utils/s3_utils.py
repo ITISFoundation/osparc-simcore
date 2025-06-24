@@ -4,8 +4,8 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 
+from common_library.async_tools import cancel_and_wait
 from pydantic import ByteSize, TypeAdapter
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.progress_bar import ProgressBarData
 
@@ -39,7 +39,7 @@ class S3TransferDataCB:
         self.finalize_transfer()
         await asyncio.sleep(0)
         assert self._async_update_periodic_task  # nosec
-        await cancel_wait_task(self._async_update_periodic_task)
+        await cancel_and_wait(self._async_update_periodic_task)
 
     async def _async_update(self) -> None:
         await self._update_task_event.wait()

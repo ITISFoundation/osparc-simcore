@@ -8,8 +8,6 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
-from common_library.async_tools import cancel_and_wait
-
 from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
@@ -231,19 +229,3 @@ def delayed_start(
         return _wrapper
 
     return _decorator
-
-
-async def cancel_wait_task(
-    task: asyncio.Task,
-    *,
-    max_delay: float | None = None,
-) -> None:
-    """Cancel a asyncio.Task and waits for it to finish.
-
-    :param task: task to be canceled
-    :param max_delay: duration (in seconds) to wait before giving
-        up the cancellation. If None it waits forever.
-    :raises TimeoutError: raised if cannot cancel the task.
-    """
-    async with asyncio.timeout(max_delay):
-        await cancel_and_wait(task)

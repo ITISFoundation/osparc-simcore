@@ -168,3 +168,28 @@ async def test_cancel_and_wait_propagates_external_cancel():
 
     inner_task.add_done_callback(on_done)
     await done_event.wait()
+
+
+async def test_cancel_and_wait_timeout_on_slow_cleanup():
+    """Test that cancel_and_wait raises TimeoutError when cleanup takes longer than max_delay"""
+
+    CLEANUP_TIME = 2  # seconds
+
+    async def slow_cleanup_coro():
+        try:
+            await asyncio.sleep(10)  # Long running task
+        except asyncio.CancelledError:
+            # Simulate slow cleanup that exceeds max_delay!
+            await asyncio.sleep(CLEANUP_TIME)
+            raise
+
+    task = asyncio.create_task(slow_cleanup_coro())
+    await asyncio.sleep(0.1)  # Let the task start
+
+    # Cancel with a max_delay shorter than cleanup time
+    with pytest.raises(TimeoutError):
+        await cancel_and_wait(
+            task, max_delay=CLEANUP_TIME / 10
+        )  # 0.2 seconds < 2 seconds cleanup
+
+    assert task.cancelled()

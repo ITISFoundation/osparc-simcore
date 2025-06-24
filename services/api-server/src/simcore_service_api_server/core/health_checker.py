@@ -5,11 +5,11 @@ from datetime import timedelta
 from typing import Annotated, Final, cast
 from uuid import uuid4
 
+from common_library.async_tools import cancel_and_wait
 from fastapi import Depends, FastAPI
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt, PositiveFloat, PositiveInt
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.dependencies import get_app
 from servicelib.logging_utils import log_catch
@@ -63,7 +63,7 @@ class ApiServerHealthChecker:
     async def teardown(self):
         if self._background_task:
             with log_catch(_logger, reraise=False):
-                await cancel_wait_task(
+                await cancel_and_wait(
                     self._background_task, max_delay=self._timeout_seconds
                 )
         await self._log_distributor.deregister(job_id=self._dummy_job_id)
@@ -95,7 +95,7 @@ class ApiServerHealthChecker:
                 self._dummy_queue.get(), timeout=self._timeout_seconds
             )
             self._health_check_failure_count = 0
-        except asyncio.TimeoutError:
+        except TimeoutError:
             self._increment_health_check_failure_count()
 
 

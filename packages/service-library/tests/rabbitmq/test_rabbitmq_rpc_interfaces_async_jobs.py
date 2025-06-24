@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 
 import pytest
+from common_library.async_tools import cancel_and_wait
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
@@ -16,7 +17,6 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import JobMissingError
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import TypeAdapter
-from servicelib.async_utils import cancel_wait_task
 from servicelib.rabbitmq import RabbitMQRPCClient, RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     list_jobs,
@@ -137,7 +137,7 @@ async def async_job_rpc_server(  # noqa: C901
     yield
 
     for task in fake_server.tasks:
-        await cancel_wait_task(task)
+        await cancel_and_wait(task)
 
 
 @pytest.mark.parametrize("method", ["result", "status", "cancel"])

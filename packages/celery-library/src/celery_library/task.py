@@ -12,8 +12,8 @@ from celery.contrib.abortable import (  # type: ignore[import-untyped]
     AbortableTask,
 )
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
+from common_library.async_tools import cancel_and_wait
 from pydantic import NonNegativeInt
-from servicelib.async_utils import cancel_wait_task
 from servicelib.celery.models import TaskID
 
 from .errors import encode_celery_transferrable_error
@@ -62,7 +62,7 @@ def _async_task_wrapper(
                             abortable_result = AbortableAsyncResult(task_id, app=app)
                             while not main_task.done():
                                 if abortable_result.is_aborted():
-                                    await cancel_wait_task(
+                                    await cancel_and_wait(
                                         main_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                     )

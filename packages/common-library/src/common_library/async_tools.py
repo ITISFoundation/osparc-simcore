@@ -67,17 +67,38 @@ async def maybe_await(
     return obj
 
 
-async def cancel_and_wait(task: asyncio.Task) -> None:
+async def cancel_and_wait(
+    task: asyncio.Task, *, max_delay: float | None = None
+) -> None:
     """Cancels the given task and waits for it to complete.
 
-    Accounts for the case where the tasks's owner function is being cancelled.
-    In that case, it propagates the cancellation exception upstream.
+    Arguments:
+        task -- task to be canceled
+
+
+    Keyword Arguments:
+        max_delay -- duration (in seconds) to wait before giving
+        up the cancellation. This timeout should be an upper bound to the
+        time needed for the task to cleanup after being canceled and
+        avoids that the cancellation takes forever. If None the timeout is not
+        set. (default: {None})
+
+    Raises:
+        TimeoutError: raised if cannot cancel the task.
+        CancelledError: raised ONLY if owner is being cancelled.
     """
+
     task.cancel()
+    assert task.cancelling()  # nosec
+    assert not task.cancelled()  # nosec
+
     try:
-        # NOTE shield ensures that cancellation of the caller function won’t stop you
-        # from observing the cancellation/finalization of task.
-        await asyncio.shield(task)
+
+        await asyncio.shield(
+            # NOTE shield ensures that cancellation of the caller function won't stop you
+            # from observing the cancellation/finalization of task.
+            asyncio.wait_for(task, timeout=max_delay)
+        )
 
     except asyncio.CancelledError:
         if not task.cancelled():

@@ -13,9 +13,9 @@ from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from common_library.async_tools import cancel_and_wait
 from faker import Faker
 from pytest_mock.plugin import MockerFixture
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task, periodic, periodic_task
 
 pytest_simcore_core_services_selection = [
@@ -78,7 +78,7 @@ async def create_background_task(
     yield _creator
     # cleanup
     await asyncio.gather(
-        *(cancel_wait_task(t, max_delay=stop_task_timeout) for t in created_tasks)
+        *(cancel_and_wait(t, max_delay=stop_task_timeout) for t in created_tasks)
     )
 
 

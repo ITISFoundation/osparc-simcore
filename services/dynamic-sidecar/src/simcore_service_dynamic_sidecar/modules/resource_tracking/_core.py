@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Final
 
+from common_library.async_tools import cancel_and_wait
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import (
@@ -14,7 +15,6 @@ from models_library.rabbitmq_messages import (
 from models_library.services import ServiceType
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import NonNegativeFloat
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_context
 
@@ -62,7 +62,7 @@ async def _start_heart_beat_task(app: FastAPI) -> None:
 async def stop_heart_beat_task(app: FastAPI) -> None:
     resource_tracking: ResourceTrackingState = app.state.resource_tracking
     if resource_tracking.heart_beat_task:
-        await cancel_wait_task(
+        await cancel_and_wait(
             resource_tracking.heart_beat_task, max_delay=_STOP_WORKER_TIMEOUT_S
         )
 

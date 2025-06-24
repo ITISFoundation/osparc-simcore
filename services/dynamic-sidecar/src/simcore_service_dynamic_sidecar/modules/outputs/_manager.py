@@ -6,12 +6,12 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
+from common_library.async_tools import cancel_and_wait
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from servicelib import progress_bar
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
@@ -204,7 +204,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         with log_context(_logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
-                await cancel_wait_task(
+                await cancel_and_wait(
                     self._task_scheduler_worker, max_delay=self.task_monitor_interval_s
                 )
 

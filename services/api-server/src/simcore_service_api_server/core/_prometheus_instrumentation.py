@@ -4,10 +4,10 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Final, cast
 
+from common_library.async_tools import cancel_and_wait
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Gauge
 from pydantic import PositiveInt
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,
@@ -85,7 +85,7 @@ def setup_prometheus_instrumentation(app: FastAPI):
     async def on_shutdown() -> None:
         assert app.state.instrumentation_task  # nosec
         with log_catch(_logger, reraise=False):
-            await cancel_wait_task(app.state.instrumentation_task)
+            await cancel_and_wait(app.state.instrumentation_task)
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

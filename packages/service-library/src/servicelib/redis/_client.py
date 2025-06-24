@@ -12,7 +12,7 @@ from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 
-from ..async_utils import cancel_wait_task
+from ..async_utils import cancel_and_wait
 from ..background_task import periodic
 from ..logging_utils import log_catch, log_context
 from ._constants import (
@@ -88,7 +88,7 @@ class RedisClientSDK:
                 assert self._health_check_task_started_event  # nosec
                 # NOTE: wait for the health check task to have started once before we can cancel it
                 await self._health_check_task_started_event.wait()
-                await cancel_wait_task(
+                await cancel_and_wait(
                     self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
                 )
 

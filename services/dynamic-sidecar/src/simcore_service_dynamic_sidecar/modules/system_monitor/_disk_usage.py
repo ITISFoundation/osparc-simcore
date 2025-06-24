@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Final
 
 import psutil
+from common_library.async_tools import cancel_and_wait
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_sidecar.telemetry import (
     DiskUsage,
@@ -14,7 +15,6 @@ from models_library.api_schemas_dynamic_sidecar.telemetry import (
 )
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
@@ -185,7 +185,7 @@ class DiskUsageMonitor:
 
     async def shutdown(self) -> None:
         if self._monitor_task:
-            await cancel_wait_task(self._monitor_task)
+            await cancel_and_wait(self._monitor_task)
 
     def set_disk_usage_for_path(self, overwrite_usage: dict[str, DiskUsage]) -> None:
         """

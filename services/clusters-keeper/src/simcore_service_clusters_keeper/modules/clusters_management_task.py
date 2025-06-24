@@ -2,8 +2,8 @@ import json
 import logging
 from collections.abc import Awaitable, Callable
 
+from common_library.async_tools import cancel_and_wait
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.redis import exclusive
 
@@ -37,7 +37,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Awaitable[None]]:
     async def _stop() -> None:
-        await cancel_wait_task(app.state.clusters_cleaning_task, max_delay=5)
+        await cancel_and_wait(app.state.clusters_cleaning_task, max_delay=5)
 
     return _stop
 

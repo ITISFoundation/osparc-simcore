@@ -9,7 +9,7 @@ from typing import Any, Final, ParamSpec, TypeVar
 from tenacity import TryAgain, before_sleep_log, retry, retry_if_exception_type
 from tenacity.wait import wait_fixed
 
-from .async_utils import cancel_wait_task, delayed_start
+from .async_utils import cancel_and_wait, delayed_start
 from .logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
@@ -142,4 +142,4 @@ async def periodic_task(
         if asyncio_task is not None:
             # NOTE: this stopping is shielded to prevent the cancellation to propagate
             # into the stopping procedure
-            await asyncio.shield(cancel_wait_task(asyncio_task, max_delay=stop_timeout))
+            await asyncio.shield(cancel_and_wait(asyncio_task, max_delay=stop_timeout))

@@ -23,8 +23,8 @@ import logging
 from datetime import timedelta
 from typing import cast
 
+from common_library.async_tools import cancel_and_wait
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
 
@@ -66,7 +66,7 @@ def setup_dsm_cleaner(app: FastAPI) -> None:
 
     async def _on_shutdown() -> None:
         assert isinstance(app.state.dsm_cleaner_task, asyncio.Task)  # nosec
-        await cancel_wait_task(app.state.dsm_cleaner_task)
+        await cancel_and_wait(app.state.dsm_cleaner_task)
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)

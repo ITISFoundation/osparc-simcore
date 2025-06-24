@@ -1,8 +1,8 @@
 import logging
 from collections.abc import Awaitable, Callable
 
+from common_library.async_tools import cancel_and_wait
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
 
 _logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def _on_app_shutdown(
             assert _app  # nosec
             if _app.state.efs_guardian_fire_and_forget_tasks:
                 for task in _app.state.efs_guardian_fire_and_forget_tasks:
-                    await cancel_wait_task(task)
+                    await cancel_and_wait(task)
 
     return _stop
 

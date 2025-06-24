@@ -3,8 +3,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
 
+from common_library.async_tools import cancel_and_wait
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_catch, log_context
 
@@ -50,7 +50,7 @@ def _on_app_shutdown(
         ):
             assert _app  # nosec
             if _app.state.efs_guardian_removal_policy_background_task:
-                await cancel_wait_task(
+                await cancel_and_wait(
                     _app.state.efs_guardian_removal_policy_background_task
                 )
 

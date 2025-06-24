@@ -10,11 +10,11 @@ from unittest import mock
 from uuid import UUID
 
 import pytest
+from common_library.async_tools import cancel_and_wait
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from servicelib.async_utils import cancel_wait_task
 from servicelib.redis import (
     ProjectLockError,
     RedisClientSDK,
@@ -141,4 +141,4 @@ async def test_lock_already_locked_project_raises(
     with pytest.raises(ProjectLockError):
         await _locked_fct()
 
-    await cancel_wait_task(task1)
+    await cancel_and_wait(task1)
