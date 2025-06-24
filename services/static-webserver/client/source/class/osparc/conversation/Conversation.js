@@ -245,9 +245,10 @@ qx.Class.define("osparc.conversation.Conversation", {
       // it's not provided by the backend
       message["projectId"] = this.__studyData["uuid"];
 
+      // Add the message in the messages array
       this.__messages.push(message);
-      this.__updateMessagesNumber();
 
+      // Add the UI element to the messages list
       let control = null;
       switch (message["type"]) {
         case "MESSAGE":
@@ -260,6 +261,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       if (control) {
         this.__messagesList.add(control);
       }
+
+      this.__updateMessagesNumber();
     },
 
     deleteMessage: function(message) {
@@ -283,6 +286,14 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
 
     updateMessage: function(message) {
+      // Replace the message in the messages array
+      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      if (messageIndex === -1) {
+        return;
+      }
+      this.__messages[messageIndex] = message;
+
+      // Update the UI element from the messages list
       this.__messagesList.getChildren().forEach(control => {
         if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
           control.setMessage(message);
