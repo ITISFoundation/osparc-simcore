@@ -11,7 +11,7 @@ def model_dump_with_secrets(
 ) -> dict[str, Any]:
     data = settings_obj.model_dump(**pydantic_export_options)
 
-    for field_name in settings_obj.model_fields:
+    for field_name in settings_obj.__class__.model_fields:
         if field_name not in data:
             continue
 
@@ -29,7 +29,9 @@ def model_dump_with_secrets(
             data[field_name] = str(field_data)
 
         elif isinstance(field_data, dict):
-            possible_pydantic_model = settings_obj.model_fields[field_name].annotation
+            possible_pydantic_model = settings_obj.__class__.model_fields[
+                field_name
+            ].annotation
             # NOTE: data could be a dict which does not represent a pydantic model or a union of models
             with contextlib.suppress(AttributeError, ValidationError):
                 data[field_name] = model_dump_with_secrets(
