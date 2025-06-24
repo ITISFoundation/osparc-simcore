@@ -25,9 +25,11 @@ qx.Class.define("osparc.conversation.NotificationUI", {
   construct: function(message) {
     this.base(arguments);
 
-    this.__message = message;
+    this.set({
+      message,
+    });
 
-    const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.__message);
+    const isMyMessage = osparc.conversation.MessageUI.isMyMessage(message);
     const layout = new qx.ui.layout.Grid(4, 4);
     layout.setColumnFlex(isMyMessage ? 0 : 3, 3); // spacer
     layout.setRowAlign(0, "center", "middle");
@@ -37,13 +39,19 @@ qx.Class.define("osparc.conversation.NotificationUI", {
     this.__buildLayout();
   },
 
-  members: {
-    __message: null,
+  properties: {
+    message: {
+      check: "Object",
+      init: null,
+      nullable: false,
+    },
+  },
 
+  members: {
     // spacer - date - content - (thumbnail-spacer)
     // (thumbnail-spacer) - content - date - spacer
     _createChildControlImpl: function(id) {
-      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.__message);
+      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.getMessage());
       let control;
       switch (id) {
         case "thumbnail-spacer":
@@ -90,16 +98,16 @@ qx.Class.define("osparc.conversation.NotificationUI", {
     __buildLayout: function() {
       this.getChildControl("thumbnail-spacer");
 
-      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.__message);
+      const isMyMessage = osparc.conversation.MessageUI.isMyMessage(this.getMessage());
 
-      const modifiedDate = new Date(this.__message["modified"]);
+      const modifiedDate = new Date(this.getMessage()["modified"]);
       const date = osparc.utils.Utils.formatDateAndTime(modifiedDate);
       const lastUpdate = this.getChildControl("last-updated");
       lastUpdate.setValue(isMyMessage ? date + " -" : " - " + date);
 
       const messageContent = this.getChildControl("message-content");
-      const notifierUserGroupId = parseInt(this.__message["userGroupId"]);
-      const notifiedUserGroupId = parseInt(this.__message["content"]);
+      const notifierUserGroupId = parseInt(this.getMessage()["userGroupId"]);
+      const notifiedUserGroupId = parseInt(this.getMessage()["content"]);
       let msgContent = "🔔 ";
       Promise.all([
         osparc.store.Users.getInstance().getUser(notifierUserGroupId),

@@ -255,5 +255,14 @@ qx.Class.define("osparc.conversation.Conversation", {
         this.__messagesList.add(control);
       }
     },
+
+    deleteMessage: function(messageId) {
+      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === messageId);
+      if (messageIndex !== -1) {
+        this.__messages.splice(messageIndex, 1);
+      }
+
+      console.log(this.__messagesList.getChildren());
+    },
   }
 });
