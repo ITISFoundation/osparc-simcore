@@ -263,14 +263,20 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
 
     deleteMessage: function(message) {
+      // remove it from the messages array
       const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
-      if (messageIndex !== -1) {
-        this.__messages.splice(messageIndex, 1);
-
-        this.__updateMessagesNumber();
-
-        console.log(this.__messagesList.getChildren());
+      if (messageIndex === -1) {
+        return;
       }
+      this.__messages.splice(messageIndex, 1);
+
+      // remove the ui element
+      const index = this.__messagesList.getChildren().findIndex(control => ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]));
+      if (index > -1) {
+        this.__messagesList.getChildren().removeAt(index);
+      }
+
+      this.__updateMessagesNumber();
     },
 
     updateMessage: function(message) {
