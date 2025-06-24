@@ -227,18 +227,21 @@ qx.Class.define("osparc.conversation.Conversation", {
         .finally(() => this.__loadMoreMessages.setFetching(false));
     },
 
-    addMessage: function(message) {
-      // it's not provided by the backend
-      message["projectId"] = this.__studyData["uuid"];
-
-      this.__messages.push(message);
-
+    __updateMessagesNumber: function() {
       const nMessages = this.__messages.filter(msg => msg["type"] === "MESSAGE").length;
       if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));
       } else if (nMessages > 1) {
         this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
       }
+    },
+
+    addMessage: function(message) {
+      // it's not provided by the backend
+      message["projectId"] = this.__studyData["uuid"];
+
+      this.__messages.push(message);
+      this.__updateMessagesNumber();
 
       let control = null;
       switch (message["type"]) {
@@ -261,6 +264,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       if (messageIndex !== -1) {
         this.__messages.splice(messageIndex, 1);
       }
+      this.__updateMessagesNumber();
 
       console.log(this.__messagesList.getChildren());
     },
