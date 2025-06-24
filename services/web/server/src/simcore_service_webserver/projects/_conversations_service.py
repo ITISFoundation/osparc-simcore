@@ -247,6 +247,7 @@ async def delete_project_conversation_message(
     )
     await conversations_service.delete_message(
         app,
+        user_id=user_id,
         project_id=project_uuid,
         conversation_id=conversation_id,
         message_id=message_id,
