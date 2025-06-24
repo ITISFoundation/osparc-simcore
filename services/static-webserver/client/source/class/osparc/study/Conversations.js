@@ -143,6 +143,7 @@ qx.Class.define("osparc.study.Conversations", {
 
   members: {
     __conversations: null,
+    __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -163,14 +164,15 @@ qx.Class.define("osparc.study.Conversations", {
     },
 
     __listenToConversationWS: function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
+      this.__wsHandlers = [];
 
+      const socket = osparc.wrapper.WebSocket.getInstance();
       [
         "conversation:message:created",
         "conversation:message:update",
         "conversation:message:deleted",
       ].forEach(eventName => {
-        socket.on(eventName, message => {
+        const eventHandler = message => {
           console.log("Conversation message", eventName, message);
           if (message) {
             const conversationId = message["conversationId"];
@@ -189,7 +191,9 @@ qx.Class.define("osparc.study.Conversations", {
               }
             }
           }
-        }, this);
+        };
+        socket.on(eventName, eventHandler, this);
+        this.__wsHandlers.push({ eventName, handler: eventHandler });
       });
     },
 
@@ -261,5 +265,15 @@ qx.Class.define("osparc.study.Conversations", {
 
       conversationsLayout.getChildControl("bar").add(newConversationButton);
     },
-  }
+  },
+
+  destruct: function() {
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    if (this.__wsHandlers) {
+      this.__wsHandlers.forEach(({ eventName }) => {
+        socket.removeSlot(eventName);
+      });
+      this.__wsHandlers = null;
+    }
+  },
 });
