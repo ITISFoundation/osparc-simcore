@@ -3,14 +3,12 @@ Scheduled tasks addressing users
 
 """
 
-import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
 from datetime import timedelta
 
 from aiohttp import web
 from models_library.users import UserID
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import get_log_record_extra, log_context
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
@@ -18,6 +16,7 @@ from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from ..login import login_service
 from ..security import security_service
 from ..users.api import update_expired_users
+from ._tasks_utils import CleanupContextFunc, setup_periodic_task
 
 _logger = logging.getLogger(__name__)
 
@@ -84,22 +83,7 @@ def create_background_task_for_trial_accounts(wait_s: float) -> CleanupContextFu
             with log_context(_logger, logging.INFO, "Updating expired users"):
                 await _update_expired_users(app)
 
-        # setup
-        task_name = _update_expired_users_periodically.__name__
-
-        task = asyncio.create_task(
-            _update_expired_users_periodically(),
-            name=task_name,
-        )
-
-        # prevents premature garbage collection of the task
-        app_task_key = f"tasks.{task_name}"
-        app[app_task_key] = task
-
-        yield
-
-        # tear-down
-        await cancel_wait_task(task)
-        app.pop(app_task_key, None)
+        async for _ in setup_periodic_task(app, _update_expired_users_periodically):
+            yield
 
     return _cleanup_ctx_fun

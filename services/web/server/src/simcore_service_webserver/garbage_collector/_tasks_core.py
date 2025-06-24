@@ -4,23 +4,20 @@
 Specifics of the gc implementation should go into garbage_collector_core.py
 """
 
-import asyncio
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from datetime import timedelta
 
 from aiohttp import web
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ._core import collect_garbage
+from ._tasks_utils import CleanupContextFunc, setup_periodic_task
 from .settings import GarbageCollectorSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
-
-CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
 
 def create_background_task_for_garbage_collection() -> CleanupContextFunc:
@@ -38,22 +35,7 @@ def create_background_task_for_garbage_collection() -> CleanupContextFunc:
             with log_context(_logger, logging.INFO, "Garbage collect cycle"):
                 await collect_garbage(app)
 
-        # setup
-        task_name = _collect_garbage_periodically.__name__
-
-        task = asyncio.create_task(
-            _collect_garbage_periodically(),
-            name=task_name,
-        )
-
-        # prevents premature garbage collection of the task
-        app_task_key = f"tasks.{task_name}"
-        app[app_task_key] = task
-
-        yield
-
-        # tear-down
-        await cancel_wait_task(task)
-        app.pop(app_task_key, None)
+        async for _ in setup_periodic_task(app, _collect_garbage_periodically):
+            yield
 
     return _cleanup_ctx_fun
