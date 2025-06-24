@@ -1,34 +1,56 @@
 import logging
 import re
 import urllib.parse
+from datetime import timedelta
 from functools import partial
 from mimetypes import guess_type
-from typing import Literal
+from typing import Final, Literal
 from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from httpx import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
+    ETag,
     FileMetaDataArray,
 )
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet as StorageFileMetaData,
 )
 from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadCompleteFutureResponse,
+    FileUploadCompleteResponse,
+    FileUploadCompleteState,
+    FileUploadCompletionBody,
     FileUploadSchema,
+    LinkType,
     PresignedLink,
+    UploadedPart,
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
-from starlette.datastructures import URL
+from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutError
+from simcore_service_api_server.models.schemas.files import UserFile
+from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
+from tenacity import (
+    AsyncRetrying,
+    TryAgain,
+    before_sleep_log,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..models.domain.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
+
+_POLL_TIMEOUT: Final[timedelta] = timedelta(minutes=10)
+
 
 _logger = logging.getLogger(__name__)
 
@@ -157,15 +179,22 @@ class StorageApi(BaseServiceClientApi):
         response.raise_for_status()
 
     @_exception_mapper(http_status_map={})
-    async def get_upload_links(
-        self, *, user_id: int, file_id: UUID, file_name: str
+    async def get_file_upload_links(
+        self, *, user_id: int, file: File, client_file: UserFileToProgramJob | UserFile
     ) -> FileUploadSchema:
-        object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
+
+        query_params = QueryParams(
+            user_id=f"{user_id}",
+            link_type=LinkType.PRESIGNED.value,
+            file_size=int(client_file.filesize),
+            is_directory="false",
+            sha256_checksum=f"{client_file.sha256_checksum}",
+        )
 
         # complete_upload_file
         response = await self.client.put(
-            f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
-            params={"user_id": user_id, "file_size": 0},
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}",
+            params=query_params,
         )
         response.raise_for_status()
 
@@ -173,25 +202,58 @@ class StorageApi(BaseServiceClientApi):
         assert enveloped_data.data  # nosec
         return enveloped_data.data
 
-    async def create_complete_upload_link(
-        self, *, file: File, query: dict[str, str] | None = None
-    ) -> URL:
-        url = URL(
-            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:complete"
-        )
-        if query is not None:
-            url = url.include_query_params(**query)
-        return url
+    @_exception_mapper(http_status_map={})
+    async def complete_file_upload(
+        self, *, user_id: int, file: File, uploaded_parts: list[UploadedPart]
+    ) -> ETag:
 
-    async def create_abort_upload_link(
-        self, *, file: File, query: dict[str, str] | None = None
-    ) -> URL:
-        url = URL(
-            f"{self.client.base_url}locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort"
+        response = await self.client.post(
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.storage_file_id}:complete",
+            params={"user_id": f"{user_id}"},
+            json=jsonable_encoder(FileUploadCompletionBody(parts=uploaded_parts)),
         )
-        if query is not None:
-            url = url.include_query_params(**query)
-        return url
+        response.raise_for_status()
+        file_upload_complete_response = Envelope[
+            FileUploadCompleteResponse
+        ].model_validate_json(response.text)
+        assert file_upload_complete_response.data  # nosec
+        state_url = f"{file_upload_complete_response.data.links.state}"
+        try:
+            async for attempt in AsyncRetrying(
+                reraise=True,
+                wait=wait_fixed(1),
+                stop=stop_after_delay(_POLL_TIMEOUT),
+                retry=retry_if_exception_type(TryAgain),
+                before_sleep=before_sleep_log(_logger, logging.DEBUG),
+            ):
+                with attempt:
+                    resp = await self.client.post(state_url)
+                    resp.raise_for_status()
+                    future_enveloped = Envelope[
+                        FileUploadCompleteFutureResponse
+                    ].model_validate_json(resp.text)
+                    assert future_enveloped.data  # nosec
+                    if future_enveloped.data.state == FileUploadCompleteState.NOK:
+                        raise TryAgain()
+
+                    assert future_enveloped.data.e_tag  # nosec
+                    _logger.debug(
+                        "multipart upload completed in %s, received %s",
+                        attempt.retry_state.retry_object.statistics,
+                        f"{future_enveloped.data.e_tag=}",
+                    )
+                    return future_enveloped.data.e_tag
+        except TryAgain as exc:
+            raise BackendTimeoutError() from exc
+        raise BackendTimeoutError()
+
+    @_exception_mapper(http_status_map={})
+    async def abort_file_upload(self, *, user_id: int, file: File) -> None:
+        response = await self.client.post(
+            f"/locations/{self.SIMCORE_S3_ID}/files/{file.quoted_storage_file_id}:abort",
+            params={"user_id": f"{user_id}"},
+        )
+        response.raise_for_status()
 
     @_exception_mapper(http_status_map={})
     async def create_soft_link(
