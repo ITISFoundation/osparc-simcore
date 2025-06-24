@@ -172,7 +172,6 @@ qx.Class.define("osparc.conversation.Conversation", {
           if (data["conversationId"]) {
             this.setConversationId(data["conversationId"]);
           }
-          this.reloadMessages();
         });
         this._add(addMessages);
       }
@@ -237,6 +236,12 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
 
     addMessage: function(message) {
+      // ignore it if it was already there
+      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      if (messageIndex !== -1) {
+        return;
+      }
+
       // it's not provided by the backend
       message["projectId"] = this.__studyData["uuid"];
 
@@ -247,8 +252,6 @@ qx.Class.define("osparc.conversation.Conversation", {
       switch (message["type"]) {
         case "MESSAGE":
           control = new osparc.conversation.MessageUI(message, this.__studyData);
-          control.addListener("messageEdited", () => this.reloadMessages());
-          control.addListener("messageDeleted", () => this.reloadMessages());
           break;
         case "NOTIFICATION":
           control = new osparc.conversation.NotificationUI(message);
@@ -263,10 +266,11 @@ qx.Class.define("osparc.conversation.Conversation", {
       const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === messageId);
       if (messageIndex !== -1) {
         this.__messages.splice(messageIndex, 1);
-      }
-      this.__updateMessagesNumber();
 
-      console.log(this.__messagesList.getChildren());
+        this.__updateMessagesNumber();
+
+        console.log(this.__messagesList.getChildren());
+      }
     },
   }
 });
