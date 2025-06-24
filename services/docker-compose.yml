@@ -888,10 +888,14 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.rule=Path(`/v0/projects`) ||
           Path(`/v0/projects:clone`) ||
           PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:stop`) ||
+          PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:open`) ||
+          PathRegexp(`^/v0/projects/[0-9a-fA-F-]+/nodes/[0-9a-fA-F-]+:close`) ||
           PathRegexp(`^/v0/storage/locations/[0-9]+/paths/.+:size`) ||
           PathRegexp(`^/v0/storage/locations/[0-9]+/-/paths:batchDelete`) ||
           PathRegexp(`^/v0/storage/locations/[0-9]+/export-data`) ||
           PathRegexp(`^/v0/tasks-legacy/.+`)
+        # NOTE: the sticky router must have a higher priority than the webserver router but below dy-proxies
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.priority=8
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.service=${SWARM_STACK_NAME}_webserver_sticky
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_sticky.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
