@@ -502,11 +502,6 @@ push-version: tag-version
 .venv: .check-uv-installed
 	@uv venv $@
 	@echo "# upgrading tools to latest version in" && $@/bin/python --version
-	@uv pip --quiet install --upgrade \
-		pip~=24.0 \
-		wheel \
-		setuptools \
-		uv
 	@uv pip list
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
