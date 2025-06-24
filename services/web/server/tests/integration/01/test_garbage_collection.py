@@ -177,7 +177,9 @@ async def client(
     setup_socketio(app)
     setup_projects(app)
     setup_director_v2(app)
+
     assert setup_resource_manager(app)
+
     setup_garbage_collector(app)
 
     return await aiohttp_client(

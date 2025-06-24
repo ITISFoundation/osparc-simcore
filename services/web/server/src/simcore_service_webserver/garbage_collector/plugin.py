@@ -23,11 +23,11 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_garbage_collector(app: web.Application) -> None:
-    # distributed exclusive periodic tasks
-    setup_redis(app)
-
     # for trashing
     setup_products(app)
+
+    # distributed exclusive periodic tasks
+    setup_redis(app)
 
     # - project-api needs access to db
     setup_projects_db(app)
