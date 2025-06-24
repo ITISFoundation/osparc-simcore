@@ -13,6 +13,7 @@ from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.status_codes_utils import get_code_display_name
 from simcore_service_webserver.errors import WebServerBaseError
 from simcore_service_webserver.exception_handling._base import (
     ExceptionHandlingContextManager,
@@ -28,16 +29,13 @@ from simcore_service_webserver.exception_handling._factory import (
 # Some custom errors in my service
 
 
-class BaseError(WebServerBaseError):
-    ...
+class BaseError(WebServerBaseError): ...
 
 
-class OneError(BaseError):
-    ...
+class OneError(BaseError): ...
 
 
-class OtherError(BaseError):
-    ...
+class OtherError(BaseError): ...
 
 
 @pytest.fixture
@@ -58,7 +56,7 @@ async def test_factory__create_exception_handler_from_http_error(
     response = await one_error_to_404(fake_request, caught)
     assert response.status == status.HTTP_404_NOT_FOUND
     assert response.text is not None
-    assert "one error message" in response.reason
+    assert response.reason == get_code_display_name(response.status)
     assert response.content_type == MIMETYPE_APPLICATION_JSON
 
 
@@ -82,9 +80,7 @@ async def test_handling_different_exceptions_with_context(
         response = cm.get_response_or_none()
         assert response is not None
         assert response.status == status.HTTP_400_BAD_REQUEST
-        assert response.reason == exc_to_http_error_map[OneError].msg_template.format(
-            code="WebServerBaseError.BaseError.OneError"
-        )
+        assert response.reason == get_code_display_name(response.status)
         assert not caplog.records
 
         # unhandled -> reraises
@@ -103,9 +99,7 @@ async def test_handling_different_exceptions_with_context(
         response = cm.get_response_or_none()
         assert response is not None
         assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
-        assert response.reason == exc_to_http_error_map[OtherError].msg_template.format(
-            code="WebServerBaseError.BaseError.OtherError"
-        )
+        assert response.reason == get_code_display_name(response.status)
         assert caplog.records, "Expected 5XX troubleshooting logged as error"
         assert caplog.records[0].levelno == logging.ERROR
 
