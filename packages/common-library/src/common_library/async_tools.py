@@ -1,10 +1,12 @@
 import asyncio
+import datetime
 import functools
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from concurrent.futures import Executor
+from functools import wraps
 from inspect import isawaitable
-from typing import ParamSpec, TypeVar, overload
+from typing import Any, ParamSpec, TypeVar, overload
 
 _logger = logging.getLogger(__name__)
 
@@ -110,3 +112,21 @@ async def cancel_and_wait(
             "Task %s cancellation is complete",
             task.get_name(),
         )
+
+
+def delayed_start(
+    delay: datetime.timedelta,
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    def _decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @wraps(func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            await asyncio.sleep(delay.total_seconds())
+            return await func(*args, **kwargs)
+
+        return _wrapper
+
+    return _decorator

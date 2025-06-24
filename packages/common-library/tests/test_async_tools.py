@@ -1,10 +1,16 @@
 import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from typing import Any
 
 import pytest
-from common_library.async_tools import cancel_and_wait, make_async, maybe_await
+from common_library.async_tools import (
+    cancel_and_wait,
+    delayed_start,
+    make_async,
+    maybe_await,
+)
 
 
 @make_async()
@@ -193,3 +199,20 @@ async def test_cancel_and_wait_timeout_on_slow_cleanup():
         )  # 0.2 seconds < 2 seconds cleanup
 
     assert task.cancelled()
+
+
+async def test_with_delay():
+    @delayed_start(timedelta(seconds=0.2))
+    async def decorated_awaitable() -> int:
+        return 42
+
+    assert await decorated_awaitable() == 42
+
+    async def another_awaitable() -> int:
+        return 42
+
+    decorated_another_awaitable = delayed_start(timedelta(seconds=0.2))(
+        another_awaitable
+    )
+
+    assert await decorated_another_awaitable() == 42

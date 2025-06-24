@@ -1,8 +1,7 @@
 import asyncio
-import datetime
 import logging
 from collections import deque
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
@@ -211,21 +210,3 @@ def run_sequentially_in_context(
         return wrapper
 
     return decorator
-
-
-def delayed_start(
-    delay: datetime.timedelta,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
-    def _decorator(
-        func: Callable[P, Coroutine[Any, Any, R]],
-    ) -> Callable[P, Coroutine[Any, Any, R]]:
-        @wraps(func)
-        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            await asyncio.sleep(delay.total_seconds())
-            return await func(*args, **kwargs)
-
-        return _wrapper
-
-    return _decorator
