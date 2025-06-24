@@ -1,8 +1,11 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
+from contextvars import Token
 from typing import TypeAlias
 
 from opentelemetry import context as otcontext
 from opentelemetry import trace
+from opentelemetry.context import Context
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from settings_library.tracing import TracingSettings
 
@@ -22,8 +25,8 @@ def get_context() -> TracingContext:
 
 
 @contextmanager
-def use_tracing_context(context: TracingContext):
-    token: object | None = None
+def use_tracing_context(context: TracingContext) -> Iterator[None]:
+    token: Token[Context] | None = None
     if context is not None:
         token = otcontext.attach(context)
     try:

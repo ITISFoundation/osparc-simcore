@@ -23,7 +23,7 @@ validation_error_response_definition["properties"] = {
 }
 
 
-TException = TypeVar("TException")
+TException = TypeVar("TException", bound=BaseException)
 
 _logger = logging.getLogger(__name__)
 
