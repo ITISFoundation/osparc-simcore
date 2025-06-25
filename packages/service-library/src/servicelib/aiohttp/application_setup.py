@@ -4,6 +4,7 @@ import logging
 from collections.abc import Callable
 from contextlib import ContextDecorator
 from copy import deepcopy
+from datetime import datetime
 from enum import Enum
 from types import TracebackType
 from typing import Any, Final, Protocol
@@ -139,6 +140,7 @@ class _SetupTimingContext(ContextDecorator):
         self,
         module_name: str,
         *,
+        logger: logging.Logger,
         category: ModuleCategory | None = None,
         depends: list[str] | None = None,
     ) -> None:
@@ -151,20 +153,21 @@ class _SetupTimingContext(ContextDecorator):
         self.module_name = module_name
         self.category = category
         self.depends = depends
-        self.started = None
+        self.started: datetime | None = None
         self.head_msg = f"Setup of {module_name}"
+        self.logger = logger
 
     def __enter__(self) -> None:
-        self.started = arrow.utcnow()
+        self.started = arrow.utcnow().datetime
         if self.category is not None:
-            _logger.info(
+            self.logger.info(
                 "%s (%s, %s) started ... ",
                 self.head_msg,
                 f"{self.category.name=}",
                 f"{self.depends}",
             )
         else:
-            _logger.info("%s started ...", self.head_msg)
+            self.logger.info("%s started ...", self.head_msg)
 
     def __exit__(
         self,
@@ -187,14 +190,14 @@ def is_setup_completed(module_name: str, app: web.Application) -> bool:
 def ensure_single_setup(
     module_name: str,
     *,
-    logger: logging.Logger = _logger,
+    logger: logging.Logger,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Ensures a setup function is executed only once per application and handles completion.
 
     :param module_name: Name of the module being set up
     """
 
-    def _skip_setup(reason: str) -> bool:
+    def _log_skip(reason: str) -> bool:
         logger.info("Skipping '%s' setup: %s", module_name, reason)
         return False
 
@@ -205,26 +208,34 @@ def ensure_single_setup(
 
             # pre-setup init
             if APP_SETUP_COMPLETED_KEY not in app:
-                app[APP_SETUP_COMPLETED_KEY] = {}
+                app[APP_SETUP_COMPLETED_KEY] = []
 
             # check
             if is_setup_completed(module_name, app):
-                return _skip_setup(
+                _log_skip(
                     f"'{module_name}' was already initialized in {app}."
                     " Setup can only be executed once per app."
                 )
+                return False
 
-            completed = setup_func(app, *args, **kwargs)
+            try:
+                completed = setup_func(app, *args, **kwargs)
 
-            # post-setup handling
-            if completed is None:
-                completed = True
+                # post-setup handling
+                if completed is None:
+                    completed = True
 
-            if completed:  # registers completed setup
-                app[APP_SETUP_COMPLETED_KEY].add(module_name)
-                return completed
+                if completed:  # registers completed setup
+                    app[APP_SETUP_COMPLETED_KEY].append(module_name)
+                    return completed
 
-            return _skip_setup("Undefined (setup function returned false)")
+                assert not completed  # nosec
+                _log_skip("Undefined (setup function returned false)")
+                return False
+
+            except SkipModuleSetupError as err:
+                _log_skip(err.reason)
+                return False
 
         return _wrapper
 
@@ -296,7 +307,10 @@ def app_module_setup(
         ), f"Rename '{setup_func.__name__}' start with 'setup_$(plugin-name)'"
 
         @functools.wraps(setup_func)
-        @_SetupTimingContext(module_name, category=category, depends=depends)
+        @_SetupTimingContext(
+            module_name, category=category, depends=depends, logger=logger
+        )
+        @ensure_single_setup(module_name, logger=logger)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             if category == ModuleCategory.ADDON:
                 # ONLY addons can be enabled/disabled
@@ -345,9 +359,7 @@ def app_module_setup(
                     raise DependencyError(msg)
 
             # execution of setup with module name
-            completed: bool = ensure_single_setup(module_name, logger=logger)(
-                setup_func
-            )(app, *args, **kargs)
+            completed: bool = setup_func(app, *args, **kargs)
 
             return completed
 
