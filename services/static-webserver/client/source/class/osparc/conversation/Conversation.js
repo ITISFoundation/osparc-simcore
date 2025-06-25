@@ -242,9 +242,6 @@ qx.Class.define("osparc.conversation.Conversation", {
         return;
       }
 
-      // it's not provided by the backend
-      message["projectId"] = this.__studyData["uuid"];
-
       // Add the message in the messages array
       this.__messages.push(message);
 
@@ -259,7 +256,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           break;
       }
       if (control) {
-        this.__messagesList.add(control);
+        this.__messagesList.addAt(control, 0);
       }
 
       this.__updateMessagesNumber();
