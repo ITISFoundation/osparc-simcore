@@ -90,9 +90,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           const newLabel = e.getData()["newLabel"];
           if (this.getConversationId()) {
             osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
-              .then(() => {
-                this.getChildControl("button").setLabel(newLabel);
-              });
+              .then(() => this.renameConversation(newLabel));
           } else {
             // create new conversation first
             osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
@@ -145,6 +143,10 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.bind("conversationId", trashButton, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
+    },
+
+    renameConversation: function(newName) {
+      this.getChildControl("button").setLabel(newName);
     },
 
     __buildLayout: function() {
