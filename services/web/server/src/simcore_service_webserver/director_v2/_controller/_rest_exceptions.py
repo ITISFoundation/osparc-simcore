@@ -87,11 +87,17 @@ _exceptions_handlers_map[DirectorV2ServiceError] = (
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Default wallet not found but necessary for computations"),
+        user_message(
+            "A default wallet is required for running computations but could not be found.",
+            _version=1,
+        ),
     ),
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
-        user_message("Wallet does not have enough credits for computations. {reason}"),
+        user_message(
+            "Your wallet does not have sufficient credits to run this computation. {reason}",
+            _version=1,
+        ),
     ),
 }
 

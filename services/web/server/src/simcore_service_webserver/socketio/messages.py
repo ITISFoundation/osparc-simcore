@@ -62,12 +62,12 @@ async def send_message_to_user(
     user_id: UserID,
     message: SocketMessageDict,
     *,
-    ignore_queue: bool,
+    ignore_queue: bool = False,
 ) -> None:
     """
     Keyword Arguments:
-        ignore_queue -- set to False when this message is delivered from a server that has no direct connection to the client (default: {True})
-        An example where this is value is False, is sending messages to a user in the GC
+        ignore_queue -- set to True when this message is delivered from a server that has no direct connection to the user client (default: {False})
+        Be careful with this option, as it can lead to message loss if the user is not connected to this server!!
     """
     sio: AsyncServer = get_socket_server(app)
 

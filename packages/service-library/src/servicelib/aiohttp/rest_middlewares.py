@@ -36,7 +36,8 @@ from .web_exceptions_extension import get_http_error_class_or_none
 DEFAULT_API_VERSION = "v0"
 _FMSG_INTERNAL_ERROR_USER_FRIENDLY = user_message(
     "We apologize for the inconvenience. "
-    "The issue has been recorded, please report it if it persists."
+    "The issue has been recorded, please report it if it persists.",
+    _version=1,
 )
 
 

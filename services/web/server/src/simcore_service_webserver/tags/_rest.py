@@ -39,27 +39,35 @@ from .schemas import (
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     TagNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("Tag {tag_id} not found: either no access or does not exists"),
+        user_message(
+            "The tag '{tag_id}' could not be found or you don't have access to it.",
+            _version=1,
+        ),
     ),
     TagOperationNotAllowedError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "Could not {operation} tag {tag_id}. Not found or insuficient access."
+            "Unable to {operation} tag '{tag_id}'. The tag was not found or you don't have sufficient access.",
+            _version=1,
         ),
     ),
     ShareTagWithEveryoneNotAllowedError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message("Sharing with everyone is not permitted."),
+        user_message("Sharing with everyone is not allowed.", _version=1),
     ),
     ShareTagWithProductGroupNotAllowedError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "Sharing with all users is only permitted to admin users (e.g. testers, POs, ...)."
+            "Sharing with all users is only allowed for admin users (e.g. testers, POs, ...).",
+            _version=1,
         ),
     ),
     InsufficientTagShareAccessError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message("Insufficient access rightst to share (or unshare) tag {tag_id}."),
+        user_message(
+            "You don't have sufficient access rights to share (or unshare) tag '{tag_id}'.",
+            _version=1,
+        ),
     ),
 }
 
