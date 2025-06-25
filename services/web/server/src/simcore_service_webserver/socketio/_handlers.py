@@ -44,7 +44,7 @@ _EMIT_INTERVAL_S: int = 2
 
 def auth_user_factory(socket_id: SocketID):
     @login_required
-    async def _handler(request: web.Request) -> tuple[UserID, ProductName]:
+    async def _handler(request: web.Request) -> tuple[UserID, ProductName, str]:
         """
         Raises:
             web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
@@ -81,7 +81,7 @@ def auth_user_factory(socket_id: SocketID):
             )
             await resource_registry.set_socket_id(socket_id)
 
-        return user_id, product.name
+        return user_id, product.name, client_session_id
 
     return _handler
 
@@ -126,18 +126,16 @@ async def connect(
 
     try:
         auth_user_handler = auth_user_factory(socket_id)
-        user_id, product_name = await auth_user_handler(environ["aiohttp.request"])
+        user_id, product_name, client_session_id = await auth_user_handler(
+            environ["aiohttp.request"]
+        )
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
 
         _logger.info("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
         await emit(
-            app,
-            "SIGNAL_USER_CONNECTED",
-            user_id,
-            app,
-            product_name,
+            app, "SIGNAL_USER_CONNECTED", user_id, app, product_name, client_session_id
         )
 
         await send_message_to_user(
