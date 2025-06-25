@@ -20,7 +20,7 @@ qx.Class.define("osparc.study.Conversations", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param studyData {String} Study Data
+    * @param studyData {Object} Study Data
     */
   construct: function(studyData) {
     this.base(arguments);
@@ -29,9 +29,20 @@ qx.Class.define("osparc.study.Conversations", {
 
     this.__conversations = [];
 
-    this.fetchConversations(studyData);
+    this.set({
+      studyData,
+    });
 
     this.__listenToConversationWS();
+  },
+
+  properties: {
+    studyData: {
+      check: "Object",
+      init: null,
+      nullable: false,
+      apply: "__applyStudyData",
+    },
   },
 
   statics: {
@@ -177,13 +188,13 @@ qx.Class.define("osparc.study.Conversations", {
           if (conversation) {
             switch (eventName) {
               case "conversation:created":
-                conversation.addMessage(conversation);
+                this.__addConversation(conversation);
                 break;
               case "conversation:updated":
-                conversation.updateMessage(conversation);
+                this.__updateConversation(conversation);
                 break;
               case "conversation:deleted":
-                conversation.deleteMessage(conversation);
+                this.__deleteConversation(conversation);
                 break;
             }
           }
@@ -225,7 +236,7 @@ qx.Class.define("osparc.study.Conversations", {
       return this.__conversations.find(conversation => conversation.getConversationId() === conversationId);
     },
 
-    fetchConversations: function(studyData) {
+    __applyStudyData: function(studyData) {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
