@@ -36,45 +36,41 @@ def app_config() -> dict:
 
 
 @pytest.fixture
-def app(app_config) -> web.Application:
+def app(app_config: dict) -> web.Application:
     _app = web.Application()
     _app[APP_CONFIG_KEY] = app_config
     return _app
 
 
 @pytest.fixture
-def create_setup_bar() -> Callable[[web.Application, str, bool], bool]:
+def create_setup_bar() -> Callable[[web.Application], bool]:
     @app_module_setup("package.bar", ModuleCategory.ADDON)
-    def _setup_bar(
-        app: web.Application, arg1: str, *, raise_skip: bool = False
-    ) -> bool:
+    def setup_bar(app: web.Application) -> bool:
         return True
 
-    return _setup_bar
+    return setup_bar
 
 
 @pytest.fixture
-def create_setup_foo() -> Callable[[web.Application, str, bool], bool]:
-    @app_module_setup("package.foo", ModuleCategory.ADDON)
-    def _setup_foo(
-        app: web.Application, arg1: str, *, raise_skip: bool = False, **kwargs
-    ) -> bool:
+def create_setup_foo(mock_logger: MockType) -> Callable[[web.Application], bool]:
+    @app_module_setup("package.foo", ModuleCategory.ADDON, logger=mock_logger)
+    def setup_foo(app: web.Application, *, raise_skip: bool = False) -> bool:
         if raise_skip:
             raise SkipModuleSetupError(reason="explicit skip")
         return True
 
-    return _setup_foo
+    return setup_foo
 
 
 @pytest.fixture
-def create_setup_zee() -> Callable[[web.Application, str, int], bool]:
+def create_setup_zee() -> Callable[[web.Application, object, int], bool]:
     @app_module_setup(
         "package.zee", ModuleCategory.ADDON, config_enabled="main.zee_enabled"
     )
-    def _setup_zee(app: web.Application, arg1: str, kargs: int = 55) -> bool:
+    def setup_zee(app: web.Application, arg1, kargs=55) -> bool:
         return True
 
-    return _setup_zee
+    return setup_zee
 
 
 @pytest.fixture
@@ -153,7 +149,9 @@ def test_skip_setup(
     mock_logger.info.assert_called()
 
 
-def test_ensure_single_setup_runs_once(app: web.Application, mock_logger: Mock) -> None:
+def test_ensure_single_setup_runs_once(
+    app: web.Application, mock_logger: MockType
+) -> None:
     decorated = ensure_single_setup("test.module", logger=mock_logger)(setup_basic)
 
     # First call succeeds
@@ -170,7 +168,7 @@ def test_ensure_single_setup_runs_once(app: web.Application, mock_logger: Mock) 
 
 
 def test_ensure_single_setup_error_handling(
-    app: web.Application, mock_logger: Mock
+    app: web.Application, mock_logger: MockType
 ) -> None:
     decorated = ensure_single_setup("test.error", logger=mock_logger)(setup_that_raises)
 
@@ -180,7 +178,7 @@ def test_ensure_single_setup_error_handling(
 
 
 def test_ensure_single_setup_multiple_modules(
-    app: web.Application, mock_logger: Mock
+    app: web.Application, mock_logger: MockType
 ) -> None:
     decorated1 = ensure_single_setup("module1", logger=mock_logger)(setup_basic)
     decorated2 = ensure_single_setup("module2", logger=mock_logger)(setup_basic)
