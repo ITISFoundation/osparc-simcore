@@ -284,6 +284,13 @@ qx.Class.define("osparc.study.Conversations", {
     },
 
     __addConversationPage: function(conversationData) {
+      // ignore it if it was already there
+      const conversationId = conversationData["conversationId"];
+      const conversation = this.__getConversation(conversationId);
+      if (conversation) {
+        return null;
+      }
+
       const conversationPage = this.__createConversationPage(conversationData);
       this.__addToPages(conversationPage);
 
@@ -309,7 +316,9 @@ qx.Class.define("osparc.study.Conversations", {
           osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
             .then(conversationDt => {
               const newConversationPage = this.__addConversationPage(conversationDt);
-              conversationsLayout.setSelection([newConversationPage]);
+              if (newConversationPage) {
+                conversationsLayout.setSelection([newConversationPage]);
+              }
             });
         });
         conversationsLayout.getChildControl("bar").add(newConversationButton);
