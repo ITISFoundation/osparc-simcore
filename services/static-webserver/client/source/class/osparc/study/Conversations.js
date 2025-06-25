@@ -154,7 +154,6 @@ qx.Class.define("osparc.study.Conversations", {
 
   members: {
     __conversations: null,
-    __conversationPages: null,
     __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
@@ -250,7 +249,6 @@ qx.Class.define("osparc.study.Conversations", {
       };
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
         .then(conversations => {
-          this.__conversationPages = [];
           if (conversations.length === 0) {
             conversations.forEach(conversation => this.__addConversation(conversation));
           } else {
@@ -285,8 +283,6 @@ qx.Class.define("osparc.study.Conversations", {
 
       const conversationsLayout = this.getChildControl("conversations-layout");
       conversationsLayout.add(temporaryConversation);
-
-      this.__conversationPages.push(temporaryConversation);
     },
 
     __addConversation: function(conversationData) {
@@ -295,10 +291,7 @@ qx.Class.define("osparc.study.Conversations", {
       const conversationsLayout = this.getChildControl("conversations-layout");
       conversationsLayout.add(conversation);
 
-
-
       this.__conversations.push(conversation);
-      this.__conversationPages.push(conversation);
 
       if (this.__newConversationButton === null) {
         // initialize the new button only once
