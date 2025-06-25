@@ -385,16 +385,20 @@ qx.Class.define("osparc.store.Store", {
     },
 
     __applyWallets: function(wallets) {
+      console.log("wallets", wallets);
+
       const preferenceSettings = osparc.Preferences.getInstance();
-      const preferenceWalletId = preferenceSettings.getPreferredWalletId();
+      const defaultWalletId = preferenceSettings.getPreferredWalletId();
       if (
-        (preferenceWalletId === null || osparc.desktop.credits.Utils.getWallet(preferenceWalletId) === null) &&
-        wallets.length === 1
+        (defaultWalletId === null || osparc.desktop.credits.Utils.getWallet(defaultWalletId) === null) &&
+        wallets.length
       ) {
-        // If there is only one wallet available, make it default
+        // If there is no default wallet set in preferences or the default wallet is not available anymore:
+        // select the personal wallet if it exists
+        // wallets = wallets.filter(wallet => wallet.getType() === "personal");
         preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
-      } else if (preferenceWalletId) {
-        const walletFound = wallets.find(wallet => wallet.getWalletId() === preferenceWalletId);
+      } else if (defaultWalletId) {
+        const walletFound = wallets.find(wallet => wallet.getWalletId() === defaultWalletId);
         if (walletFound) {
           this.setPreferredWallet(walletFound);
         }
