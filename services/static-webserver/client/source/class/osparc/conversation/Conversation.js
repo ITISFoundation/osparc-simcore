@@ -109,11 +109,11 @@ qx.Class.define("osparc.conversation.Conversation", {
         column: 3
       });
 
-      const trashButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+      const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
         ...buttonsAesthetics,
         paddingLeft: 4, // adds spacing between buttons
       });
-      trashButton.addListener("execute", () => {
+      closeButton.addListener("execute", () => {
         const deleteConversation = () => {
           osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
             .then(() => this.fireEvent("conversationDeleted"));
@@ -136,11 +136,11 @@ qx.Class.define("osparc.conversation.Conversation", {
         }
       });
       // eslint-disable-next-line no-underscore-dangle
-      tabButton._add(trashButton, {
+      tabButton._add(closeButton, {
         row: 0,
         column: 4
       });
-      this.bind("conversationId", trashButton, "visibility", {
+      this.bind("conversationId", closeButton, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
     },
