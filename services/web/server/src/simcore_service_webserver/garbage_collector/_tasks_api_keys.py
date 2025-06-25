@@ -13,7 +13,7 @@ from servicelib.logging_utils import log_context
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ..api_keys import api_keys_service
-from ._tasks_utils import CleanupContextFunc, setup_periodic_task
+from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +45,9 @@ def create_background_task_to_prune_api_keys(
             with log_context(_logger, logging.INFO, "Pruning expired API keys"):
                 await _prune_expired_api_keys(app)
 
-        async for _ in setup_periodic_task(app, _prune_expired_api_keys_periodically):
+        async for _ in periodic_task_lifespan(
+            app, _prune_expired_api_keys_periodically
+        ):
             yield
 
     return _cleanup_ctx_fun

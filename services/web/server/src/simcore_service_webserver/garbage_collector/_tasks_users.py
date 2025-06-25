@@ -16,7 +16,7 @@ from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 from ..login import login_service
 from ..security import security_service
 from ..users.api import update_expired_users
-from ._tasks_utils import CleanupContextFunc, setup_periodic_task
+from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 
 _logger = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def create_background_task_for_trial_accounts(wait_s: float) -> CleanupContextFu
             with log_context(_logger, logging.INFO, "Updating expired users"):
                 await _update_expired_users(app)
 
-        async for _ in setup_periodic_task(app, _update_expired_users_periodically):
+        async for _ in periodic_task_lifespan(app, _update_expired_users_periodically):
             yield
 
     return _cleanup_ctx_fun

@@ -14,7 +14,7 @@ from servicelib.logging_utils import log_context
 from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ._core import collect_garbage
-from ._tasks_utils import CleanupContextFunc, setup_periodic_task
+from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 from .settings import GarbageCollectorSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ def create_background_task_for_garbage_collection() -> CleanupContextFunc:
             with log_context(_logger, logging.INFO, "Garbage collect cycle"):
                 await collect_garbage(app)
 
-        async for _ in setup_periodic_task(
+        async for _ in periodic_task_lifespan(
             app, _collect_garbage_periodically, task_name=_GC_TASK_NAME
         ):
             yield

@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import AsyncIterator, Callable, Coroutine
 
 from aiohttp import web
-from servicelib.async_utils import cancel_wait_task
+from common_library.async_tools import cancel_wait_task
 
 CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
@@ -19,7 +19,7 @@ def create_task_name(coro: Callable) -> str:
     return f"{coro.__module__}.{coro.__name__}"
 
 
-async def setup_periodic_task(
+async def periodic_task_lifespan(
     app: web.Application,
     periodic_task_coro: Callable[[], Coroutine[None, None, None]],
     *,
