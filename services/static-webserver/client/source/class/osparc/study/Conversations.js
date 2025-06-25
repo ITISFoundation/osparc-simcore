@@ -192,10 +192,10 @@ qx.Class.define("osparc.study.Conversations", {
                 this.__addConversationPage(conversation);
                 break;
               case "conversation:updated":
-                this.__updateConversation(conversation);
+                this.__updateConversationName(conversation);
                 break;
               case "conversation:deleted":
-                this.__deleteConversation(conversation);
+                this.__removeConversationPage(conversation);
                 break;
             }
           }
@@ -269,9 +269,7 @@ qx.Class.define("osparc.study.Conversations", {
         const conversationId = conversationData["conversationId"];
         conversationPage = new osparc.conversation.Conversation(studyData, conversationId);
         conversationPage.setLabel(conversationData["name"]);
-        conversationPage.addListener("conversationDeleted", () => {
-          this.__deleteConversation(conversationData);
-        });
+        conversationPage.addListener("conversationDeleted", () => this.__removeConversationPage(conversationData));
       } else {
         // create a temporary conversation
         conversationPage = new osparc.conversation.Conversation(studyData);
@@ -321,7 +319,7 @@ qx.Class.define("osparc.study.Conversations", {
       conversationsLayout.getChildControl("bar").add(this.__newConversationButton);
     },
 
-    __deleteConversation: function(conversationData) {
+    __removeConversationPage: function(conversationData) {
       const conversationId = conversationData["conversationId"];
       const conversation = this.__getConversation(conversationId);
       if (conversation) {
@@ -340,7 +338,7 @@ qx.Class.define("osparc.study.Conversations", {
     },
 
     // it can only be renamed, not updated
-    __updateConversation: function(conversationData) {
+    __updateConversationName: function(conversationData) {
       const conversationId = conversationData["conversationId"];
       const conversation = this.__getConversation(conversationId);
       if (conversation) {
