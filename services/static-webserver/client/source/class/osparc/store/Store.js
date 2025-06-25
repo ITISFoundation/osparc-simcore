@@ -393,7 +393,7 @@ qx.Class.define("osparc.store.Store", {
       ) {
         // If there is no default wallet set in preferences or the default wallet is not available anymore:
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-        const myWallet = wallets.filter(wallet => wallet.getOwner() === myGroupId);
+        const myWallet = wallets.find(wallet => wallet.getOwner() === myGroupId);
         if (myWallet) {
           // select the personal wallet if it exists
           preferenceSettings.requestChangePreferredWalletId(myWallet.getWalletId());
