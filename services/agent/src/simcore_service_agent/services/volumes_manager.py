@@ -6,10 +6,10 @@ from typing import Final
 
 import arrow
 from aiodocker.docker import Docker
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from pydantic import NonNegativeFloat
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context

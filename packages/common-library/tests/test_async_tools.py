@@ -1,9 +1,16 @@
 import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from typing import Any
 
 import pytest
-from common_library.async_tools import make_async, maybe_await
+from common_library.async_tools import (
+    cancel_wait_task,
+    delayed_start,
+    make_async,
+    maybe_await,
+)
 
 
 @make_async()
@@ -13,7 +20,8 @@ def sync_function(x: int, y: int) -> int:
 
 @make_async()
 def sync_function_with_exception() -> None:
-    raise ValueError("This is an error!")
+    msg = "This is an error!"
+    raise ValueError(msg)
 
 
 @pytest.mark.asyncio
@@ -93,3 +101,118 @@ async def test_maybe_await_with_result_proxy():
 
     sync_result = await maybe_await(SyncResultProxy().fetchone())
     assert sync_result == {"id": 2, "name": "test2"}
+
+
+async def test_cancel_and_wait():
+    state = {"started": False, "cancelled": False, "cleaned_up": False}
+    SLEEP_TIME = 5  # seconds
+
+    async def coro():
+        try:
+            state["started"] = True
+            await asyncio.sleep(SLEEP_TIME)
+        except asyncio.CancelledError:
+            state["cancelled"] = True
+            raise
+        finally:
+            state["cleaned_up"] = True
+
+    task = asyncio.create_task(coro())
+    await asyncio.sleep(0.1)  # Let coro start
+
+    start = time.time()
+    await cancel_wait_task(task)
+
+    elapsed = time.time() - start
+    assert elapsed < SLEEP_TIME, "Task should be cancelled quickly"
+    assert task.done()
+    assert task.cancelled()
+    assert state["started"]
+    assert state["cancelled"]
+    assert state["cleaned_up"]
+
+
+async def test_cancel_and_wait_propagates_external_cancel():
+    """
+    This test ensures that if the caller of cancel_and_wait is cancelled,
+    the CancelledError is not swallowed.
+    """
+
+    async def coro():
+        try:
+            await asyncio.sleep(4)
+        except asyncio.CancelledError:
+            await asyncio.sleep(1)  # simulate cleanup
+            raise
+
+    inner_task = asyncio.create_task(coro())
+
+    async def outer_coro():
+        try:
+            await cancel_wait_task(inner_task)
+        except asyncio.CancelledError:
+            assert (
+                not inner_task.cancelled()
+            ), "Internal Task DOES NOT RAISE CancelledError"
+            raise
+
+    # Cancel the wrapper after a short delay
+    outer_task = asyncio.create_task(outer_coro())
+    await asyncio.sleep(0.1)
+    outer_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await outer_task
+
+    # Ensure the task was cancelled
+    assert inner_task.cancelled() is False, "Task should not be cancelled initially"
+
+    done_event = asyncio.Event()
+
+    def on_done(_):
+        done_event.set()
+
+    inner_task.add_done_callback(on_done)
+    await done_event.wait()
+
+
+async def test_cancel_and_wait_timeout_on_slow_cleanup():
+    """Test that cancel_and_wait raises TimeoutError when cleanup takes longer than max_delay"""
+
+    CLEANUP_TIME = 2  # seconds
+
+    async def slow_cleanup_coro():
+        try:
+            await asyncio.sleep(10)  # Long running task
+        except asyncio.CancelledError:
+            # Simulate slow cleanup that exceeds max_delay!
+            await asyncio.sleep(CLEANUP_TIME)
+            raise
+
+    task = asyncio.create_task(slow_cleanup_coro())
+    await asyncio.sleep(0.1)  # Let the task start
+
+    # Cancel with a max_delay shorter than cleanup time
+    with pytest.raises(TimeoutError):
+        await cancel_wait_task(
+            task, max_delay=CLEANUP_TIME / 10
+        )  # 0.2 seconds < 2 seconds cleanup
+
+    assert task.cancelled()
+
+
+async def test_with_delay():
+    @delayed_start(timedelta(seconds=0.2))
+    async def decorated_awaitable() -> int:
+        return 42
+
+    assert await decorated_awaitable() == 42
+
+    async def another_awaitable() -> int:
+        return 42
+
+    decorated_another_awaitable = delayed_start(timedelta(seconds=0.2))(
+        another_awaitable
+    )
+
+    assert await decorated_another_awaitable() == 42

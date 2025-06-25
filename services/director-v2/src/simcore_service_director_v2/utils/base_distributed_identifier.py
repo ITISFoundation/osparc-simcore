@@ -4,8 +4,8 @@ from asyncio import Task
 from datetime import timedelta
 from typing import Final, Generic, TypeVar
 
+from common_library.async_tools import cancel_wait_task
 from pydantic import NonNegativeInt
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import RedisClientSDK

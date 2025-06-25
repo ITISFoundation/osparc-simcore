@@ -6,10 +6,10 @@ from datetime import datetime
 from typing import Final
 
 import arrow
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI, status
 from models_library.callbacks_mapping import CallbacksMapping, UserServiceCommand
 from pydantic import BaseModel, NonNegativeFloat, NonNegativeInt
-from servicelib.async_utils import cancel_wait_task
 from servicelib.logging_utils import log_context
 from servicelib.sequences_utils import pairwise
 from simcore_service_dynamic_sidecar.core.errors import (

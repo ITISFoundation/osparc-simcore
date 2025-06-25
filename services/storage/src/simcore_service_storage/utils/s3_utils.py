@@ -4,8 +4,8 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
 
+from common_library.async_tools import cancel_wait_task
 from pydantic import ByteSize, TypeAdapter
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.progress_bar import ProgressBarData
 
