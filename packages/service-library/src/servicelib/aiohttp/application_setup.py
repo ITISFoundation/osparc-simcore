@@ -260,7 +260,7 @@ def app_module_setup(
 ) -> Callable:
     """Decorator marking a function as a module setup for an application.
 
-    Ensures one-time execution and tracks setup completion. For addons, setup can be
+    Ensures one-time execution (idempotent) and tracks setup completion. For addons, setup can be
     toggled via config [deprecated] or settings.
 
     :param settings_name: Field name in app settings for this module
