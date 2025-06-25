@@ -8,11 +8,11 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
+from common_library.async_tools import cancel_wait_task
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
 
-from ..async_utils import cancel_wait_task
 from ..background_task import periodic
 from ..logging_utils import log_catch, log_context
 from ._constants import (

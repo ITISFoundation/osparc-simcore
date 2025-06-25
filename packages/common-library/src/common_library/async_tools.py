@@ -1,9 +1,14 @@
 import asyncio
+import datetime
 import functools
-from collections.abc import Awaitable, Callable
+import logging
+from collections.abc import Awaitable, Callable, Coroutine
 from concurrent.futures import Executor
+from functools import wraps
 from inspect import isawaitable
-from typing import ParamSpec, TypeVar, overload
+from typing import Any, ParamSpec, TypeVar, overload
+
+_logger = logging.getLogger(__name__)
 
 R = TypeVar("R")
 P = ParamSpec("P")
@@ -62,3 +67,69 @@ async def maybe_await(
         return await obj
     assert not isawaitable(obj)  # nosec
     return obj
+
+
+async def cancel_wait_task(
+    task: asyncio.Task, *, max_delay: float | None = None
+) -> None:
+    """Cancels the given task and waits for it to complete
+
+    Arguments:
+        task -- task to be canceled
+
+
+    Keyword Arguments:
+        max_delay -- duration (in seconds) to wait before giving
+        up the cancellation. This timeout should be an upper bound to the
+        time needed for the task to cleanup after being canceled and
+        avoids that the cancellation takes forever. If None the timeout is not
+        set. (default: {None})
+
+    Raises:
+        TimeoutError: raised if cannot cancel the task.
+        CancelledError: raised ONLY if owner is being cancelled.
+    """
+
+    cancelling = task.cancel()
+    if not cancelling:
+        return  # task was alredy cancelled
+
+    assert task.cancelling()  # nosec
+    assert not task.cancelled()  # nosec
+
+    try:
+
+        await asyncio.shield(
+            # NOTE shield ensures that cancellation of the caller function won't stop you
+            # from observing the cancellation/finalization of task.
+            asyncio.wait_for(task, timeout=max_delay)
+        )
+
+    except asyncio.CancelledError:
+        if not task.cancelled():
+            # task owner function is being cancelled -> propagate cancellation
+            raise
+
+        # else: task cancellation is complete, we can safely ignore it
+        _logger.debug(
+            "Task %s cancellation is complete",
+            task.get_name(),
+        )
+
+
+def delayed_start(
+    delay: datetime.timedelta,
+) -> Callable[
+    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
+]:
+    def _decorator(
+        func: Callable[P, Coroutine[Any, Any, R]],
+    ) -> Callable[P, Coroutine[Any, Any, R]]:
+        @wraps(func)
+        async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            await asyncio.sleep(delay.total_seconds())
+            return await func(*args, **kwargs)
+
+        return _wrapper
+
+    return _decorator

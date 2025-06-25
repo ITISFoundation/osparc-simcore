@@ -8,9 +8,9 @@ from typing import Any, Final, cast
 
 import httpx
 from aiocache import Cache, SimpleMemoryCache  # type: ignore[import-untyped]
+from common_library.async_tools import cancel_wait_task
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI, status
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.client_session import get_client_session
 from servicelib.logging_utils import log_catch, log_context
