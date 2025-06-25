@@ -363,11 +363,12 @@ def app_module_setup(
 
             return completed
 
-        _wrapper.metadata = _setup_metadata  # type: ignore[attr-defined]
-        _wrapper.mark_as_simcore_servicelib_setup_func = True  # type: ignore[attr-defined]
         assert (
             _wrapper.__wrapped__ == setup_func
         ), "this is added by functools.wraps decorator"  # nosec
+
+        setattr(_wrapper, "metadata", _setup_metadata)  # noqa: B010
+        setattr(_wrapper, "mark_as_simcore_servicelib_setup_func", True)  # noqa: B010
 
         return _wrapper
 
