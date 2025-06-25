@@ -3,9 +3,10 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import logging
 import re
-from collections.abc import AsyncIterable, Awaitable, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
@@ -80,6 +81,13 @@ GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 # ensure enough time has passed and GC was triggered
 WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 2
+
+
+@pytest.fixture
+async def exit_stack() -> AsyncIterator[contextlib.AsyncExitStack]:
+    """Provides an AsyncExitStack that gets cleaned up after each test"""
+    async with contextlib.AsyncExitStack() as stack:
+        yield stack
 
 
 @pytest.fixture(autouse=True)
@@ -203,14 +211,20 @@ def disable_garbage_collector_task(mocker: MockerFixture) -> mock.MagicMock:
     )
 
 
-async def login_user(client: TestClient):
+async def login_user(client: TestClient, *, exit_stack: contextlib.AsyncExitStack):
     """returns a logged in regular user"""
-    return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
+    return await log_client_in(
+        client=client, user_data={"role": UserRole.USER.name}, exit_stack=exit_stack
+    )
 
 
-async def login_guest_user(client: TestClient):
+async def login_guest_user(
+    client: TestClient, *, exit_stack: contextlib.AsyncExitStack
+):
     """returns a logged in Guest user"""
-    return await log_client_in(client=client, user_data={"role": UserRole.GUEST.name})
+    return await log_client_in(
+        client=client, user_data={"role": UserRole.GUEST.name}, exit_stack=exit_stack
+    )
 
 
 async def new_project(
@@ -482,10 +496,11 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     assert client.app
-    logged_guest_user = await login_guest_user(client)
+    logged_guest_user = await login_guest_user(client, exit_stack=exit_stack)
     empty_guest_user_project = await new_project(
         client, logged_guest_user, osparc_product_name, tests_data_dir
     )
@@ -508,10 +523,11 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """After a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
     assert client.app
-    logged_guest_user = await login_guest_user(client)
+    logged_guest_user = await login_guest_user(client, exit_stack=exit_stack)
     empty_guest_user_project = await new_project(
         client, logged_guest_user, osparc_product_name, tests_data_dir
     )
@@ -557,11 +573,12 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     fake_project: dict,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
     number_of_templates = 5
-    logged_user = await login_user(client)
+    logged_user = await login_user(client, exit_stack=exit_stack)
     user_projects = [
         await new_project(client, logged_user, osparc_product_name, tests_data_dir)
         for _ in range(number_of_projects)
@@ -604,6 +621,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -611,9 +629,9 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of the users in the "g1" will become the new owner of the project and "u1" will be deleted
     """
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     # creating g1 and inviting u2 and u3
     g1 = await get_group(client, u1)
@@ -648,15 +666,16 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
     USER "u1" is manually marked as "GUEST";
     EXPECTED: one of "u2" or "u3" will become the new owner of the project and "u1" will be deleted
     """
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     q_u2 = await fetch_user_from_db(aiopg_engine, u2)
     assert q_u2
@@ -694,6 +713,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -703,9 +723,9 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     the new owner either "u2" or "u3" will be manually marked as "GUEST";
     EXPECTED: the GUEST user will be deleted and the project will pass to the last member of "g1"
     """
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     # creating g1 and inviting u2 and u3
     g1 = await get_group(client, u1)
@@ -765,6 +785,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -777,9 +798,9 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     EXPECTED: the last user will be removed and the project will be removed
     """
     assert client.app
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     # creating g1 and inviting u2 and u3
     g1 = await get_group(client, u1)
@@ -853,6 +874,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -861,9 +883,9 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     same as T5 => afterwards afterwards the new owner either "u2" or "u3" will be manually marked as "GUEST";
     EXPECTED: the GUEST user will be deleted and the project will pass to the last member of "g1"
     """
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     q_u2 = await fetch_user_from_db(aiopg_engine, u2)
     assert q_u2
@@ -927,6 +949,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -937,9 +960,9 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     same as T8 => afterwards the last user will be marked as "GUEST";
     EXPECTED: the last user will be removed and the project will be removed
     """
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     q_u2 = await fetch_user_from_db(aiopg_engine, u2)
     assert q_u2
@@ -1014,6 +1037,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -1026,9 +1050,9 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     )
     assert not gc_task.done()
 
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     q_u2 = await fetch_user_from_db(aiopg_engine, u2)
     q_u3 = await fetch_user_from_db(aiopg_engine, u3)
@@ -1067,6 +1091,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
+    exit_stack: contextlib.AsyncExitStack,
 ):
     """
     USER "u1" creates a group and invites "u2" and "u3";
@@ -1074,9 +1099,9 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     USER "u1", "u2" and "u3" are manually marked as "GUEST"
     EXPECTED: the project and all the users are removed
     """
-    u1 = await login_user(client)
-    u2 = await login_user(client)
-    u3 = await login_user(client)
+    u1 = await login_user(client, exit_stack=exit_stack)
+    u2 = await login_user(client, exit_stack=exit_stack)
+    u3 = await login_user(client, exit_stack=exit_stack)
 
     # creating g1 and inviting u2 and u3
     g1 = await get_group(client, u1)

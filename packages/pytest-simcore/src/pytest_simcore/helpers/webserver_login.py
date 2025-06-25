@@ -270,7 +270,9 @@ class NewInvitation(NewUser):
     async def __aenter__(self) -> "NewInvitation":
         # creates host user
         assert self.client.app
-        self.user = await _create_user_in_db(self.client.app, self.user_data)
+        self.user = await _create_user_in_db(
+            self.client.app, self.exit_stack, self.user_data
+        )
 
         self.confirmation = await create_invitation_token(
             self.db,
