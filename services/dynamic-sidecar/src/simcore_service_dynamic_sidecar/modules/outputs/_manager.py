@@ -6,12 +6,12 @@ from contextlib import suppress
 from datetime import timedelta
 from functools import partial
 
+from common_library.async_tools import cancel_wait_task
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import ProgressType
 from pydantic import PositiveFloat
 from servicelib import progress_bar
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB

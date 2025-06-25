@@ -1,5 +1,5 @@
 """
-    Scheduled tasks addressing users
+Scheduled tasks addressing users
 
 """
 
@@ -8,6 +8,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
+from common_library.async_tools import cancel_wait_task
 from servicelib.logging_utils import log_context
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -55,10 +56,6 @@ def create_background_task_to_prune_trash(
         yield
 
         # tear-down
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            assert task.cancelled()  # nosec
+        await cancel_wait_task(task)
 
     return _cleanup_ctx_fun
