@@ -55,32 +55,40 @@ _logger = logging.getLogger(__name__)
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     PendingPreRegistrationNotFoundError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
-        user_message(PendingPreRegistrationNotFoundError.msg_template),
+        user_message(
+            "No pending registration request found for email {email} in {product_name}.",
+            _version=2,
+        ),
     ),
     UserNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
-            "This user cannot be found. Either it is not registered or has enabled privacy settings."
+            "The requested user could not be found. "
+            "This may be because the user is not registered or has privacy settings enabled.",
+            _version=1,
         ),
     ),
     UserNameDuplicateError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "Username '{user_name}' is already taken. "
-            "Consider '{alternative_user_name}' instead."
+            "The username '{user_name}' is already in use. "
+            "Please try '{alternative_user_name}' instead.",
+            _version=1,
         ),
     ),
     AlreadyPreRegisteredError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "Found {num_found} matches for '{email}'. Cannot pre-register existing user"
+            "Found {num_found} existing account(s) for '{email}'. Unable to pre-register an existing user.",
+            _version=1,
         ),
     ),
     MissingGroupExtraPropertiesForProductError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
-            "The product is not ready for use until the configuration is fully completed. "
-            "Please wait and try again. "
+            "This product is currently being configured and is not yet ready for use. "
+            "Please try again later.",
+            _version=1,
         ),
     ),
 }

@@ -111,6 +111,7 @@ async def update_message(
 async def delete_message(
     app: web.Application,
     *,
+    user_id: UserID,
     project_id: ProjectID,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
@@ -121,9 +122,12 @@ async def delete_message(
         message_id=message_id,
     )
 
+    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
+
     await notify_conversation_message_deleted(
         app,
         recipients=await _get_recipients(app, project_id),
+        user_group_id=_user_group_id,
         project_id=project_id,
         conversation_id=conversation_id,
         message_id=message_id,

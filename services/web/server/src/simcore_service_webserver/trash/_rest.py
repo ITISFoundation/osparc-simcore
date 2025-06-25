@@ -27,13 +27,15 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "Current study is in use and cannot be trashed [project_id={project_uuid}]. Please stop all services first and try again"
+            "The project is currently in use and cannot be moved to trash. Please stop all running services first and try again.",
+            _version=1,
         ),
     ),
     ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message(
-            "Something went wrong while stopping services before trashing. Aborting trash."
+            "An error occurred while stopping services before moving to trash. The operation has been cancelled.",
+            _version=1,
         ),
     ),
 }
