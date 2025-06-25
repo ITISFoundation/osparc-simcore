@@ -8,20 +8,20 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.users import UserID
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.users import users as users_table
 from simcore_service_webserver.db.models import UserRole, UserStatus
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.groups import api as groups_service
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._invitations_service import create_invitation_token
-from simcore_service_webserver.login._login_repository_legacy import (
-    AsyncpgStorage,
-    get_plugin_storage,
-)
 from simcore_service_webserver.products.products_service import list_products
 from simcore_service_webserver.security import security_service
+from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
 
 from .assert_checks import assert_status
 from .faker_factories import DEFAULT_FAKER, DEFAULT_TEST_PASSWORD, random_user
+from .postgres_tools import insert_and_get_row_lifespan
 
 
 # WARNING: DO NOT use UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):
@@ -65,42 +65,61 @@ def parse_link(text):
     return URL(link).path
 
 
-async def _create_user(app: web.Application, data=None) -> UserInfoDict:
-    db: AsyncpgStorage = get_plugin_storage(app)
+async def _create_user_in_db(
+    sqlalchemy_async_engine: AsyncEngine,
+    exit_stack: contextlib.AsyncExitStack,
+    data: dict | None = None,
+) -> UserInfoDict:
 
-    # create
+    # create fake
     data = data or {}
     data.setdefault("status", UserStatus.ACTIVE.name)
     data.setdefault("role", UserRole.USER.name)
-    data.setdefault("password", DEFAULT_TEST_PASSWORD)
-    user = await db.create_user(random_user(**data))
 
-    # get
-    user = await db.get_user({"id": user["id"]})
+    raw_password = DEFAULT_TEST_PASSWORD
+
+    # inject in db
+    user = await exit_stack.enter_async_context(
+        insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+            sqlalchemy_async_engine,
+            table=users_table,
+            values=random_user(password=raw_password, **data),
+            pk_col=users_table.c.id,
+        )
+    )
     assert "first_name" in user
     assert "last_name" in user
 
-    # adds extras
-    extras = {"raw_password": data["password"]}
-
     return UserInfoDict(
-        **{
-            key: user[key]
-            for key in [
-                "id",
-                "name",
-                "email",
-                "primary_gid",
-                "status",
-                "role",
-                "created_at",
-                "password_hash",
-                "first_name",
-                "last_name",
-                "phone",
-            ]
-        },
-        **extras,
+        # required
+        #  - in db
+        id=user["id"],
+        name=user["name"],
+        email=user["email"],
+        primary_gid=user["primary_gid"],
+        status=(
+            UserStatus(user["status"])
+            if not isinstance(user["status"], UserStatus)
+            else user["status"]
+        ),
+        role=(
+            UserRole(user["role"])
+            if not isinstance(user["role"], UserRole)
+            else user["role"]
+        ),
+        # optional
+        #  - in db
+        created_at=(
+            user["created_at"]
+            if isinstance(user["created_at"], datetime)
+            else datetime.fromisoformat(user["created_at"])
+        ),
+        password_hash=user["password_hash"],
+        first_name=user["first_name"],
+        last_name=user["last_name"],
+        phone=user["phone"],
+        # extras
+        raw_password=raw_password,
     )
 
 
@@ -114,12 +133,16 @@ async def _register_user_in_default_product(app: web.Application, user_id: UserI
     )
 
 
-async def _create_account(
+async def _create_account_in_db(
     app: web.Application,
+    exit_stack: contextlib.AsyncExitStack,
     user_data: dict[str, Any] | None = None,
 ) -> UserInfoDict:
     # users, groups in db
-    user = await _create_user(app, user_data)
+    user = await _create_user_in_db(
+        get_asyncpg_engine(app), exit_stack=exit_stack, data=user_data
+    )
+
     # user has default product
     await _register_user_in_default_product(app, user_id=user["id"])
     return user
@@ -129,14 +152,17 @@ async def log_client_in(
     client: TestClient,
     user_data: dict[str, Any] | None = None,
     *,
-    enable_check=True,
+    exit_stack: contextlib.AsyncExitStack,
+    enable_check: bool = True,
 ) -> UserInfoDict:
     assert client.app
 
     # create account
-    user = await _create_account(client.app, user_data=user_data)
+    user = await _create_account_in_db(
+        client.app, exit_stack=exit_stack, user_data=user_data
+    )
 
-    # login
+    # login (requires)
     url = client.app.router["auth_login"].url_for()
     reponse = await client.post(
         str(url),
@@ -160,16 +186,20 @@ class NewUser:
     ):
         self.user_data = user_data
         self.user = None
+
         assert app
-        self.db = get_plugin_storage(app)
         self.app = app
 
+        self.exit_stack = contextlib.AsyncExitStack()
+
     async def __aenter__(self) -> UserInfoDict:
-        self.user = await _create_account(self.app, self.user_data)
+        self.user = await _create_account_in_db(
+            self.app, self.exit_stack, self.user_data
+        )
         return self.user
 
     async def __aexit__(self, *args):
-        await self.db.delete_user(self.user)
+        await self.exit_stack.aclose()
 
 
 class LoggedUser(NewUser):
@@ -181,7 +211,10 @@ class LoggedUser(NewUser):
 
     async def __aenter__(self) -> UserInfoDict:
         self.user = await log_client_in(
-            self.client, self.user_data, enable_check=self.enable_check
+            self.client,
+            self.user_data,
+            exit_stack=self.exit_stack,
+            enable_check=self.enable_check,
         )
         return self.user
 
@@ -237,7 +270,7 @@ class NewInvitation(NewUser):
     async def __aenter__(self) -> "NewInvitation":
         # creates host user
         assert self.client.app
-        self.user = await _create_user(self.client.app, self.user_data)
+        self.user = await _create_user_in_db(self.client.app, self.user_data)
 
         self.confirmation = await create_invitation_token(
             self.db,
