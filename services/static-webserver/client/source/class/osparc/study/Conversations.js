@@ -169,7 +169,7 @@ qx.Class.define("osparc.study.Conversations", {
       const socket = osparc.wrapper.WebSocket.getInstance();
       [
         "conversation:message:created",
-        "conversation:message:update",
+        "conversation:message:updated",
         "conversation:message:deleted",
       ].forEach(eventName => {
         const eventHandler = message => {
@@ -182,7 +182,7 @@ qx.Class.define("osparc.study.Conversations", {
                 case "conversation:message:created":
                   conversation.addMessage(message);
                   break;
-                case "conversation:message:update":
+                case "conversation:message:updated":
                   conversation.updateMessage(message);
                   break;
                 case "conversation:message:deleted":
