@@ -3,12 +3,15 @@ from typing import Final
 
 from aiohttp import web
 from models_library.conversations import (
+    ConversationGetDB,
     ConversationID,
     ConversationMessageGetDB,
     ConversationMessageID,
     ConversationMessageType,
+    ConversationType,
 )
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
@@ -19,6 +22,10 @@ from servicelib.utils import limited_as_completed
 from ..socketio.messages import send_message_to_user
 
 _MAX_CONCURRENT_SENDS: Final[int] = 3
+
+SOCKET_IO_CONVERSATION_CREATED_EVENT: Final[str] = "conversation:created"
+SOCKET_IO_CONVERSATION_DELETED_EVENT: Final[str] = "conversation:deleted"
+SOCKET_IO_CONVERSATION_UPDATED_EVENT: Final[str] = "conversation:updated"
 
 SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT: Final[str] = (
     "conversation:message:created"
@@ -31,7 +38,30 @@ SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT: Final[str] = (
 )
 
 
-class BaseConversationMessage(BaseModel):
+class BaseEvent(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel,
+        ),
+    )
+
+
+class BaseConversationEvent(BaseEvent):
+    product_name: ProductName
+    project_id: ProjectID | None
+    user_group_id: GroupID
+    conversation_id: ConversationID
+    type: ConversationType
+
+
+class ConversationCreatedOrUpdatedEvent(BaseConversationEvent):
+    created: datetime.datetime
+    modified: datetime.datetime
+
+
+class BaseConversationMessageEvent(BaseEvent):
     conversation_id: ConversationID
     message_id: ConversationMessageID
     user_group_id: GroupID
@@ -46,13 +76,13 @@ class BaseConversationMessage(BaseModel):
     )
 
 
-class ConversationMessageCreatedOrUpdated(BaseConversationMessage):
+class ConversationMessageCreatedOrUpdatedEvent(BaseConversationMessageEvent):
     content: str
     created: datetime.datetime
     modified: datetime.datetime
 
 
-class ConversationMessageDeleted(BaseConversationMessage): ...
+class ConversationMessageDeletedEvent(BaseConversationMessageEvent): ...
 
 
 async def _send_message_to_recipients(
@@ -72,6 +102,26 @@ async def _send_message_to_recipients(
         ...
 
 
+async def notify_conversation_created(
+    app: web.Application,
+    *,
+    recipients: set[UserID],
+    project_id: ProjectID,
+    conversation: ConversationGetDB,
+) -> None:
+    notification_message = SocketMessageDict(
+        event_type=SOCKET_IO_CONVERSATION_CREATED_EVENT,
+        data={
+            "projectId": project_id,
+            **ConversationCreatedOrUpdatedEvent(**conversation.model_dump()).model_dump(
+                mode="json", by_alias=True
+            ),
+        },
+    )
+
+    await _send_message_to_recipients(app, recipients, notification_message)
+
+
 async def notify_conversation_message_created(
     app: web.Application,
     *,
@@ -83,7 +133,7 @@ async def notify_conversation_message_created(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT,
         data={
             "projectId": project_id,
-            **ConversationMessageCreatedOrUpdated(
+            **ConversationMessageCreatedOrUpdatedEvent(
                 **conversation_message.model_dump()
             ).model_dump(mode="json", by_alias=True),
         },
@@ -104,7 +154,7 @@ async def notify_conversation_message_updated(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT,
         data={
             "projectId": project_id,
-            **ConversationMessageCreatedOrUpdated(
+            **ConversationMessageCreatedOrUpdatedEvent(
                 **conversation_message.model_dump()
             ).model_dump(mode="json", by_alias=True),
         },
@@ -127,7 +177,7 @@ async def notify_conversation_message_deleted(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT,
         data={
             "projectId": project_id,
-            **ConversationMessageDeleted(
+            **ConversationMessageDeletedEvent(
                 conversation_id=conversation_id,
                 message_id=message_id,
                 user_group_id=user_group_id,
