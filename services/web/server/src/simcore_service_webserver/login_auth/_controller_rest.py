@@ -5,7 +5,7 @@ from aiohttp.web import RouteTableDef
 from servicelib.aiohttp import status
 
 from .._meta import API_VTAG
-from ..login.decorators import login_required  # FIXME: move this here
+from .decorators import login_required
 
 _logger = logging.getLogger(__name__)
 
