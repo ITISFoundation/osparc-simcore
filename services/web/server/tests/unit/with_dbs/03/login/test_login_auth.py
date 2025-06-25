@@ -41,6 +41,9 @@ from simcore_service_webserver.session.settings import get_plugin_settings
 async def test_check_auth(client: TestClient, logged_user: UserInfoDict):
     assert client.app
 
+    url = client.app.router["check_auth"].url_for()
+    assert url.path == "/v0/auth:check"
+
     response = await client.get("/v0/auth:check")
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 

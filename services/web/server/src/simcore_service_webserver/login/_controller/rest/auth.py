@@ -289,17 +289,18 @@ async def logout(request: web.Request) -> web.Response:
         return response
 
 
-@routes.get(f"/{API_VTAG}/auth:check", name="check_authentication")
+@routes.get(f"/{API_VTAG}/auth:check", name="check_auth")
 @login_required
 async def check_auth(request: web.Request) -> web.Response:
-    # lightweight endpoint for checking if users are authenticated
-    # used primarily by Traefik auth middleware to verify session cookies
+    """Lightweight endpoint for checking if users are authenticated & authorized to this product
 
+    Used primarily by Traefik auth middleware to verify session cookies
+    SEE https://doc.traefik.io/traefik/middlewares/http/forwardauth
+    """
     # NOTE: for future development
     # if database access is added here, services like jupyter-math
     # which load a lot of resources will have a big performance hit
     # consider caching some properties required by this endpoint or rely on Redis
-
     assert request  # nosec
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
