@@ -552,7 +552,7 @@ async def test_create_organization_and_add_users(
 ):
     assert client.app
     assert logged_user["id"] != 0
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     # CREATE GROUP
     url = client.app.router["create_group"].url_for()

@@ -59,7 +59,7 @@ async def test_list_user_groups_and_try_modify_organizations(
 ):
     assert client.app
     assert logged_user["id"] != standard_groups_owner["id"]
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     # List all groups (organizations, primary, everyone and products) I belong to
     url = client.app.router["list_groups"].url_for()
@@ -130,7 +130,7 @@ async def test_group_creation_workflow(
 ):
     assert client.app
     assert logged_user["id"] != 0
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     url = client.app.router["create_group"].url_for()
     new_group_data = {

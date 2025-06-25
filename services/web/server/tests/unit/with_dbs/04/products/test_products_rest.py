@@ -135,7 +135,7 @@ async def test_get_current_product_ui(
     user_role: UserRole,
     expected_status_code: int,
 ):
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
     assert product_name in app_products_names
 
     # give access to user to this product
