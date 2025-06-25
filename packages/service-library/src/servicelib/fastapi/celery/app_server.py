@@ -28,6 +28,6 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
             try:
                 _logger.info("fastapi app initialized")
                 startup_completed_event.set()
-                await self.shutdown_event.wait()
+                await self.shutdown_event.wait()  # NOTE: wait here until shutdown is requested
             except asyncio.CancelledError:
                 _logger.warning("lifespan task cancelled")
