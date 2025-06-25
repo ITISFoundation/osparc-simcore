@@ -27,7 +27,11 @@ qx.Class.define("osparc.study.Conversations", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    this.__conversations = [];
+
     this.fetchConversations(studyData);
+
+    this.__listenToConversationWS();
   },
 
   statics: {
@@ -109,12 +113,12 @@ qx.Class.define("osparc.study.Conversations", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    deleteMessage: function(studyId, conversationId, messageId) {
+    deleteMessage: function(message) {
       const params = {
         url: {
-          studyId,
-          conversationId,
-          messageId,
+          studyId: message["projectId"],
+          conversationId: message["conversationId"],
+          messageId: message["messageId"],
         },
       };
       return osparc.data.Resources.fetch("conversations", "deleteMessage", params)
@@ -138,6 +142,9 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   members: {
+    __conversations: null,
+    __wsHandlers: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -154,6 +161,43 @@ qx.Class.define("osparc.study.Conversations", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __listenToConversationWS: function() {
+      this.__wsHandlers = [];
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      [
+        "conversation:message:created",
+        "conversation:message:updated",
+        "conversation:message:deleted",
+      ].forEach(eventName => {
+        const eventHandler = message => {
+          if (message) {
+            const conversationId = message["conversationId"];
+            const conversation = this.__getConversation(conversationId);
+            if (conversation) {
+              switch (eventName) {
+                case "conversation:message:created":
+                  conversation.addMessage(message);
+                  break;
+                case "conversation:message:updated":
+                  conversation.updateMessage(message);
+                  break;
+                case "conversation:message:deleted":
+                  conversation.deleteMessage(message);
+                  break;
+              }
+            }
+          }
+        };
+        socket.on(eventName, eventHandler, this);
+        this.__wsHandlers.push({ eventName, handler: eventHandler });
+      });
+    },
+
+    __getConversation: function(conversationId) {
+      return this.__conversations.find(conversation => conversation.getConversationId() === conversationId);
     },
 
     fetchConversations: function(studyData) {
@@ -192,6 +236,7 @@ qx.Class.define("osparc.study.Conversations", {
         this.fetchConversations(studyData);
       };
 
+      this.__conversations = [];
       if (conversations.length === 0) {
         const noConversationTab = new osparc.conversation.Conversation(studyData);
         conversationPages.push(noConversationTab);
@@ -199,13 +244,14 @@ qx.Class.define("osparc.study.Conversations", {
         noConversationTab.addListener("conversationDeleted", () => reloadConversations());
         conversationsLayout.add(noConversationTab);
       } else {
-        conversations.forEach(conversation => {
-          const conversationId = conversation["conversationId"];
-          const conversationTab = new osparc.conversation.Conversation(studyData, conversationId);
-          conversationPages.push(conversationTab);
-          conversationTab.setLabel(conversation["name"]);
-          conversationTab.addListener("conversationDeleted", () => reloadConversations());
-          conversationsLayout.add(conversationTab);
+        conversations.forEach(conversationData => {
+          const conversationId = conversationData["conversationId"];
+          const conversation = new osparc.conversation.Conversation(studyData, conversationId);
+          this.__conversations.push(conversation);
+          conversationPages.push(conversation);
+          conversation.setLabel(conversationData["name"]);
+          conversation.addListener("conversationDeleted", () => reloadConversations());
+          conversationsLayout.add(conversation);
         });
       }
 
@@ -218,5 +264,15 @@ qx.Class.define("osparc.study.Conversations", {
 
       conversationsLayout.getChildControl("bar").add(newConversationButton);
     },
-  }
+  },
+
+  destruct: function() {
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    if (this.__wsHandlers) {
+      this.__wsHandlers.forEach(({ eventName }) => {
+        socket.removeSlot(eventName);
+      });
+      this.__wsHandlers = null;
+    }
+  },
 });
