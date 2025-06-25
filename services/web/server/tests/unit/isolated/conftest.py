@@ -4,8 +4,10 @@ import random
 from pathlib import Path
 
 import pytest
+import simcore_service_webserver
+import simcore_service_webserver.security
 from faker import Faker
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
@@ -256,4 +258,17 @@ def mocked_login_required(mocker: MockerFixture):
         "simcore_service_webserver.login_auth.decorators.products_web.get_product_name",
         spec=True,
         return_value="osparc",
+    )
+
+
+@pytest.fixture
+def mocked_db_setup_in_setup_security(mocker: MockerFixture) -> MockType:
+    """Mocking avoids setting up a full db"""
+    import simcore_service_webserver.security.plugin
+
+    return mocker.patch.object(
+        simcore_service_webserver.security.plugin,
+        "setup_db",
+        autospec=True,
+        return_value=True,
     )

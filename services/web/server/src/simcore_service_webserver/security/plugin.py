@@ -12,8 +12,8 @@ import logging
 import aiohttp_security  # type: ignore[import-untyped]
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from simcore_service_webserver.db.plugin import setup_db
 
+from ..db.plugin import setup_db
 from ..session.plugin import setup_session
 from ._authz_access_model import RoleBasedAccessModel
 from ._authz_access_roles import ROLES_PERMISSIONS
