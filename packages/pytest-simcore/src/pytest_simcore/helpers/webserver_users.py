@@ -4,7 +4,6 @@ from typing import Any, TypedDict
 
 from aiohttp import web
 from models_library.users import UserID
-from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import users as users_table
 from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
