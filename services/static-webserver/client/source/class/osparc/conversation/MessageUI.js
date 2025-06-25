@@ -154,10 +154,16 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       const userName = this.getChildControl("user-name");
 
-      const date = new Date(message["modified"]);
-      const date2 = osparc.utils.Utils.formatDateAndTime(date);
+      const createdDateData = new Date(message["created"]);
+      const createdDate = osparc.utils.Utils.formatDateAndTime(createdDateData);
       const lastUpdate = this.getChildControl("last-updated");
-      lastUpdate.setValue(date2);
+      if (message["created"] === message["modified"]) {
+        lastUpdate.setValue(createdDate);
+      } else {
+        const updatedDateData = new Date(message["modified"]);
+        const updatedDate = osparc.utils.Utils.formatDateAndTime(updatedDateData);
+        lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
+      }
 
       const messageContent = this.getChildControl("message-content");
       messageContent.setValue(message["content"]);
