@@ -167,10 +167,11 @@ qx.Class.define("osparc.conversation.Conversation", {
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
         const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId());
         addMessages.setPaddingLeft(10);
-        addMessages.addListener("commentAdded", e => {
+        addMessages.addListener("messageAdded", e => {
           const data = e.getData();
           if (data["conversationId"]) {
             this.setConversationId(data["conversationId"]);
+            this.addMessage(data);
           }
         });
         this._add(addMessages);
@@ -259,6 +260,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       switch (message["type"]) {
         case "MESSAGE":
           control = new osparc.conversation.MessageUI(message, this.__studyData);
+          control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
+          control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
           break;
         case "NOTIFICATION":
           control = new osparc.conversation.NotificationUI(message);

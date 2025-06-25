@@ -45,8 +45,8 @@ qx.Class.define("osparc.conversation.MessageUI", {
   },
 
   events: {
-    "messageEdited": "qx.event.type.Event",
-    "messageDeleted": "qx.event.type.Event",
+    "messageUpdated": "qx.event.type.Data",
+    "messageDeleted": "qx.event.type.Data",
   },
 
   properties: {
@@ -207,9 +207,9 @@ qx.Class.define("osparc.conversation.MessageUI", {
         resizable: true,
         showClose: true,
       });
-      addMessage.addListener("messageEdited", () => {
+      addMessage.addListener("messageUpdated", e => {
         win.close();
-        this.fireDataEvent("messageEdited");
+        this.fireDataEvent("messageUpdated", e.getData());
       });
     },
 
@@ -225,7 +225,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       win.addListener("close", () => {
         if (win.getConfirmed()) {
           osparc.study.Conversations.deleteMessage(message)
-            .then(() => this.fireEvent("messageDeleted"))
+            .then(() => this.fireDataEvent("messageDeleted", message))
             .catch(err => osparc.FlashMessenger.logError(err));
         }
       });
