@@ -16,7 +16,11 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
-from ..conversations._socketio import notify_conversation_created
+from ..conversations._socketio import (
+    notify_conversation_created,
+    notify_conversation_deleted,
+    notify_conversation_updated,
+)
 from ..projects._groups_repository import list_project_groups
 from ..users._users_service import get_users_in_group
 from ..users.api import get_user_primary_group_id
@@ -83,24 +87,48 @@ async def get_conversation(
 async def update_conversation(
     app: web.Application,
     *,
+    project_id: ProjectID,
     conversation_id: ConversationID,
     # Update attributes
     updates: ConversationPatchDB,
 ) -> ConversationGetDB:
-    return await _conversation_repository.update(
+    updated_conversation = await _conversation_repository.update(
         app,
         conversation_id=conversation_id,
         updates=updates,
     )
 
+    await notify_conversation_updated(
+        app,
+        recipients=await _get_recipients(app, project_id),
+        project_id=project_id,
+        conversation=updated_conversation,
+    )
+
+    return updated_conversation
+
 
 async def delete_conversation(
     app: web.Application,
     *,
+    product_name: ProductName,
+    project_id: ProjectID,
+    user_id: UserID,
     conversation_id: ConversationID,
 ) -> None:
     await _conversation_repository.delete(
         app,
+        conversation_id=conversation_id,
+    )
+
+    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
+
+    await notify_conversation_deleted(
+        app,
+        recipients=await _get_recipients(app, project_id),
+        product_name=product_name,
+        user_group_id=_user_group_id,
+        project_id=project_id,
         conversation_id=conversation_id,
     )
 
