@@ -167,6 +167,31 @@ qx.Class.define("osparc.study.Conversations", {
       this.__wsHandlers = [];
 
       const socket = osparc.wrapper.WebSocket.getInstance();
+
+      [
+        "conversation:created",
+        "conversation:updated",
+        "conversation:deleted",
+      ].forEach(eventName => {
+        const eventHandler = conversation => {
+          if (conversation) {
+            switch (eventName) {
+              case "conversation:created":
+                conversation.addMessage(conversation);
+                break;
+              case "conversation:updated":
+                conversation.updateMessage(conversation);
+                break;
+              case "conversation:deleted":
+                conversation.deleteMessage(conversation);
+                break;
+            }
+          }
+        };
+        socket.on(eventName, eventHandler, this);
+        this.__wsHandlers.push({ eventName, handler: eventHandler });
+      });
+
       [
         "conversation:message:created",
         "conversation:message:updated",
