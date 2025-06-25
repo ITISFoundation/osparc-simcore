@@ -2,9 +2,11 @@ import functools
 import inspect
 import logging
 from collections.abc import Callable
+from contextlib import ContextDecorator
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Protocol
+from types import TracebackType
+from typing import Any, Final, Protocol
 
 import arrow
 from aiohttp import web
@@ -15,21 +17,19 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
 
 from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-APP_SETUP_COMPLETED_KEY = f"{__name__ }.setup"
+APP_SETUP_COMPLETED_KEY: Final[str] = f"{__name__ }.setup"
 
 
 class _SetupFunc(Protocol):
     __name__: str
 
-    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool:
-        ...
+    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool: ...
 
 
 class _ApplicationSettings(Protocol):
-    def is_enabled(self, field_name: str) -> bool:
-        ...
+    def is_enabled(self, field_name: str) -> bool: ...
 
 
 class ModuleCategory(Enum):
@@ -46,12 +46,10 @@ class SkipModuleSetupError(Exception):
         super().__init__(reason)
 
 
-class ApplicationSetupError(Exception):
-    ...
+class ApplicationSetupError(Exception): ...
 
 
-class DependencyError(ApplicationSetupError):
-    ...
+class DependencyError(ApplicationSetupError): ...
 
 
 class SetupMetadataDict(TypedDict):
@@ -134,11 +132,103 @@ def _get_app_settings_and_field_name(
     return app_settings, settings_field_name
 
 
+class _SetupTimingContext(ContextDecorator):
+    """Context manager/decorator for timing and logging module setup operations."""
+
+    def __init__(
+        self,
+        module_name: str,
+        *,
+        category: ModuleCategory | None = None,
+        depends: list[str] | None = None,
+    ) -> None:
+        """Initialize timing context.
+
+        :param module_name: Name of the module being set up
+        :param category: Optional module category for detailed logging
+        :param depends: Optional dependencies for detailed logging
+        """
+        self.module_name = module_name
+        self.category = category
+        self.depends = depends
+        self.started = None
+        self.head_msg = f"Setup of {module_name}"
+
+    def __enter__(self) -> None:
+        self.started = arrow.utcnow()
+        if self.category is not None:
+            _logger.info(
+                "%s (%s, %s) started ... ",
+                self.head_msg,
+                f"{self.category.name=}",
+                f"{self.depends}",
+            )
+        else:
+            _logger.info("%s started ...", self.head_msg)
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        if self.started:
+            elapsed = (arrow.utcnow() - self.started).total_seconds()
+            _logger.info("%s completed [Elapsed: %3.1f secs]", self.head_msg, elapsed)
+
+
 # PUBLIC API ------------------------------------------------------------------
 
 
 def is_setup_completed(module_name: str, app: web.Application) -> bool:
     return module_name in app[APP_SETUP_COMPLETED_KEY]
+
+
+def ensure_single_setup(
+    module_name: str,
+    *,
+    logger: logging.Logger = _logger,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    """Ensures a setup function is executed only once per application and handles completion.
+
+    :param module_name: Name of the module being set up
+    """
+
+    def _skip_setup(reason: str) -> bool:
+        logger.info("Skipping '%s' setup: %s", module_name, reason)
+        return False
+
+    def decorator(setup_func: _SetupFunc) -> _SetupFunc:
+
+        @functools.wraps(setup_func)
+        def _wrapper(app: web.Application, *args: Any, **kwargs: Any) -> bool:
+
+            # pre-setup init
+            if APP_SETUP_COMPLETED_KEY not in app:
+                app[APP_SETUP_COMPLETED_KEY] = {}
+
+            # check
+            if is_setup_completed(module_name, app):
+                return _skip_setup(
+                    f"'{module_name}' was already initialized in {app}."
+                    " Setup can only be executed once per app."
+                )
+
+            completed = setup_func(app, *args, **kwargs)
+
+            # post-setup handling
+            if completed is None:
+                completed = True
+
+            if completed:  # registers completed setup
+                app[APP_SETUP_COMPLETED_KEY].add(module_name)
+                return completed
+
+            return _skip_setup("Undefined (setup function returned false)")
+
+        return _wrapper
+
+    return decorator
 
 
 def app_module_setup(
@@ -147,7 +237,7 @@ def app_module_setup(
     *,
     settings_name: str | None = None,
     depends: list[str] | None = None,
-    logger: logging.Logger = log,
+    logger: logging.Logger = _logger,
     # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2008
     # TODO: - settings_name becomes module_name!!
     # TODO: - plugin base should be aware of setup and settings -> model instead of function?
@@ -190,35 +280,24 @@ def app_module_setup(
         module_name, depends, config_section, config_enabled
     )
 
-    def _decorate(setup_func: _SetupFunc):
-        if "setup" not in setup_func.__name__:
-            logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
+    # metadata info
+    def _setup_metadata() -> SetupMetadataDict:
+        return SetupMetadataDict(
+            module_name=module_name,
+            dependencies=depends,
+            config_section=section,
+            config_enabled=config_enabled,
+        )
 
-        # metadata info
-        def setup_metadata() -> SetupMetadataDict:
-            return SetupMetadataDict(
-                module_name=module_name,
-                dependencies=depends,
-                config_section=section,
-                config_enabled=config_enabled,
-            )
+    def decorator(setup_func: _SetupFunc) -> _SetupFunc:
 
-        # wrapper
+        assert setup_func.__name__.startswith(  # nosec
+            "setup_"
+        ), f"Rename '{setup_func.__name__}' start with 'setup_$(plugin-name)'"
+
         @functools.wraps(setup_func)
+        @_SetupTimingContext(module_name, category=category, depends=depends)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
-            # pre-setup
-            head_msg = f"Setup of {module_name}"
-            started = arrow.utcnow()
-            logger.info(
-                "%s (%s, %s) started ... ",
-                head_msg,
-                f"{category.name=}",
-                f"{depends}",
-            )
-
-            if APP_SETUP_COMPLETED_KEY not in app:
-                app[APP_SETUP_COMPLETED_KEY] = []
-
             if category == ModuleCategory.ADDON:
                 # ONLY addons can be enabled/disabled
 
@@ -258,7 +337,6 @@ def app_module_setup(
                     return False
 
             if depends:
-                # TODO: no need to enforce. Use to deduce order instead.
                 uninitialized = [
                     dep for dep in depends if not is_setup_completed(dep, app)
                 ]
@@ -266,48 +344,21 @@ def app_module_setup(
                     msg = f"Cannot setup app module '{module_name}' because the following dependencies are still uninitialized: {uninitialized}"
                     raise DependencyError(msg)
 
-            # execution of setup
-            try:
-                if is_setup_completed(module_name, app):
-                    raise SkipModuleSetupError(  # noqa: TRY301
-                        reason=f"'{module_name}' was already initialized in {app}."
-                        " Setup can only be executed once per app."
-                    )
+            # execution of setup with module name
+            completed: bool = ensure_single_setup(module_name, logger=logger)(
+                setup_func
+            )(app, *args, **kargs)
 
-                completed = setup_func(app, *args, **kargs)
-
-                # post-setup
-                if completed is None:
-                    completed = True
-
-                if completed:  # registers completed setup
-                    app[APP_SETUP_COMPLETED_KEY].append(module_name)
-                else:
-                    raise SkipModuleSetupError(  # noqa: TRY301
-                        reason="Undefined (setup function returned false)"
-                    )
-
-            except SkipModuleSetupError as exc:
-                logger.info("Skipping '%s' setup: %s", module_name, exc.reason)
-                completed = False
-
-            elapsed = arrow.utcnow() - started
-            logger.info(
-                "%s %s [Elapsed: %3.1f secs]",
-                head_msg,
-                "completed" if completed else "skipped",
-                elapsed.total_seconds(),
-            )
             return completed
 
-        _wrapper.metadata = setup_metadata  # type: ignore[attr-defined]
+        _wrapper.metadata = _setup_metadata  # type: ignore[attr-defined]
         _wrapper.mark_as_simcore_servicelib_setup_func = True  # type: ignore[attr-defined]
         # NOTE: this is added by functools.wraps decorated
         assert _wrapper.__wrapped__ == setup_func  # nosec
 
         return _wrapper
 
-    return _decorate
+    return decorator
 
 
 def is_setup_function(fun: Callable) -> bool:
