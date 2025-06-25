@@ -269,7 +269,7 @@ qx.Class.define("osparc.study.Conversations", {
         const conversationId = conversationData["conversationId"];
         conversationPage = new osparc.conversation.Conversation(studyData, conversationId);
         conversationPage.setLabel(conversationData["name"]);
-        conversationPage.addListener("conversationDeleted", () => this.__removeConversationPage(conversationData));
+        conversationPage.addListener("conversationDeleted", () => this.__removeConversationPage(conversationData, true));
       } else {
         // create a temporary conversation
         conversationPage = new osparc.conversation.Conversation(studyData);
@@ -329,7 +329,7 @@ qx.Class.define("osparc.study.Conversations", {
       conversationsLayout.getChildControl("bar").add(this.__newConversationButton);
     },
 
-    __removeConversationPage: function(conversationData) {
+    __removeConversationPage: function(conversationData, changeSelection = false) {
       const conversationId = conversationData["conversationId"];
       const conversation = this.__getConversation(conversationId);
       if (conversation) {
@@ -337,9 +337,14 @@ qx.Class.define("osparc.study.Conversations", {
         conversationsLayout.remove(conversation);
         this.__conversations = this.__conversations.filter(c => c !== conversation);
 
+        changeSelection
+
         const conversationPages = conversationsLayout.getSelectables();
         if (conversationPages.length) {
-          conversationsLayout.setSelection([conversationPages[0]]);
+          if (changeSelection) {
+            // change selection to the first conversation
+            conversationsLayout.setSelection([conversationPages[0]]);
+          }
         } else {
           // no conversations left, add a temporary one
           this.__addTempConversationPage();
