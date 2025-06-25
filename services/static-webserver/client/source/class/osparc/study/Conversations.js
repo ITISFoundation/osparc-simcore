@@ -154,6 +154,7 @@ qx.Class.define("osparc.study.Conversations", {
 
   members: {
     __conversations: null,
+    __newConversationButton: null,
     __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
@@ -188,7 +189,7 @@ qx.Class.define("osparc.study.Conversations", {
           if (conversation) {
             switch (eventName) {
               case "conversation:created":
-                this.__addConversation(conversation);
+                this.__addConversationPage(conversation);
                 break;
               case "conversation:updated":
                 this.__updateConversation(conversation);
@@ -249,10 +250,10 @@ qx.Class.define("osparc.study.Conversations", {
       };
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
         .then(conversations => {
-          if (conversations.length === 0) {
-            conversations.forEach(conversation => this.__addConversation(conversation));
+          if (conversations.length) {
+            conversations.forEach(conversation => this.__addConversationPage(conversation));
           } else {
-            this.__addTemporaryConversation();
+            this.__addTempConversationPage();
           }
         })
         .finally(() => {
@@ -261,38 +262,41 @@ qx.Class.define("osparc.study.Conversations", {
         });
     },
 
-    __createConversation: function(conversationData) {
+    __createConversationPage: function(conversationData) {
       const studyData = this.getStudyData();
-      let conversation = null;
+      let conversationPage = null;
       if (conversationData) {
         const conversationId = conversationData["conversationId"];
-        conversation = new osparc.conversation.Conversation(studyData, conversationId);
-        conversation.setLabel(conversationData["name"]);
-        conversation.addListener("conversationDeleted", () => {
-          console.log("Conversation deleted");
+        conversationPage = new osparc.conversation.Conversation(studyData, conversationId);
+        conversationPage.setLabel(conversationData["name"]);
+        conversationPage.addListener("conversationDeleted", () => {
+          this.__deleteConversation(conversationData);
         });
       } else {
         // create a temporary conversation
-        conversation = new osparc.conversation.Conversation(studyData);
-        conversation.setLabel(this.tr("new"));
+        conversationPage = new osparc.conversation.Conversation(studyData);
+        conversationPage.setLabel(this.tr("new"));
       }
-      return conversation;
+      return conversationPage;
     },
 
-    __addTemporaryConversation: function() {
-      const temporaryConversation = this.__createConversation();
-
-      const conversationsLayout = this.getChildControl("conversations-layout");
-      conversationsLayout.add(temporaryConversation);
+    __addTempConversationPage: function() {
+      const temporaryConversationPage = this.__createConversationPage();
+      this.__addToPages(temporaryConversationPage);
     },
 
-    __addConversation: function(conversationData) {
-      const conversation = this.__createConversation(conversationData);
+    __addConversationPage: function(conversationData) {
+      const conversationPage = this.__createConversationPage(conversationData);
+      this.__addToPages(conversationPage);
 
+      this.__conversations.push(conversationPage);
+
+      return conversationPage;
+    },
+
+    __addToPages: function(conversationPage) {
       const conversationsLayout = this.getChildControl("conversations-layout");
-      conversationsLayout.add(conversation);
-
-      this.__conversations.push(conversation);
+      conversationsLayout.add(conversationPage);
 
       if (this.__newConversationButton === null) {
         // initialize the new button only once
@@ -303,9 +307,11 @@ qx.Class.define("osparc.study.Conversations", {
           backgroundColor: "transparent",
         });
         newConversationButton.addListener("execute", () => {
+          const studyData = this.getStudyData();
           osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
             .then(conversationDt => {
-              this.__addConversation(conversationDt);
+              const newConversationPage = this.__addConversationPage(conversationDt);
+              conversationsLayout.setSelection([newConversationPage]);
             });
         });
         conversationsLayout.getChildControl("bar").add(newConversationButton);
@@ -322,6 +328,14 @@ qx.Class.define("osparc.study.Conversations", {
         const conversationsLayout = this.getChildControl("conversations-layout");
         conversationsLayout.remove(conversation);
         this.__conversations = this.__conversations.filter(c => c !== conversation);
+
+        const conversationPages = conversationsLayout.getSelectables();
+        if (conversationPages.length) {
+          conversationsLayout.setSelection([conversationPages[0]]);
+        } else {
+          // no conversations left, add a temporary one
+          this.__addTempConversationPage();
+        }
       }
     },
 
