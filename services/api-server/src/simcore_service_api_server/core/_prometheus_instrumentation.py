@@ -4,10 +4,10 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Final, cast
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from prometheus_client import CollectorRegistry, Gauge
 from pydantic import PositiveInt
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation as setup_rest_instrumentation,

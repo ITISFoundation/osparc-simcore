@@ -2,10 +2,10 @@ import logging
 from typing import Final
 
 import networkx as nx
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.exception_utils import suppress_exceptions
 from servicelib.logging_utils import log_context
