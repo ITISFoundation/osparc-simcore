@@ -218,8 +218,6 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__getNextRequest()
         .then(resp => {
           const messages = resp["data"];
-          // backend doesn't provide the projectId
-          messages.forEach(message => message["projectId"] = this.__studyData["uuid"]);
           messages.forEach(message => this.addMessage(message));
           this.__nextRequestParams = resp["_links"]["next"];
           if (this.__nextRequestParams === null) {
@@ -239,6 +237,9 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
 
     addMessage: function(message) {
+      // backend doesn't provide the projectId
+      message["projectId"] = this.__studyData["uuid"];
+
       // ignore it if it was already there
       const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
       if (messageIndex !== -1) {
@@ -296,6 +297,9 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
 
     updateMessage: function(message) {
+      // backend doesn't provide the projectId
+      message["projectId"] = this.__studyData["uuid"];
+
       // Replace the message in the messages array
       const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
       if (messageIndex === -1) {

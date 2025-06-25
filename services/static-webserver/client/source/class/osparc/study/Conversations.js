@@ -173,7 +173,6 @@ qx.Class.define("osparc.study.Conversations", {
         "conversation:message:deleted",
       ].forEach(eventName => {
         const eventHandler = message => {
-          console.log("Conversation message", eventName, message);
           if (message) {
             const conversationId = message["conversationId"];
             const conversation = this.__getConversation(conversationId);
