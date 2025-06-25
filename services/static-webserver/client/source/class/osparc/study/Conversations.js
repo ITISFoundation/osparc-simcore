@@ -302,9 +302,9 @@ qx.Class.define("osparc.study.Conversations", {
           backgroundColor: "transparent",
         });
         newConversationButton.addListener("execute", () => {
-          osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (conversations.length + 1))
-            .then(conversation => {
-              this.__addConversation(conversation);
+          osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
+            .then(conversationDt => {
+              this.__addConversation(conversationDt);
             });
         });
         conversationsLayout.getChildControl("bar").add(newConversationButton);
