@@ -40,6 +40,7 @@ _SERVICES_TO_SKIP: Final[set[str]] = {
     "whoami",
     "sto-worker",
     "sto-worker-cpu-bound",
+    "traefik-configuration-placeholder",
 }
 # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
 DEFAULT_SERVICE_HEALTHCHECK_ENTRYPOINT: Final[str] = "/v0/"
