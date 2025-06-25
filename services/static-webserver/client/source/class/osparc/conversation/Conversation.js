@@ -242,8 +242,15 @@ qx.Class.define("osparc.conversation.Conversation", {
         return;
       }
 
-      // Add the message in the messages array
-      this.__messages.push(message);
+      // determine insertion index for most‐recent‐first order
+      const newTime = new Date(message["created"]);
+      let insertAt = this.__messages.findIndex(m => new Date(m["created"]) < newTime);
+      if (insertAt === -1) {
+        insertAt = this.__messages.length;
+      }
+
+      // Insert the message in the messages array
+      this.__messages.splice(insertAt, 0, message);
 
       // Add the UI element to the messages list
       let control = null;
@@ -256,7 +263,8 @@ qx.Class.define("osparc.conversation.Conversation", {
           break;
       }
       if (control) {
-        this.__messagesList.addAt(control, 0);
+        // insert into the UI at the same position
+        this.__messagesList.addAt(control, insertAt);
       }
 
       this.__updateMessagesNumber();
