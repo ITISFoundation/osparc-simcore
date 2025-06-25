@@ -15,7 +15,6 @@ _logger = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_LOGIN_AUTH", logger=_logger
 )
 def setup_login_auth(app: web.Application):
-
     setup_products(app)
     setup_security(app)
     setup_rest(app)

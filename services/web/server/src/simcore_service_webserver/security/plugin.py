@@ -27,7 +27,7 @@ _logger = logging.getLogger(__name__)
     __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger
 )
 def setup_security(app: web.Application):
-
+    # NOTE: no need for setup_products
     setup_session(app)
     setup_db(app)
 
