@@ -154,6 +154,7 @@ qx.Class.define("osparc.study.Conversations", {
 
   members: {
     __conversations: null,
+    __conversationPages: null,
     __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
@@ -248,57 +249,76 @@ qx.Class.define("osparc.study.Conversations", {
         }
       };
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
-        .then(conversations => this.__addConversations(conversations, studyData))
+        .then(conversations => {
+          this.__conversationPages = [];
+          if (conversations.length === 0) {
+            conversations.forEach(conversation => this.__addConversation(conversation));
+          } else {
+            this.__addTemporaryConversation();
+          }
+        })
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
         });
     },
 
-    __addConversations: function(conversations, studyData) {
-      const conversationPages = [];
-      const conversationsLayout = this.getChildControl("conversations-layout");
-
-      const newConversationButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/plus/12",
-        toolTipText: this.tr("Add new conversation"),
-        allowGrowX: false,
-        backgroundColor: "transparent",
-      });
-
-      const reloadConversations = () => {
-        conversationPages.forEach(conversationPage => conversationPage.fireDataEvent("close", conversationPage));
-        conversationsLayout.getChildControl("bar").remove(newConversationButton);
-        this.fetchConversations(studyData);
-      };
-
-      this.__conversations = [];
-      if (conversations.length === 0) {
-        const noConversationTab = new osparc.conversation.Conversation(studyData);
-        conversationPages.push(noConversationTab);
-        noConversationTab.setLabel(this.tr("new"));
-        noConversationTab.addListener("conversationDeleted", () => reloadConversations());
-        conversationsLayout.add(noConversationTab);
-      } else {
-        conversations.forEach(conversationData => {
-          const conversationId = conversationData["conversationId"];
-          const conversation = new osparc.conversation.Conversation(studyData, conversationId);
-          this.__conversations.push(conversation);
-          conversationPages.push(conversation);
-          conversation.setLabel(conversationData["name"]);
-          conversation.addListener("conversationDeleted", () => reloadConversations());
-          conversationsLayout.add(conversation);
+    __createConversation: function(conversationData) {
+      const studyData = this.getStudyData();
+      let conversation = null;
+      if (conversationData) {
+        const conversationId = conversationData["conversationId"];
+        conversation = new osparc.conversation.Conversation(studyData, conversationId);
+        conversation.setLabel(conversationData["name"]);
+        conversation.addListener("conversationDeleted", () => {
+          console.log("Conversation deleted");
         });
+      } else {
+        // create a temporary conversation
+        conversation = new osparc.conversation.Conversation(studyData);
+        conversation.setLabel(this.tr("new"));
       }
+    },
 
-      newConversationButton.addListener("execute", () => {
-        osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (conversations.length + 1))
-          .then(() => {
-            reloadConversations();
-          });
-      });
+    __addTemporaryConversation: function() {
+      const temporaryConversation = this.__createConversation();
 
-      conversationsLayout.getChildControl("bar").add(newConversationButton);
+      const conversationsLayout = this.getChildControl("conversations-layout");
+      conversationsLayout.add(temporaryConversation);
+
+      this.__conversationPages.push(temporaryConversation);
+    },
+
+    __addConversation: function(conversationData) {
+      const conversation = this.__createConversation(conversationData);
+
+      const conversationsLayout = this.getChildControl("conversations-layout");
+      conversationsLayout.add(conversation);
+
+
+
+      this.__conversations.push(conversation);
+      this.__conversationPages.push(conversation);
+
+      if (this.__newConversationButton === null) {
+        // initialize the new button only once
+        const newConversationButton = this.__newConversationButton = new qx.ui.form.Button().set({
+          icon: "@FontAwesome5Solid/plus/12",
+          toolTipText: this.tr("Add new conversation"),
+          allowGrowX: false,
+          backgroundColor: "transparent",
+        });
+        newConversationButton.addListener("execute", () => {
+          osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (conversations.length + 1))
+            .then(conversation => {
+              this.__addConversation(conversation);
+            });
+        });
+        conversationsLayout.getChildControl("bar").add(newConversationButton);
+      }
+      // remove and add to move to last position
+      conversationsLayout.getChildControl("bar").remove(this.__newConversationButton);
+      conversationsLayout.getChildControl("bar").add(this.__newConversationButton);
     },
   },
 
