@@ -1,7 +1,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import ensure_single_setup
 
 from ..products.plugin import setup_products
 from ..rest.plugin import setup_rest
@@ -11,9 +11,7 @@ from . import _controller_rest
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_LOGIN_AUTH", logger=_logger
-)
+@ensure_single_setup(__name__, logger=_logger)
 def setup_login_auth(app: web.Application):
     setup_products(app)
     setup_security(app)
