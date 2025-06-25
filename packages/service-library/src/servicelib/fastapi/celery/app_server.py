@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import logging
 import threading
@@ -25,9 +24,6 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
             startup_timeout=None,  # waits for full app initialization (DB migrations, etc.)
             shutdown_timeout=_SHUTDOWN_TIMEOUT,
         ):
-            try:
-                _logger.info("fastapi app initialized")
-                startup_completed_event.set()
-                await self.shutdown_event.wait()  # NOTE: wait here until shutdown is requested
-            except asyncio.CancelledError:
-                _logger.warning("lifespan task cancelled")
+            _logger.info("fastapi app initialized")
+            startup_completed_event.set()
+            await self.shutdown_event.wait()  # NOTE: wait here until shutdown is requested
