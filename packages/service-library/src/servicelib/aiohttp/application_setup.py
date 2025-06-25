@@ -307,10 +307,10 @@ def app_module_setup(
         ), f"Rename '{setup_func.__name__}' start with 'setup_$(plugin-name)'"
 
         @functools.wraps(setup_func)
+        @ensure_single_setup(module_name, logger=logger)
         @_SetupTimingContext(
             module_name, category=category, depends=depends, logger=logger
         )
-        @ensure_single_setup(module_name, logger=logger)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             if category == ModuleCategory.ADDON:
                 # ONLY addons can be enabled/disabled
