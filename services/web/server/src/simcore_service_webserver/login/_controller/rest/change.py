@@ -5,7 +5,7 @@ from aiohttp.web import RouteTableDef
 from models_library.emails import LowerCaseEmailStr
 from pydantic import SecretStr, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
@@ -130,7 +130,7 @@ async def initiate_reset_password(request: web.Request):
     user = await db.get_user({"email": request_body.email})
     if not user:
         _logger.warning(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 f"{_error_msg_prefix} for non-existent email. {_error_msg_suffix}",
                 error=Exception("No user found with this email"),
                 error_context=_get_error_context(),
@@ -149,10 +149,10 @@ async def initiate_reset_password(request: web.Request):
             # NOTE: we abuse here (untiby reusing `validate_user_status` and catching http errors that we
             # do not want to forward but rather log due to the special rules in this entrypoint
             _logger.warning(
-                **create_troubleshotting_log_kwargs(
-                    f"{_error_msg_prefix} for invalid user. {_error_msg_suffix}.",
+                **create_troubleshootting_log_kwargs(
+                    f"{_error_msg_prefix} for invalid user. {err.text}. {_error_msg_suffix}",
                     error=err,
-                    error_context=_get_error_context(user),
+                    error_context={**_get_error_context(user), "error.text": err.text},
                 )
             )
             ok = False
@@ -167,8 +167,8 @@ async def initiate_reset_password(request: web.Request):
             request.app, user_id=user["id"], product_name=product.name
         ):
             _logger.warning(
-                **create_troubleshotting_log_kwargs(
-                    f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}.",
+                **create_troubleshootting_log_kwargs(
+                    f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}",
                     error=Exception("User cannot access this product"),
                     error_context=_get_error_context(user),
                 )
@@ -210,7 +210,7 @@ async def initiate_reset_password(request: web.Request):
             )
         except Exception as err:  # pylint: disable=broad-except
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     "Unable to send email",
                     error=err,
                     error_context=_get_error_context(user),
@@ -297,7 +297,7 @@ async def change_password(request: web.Request):
         passwords.current.get_secret_value(), user["password_hash"]
     ):
         raise web.HTTPUnprocessableEntity(
-            reason=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )  # 422
 
     await db.update_user(

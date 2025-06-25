@@ -80,7 +80,6 @@ def create_http_error(
     ] = web.HTTPInternalServerError,  # type: ignore[assignment]
     *,
     status_reason: str | None = None,
-    skip_internal_error_details: bool = False,
     error_code: ErrorCodeStr | None = None,
 ) -> T_HTTPError:
     """
@@ -99,7 +98,7 @@ def create_http_error(
     # changing the workflows in this function
 
     is_internal_error = bool(http_error_cls == web.HTTPInternalServerError)
-    if is_internal_error and skip_internal_error_details:
+    if is_internal_error:
         error_model = ErrorGet.model_validate(
             {
                 "status": http_error_cls.status_code,
@@ -134,13 +133,19 @@ def create_http_error(
     )
 
 
-def exception_to_response(exc: HTTPError) -> web.Response:
+def exception_to_response(exception: HTTPError) -> web.Response:
     # Returning web.HTTPException is deprecated so here we have a converter to a response
     # so it can be used as
     # SEE https://github.com/aio-libs/aiohttp/issues/2415
+
+    if exception.reason:
+        reason = safe_status_message(exception.reason)
+    else:
+        reason = get_code_description(exception.status)
+
     return web.Response(
-        status=exc.status,
-        headers=exc.headers,
-        reason=exc.reason,
-        text=exc.text,
+        status=exception.status,
+        headers=exception.headers,
+        reason=reason,
+        text=exception.text,
     )

@@ -1,3 +1,4 @@
+from common_library.user_messages import user_message
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
@@ -22,35 +23,48 @@ from ..exception_handling import (
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     InvalidFileIdentifierError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Could not find file {file_id}",
+        user_message(
+            "The file with identifier {file_id} could not be found", _version=2
+        ),
     ),
     AccessRightError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Accessright error: user {user_id} does not have access to file {file_id} with location {location_id}",
+        user_message(
+            "Permission denied: You (user {user_id}) don't have the necessary rights to access file {file_id} in location {location_id}",
+            _version=2,
+        ),
     ),
     JobAbortedError: HttpErrorInfo(
         status.HTTP_410_GONE,
-        "Task {job_id} is aborted",
+        user_message("Task {job_id} was terminated before completion", _version=2),
     ),
     JobError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Task '{job_id}' failed with exception type '{exc_type}' and message: {exc_msg}",
+        user_message(
+            "Task '{job_id}' encountered an error: {exc_msg} (error type: '{exc_type}')",
+            _version=2,
+        ),
     ),
     JobNotDoneError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "task {job_id} is not done yet",
+        user_message(
+            "Task {job_id} is still running and has not completed yet", _version=2
+        ),
     ),
     JobMissingError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "No task with id: {job_id}",
+        user_message("The requested task with ID {job_id} does not exist", _version=2),
     ),
     JobSchedulerError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Encountered an error with the task scheduling system",
+        user_message(
+            "The task scheduling system encountered an error. Please try again later",
+            _version=2,
+        ),
     ),
     JobStatusError: HttpErrorInfo(
         status.HTTP_500_INTERNAL_SERVER_ERROR,
-        "Encountered an error while getting the status of task {job_id}",
+        user_message("Unable to get the current status for task {job_id}", _version=2),
     ),
 }
 

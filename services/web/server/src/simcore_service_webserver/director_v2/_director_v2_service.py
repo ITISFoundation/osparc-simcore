@@ -15,7 +15,8 @@ from models_library.wallets import WalletID, WalletInfo
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.exception_utils import suppress_exceptions
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
@@ -66,6 +67,7 @@ async def create_or_update_pipeline(
             user_id=user_id,
             project_id=project_id,
             product_name=product_name,
+            check_user_wallet_permission=False,
         ),
     }
 
@@ -78,7 +80,7 @@ async def create_or_update_pipeline(
 
     except DirectorV2ServiceError as exc:
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 f"Could not create pipeline from project {project_id}",
                 error=exc,
                 error_context={**body, "backend_url": backend_url},
@@ -111,7 +113,6 @@ async def is_pipeline_running(
 async def get_computation_task(
     app: web.Application, user_id: UserID, project_id: ProjectID
 ) -> ComputationTask | None:
-
     try:
         dv2_computation = await DirectorV2RestClient(app).get_computation(
             project_id=project_id, user_id=user_id
@@ -130,7 +131,17 @@ async def get_computation_task(
         return None
 
 
+def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
+    assert isinstance(exception, DirectorV2ServiceError)  # nosec
+    return exception.status == status.HTTP_404_NOT_FOUND
+
+
 @log_decorator(logger=_logger)
+@suppress_exceptions(
+    (DirectorV2ServiceError,),
+    reason="silence in case the pipeline does not exist",
+    predicate=_skip_if_pipeline_not_found,
+)
 async def stop_pipeline(
     app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
 ):
@@ -203,6 +214,7 @@ async def get_wallet_info(
     user_id: UserID,
     project_id: ProjectID,
     product_name: ProductName,
+    check_user_wallet_permission: bool = True,
 ) -> WalletInfo | None:
     app_settings = get_application_settings(app)
     if not (
@@ -234,13 +246,24 @@ async def get_wallet_info(
     else:
         project_wallet_id = project_wallet.wallet_id
 
-    # Check whether user has access to the wallet
-    wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
-        app,
-        user_id=user_id,
-        wallet_id=project_wallet_id,
-        product_name=product_name,
-    )
+    if check_user_wallet_permission:
+        # Check whether user has access to the wallet
+        wallet = (
+            await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+                app,
+                user_id=user_id,
+                wallet_id=project_wallet_id,
+                product_name=product_name,
+            )
+        )
+    else:
+        # This function is used also when we are synchronizing the projects/projects_nodes with the comp_pipelines/comp_tasks tables in director-v2
+        # In situations where a project is connected to a wallet, but the user does not have access to it and is performing an action such as
+        # upgrading the service version, we still want to retrieve the wallet info and pass it to director-v2.
+        wallet = await wallets_service.get_wallet_with_available_credits(
+            app, wallet_id=project_wallet_id, product_name=product_name
+        )
+
     return WalletInfo(
         wallet_id=project_wallet_id,
         wallet_name=wallet.name,

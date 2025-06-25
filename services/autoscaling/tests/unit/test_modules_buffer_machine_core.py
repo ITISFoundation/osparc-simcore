@@ -532,7 +532,7 @@ def pre_pull_images(
 
 
 async def test_monitor_buffer_machines_against_aws(
-    skip_if_external_envfile_dict: None,
+    skip_if_no_external_envfile: None,
     disable_buffers_pool_background_task: None,
     disable_autoscaling_background_task: None,
     disabled_rabbitmq: None,

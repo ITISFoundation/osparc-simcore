@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from collections import defaultdict
 from collections.abc import AsyncIterator, Generator
 from typing import Final
 
@@ -36,6 +38,8 @@ from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rab
 _logger = logging.getLogger(__name__)
 
 _APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
+APP_WALLET_SUBSCRIPTIONS_KEY: Final[str] = "wallet_subscriptions"
+APP_WALLET_SUBSCRIPTION_LOCK_KEY: Final[str] = "wallet_subscription_lock"
 
 
 async def _convert_to_node_update_event(
@@ -89,7 +93,6 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
             app,
             rabbit_message.user_id,
             message=message,
-            ignore_queue=True,
         )
     return True
 
@@ -103,7 +106,6 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
             event_type=SOCKET_IO_LOG_EVENT,
             data=rabbit_message.model_dump(exclude={"user_id", "channel_name"}),
         ),
-        ignore_queue=True,
     )
     return True
 
@@ -120,7 +122,6 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
                 "node_id": f"{rabbit_message.node_id}",
             },
         ),
-        ignore_queue=True,
     )
     return True
 
@@ -174,9 +175,10 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:
-    with log_context(
-        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
-    ), log_catch(_logger, reraise=False):
+    with (
+        log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"),
+        log_catch(_logger, reraise=False),
+    ):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(
@@ -192,6 +194,12 @@ async def on_cleanup_ctx_rabbitmq_consumers(
     app[_APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
+
+    app[APP_WALLET_SUBSCRIPTIONS_KEY] = defaultdict(
+        int
+    )  # wallet_id -> subscriber count
+    app[APP_WALLET_SUBSCRIPTION_LOCK_KEY] = asyncio.Lock()  # Ensures exclusive access
+
     yield
 
     # cleanup

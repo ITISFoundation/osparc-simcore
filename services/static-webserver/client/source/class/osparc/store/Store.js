@@ -178,6 +178,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    functionPermissions: {
+      check: "Object",
+      init: {}
+    },
     apiKeys: {
       check: "Array",
       init: []
@@ -249,6 +253,8 @@ qx.Class.define("osparc.store.Store", {
   },
 
   members: {
+    __studiesInDebt: null,
+
     // fetch resources that do not require log in
     preloadCalls: async function() {
       await osparc.data.Resources.get("config");
@@ -450,6 +456,16 @@ qx.Class.define("osparc.store.Store", {
     },
 
     setStudyDebt: function(studyId, debt) {
+      // init object if it does not exist
+      if (this.__studiesInDebt === null) {
+        this.__studiesInDebt = {};
+      }
+      if (debt) {
+        this.__studiesInDebt[studyId] = debt;
+      } else {
+        delete this.__studiesInDebt[studyId];
+      }
+
       const studiesWStateCache = this.getStudies();
       const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
       if (idx !== -1) {
@@ -464,6 +480,17 @@ qx.Class.define("osparc.store.Store", {
         studyId,
         debt,
       });
+    },
+
+    getStudyDebt: function(studyId) {
+      if (this.__studiesInDebt && studyId in this.__studiesInDebt) {
+        return this.__studiesInDebt[studyId];
+      }
+      return null;
+    },
+
+    isStudyInDebt: function(studyId) {
+      return Boolean(this.getStudyDebt(studyId));
     },
 
     trashStudy: function(studyId) {

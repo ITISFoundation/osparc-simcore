@@ -1,8 +1,11 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-statements
 
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypedDict
@@ -12,6 +15,8 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import status
+from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.generics import Envelope
 from pydantic import TypeAdapter
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
@@ -188,6 +193,7 @@ async def test_clone_study(
         _headers[X_SIMCORE_PARENT_PROJECT_UUID] = f"{parent_project_id}"
     if parent_node_id is not None:
         _headers[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
+
     resp = await client.post(
         f"/{API_VTAG}/studies/{study_id}:clone", headers=_headers, auth=auth
     )
@@ -195,6 +201,118 @@ async def test_clone_study(
     assert mocked_webserver_rest_api_base["create_projects"].called
 
     assert resp.status_code == status.HTTP_201_CREATED
+
+
+# string length limits: https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/models-library/src/models_library/api_schemas_webserver/projects.py#L242
+@pytest.mark.parametrize("hidden", [True, False, None])
+@pytest.mark.parametrize(
+    "title, description, expected_status_code",
+    [
+        (
+            _faker.text(max_nb_chars=600),
+            _faker.text(max_nb_chars=65536),
+            status.HTTP_201_CREATED,
+        ),
+        ("a" * 999, "b" * 99999, status.HTTP_201_CREATED),
+        (None, None, status.HTTP_201_CREATED),
+    ],
+    ids=[
+        "valid_title_and_description",
+        "very_long_title_and_description",
+        "no_title_or_description",
+    ],
+)
+async def test_clone_study_with_title(
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+    study_id: StudyID,
+    mocked_webserver_rest_api_base: MockRouter,
+    patch_webserver_long_running_project_tasks: Callable[[MockRouter], MockRouter],
+    mock_webserver_patch_project: Callable[[MockRouter], MockRouter],
+    mock_webserver_get_project: Callable[[MockRouter], MockRouter],
+    hidden: bool | None,
+    title: str | None,
+    description: str | None,
+    expected_status_code: int,
+):
+    # Mocks /projects
+    patch_webserver_long_running_project_tasks(mocked_webserver_rest_api_base)
+    mock_webserver_patch_project(mocked_webserver_rest_api_base)
+    mock_webserver_get_project(mocked_webserver_rest_api_base)
+
+    create_callback = mocked_webserver_rest_api_base["create_projects"].side_effect
+    assert create_callback is not None
+    patch_callback = mocked_webserver_rest_api_base["project_patch"].side_effect
+    assert patch_callback is not None
+    get_callback = mocked_webserver_rest_api_base["project_get"].side_effect
+    assert get_callback is not None
+
+    def clone_project_side_effect(request: httpx.Request):
+        if hidden is not None:
+            _hidden = request.url.params.get("hidden")
+            assert _hidden == str(hidden).lower()
+        return create_callback(request)
+
+    def patch_project_side_effect(request: httpx.Request, *args, **kwargs):
+        body = json.loads(request.content.decode("utf-8"))
+        if title is not None:
+            _name = body.get("name")
+            assert _name is not None and _name in title
+        if description is not None:
+            _description = body.get("description")
+            assert _description is not None and _description in description
+        return patch_callback(request, *args, **kwargs)
+
+    def get_project_side_effect(request: httpx.Request, *args, **kwargs):
+        # this is needed to return the patched project
+        _project_id = kwargs.get("project_id")
+        assert _project_id is not None
+        result = Envelope[ProjectGet].model_validate(
+            {"data": ProjectGet.model_json_schema()["examples"][0]}
+        )
+        assert result.data is not None
+        if title is not None:
+            result.data.name = title
+        if description is not None:
+            result.data.description = description
+        result.data.uuid = UUID(_project_id)
+        return httpx.Response(status.HTTP_200_OK, content=result.model_dump_json())
+
+    mocked_webserver_rest_api_base["create_projects"].side_effect = (
+        clone_project_side_effect
+    )
+    mocked_webserver_rest_api_base["project_patch"].side_effect = (
+        patch_project_side_effect
+    )
+    mocked_webserver_rest_api_base["project_get"].side_effect = get_project_side_effect
+
+    query = dict()
+    if hidden is not None:
+        query["hidden"] = str(hidden).lower()
+
+    body = dict()
+    if hidden is not None:
+        body["hidden"] = hidden
+    if title is not None:
+        body["title"] = title
+    if description is not None:
+        body["description"] = description
+
+    resp = await client.post(
+        f"/{API_VTAG}/studies/{study_id}:clone", auth=auth, json=body, params=query
+    )
+
+    assert mocked_webserver_rest_api_base["create_projects"].called
+    if title or description:
+        assert mocked_webserver_rest_api_base["project_patch"].called
+        assert mocked_webserver_rest_api_base["project_get"].called
+
+    assert resp.status_code == expected_status_code
+    study = Study.model_validate(resp.json())
+    if title is not None:
+        assert study.title == title
+    if description is not None:
+        assert study.description == description
 
 
 async def test_clone_study_not_found(

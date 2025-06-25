@@ -92,7 +92,7 @@ async def _prepare_project_copy(
         )
         if project_data_size >= max_bytes:
             raise web.HTTPUnprocessableEntity(
-                reason=f"Source project data size is {project_data_size.human_readable()}."
+                text=f"Source project data size is {project_data_size.human_readable()}."
                 f"This is larger than the maximum {max_bytes.human_readable()} allowed for copying."
                 "TIP: Please reduce the study size or contact application support."
             )
@@ -263,7 +263,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     simcore_user_agent: str,
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
-) -> None:
+) -> web.HTTPCreated:
     """Implements TaskProtocol for 'create_projects' handler
 
     Arguments:
@@ -278,7 +278,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         predefined_project -- project in request body
 
     Raises:
-        web.HTTPCreated: succeeded
         web.HTTPBadRequest:
         web.HTTPNotFound:
         web.HTTPUnauthorized:
@@ -481,7 +480,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             **RESPONSE_MODEL_POLICY
         )
 
-        raise web.HTTPCreated(
+        return web.HTTPCreated(
             text=json_dumps({"data": data}),
             content_type=MIMETYPE_APPLICATION_JSON,
         )

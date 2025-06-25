@@ -20,6 +20,9 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
+from servicelib.celery.models import TaskMetadata, TaskUUID
+from servicelib.celery.task_manager import TaskManager
+from servicelib.logging_utils import log_context
 from yarl import URL
 
 from ...dsm import get_dsm_provider
@@ -34,11 +37,9 @@ from ...models import (
     StorageQueryParamsBase,
     UploadLinks,
 )
-from ...modules.celery.client import CeleryTaskClient
-from ...modules.celery.models import TaskMetadata, TaskUUID
 from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
-from .dependencies.celery import get_celery_client
+from .dependencies.celery import get_task_manager
 
 _logger = logging.getLogger(__name__)
 
@@ -185,14 +186,17 @@ async def upload_file(
     """
     # NOTE: Used by legacy dynamic services with single presigned link -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
-    links: UploadLinks = await dsm.create_file_upload_links(
-        user_id=query_params.user_id,
-        file_id=file_id,
-        link_type=query_params.link_type,
-        file_size_bytes=query_params.file_size or ByteSize(0),
-        is_directory=query_params.is_directory,
-        sha256_checksum=query_params.sha256_checksum,
-    )
+    with log_context(
+        logger=_logger, level=logging.DEBUG, msg=f"Creating upload links for {file_id=}"
+    ):
+        links: UploadLinks = await dsm.create_file_upload_links(
+            user_id=query_params.user_id,
+            file_id=file_id,
+            link_type=query_params.link_type,
+            file_size_bytes=query_params.file_size or ByteSize(0),
+            is_directory=query_params.is_directory,
+            sha256_checksum=query_params.sha256_checksum,
+        )
     if query_params.is_v1_upload:
         # return v1 response
         assert len(links.urls) == 1  # nosec
@@ -270,7 +274,7 @@ _UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS: Final[str] = (
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def complete_upload_file(
-    celery_client: Annotated[CeleryTaskClient, Depends(get_celery_client)],
+    task_manager: Annotated[TaskManager, Depends(get_task_manager)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
@@ -284,7 +288,7 @@ async def complete_upload_file(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
-    task_uuid = await celery_client.submit_task(
+    task_uuid = await task_manager.submit_task(
         TaskMetadata(
             name=remote_complete_upload_file.__name__,
         ),
@@ -326,7 +330,7 @@ async def complete_upload_file(
     response_model=Envelope[FileUploadCompleteFutureResponse],
 )
 async def is_completed_upload_file(
-    celery_client: Annotated[CeleryTaskClient, Depends(get_celery_client)],
+    task_manager: Annotated[TaskManager, Depends(get_task_manager)],
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     location_id: LocationID,
     file_id: StorageFileID,
@@ -340,20 +344,23 @@ async def is_completed_upload_file(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
-    task_status = await celery_client.get_task_status(
+    task_status = await task_manager.get_task_status(
         task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
     )
     # first check if the task is in the app
     if task_status.is_done:
-        task_result = await celery_client.get_task_result(
-            task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        task_result = TypeAdapter(FileMetaData).validate_python(
+            await task_manager.get_task_result(
+                task_context=async_job_name_data.model_dump(),
+                task_uuid=TaskUUID(future_id),
+            )
         )
-        assert isinstance(task_result, FileMetaData), f"{task_result=}"  # nosec
         new_fmd = task_result
         assert new_fmd.location_id == location_id  # nosec
         assert new_fmd.file_id == file_id  # nosec
         response = FileUploadCompleteFutureResponse(
-            state=FileUploadCompleteState.OK, e_tag=new_fmd.entity_tag
+            state=FileUploadCompleteState.OK,
+            e_tag=new_fmd.entity_tag,
         )
     else:
         # the task is still running

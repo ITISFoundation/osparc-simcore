@@ -136,6 +136,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         icon: "@FontAwesome5Solid/copy/16",
         paddingLeft: 10, // align it with the context
       });
+      osparc.utils.Utils.setIdToWidget(templatesButton, "templatesFilterItem");
       templatesButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {
@@ -153,6 +154,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         icon: "@FontAwesome5Solid/globe/16",
         paddingLeft: 10, // align it with the context
       });
+      osparc.utils.Utils.setIdToWidget(publicProjectsButton, "publicProjectsFilterItem");
       publicProjectsButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {

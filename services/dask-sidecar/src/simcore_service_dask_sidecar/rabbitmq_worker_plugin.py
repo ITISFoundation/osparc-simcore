@@ -6,7 +6,7 @@ from collections.abc import Awaitable
 from typing import Final
 
 import distributed
-from servicelib.async_utils import cancel_wait_task
+from common_library.async_tools import cancel_wait_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, wait_till_rabbitmq_responsive
 from servicelib.rabbitmq._models import RabbitMessage

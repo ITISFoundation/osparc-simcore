@@ -17,6 +17,7 @@ from models_library.functions import FunctionJobCollectionsListFilters
 from models_library.functions_errors import (
     FunctionJobCollectionReadAccessDeniedError,
     FunctionJobCollectionsReadApiAccessDeniedError,
+    FunctionJobCollectionWriteAccessDeniedError,
     FunctionJobIDNotFoundError,
 )
 from models_library.products import ProductName
@@ -137,7 +138,7 @@ async def test_function_job_collection(
         )
 
     # Attempt to delete the function job collection by another user
-    with pytest.raises(FunctionJobCollectionReadAccessDeniedError):
+    with pytest.raises(FunctionJobCollectionWriteAccessDeniedError):
         await functions_rpc.delete_function_job_collection(
             rabbitmq_rpc_client=rpc_client,
             function_job_collection_id=registered_collection.uid,

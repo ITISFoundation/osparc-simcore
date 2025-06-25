@@ -1090,8 +1090,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       const nodeOptions = new osparc.widget.NodeOptions(node);
-      nodeOptions.buildLayout();
-
       return nodeOptions;
     },
 

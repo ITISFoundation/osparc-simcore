@@ -93,6 +93,48 @@ qx.Class.define("osparc.study.Conversations", {
       return osparc.data.Resources.fetch("conversations", "addMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
+
+    editMessage: function(studyId, conversationId, messageId, message) {
+      const params = {
+        url: {
+          studyId,
+          conversationId,
+          messageId,
+        },
+        data: {
+          "content": message,
+        },
+      };
+      return osparc.data.Resources.fetch("conversations", "editMessage", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    deleteMessage: function(studyId, conversationId, messageId) {
+      const params = {
+        url: {
+          studyId,
+          conversationId,
+          messageId,
+        },
+      };
+      return osparc.data.Resources.fetch("conversations", "deleteMessage", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    notifyUser: function(studyId, conversationId, userGroupId) {
+      const params = {
+        url: {
+          studyId,
+          conversationId,
+        },
+        data: {
+          "content": userGroupId.toString(), // eventually the backend will accept integers
+          "type": "NOTIFICATION",
+        }
+      };
+      return osparc.data.Resources.fetch("conversations", "addMessage", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
   },
 
   members: {
@@ -151,7 +193,7 @@ qx.Class.define("osparc.study.Conversations", {
       };
 
       if (conversations.length === 0) {
-        const noConversationTab = new osparc.info.Conversation(studyData);
+        const noConversationTab = new osparc.conversation.Conversation(studyData);
         conversationPages.push(noConversationTab);
         noConversationTab.setLabel(this.tr("new"));
         noConversationTab.addListener("conversationDeleted", () => reloadConversations());
@@ -159,7 +201,7 @@ qx.Class.define("osparc.study.Conversations", {
       } else {
         conversations.forEach(conversation => {
           const conversationId = conversation["conversationId"];
-          const conversationTab = new osparc.info.Conversation(studyData, conversationId);
+          const conversationTab = new osparc.conversation.Conversation(studyData, conversationId);
           conversationPages.push(conversationTab);
           conversationTab.setLabel(conversation["name"]);
           conversationTab.addListener("conversationDeleted", () => reloadConversations());

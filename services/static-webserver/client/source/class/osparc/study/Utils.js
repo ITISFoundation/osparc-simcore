@@ -344,7 +344,26 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isInDebt: function(studyData) {
-      return Boolean("debt" in studyData && studyData["debt"] < 0);
+      return osparc.store.Store.getInstance().isStudyInDebt(studyData["uuid"]);
+    },
+
+    extractDebtFromError: function(studyId, err) {
+      const msg = err["message"];
+      // The backend might have thrown a 402 because the wallet was negative
+      const match = msg.match(/last transaction of\s([-]?\d+(\.\d+)?)\sresulted/);
+      let debt = null;
+      if ("debtAmount" in err) {
+        // the study has some debt that needs to be paid
+        debt = err["debtAmount"];
+      } else if (match) {
+        // the study has some debt that needs to be paid
+        debt = parseFloat(match[1]); // Convert the captured string to a number
+      }
+      if (debt) {
+        // if get here, it means that the 402 was thrown due to the debt
+        osparc.store.Store.getInstance().setStudyDebt(studyId, debt);
+      }
+      return debt;
     },
 
     getUiMode: function(studyData) {
@@ -442,8 +461,7 @@ qx.Class.define("osparc.study.Utils", {
         if (studyData["ui"]["mode"] === "pipeline") {
           resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
-          const defaultIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
-          // the was to guess the TI type is to check the boot mode of the ti-postpro in the pipeline
+          const productIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
           const wbServices = this.self().getNonFrontendNodes(studyData);
           if (wbServices.length === 1) {
             const wbService = wbServices[0];
@@ -452,8 +470,9 @@ qx.Class.define("osparc.study.Utils", {
                 if (serviceMetadata && serviceMetadata["icon"]) {
                   resolve(serviceMetadata["icon"]);
                 }
-                resolve(defaultIcon);
-              });
+                resolve(productIcon);
+              })
+              .catch(() => resolve(productIcon));
           } else {
             resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
           }

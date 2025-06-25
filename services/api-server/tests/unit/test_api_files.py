@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 import datetime
+import re
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -13,7 +14,6 @@ import httpx
 import pytest
 import respx
 import yarl
-from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -25,6 +25,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -233,11 +234,9 @@ async def test_get_upload_links(
     follow_up_request: str,
     client: AsyncClient,
     auth: httpx.BasicAuth,
-    storage_v0_service_mock: AioResponsesMock,
+    mocked_storage_rest_api_base: MockRouter,
 ):
     """Test that we can get data needed for performing multipart upload directly to S3"""
-
-    assert storage_v0_service_mock  # nosec
 
     msg = {
         "filename": DummyFileData.file().filename,
@@ -280,6 +279,28 @@ async def test_get_upload_links(
         assert response.status_code == status.HTTP_200_OK
     else:
         raise AssertionError
+
+
+async def test_get_upload_links_timeout(
+    client: AsyncClient,
+    auth: httpx.BasicAuth,
+    mocked_storage_rest_api_base: MockRouter,
+    mocker: MockerFixture,
+):
+    mocked_endpoint = mocked_storage_rest_api_base.put(
+        re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"),
+    ).mock(side_effect=httpx.ReadTimeout("Mocked timeout error"))
+
+    msg = {
+        "filename": DummyFileData.file().filename,
+        "filesize": DummyFileData.file_size(),
+        "sha256_checksum": DummyFileData.checksum(),
+    }
+
+    response = await client.post(f"{API_VTAG}/files/content", json=msg, auth=auth)
+
+    assert mocked_endpoint.called
+    assert response.status_code == status.HTTP_504_GATEWAY_TIMEOUT
 
 
 @pytest.mark.parametrize(

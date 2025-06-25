@@ -21,7 +21,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from yarl import URL
@@ -195,7 +195,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
             )
 
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,
@@ -237,7 +237,7 @@ async def phone_confirmation(request: web.Request):
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
-            reason="Phone registration is not available",
+            text="Phone registration is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 
@@ -257,7 +257,7 @@ async def phone_confirmation(request: web.Request):
 
         except UniqueViolation as err:
             raise web.HTTPUnauthorized(
-                reason="Invalid phone number",
+                text="Invalid phone number",
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
@@ -265,7 +265,7 @@ async def phone_confirmation(request: web.Request):
 
     # fails because of invalid or no code
     raise web.HTTPUnauthorized(
-        reason="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
+        text="Invalid 2FA code", content_type=MIMETYPE_APPLICATION_JSON
     )
 
 
@@ -312,7 +312,7 @@ async def complete_reset_password(request: web.Request):
         return flash_response(MSG_PASSWORD_CHANGED)
 
     raise web.HTTPUnauthorized(
-        reason=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(
+        text=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(
             support_email=product.support_email
         ),
         content_type=MIMETYPE_APPLICATION_JSON,

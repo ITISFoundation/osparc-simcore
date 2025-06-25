@@ -8,7 +8,7 @@ from common_library.error_codes import create_error_code
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import QueueName, RabbitMQClient
 
@@ -139,7 +139,7 @@ class LogStreamer:
             error_msg = MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE + f" [{error_code}]"
 
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     error_msg,
                     error=exc,
                     error_code=error_code,

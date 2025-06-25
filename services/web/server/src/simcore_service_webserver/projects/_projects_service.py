@@ -1114,7 +1114,7 @@ async def patch_project_node(
         project_id=project_id,
         user_id=user_id,
         product_name=product_name,
-        permission="write",  # NOTE: MD: before only read was sufficient, double check this
+        permission="write",
     )
 
     # 2. If patching service key or version make sure it's valid
@@ -1153,7 +1153,7 @@ async def patch_project_node(
         partial_node=partial_node,
     )
 
-    # 4. Make calls to director-v2 to keep data in sync (ex. comp_tasks DB table)
+    # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
     await director_v2_service.create_or_update_pipeline(
         app,
         user_id,
@@ -1961,7 +1961,6 @@ async def notify_project_state_update(
             app,
             user_id=notify_only_user,
             message=message,
-            ignore_queue=True,
         )
     else:
         rooms_to_notify: Generator[GroupID, None, None] = (
