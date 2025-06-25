@@ -28,7 +28,8 @@ from .garbage_collector.plugin import setup_garbage_collector
 from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
 from .licenses.plugin import setup_licenses
-from .login.plugin import setup_login, setup_login_auth
+from .login.plugin import setup_login
+from .login_auth.plugin import setup_login_auth
 from .long_running_tasks import setup_long_running_tasks
 from .notifications.plugin import setup_notifications
 from .payments.plugin import setup_payments

@@ -4,7 +4,11 @@ import logging
 import asyncpg
 from aiohttp import web
 from pydantic import ValidationError
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import (
+    ModuleCategory,
+    app_module_setup,
+    ensure_single_setup,
+)
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
@@ -18,7 +22,7 @@ from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
-from ..login_auth.plugin import ensure_single_setup, setup_login_auth
+from ..login_auth.plugin import setup_login_auth
 from ..products import products_service
 from ..products.models import ProductName
 from ..products.plugin import setup_products

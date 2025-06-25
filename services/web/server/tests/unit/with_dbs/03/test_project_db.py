@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from random import randint
@@ -805,12 +806,13 @@ async def test_has_permission(
     client: TestClient,
     aiopg_engine: aiopg.sa.engine.Engine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
+    exit_stack: contextlib.AsyncExitStack,
 ):
     project_id = faker.uuid4(cast_to=None)
     owner_id = logged_user["id"]
 
     second_user: UserInfoDict = await log_client_in(
-        client=client, user_data={"role": UserRole.USER.name}
+        client=client, user_data={"role": UserRole.USER.name}, exit_stack=exit_stack
     )
 
     new_project = deepcopy(fake_project)

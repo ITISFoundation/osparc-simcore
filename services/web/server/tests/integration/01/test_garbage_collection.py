@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import logging
 import re
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
@@ -81,13 +81,6 @@ GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 # ensure enough time has passed and GC was triggered
 WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 2
-
-
-@pytest.fixture
-async def exit_stack() -> AsyncIterator[contextlib.AsyncExitStack]:
-    """Provides an AsyncExitStack that gets cleaned up after each test"""
-    async with contextlib.AsyncExitStack() as stack:
-        yield stack
 
 
 @pytest.fixture(autouse=True)
