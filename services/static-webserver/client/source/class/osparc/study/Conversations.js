@@ -315,6 +315,25 @@ qx.Class.define("osparc.study.Conversations", {
     },
   },
 
+  __deleteConversation: function(conversationData) {
+    const conversationId = conversationData["conversationId"];
+    const conversation = this.__getConversation(conversationId);
+    if (conversation) {
+      const conversationsLayout = this.getChildControl("conversations-layout");
+      conversationsLayout.remove(conversation);
+      this.__conversations = this.__conversations.filter(c => c !== conversation);
+    }
+  },
+
+  // it can only be renamed, not updated
+  __updateConversation: function(conversationData) {
+    const conversationId = conversationData["conversationId"];
+    const conversation = this.__getConversation(conversationId);
+    if (conversation) {
+      conversation.renameConversation(conversationData["name"]);
+    }
+  },
+
   destruct: function() {
     const socket = osparc.wrapper.WebSocket.getInstance();
     if (this.__wsHandlers) {
