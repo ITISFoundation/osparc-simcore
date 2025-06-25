@@ -315,7 +315,8 @@ qx.Class.define("osparc.study.Conversations", {
           const studyData = this.getStudyData();
           osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
             .then(conversationDt => {
-              const newConversationPage = this.__addConversationPage(conversationDt);
+              this.__addConversationPage(conversationDt);
+              const newConversationPage = this.__getConversation(conversationDt["conversationId"]);
               if (newConversationPage) {
                 conversationsLayout.setSelection([newConversationPage]);
               }
