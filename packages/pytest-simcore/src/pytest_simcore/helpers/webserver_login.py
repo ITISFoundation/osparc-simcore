@@ -9,7 +9,7 @@ from aiohttp.test_utils import TestClient
 from models_library.users import UserID
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole, UserStatus
-from simcore_service_webserver.groups.api import auto_add_user_to_product_group
+from simcore_service_webserver.groups import api as groups_service
 from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._invitations_service import create_invitation_token
 from simcore_service_webserver.login._login_repository_legacy import (
@@ -109,7 +109,9 @@ async def _register_user_in_default_product(app: web.Application, user_id: UserI
     assert products
     product_name = products[0].name
 
-    return await auto_add_user_to_product_group(app, user_id, product_name=product_name)
+    return await groups_service.auto_add_user_to_product_group(
+        app, user_id, product_name=product_name
+    )
 
 
 async def _create_account(

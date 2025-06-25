@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
     settings_name="WEBSERVER_PRODUCTS",
     logger=_logger,
 )
-def setup_products(app: web.Application):
+def setup_products(app: web.Application, *, rpc_enabled: bool = True):
     #
     # NOTE: internal import speeds up booting app
     # specially if this plugin is not set up to be loaded
@@ -34,10 +34,14 @@ def setup_products(app: web.Application):
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
+    # rest API
     app.middlewares.append(_web_middlewares.discover_product_middleware)
-
     app.router.add_routes(rest.routes)
 
-    rpc.setup_rpc(app)
+    # rpc API (optional)
+    if rpc_enabled:
+        rpc.setup_rpc(app)
+    else:
+        _logger.info("Skipping RPC api in products plugin")
 
     _web_events.setup_web_events(app)

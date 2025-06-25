@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 @ensure_single_setup(__name__, logger=_logger)
 def setup_login_auth(app: web.Application):
-    setup_products(app)
+    setup_products(app, rpc_enabled=False)
     setup_security(app)
     setup_rest(app)
 
