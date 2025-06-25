@@ -27,6 +27,7 @@ qx.Class.define("osparc.conversation.Conversation", {
     this.base(arguments);
 
     this.__studyData = studyData;
+    this.__messages = [];
 
     if (conversationId) {
       this.setConversationId(conversationId);
@@ -46,7 +47,7 @@ qx.Class.define("osparc.conversation.Conversation", {
 
     this.__buildLayout();
 
-    this.fetchMessages();
+    this.__reloadMessages();
   },
 
   properties: {
@@ -64,6 +65,7 @@ qx.Class.define("osparc.conversation.Conversation", {
 
   members: {
     __studyData: null,
+    __messages: null,
     __nextRequestParams: null,
     __messagesTitle: null,
     __messagesList: null,
@@ -159,51 +161,21 @@ qx.Class.define("osparc.conversation.Conversation", {
       });
 
       this.__loadMoreMessages = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-      this.__loadMoreMessages.addListener("execute", () => this.fetchMessages(false));
+      this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
       if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
         const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId());
         addMessages.setPaddingLeft(10);
-        addMessages.addListener("commentAdded", e => {
+        addMessages.addListener("messageAdded", e => {
           const data = e.getData();
           if (data["conversationId"]) {
             this.setConversationId(data["conversationId"]);
+            this.addMessage(data);
           }
-          this.fetchMessages();
         });
         this._add(addMessages);
       }
-    },
-
-    fetchMessages: function(removeMessages = true) {
-      if (this.getConversationId() === null) {
-        this.__messagesTitle.setValue(this.tr("No messages yet"));
-        this.__messagesList.hide();
-        this.__loadMoreMessages.hide();
-        return;
-      }
-
-      this.__messagesList.show();
-      this.__loadMoreMessages.show();
-      this.__loadMoreMessages.setFetching(true);
-
-      if (removeMessages) {
-        this.__messagesList.removeAll();
-      }
-
-      this.__getNextRequest()
-        .then(resp => {
-          const messages = resp["data"];
-          // it's not provided by the backend
-          messages.forEach(message => message["studyId"] = this.__studyData["uuid"]);
-          this.__addMessages(messages);
-          this.__nextRequestParams = resp["_links"]["next"];
-          if (this.__nextRequestParams === null) {
-            this.__loadMoreMessages.exclude();
-          }
-        })
-        .finally(() => this.__loadMoreMessages.setFetching(false));
     },
 
     __getNextRequest: function() {
@@ -226,28 +198,120 @@ qx.Class.define("osparc.conversation.Conversation", {
       return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
     },
 
-    __addMessages: function(messages) {
-      const nMessages = messages.filter(msg => msg["type"] === "MESSAGE").length;
+    __reloadMessages: function(removeMessages = true) {
+      if (this.getConversationId() === null) {
+        this.__messagesTitle.setValue(this.tr("No messages yet"));
+        this.__messagesList.hide();
+        this.__loadMoreMessages.hide();
+        return;
+      }
+
+      this.__messagesList.show();
+      this.__loadMoreMessages.show();
+      this.__loadMoreMessages.setFetching(true);
+
+      if (removeMessages) {
+        this.__messages = [];
+        this.__messagesList.removeAll();
+      }
+
+      this.__getNextRequest()
+        .then(resp => {
+          const messages = resp["data"];
+          messages.forEach(message => this.addMessage(message));
+          this.__nextRequestParams = resp["_links"]["next"];
+          if (this.__nextRequestParams === null) {
+            this.__loadMoreMessages.exclude();
+          }
+        })
+        .finally(() => this.__loadMoreMessages.setFetching(false));
+    },
+
+    __updateMessagesNumber: function() {
+      const nMessages = this.__messages.filter(msg => msg["type"] === "MESSAGE").length;
       if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));
       } else if (nMessages > 1) {
         this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
       }
+    },
 
-      messages.forEach(message => {
-        let control = null;
-        switch (message["type"]) {
-          case "MESSAGE":
-            control = new osparc.conversation.MessageUI(message, this.__studyData);
-            control.addListener("messageEdited", () => this.fetchMessages());
-            control.addListener("messageDeleted", () => this.fetchMessages());
-            break;
-          case "NOTIFICATION":
-            control = new osparc.conversation.NotificationUI(message);
-            break;
-        }
-        if (control) {
-          this.__messagesList.add(control);
+    addMessage: function(message) {
+      // backend doesn't provide the projectId
+      message["projectId"] = this.__studyData["uuid"];
+
+      // ignore it if it was already there
+      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      if (messageIndex !== -1) {
+        return;
+      }
+
+      // determine insertion index for most‐recent‐first order
+      const newTime = new Date(message["created"]);
+      let insertAt = this.__messages.findIndex(m => new Date(m["created"]) < newTime);
+      if (insertAt === -1) {
+        insertAt = this.__messages.length;
+      }
+
+      // Insert the message in the messages array
+      this.__messages.splice(insertAt, 0, message);
+
+      // Add the UI element to the messages list
+      let control = null;
+      switch (message["type"]) {
+        case "MESSAGE":
+          control = new osparc.conversation.MessageUI(message, this.__studyData);
+          control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
+          control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
+          break;
+        case "NOTIFICATION":
+          control = new osparc.conversation.NotificationUI(message);
+          break;
+      }
+      if (control) {
+        // insert into the UI at the same position
+        this.__messagesList.addAt(control, insertAt);
+      }
+
+      this.__updateMessagesNumber();
+    },
+
+    deleteMessage: function(message) {
+      // remove it from the messages array
+      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      if (messageIndex === -1) {
+        return;
+      }
+      this.__messages.splice(messageIndex, 1);
+
+      // Remove the UI element from the messages list
+      const children = this.__messagesList.getChildren();
+      const controlIndex = children.findIndex(
+        ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === message["messageId"])
+      );
+      if (controlIndex > -1) {
+        this.__messagesList.remove(children[controlIndex]);
+      }
+
+      this.__updateMessagesNumber();
+    },
+
+    updateMessage: function(message) {
+      // backend doesn't provide the projectId
+      message["projectId"] = this.__studyData["uuid"];
+
+      // Replace the message in the messages array
+      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
+      if (messageIndex === -1) {
+        return;
+      }
+      this.__messages[messageIndex] = message;
+
+      // Update the UI element from the messages list
+      this.__messagesList.getChildren().forEach(control => {
+        if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
+          control.setMessage(message);
+          return;
         }
       });
     },
