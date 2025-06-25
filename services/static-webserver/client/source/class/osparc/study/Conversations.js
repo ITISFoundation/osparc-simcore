@@ -276,6 +276,7 @@ qx.Class.define("osparc.study.Conversations", {
         conversation = new osparc.conversation.Conversation(studyData);
         conversation.setLabel(this.tr("new"));
       }
+      return conversation;
     },
 
     __addTemporaryConversation: function() {
@@ -313,34 +314,34 @@ qx.Class.define("osparc.study.Conversations", {
       conversationsLayout.getChildControl("bar").remove(this.__newConversationButton);
       conversationsLayout.getChildControl("bar").add(this.__newConversationButton);
     },
-  },
 
-  __deleteConversation: function(conversationData) {
-    const conversationId = conversationData["conversationId"];
-    const conversation = this.__getConversation(conversationId);
-    if (conversation) {
-      const conversationsLayout = this.getChildControl("conversations-layout");
-      conversationsLayout.remove(conversation);
-      this.__conversations = this.__conversations.filter(c => c !== conversation);
-    }
-  },
+    __deleteConversation: function(conversationData) {
+      const conversationId = conversationData["conversationId"];
+      const conversation = this.__getConversation(conversationId);
+      if (conversation) {
+        const conversationsLayout = this.getChildControl("conversations-layout");
+        conversationsLayout.remove(conversation);
+        this.__conversations = this.__conversations.filter(c => c !== conversation);
+      }
+    },
 
-  // it can only be renamed, not updated
-  __updateConversation: function(conversationData) {
-    const conversationId = conversationData["conversationId"];
-    const conversation = this.__getConversation(conversationId);
-    if (conversation) {
-      conversation.renameConversation(conversationData["name"]);
-    }
-  },
+    // it can only be renamed, not updated
+    __updateConversation: function(conversationData) {
+      const conversationId = conversationData["conversationId"];
+      const conversation = this.__getConversation(conversationId);
+      if (conversation) {
+        conversation.renameConversation(conversationData["name"]);
+      }
+    },
 
-  destruct: function() {
-    const socket = osparc.wrapper.WebSocket.getInstance();
-    if (this.__wsHandlers) {
-      this.__wsHandlers.forEach(({ eventName }) => {
-        socket.removeSlot(eventName);
-      });
-      this.__wsHandlers = null;
-    }
-  },
+    destruct: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      if (this.__wsHandlers) {
+        this.__wsHandlers.forEach(({ eventName }) => {
+          socket.removeSlot(eventName);
+        });
+        this.__wsHandlers = null;
+      }
+    },
+  }
 });
