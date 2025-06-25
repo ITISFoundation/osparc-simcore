@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
+import threading
 from collections.abc import AsyncIterator, Callable
 from functools import partial
 from typing import Any
@@ -30,10 +31,7 @@ pytest_plugins = [
 
 
 class FakeAppServer(BaseAppServer):
-    async def on_startup(self) -> None:
-        pass
-
-    async def on_shutdown(self) -> None:
+    async def lifespan(self, startup_completed_event: threading.Event) -> None:
         pass
 
 
