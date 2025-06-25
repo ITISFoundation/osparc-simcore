@@ -241,19 +241,19 @@ def mocked_login_required(mocker: MockerFixture):
     # patches @login_required decorator
     # avoids having to start database etc...
     mocker.patch(
-        "simcore_service_webserver.login.decorators.security_web.check_user_authorized",
+        "simcore_service_webserver.login_auth.decorators.security_web.check_user_authorized",
         spec=True,
         return_value=user_id,
     )
 
     mocker.patch(
-        "simcore_service_webserver.login.decorators.security_web.check_user_permission",
+        "simcore_service_webserver.login_auth.decorators.security_web.check_user_permission",
         spec=True,
         return_value=None,
     )
 
     mocker.patch(
-        "simcore_service_webserver.login.decorators.products_web.get_product_name",
+        "simcore_service_webserver.login_auth.decorators.products_web.get_product_name",
         spec=True,
         return_value="osparc",
     )
