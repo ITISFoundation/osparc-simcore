@@ -1,7 +1,6 @@
 import functools
 import inspect
 import logging
-import warnings
 from collections.abc import Callable
 from contextlib import ContextDecorator
 from copy import deepcopy
@@ -258,27 +257,42 @@ def app_module_setup(
     config_section: str | None = None,
     config_enabled: str | None = None,
 ) -> Callable:
-    """Decorator marking a function as a module setup for an application.
+    """Decorator that marks a function as 'a setup function' for a given module in an application
 
-    Ensures one-time execution (idempotent) and tracks setup completion. For addons, setup can be
-    toggled via config [deprecated] or settings.
+        - Marks a function as 'setup' of a given module in an application
+        - Ensures setup executed ONLY ONCE per app
+        - Addon modules:
+            - toggles run using 'enabled' entry in config file
+        - logs execution
 
-    :param settings_name: Field name in app settings for this module
-    :raises DependencyError: If required dependent modules are not initialized
-    :raises ApplicationSetupError: If setup fails
-    :return: True if setup completed, False if skipped
+    See packages/service-library/tests/test_application_setup.py
+
+    :param module_name: typically __name__
+    :param depends: list of module_names that must be called first, defaults to None
+    :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
+    :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
+    :param settings_name: field name in the app's settings that corresponds to this module. Defaults to the name of the module with app prefix.
+    :raises DependencyError
+    :raises ApplicationSetupError
+    :return: True if setup was completed or False if setup was skipped
     :rtype: bool
 
     :Example:
+        from servicelib.aiohttp.application_setup import app_module_setup
+
         @app_module_setup('mysubsystem', ModuleCategory.SYSTEM, logger=log)
-        def setup_mysubsystem(app: web.Application):
+        def setup(app: web.Application):
             ...
     """
+    # TODO: resilience to failure. if this setup fails, then considering dependencies, is it fatal or app can start?
+    # TODO: enforce signature as def setup(app: web.Application, **kwargs) -> web.Application
+
     module_name, depends, section, config_enabled = _parse_and_validate_arguments(
         module_name, depends, config_section, config_enabled
     )
 
-    def _get_metadata() -> SetupMetadataDict:
+    # metadata info
+    def _setup_metadata() -> SetupMetadataDict:
         return SetupMetadataDict(
             module_name=module_name,
             dependencies=depends,
@@ -303,11 +317,7 @@ def app_module_setup(
 
                 if settings_name is None:
                     # Fall back to config if settings_name is not explicitly defined
-                    warnings.warn(
-                        f"Using config-based enabling/disabling for addon '{module_name}' is deprecated. Please use settings instead.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
+                    # TODO: deprecate
                     cfg = app[APP_CONFIG_KEY]
                     is_enabled = _is_addon_enabled_from_config(
                         cfg, config_enabled, section
@@ -357,7 +367,7 @@ def app_module_setup(
             _wrapper.__wrapped__ == setup_func
         ), "this is added by functools.wraps decorator"  # nosec
 
-        setattr(_wrapper, "metadata", _get_metadata)  # noqa: B010
+        setattr(_wrapper, "metadata", _setup_metadata)  # noqa: B010
         setattr(_wrapper, "mark_as_simcore_servicelib_setup_func", True)  # noqa: B010
 
         return _wrapper
