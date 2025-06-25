@@ -147,8 +147,6 @@ qx.Class.define("osparc.conversation.MessageUI", {
     },
 
     __applyMessage: function(message) {
-      this._removeAll();
-
       const isMyMessage = this.self().isMyMessage(message);
       this._getLayout().setColumnFlex(isMyMessage ? 0 : 2, 3); // spacer
 
