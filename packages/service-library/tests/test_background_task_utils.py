@@ -13,7 +13,7 @@ from unittest import mock
 
 import arrow
 import pytest
-from servicelib.async_utils import cancel_wait_task
+from common_library.async_tools import cancel_wait_task
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase

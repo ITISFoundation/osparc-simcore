@@ -8,6 +8,7 @@ import logging
 from collections.abc import AsyncIterator, Callable
 
 from aiohttp import web
+from common_library.async_tools import cancel_wait_task
 from models_library.users import UserID
 from servicelib.logging_utils import get_log_record_extra, log_context
 from tenacity import retry
@@ -107,10 +108,6 @@ def create_background_task_for_trial_accounts(
         yield
 
         # tear-down
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            assert task.cancelled()  # nosec
+        await cancel_wait_task(task)
 
     return _cleanup_ctx_fun
