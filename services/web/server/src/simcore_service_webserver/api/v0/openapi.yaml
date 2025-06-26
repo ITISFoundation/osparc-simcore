@@ -4608,6 +4608,20 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/ProjectTypeAPI'
+          default: all
+      - name: template_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
+          title: Template Type
       - name: text
         in: query
         required: false
