@@ -7,7 +7,7 @@ from common_library.pydantic_validators import (
     validate_numeric_string_as_timedelta,
 )
 from faker import Faker
-from pydantic import BeforeValidator, Field
+from pydantic import BeforeValidator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
@@ -17,7 +17,7 @@ def test_validate_legacy_timedelta(monkeypatch: pytest.MonkeyPatch, faker: Faker
         APP_NAME: str
         REQUEST_TIMEOUT: Annotated[
             timedelta, BeforeValidator(_validate_legacy_timedelta_str)
-        ] = Field(default=timedelta(hours=1))
+        ] = timedelta(hours=1)
 
         model_config = SettingsConfigDict()
 
@@ -45,7 +45,7 @@ def test_validate_timedelta_in_legacy_mode(
 ):
     class Settings(BaseSettings):
         APP_NAME: str
-        REQUEST_TIMEOUT: timedelta = Field(default=timedelta(seconds=40))
+        REQUEST_TIMEOUT: timedelta = timedelta(seconds=40)
 
         _validate_request_timeout = validate_numeric_string_as_timedelta(
             "REQUEST_TIMEOUT"

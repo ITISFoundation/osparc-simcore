@@ -8,6 +8,7 @@ from models_library.conversations import (
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
+    ConversationName,
     ConversationPatchDB,
     ConversationType,
 )
@@ -87,7 +88,7 @@ async def update_project_conversation(
     project_uuid: ProjectID,
     conversation_id: ConversationID,
     # attributes
-    name: str,
+    name: ConversationName,
 ) -> ConversationGetDB:
     await check_user_project_permission(
         app,
@@ -98,6 +99,7 @@ async def update_project_conversation(
     )
     return await conversations_service.update_conversation(
         app,
+        project_id=project_uuid,
         conversation_id=conversation_id,
         updates=ConversationPatchDB(name=name),
     )
@@ -119,7 +121,11 @@ async def delete_project_conversation(
         permission="read",
     )
     await conversations_service.delete_conversation(
-        app, conversation_id=conversation_id
+        app,
+        product_name=product_name,
+        project_id=project_uuid,
+        user_id=user_id,
+        conversation_id=conversation_id,
     )
 
 

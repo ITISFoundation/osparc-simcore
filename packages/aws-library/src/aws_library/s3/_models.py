@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from typing import TypeAlias, cast
+from typing import Annotated, TypeAlias, cast
 
 from models_library.api_schemas_storage.storage_schemas import ETag
 from models_library.basic_types import SHA256Str
@@ -54,9 +54,10 @@ class S3MetaData(BaseModel, frozen=True):
 
 class S3DirectoryMetaData(BaseModel, frozen=True):
     prefix: S3ObjectPrefix
-    size: ByteSize | None = Field(
-        ..., description="Size of the directory if computed, None if unknown"
-    )
+    size: Annotated[
+        ByteSize | None,
+        Field(description="Size of the directory if computed, None if unknown"),
+    ]
 
     def as_path(self) -> Path:
         return self.prefix

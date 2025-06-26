@@ -16,12 +16,10 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
-from ..projects._groups_repository import list_project_groups
-from ..users._users_service import get_users_in_group
-
 # Import or define SocketMessageDict
 from ..users.api import get_user_primary_group_id
 from . import _conversation_message_repository
+from ._conversation_service import _get_recipients
 from ._socketio import (
     notify_conversation_message_created,
     notify_conversation_message_deleted,
@@ -29,16 +27,6 @@ from ._socketio import (
 )
 
 _logger = logging.getLogger(__name__)
-
-
-async def _get_recipients(app: web.Application, project_id: ProjectID) -> set[UserID]:
-    groups = await list_project_groups(app, project_id=project_id)
-    return {
-        user
-        for group in groups
-        if group.read
-        for user in await get_users_in_group(app, gid=group.gid)
-    }
 
 
 async def create_message(
