@@ -52,7 +52,7 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
       const introText = this.__makeItPublic ?
         this.tr("Share your project with the entire community as a Public Project. This makes it discoverable and reusable by others, encouraging collaboration and inspiration.")
         :
-        this.tr("Save the current state of your project as a reusable Template. Templates let you branch off easily and start new workflows.");
+        this.tr("Save the current state of your project as a reusable Template. Templates let you branch off easily and start new workflows. You can later decide with whom to share it.");
       this._add(new qx.ui.basic.Label(introText).set({
         font: "text-14",
         rich: true,
