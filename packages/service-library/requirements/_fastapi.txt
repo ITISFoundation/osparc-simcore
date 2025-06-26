@@ -9,6 +9,7 @@ asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
 certifi==2025.6.15
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   httpx
 click==8.2.1
@@ -30,6 +31,7 @@ fastapi-lifespan-manager==0.1.4
     # via -r requirements/_fastapi.in
 h11==0.16.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   httpcore
     #   uvicorn
 h2==4.2.0
@@ -42,6 +44,7 @@ httptools==0.6.4
     # via uvicorn
 httpx==0.28.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_fastapi.in
     #   fastapi
 hyperframe==6.1.0
@@ -54,7 +57,9 @@ idna==3.10
 importlib-metadata==8.7.0
     # via opentelemetry-api
 jinja2==3.1.6
-    # via fastapi
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 markdown-it-py==3.0.0
     # via rich
 markupsafe==3.0.2
@@ -95,7 +100,9 @@ packaging==25.0
 prometheus-client==0.22.1
     # via -r requirements/_fastapi.in
 pydantic==2.11.7
-    # via fastapi
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 pydantic-core==2.33.2
     # via pydantic
 pygments==2.19.2
@@ -105,7 +112,9 @@ python-dotenv==1.1.1
 python-multipart==0.0.20
     # via fastapi
 pyyaml==6.0.2
-    # via uvicorn
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   uvicorn
 rich==14.0.0
     # via
     #   rich-toolkit
@@ -117,7 +126,9 @@ shellingham==1.5.4
 sniffio==1.3.1
     # via anyio
 starlette==0.46.2
-    # via fastapi
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 typer==0.16.0
     # via fastapi-cli
 typing-extensions==4.14.0

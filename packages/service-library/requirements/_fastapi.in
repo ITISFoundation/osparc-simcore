@@ -2,7 +2,8 @@
 # Dependencies for exclusive to fastapi-based services
 #
 #
-
+--constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
 fastapi[standard]
 fastapi-lifespan-manager
