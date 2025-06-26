@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import json
 import logging
 import random
@@ -86,6 +87,13 @@ pytest_plugins = [
     "pytest_simcore.simcore_webserver_groups_fixtures",
     "pytest_simcore.socketio_client",
 ]
+
+
+@pytest.fixture
+async def exit_stack() -> AsyncIterator[contextlib.AsyncExitStack]:
+    """Provides an AsyncExitStack that gets cleaned up after each test"""
+    async with contextlib.AsyncExitStack() as stack:
+        yield stack
 
 
 @pytest.fixture(scope="session")

@@ -311,7 +311,7 @@ async def test_share_project_with_roles(
 ):
     assert client.app
 
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     # Attempt to share the project
     url = client.app.router["share_project"].url_for(
