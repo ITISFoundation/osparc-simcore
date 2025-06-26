@@ -40,7 +40,7 @@ async def periodic_task_lifespan(
         name=task_name,
     )
 
-    # prevents premature garbage collection of the task
+    # Keeping a reference in app's state to prevent premature garbage collection of the task
     app_task_key = f"gc-tasks/{task_name}"
     if app_task_key in app:
         msg = f"Task {task_name} is already registered in the app state"
