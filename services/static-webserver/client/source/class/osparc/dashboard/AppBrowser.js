@@ -132,7 +132,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
       this._resourcesContainer.getNoResourcesFoundLabel().set({
         value: this.tr("No Apps found"),
-        visibility: this._resourcesList.length === 0 ? "visible" : "excluded",
+        visibility: cards.length === 0 ? "visible" : "excluded",
       });
     },
 

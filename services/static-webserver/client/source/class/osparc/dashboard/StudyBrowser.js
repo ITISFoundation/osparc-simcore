@@ -421,7 +421,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourcesContainer.getNoResourcesFoundLabel().set({
         value: this.tr("No Projects found"),
-        visibility: this._resourcesList.length === 0 ? "visible" : "excluded"
+        visibility: cards.length === 0 ? "visible" : "excluded",
       });
     },
 

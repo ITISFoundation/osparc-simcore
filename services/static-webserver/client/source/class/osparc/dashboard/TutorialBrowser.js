@@ -119,7 +119,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
       this._resourcesContainer.getNoResourcesFoundLabel().set({
         value: this.tr("No Tutorials found"),
-        visibility: this._resourcesList.length === 0 ? "visible" : "excluded"
+        visibility: cards.length === 0 ? "visible" : "excluded",
       });
     },
 
