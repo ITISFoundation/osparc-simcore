@@ -27,8 +27,8 @@ from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers import webserver_projects
 from pytest_simcore.helpers.webserver_login import log_client_in
-from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
@@ -226,7 +226,25 @@ async def login_guest_user(
     )
 
 
-async def new_project(
+async def _setup_project_cleanup(
+    client: TestClient,
+    project: dict[str, Any],
+    exit_stack: contextlib.AsyncExitStack,
+) -> None:
+    """Helper function to setup project cleanup after test completion"""
+
+    async def _delete_project(project_uuid):
+        assert client.app
+        with contextlib.suppress(ProjectNotFoundError):
+            # Sometimes the test deletes the project
+            await _projects_repository.delete_project(
+                client.app, project_uuid=project_uuid
+            )
+
+    exit_stack.push_async_callback(_delete_project, ProjectID(project["uuid"]))
+
+
+async def create_standard_project(
     client: TestClient,
     user: UserInfoDict,
     product_name: str,
@@ -235,12 +253,12 @@ async def new_project(
     access_rights: dict[str, Any] | None = None,
 ):
     """returns a project for the given user"""
-    project_data = empty_project_data()
+    project_data = webserver_projects.empty_project_data()
     if access_rights is not None:
         project_data["accessRights"] = access_rights
 
     assert client.app
-    project = await create_project(
+    project = await webserver_projects.create_project(
         client.app,
         project_data,
         user["id"],
@@ -259,25 +277,16 @@ async def new_project(
                 delete=permissions["delete"],
             )
 
-    # ensures the project is removed after the test
-    async def _delete_project(project_uuid):
-        assert client.app
-        with contextlib.suppress(ProjectNotFoundError):
-            # Sometimes the test deletes the project
-            await _projects_repository.delete_project(
-                client.app, project_uuid=project_uuid
-            )
-
-    exit_stack.push_async_callback(_delete_project, ProjectID(project["uuid"]))
-
+    await _setup_project_cleanup(client, project, exit_stack)
     return project
 
 
-async def get_template_project(
+async def create_template_project(
     client: TestClient,
     user: UserInfoDict,
     product_name: str,
     project_data: ProjectDict,
+    exit_stack: contextlib.AsyncExitStack,
     access_rights=None,
 ):
     """returns a tempalte shared with all"""
@@ -292,13 +301,16 @@ async def get_template_project(
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
 
-    return await create_project(
+    project = await webserver_projects.create_project(
         client.app,
         project_data,
         user["id"],
         product_name=product_name,
         default_project_json=None,
     )
+
+    await _setup_project_cleanup(client, project, exit_stack)
+    return project
 
 
 async def get_group(client: TestClient, user: UserInfoDict):
@@ -513,7 +525,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     assert client.app
     logged_guest_user = await login_guest_user(client, exit_stack=exit_stack)
-    empty_guest_user_project = await new_project(
+    empty_guest_user_project = await create_standard_project(
         client,
         logged_guest_user,
         osparc_product_name,
@@ -544,7 +556,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     """After a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
     assert client.app
     logged_guest_user = await login_guest_user(client, exit_stack=exit_stack)
-    empty_guest_user_project = await new_project(
+    empty_guest_user_project = await create_standard_project(
         client,
         logged_guest_user,
         osparc_product_name,
@@ -600,14 +612,18 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     number_of_templates = 5
     logged_user = await login_user(client, exit_stack=exit_stack)
     user_projects = [
-        await new_project(
+        await create_standard_project(
             client, logged_user, osparc_product_name, tests_data_dir, exit_stack
         )
         for _ in range(number_of_projects)
     ]
     user_template_projects = [
-        await get_template_project(
-            client, logged_user, osparc_product_name, fake_project
+        await create_template_project(
+            client,
+            logged_user,
+            osparc_product_name,
+            fake_project,
+            exit_stack=exit_stack,
         )
         for _ in range(number_of_templates)
     ]
@@ -661,7 +677,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
@@ -706,7 +722,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     assert q_u3
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
@@ -757,7 +773,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
@@ -833,7 +849,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
@@ -919,7 +935,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     assert q_u3
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
@@ -997,7 +1013,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     assert q_u3
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
@@ -1088,7 +1104,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     assert q_u3
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
@@ -1138,7 +1154,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     await invite_user_to_group(client, owner=u1, invitee=u3, group=g1)
 
     # u1 creates project and shares it with g1
-    project = await new_project(
+    project = await create_standard_project(
         client,
         u1,
         osparc_product_name,
