@@ -32,7 +32,8 @@ pytest_plugins = [
 
 class FakeAppServer(BaseAppServer):
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
-        pass
+        startup_completed_event.set()
+        await self.shutdown_event.wait()  # wait for shutdown
 
 
 @pytest.fixture
