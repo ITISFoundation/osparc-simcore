@@ -4,7 +4,11 @@ import logging
 import asyncpg
 from aiohttp import web
 from pydantic import ValidationError
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import (
+    ModuleCategory,
+    app_module_setup,
+    ensure_single_setup,
+)
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
@@ -61,11 +65,13 @@ async def _setup_login_storage_ctx(app: web.Application):
         yield  # ----------------
 
 
+@ensure_single_setup(f"{__name__}.setup_login_storage", logger=log)
 def setup_login_storage(app: web.Application):
     if _setup_login_storage_ctx not in app.cleanup_ctx:
         app.cleanup_ctx.append(_setup_login_storage_ctx)
 
 
+@ensure_single_setup(f"{__name__}._setup_login_options", logger=log)
 def _setup_login_options(app: web.Application):
     settings: SMTPSettings = get_email_plugin_settings(app)
 
