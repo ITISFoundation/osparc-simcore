@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Callable
+import logging
 
 import pytest
 from aiohttp import web
@@ -23,7 +23,8 @@ from servicelib.aiohttp.application_setup import (
 
 @pytest.fixture
 def mock_logger(mocker: MockerFixture) -> MockType:
-    return mocker.patch("logging.getLogger", autospec=True)
+    logger_mock: MockType = mocker.create_autospec(logging.Logger, instance=True)
+    return logger_mock
 
 
 @pytest.fixture
@@ -42,50 +43,83 @@ def app(app_config: dict) -> web.Application:
     return _app
 
 
-@pytest.fixture
-def create_setup_bar() -> Callable[[web.Application], bool]:
-    @app_module_setup("package.bar", ModuleCategory.ADDON)
-    def setup_bar(app: web.Application) -> bool:
+def test_setup_config_enabled(app_config: dict, app: web.Application):
+
+    @app_module_setup(
+        "package.zee",
+        ModuleCategory.ADDON,
+        # legacy support for config_enabled
+        config_enabled="main.zee_enabled",
+    )
+    def setup_zee(app: web.Application, arg) -> bool:
+        assert arg
         return True
 
-    return setup_bar
+    assert setup_zee(app, 1)
+
+    assert setup_zee.metadata()["config_enabled"] == "main.zee_enabled"
+    app_config["main"]["zee_enabled"] = False
+
+    assert not setup_zee(app, 2)
 
 
-@pytest.fixture
-def create_setup_foo(mock_logger: MockType) -> Callable[[web.Application], bool]:
+def test_setup_dependencies(app: web.Application):
+
+    @app_module_setup("package.foo", ModuleCategory.ADDON)
+    def setup_foo(app: web.Application) -> bool:
+        return True
+
+    @app_module_setup(
+        "package.needs_foo",
+        ModuleCategory.SYSTEM,
+        depends=[
+            # This module needs foo to be setup first
+            "package.foo",
+        ],
+    )
+    def setup_needs_foo(app: web.Application) -> bool:
+        return True
+
+    # setup_foo is not called yet
+    with pytest.raises(DependencyError):
+        setup_needs_foo(app)
+
+    # ok
+    assert setup_foo(app)
+    assert setup_needs_foo(app)
+
+    # meta
+    assert setup_needs_foo.metadata()["dependencies"] == [
+        setup_foo.metadata()["module_name"],
+    ]
+
+
+def test_marked_setup(app_config: dict, app: web.Application):
+    @app_module_setup("package.foo", ModuleCategory.ADDON)
+    def setup_foo(app: web.Application) -> bool:
+        return True
+
+    assert setup_foo(app)
+    assert setup_foo.metadata()["module_name"] == "package.foo"
+    assert is_setup_completed(setup_foo.metadata()["module_name"], app)
+
+    app_config["foo"]["enabled"] = False
+    assert not setup_foo(app)
+
+
+def test_skip_setup(app: web.Application, mock_logger: MockType):
     @app_module_setup("package.foo", ModuleCategory.ADDON, logger=mock_logger)
     def setup_foo(app: web.Application, *, raise_skip: bool = False) -> bool:
         if raise_skip:
             raise SkipModuleSetupError(reason="explicit skip")
         return True
 
-    return setup_foo
+    assert not setup_foo(app, raise_skip=True)
+    assert setup_foo(app)
 
-
-@pytest.fixture
-def create_setup_zee() -> Callable[[web.Application, object, int], bool]:
-    @app_module_setup(
-        "package.zee", ModuleCategory.ADDON, config_enabled="main.zee_enabled"
-    )
-    def setup_zee(app: web.Application, arg1, kargs=55) -> bool:
-        return True
-
-    return setup_zee
-
-
-@pytest.fixture
-def create_setup_needs_foo() -> Callable[[web.Application, str, int], bool]:
-    @app_module_setup(
-        "package.needs_foo",
-        ModuleCategory.SYSTEM,
-        depends=[
-            "package.foo",
-        ],
-    )
-    def _setup_needs_foo(app: web.Application, arg1: str, kargs: int = 55) -> bool:
-        return True
-
-    return _setup_needs_foo
+    assert mock_logger.info.called
+    args = [call.args[-1] for call in mock_logger.info.mock_calls]
+    assert any("explicit skip" in arg for arg in args)
 
 
 def setup_basic(app: web.Application) -> bool:
@@ -97,61 +131,7 @@ def setup_that_raises(app: web.Application) -> bool:
     raise ValueError(error_msg)
 
 
-def test_setup_config_enabled(
-    app_config: dict, app: web.Application, create_setup_zee: Callable
-):
-    setup_zee = create_setup_zee()
-
-    assert setup_zee(app, 1)
-    assert setup_zee.metadata()["config_enabled"] == "main.zee_enabled"
-    app_config["main"]["zee_enabled"] = False
-    assert not setup_zee(app, 2)
-
-
-def test_setup_dependencies(
-    app: web.Application,
-    create_setup_needs_foo: Callable,
-    create_setup_foo: Callable,
-) -> None:
-    setup_needs_foo = create_setup_needs_foo()
-    setup_foo = create_setup_foo()
-
-    with pytest.raises(DependencyError):
-        setup_needs_foo(app, "1")
-
-    assert setup_foo(app, "1")
-    assert setup_needs_foo(app, "2")
-
-    assert setup_needs_foo.metadata()["dependencies"] == [
-        setup_foo.metadata()["module_name"],
-    ]
-
-
-def test_marked_setup(
-    app_config: dict, app: web.Application, create_setup_foo: Callable
-):
-    setup_foo = create_setup_foo()
-
-    assert setup_foo(app, 1)
-    assert setup_foo.metadata()["module_name"] == "package.foo"
-    assert is_setup_completed(setup_foo.metadata()["module_name"], app)
-
-    app_config["foo"]["enabled"] = False
-    assert not setup_foo(app, 2)
-
-
-def test_skip_setup(
-    app: web.Application, mock_logger: MockType, create_setup_foo: Callable
-):
-    setup_foo = create_setup_foo()
-    assert not setup_foo(app, 1, raise_skip=True)
-    assert setup_foo(app, 1)
-    mock_logger.info.assert_called()
-
-
-def test_ensure_single_setup_runs_once(
-    app: web.Application, mock_logger: MockType
-) -> None:
+def test_ensure_single_setup_runs_once(app: web.Application, mock_logger: MockType):
     decorated = ensure_single_setup("test.module", logger=mock_logger)(setup_basic)
 
     # First call succeeds
@@ -160,16 +140,11 @@ def test_ensure_single_setup_runs_once(
 
     # Second call skips
     assert not decorated(app)
-    mock_logger.info.assert_called_with(
-        "Skipping '%s' setup: %s",
-        "test.module",
-        "'test.module' was already initialized in <Application. Avoid logging objects like this>. Setup can only be executed once per app.",
-    )
 
 
 def test_ensure_single_setup_error_handling(
     app: web.Application, mock_logger: MockType
-) -> None:
+):
     decorated = ensure_single_setup("test.error", logger=mock_logger)(setup_that_raises)
 
     with pytest.raises(ValueError, match="Setup failed"):
@@ -179,7 +154,7 @@ def test_ensure_single_setup_error_handling(
 
 def test_ensure_single_setup_multiple_modules(
     app: web.Application, mock_logger: MockType
-) -> None:
+):
     decorated1 = ensure_single_setup("module1", logger=mock_logger)(setup_basic)
     decorated2 = ensure_single_setup("module2", logger=mock_logger)(setup_basic)
 

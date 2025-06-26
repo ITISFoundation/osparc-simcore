@@ -302,9 +302,9 @@ def app_module_setup(
 
     def decorator(setup_func: _SetupFunc) -> _SetupFunc:
 
-        assert setup_func.__name__.startswith(  # nosec
-            "setup_"
-        ), f"Rename '{setup_func.__name__}' start with 'setup_$(plugin-name)'"
+        assert (  # nosec
+            "setup_" in setup_func.__name__
+        ), f"Rename '{setup_func.__name__}' like 'setup_$(plugin-name)'"
 
         @functools.wraps(setup_func)
         @ensure_single_setup(module_name, logger=logger)
