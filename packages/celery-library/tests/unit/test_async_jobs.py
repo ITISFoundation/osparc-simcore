@@ -11,6 +11,7 @@ from typing import Any, Final
 import pytest
 from celery import Celery, Task
 from celery.contrib.testing.worker import TestWorkController
+from celery_library.rpc import _async_jobs
 from celery_library.task import register_task
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
@@ -131,6 +132,9 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 async def register_rpc_routes(
     async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, celery_task_manager: TaskManager
 ) -> None:
+    await async_jobs_rabbitmq_rpc_client.register_router(
+        _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
+    )
     await async_jobs_rabbitmq_rpc_client.register_router(
         router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
     )
