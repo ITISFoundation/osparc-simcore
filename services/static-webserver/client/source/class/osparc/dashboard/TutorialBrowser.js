@@ -67,8 +67,6 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     },
 
     __tutorialStateReceived: function(templateId, state, errors) {
-      osparc.store.Templates.getTutorials()
-      // OM follow here
       const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;
