@@ -27,7 +27,8 @@ from models_library.projects_state import ProjectState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.common_headers import (

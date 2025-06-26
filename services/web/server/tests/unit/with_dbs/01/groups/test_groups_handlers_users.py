@@ -14,11 +14,12 @@ from models_library.api_schemas_webserver.groups import GroupGet, GroupUserGet
 from models_library.groups import AccessRightsDict, Group, StandardGroupCreate
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.status_codes_utils import is_2xx_success
 from simcore_postgres_database.models.users import UserRole
