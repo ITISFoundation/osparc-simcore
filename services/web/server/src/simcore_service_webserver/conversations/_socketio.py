@@ -150,8 +150,8 @@ async def notify_conversation_deleted(
     *,
     recipients: set[UserID],
     product_name: ProductName,
-    project_id: ProjectID,
     user_group_id: GroupID,
+    project_id: ProjectID,
     conversation_id: ConversationID,
 ) -> None:
     notification_message = SocketMessageDict(
