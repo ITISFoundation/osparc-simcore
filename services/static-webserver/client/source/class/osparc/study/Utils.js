@@ -251,12 +251,18 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     extractComputationalServices: function(workbench) {
-      const computationals = Object.values(workbench).filter(srv => osparc.data.model.Node.isComputational(srv));
+      const computationals = Object.values(workbench).filter(node => {
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
+        return metadata && osparc.data.model.Node.isComputational(metadata);
+      });
       return computationals;
     },
 
     extractDynamicServices: function(workbench) {
-      const dynamics = Object.values(workbench).filter(srv => osparc.data.model.Node.isDynamic(srv));
+      const dynamics = Object.values(workbench).filter(node => {
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
+        return metadata && osparc.data.model.Node.isDynamic(metadata);
+      });
       return dynamics;
     },
 
