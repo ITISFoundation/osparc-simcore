@@ -345,7 +345,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
           }
           // delay the next request to avoid flooding the server
-          setTimeout(() => this._moreResourcesRequired(), 200);
+          setTimeout(() => this._moreResourcesRequired(), 100);
         });
     },
 
