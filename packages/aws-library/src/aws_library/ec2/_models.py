@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Annotated, Final, TypeAlias
 
 import sh  # type: ignore[import-untyped]
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.docker import DockerGenericTag
 from pydantic import (
     BaseModel,
@@ -143,23 +144,32 @@ CommandStr: TypeAlias = str
 
 class EC2InstanceBootSpecific(BaseModel):
     ami_id: AMIIdStr
-    custom_boot_scripts: list[CommandStr] = Field(
-        default_factory=list,
-        description="script(s) to run on EC2 instance startup (be careful!), "
-        "each entry is run one after the other using '&&' operator",
-    )
-    pre_pull_images: list[DockerGenericTag] = Field(
-        default_factory=list,
-        description="a list of docker image/tags to pull on instance cold start",
-    )
-    pre_pull_images_cron_interval: datetime.timedelta = Field(
-        default=datetime.timedelta(minutes=30),
-        description="time interval between pulls of images (minimum is 1 minute) "
-        "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
-    )
-    buffer_count: NonNegativeInt = Field(
-        default=0, description="number of buffer EC2s to keep (defaults to 0)"
-    )
+    custom_boot_scripts: Annotated[
+        list[CommandStr],
+        Field(
+            default_factory=list,
+            description="script(s) to run on EC2 instance startup (be careful!), "
+            "each entry is run one after the other using '&&' operator",
+        ),
+    ] = DEFAULT_FACTORY
+    pre_pull_images: Annotated[
+        list[DockerGenericTag],
+        Field(
+            default_factory=list,
+            description="a list of docker image/tags to pull on instance cold start",
+        ),
+    ] = DEFAULT_FACTORY
+    pre_pull_images_cron_interval: Annotated[
+        datetime.timedelta,
+        Field(
+            description="time interval between pulls of images (minimum is 1 minute) "
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        ),
+    ] = datetime.timedelta(minutes=30)
+    buffer_count: Annotated[
+        NonNegativeInt,
+        Field(description="number of buffer EC2s to keep (defaults to 0)"),
+    ] = 0
 
     @field_validator("custom_boot_scripts")
     @classmethod
