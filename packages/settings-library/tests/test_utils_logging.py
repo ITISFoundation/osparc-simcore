@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
@@ -17,17 +18,19 @@ def test_mixin_logging(monkeypatch):
         SC_BOOT_MODE: BootModeEnum | None = None
 
         # LOGGING
-        LOG_LEVEL: str = Field(
-            "WARNING",
-            validation_alias=AliasChoices(
-                "APPNAME_LOG_LEVEL",
-                "LOG_LEVEL",
+        LOG_LEVEL: Annotated[
+            str,
+            Field(
+                validation_alias=AliasChoices(
+                    "APPNAME_LOG_LEVEL",
+                    "LOG_LEVEL",
+                ),
             ),
-        )
+        ] = "WARNING"
 
-        APPNAME_DEBUG: bool = Field(
-            default=False, description="Starts app in debug mode"
-        )
+        APPNAME_DEBUG: Annotated[
+            bool, Field(description="Starts app in debug mode")
+        ] = False
 
         @field_validator("LOG_LEVEL", mode="before")
         @classmethod

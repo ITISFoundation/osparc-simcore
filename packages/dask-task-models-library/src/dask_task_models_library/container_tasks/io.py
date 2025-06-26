@@ -75,13 +75,15 @@ class FilePortSchema(PortSchema):
 
 class FileUrl(BaseModel):
     url: AnyUrl
-    file_mapping: str | None = Field(
-        default=None,
-        description="Local file relpath name (if given), otherwise it takes the url filename",
-    )
-    file_mime_type: str | None = Field(
-        default=None, description="the file MIME type", pattern=MIME_TYPE_RE
-    )
+    file_mapping: Annotated[
+        str | None,
+        Field(
+            description="Local file relpath name (if given), otherwise it takes the url filename"
+        ),
+    ] = None
+    file_mime_type: Annotated[
+        str | None, Field(description="the file MIME type", pattern=MIME_TYPE_RE)
+    ] = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
