@@ -73,8 +73,8 @@ qx.Class.define("osparc.ui.window.Window", {
         showMinimize: false,
         showMaximize: false,
         resizable: true,
-        width: width,
-        minHeight: minHeight,
+        width,
+        minHeight,
         maxHeight: Math.max(minHeight, document.documentElement.clientHeight),
         modal: true,
         clickAwayClose: true
