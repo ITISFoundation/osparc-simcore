@@ -72,9 +72,8 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = [
     "minio",
-    # Only for development purposes
-    # "adminer",
-    # "redis-commander",
+    "adminer",
+    "redis-commander",
 ]
 
 
