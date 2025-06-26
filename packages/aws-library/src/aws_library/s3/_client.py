@@ -94,7 +94,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
                 # don't need them, improving performance.
                 # See: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3.html#calculating-checksums
                 signature_version="s3v4",
-                request_checksum_calculation="when_required",  # type: ignore[call-arg]
+                request_checksum_calculation="when_required",
             )
             session_client = session.client(  # type: ignore[call-overload]
                 "s3",
