@@ -21,6 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   construct: function(resourceData) {
     this.base(arguments);
 
+    this.__widgets = [];
     this.__resourceData = resourceData;
 
     let latestPromise = null;
@@ -115,6 +116,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         ...osparc.ui.window.TabbedWindow.DEFAULT_PROPS,
       });
       resourceDetails.addListener("closeWindow", () => window.close());
+      window.addListener("close", () => {
+        // trigger children's destroy functions
+        resourceDetails.destroy();
+      });
       return {
         resourceDetails,
         window,
@@ -144,6 +149,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   members: {
     __resourceData: null,
     __resourceModel: null,
+    __widgets: null,
     __infoPage: null,
     __servicesUpdatePage: null,
     __conversationsPage: null,
@@ -430,6 +436,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
     },
 
+    __addPage: function(page) {
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
+    },
+
     __addInfoPage: function() {
       const id = "Information";
       const title = this.tr("Overview");
@@ -459,11 +470,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         infoCard.addListener("openClassifiers", () => this.openClassifiers());
         infoCard.addListener("openQuality", () => this.openQuality());
         page.addToContent(infoCard);
+        this.__widgets.push(infoCard);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addBillingPage: function() {
@@ -498,11 +509,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           }, this);
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
+          this.__widgets.push(billingSettings);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        const tabsView = this.getChildControl("tabs-view");
-        tabsView.add(page);
+        this.__addPage(page);
       } else if (osparc.utils.Resources.isService(resourceData)) {
         const id = "Tiers";
         const title = this.tr("Tiers");
@@ -514,11 +525,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           const pricingUnitsList = new osparc.service.PricingUnitsList(resourceData);
           const pricingUnitsListScroll = new qx.ui.container.Scroll(pricingUnitsList);
           page.addToContent(pricingUnitsListScroll);
+          this.__widgets.push(pricingUnitsList);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        const tabsView = this.getChildControl("tabs-view");
-        tabsView.add(page);
+        this.__addPage(page);
       }
     },
 
@@ -547,11 +558,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const resourceModel = this.__resourceModel;
         const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
+        this.__widgets.push(preview);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addConversationsPage: function() {
@@ -569,11 +580,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const lazyLoadContent = () => {
         const conversations = new osparc.study.Conversations(resourceData);
         page.addToContent(conversations);
+        this.__widgets.push(conversations);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addPermissionsPage: function() {
@@ -607,11 +618,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           }, this);
         }
         page.addToContent(collaboratorsView);
+        this.__widgets.push(collaboratorsView);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addClassifiersPage: function() {
@@ -643,11 +654,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           classifiers = new osparc.metadata.ClassifiersViewer(resourceData);
         }
         page.addToContent(classifiers);
+        this.__widgets.push(classifiers);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addQualityPage: function() {
@@ -673,11 +684,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             this.__fireUpdateEvent(updatedData);
           });
           page.addToContent(qualityEditor);
+          this.__widgets.push(qualityEditor);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        const tabsView = this.getChildControl("tabs-view");
-        tabsView.add(page);
+        this.__addPage(page);
       }
     },
 
@@ -704,11 +715,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           this.__fireUpdateEvent(resourceData, updatedData);
         }, this);
         page.addToContent(tagManager);
+        this.__widgets.push(tagManager);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addServicesUpdatePage: function() {
@@ -734,11 +745,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           this.__fireUpdateEvent(resourceData, updatedData);
         });
         page.addToContent(servicesUpdate);
+        this.__widgets.push(servicesUpdate);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addServicesBootOptionsPage: function() {
@@ -767,6 +778,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           this.__fireUpdateEvent(resourceData, updatedData);
         });
         page.addToContent(servicesBootOpts);
+        this.__widgets.push(servicesBootOpts);
 
         if (
           osparc.utils.Resources.isStudy(resourceData) ||
@@ -788,8 +800,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addPublishPage: function() {
@@ -823,11 +834,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           toolbar.add(publishTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
+          this.__widgets.push(saveAsTemplate);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        const tabsView = this.getChildControl("tabs-view");
-        tabsView.add(page);
+        this.__addPage(page);
       }
     },
 
@@ -862,11 +873,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           toolbar.add(createTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
+          this.__widgets.push(saveAsTemplate);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        const tabsView = this.getChildControl("tabs-view");
-        tabsView.add(page);
+        this.__addPage(page);
       }
     },
 
@@ -894,9 +905,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       toolbar.add(createFunctionButton);
       page.addToHeader(toolbar);
       page.addToContent(createFunction);
+      this.__widgets.push(createFunction);
 
-      const tabsView = this.getChildControl("tabs-view");
-      tabsView.add(page);
+      this.__addPage(page);
     },
 
     __addProjectFilesPopUp: function() {
@@ -940,6 +951,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         dataAccess.addListener("tap", () => osparc.jobs.ActivityOverview.popUpInWindow(resourceData));
         this.addWidgetToTabs(dataAccess);
       }
+    },
+
+    // overridden
+    destroy: function() {
+      this.__widgets.forEach(w => w.destroy());
+      this.base(arguments);
     },
   }
 });

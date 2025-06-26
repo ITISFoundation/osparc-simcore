@@ -52,6 +52,9 @@ qx.Class.define("osparc.study.Conversations", {
       const viewWidth = 600;
       const viewHeight = 700;
       const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
+      win.addListener("close", () => {
+        conversations.destroy();
+      }, this);
       return win;
     },
 
@@ -361,7 +364,8 @@ qx.Class.define("osparc.study.Conversations", {
       }
     },
 
-    destruct: function() {
+    // overridden
+    destroy: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       if (this.__wsHandlers) {
         this.__wsHandlers.forEach(({ eventName }) => {
@@ -369,6 +373,8 @@ qx.Class.define("osparc.study.Conversations", {
         });
         this.__wsHandlers = null;
       }
+
+      this.base(arguments);
     },
-  }
+  },
 });
