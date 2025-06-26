@@ -112,15 +112,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const title = resourceData.name;
       const window = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
         layout: new qx.ui.layout.Grow(),
+        ...osparc.ui.window.TabbedWindow.DEFAULT_PROPS,
       });
-      window.set(osparc.ui.window.TabbedWindow.DEFAULT_PROPS);
-      window.set({
-        width: this.WIDTH,
-        height: this.HEIGHT,
-      });
-      resourceDetails.addListener("closeWindow", () => {
-        window.close();
-      });
+      resourceDetails.addListener("closeWindow", () => window.close());
       return {
         resourceDetails,
         window,
