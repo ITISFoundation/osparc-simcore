@@ -277,17 +277,15 @@ class DirectorClient:
                     )
 
         # get org labels
-        result.update(
-            {
-                sl: labels[dl]
-                for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items()
-                if dl in labels
-            }
-        )
+        if service_build_details := {
+            sl: labels[dl]
+            for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items()
+            if dl in labels
+        }:
 
-        _logger.debug("Following service extras were compiled: %s", pformat(result))
+            result.update({"service_build_details": service_build_details})
 
-        return TypeAdapter(ServiceExtras).validate_python(result)
+        return TypeAdapter(ServiceExtras).validate_python(result, strict=True)
 
 
 async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
