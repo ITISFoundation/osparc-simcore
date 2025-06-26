@@ -1,12 +1,13 @@
 import datetime
 import uuid
 from dataclasses import dataclass
-from typing import Any
+from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
 import sqlalchemy
 import sqlalchemy.exc
 from common_library.async_tools import maybe_await
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from simcore_postgres_database.utils_aiosqlalchemy import map_db_exception
@@ -47,7 +48,9 @@ class ProjectNodesDuplicateNodeError(BaseProjectNodesError):
 
 class ProjectNodeCreate(BaseModel):
     node_id: uuid.UUID
-    required_resources: dict[str, Any] = Field(default_factory=dict)
+    required_resources: Annotated[dict[str, Any], Field(default_factory=dict)] = (
+        DEFAULT_FACTORY
+    )
     key: str
     version: str
     label: str

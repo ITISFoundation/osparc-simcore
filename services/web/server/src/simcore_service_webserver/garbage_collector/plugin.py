@@ -8,6 +8,7 @@ from ..application_settings import get_application_settings
 from ..login.plugin import setup_login_storage
 from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
+from ..redis import setup_redis
 from ..socketio.plugin import setup_socketio
 from . import _tasks_api_keys, _tasks_core, _tasks_trash, _tasks_users
 from .settings import get_plugin_settings
@@ -25,8 +26,12 @@ def setup_garbage_collector(app: web.Application) -> None:
     # for trashing
     setup_products(app)
 
+    # distributed exclusive periodic tasks
+    setup_redis(app)
+
     # - project-api needs access to db
     setup_projects_db(app)
+
     # - project needs access to socketio via notify_project_state_update
     setup_socketio(app)
     # - project needs access to user-api that is connected to login plugin
@@ -34,7 +39,7 @@ def setup_garbage_collector(app: web.Application) -> None:
 
     settings = get_plugin_settings(app)
 
-    app.cleanup_ctx.append(_tasks_core.run_background_task)
+    app.cleanup_ctx.append(_tasks_core.create_background_task_for_garbage_collection())
 
     set_parent_module_log_level(
         _logger.name, min(logging.INFO, get_application_settings(app).log_level)
