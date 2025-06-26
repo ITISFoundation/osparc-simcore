@@ -376,42 +376,29 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       if (this.__resourceData["resourceType"] === "function") {
         // for now, we only want the preview page
-        const page = this.__getPreviewPage();
-        if (page) {
-          tabsView.add(page);
-        }
+        this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
       }
 
-      // add Open service button
-      [
-        this.__getInfoPage,
-        this.__getBillingPage,
-        this.__getServicesUpdatePage,
-        this.__getServicesBootOptionsPage,
-        this.__getConversationsPage,
-        this.__getPermissionsPage,
-        this.__getPublishPage,
-        this.__getCreateTemplatePage,
-        this.__getCreateFunctionsPage,
-        this.__getTagsPage,
-        this.__getQualityPage,
-        this.__getClassifiersPage,
-        this.__getPreviewPage
-      ].forEach(pageCallee => {
-        if (pageCallee) {
-          const page = pageCallee.call(this);
-          if (page) {
-            tabsView.add(page);
-          }
-        }
-      });
+      this.__addInfoPage();
+      this.__addBillingPage();
+      this.__addServicesUpdatePage();
+      this.__addServicesBootOptionsPage();
+      this.__addConversationsPage();
+      this.__addPermissionsPage();
+      this.__addPublishPage();
+      this.__addCreateTemplatePage();
+      this.__addCreateFunctionsPage();
+      this.__addTagsPage();
+      this.__addQualityPage();
+      this.__addClassifiersPage();
+      this.__addPreviewPage();
 
       if (osparc.product.Utils.showComputationalActivity()) {
-        this.__getActivityOverviewPopUp();
+        this.__addActivityOverviewPopUp();
       }
-      this.__getProjectFilesPopUp();
+      this.__addProjectFilesPopUp();
 
       if (selectedTabId) {
         const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
@@ -443,7 +430,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
     },
 
-    __getInfoPage: function() {
+    __addInfoPage: function() {
       const id = "Information";
       const title = this.tr("Overview");
       const iconSrc = "@FontAwesome5Solid/info/22";
@@ -475,12 +462,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getBillingPage: function() {
+    __addBillingPage: function() {
       if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        return null;
+        return;
       }
 
       const resourceData = this.__resourceData;
@@ -513,7 +501,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        const tabsView = this.getChildControl("tabs-view");
+        tabsView.add(page);
       } else if (osparc.utils.Resources.isService(resourceData)) {
         const id = "Tiers";
         const title = this.tr("Tiers");
@@ -528,12 +517,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        const tabsView = this.getChildControl("tabs-view");
+        tabsView.add(page);
       }
-      return null;
     },
 
-    __getPreviewPage: function() {
+    __addPreviewPage: function() {
       const resourceData = this.__resourceData;
       if (
         osparc.utils.Resources.isService(resourceData) ||
@@ -541,7 +530,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         ["app", "guided", "standalone"].includes(osparc.study.Utils.getUiMode(resourceData))
       ) {
         // there is no pipelining or don't show it
-        return null;
+        return;
       }
 
       const id = "Pipeline";
@@ -561,13 +550,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getConversationsPage: function() {
+    __addConversationsPage: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
+        return;
       }
 
       const id = "Conversations";
@@ -582,10 +572,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getPermissionsPage: function() {
+    __addPermissionsPage: function() {
       const id = "Permissions";
       const title = this.tr("Sharing");
       const iconSrc = "@FontAwesome5Solid/share-alt/22";
@@ -619,16 +610,17 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getClassifiersPage: function() {
+    __addClassifiersPage: function() {
       if (!osparc.product.Utils.showClassifiers()) {
-        return null;
+        return;
       }
       const id = "Classifiers";
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
-        return null;
+        return;
       }
       const title = this.tr("Classifiers");
       const iconSrc = "@FontAwesome5Solid/search/22";
@@ -654,12 +646,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getQualityPage: function() {
+    __addQualityPage: function() {
       if (!osparc.product.Utils.showQuality()) {
-        return null;
+        return;
       }
 
       const resourceData = this.__resourceData;
@@ -683,18 +676,18 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        const tabsView = this.getChildControl("tabs-view");
+        tabsView.add(page);
       }
-      return null;
     },
 
-    __getTagsPage: function() {
+    __addTagsPage: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
+        return;
       }
       if (!osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
-        return null;
+        return;
       }
 
       const id = "Tags";
@@ -714,13 +707,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getServicesUpdatePage: function() {
+    __addServicesUpdatePage: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
+        return;
       }
 
       const id = "ServicesUpdate";
@@ -743,16 +737,17 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getServicesBootOptionsPage: function() {
+    __addServicesBootOptionsPage: function() {
       const resourceData = this.__resourceData;
       if (
         osparc.utils.Resources.isService(resourceData) ||
         !osparc.data.Permissions.getInstance().canDo("study.node.bootOptions.read")
       ) {
-        return null;
+        return;
       }
 
       const id = "ServicesBootOptions";
@@ -793,15 +788,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getPublishPage: function() {
+    __addPublishPage: function() {
       if (
         !osparc.utils.Resources.isStudy(this.__resourceData) ||
         !osparc.product.Utils.showPublicProjects()
       ) {
-        return null;
+        return;
       }
 
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
@@ -830,17 +826,17 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        const tabsView = this.getChildControl("tabs-view");
+        tabsView.add(page);
       }
-      return null;
     },
 
-    __getCreateTemplatePage: function() {
+    __addCreateTemplatePage: function() {
       if (
         !osparc.utils.Resources.isStudy(this.__resourceData) ||
         !osparc.product.Utils.showTemplates()
       ) {
-        return null;
+        return;
       }
 
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
@@ -869,22 +865,22 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        const tabsView = this.getChildControl("tabs-view");
+        tabsView.add(page);
       }
-      return null;
     },
 
-    __getCreateFunctionsPage: function() {
+    __addCreateFunctionsPage: function() {
       if (!osparc.data.Permissions.getInstance().checkFunctionPermissions("writeFunctions")) {
-        return null;
+        return;
       }
 
       if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
-        return null;
+        return;
       }
 
       if (!osparc.study.Utils.canCreateFunction(this.__resourceData["workbench"])) {
-        return null;
+        return;
       }
 
       const id = "CreateFunction";
@@ -898,10 +894,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       toolbar.add(createFunctionButton);
       page.addToHeader(toolbar);
       page.addToContent(createFunction);
-      return page;
+
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
     },
 
-    __getProjectFilesPopUp: function() {
+    __addProjectFilesPopUp: function() {
       const resourceData = this.__resourceData;
       if (!osparc.utils.Resources.isService(resourceData)) {
         const title = osparc.product.Utils.resourceTypeToAlias(resourceData["resourceType"], {firstUpperCase: true}) + this.tr(" Files");
@@ -925,7 +923,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
     },
 
-    __getActivityOverviewPopUp: function() {
+    __addActivityOverviewPopUp: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isStudy(resourceData)) {
         const title = this.tr("Activity Overview...");
