@@ -793,7 +793,7 @@ pydantic-extra-types==2.9.0
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.5.2
+pydantic-settings==2.7.0
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
