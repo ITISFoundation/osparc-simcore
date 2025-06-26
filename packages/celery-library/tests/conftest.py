@@ -3,7 +3,7 @@
 
 import datetime
 import threading
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Callable
 from functools import partial
 from typing import Any
 
@@ -15,10 +15,10 @@ from celery.worker.worker import WorkController
 from celery_library.common import create_task_manager
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
+from celery_library.types import register_celery_types
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
-from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisSettings
 
@@ -63,15 +63,6 @@ def app_environment(
             "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value(),
         },
     )
-
-
-@pytest.fixture
-async def async_jobs_rabbitmq_rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    rpc_client = await rabbitmq_rpc_client("pytest_async_jobs_rpc_client")
-    assert rpc_client
-    return rpc_client
 
 
 @pytest.fixture
@@ -134,6 +125,8 @@ async def celery_task_manager(
     celery_settings: CelerySettings,
     with_celery_worker: TestWorkController,
 ) -> CeleryTaskManager:
+    register_celery_types()
+
     return await create_task_manager(
         celery_app,
         celery_settings,

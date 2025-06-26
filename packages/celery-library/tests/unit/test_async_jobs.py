@@ -3,7 +3,7 @@
 
 import asyncio
 import pickle
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from enum import Enum
 from typing import Any, Final
@@ -48,6 +48,15 @@ class AccessRightError(OsparcErrorMixin, RuntimeError):
     msg_template: str = (
         "User {user_id} does not have access to file {file_id} with location {location_id}"
     )
+
+
+@pytest.fixture
+async def async_jobs_rabbitmq_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    rpc_client = await rabbitmq_rpc_client("pytest_async_jobs_rpc_client")
+    assert rpc_client
+    return rpc_client
 
 
 @pytest.fixture
