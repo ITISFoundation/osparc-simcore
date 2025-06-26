@@ -4,6 +4,7 @@ import logging
 
 from aiohttp import web
 from models_library.products import ProductName
+from models_library.users import UserID
 from servicelib.aiohttp.observer import (
     registed_observers_report,
     register_observer,
@@ -18,7 +19,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _on_user_disconnected(
-    user_id: int,
+    user_id: UserID,
     client_session_id: str,
     app: web.Application,
     product_name: ProductName,
@@ -38,8 +39,12 @@ async def _on_user_disconnected(
 
 
 async def _on_user_connected(
-    user_id: int, app: web.Application, product_name: str
+    user_id: UserID,
+    app: web.Application,
+    product_name: ProductName,
+    client_session_id: str,
 ) -> None:
+    assert client_session_id  # nosec
     # Get all user wallets and subscribe
     user_wallet = await wallets_service.list_wallets_for_user(
         app, user_id=user_id, product_name=product_name
