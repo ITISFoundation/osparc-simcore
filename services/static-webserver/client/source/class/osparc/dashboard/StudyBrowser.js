@@ -95,7 +95,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __foldersList: null,
     __loadingFolders: null,
     __loadingWorkspaces: null,
-    __dragWidget: null,
 
     // overridden
     initResources: function() {
