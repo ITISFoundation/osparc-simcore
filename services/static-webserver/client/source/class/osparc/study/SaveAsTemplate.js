@@ -56,8 +56,6 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
         introText += this.tr("All users will see it and can copy it.");
       } else {
         introText += this.tr("This project will be saved as a template.");
-        introText += "<br>";
-        introText += this.tr("The users you select will be able to see it and copy it.");
       }
       this._add(new qx.ui.basic.Label(introText).set({
         font: "text-14",
