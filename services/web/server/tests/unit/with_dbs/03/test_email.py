@@ -116,7 +116,7 @@ async def test_email_handlers(
     mocked_aiosmtplib: MagicMock,
     mocked_send_email: MagicMock,
 ):
-    assert logged_user["role"] == user_role.name
+    assert logged_user["role"] == user_role
     destination_email = faker.email()
 
     response = await client.post(

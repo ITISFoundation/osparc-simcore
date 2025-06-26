@@ -29,6 +29,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
