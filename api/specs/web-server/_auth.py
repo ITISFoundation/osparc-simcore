@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, status
 from models_library.api_schemas_webserver.auth import (
@@ -211,13 +211,16 @@ async def change_email(_body: ChangeEmailBody):
 
 
 class PasswordCheckSchema(BaseModel):
-    strength: confloat(ge=0.0, le=1.0) = Field(  # type: ignore
-        ...,
-        description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
-    )
-    rating: str | None = Field(
-        None, description="Human readable rating from infinitely weak to very strong"
-    )
+    strength: Annotated[
+        confloat(ge=0.0, le=1.0),
+        Field(
+            description="The strength of the password ranges from 0 (extremely weak) and 1 (extremely strong)",
+        ),
+    ]
+    rating: Annotated[
+        str | None,
+        Field(description="Human readable rating from infinitely weak to very strong"),
+    ] = None
     improvements: Any | None = None
 
 

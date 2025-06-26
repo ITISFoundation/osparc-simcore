@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
@@ -10,7 +12,7 @@ class ApiKeyInDB(BaseModel):
     api_key: str
     api_secret: str
 
-    id_: int = Field(0, alias="id")
+    id_: Annotated[int, Field(alias="id")] = 0
     display_name: str
     user_id: int
     product_name: str

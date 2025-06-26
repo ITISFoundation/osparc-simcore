@@ -36,8 +36,8 @@ qx.Class.define("osparc.conversation.AddMessage", {
   },
 
   events: {
-    "commentAdded": "qx.event.type.Data",
-    "messageEdited": "qx.event.type.Data",
+    "messageAdded": "qx.event.type.Data",
+    "messageUpdated": "qx.event.type.Data",
   },
 
   members: {
@@ -227,7 +227,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (content) {
         osparc.study.Conversations.addMessage(this.__studyData["uuid"], this.__conversationId, content)
           .then(data => {
-            this.fireDataEvent("commentAdded", data);
+            this.fireDataEvent("messageAdded", data);
             commentField.getChildControl("text-area").setValue("");
           });
       }
@@ -239,7 +239,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (content) {
         osparc.study.Conversations.editMessage(this.__studyData["uuid"], this.__conversationId, this.__message["messageId"], content)
           .then(data => {
-            this.fireDataEvent("messageEdited", data);
+            this.fireDataEvent("messageUpdated", data);
             commentField.getChildControl("text-area").setValue("");
           });
       }
@@ -249,7 +249,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (userGid) {
         osparc.study.Conversations.notifyUser(this.__studyData["uuid"], this.__conversationId, userGid)
           .then(data => {
-            this.fireDataEvent("commentAdded", data);
+            this.fireDataEvent("messageAdded", data);
             const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
             if (userGid in potentialCollaborators) {
               if ("getUserId" in potentialCollaborators[userGid]) {
