@@ -95,7 +95,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __foldersList: null,
     __loadingFolders: null,
     __loadingWorkspaces: null,
-    __dragWidget: null,
 
     // overridden
     initResources: function() {
@@ -104,6 +103,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       this._resourcesInitialized = true;
 
+      this._showLoadingPage(this.tr("Loading Projects..."));
       this._resourcesList = [];
       this.__getActiveStudy()
         .then(() => {
@@ -118,8 +118,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           } else {
             this.reloadResources();
           }
-          // "Starting..." page
-          this._hideLoadingPage();
 
           // since all the resources (templates, users, orgs...) were already loaded, notifications can be built
           osparc.data.Resources.get("notifications")
@@ -150,10 +148,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Permissions.getInstance().canDo("studies.user.read") &&
         osparc.auth.Manager.getInstance().isLoggedIn()
       ) {
-        this.__reloadFolders();
-        this.__reloadStudies();
+        Promise.all([
+          this.__reloadFolders(),
+          this.__reloadStudies(),
+        ])
+          .finally(() => this._hideLoadingPage());
       } else {
         this.__resetStudiesList();
+        this._hideLoadingPage();
       }
     },
 
@@ -235,7 +237,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__loadingFolders = true;
       this.__setFoldersToList([]);
-      request
+      return request
         .then(folders => {
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === "trash") {
@@ -267,7 +269,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
-      this.__getNextStudiesRequest()
+      this._resourcesContainer.evaluateNoResourcesFoundLabel([]);
+      return this.__getNextStudiesRequest()
         .then(resp => {
           // Context might have been changed while waiting for the response.
           // The new call is on the way, therefore this response can be ignored.
@@ -341,7 +344,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this._resourcesContainer.getFlatList()) {
             this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
           }
-          this._moreResourcesRequired();
+          // delay the next request to avoid flooding the server
+          setTimeout(() => this._moreResourcesRequired(), 100);
         });
     },
 
@@ -415,6 +419,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addNonResourceCard(loadMoreBtn);
 
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
+
+      this._resourcesContainer.evaluateNoResourcesFoundLabel(cards, this.getCurrentContext());
     },
 
     __reloadNewCards: function() {
@@ -423,6 +429,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__configureStudyCards(cards);
 
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
+
+      this._resourcesContainer.evaluateNoResourcesFoundLabel(cards, this.getCurrentContext());
     },
 
     // WORKSPACES
