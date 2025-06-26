@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
@@ -50,12 +51,13 @@ from pydantic import PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
 from pytest_simcore.helpers.webserver_projects import assert_get_same_project
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.products import products
@@ -280,6 +282,7 @@ async def test_share_project(
     share_rights: dict,
     project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
+    exit_stack: contextlib.AsyncExitStack,
 ):
     # Use-case: the user shares some projects with a group
 
@@ -303,7 +306,10 @@ async def test_share_project(
 
     # get another user logged in now
     await log_client_in(
-        client, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+        client,
+        {"role": user_role.name},
+        enable_check=user_role != UserRole.ANONYMOUS,
+        exit_stack=exit_stack,
     )
     if new_project:
         # user 2 can get the project if user 2 has read access
@@ -1272,6 +1278,7 @@ async def test_open_shared_project_2_users_locked(
     clean_redis_table: None,
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    exit_stack: contextlib.AsyncExitStack,
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     mock_project_state_updated_handler = mocker.Mock()
@@ -1332,7 +1339,10 @@ async def test_open_shared_project_2_users_locked(
 
     # 2. create a separate client now and log in user2, try to open the same shared project
     user_2 = await log_client_in(
-        client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
+        client_2,
+        {"role": user_role.name},
+        enable_check=user_role != UserRole.ANONYMOUS,
+        exit_stack=exit_stack,
     )
     await _connect_websocket(
         socketio_client_factory,
@@ -1454,6 +1464,7 @@ async def test_open_shared_project_at_same_time(
     clean_redis_table,
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    exit_stack: contextlib.AsyncExitStack,
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10
     # log client 1
@@ -1475,6 +1486,7 @@ async def test_open_shared_project_at_same_time(
             new_client,
             {"role": user_role.name},
             enable_check=user_role != UserRole.ANONYMOUS,
+            exit_stack=exit_stack,
         )
         client_id = client_session_id_factory()
         sio = await _connect_websocket(

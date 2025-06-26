@@ -13,7 +13,7 @@ from models_library.api_schemas_webserver.projects_access_rights import (
     ProjectShareAccepted,
 )
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -311,7 +311,7 @@ async def test_share_project_with_roles(
 ):
     assert client.app
 
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     # Attempt to share the project
     url = client.app.router["share_project"].url_for(

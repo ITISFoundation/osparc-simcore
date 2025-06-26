@@ -17,12 +17,12 @@ from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_tokens import (
     create_token_in_db,
     delete_all_tokens_from_db,
     get_token_from_db,
 )
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.db.plugin import get_database_engine
