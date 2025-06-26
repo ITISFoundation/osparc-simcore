@@ -174,7 +174,9 @@ async def list_projects(  # pylint: disable=too-many-arguments
         ),
         # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
-        filter_by_template_type=ProjectTemplateTypeDB(template_type),
+        filter_by_template_type=(
+            ProjectTemplateTypeDB(template_type) if template_type else None
+        ),
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
@@ -198,7 +200,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     return final_projects, total_number_projects
 
 
-async def list_projects_full_depth(
+async def list_projects_full_depth(  # pylint: disable=too-many-arguments
     app: web.Application,
     *,
     user_id: UserID,
@@ -226,7 +228,11 @@ async def list_projects_full_depth(
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(
             filter_by_project_type
         ),
-        filter_by_template_type=ProjectTemplateTypeDB(filter_by_template_type),
+        filter_by_template_type=(
+            ProjectTemplateTypeDB(filter_by_template_type)
+            if filter_by_template_type
+            else None
+        ),
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,
