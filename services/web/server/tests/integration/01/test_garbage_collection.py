@@ -27,6 +27,7 @@ from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
+from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -63,15 +64,16 @@ from tenacity import AsyncRetrying, stop_after_delay, wait_fixed
 log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
-    "migration",
+    "migration",  # NOTE: rebuild!
     "postgres",
     "rabbit",
     "redis",
-    "storage",
+    "storage",  # NOTE: rebuild!
 ]
 pytest_simcore_ops_services_selection = [
     "minio",
     "adminer",
+    "redis-commander",
 ]
 
 
@@ -96,11 +98,6 @@ async def _delete_all_redis_keys(redis_settings: RedisSettings):
     )
     await client.flushall()
     await client.aclose(close_connection_pool=True)
-
-
-@pytest.fixture(scope="session")
-def osparc_product_name() -> str:
-    return "osparc"
 
 
 @pytest.fixture
@@ -130,7 +127,7 @@ async def director_v2_service_mock(
     with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
         mock.get(
             get_computation_pattern,
-            status=202,
+            status=status.HTTP_202_ACCEPTED,
             payload={"state": str(RunningState.NOT_STARTED.value)},
             repeat=True,
         )
@@ -177,7 +174,9 @@ async def client(
     setup_socketio(app)
     setup_projects(app)
     setup_director_v2(app)
+
     assert setup_resource_manager(app)
+
     setup_garbage_collector(app)
 
     return await aiohttp_client(
@@ -190,16 +189,19 @@ async def client(
 def disable_garbage_collector_task(mocker: MockerFixture) -> mock.MagicMock:
     """patch the setup of the garbage collector so we can call it manually"""
 
-    async def _fake_background_task(app: web.Application):
-        # startup
-        await asyncio.sleep(0.1)
-        yield
-        # teardown
-        await asyncio.sleep(0.1)
+    def _fake_factory():
+        async def _cleanup_ctx_fun(app: web.Application):
+            # startup
+            await asyncio.sleep(0.1)
+            yield
+            # teardown
+            await asyncio.sleep(0.1)
+
+        return _cleanup_ctx_fun
 
     return mocker.patch(
-        "simcore_service_webserver.garbage_collector.plugin._tasks_core.run_background_task",
-        side_effect=_fake_background_task,
+        "simcore_service_webserver.garbage_collector.plugin._tasks_core.create_background_task_for_garbage_collection",
+        side_effect=_fake_factory,
     )
 
 
