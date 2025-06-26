@@ -407,8 +407,10 @@ def mocked_director_rest_api_base(
 
 @pytest.fixture
 def get_mocked_service_labels() -> Callable[[str, str], dict]:
-    def _(service_key: str, service_version: str) -> dict:
-        return {
+    def _(
+        service_key: str, service_version: str, *, include_org_labels: bool = True
+    ) -> dict:
+        base_labels = {
             "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
             "io.simcore.contact": '{"contact": "john@acme.com"}',
             "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
@@ -423,13 +425,21 @@ def get_mocked_service_labels() -> Callable[[str, str], dict]:
                 "xxxxx", service_version
             ),
             "maintainer": "johnsmith",
-            "org.label-schema.build-date": "2023-04-17T08:04:15Z",
-            "org.label-schema.schema-version": "1.0",
-            "org.label-schema.vcs-ref": "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
-            "org.label-schema.vcs-url": "https://github.com/ITISFoundation/jupyter-math.git",
             "simcore.service.restart-policy": "no-restart",
             "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000, "MemoryBytes": 4194304}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
         }
+
+        if include_org_labels:
+            base_labels.update(
+                {
+                    "org.label-schema.build-date": "2023-04-17T08:04:15Z",
+                    "org.label-schema.schema-version": "1.0",
+                    "org.label-schema.vcs-ref": "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
+                    "org.label-schema.vcs-url": "https://github.com/ITISFoundation/jupyter-math.git",
+                }
+            )
+
+        return base_labels
 
     return _
 
