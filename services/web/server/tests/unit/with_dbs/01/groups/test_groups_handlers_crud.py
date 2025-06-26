@@ -12,11 +12,11 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet, MyGroupsGet
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
