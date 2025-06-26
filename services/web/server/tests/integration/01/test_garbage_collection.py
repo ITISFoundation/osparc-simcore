@@ -24,6 +24,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
+from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.webserver_login import log_client_in
@@ -44,10 +45,12 @@ from simcore_service_webserver.garbage_collector.plugin import setup_garbage_col
 from simcore_service_webserver.groups._groups_service import create_standard_group
 from simcore_service_webserver.groups.api import add_user_in_group
 from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects import _projects_repository
 from simcore_service_webserver.projects._crud_api_delete import get_scheduled_tasks
 from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
+from simcore_service_webserver.projects.exceptions import ProjectNotFoundError
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
@@ -228,6 +231,7 @@ async def new_project(
     user: UserInfoDict,
     product_name: str,
     tests_data_dir: Path,
+    exit_stack: contextlib.AsyncExitStack,
     access_rights: dict[str, Any] | None = None,
 ):
     """returns a project for the given user"""
@@ -254,6 +258,18 @@ async def new_project(
                 write=permissions["write"],
                 delete=permissions["delete"],
             )
+
+    # ensures the project is removed after the test
+    async def _delete_project(project_uuid):
+        assert client.app
+        with contextlib.suppress(ProjectNotFoundError):
+            # Sometimes the test deletes the project
+            await _projects_repository.delete_project(
+                client.app, project_uuid=project_uuid
+            )
+
+    exit_stack.push_async_callback(_delete_project, ProjectID(project["uuid"]))
+
     return project
 
 
@@ -432,7 +448,7 @@ async def assert_user_in_db(
     user_as_dict = dict(user)
 
     # some values need to be transformed
-    user_as_dict["role"] = user_as_dict["role"].value  # type: ignore
+    user_as_dict["role"] = user_as_dict["role"]  # type: ignore
     user_as_dict["status"] = user_as_dict["status"].value  # type: ignore
 
     assert_dicts_match_by_common_keys(user_as_dict, logged_user)
@@ -498,7 +514,11 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     assert client.app
     logged_guest_user = await login_guest_user(client, exit_stack=exit_stack)
     empty_guest_user_project = await new_project(
-        client, logged_guest_user, osparc_product_name, tests_data_dir
+        client,
+        logged_guest_user,
+        osparc_product_name,
+        tests_data_dir,
+        exit_stack=exit_stack,
     )
     await assert_users_count(aiopg_engine, 1)
     await assert_projects_count(aiopg_engine, 1)
@@ -525,7 +545,11 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     assert client.app
     logged_guest_user = await login_guest_user(client, exit_stack=exit_stack)
     empty_guest_user_project = await new_project(
-        client, logged_guest_user, osparc_product_name, tests_data_dir
+        client,
+        logged_guest_user,
+        osparc_product_name,
+        tests_data_dir,
+        exit_stack=exit_stack,
     )
     await assert_users_count(aiopg_engine, 1)
     await assert_projects_count(aiopg_engine, 1)
@@ -576,7 +600,9 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     number_of_templates = 5
     logged_user = await login_user(client, exit_stack=exit_stack)
     user_projects = [
-        await new_project(client, logged_user, osparc_product_name, tests_data_dir)
+        await new_project(
+            client, logged_user, osparc_product_name, tests_data_dir, exit_stack
+        )
         for _ in range(number_of_projects)
     ]
     user_template_projects = [
@@ -641,6 +667,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
         osparc_product_name,
         tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+        exit_stack=exit_stack,
     )
 
     # mark u1 as guest
@@ -684,6 +711,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
         u1,
         osparc_product_name,
         tests_data_dir,
+        exit_stack=exit_stack,
         access_rights={
             str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
             str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
@@ -734,6 +762,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
         u1,
         osparc_product_name,
         tests_data_dir,
+        exit_stack=exit_stack,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -809,6 +838,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
         u1,
         osparc_product_name,
         tests_data_dir,
+        exit_stack=exit_stack,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -894,6 +924,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
         u1,
         osparc_product_name,
         tests_data_dir,
+        exit_stack=exit_stack,
         access_rights={
             str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
             str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
@@ -971,6 +1002,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
         u1,
         osparc_product_name,
         tests_data_dir,
+        exit_stack=exit_stack,
         access_rights={
             str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
             str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
@@ -1061,6 +1093,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
         u1,
         osparc_product_name,
         tests_data_dir,
+        exit_stack=exit_stack,
         access_rights={
             str(q_u2["primary_gid"]): {"read": True, "write": True, "delete": False},
             str(q_u3["primary_gid"]): {"read": True, "write": True, "delete": False},
@@ -1110,6 +1143,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
         u1,
         osparc_product_name,
         tests_data_dir,
+        exit_stack=exit_stack,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
