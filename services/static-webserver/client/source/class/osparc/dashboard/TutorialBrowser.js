@@ -116,6 +116,11 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       });
       this.__evaluateUpdateAllButton();
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
+
+      this._resourcesContainer.getNoResourcesFoundLabel().set({
+        value: this.tr("No Tutorials found"),
+        visibility: this._resourcesList.length === 0 ? "visible" : "excluded"
+      });
     },
 
     __itemClicked: function(card) {

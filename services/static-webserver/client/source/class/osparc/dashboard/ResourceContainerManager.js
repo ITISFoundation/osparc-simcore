@@ -42,6 +42,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._add(foldersContainer);
     }
 
+    const noResourcesFound = this.__noResourcesFound = new qx.ui.basic.Label("No resources found").set({
+      visibility: "excluded",
+      font: "text-14"
+    });
+    noResourcesFound.exclude();
+    this._add(noResourcesFound);
+
     const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();
     this._add(nonGroupedContainer);
 
@@ -128,8 +135,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __groupedContainersList: null,
     __foldersContainer: null,
     __workspacesContainer: null,
+    __noResourcesFound: null,
     __nonGroupedContainer: null,
     __groupedContainers: null,
+
+    getNoResourcesFoundLabel: function() {
+      return this.__noResourcesFound;
+    },
 
     addNonResourceCard: function(card) {
       if (osparc.dashboard.CardContainer.isValidCard(card)) {
