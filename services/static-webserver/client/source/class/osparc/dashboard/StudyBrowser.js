@@ -104,6 +104,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       this._resourcesInitialized = true;
 
+      this._showLoadingPage(this.tr("Loading Projects..."));
       this._resourcesList = [];
       this.__getActiveStudy()
         .then(() => {
@@ -118,8 +119,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           } else {
             this.reloadResources();
           }
-          // "Starting..." page
-          this._hideLoadingPage();
 
           // since all the resources (templates, users, orgs...) were already loaded, notifications can be built
           osparc.data.Resources.get("notifications")
@@ -150,10 +149,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Permissions.getInstance().canDo("studies.user.read") &&
         osparc.auth.Manager.getInstance().isLoggedIn()
       ) {
-        this.__reloadFolders();
-        this.__reloadStudies();
+        Promise.all([
+          this.__reloadFolders(),
+          this.__reloadStudies(),
+        ])
+          .finally(() => this._hideLoadingPage());
       } else {
         this.__resetStudiesList();
+        this._hideLoadingPage();
       }
     },
 
@@ -341,7 +344,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           if (this._resourcesContainer.getFlatList()) {
             this._loadingResourcesBtn.setVisibility(this._resourcesContainer.getFlatList().nextRequest === null ? "excluded" : "visible");
           }
-          this._moreResourcesRequired();
+          // delay the next request to avoid flooding the server
+          setTimeout(() => this._moreResourcesRequired(), 200);
         });
     },
 
