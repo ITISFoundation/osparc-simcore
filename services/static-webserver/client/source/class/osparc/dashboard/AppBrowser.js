@@ -42,6 +42,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       }
       this._resourcesInitialized = true;
 
+      this._showLoadingPage(this.tr("Loading Apps..."));
       this._resourcesList = [];
       Promise.all([
         osparc.store.Services.getServicesLatest(),
@@ -63,13 +64,15 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
           this.getChildControl("resources-layout");
           this.reloadResources();
-          this._hideLoadingPage();
         });
     },
 
     reloadResources: function(useCache = true) {
-      this.__loadServices();
-      this.__loadHypertools(useCache);
+      Promise.all([
+        this.__loadServices(),
+        this.__loadHypertools(useCache),
+      ])
+        .finally(() => this._hideLoadingPage());
     },
 
     __loadServices: function() {

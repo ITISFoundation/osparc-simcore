@@ -34,21 +34,23 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
       this._resourcesInitialized = true;
 
+      this._showLoadingPage(this.tr("Loading Tutorials..."));
       osparc.store.Templates.getTutorials()
         .then(() => {
           this._resourcesList = [];
           this.getChildControl("resources-layout");
           this.reloadResources();
           this.__attachEventHandlers();
-          this._hideLoadingPage();
         });
     },
 
     reloadResources: function(useCache = true) {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        this.__reloadTutorials(useCache);
+        this.__reloadTutorials(useCache)
+          .finally(() => this._hideLoadingPage());
       } else {
         this.__setResourcesToList([]);
+        this._hideLoadingPage();
       }
     },
 
