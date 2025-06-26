@@ -6,7 +6,7 @@
 
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Annotated, Any
 
 import pydantic
 import pytest
@@ -74,12 +74,18 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
             VALUE_NULLABLE_DEFAULT_VALUE: S | None = S(S_VALUE=42)
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
-                json_schema_extra={"auto_default_from_env": True}
-            )
-            VALUE_DEFAULT_ENV: S = Field(
-                json_schema_extra={"auto_default_from_env": True}
-            )
+            VALUE_NULLABLE_DEFAULT_ENV: Annotated[
+                S | None,
+                Field(
+                    json_schema_extra={"auto_default_from_env": True},
+                ),
+            ]
+            VALUE_DEFAULT_ENV: Annotated[
+                S,
+                Field(
+                    json_schema_extra={"auto_default_from_env": True},
+                ),
+            ]
 
         class M2(BaseCustomSettings):
             #
@@ -91,14 +97,20 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
 
             # defaults enabled but if not exists, it disables
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
-                json_schema_extra={"auto_default_from_env": True}
-            )
+            VALUE_NULLABLE_DEFAULT_ENV: Annotated[
+                S | None,
+                Field(
+                    json_schema_extra={"auto_default_from_env": True},
+                ),
+            ]
 
             # cannot be disabled
-            VALUE_DEFAULT_ENV: S = Field(
-                json_schema_extra={"auto_default_from_env": True}
-            )
+            VALUE_DEFAULT_ENV: Annotated[
+                S,
+                Field(
+                    json_schema_extra={"auto_default_from_env": True},
+                ),
+            ]
 
         # Changed in version 3.7: Dictionary order is guaranteed to be insertion order
         _classes = {"M1": M1, "M2": M2, "S": S}
@@ -108,7 +120,7 @@ def create_settings_class() -> Callable[[str], type[BaseCustomSettings]]:
 
 
 def test_create_settings_class(
-    create_settings_class: Callable[[str], type[BaseCustomSettings]]
+    create_settings_class: Callable[[str], type[BaseCustomSettings]],
 ):
     M = create_settings_class("M1")
 
@@ -216,9 +228,12 @@ def test_auto_default_to_none_logs_a_warning(
 
     class SettingsClass(BaseCustomSettings):
         VALUE_NULLABLE_DEFAULT_NULL: S | None = None
-        VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
-            json_schema_extra={"auto_default_from_env": True},
-        )
+        VALUE_NULLABLE_DEFAULT_ENV: Annotated[
+            S | None,
+            Field(
+                json_schema_extra={"auto_default_from_env": True},
+            ),
+        ] = None
 
     instance = SettingsClass.create_from_envs()
     assert instance.VALUE_NULLABLE_DEFAULT_NULL is None
@@ -245,9 +260,12 @@ def test_auto_default_to_not_none(
 
         class SettingsClass(BaseCustomSettings):
             VALUE_NULLABLE_DEFAULT_NULL: S | None = None
-            VALUE_NULLABLE_DEFAULT_ENV: S | None = Field(
-                json_schema_extra={"auto_default_from_env": True},
-            )
+            VALUE_NULLABLE_DEFAULT_ENV: Annotated[
+                S | None,
+                Field(
+                    json_schema_extra={"auto_default_from_env": True},
+                ),
+            ] = None
 
         instance = SettingsClass.create_from_envs()
         assert instance.VALUE_NULLABLE_DEFAULT_NULL is None
@@ -342,7 +360,7 @@ def test_issubclass_type_error_with_pydantic_models():
 
     # here reproduces the problem with our settings that ANE and PC had
     class SettingsClassThatFailed(BaseCustomSettings):
-        FOO: dict[str, str] | None = Field(default=None)
+        FOO: dict[str, str] | None = None
 
     SettingsClassThatFailed(FOO={})
     assert SettingsClassThatFailed(FOO=None) == SettingsClassThatFailed()
@@ -352,9 +370,7 @@ def test_upgrade_failure_to_pydantic_settings_2_6(
     mock_env_devel_environment: EnvVarsDict,
 ):
     class ProblematicSettings(BaseCustomSettings):
-        WEBSERVER_EMAIL: SMTPSettings | None = Field(
-            json_schema_extra={"auto_default_from_env": True}
-        )
+        WEBSERVER_EMAIL: SMTPSettings | None = None
 
         model_config = SettingsConfigDict(nested_model_default_partial_update=True)
 

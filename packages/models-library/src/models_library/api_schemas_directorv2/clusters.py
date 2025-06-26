@@ -20,10 +20,10 @@ class TaskCounts(BaseModel):
 
 
 class WorkerMetrics(BaseModel):
-    cpu: float = Field(..., description="consumed % of cpus")
-    memory: ByteSize = Field(..., description="consumed memory")
-    num_fds: int = Field(..., description="consumed file descriptors")
-    task_counts: TaskCounts = Field(..., description="task details")
+    cpu: Annotated[float, Field(description="consumed % of cpus")]
+    memory: Annotated[ByteSize, Field(description="consumed memory")]
+    num_fds: Annotated[int, Field(description="consumed file descriptors")]
+    task_counts: Annotated[TaskCounts, Field(description="task details")]
 
 
 AvailableResources: TypeAlias = DictModel[str, PositiveFloat]
@@ -54,7 +54,7 @@ WorkersDict: TypeAlias = dict[AnyUrl, Worker]
 
 
 class Scheduler(BaseModel):
-    status: str = Field(..., description="The running status of the scheduler")
+    status: Annotated[str, Field(description="The running status of the scheduler")]
     workers: Annotated[WorkersDict | None, Field(default_factory=dict)]
 
     @field_validator("workers", mode="before")
@@ -66,10 +66,5 @@ class Scheduler(BaseModel):
 
 
 class ClusterDetails(BaseModel):
-    scheduler: Scheduler = Field(
-        ...,
-        description="This contains dask scheduler information given by the underlying dask library",
-    )
-    dashboard_link: AnyUrl = Field(
-        ..., description="Link to this scheduler's dashboard"
-    )
+    scheduler: Annotated[Scheduler, Field(description="scheduler information")]
+    dashboard_link: Annotated[AnyUrl, Field(description="Link to the dask dashboard")]

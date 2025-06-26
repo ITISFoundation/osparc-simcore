@@ -6,7 +6,7 @@ import json
 import logging
 from collections.abc import Callable
 from io import StringIO
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 import typer
@@ -414,7 +414,7 @@ def test_cli_settings_exclude_unset_as_json(
 
 def test_print_as(capsys: pytest.CaptureFixture):
     class FakeSettings(BaseCustomSettings):
-        INTEGER: int = Field(..., description="Some info")
+        INTEGER: Annotated[int, Field(description="Some info")]
         SECRET: SecretStr
         URL: AnyHttpUrl
 
