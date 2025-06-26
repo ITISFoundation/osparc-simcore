@@ -21,9 +21,13 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from models_library.api_schemas_directorv2.services import ServiceExtras
+from models_library.api_schemas_directorv2.services import (
+    NodeRequirements,
+    ServiceBuildDetails,
+    ServiceExtras,
+)
 from packaging.version import Version
-from pydantic import EmailStr, TypeAdapter
+from pydantic import EmailStr
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -446,8 +450,14 @@ def get_mocked_service_labels() -> Callable[[str, str], dict]:
 
 @pytest.fixture
 def mock_service_extras() -> ServiceExtras:
-    return TypeAdapter(ServiceExtras).validate_python(
-        ServiceExtras.model_json_schema()["examples"][0]
+    return ServiceExtras(
+        node_requirements=NodeRequirements(CPU=1.0, GPU=None, RAM=4194304, VRAM=None),
+        service_build_details=ServiceBuildDetails(
+            build_date="2023-04-17T08:04:15Z",
+            vcs_ref="4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
+            vcs_url="https://github.com/ITISFoundation/jupyter-math.git",
+        ),
+        container_spec=None,
     )
 
 
