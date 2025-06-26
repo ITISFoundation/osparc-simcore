@@ -107,21 +107,24 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     WIDTH: 830,
     HEIGHT: 700,
 
-    popUpInWindow: function(resourceDetails) {
-      // eslint-disable-next-line no-underscore-dangle
-      const title = resourceDetails.__resourceData.name;
-      const win = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
+    popUpInWindow: function(resourceData) {
+      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const title = resourceData.name;
+      const window = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
         layout: new qx.ui.layout.Grow(),
       });
-      win.set(osparc.ui.window.TabbedWindow.DEFAULT_PROPS);
-      win.set({
+      window.set(osparc.ui.window.TabbedWindow.DEFAULT_PROPS);
+      window.set({
         width: this.WIDTH,
         height: this.HEIGHT,
       });
       resourceDetails.addListener("closeWindow", () => {
-        win.close();
+        window.close();
       });
-      return win;
+      return {
+        resourceDetails,
+        window,
+      };
     },
 
     createToolbar: function() {

@@ -939,19 +939,22 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _openResourceDetails: function(resourceData) {
-      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
-      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+      const {
+        resourceDetails,
+        window,
+      } = osparc.dashboard.ResourceDetails.popUpInWindow(resourceData);
+
       resourceDetails.addListener("updateStudy", e => this._updateStudyData(e.getData()));
       resourceDetails.addListener("updateTemplate", e => this._updateTemplateData(e.getData()));
       resourceDetails.addListener("updateTutorial", e => this._updateTutorialData(e.getData()));
       resourceDetails.addListener("updateService", e => this._updateServiceData(e.getData()));
       resourceDetails.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourceDetails.addListener("publishTemplate", e => {
-        win.close();
+        window.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
       resourceDetails.addListener("openStudy", e => {
-        const openCB = () => win.close();
+        const openCB = () => window.close();
         const studyId = e.getData()["uuid"];
         const isStudyCreation = false;
         this._startStudyById(studyId, openCB, null, isStudyCreation);
@@ -962,13 +965,13 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         "openHypertool",
       ].forEach(eventName => {
         resourceDetails.addListener(eventName, e => {
-          win.close();
+          window.close();
           const templateData = e.getData();
           this._createStudyFromTemplate(templateData);
         });
       });
       resourceDetails.addListener("openService", e => {
-        win.close();
+        window.close();
         const openServiceData = e.getData();
         this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
       });
