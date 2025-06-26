@@ -124,10 +124,6 @@ attrs==21.4.0
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   aiohttp
     #   jsonschema
-backoff==1.11.1
-    # via
-    #   opentelemetry-exporter-otlp-proto-grpc
-    #   opentelemetry-exporter-otlp-proto-http
 bidict==0.22.0
     # via python-socketio
 captcha==0.5.0
@@ -244,7 +240,7 @@ frozenlist==1.4.1
     #   -c requirements/./constraints.txt
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.65.0
+googleapis-common-protos==1.70.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -470,13 +466,17 @@ opentelemetry-api==1.34.1
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.11.1
+opentelemetry-exporter-otlp==1.34.1
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-grpc==1.11.1
+opentelemetry-exporter-otlp-proto-common==1.34.1
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-grpc==1.34.1
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.11.1
+opentelemetry-exporter-otlp-proto-http==1.34.1
     # via opentelemetry-exporter-otlp
 opentelemetry-instrumentation==0.55b1
     # via
@@ -520,8 +520,9 @@ opentelemetry-instrumentation-requests==0.55b1
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-proto==1.11.1
+opentelemetry-proto==1.34.1
     # via
+    #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
 opentelemetry-sdk==1.34.1
@@ -633,7 +634,7 @@ propcache==0.3.1
     # via
     #   aiohttp
     #   yarl
-protobuf==5.29.5
+protobuf==5.29.3
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -1090,6 +1091,8 @@ typing-extensions==4.12.2
     #   flexcache
     #   flexparser
     #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
     #   pint

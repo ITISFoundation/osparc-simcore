@@ -2,6 +2,20 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+
+# NOTE: This test will fail with protobuf>=5.29.4
+#
+# E     TypeError: Descriptors cannot be created directly.
+# E     If this call came from a _pb2.py file, your generated code is out of date and must be regenerated with protoc >= 3.19.0.
+# E     If you cannot immediately regenerate your protos, some other possible workarounds are:
+# E      1. Downgrade the protobuf package to 3.20.x or lower.
+# E      2. Set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python (but this will use pure-Python parsing and will be much slower).
+# E
+# E     More information: https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates
+#
+# SEE requirements/constraints.txt
+
+
 import importlib
 import inspect
 from collections.abc import Callable

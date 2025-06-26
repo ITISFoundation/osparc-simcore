@@ -481,7 +481,7 @@ propcache==0.3.1
     # via
     #   aiohttp
     #   yarl
-protobuf==5.29.5
+protobuf==5.29.3
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

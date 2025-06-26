@@ -18,7 +18,6 @@ jinja2>=2.11.3                                # https://github.com/advisories/GH
 mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp
 orjson>=3.9.15                                # https://github.com/advisories/GHSA-pwr2-4v36-6qpr
 paramiko>=2.10.1                              # https://github.com/advisories/GHSA-f8q4-jwww-x3wv
-protobuf>=5.29.5                              # https://github.com/advisories/GHSA-8qvm-5x2c-j2w7
 py>=1.11.0                                    # https://github.com/advisories/GHSA-w596-4wvx-j9j6 / CVE-2022-42969
 pyyaml>=5.4                                   # https://github.com/advisories/GHSA-8q59-q68h-6hv4
 redis>=4.5.4                                  # https://github.com/advisories/GHSA-24wv-mv5m-xv4h
@@ -52,6 +51,18 @@ httpx!=0.28.0  # Waiting for fix in respx: https://github.com/lundberg/respx/pul
 #
 pydantic>=2.10.0    # Avoids inter-version compatibility serialization errors as: _pickle.UnpicklingError: NEWOBJ class argument must be a type, not _AnnotatedAlias
 
+
+protobuf<5.29.4 # Cannot update to https://github.com/advisories/GHSA-8qvm-5x2c-j2w7 because it fails with
+#
+# E     TypeError: Descriptors cannot be created directly.
+# E     If this call came from a _pb2.py file, your generated code is out of date and must be regenerated with protoc >= 3.19.0.
+# E     If you cannot immediately regenerate your protos, some other possible workarounds are:
+# E      1. Downgrade the protobuf package to 3.20.x or lower.
+# E      2. Set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python (but this will use pure-Python parsing and will be much slower).
+# E
+# E     More information: https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates
+#
+# NOTE: see test__configs.py to reproduce fast this problem
 
 
 #
