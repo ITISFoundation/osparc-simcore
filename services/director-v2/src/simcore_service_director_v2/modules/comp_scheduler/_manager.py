@@ -128,8 +128,7 @@ async def _get_pipeline_at_db(
     project_id: ProjectID, db_engine: AsyncEngine
 ) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
-    pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
-    return pipeline_at_db
+    return await comp_pipeline_repo.get_pipeline(project_id)
 
 
 async def _get_pipeline_tasks_at_db(
