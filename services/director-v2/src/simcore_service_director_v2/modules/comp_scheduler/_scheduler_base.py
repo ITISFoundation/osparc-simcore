@@ -258,11 +258,16 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
     ) -> None:
-        await CompRunsRepository.instance(self.db_engine).mark_as_processed(
-            user_id=user_id,
-            project_id=project_id,
-            iteration=iteration,
-        )
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"mark pipeline run for {iteration=} for {user_id=} and {project_id=} as processed",
+        ):
+            await CompRunsRepository.instance(self.db_engine).mark_as_processed(
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+            )
 
     async def _set_states_following_failed_to_aborted(
         self, project_id: ProjectID, dag: nx.DiGraph, run_id: PositiveInt
@@ -738,7 +743,7 @@ class BaseCompScheduler(ABC):
             )
         )
         for task in tasks_instantly_stopeable:
-            comp_tasks[f"{task}"].state = RunningState.ABORTED
+            comp_tasks[f"{task.node_id}"].state = RunningState.ABORTED
         # stop any remaining running task, these are already submitted
         if tasks_to_stop := [
             t for t in comp_tasks.values() if t.state in PROCESSING_STATES
