@@ -302,9 +302,9 @@ def app_module_setup(
 
     def decorator(setup_func: _SetupFunc) -> _SetupFunc:
 
-        assert setup_func.__name__.startswith(  # nosec
-            "setup_"
-        ), f"Rename '{setup_func.__name__}' start with 'setup_$(plugin-name)'"
+        assert (  # nosec
+            "setup_" in setup_func.__name__
+        ), f"Rename '{setup_func.__name__}' like 'setup_$(plugin-name)'"
 
         @functools.wraps(setup_func)
         @ensure_single_setup(module_name, logger=logger)
@@ -363,10 +363,12 @@ def app_module_setup(
 
             return completed
 
-        _wrapper.metadata = _setup_metadata  # type: ignore[attr-defined]
-        _wrapper.mark_as_simcore_servicelib_setup_func = True  # type: ignore[attr-defined]
-        # NOTE: this is added by functools.wraps decorated
-        assert _wrapper.__wrapped__ == setup_func  # nosec
+        assert (
+            _wrapper.__wrapped__ == setup_func
+        ), "this is added by functools.wraps decorator"  # nosec
+
+        setattr(_wrapper, "metadata", _setup_metadata)  # noqa: B010
+        setattr(_wrapper, "mark_as_simcore_servicelib_setup_func", True)  # noqa: B010
 
         return _wrapper
 
@@ -374,7 +376,6 @@ def app_module_setup(
 
 
 def is_setup_function(fun: Callable) -> bool:
-    # TODO: use _SetupFunc protocol to check in runtime
     return (
         inspect.isfunction(fun)
         and hasattr(fun, "mark_as_simcore_servicelib_setup_func")
