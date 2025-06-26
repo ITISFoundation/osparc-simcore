@@ -43,11 +43,11 @@ click==8.1.8
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-coverage==7.6.12
+coverage==7.9.1
     # via pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==37.0.0
+faker==37.4.0
     # via -r requirements/_test.in
 frozenlist==1.5.0
     # via
@@ -78,7 +78,7 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 jsonschema==4.23.0
     # via
@@ -102,16 +102,20 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-pluggy==1.5.0
-    # via pytest
+pathspec==0.12.1
+    # via mypy
+pluggy==1.6.0
+    # via
+    #   pytest
+    #   pytest-cov
 propcache==0.3.0
     # via
     #   -c requirements/_base.txt
@@ -121,7 +125,11 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -132,15 +140,15 @@ pytest==8.3.5
     #   pytest-mock
 pytest-aiohttp==1.1.0
     # via -r requirements/_test.in
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via pytest-aiohttp
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.0
+pytest-docker==3.2.2
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -174,9 +182,9 @@ sqlalchemy==1.4.54
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-types-psycopg2==2.9.21.20250121
+types-psycopg2==2.9.21.20250516
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20241230
+types-pyyaml==6.0.12.20250516
     # via -r requirements/_test.in
 typing-extensions==4.12.2
     # via
@@ -185,7 +193,7 @@ typing-extensions==4.12.2
     #   anyio
     #   mypy
     #   sqlalchemy2-stubs
-tzdata==2025.1
+tzdata==2025.2
     # via faker
 urllib3==2.3.0
     # via

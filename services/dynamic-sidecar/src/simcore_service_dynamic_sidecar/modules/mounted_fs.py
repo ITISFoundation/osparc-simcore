@@ -162,7 +162,7 @@ class MountedVolumes:
 def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
     settings: ApplicationSettings = app.state.settings
 
-    app.state.mounted_volumes = MountedVolumes(
+    app.state.mounted_volumes = volumes = MountedVolumes(
         service_run_id=settings.DY_SIDECAR_RUN_ID,
         node_id=settings.DY_SIDECAR_NODE_ID,
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
@@ -174,4 +174,4 @@ def setup_mounted_fs(app: FastAPI) -> MountedVolumes:
         dy_volumes=settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR,
     )
 
-    return app.state.mounted_volumes
+    return volumes

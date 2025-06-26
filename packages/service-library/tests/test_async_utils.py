@@ -97,7 +97,7 @@ async def test_context_aware_dispatch(
         params = copy.deepcopy(context)
         params["control"] = control
 
-        task = asyncio.get_event_loop().create_task(orderly(**params))
+        task = asyncio.create_task(orderly(**params))
         tasks.append(task)
 
     for task in tasks:
@@ -144,8 +144,7 @@ async def test_context_aware_wrong_target_args_name(
         await target_function("something")
 
     message = (
-        f"Expected '{expected_param_name}' in "
-        f"'{target_function.__name__}' arguments."
+        f"Expected '{expected_param_name}' in '{target_function.__name__}' arguments."
     )
     assert str(excinfo.value).startswith(message) is True
 

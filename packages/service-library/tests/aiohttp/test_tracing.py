@@ -10,7 +10,6 @@ from typing import Any
 import pip
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ValidationError
@@ -59,10 +58,10 @@ async def test_valid_tracing_settings(
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
     uninstrument_opentelemetry: Iterator[None],
-) -> TestClient:
+):
     app = web.Application()
     service_name = "simcore_service_webserver"
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     async for _ in get_tracing_lifespan(
         app=app, service_name=service_name, tracing_settings=tracing_settings
     )(app):
@@ -83,9 +82,9 @@ async def test_invalid_tracing_settings(
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in,
     uninstrument_opentelemetry: Iterator[None],
-) -> TestClient:
+):
     with pytest.raises(ValidationError):
-        TracingSettings()
+        TracingSettings.create_from_envs()
 
 
 def install_package(package):
@@ -96,7 +95,7 @@ def uninstall_package(package):
     pip.main(["uninstall", "-y", package])
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def manage_package(request):
     package, importname = request.param
     install_package(package)
@@ -139,7 +138,7 @@ async def test_tracing_setup_package_detection(
     #
     app = web.Application()
     service_name = "simcore_service_webserver"
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     async for _ in get_tracing_lifespan(
         app=app,
         service_name=service_name,
@@ -174,7 +173,7 @@ async def test_trace_id_in_response_header(
 ) -> None:
     app = web.Application()
     service_name = "simcore_service_webserver"
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
 
     async def handler(handler_data: dict, request: web.Request) -> web.Response:
         current_span = trace.get_current_span()
@@ -185,7 +184,7 @@ async def test_trace_id_in_response_header(
             raise server_response
         return server_response
 
-    handler_data = dict()
+    handler_data = {}
     app.router.add_get("/", partial(handler, handler_data))
 
     async for _ in get_tracing_lifespan(

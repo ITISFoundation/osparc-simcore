@@ -1,62 +1,58 @@
-alembic==1.14.1
+alembic==1.16.2
     # via -r requirements/_base.in
 annotated-types==0.7.0
     # via pydantic
 asyncpg==0.30.0
     # via sqlalchemy
-deprecated==1.2.18
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
-greenlet==3.1.1
+greenlet==3.2.3
     # via sqlalchemy
 idna==3.10
     # via yarl
-importlib-metadata==8.5.0
+importlib-metadata==8.7.0
     # via opentelemetry-api
-mako==1.3.9
+mako==1.3.10
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
 markupsafe==3.0.2
     # via mako
-multidict==6.1.0
+multidict==6.5.0
     # via yarl
-opentelemetry-api==1.30.0
+opentelemetry-api==1.34.1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.51b0
+opentelemetry-instrumentation==0.55b1
     # via opentelemetry-instrumentation-asyncpg
-opentelemetry-instrumentation-asyncpg==0.51b0
+opentelemetry-instrumentation-asyncpg==0.55b1
     # via -r requirements/_base.in
-opentelemetry-semantic-conventions==0.51b0
+opentelemetry-semantic-conventions==0.55b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asyncpg
-orjson==3.10.15
+orjson==3.10.18
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
-packaging==24.2
+packaging==25.0
     # via opentelemetry-instrumentation
-propcache==0.3.0
+propcache==0.3.2
     # via yarl
 psycopg2-binary==2.9.10
     # via sqlalchemy
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
     #   pydantic-extra-types
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.2
+pydantic-extra-types==2.10.5
     # via -r requirements/../../../packages/common-library/requirements/_base.in
 sqlalchemy==1.4.54
     # via
@@ -64,17 +60,20 @@ sqlalchemy==1.4.54
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   alembic
-typing-extensions==4.12.2
+typing-extensions==4.14.0
     # via
     #   alembic
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 wrapt==1.17.2
-    # via
-    #   deprecated
-    #   opentelemetry-instrumentation
-yarl==1.18.3
+    # via opentelemetry-instrumentation
+yarl==1.20.1
     # via -r requirements/_base.in
-zipp==3.21.0
+zipp==3.23.0
     # via importlib-metadata

@@ -3,6 +3,7 @@
 #
 #
 
+--constraint _base.in
 
 fastapi[standard]
 fastapi-lifespan-manager

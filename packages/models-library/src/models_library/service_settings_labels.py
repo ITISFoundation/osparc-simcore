@@ -570,8 +570,8 @@ class DynamicSidecarServiceLabels(BaseModel):
             "containers_allowed_outgoing_internet",
             "containers_allowed_outgoing_permit_list",
         }
-        if match_keys & set(self.model_fields) != match_keys:
-            err_msg = f"Expected the following keys {match_keys} to be present {self.model_fields=}"
+        if match_keys & set(self.__class__.model_fields) != match_keys:
+            err_msg = f"Expected the following keys {match_keys} to be present {self.__class__.model_fields=}"
             raise ValueError(err_msg)
 
         if (

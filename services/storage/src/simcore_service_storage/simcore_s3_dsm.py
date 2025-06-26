@@ -7,7 +7,7 @@ from collections.abc import Coroutine
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, Final
 
 from aws_library.s3 import (
     CopiedBytesTransferredCallback,
@@ -634,7 +634,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         4. Raises FileAccessRightError if the user does not have access to the file
         """
         directory_file_id = await get_directory_file_id(
-            get_db_engine(self.app), cast(SimcoreS3FileID, file_id)
+            get_db_engine(self.app), file_id
         )
         can = await AccessLayerRepository.instance(
             get_db_engine(self.app)

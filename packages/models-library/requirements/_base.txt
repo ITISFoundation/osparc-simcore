@@ -2,7 +2,7 @@ annotated-types==0.7.0
     # via pydantic
 arrow==1.3.0
     # via -r requirements/_base.in
-attrs==25.1.0
+attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
@@ -12,17 +12,17 @@ email-validator==2.2.0
     # via pydantic
 idna==3.10
     # via email-validator
-jsonschema==4.23.0
+jsonschema==4.24.0
     # via -r requirements/_base.in
-jsonschema-specifications==2024.10.1
+jsonschema-specifications==2025.4.1
     # via jsonschema
-orjson==3.10.15
+orjson==3.10.18
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -30,9 +30,9 @@ pydantic==2.10.6
     #   -r requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.2
+pydantic-extra-types==2.10.5
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -43,7 +43,7 @@ pydantic-settings==2.7.0
     #   -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.0.1
+python-dotenv==1.1.1
     # via pydantic-settings
 referencing==0.35.1
     # via
@@ -51,16 +51,19 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-rpds-py==0.23.1
+rpds-py==0.25.1
     # via
     #   jsonschema
     #   referencing
 six==1.17.0
     # via python-dateutil
-types-python-dateutil==2.9.0.20241206
+types-python-dateutil==2.9.0.20250516
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.14.0
     # via
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic

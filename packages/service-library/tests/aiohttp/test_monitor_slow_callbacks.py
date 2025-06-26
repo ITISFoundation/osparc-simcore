@@ -10,13 +10,14 @@ from collections.abc import Iterable
 import pytest
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.aiopg_utils import DatabaseError
+from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 
-async def slow_task(delay):
-    time.sleep(delay)  # noqa: ASYNC101
+async def slow_sync_sleeper_task(delay):
+    time.sleep(delay)  # noqa: ASYNC251
 
 
 @retry(wait=wait_fixed(1), stop=stop_after_attempt(2))
@@ -25,18 +26,30 @@ async def fails_to_reach_pg_db():
 
 
 @pytest.fixture
-def incidents_manager(event_loop) -> dict:
-    incidents = []
+async def incidents_manager() -> dict:
+    incidents: LimitedOrderedStack[SlowCallback] = LimitedOrderedStack[SlowCallback](
+        max_size=10
+    )
     monitor_slow_callbacks.enable(slow_duration_secs=0.2, incidents=incidents)
 
-    asyncio.ensure_future(slow_task(0.3), loop=event_loop)  # noqa: RUF006
-    asyncio.ensure_future(slow_task(0.3), loop=event_loop)  # noqa: RUF006
-    asyncio.ensure_future(slow_task(0.4), loop=event_loop)  # noqa: RUF006
+    f1 = asyncio.ensure_future(
+        slow_sync_sleeper_task(0.3), loop=asyncio.get_event_loop()
+    )
+    assert f1
+    f2 = asyncio.ensure_future(
+        slow_sync_sleeper_task(0.3), loop=asyncio.get_event_loop()
+    )
+    assert f2
+    f3 = asyncio.ensure_future(
+        slow_sync_sleeper_task(0.4), loop=asyncio.get_event_loop()
+    )
+    assert f3
 
     incidents_pg = None  # aiopg_utils.monitor_pg_responsiveness.enable()
-    asyncio.ensure_future(fails_to_reach_pg_db(), loop=event_loop)  # noqa: RUF006
+    f4 = asyncio.ensure_future(fails_to_reach_pg_db(), loop=asyncio.get_event_loop())
+    assert f4
 
-    return {"slow_callback": incidents, "posgres_responsive": incidents_pg}
+    return {"slow_callback": incidents, "postgres_responsive": incidents_pg}
 
 
 @pytest.fixture
