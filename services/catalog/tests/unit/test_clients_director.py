@@ -12,7 +12,7 @@ from typing import Any
 
 import httpx
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.services_metadata_published import ServiceMetaDataPublished
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -32,6 +32,14 @@ def app_environment(
             "SC_BOOT_MODE": "local-development",
         },
     )
+
+
+@pytest.fixture
+def service_key_and_version(
+    expected_director_rest_api_list_services: list[dict[str, Any]],
+) -> tuple[str, str]:
+    expected_service = expected_director_rest_api_list_services[0]
+    return expected_service["key"], expected_service["version"]
 
 
 async def test_director_client_high_level_api(
@@ -66,14 +74,12 @@ async def test_director_client_low_level_api(
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api: MockRouter,
-    expected_director_rest_api_list_services: list[dict[str, Any]],
+    service_key_and_version: tuple[str, str],
     app: FastAPI,
 ):
     director_api = get_director_client(app)
 
-    expected_service = expected_director_rest_api_list_services[0]
-    key = expected_service["key"]
-    version = expected_service["version"]
+    key, version = service_key_and_version
 
     service_labels = await director_api.get(
         f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
@@ -92,14 +98,12 @@ async def test_director_client_get_service_extras_with_org_labels(
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api: MockRouter,
-    expected_director_rest_api_list_services: list[dict[str, Any]],
+    service_key_and_version: tuple[str, str],
     app: FastAPI,
 ):
     director_api = get_director_client(app)
 
-    expected_service = expected_director_rest_api_list_services[0]
-    key = expected_service["key"]
-    version = expected_service["version"]
+    key, version = service_key_and_version
 
     service_extras = await director_api.get_service_extras(key, version)
 
@@ -126,14 +130,12 @@ async def test_director_client_get_service_extras_without_org_labels(
     background_task_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     mocked_director_rest_api_base: MockRouter,
-    expected_director_rest_api_list_services: list[dict[str, Any]],
+    service_key_and_version: tuple[str, str],
     get_mocked_service_labels: Callable[[str, str, bool], dict],
     app: FastAPI,
 ):
     # Setup mock without org.label-schema labels
-    expected_service = expected_director_rest_api_list_services[0]
-    service_key = expected_service["key"]
-    service_version = expected_service["version"]
+    service_key, service_version = service_key_and_version
 
     # Mock the labels endpoint without org labels
     @mocked_director_rest_api_base.get(
@@ -142,7 +144,7 @@ async def test_director_client_get_service_extras_without_org_labels(
     )
     def _get_service_labels_no_org(request, service_key, service_version):
         return httpx.Response(
-            status_code=200,
+            status_code=status.HTTP_200_OK,
             json={
                 "data": get_mocked_service_labels(
                     service_key, service_version, include_org_labels=False
