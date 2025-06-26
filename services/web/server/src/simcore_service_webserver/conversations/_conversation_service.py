@@ -112,8 +112,8 @@ async def delete_conversation(
     app: web.Application,
     *,
     product_name: ProductName,
-    project_id: ProjectID,
     user_id: UserID,
+    project_id: ProjectID,
     conversation_id: ConversationID,
 ) -> None:
     await _conversation_repository.delete(
