@@ -1,13 +1,10 @@
 import asyncio
-import datetime
 import threading
 from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
-from typing import Final, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from servicelib.celery.task_manager import TaskManager
-
-STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=1).total_seconds()
 
 T = TypeVar("T")
 
@@ -15,7 +12,7 @@ T = TypeVar("T")
 class BaseAppServer(ABC, Generic[T]):
     def __init__(self, app: T) -> None:
         self._app: T = app
-        self._shutdown_event: asyncio.Event | None = None
+        self._shutdown_event: asyncio.Event = asyncio.Event()
 
     @property
     def app(self) -> T:
@@ -30,6 +27,10 @@ class BaseAppServer(ABC, Generic[T]):
         self._event_loop = loop
 
     @property
+    def shutdown_event(self) -> asyncio.Event:
+        return self._shutdown_event
+
+    @property
     def task_manager(self) -> TaskManager:
         return self._task_manager
 
@@ -38,23 +39,8 @@ class BaseAppServer(ABC, Generic[T]):
         self._task_manager = manager
 
     @abstractmethod
-    async def on_startup(self) -> None:
-        raise NotImplementedError
-
-    async def startup(
-        self, completed_event: threading.Event, shutdown_event: asyncio.Event
+    async def lifespan(
+        self,
+        startup_completed_event: threading.Event,
     ) -> None:
-        self._shutdown_event = shutdown_event
-        completed_event.set()
-        await self.on_startup()
-        await self._shutdown_event.wait()
-
-    @abstractmethod
-    async def on_shutdown(self) -> None:
         raise NotImplementedError
-
-    async def shutdown(self) -> None:
-        if self._shutdown_event is not None:
-            self._shutdown_event.set()
-
-        await self.on_shutdown()

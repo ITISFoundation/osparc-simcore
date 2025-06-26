@@ -26,17 +26,16 @@ qx.Class.define("osparc.conversation.MessageUI", {
   construct: function(message, studyData = null) {
     this.base(arguments);
 
-    this.__message = message;
     this.__studyData = studyData;
 
-    const isMyMessage = this.self().isMyMessage(this.__message);
     const layout = new qx.ui.layout.Grid(12, 4);
     layout.setColumnFlex(1, 1); // content
-    layout.setColumnFlex(isMyMessage ? 0 : 2, 3); // spacer
     this._setLayout(layout);
     this.setPadding(5);
 
-    this.__buildLayout();
+    this.set({
+      message,
+    });
   },
 
   statics: {
@@ -46,15 +45,22 @@ qx.Class.define("osparc.conversation.MessageUI", {
   },
 
   events: {
-    "messageEdited": "qx.event.type.Event",
-    "messageDeleted": "qx.event.type.Event",
+    "messageUpdated": "qx.event.type.Data",
+    "messageDeleted": "qx.event.type.Data",
+  },
+
+  properties: {
+    message: {
+      check: "Object",
+      init: null,
+      nullable: false,
+      apply: "__applyMessage",
+    },
   },
 
   members: {
-    __message: null,
-
     _createChildControlImpl: function(id) {
-      const isMyMessage = this.self().isMyMessage(this.__message);
+      const isMyMessage = this.self().isMyMessage(this.getMessage());
       let control;
       switch (id) {
         case "thumbnail":
@@ -140,20 +146,29 @@ qx.Class.define("osparc.conversation.MessageUI", {
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
+    __applyMessage: function(message) {
+      const isMyMessage = this.self().isMyMessage(message);
+      this._getLayout().setColumnFlex(isMyMessage ? 0 : 2, 3); // spacer
+
       const thumbnail = this.getChildControl("thumbnail");
 
       const userName = this.getChildControl("user-name");
 
-      const date = new Date(this.__message["modified"]);
-      const date2 = osparc.utils.Utils.formatDateAndTime(date);
+      const createdDateData = new Date(message["created"]);
+      const createdDate = osparc.utils.Utils.formatDateAndTime(createdDateData);
       const lastUpdate = this.getChildControl("last-updated");
-      lastUpdate.setValue(date2);
+      if (message["created"] === message["modified"]) {
+        lastUpdate.setValue(createdDate);
+      } else {
+        const updatedDateData = new Date(message["modified"]);
+        const updatedDate = osparc.utils.Utils.formatDateAndTime(updatedDateData);
+        lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
+      }
 
       const messageContent = this.getChildControl("message-content");
-      messageContent.setValue(this.__message["content"]);
+      messageContent.setValue(message["content"]);
 
-      osparc.store.Users.getInstance().getUser(this.__message["userGroupId"])
+      osparc.store.Users.getInstance().getUser(message["userGroupId"])
         .then(user => {
           if (user) {
             thumbnail.setSource(user.getThumbnail());
@@ -170,7 +185,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       this.getChildControl("spacer");
 
-      if (this.self().isMyMessage(this.__message)) {
+      if (this.self().isMyMessage(message)) {
         const menuButton = this.getChildControl("menu-button");
 
         const menu = new qx.ui.menu.Menu().set({
@@ -189,20 +204,24 @@ qx.Class.define("osparc.conversation.MessageUI", {
     },
 
     __editMessage: function() {
-      const addMessage = new osparc.conversation.AddMessage(this.__studyData, this.__message["conversationId"], this.__message);
+      const message = this.getMessage();
+
+      const addMessage = new osparc.conversation.AddMessage(this.__studyData, message["conversationId"], message);
       const title = this.tr("Edit message");
       const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
         clickAwayClose: false,
         resizable: true,
         showClose: true,
       });
-      addMessage.addListener("messageEdited", () => {
+      addMessage.addListener("messageUpdated", e => {
         win.close();
-        this.fireDataEvent("messageEdited");
+        this.fireDataEvent("messageUpdated", e.getData());
       });
     },
 
     __deleteMessage: function() {
+      const message = this.getMessage();
+
       const win = new osparc.ui.window.Confirmation(this.tr("Delete message?")).set({
         caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),
@@ -211,8 +230,8 @@ qx.Class.define("osparc.conversation.MessageUI", {
       win.open();
       win.addListener("close", () => {
         if (win.getConfirmed()) {
-          osparc.study.Conversations.deleteMessage(this.__message["studyId"], this.__message["conversationId"], this.__message["messageId"])
-            .then(() => this.fireEvent("messageDeleted"))
+          osparc.study.Conversations.deleteMessage(message)
+            .then(() => this.fireDataEvent("messageDeleted", message))
             .catch(err => osparc.FlashMessenger.logError(err));
         }
       });
