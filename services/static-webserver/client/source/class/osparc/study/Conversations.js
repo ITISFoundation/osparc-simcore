@@ -339,9 +339,6 @@ qx.Class.define("osparc.study.Conversations", {
         const conversationsLayout = this.getChildControl("conversations-layout");
         conversationsLayout.remove(conversation);
         this.__conversations = this.__conversations.filter(c => c !== conversation);
-
-        changeSelection
-
         const conversationPages = conversationsLayout.getSelectables();
         if (conversationPages.length) {
           if (changeSelection) {
