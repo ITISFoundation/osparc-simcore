@@ -285,7 +285,7 @@ class DirectorClient:
 
             result.update({"service_build_details": service_build_details})
 
-        return TypeAdapter(ServiceExtras).validate_python(result, strict=True)
+        return TypeAdapter(ServiceExtras).validate_python(result)
 
 
 async def director_lifespan(app: FastAPI) -> AsyncIterator[State]:
