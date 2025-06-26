@@ -58,7 +58,7 @@ def periodic(
     """
 
     def _decorator(
-        coro: Callable[P, Coroutine[Any, Any, None]],
+        async_fun: Callable[P, Coroutine[Any, Any, None]],
     ) -> Callable[P, Coroutine[Any, Any, None]]:
         class _InternalTryAgain(TryAgain):
             # Local exception to prevent reacting to similarTryAgain exceptions raised by the wrapped func
@@ -82,10 +82,10 @@ def periodic(
             ),
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
-        @functools.wraps(coro)
+        @functools.wraps(async_fun)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             with log_catch(_logger, reraise=True):
-                await coro(*args, **kwargs)
+                await async_fun(*args, **kwargs)
             raise _InternalTryAgain
 
         return _wrapper
