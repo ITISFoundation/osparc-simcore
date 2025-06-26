@@ -21,7 +21,7 @@ def create_task_name(coro: Callable) -> str:
 
 async def periodic_task_lifespan(
     app: web.Application,
-    periodic_task_coro: Callable[[], Coroutine[None, None, None]],
+    periodic_async_func: Callable[[], Coroutine[None, None, None]],
     *,
     task_name: str | None = None,
 ) -> AsyncIterator[None]:
@@ -30,13 +30,15 @@ async def periodic_task_lifespan(
 
     Args:
         app: The aiohttp web application
-        periodic_task_coro: The periodic task coroutine function (already decorated with @exclusive_periodic)
+        periodic_async_func: The periodic coroutine function (already decorated with @exclusive_periodic)
     """
+    assert getattr(periodic_async_func, "__exclusive_periodic__", False)  # nosec
+
     # setup
-    task_name = task_name or create_task_name(periodic_task_coro)
+    task_name = task_name or create_task_name(periodic_async_func)
 
     task = asyncio.create_task(
-        periodic_task_coro(),
+        periodic_async_func(),
         name=task_name,
     )
 

@@ -54,6 +54,8 @@ def exclusive_periodic(
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
             return await coro(*args, **kwargs)
 
+        # Marks with an identifier (mostly to assert a function has been decorated with this decorator)
+        setattr(_wrapper, "__exclusive_periodic__", True)  # noqa: B010
         return _wrapper
 
     return _decorator
