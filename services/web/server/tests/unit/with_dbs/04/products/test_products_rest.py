@@ -13,7 +13,7 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.products import ProductGet, ProductUIGet
 from models_library.products import ProductName
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.status_codes_utils import is_2xx_success

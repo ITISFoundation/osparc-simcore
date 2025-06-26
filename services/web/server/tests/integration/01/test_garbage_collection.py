@@ -26,8 +26,8 @@ from aioresponses import aioresponses
 from models_library.groups import EVERYONE_GROUP_ID, StandardGroupCreate
 from models_library.projects_state import RunningState
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.webserver_projects import create_project, empty_project_data
+from pytest_simcore.helpers.webserver_users import UserInfoDict, log_client_in
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
