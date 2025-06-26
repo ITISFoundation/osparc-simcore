@@ -3,7 +3,7 @@
 
 import datetime
 import threading
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from functools import partial
 from typing import Any
 
@@ -18,6 +18,7 @@ from celery_library.task_manager import CeleryTaskManager
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
+from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisSettings
 
@@ -25,6 +26,7 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
@@ -61,6 +63,15 @@ def app_environment(
             "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value(),
         },
     )
+
+
+@pytest.fixture
+async def async_jobs_rabbitmq_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    rpc_client = await rabbitmq_rpc_client("pytest_async_jobs_rpc_client")
+    assert rpc_client
+    return rpc_client
 
 
 @pytest.fixture
