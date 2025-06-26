@@ -238,13 +238,13 @@ paths:
       tags:
       - auth
       summary: Check Auth
-      description: checks if user is authenticated in the platform
-      operationId: check_authentication
+      description: checks whether user request is authenticated
+      operationId: check_auth
       responses:
         '204':
           description: Successful Response
         '401':
-          description: unauthorized reset due to invalid token code
+          description: Unauthorized
           content:
             application/json:
               schema:
