@@ -252,7 +252,7 @@ class BaseCompScheduler(ABC):
             self.rabbitmq_client, user_id, project_id, run_result
         )
 
-    async def _set_schedule_done(
+    async def _set_processing_done(
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -721,7 +721,7 @@ class BaseCompScheduler(ABC):
             except ComputationalBackendNotConnectedError:
                 _logger.exception("Computational backend is not connected!")
             finally:
-                await self._set_schedule_done(user_id, project_id, iteration)
+                await self._set_processing_done(user_id, project_id, iteration)
 
     async def _schedule_tasks_to_stop(
         self,
