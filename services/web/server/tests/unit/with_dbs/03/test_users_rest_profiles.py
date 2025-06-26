@@ -27,10 +27,9 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import (
-    NewUser,
-    UserInfoDict,
     switch_client_session_to,
 )
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.users._preferences_service import (
@@ -143,7 +142,7 @@ async def test_search_users_by_partial_fullname(
     public_user: UserInfoDict,
 ):
     assert client.app
-    assert user_role.value == logged_user["role"]
+    assert user_role == logged_user["role"]
 
     # logged_user has default settings
     assert private_user["id"] != logged_user["id"]
@@ -286,7 +285,7 @@ async def test_get_user_by_group_id(
     private_user: UserInfoDict,
 ):
     assert client.app
-    assert user_role.value == logged_user["role"]
+    assert user_role == logged_user["role"]
 
     assert private_user["id"] != logged_user["id"]
     assert public_user["id"] != logged_user["id"]
