@@ -49,14 +49,10 @@ qx.Class.define("osparc.study.SaveAsTemplate", {
     __createTemplateBtn: null,
 
     __buildLayout: function() {
-      let introText = "";
-      if (this.__makeItPublic) {
-        introText += this.tr("This project will be published and accessible to everyone.");
-        introText += "<br>";
-        introText += this.tr("All users will see it and can copy it.");
-      } else {
-        introText += this.tr("This project will be saved as a template.");
-      }
+      const introText = this.__makeItPublic ?
+        this.tr("Share your project with the entire community as a Public Project. This makes it discoverable and reusable by others, encouraging collaboration and inspiration.")
+        :
+        this.tr("Save the current state of your project as a reusable Template. Templates let you branch off easily and start new workflows.");
       this._add(new qx.ui.basic.Label(introText).set({
         font: "text-14",
         rich: true,
