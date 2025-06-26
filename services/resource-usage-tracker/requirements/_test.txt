@@ -85,11 +85,12 @@ greenlet==3.0.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==1.0.4
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -185,12 +186,12 @@ py-partiql-parser==0.6.1
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.10.2
+pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -273,8 +274,9 @@ s3transfer==0.11.3
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==74.0.0
+setuptools==80.9.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   moto
 six==1.16.0
@@ -314,6 +316,11 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   sqlalchemy2-stubs
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 tzdata==2024.1
     # via
     #   -c requirements/_base.txt

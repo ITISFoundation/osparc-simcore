@@ -102,11 +102,12 @@ frozenlist==1.5.0
     #   aiosignal
 graphql-core==3.2.6
     # via moto
-h11==0.14.0
+h11==0.16.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -200,12 +201,12 @@ py-partiql-parser==0.6.1
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -270,8 +271,10 @@ rpds-py==0.23.1
     #   referencing
 s3transfer==0.11.3
     # via boto3
-setuptools==75.8.2
-    # via moto
+setuptools==80.9.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   moto
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -292,6 +295,11 @@ typing-extensions==4.12.2
     #   cfn-lint
     #   pydantic
     #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 tzdata==2025.1
     # via faker
 urllib3==2.3.0

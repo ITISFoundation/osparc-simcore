@@ -95,12 +95,13 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
+    #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   httpcore
     #   uvicorn
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -187,13 +188,13 @@ propcache==0.3.1
     #   yarl
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pydantic==2.10.2
+pydantic==2.11.7
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-pagination
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -274,8 +275,9 @@ rich==13.4.2
     # via
     #   -c requirements/_base.txt
     #   typer
-setuptools==69.1.1
+setuptools==80.9.0
     # via
+    #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   jsonschema
     #   openapi-spec-validator
@@ -337,6 +339,11 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   sqlalchemy2-stubs
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 urllib3==2.2.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
