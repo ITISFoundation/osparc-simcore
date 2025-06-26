@@ -45,15 +45,16 @@ async def _create_user_in_db(
     data = data or {}
     data.setdefault("status", UserStatus.ACTIVE.name)
     data.setdefault("role", UserRole.USER.name)
+    data.setdefault("password", DEFAULT_TEST_PASSWORD)
 
-    raw_password = DEFAULT_TEST_PASSWORD
+    raw_password = data["password"]
 
     # inject in db
     user = await exit_stack.enter_async_context(
         insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
             sqlalchemy_async_engine,
             table=users_table,
-            values=random_user(password=raw_password, **data),
+            values=random_user(**data),
             pk_col=users_table.c.id,
         )
     )
