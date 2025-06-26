@@ -269,7 +269,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
-      this._resourcesContainer.getNoResourcesFoundLabel().setVisibility("excluded");
+      this._resourcesContainer.evaluateNoResourcesFoundLabel([]);
       return this.__getNextStudiesRequest()
         .then(resp => {
           // Context might have been changed while waiting for the response.
@@ -420,10 +420,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
 
-      this._resourcesContainer.getNoResourcesFoundLabel().set({
-        value: this.tr("No Projects found"),
-        visibility: cards.length === 0 ? "visible" : "excluded",
-      });
+      this._resourcesContainer.evaluateNoResourcesFoundLabel(cards, this.getCurrentContext());
     },
 
     __reloadNewCards: function() {
@@ -433,10 +430,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
 
-      this._resourcesContainer.getNoResourcesFoundLabel().set({
-        value: this.tr("No Tutorials found"),
-        visibility: cards.length === 0 ? "visible" : "excluded",
-      });
+      this._resourcesContainer.evaluateNoResourcesFoundLabel(cards, this.getCurrentContext());
     },
 
     // WORKSPACES

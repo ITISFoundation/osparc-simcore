@@ -139,8 +139,32 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __nonGroupedContainer: null,
     __groupedContainers: null,
 
-    getNoResourcesFoundLabel: function() {
-      return this.__noResourcesFound;
+    evaluateNoResourcesFoundLabel: function(cards, context) {
+      if (this.__noResourcesFound) {
+        let text = null;
+        switch (context) {
+          case "studiesAndFolders":
+          case "search":
+            text = this.tr("No Projects found");
+            break;
+          case "templates":
+            text = this.tr("No Templates found");
+            break;
+          case "public":
+            text = this.tr("No Public Projects found");
+            break;
+          case "tutorial":
+            text = this.tr("No Tutorials found");
+            break;
+          case "service":
+            text = this.tr("No Apps found");
+            break;
+        }
+        this.__noResourcesFound.set({
+          value: text,
+          visibility: text && cards.length === 0 ? "visible" : "excluded",
+        });
+      }
     },
 
     addNonResourceCard: function(card) {

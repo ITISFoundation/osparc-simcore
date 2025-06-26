@@ -130,10 +130,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       });
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
 
-      this._resourcesContainer.getNoResourcesFoundLabel().set({
-        value: this.tr("No Apps found"),
-        visibility: cards.length === 0 ? "visible" : "excluded",
-      });
+      this._resourcesContainer.evaluateNoResourcesFoundLabel(cards, this._resourceType);
     },
 
     __itemClicked: function(card) {
