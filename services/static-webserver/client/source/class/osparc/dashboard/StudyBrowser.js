@@ -235,7 +235,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this.__loadingFolders = true;
       this.__setFoldersToList([]);
-      request
+      return request
         .then(folders => {
           this.__setFoldersToList(folders);
           if (this.getCurrentContext() === "trash") {
@@ -267,7 +267,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._loadingResourcesBtn.setFetching(true);
       this._loadingResourcesBtn.setVisibility("visible");
-      this.__getNextStudiesRequest()
+      return this.__getNextStudiesRequest()
         .then(resp => {
           // Context might have been changed while waiting for the response.
           // The new call is on the way, therefore this response can be ignored.

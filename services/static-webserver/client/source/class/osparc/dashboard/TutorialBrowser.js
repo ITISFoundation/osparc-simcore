@@ -83,9 +83,9 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     __reloadTutorials: function(useCache) {
       this.__tasksToCards();
 
-        osparc.store.Templates.getTutorials(useCache)
-          .then(tutorials => this.__setResourcesToList(tutorials))
-          .catch(() => this.__setResourcesToList([]));
+      return osparc.store.Templates.getTutorials(useCache)
+        .then(tutorials => this.__setResourcesToList(tutorials))
+        .catch(() => this.__setResourcesToList([]));
     },
 
     _updateTutorialData: function(templateData) {
