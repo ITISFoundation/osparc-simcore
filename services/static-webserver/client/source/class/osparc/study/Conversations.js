@@ -46,6 +46,11 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   statics: {
+    TYPES: {
+      PROJECT_STATIC: "PROJECT_STATIC",
+      PROJECT_DYNAMIC: "PROJECT_DYNAMIC",
+    },
+
     popUpInWindow: function(studyData) {
       const conversations = new osparc.study.Conversations(studyData);
       const title = qx.locale.Manager.tr("Conversations");
@@ -58,14 +63,14 @@ qx.Class.define("osparc.study.Conversations", {
       return win;
     },
 
-    addConversation: function(studyId, name = "new 1") {
+    addConversation: function(studyId, name = "new 1", type = this.TYPES.PROJECT_STATIC) {
       const params = {
         url: {
           studyId,
         },
         data: {
           name,
-          "type": "PROJECT_STATIC",
+          type,
         }
       };
       return osparc.data.Resources.fetch("conversations", "addConversation", params)
