@@ -11,7 +11,7 @@ from models_library.licenses import (
     LicensedResourcePatchDB,
     LicensedResourceType,
 )
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.licenses import _licensed_resources_repository
 from simcore_service_webserver.projects.models import ProjectDict

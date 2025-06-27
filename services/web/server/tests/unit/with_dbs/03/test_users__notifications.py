@@ -22,7 +22,7 @@ from models_library.products import ProductName
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.redis import get_redis_user_notifications_client
@@ -234,7 +234,7 @@ async def test_create_user_notification(
         assert error is not None
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
     "notification_count",
     [
@@ -290,7 +290,7 @@ async def test_create_user_notification_capped_list_length(
     assert len(user_notifications) <= MAX_NOTIFICATIONS_FOR_USER_TO_KEEP
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_create_user_notification_per_product(
     logged_user: UserInfoDict,
     notification_redis_client: aioredis.Redis,

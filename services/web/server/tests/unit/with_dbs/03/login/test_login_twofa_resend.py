@@ -9,7 +9,7 @@ from aiohttp.test_utils import TestClient
 from pytest_mock import MockFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings

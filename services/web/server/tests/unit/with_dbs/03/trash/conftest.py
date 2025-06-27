@@ -19,9 +19,9 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_service_webserver.projects.models import ProjectDict
 
 _logger = logging.getLogger(__name__)
