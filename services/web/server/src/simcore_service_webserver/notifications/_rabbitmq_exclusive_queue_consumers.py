@@ -102,20 +102,14 @@ async def _computational_pipeline_status_message_parser(
     app: web.Application, data: bytes
 ) -> bool:
     rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
-    try:
-        project = await _projects_service.get_project_for_user(
-            app,
-            f"{rabbit_message.project_id}",
-            rabbit_message.user_id,
-            include_state=True,
-        )
-        await _projects_service.notify_project_state_update(app, project)
-    except ProjectNotFoundError:
-        _logger.warning(
-            "Project %s not found for user %s",
-            rabbit_message.project_id,
-            rabbit_message.user_id,
-        )
+    project = await _projects_service.get_project_for_user(
+        app,
+        f"{rabbit_message.project_id}",
+        rabbit_message.user_id,
+        include_state=True,
+    )
+    await _projects_service.notify_project_state_update(app, project)
+
     return True
 
 
