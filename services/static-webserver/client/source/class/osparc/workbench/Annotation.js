@@ -46,7 +46,13 @@ qx.Class.define("osparc.workbench.Annotation", {
   },
 
   statics: {
-    DEFAULT_COLOR: "#FFFF01"
+    DEFAULT_COLOR: "#FFFF01",
+
+    TYPES: {
+      NOTE: "note",
+      RECT: "rect",
+      TEXT: "text",
+    },
   },
 
   properties: {
@@ -56,6 +62,7 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     type: {
+      // check: [this.TYPES.NOTE, this.TYPES.RECT, , this.TYPES.TEXT],
       check: ["note", "rect", "text"],
       nullable: false
     },
@@ -95,15 +102,15 @@ qx.Class.define("osparc.workbench.Annotation", {
 
       let representation = null;
       switch (this.getType()) {
-        case "note": {
+        case this.self().TYPES.NOTE: {
           const user = osparc.store.Groups.getInstance().getUserByGroupId(attrs.recipientGid);
           representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.getLabel() : "", attrs.text);
           break;
         }
-        case "rect":
+        case this.self().TYPES.RECT:
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
-        case "text":
+        case this.self().TYPES.TEXT:
           representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
           break;
       }
@@ -124,10 +131,10 @@ qx.Class.define("osparc.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         switch (this.getType()) {
-          case "rect":
+          case this.self().TYPES.RECT:
             osparc.wrapper.Svg.updateItemColor(representation, color);
             break;
-          case "text":
+          case this.self().TYPES.TEXT:
             osparc.wrapper.Svg.updateTextColor(representation, color);
             break;
         }
@@ -188,8 +195,8 @@ qx.Class.define("osparc.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         switch (this.getType()) {
-          case "rect":
-          case "text": {
+          case this.self().TYPES.RECT:
+          case this.self().TYPES.TEXT: {
             if (selected) {
               if (!("bBox" in representation.node)) {
                 const bBox = this.__svgLayer.drawBoundingBox(this);
