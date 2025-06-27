@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from typing import Final
 
@@ -13,10 +14,11 @@ from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
-from ...utils.rabbitmq import publish_project_log
+from ...utils.rabbitmq import publish_pipeline_scheduling_state, publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -57,6 +59,18 @@ async def run_new_pipeline(
         )
         return
 
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        # if the run already exists and is scheduled, do not schedule again.
+        last_run = await CompRunsRepository.instance(db_engine).get(
+            user_id=user_id, project_id=project_id
+        )
+        if last_run.result.is_running():
+            _logger.warning(
+                "run for project %s is already running. not scheduling it again.",
+                f"{project_id=}",
+            )
+            return
+
     new_run = await CompRunsRepository.instance(db_engine).create(
         user_id=user_id,
         project_id=project_id,
@@ -91,6 +105,9 @@ async def run_new_pipeline(
         project_id,
         log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
         log_level=logging.INFO,
+    )
+    await publish_pipeline_scheduling_state(
+        rabbitmq_client, user_id, project_id, new_run.result
     )
 
 
@@ -128,8 +145,7 @@ async def _get_pipeline_at_db(
     project_id: ProjectID, db_engine: AsyncEngine
 ) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
-    pipeline_at_db = await comp_pipeline_repo.get_pipeline(project_id)
-    return pipeline_at_db
+    return await comp_pipeline_repo.get_pipeline(project_id)
 
 
 async def _get_pipeline_tasks_at_db(
