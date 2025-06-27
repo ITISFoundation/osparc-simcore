@@ -129,20 +129,21 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
         return;
       }
 
+      const annotationTypes = osparc.workbench.Annotation.TYPES;
+
       const attrs = annotation.getAttributes();
-      if (annotation.getType() === osparc.workbench.Annotation.TYPES.TEXT) {
+      if (annotation.getType() === annotationTypes.TEXT) {
         const textField = this.getChildControl("text-field").set({
           value: attrs.text
         });
         textField.addListener("changeValue", e => annotation.setText(e.getData()));
-      } else if (annotation.getType() === osparc.workbench.Annotation.TYPES.NOTE) {
+      } else if (annotation.getType() === annotationTypes.NOTE) {
         const textArea = this.getChildControl("text-area").set({
           value: attrs.text
         });
         textArea.addListener("changeValue", e => annotation.setText(e.getData()));
       }
 
-      const annotationTypes = osparc.workbench.Annotation.TYPES;
       if ([annotationTypes.TEXT, annotationTypes.RECT].includes(annotation.getType())) {
         const colorPicker = this.getChildControl("color-picker");
         annotation.bind("color", colorPicker, "value");
