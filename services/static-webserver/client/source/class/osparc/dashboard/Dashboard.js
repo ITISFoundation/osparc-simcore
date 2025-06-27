@@ -209,7 +209,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
             selectedTab.resourceBrowser.initResources();
           } else {
             const initTab = () => {
-              selectedTab.resourceBrowser.initResources()
+              selectedTab.resourceBrowser.initResources();
               this.removeListener("preResourcesLoaded", initTab);
             };
             this.addListener("preResourcesLoaded", initTab, this);

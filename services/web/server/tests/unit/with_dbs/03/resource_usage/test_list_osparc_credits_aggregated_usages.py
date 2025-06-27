@@ -19,7 +19,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
     OsparcCreditsAggregatedUsagesPage,
 )
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole

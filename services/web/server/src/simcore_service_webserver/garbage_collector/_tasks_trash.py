@@ -3,59 +3,37 @@ Scheduled tasks addressing users
 
 """
 
-import asyncio
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
+from datetime import timedelta
 
 from aiohttp import web
-from common_library.async_tools import cancel_wait_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
-from tenacity import retry
-from tenacity.before_sleep import before_sleep_log
-from tenacity.wait import wait_exponential
+from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ..trash import trash_service
+from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 
 _logger = logging.getLogger(__name__)
 
-CleanupContextFunc = Callable[[web.Application], AsyncIterator[None]]
 
+def create_background_task_to_prune_trash(wait_s: float) -> CleanupContextFunc:
 
-_PERIODIC_TASK_NAME = f"{__name__}"
-_APP_TASK_KEY = f"{_PERIODIC_TASK_NAME}.task"
+    async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
+        interval = timedelta(seconds=wait_s)
 
-
-@retry(
-    wait=wait_exponential(min=5, max=20),
-    before_sleep=before_sleep_log(_logger, logging.WARNING),
-)
-async def _run_task(app: web.Application):
-    with log_context(_logger, logging.INFO, "Deleting expired trashed items"):
-        await trash_service.safe_delete_expired_trash_as_admin(app)
-
-
-async def _run_periodically(app: web.Application, wait_interval_s: float):
-    while True:
-        await _run_task(app)
-        await asyncio.sleep(wait_interval_s)
-
-
-def create_background_task_to_prune_trash(
-    wait_s: float, task_name: str = _PERIODIC_TASK_NAME
-) -> CleanupContextFunc:
-    async def _cleanup_ctx_fun(
-        app: web.Application,
-    ) -> AsyncIterator[None]:
-        # setup
-        task = asyncio.create_task(
-            _run_periodically(app, wait_s),
-            name=task_name,
+        @exclusive_periodic(
+            # Function-exclusiveness is required to avoid multiple tasks like thisone running concurrently
+            get_redis_lock_manager_client_sdk(app),
+            task_interval=interval,
+            retry_after=min(timedelta(seconds=10), interval / 10),
         )
-        app[_APP_TASK_KEY] = task
+        async def _prune_trash_periodically() -> None:
+            with log_context(_logger, logging.INFO, "Deleting expired trashed items"):
+                await trash_service.safe_delete_expired_trash_as_admin(app)
 
-        yield
-
-        # tear-down
-        await cancel_wait_task(task)
+        async for _ in periodic_task_lifespan(app, _prune_trash_periodically):
+            yield
 
     return _cleanup_ctx_fun

@@ -15,11 +15,11 @@ from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from pydantic import TypeAdapter
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     MockedStorageSubsystem,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.client import long_running_task_request
 from simcore_service_webserver.db.models import UserRole
