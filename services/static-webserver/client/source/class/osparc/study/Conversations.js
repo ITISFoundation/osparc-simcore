@@ -259,6 +259,7 @@ qx.Class.define("osparc.study.Conversations", {
             this.__addTempConversationPage();
           }
         })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();

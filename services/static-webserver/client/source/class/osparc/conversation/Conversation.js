@@ -197,7 +197,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
+      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options)
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __reloadMessages: function(removeMessages = true) {
