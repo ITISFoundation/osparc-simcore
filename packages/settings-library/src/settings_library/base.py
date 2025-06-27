@@ -120,7 +120,7 @@ class BaseCustomSettings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=True,  # All must be capitalized
         env_parse_none_str="null",
-        extra="forbid",
+        extra="ignore",
         frozen=True,
         ignored_types=(cached_property,),
         validate_by_alias=True,

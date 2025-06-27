@@ -125,7 +125,7 @@ async def test_get_ec2_instance_capabilities_returns_all_options(
     assert instance_types
     # NOTE: this might need adaptation when moto is updated
     assert (
-        850 < len(instance_types) < 877
+        876 < len(instance_types) < 925
     ), f"received {len(instance_types)}, the test might need adaptation"
 
 
