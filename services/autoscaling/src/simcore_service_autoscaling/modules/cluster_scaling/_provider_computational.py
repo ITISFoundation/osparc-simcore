@@ -21,10 +21,10 @@ from ...core.errors import (
 )
 from ...core.settings import get_application_settings
 from ...models import AssociatedInstance, DaskTask
-from ...utils import computational_scaling as utils
 from ...utils import utils_docker, utils_ec2
 from .. import dask
 from ..docker import get_docker_client
+from . import _utils_computational as utils
 
 _logger = logging.getLogger(__name__)
 

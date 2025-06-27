@@ -8,7 +8,7 @@ import pytest
 from aws_library.ec2 import Resources
 from pydantic import ByteSize, TypeAdapter
 from simcore_service_autoscaling.models import DaskTask, DaskTaskResources
-from simcore_service_autoscaling.utils.computational_scaling import (
+from simcore_service_autoscaling.modules.cluster_scaling._utils_computational import (
     _DEFAULT_MAX_CPU,
     _DEFAULT_MAX_RAM,
     resources_from_dask_task,
