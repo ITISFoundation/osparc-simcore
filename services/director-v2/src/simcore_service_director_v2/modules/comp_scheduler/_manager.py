@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from typing import Final
 
@@ -5,7 +6,6 @@ import networkx as nx
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.projects import ProjectID
-from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.background_task import create_periodic_task
 from servicelib.exception_utils import suppress_exceptions
@@ -14,6 +14,7 @@ from servicelib.redis import CouldNotAcquireLockError, exclusive
 from servicelib.utils import limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ...core.errors import ComputationalRunNotFoundError
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
@@ -57,6 +58,18 @@ async def run_new_pipeline(
             f"{project_id=}",
         )
         return
+
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        # if the run already exists and is scheduled, do not schedule again.
+        last_run = await CompRunsRepository.instance(db_engine).get(
+            user_id=user_id, project_id=project_id
+        )
+        if last_run.result.is_running():
+            _logger.warning(
+                "run for project %s is already running. not scheduling it again.",
+                f"{project_id=}",
+            )
+            return
 
     new_run = await CompRunsRepository.instance(db_engine).create(
         user_id=user_id,
