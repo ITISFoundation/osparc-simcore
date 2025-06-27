@@ -150,7 +150,7 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
         colorPicker.bind("value", annotation, "color");
       }
 
-      if (annotation.getType() === "text") {
+      if (annotation.getType() === annotationTypes.TEXT) {
         const fontSizeField = this.getChildControl("font-size").set({
           value: attrs.fontSize
         })
