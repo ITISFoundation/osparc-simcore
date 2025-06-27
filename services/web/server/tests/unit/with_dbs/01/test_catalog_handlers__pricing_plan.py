@@ -15,7 +15,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole

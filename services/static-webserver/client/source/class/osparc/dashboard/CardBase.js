@@ -1024,13 +1024,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __openResourceDetails: function(openWindowCB) {
       const resourceData = this.getResourceData();
-      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const {
+        resourceDetails,
+        window,
+      } = osparc.dashboard.ResourceDetails.popUpInWindow(resourceData);
+
       resourceDetails.addListenerOnce("pagesAdded", () => {
         if (openWindowCB in resourceDetails) {
           resourceDetails[openWindowCB]();
         }
-      })
-      const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+      });
       [
         "updateStudy",
         "updateTemplate",
@@ -1041,11 +1044,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
         resourceDetails.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
       });
       resourceDetails.addListener("publishTemplate", e => {
-        win.close();
+        window.close();
         this.fireDataEvent("publishTemplate", e.getData());
       });
       resourceDetails.addListener("openStudy", e => {
-        const openCB = () => win.close();
+        const openCB = () => window.close();
         const studyId = e.getData()["uuid"];
         const isStudyCreation = false;
         this._startStudyById(studyId, openCB, null, isStudyCreation);

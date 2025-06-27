@@ -18,7 +18,7 @@ from models_library.functions_errors import (
     FunctionJobWriteAccessDeniedError,
 )
 from models_library.products import ProductName
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface as functions_rpc,

@@ -23,7 +23,7 @@ from models_library.api_schemas_webserver.wallets import WalletGetWithAvailableC
 from models_library.licenses import VIP_DETAILS_EXAMPLE, LicensedResourceType
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.licensed_item_to_resource import (
     licensed_item_to_resource,
