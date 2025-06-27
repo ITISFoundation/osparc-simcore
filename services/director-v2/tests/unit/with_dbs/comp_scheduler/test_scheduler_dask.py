@@ -162,6 +162,7 @@ async def _assert_start_pipeline(
     sqlalchemy_async_engine: AsyncEngine,
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
 ) -> tuple[CompRunsAtDB, list[CompTaskAtDB]]:
     exp_published_tasks = deepcopy(published_project.tasks)
     assert published_project.project.prj_owner
@@ -182,6 +183,11 @@ async def _assert_start_pipeline(
             comp_runs.c.user_id == published_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
         ),
+    )
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        1,
+        ComputationalPipelineStatusMessage.model_validate_json,
     )
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
@@ -390,9 +396,9 @@ async def _assert_message_received(
             print(
                 f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
-            assert mocked_message_parser.call_count == expected_call_count, (
-                mocked_message_parser.call_args_list
-            )
+            assert (
+                mocked_message_parser.call_count == expected_call_count
+            ), mocked_message_parser.call_args_list
             print(
                 f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
@@ -477,14 +483,9 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         sqlalchemy_async_engine=sqlalchemy_async_engine,
         published_project=published_project,
         run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
     )
     with_disabled_scheduler_publisher.assert_called()
-
-    await _assert_message_received(
-        computational_pipeline_rabbit_client_parser,
-        1,
-        ComputationalPipelineStatusMessage.model_validate_json,
-    )
 
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the dask-worker can take them
@@ -974,13 +975,10 @@ async def with_started_project(
         sqlalchemy_async_engine=sqlalchemy_async_engine,
         published_project=published_project,
         run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
     )
     with_disabled_scheduler_publisher.assert_called_once()
-    await _assert_message_received(
-        computational_pipeline_rabbit_client_parser,
-        1,
-        ComputationalPipelineStatusMessage.model_validate_json,
-    )
+
     #
     # 2. This runs the scheduler until the project is started scheduled in the back-end
     #
@@ -1290,12 +1288,9 @@ async def test_task_progress_triggers(
         sqlalchemy_async_engine=sqlalchemy_async_engine,
         published_project=published_project,
         run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
     )
-    await _assert_message_received(
-        computational_pipeline_rabbit_client_parser,
-        1,
-        ComputationalPipelineStatusMessage.model_validate_json,
-    )
+
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the dask-worker can take them
     expected_pending_tasks, _ = await _assert_publish_in_dask_backend(
@@ -1474,7 +1469,6 @@ class RebootState:
     expected_pipeline_state_notification: int
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize(
     "reboot_state",
     [
@@ -1657,6 +1651,7 @@ async def test_handling_cancellation_of_jobs_after_reboot(
     scheduler_api: BaseCompScheduler,
     mocked_parse_output_data_fct: mock.Mock,
     mocked_clean_task_output_fct: mock.Mock,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
 ):
     """A running pipeline was cancelled by a user and the DV-2 was restarted BEFORE
     It could actually cancel the task. On reboot the DV-2 shall recover
@@ -1676,6 +1671,11 @@ async def test_handling_cancellation_of_jobs_after_reboot(
             ),
         )
     )[0]
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        0,
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
 
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
@@ -1772,6 +1772,11 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         ),
     )
     mocked_clean_task_output_fct.assert_called()
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        1,
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
 
 
 @pytest.fixture
@@ -1794,6 +1799,7 @@ async def test_running_pipeline_triggers_heartbeat(
     published_project: PublishedProject,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
 ):
     _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     run_in_db, expected_published_tasks = await _assert_start_pipeline(
@@ -1801,6 +1807,7 @@ async def test_running_pipeline_triggers_heartbeat(
         sqlalchemy_async_engine=sqlalchemy_async_engine,
         published_project=published_project,
         run_metadata=run_metadata,
+        computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
     )
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the dask-worker can take them
@@ -1810,6 +1817,7 @@ async def test_running_pipeline_triggers_heartbeat(
         expected_published_tasks,
         mocked_dask_client,
         scheduler_api,
+        computational_pipeline_rabbit_client_parser,
     )
     # -------------------------------------------------------------------------------
     # 2. the "worker" starts processing a task
@@ -1908,6 +1916,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
     faker: Faker,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
 ):
     mocked_get_or_create_cluster.side_effect = (
         ComputationalBackendOnDemandNotReadyError(
@@ -1936,6 +1945,11 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
             ),
         )
     )[0]
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        1,
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
@@ -1966,6 +1980,11 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
             comp_runs.c.user_id == published_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
         ),
+    )
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        1,
+        ComputationalPipelineStatusMessage.model_validate_json,
     )
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
@@ -2017,6 +2036,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     run_metadata: RunMetadataDict,
     mocked_get_or_create_cluster: mock.Mock,
     get_or_create_exception: Exception,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
 ):
     # needs to change: https://github.com/ITISFoundation/osparc-simcore/issues/6817
 
@@ -2043,6 +2063,11 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
             ),
         )
     )[0]
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        1,
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
@@ -2073,6 +2098,11 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
         ),
     )
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        1,
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
@@ -2096,6 +2126,11 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
             comp_runs.c.user_id == published_project.project.prj_owner,
             comp_runs.c.project_uuid == f"{published_project.project.uuid}",
         ),
+    )
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        0,
+        ComputationalPipelineStatusMessage.model_validate_json,
     )
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
