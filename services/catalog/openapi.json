@@ -172,6 +172,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "additionalProperties": true,
                   "title": "Response Get Service Labels V0 Services  Service Key   Service Version  Labels Get"
                 }
               }
@@ -839,6 +840,7 @@
           "Runtime": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -1534,6 +1536,7 @@
           "Global": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -1556,6 +1559,7 @@
           "GlobalJob": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -2688,6 +2692,7 @@
             "title": "Classifiers"
           },
           "quality": {
+            "additionalProperties": true,
             "type": "object",
             "title": "Quality",
             "default": {}
@@ -2933,6 +2938,7 @@
           "contentSchema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -3044,6 +3050,7 @@
           "contentSchema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -3130,6 +3137,7 @@
           "content_schema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {

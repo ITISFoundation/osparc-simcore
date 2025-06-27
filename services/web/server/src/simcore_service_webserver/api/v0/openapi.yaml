@@ -8407,6 +8407,7 @@ components:
     AccountRequestInfo:
       properties:
         form:
+          additionalProperties: true
           type: object
           title: Form
         captcha:
@@ -8472,6 +8473,7 @@ components:
           format: color
           title: Color
         attributes:
+          additionalProperties: true
           type: object
           title: Attributes
           description: svg attributes
@@ -8569,6 +8571,9 @@ components:
         apiBaseUrl:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Apibaseurl
         apiKey:
@@ -8611,13 +8616,15 @@ components:
           title: Version
           description: Application's version
         services:
+          additionalProperties: true
           type: object
           title: Services
           description: Other backend services connected from this service
           default: {}
         sessions:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Sessions
           description: Client sessions info. If single session per app, then is denoted
@@ -8626,12 +8633,16 @@ components:
         url:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Url
           description: Link to current resource
         diagnostics_url:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Diagnostics Url
           description: Link to diagnostics report sub-resource. This MIGHT take some
@@ -8748,11 +8759,17 @@ components:
         thumbnail:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Thumbnail
         icon:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Icon
         descriptionUi:
@@ -8804,6 +8821,7 @@ components:
           - type: 'null'
           title: Classifiers
         quality:
+          additionalProperties: true
           type: object
           title: Quality
         release:
@@ -8967,11 +8985,17 @@ components:
         thumbnail:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Thumbnail
         icon:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Icon
         descriptionUi:
@@ -9025,6 +9049,7 @@ components:
           - type: 'null'
           title: Classifiers
         quality:
+          additionalProperties: true
           type: object
           title: Quality
         history:
@@ -9167,6 +9192,7 @@ components:
           - type: 'null'
           title: Classifiers
         quality:
+          additionalProperties: true
           type: object
           title: Quality
           default: {}
@@ -9305,11 +9331,15 @@ components:
             task
         url:
           type: string
+          minLength: 1
+          format: uri
           title: Url
           description: the link where to get the status of the task
         stop_url:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Stop Url
           description: the link where to stop the task
@@ -9336,6 +9366,7 @@ components:
         state:
           $ref: '#/components/schemas/RunningState'
         info:
+          additionalProperties: true
           type: object
           title: Info
         submittedAt:
@@ -9358,6 +9389,7 @@ components:
           type: string
           title: Rootprojectname
         projectCustomMetadata:
+          additionalProperties: true
           type: object
           title: Projectcustommetadata
       type: object
@@ -9421,6 +9453,7 @@ components:
           type: number
           title: Progress
         image:
+          additionalProperties: true
           type: object
           title: Image
         startedAt:
@@ -9438,6 +9471,8 @@ components:
         logDownloadLink:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Logdownloadlink
         nodeName:
@@ -9864,9 +9899,11 @@ components:
     EmailTestPassed:
       properties:
         fixtures:
+          additionalProperties: true
           type: object
           title: Fixtures
         info:
+          additionalProperties: true
           type: object
           title: Info
       type: object
@@ -9906,6 +9943,8 @@ components:
         data:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Data
         error:
@@ -10911,7 +10950,8 @@ components:
       properties:
         data:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Data
         error:
@@ -11734,6 +11774,8 @@ components:
       properties:
         state:
           type: string
+          minLength: 1
+          format: uri
           title: State
       type: object
       required:
@@ -11768,9 +11810,13 @@ components:
       properties:
         abort_upload:
           type: string
+          minLength: 1
+          format: uri
           title: Abort Upload
         complete_upload:
           type: string
+          minLength: 1
+          format: uri
           title: Complete Upload
       type: object
       required:
@@ -11786,6 +11832,8 @@ components:
         urls:
           items:
             type: string
+            minLength: 1
+            format: uri
           type: array
           title: Urls
         links:
@@ -12014,6 +12062,8 @@ components:
         thumbnail:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Thumbnail
           description: url to the group thumbnail
@@ -12310,6 +12360,9 @@ components:
           title: Created
         invitationLink:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: Invitationlink
       type: object
       required:
@@ -12334,6 +12387,7 @@ components:
     JSONFunctionInputSchema:
       properties:
         schema_content:
+          additionalProperties: true
           type: object
           title: JSON Schema
           description: JSON Schema
@@ -12348,6 +12402,7 @@ components:
     JSONFunctionOutputSchema:
       properties:
         schema_content:
+          additionalProperties: true
           type: object
           title: JSON Schema
           description: JSON Schema
@@ -12477,11 +12532,17 @@ components:
         categoryIcon:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Categoryicon
         termsOfUseUrl:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Termsofuseurl
         createdAt:
@@ -13111,6 +13172,10 @@ components:
         thumbnail:
           anyOf:
           - type: string
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
@@ -13284,7 +13349,6 @@ components:
           exclusiveMinimum: true
           title: Serviceport
           description: port to access the service within the network
-          default: 8080
           maximum: 65535
           minimum: 0
         serviceBasepath:
@@ -13321,6 +13385,7 @@ components:
       - serviceKey
       - serviceVersion
       - serviceHost
+      - servicePort
       - serviceState
       - userId
       title: NodeGet
@@ -13363,6 +13428,7 @@ components:
     NodeOutputs:
       properties:
         outputs:
+          additionalProperties: true
           type: object
           title: Outputs
       type: object
@@ -13417,12 +13483,14 @@ components:
           title: Progress
         bootOptions:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Bootoptions
         outputs:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Outputs
       type: object
@@ -13453,9 +13521,15 @@ components:
       properties:
         thumbnail_url:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: Thumbnail Url
         file_url:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: File Url
         mimetype:
           anyOf:
@@ -14031,6 +14105,9 @@ components:
           title: Paymentmethodid
         paymentMethodFormUrl:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: Paymentmethodformurl
           description: Link to external site that holds the payment submission form
       type: object
@@ -14088,6 +14165,9 @@ components:
         invoiceUrl:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Invoiceurl
       type: object
@@ -14236,6 +14316,7 @@ components:
           type: string
           title: Country
         extras:
+          additionalProperties: true
           type: object
           title: Extras
           description: Keeps extra information provided in the request form.
@@ -14267,6 +14348,8 @@ components:
       properties:
         link:
           type: string
+          minLength: 1
+          format: uri
           title: Link
       type: object
       required:
@@ -14482,13 +14565,15 @@ components:
           description: Short display name for SMS
         vendor:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Vendor
           description: vendor attributes
         issues:
           anyOf:
           - items:
+              additionalProperties: true
               type: object
             type: array
           - type: 'null'
@@ -14497,6 +14582,7 @@ components:
         manuals:
           anyOf:
           - items:
+              additionalProperties: true
               type: object
             type: array
           - type: 'null'
@@ -14505,12 +14591,14 @@ components:
         support:
           anyOf:
           - items:
+              additionalProperties: true
               type: object
             type: array
           - type: 'null'
           title: Support
           description: List of support resources
         loginSettings:
+          additionalProperties: true
           type: object
           title: Loginsettings
         maxOpenStudiesPerUser:
@@ -14565,6 +14653,7 @@ components:
           type: string
           title: Productname
         ui:
+          additionalProperties: true
           type: object
           title: Ui
           description: Front-end owned ui product configuration
@@ -14702,7 +14791,8 @@ components:
               application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
         defaultInputs:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Defaultinputs
         projectId:
@@ -14731,6 +14821,9 @@ components:
         thumbnail:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: string
             const: ''
           title: Thumbnail
@@ -14793,6 +14886,7 @@ components:
           title: Classifiers
           default: []
         quality:
+          additionalProperties: true
           type: object
           title: Quality
           default: {}
@@ -14804,7 +14898,8 @@ components:
           title: Ui
         dev:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Dev
         permalink:
@@ -14929,6 +15024,9 @@ components:
         thumbnail:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: string
             const: ''
           title: Thumbnail
@@ -14991,6 +15089,7 @@ components:
           title: Classifiers
           default: []
         quality:
+          additionalProperties: true
           type: object
           title: Quality
           default: {}
@@ -15002,7 +15101,8 @@ components:
           title: Ui
         dev:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Dev
         permalink:
@@ -15099,7 +15199,8 @@ components:
           title: Kind
         content_schema:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Content Schema
           description: jsonschema for the port's value. SEE https://json-schema.org/understanding-json-schema/
@@ -15198,7 +15299,8 @@ components:
           title: Classifiers
         dev:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Dev
         ui:
@@ -15207,7 +15309,8 @@ components:
           - type: 'null'
         quality:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Quality
         templateType:
@@ -15220,6 +15323,9 @@ components:
       properties:
         url:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: Url
         is_public:
           type: boolean
@@ -15275,6 +15381,9 @@ components:
           title: Shareeemail
         confirmationLink:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: Confirmationlink
       type: object
       required:
@@ -15520,7 +15629,8 @@ components:
               application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
         defaultInputs:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Defaultinputs
         uid:
@@ -15577,7 +15687,8 @@ components:
               application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
         defaultInputs:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Defaultinputs
         uid:
@@ -15786,7 +15897,6 @@ components:
           exclusiveMinimum: true
           title: Service Port
           description: the service swarm internal port
-          default: 8080
           maximum: 65535
           minimum: 0
         published_port:
@@ -15824,6 +15934,7 @@ components:
       - project_id
       - service_uuid
       - service_host
+      - service_port
       - service_state
       title: RunningDynamicServiceDetails
     RunningState:
@@ -15880,6 +15991,9 @@ components:
           description: Long description of the service
         thumbnail:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: Thumbnail
           description: Url to service thumbnail
         file_extensions:
@@ -15890,6 +16004,9 @@ components:
           description: File extensions that this service can process
         view_url:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: View Url
           description: Redirection to open a service in osparc (see /view)
       type: object
@@ -15960,7 +16077,8 @@ components:
             is allowed
         contentSchema:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Contentschema
           description: jsonschema of this input/output. Required when type='ref_contentSchema'
@@ -16077,7 +16195,8 @@ components:
             is allowed
         contentSchema:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Contentschema
           description: jsonschema of this input/output. Required when type='ref_contentSchema'
@@ -16430,7 +16549,8 @@ components:
               application/schema+json: '#/components/schemas/JSONFunctionOutputSchema'
         defaultInputs:
           anyOf:
-          - type: object
+          - additionalProperties: true
+            type: object
           - type: 'null'
           title: Defaultinputs
         solverKey:
@@ -16596,6 +16716,9 @@ components:
         icon:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Icon
         workbench:
@@ -16886,6 +17009,7 @@ components:
           title: Template Name
           default: registration_email.jinja2
         template_context:
+          additionalProperties: true
           type: object
           title: Template Context
           default: {}
@@ -17133,6 +17257,7 @@ components:
           - type: 'null'
           title: Country
         extras:
+          additionalProperties: true
           type: object
           title: Extras
           description: Keeps extra information provided in the request form
@@ -17407,6 +17532,9 @@ components:
           description: Identifier for the file type
         view_url:
           type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: View Url
           description: Base url to execute viewer. Needs appending file_size,[file_name]
             and download_link as query parameters
@@ -17562,6 +17690,9 @@ components:
         paymentFormUrl:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Paymentformurl
           description: Link to external site that holds the payment submission form.None
