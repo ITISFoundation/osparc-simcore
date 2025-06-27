@@ -5,6 +5,7 @@ import networkx as nx
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.background_task import create_periodic_task
 from servicelib.exception_utils import suppress_exceptions
@@ -16,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
-from ...utils.rabbitmq import publish_project_log
+from ...utils.rabbitmq import publish_pipeline_scheduling_state, publish_project_log
 from ..db import get_db_engine
 from ..db.repositories.comp_pipelines import CompPipelinesRepository
 from ..db.repositories.comp_runs import CompRunsRepository
@@ -91,6 +92,9 @@ async def run_new_pipeline(
         project_id,
         log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
         log_level=logging.INFO,
+    )
+    await publish_pipeline_scheduling_state(
+        rabbitmq_client, user_id, project_id, new_run.result
     )
 
 
