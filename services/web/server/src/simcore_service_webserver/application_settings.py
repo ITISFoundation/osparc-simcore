@@ -98,7 +98,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_APP_FACTORY_NAME: Annotated[
         Literal["WEBSERVER_FULL_APP_FACTORY", "WEBSERVER_AUTHZ_APP_FACTORY"],
         Field(
-            description="Application factory to be lauched by the guvicorn server",
+            description="Application factory to be lauched by the gunicorn server",
         ),
     ] = "WEBSERVER_FULL_APP_FACTORY"
 

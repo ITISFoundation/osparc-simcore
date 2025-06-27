@@ -27,7 +27,8 @@ _logger = logging.getLogger(__name__)
     __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger
 )
 def setup_security(app: web.Application):
-    # NOTE: no need for setup_products
+    # NOTE: No need to add a dependency with products domain, i.e. do not call setup_products.
+    #       The logic about the product is obtained via the security repository
     setup_session(app)
     setup_db(app)
 
