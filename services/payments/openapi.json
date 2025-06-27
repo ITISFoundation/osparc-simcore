@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-payments web API",
     "description": "Service that manages creation and validation of registration payments",
-    "version": "1.4.0"
+    "version": "1.4.1"
   },
   "paths": {
     "/": {
