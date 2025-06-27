@@ -6,7 +6,7 @@ from dask_task_models_library.resource_constraints import (
     get_ec2_instance_type_from_resources,
 )
 
-from ..models import DaskTask
+from ...models import DaskTask
 
 _logger = logging.getLogger(__name__)
 
