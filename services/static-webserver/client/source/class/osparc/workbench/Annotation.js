@@ -62,8 +62,11 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     type: {
-      // check: [this.TYPES.NOTE, this.TYPES.RECT, , this.TYPES.TEXT],
-      check: ["note", "rect", "text"],
+      check: [
+        "note", // osparc.workbench.Annotation.TYPES.NOTE
+        "rect", // osparc.workbench.Annotation.TYPES.RECT
+        "text", // osparc.workbench.Annotation.TYPES.TEXT
+      ],
       nullable: false
     },
 
