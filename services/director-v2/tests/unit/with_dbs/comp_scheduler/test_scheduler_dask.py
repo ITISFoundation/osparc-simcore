@@ -2140,3 +2140,78 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         expected_progress=1.0,
         run_id=run_in_db.run_id,
     )
+
+
+async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    initialized_app: FastAPI,
+    sqlalchemy_async_engine: AsyncEngine,
+    published_project: PublishedProject,
+    run_metadata: RunMetadataDict,
+    computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+):
+    # Ensure we start with an empty database
+    await assert_comp_runs_empty(sqlalchemy_async_engine)
+
+    # First call to run_new_pipeline - should succeed
+    assert published_project.project.prj_owner
+    await run_new_pipeline(
+        initialized_app,
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        run_metadata=run_metadata,
+        use_on_demand_clusters=False,
+    )
+
+    # Verify first run was created and published
+    runs_after_first_call = await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PUBLISHED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    first_run = runs_after_first_call[0]
+
+    # Verify first RabbitMQ message was sent
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        1,
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
+
+    # Second call to run_new_pipeline - should be ignored since first run is still running
+    await run_new_pipeline(
+        initialized_app,
+        user_id=published_project.project.prj_owner,
+        project_id=published_project.project.uuid,
+        run_metadata=run_metadata,
+        use_on_demand_clusters=False,
+    )
+
+    # Verify still only one run exists with same run_id
+    runs_after_second_call = await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.PUBLISHED,
+        where_statement=and_(
+            comp_runs.c.user_id == published_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{published_project.project.uuid}",
+        ),
+    )
+    second_run = runs_after_second_call[0]
+
+    # Verify it's the same run (same run_id, same created timestamp)
+    assert first_run.run_id == second_run.run_id
+    assert first_run.created == second_run.created
+    assert first_run.iteration == second_run.iteration
+
+    # Verify no additional RabbitMQ message was sent (still only 1 total)
+    await _assert_message_received(
+        computational_pipeline_rabbit_client_parser,
+        0,  # No new messages expected
+        ComputationalPipelineStatusMessage.model_validate_json,
+    )
