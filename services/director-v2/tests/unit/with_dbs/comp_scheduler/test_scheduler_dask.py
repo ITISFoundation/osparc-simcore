@@ -1471,8 +1471,10 @@ class RebootState:
     expected_task_state_group2: RunningState
     expected_task_progress_group2: float
     expected_run_state: RunningState
+    expected_pipeline_state_notification: int
 
 
+@pytest.mark.testit
 @pytest.mark.parametrize(
     "reboot_state",
     [
@@ -1485,6 +1487,7 @@ class RebootState:
                 expected_task_state_group2=RunningState.ABORTED,
                 expected_task_progress_group2=1,
                 expected_run_state=RunningState.FAILED,
+                expected_pipeline_state_notification=1,
             ),
             id="reboot with lost tasks",
         ),
@@ -1497,6 +1500,7 @@ class RebootState:
                 expected_task_state_group2=RunningState.ABORTED,
                 expected_task_progress_group2=1,
                 expected_run_state=RunningState.ABORTED,
+                expected_pipeline_state_notification=1,
             ),
             id="reboot with aborted tasks",
         ),
@@ -1509,6 +1513,7 @@ class RebootState:
                 expected_task_state_group2=RunningState.ABORTED,
                 expected_task_progress_group2=1,
                 expected_run_state=RunningState.FAILED,
+                expected_pipeline_state_notification=1,
             ),
             id="reboot with failed tasks",
         ),
@@ -1523,6 +1528,7 @@ class RebootState:
                 expected_task_state_group2=RunningState.STARTED,
                 expected_task_progress_group2=0,
                 expected_run_state=RunningState.STARTED,
+                expected_pipeline_state_notification=0,
             ),
             id="reboot with running tasks",
         ),
@@ -1535,6 +1541,7 @@ class RebootState:
                 expected_task_state_group2=RunningState.SUCCESS,
                 expected_task_progress_group2=1,
                 expected_run_state=RunningState.SUCCESS,
+                expected_pipeline_state_notification=1,
             ),
             id="reboot with completed tasks",
         ),
@@ -1636,7 +1643,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     )
     await _assert_message_received(
         computational_pipeline_rabbit_client_parser,
-        0,
+        reboot_state.expected_pipeline_state_notification,
         ComputationalPipelineStatusMessage.model_validate_json,
     )
 
