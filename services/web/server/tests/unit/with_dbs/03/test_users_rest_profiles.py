@@ -11,7 +11,7 @@ from collections.abc import AsyncIterable
 from copy import deepcopy
 from http import HTTPStatus
 from typing import Any
-from unittest.mock import MagicMock, Mock
+from unittest.mock import patch
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -27,10 +27,9 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import (
-    NewUser,
-    UserInfoDict,
     switch_client_session_to,
 )
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.users._preferences_service import (
@@ -143,7 +142,7 @@ async def test_search_users_by_partial_fullname(
     public_user: UserInfoDict,
 ):
     assert client.app
-    assert user_role.value == logged_user["role"]
+    assert user_role == logged_user["role"]
 
     # logged_user has default settings
     assert private_user["id"] != logged_user["id"]
@@ -286,7 +285,7 @@ async def test_get_user_by_group_id(
     private_user: UserInfoDict,
 ):
     assert client.app
-    assert user_role.value == logged_user["role"]
+    assert user_role == logged_user["role"]
 
     assert private_user["id"] != logged_user["id"]
     assert public_user["id"] != logged_user["id"]
@@ -545,28 +544,6 @@ async def test_update_existing_user_name(
     await assert_status(resp, status.HTTP_409_CONFLICT)
 
 
-@pytest.fixture
-def mock_failing_database_connection(mocker: Mock) -> MagicMock:
-    """
-    async with engine.acquire() as conn:
-        await conn.execute(query)  --> will raise OperationalError
-    """
-    # See http://initd.org/psycopg/docs/module.html
-    conn_execute = mocker.patch.object(SAConnection, "execute")
-    conn_execute.side_effect = OperationalError(
-        "MOCK: server closed the connection unexpectedly"
-    )
-
-    aysncpg_conn_execute = mocker.patch.object(AsyncConnection, "execute")
-    aysncpg_conn_execute.side_effect = SQLAlchemyOperationalError(
-        statement="MOCK statement",
-        params=(),
-        orig=OperationalError("MOCK: server closed the connection unexpectedly"),
-    )
-
-    return conn_execute
-
-
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -576,7 +553,6 @@ def mock_failing_database_connection(mocker: Mock) -> MagicMock:
 async def test_get_profile_with_failing_db_connection(
     logged_user: UserInfoDict,
     client: TestClient,
-    mock_failing_database_connection: MagicMock,
     expected: HTTPStatus,
 ):
     """
@@ -595,8 +571,22 @@ async def test_get_profile_with_failing_db_connection(
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
-    resp = await client.get(url.path)
+    with patch.object(SAConnection, "execute") as mock_sa_execute, patch.object(
+        AsyncConnection, "execute"
+    ) as mock_async_execute:
 
-    data, error = await assert_status(resp, expected)
-    assert not data
-    assert error["message"] == "Authentication service is temporary unavailable"
+        # Emulates a database connection failure
+        mock_sa_execute.side_effect = OperationalError(
+            "MOCK: server closed the connection unexpectedly"
+        )
+        mock_async_execute.side_effect = SQLAlchemyOperationalError(
+            statement="MOCK statement",
+            params=(),
+            orig=OperationalError("MOCK: server closed the connection unexpectedly"),
+        )
+
+        resp = await client.get(url.path)
+
+        data, error = await assert_status(resp, expected)
+        assert not data
+        assert error["message"] == "Authentication service is temporary unavailable"

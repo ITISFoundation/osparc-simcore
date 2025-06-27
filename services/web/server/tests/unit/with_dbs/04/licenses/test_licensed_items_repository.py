@@ -14,7 +14,7 @@ from models_library.licenses import (
     LicensedResourceType,
 )
 from models_library.rest_ordering import OrderBy
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.licensed_item_to_resource import (
     licensed_item_to_resource,
 )

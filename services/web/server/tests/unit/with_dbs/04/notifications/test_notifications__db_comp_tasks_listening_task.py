@@ -22,7 +22,7 @@ from faker import Faker
 from models_library.projects import ProjectAtDB
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_postgres_database.models.users import UserRole

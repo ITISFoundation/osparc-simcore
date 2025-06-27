@@ -12,11 +12,11 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet, MyGroupsGet
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import API_VTAG
@@ -59,7 +59,7 @@ async def test_list_user_groups_and_try_modify_organizations(
 ):
     assert client.app
     assert logged_user["id"] != standard_groups_owner["id"]
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     # List all groups (organizations, primary, everyone and products) I belong to
     url = client.app.router["list_groups"].url_for()
@@ -130,7 +130,7 @@ async def test_group_creation_workflow(
 ):
     assert client.app
     assert logged_user["id"] != 0
-    assert logged_user["role"] == user_role.value
+    assert logged_user["role"] == user_role
 
     url = client.app.router["create_group"].url_for()
     new_group_data = {
