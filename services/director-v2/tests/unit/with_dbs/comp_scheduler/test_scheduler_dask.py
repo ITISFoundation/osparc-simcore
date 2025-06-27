@@ -47,6 +47,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.core.errors import (
@@ -350,7 +351,9 @@ async def computational_pipeline_rabbit_client_parser(
     client = create_rabbitmq_client("computational_pipeline_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
     queue_name, _ = await client.subscribe(
-        ComputationalPipelineStatusMessage.get_channel_name(), mock
+        ComputationalPipelineStatusMessage.get_channel_name(),
+        mock,
+        topics=[BIND_TO_ALL_TOPICS],
     )
     yield mock
     await client.unsubscribe(queue_name)
@@ -361,6 +364,22 @@ async def _assert_message_received(
     expected_call_count: int,
     message_parser: Callable,
 ) -> list:
+    if expected_call_count == 0:
+        # ensure it remains so for a few seconds
+        mocked_message_parser.assert_not_called()
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(1),
+            stop=stop_after_delay(3),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        ):
+            with attempt:
+                print(
+                    f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
+                )
+                mocked_message_parser.assert_not_called()
+
+        return []
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(5),
@@ -371,7 +390,9 @@ async def _assert_message_received(
             print(
                 f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
-            assert mocked_message_parser.call_count == expected_call_count
+            assert mocked_message_parser.call_count == expected_call_count, (
+                mocked_message_parser.call_args_list
+            )
             print(
                 f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
@@ -1615,7 +1636,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     )
     await _assert_message_received(
         computational_pipeline_rabbit_client_parser,
-        1,
+        0,
         ComputationalPipelineStatusMessage.model_validate_json,
     )
 
