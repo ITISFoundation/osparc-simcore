@@ -1602,6 +1602,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.setScale(closestDown);
     },
 
+    startConversation: function() {
+      this.__toolHint.setValue(this.tr("Pick the position"));
+    },
+
     startAnnotationsNote: function() {
       this.__annotatingNote = true;
       this.__annotatingRect = false;
