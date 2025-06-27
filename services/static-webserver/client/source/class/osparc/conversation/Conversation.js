@@ -82,6 +82,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       };
       const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/10").set({
         ...buttonsAesthetics,
+        visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
       });
       renameButton.addListener("execute", () => {
         const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
@@ -112,6 +113,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
         ...buttonsAesthetics,
         paddingLeft: 4, // adds spacing between buttons
+        visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
       });
       closeButton.addListener("execute", () => {
         const deleteConversation = () => {
