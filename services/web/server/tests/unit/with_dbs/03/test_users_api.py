@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 from datetime import datetime, timedelta
-from enum import Enum
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -14,7 +13,7 @@ from models_library.users import UserID, UserNameID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserStatus
 from simcore_service_webserver.users.api import (
@@ -56,10 +55,7 @@ async def test_reading_a_user(client: TestClient, faker: Faker, user: UserInfoDi
 
     keys = set(got.keys()).intersection(user.keys())
 
-    def _normalize_val(v):
-        return v.value if isinstance(v, Enum) else v
-
-    assert {k: _normalize_val(got[k]) for k in keys} == {k: user[k] for k in keys}
+    assert {k: got[k] for k in keys} == {k: user[k] for k in keys}
 
     user_primary_group_id = got["primary_gid"]
 
@@ -84,7 +80,7 @@ async def test_reading_a_user(client: TestClient, faker: Faker, user: UserInfoDi
     assert got.name == user["name"]
 
     got = await get_user_role(client.app, user_id=user_id)
-    assert _normalize_val(got) == user["role"]
+    assert got == user["role"]
 
     got = await get_user_id_from_gid(client.app, primary_gid=user_primary_group_id)
     assert got == user_id
@@ -100,9 +96,7 @@ async def test_listing_users(client: TestClient, faker: Faker, user: UserInfoDic
     guests = await get_guest_user_ids_and_names(client.app)
     assert not guests
 
-    async with NewUser(
-        user_data={"role": UserRole.GUEST.value}, app=client.app
-    ) as guest:
+    async with NewUser(user_data={"role": UserRole.GUEST}, app=client.app) as guest:
         got = await get_guest_user_ids_and_names(client.app)
         assert (guest["id"], guest["name"]) in TypeAdapter(
             list[tuple[UserID, UserNameID]]
