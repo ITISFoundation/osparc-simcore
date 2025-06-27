@@ -42,6 +42,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this._add(foldersContainer);
     }
 
+    const noResourcesFound = this.__noResourcesFound = new qx.ui.basic.Label("No resources found").set({
+      visibility: "excluded",
+      font: "text-14"
+    });
+    noResourcesFound.exclude();
+    this._add(noResourcesFound);
+
     const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();
     this._add(nonGroupedContainer);
 
@@ -128,8 +135,37 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __groupedContainersList: null,
     __foldersContainer: null,
     __workspacesContainer: null,
+    __noResourcesFound: null,
     __nonGroupedContainer: null,
     __groupedContainers: null,
+
+    evaluateNoResourcesFoundLabel: function(cards, context) {
+      if (this.__noResourcesFound) {
+        let text = null;
+        switch (context) {
+          case "studiesAndFolders":
+          case "search":
+            text = this.tr("No Projects found");
+            break;
+          case "templates":
+            text = this.tr("No Templates found");
+            break;
+          case "public":
+            text = this.tr("No Public Projects found");
+            break;
+          case "template":
+            text = this.tr("No Tutorials found");
+            break;
+          case "service":
+            text = this.tr("No Apps found");
+            break;
+        }
+        this.__noResourcesFound.set({
+          value: text,
+          visibility: text && cards.length === 0 ? "visible" : "excluded",
+        });
+      }
+    },
 
     addNonResourceCard: function(card) {
       if (osparc.dashboard.CardContainer.isValidCard(card)) {

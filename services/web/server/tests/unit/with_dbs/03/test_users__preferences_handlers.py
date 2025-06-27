@@ -15,7 +15,7 @@ from models_library.user_preferences import FrontendUserPreference, PreferenceId
 from models_library.users import UserID
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_service_webserver.users._preferences_models import ALL_FRONTEND_PREFERENCES

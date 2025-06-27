@@ -12,7 +12,7 @@ from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.projects._jobs_service import (
     list_my_projects_marked_as_jobs,
     set_project_as_job,

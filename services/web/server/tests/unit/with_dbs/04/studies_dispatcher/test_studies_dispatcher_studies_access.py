@@ -17,6 +17,7 @@ import pytest
 import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
+from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
 from models_library.progress_bar import ProgressReport
@@ -25,9 +26,9 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (

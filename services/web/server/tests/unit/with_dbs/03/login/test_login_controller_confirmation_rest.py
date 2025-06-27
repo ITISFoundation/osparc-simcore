@@ -11,7 +11,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserStatus
 from models_library.products import ProductName
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.login._login_repository_legacy import (
     ActionLiteralStr,

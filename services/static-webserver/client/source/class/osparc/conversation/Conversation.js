@@ -90,9 +90,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           const newLabel = e.getData()["newLabel"];
           if (this.getConversationId()) {
             osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
-              .then(() => {
-                this.getChildControl("button").setLabel(newLabel);
-              });
+              .then(() => this.renameConversation(newLabel));
           } else {
             // create new conversation first
             osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
@@ -111,11 +109,11 @@ qx.Class.define("osparc.conversation.Conversation", {
         column: 3
       });
 
-      const trashButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
+      const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
         ...buttonsAesthetics,
         paddingLeft: 4, // adds spacing between buttons
       });
-      trashButton.addListener("execute", () => {
+      closeButton.addListener("execute", () => {
         const deleteConversation = () => {
           osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
             .then(() => this.fireEvent("conversationDeleted"));
@@ -138,13 +136,17 @@ qx.Class.define("osparc.conversation.Conversation", {
         }
       });
       // eslint-disable-next-line no-underscore-dangle
-      tabButton._add(trashButton, {
+      tabButton._add(closeButton, {
         row: 0,
         column: 4
       });
-      this.bind("conversationId", trashButton, "visibility", {
+      this.bind("conversationId", closeButton, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
+    },
+
+    renameConversation: function(newName) {
+      this.getChildControl("button").setLabel(newName);
     },
 
     __buildLayout: function() {

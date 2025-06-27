@@ -101,10 +101,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
           break;
         case "message-content":
           control = new osparc.ui.markdown.Markdown().set({
-            decorator: "rounded",
             noMargin: true,
-            paddingLeft: 8,
-            paddingRight: 8,
             allowGrowX: true,
           });
           control.getContentElement().setStyles({

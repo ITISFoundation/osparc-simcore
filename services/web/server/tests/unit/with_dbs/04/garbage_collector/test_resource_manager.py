@@ -28,9 +28,9 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis.asyncio import Redis
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application

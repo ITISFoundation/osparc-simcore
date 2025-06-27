@@ -22,12 +22,12 @@ from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectStatus
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
     standard_role_response,
 )
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis import with_project_locked

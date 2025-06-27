@@ -18,7 +18,7 @@ from models_library.api_schemas_webserver import resource_usage as webserver_api
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.resource_usage_tracker import ResourceUsageTrackerSettings
 from simcore_service_webserver.db.models import UserRole
@@ -77,7 +77,7 @@ async def test_get_pricing_plan_user_role_access(
     await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_pricing_plan(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -104,7 +104,7 @@ async def test_get_pricing_plan(
     assert len(data["pricingUnits"]) == 1
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_list_pricing_plans(
     client: TestClient,
     logged_user: UserInfoDict,

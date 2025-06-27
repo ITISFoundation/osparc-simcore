@@ -15,13 +15,14 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
+from common_library.users_enums import UserRole
 from faker import Faker
 from pydantic import ValidationError
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from settings_library.email import EmailProtocol, SMTPSettings
 from simcore_service_webserver._meta import API_VTAG
@@ -115,7 +116,7 @@ async def test_email_handlers(
     mocked_aiosmtplib: MagicMock,
     mocked_send_email: MagicMock,
 ):
-    assert logged_user["role"] == user_role.name
+    assert logged_user["role"] == user_role
     destination_email = faker.email()
 
     response = await client.post(

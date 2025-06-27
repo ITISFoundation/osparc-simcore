@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from random import randint
@@ -23,7 +24,8 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from psycopg2.errors import UniqueViolation
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict, log_client_in
+from pytest_simcore.helpers.webserver_login import log_client_in
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
@@ -805,12 +807,13 @@ async def test_has_permission(
     client: TestClient,
     aiopg_engine: aiopg.sa.engine.Engine,
     insert_project_in_db: Callable[..., Awaitable[dict[str, Any]]],
+    exit_stack: contextlib.AsyncExitStack,
 ):
     project_id = faker.uuid4(cast_to=None)
     owner_id = logged_user["id"]
 
     second_user: UserInfoDict = await log_client_in(
-        client=client, user_data={"role": UserRole.USER.name}
+        client=client, user_data={"role": UserRole.USER.name}, exit_stack=exit_stack
     )
 
     new_project = deepcopy(fake_project)

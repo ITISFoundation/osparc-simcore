@@ -30,7 +30,7 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.monitor_services import (

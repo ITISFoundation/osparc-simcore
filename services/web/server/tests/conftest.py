@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import json
 import logging
 import random
@@ -26,7 +27,8 @@ from models_library.projects_state import ProjectState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.common_headers import (
@@ -86,6 +88,13 @@ pytest_plugins = [
     "pytest_simcore.simcore_webserver_groups_fixtures",
     "pytest_simcore.socketio_client",
 ]
+
+
+@pytest.fixture
+async def exit_stack() -> AsyncIterator[contextlib.AsyncExitStack]:
+    """Provides an AsyncExitStack that gets cleaned up after each test"""
+    async with contextlib.AsyncExitStack() as stack:
+        yield stack
 
 
 @pytest.fixture(scope="session")

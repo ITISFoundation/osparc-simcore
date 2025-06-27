@@ -360,10 +360,13 @@ qx.Class.define("osparc.dashboard.NewPlusMenu", {
           // so that is not consumed by the menu button itself
           e.stopPropagation();
           latestMetadata["resourceType"] = "service";
-          const resourceDetails = new osparc.dashboard.ResourceDetails(latestMetadata);
-          const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+          const {
+            resourceDetails,
+            window,
+          } = osparc.dashboard.ResourceDetails.popUpInWindow(latestMetadata);
+
           resourceDetails.addListener("openService", ev => {
-            win.close();
+            window.close();
             const openServiceData = ev.getData();
             this.fireDataEvent("newStudyFromServiceClicked", {
               serviceMetadata: openServiceData,

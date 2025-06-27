@@ -90,10 +90,12 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
               .then(templateData => {
                 if (templateData) {
                   templateData["resourceType"] = "tutorial";
-                  const resourceDetails = new osparc.dashboard.ResourceDetails(templateData).set({
+                  const {
+                    resourceDetails,
+                  } = osparc.dashboard.ResourceDetails.popUpInWindow(templateData);
+                  resourceDetails.set({
                     showOpenButton: false
                   });
-                  osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
                 }
               });
           });

@@ -32,7 +32,7 @@ from models_library.wallets import WalletID
 from pydantic import EmailStr, HttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.users_details import (

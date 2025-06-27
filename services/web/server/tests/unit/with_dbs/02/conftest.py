@@ -29,8 +29,8 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
