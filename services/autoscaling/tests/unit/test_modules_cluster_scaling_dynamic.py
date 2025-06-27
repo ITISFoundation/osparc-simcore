@@ -66,7 +66,7 @@ from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
     get_docker_client,
 )
-from simcore_service_autoscaling.utils.auto_scaling_core import (
+from simcore_service_autoscaling.utils.cluster_scaling import (
     node_host_name_from_ec2_private_dns,
 )
 from simcore_service_autoscaling.utils.utils_docker import (
