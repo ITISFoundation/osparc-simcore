@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.69.1
+  version: 0.69.2
 servers:
 - url: ''
   description: webserver
