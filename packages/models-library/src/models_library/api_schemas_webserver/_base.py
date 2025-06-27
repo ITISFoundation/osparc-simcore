@@ -1,5 +1,5 @@
 """
-    Base model classes for schemas in OpenAPI specs (OAS) for this service
+Base model classes for schemas in OpenAPI specs (OAS) for this service
 
 """
 
@@ -31,7 +31,9 @@ class InputSchemaWithoutCamelCase(BaseModel):
 
 class InputSchema(BaseModel):
     model_config = ConfigDict(
-        **InputSchemaWithoutCamelCase.model_config,
+        populate_by_name=False,
+        extra="ignore",  # Non-strict inputs policy: Used to prune extra field
+        frozen=True,
         alias_generator=snake_to_camel,
     )
 
