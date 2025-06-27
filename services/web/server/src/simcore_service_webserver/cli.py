@@ -1,4 +1,4 @@
-""" Application's command line .
+"""Application's command line .
 
 Why does this file exist, and why not put this in __main__?
 
@@ -15,13 +15,12 @@ Why does this file exist, and why not put this in __main__?
 
 import logging
 import os
-from typing import Final
+from typing import Annotated, Final
 
 import typer
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 from settings_library.utils_cli import create_settings_command
-from typing_extensions import Annotated
 
 from .application_settings import ApplicationSettings
 from .login import cli as login_cli
@@ -42,7 +41,6 @@ def _setup_app_from_settings(
     # NOTE: keeping imports here to reduce CLI load time
     from .application import create_application
     from .application_settings_utils import convert_to_app_config
-    from .log import setup_logging
 
     # NOTE: By having an equivalent config allows us
     # to keep some of the code from the previous
@@ -51,30 +49,39 @@ def _setup_app_from_settings(
     # given configs and changing those would not have
     # a meaningful RoI.
     config = convert_to_app_config(settings)
-
-    setup_logging(
-        level=settings.log_level,
-        slow_duration=settings.AIODEBUG_SLOW_DURATION_SECS,
-        log_format_local_dev_enabled=settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.WEBSERVER_LOG_FILTER_MAPPING,
-        tracing_settings=settings.WEBSERVER_TRACING,
-    )
-
     app = create_application()
     return (app, config)
 
 
 async def app_factory() -> web.Application:
     """Created to launch app from gunicorn (see docker/boot.sh)"""
+    from .application import create_application_auth
+    from .log import setup_logging
+
     app_settings = ApplicationSettings.create_from_envs()
-    assert app_settings.SC_BUILD_TARGET  # nosec
 
     _logger.info(
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
 
-    app, _ = _setup_app_from_settings(app_settings)
+    _logger.info(
+        "Using application factory: %s", app_settings.WEBSERVER_APP_FACTORY_NAME
+    )
+
+    setup_logging(
+        level=app_settings.log_level,
+        slow_duration=app_settings.AIODEBUG_SLOW_DURATION_SECS,
+        log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=app_settings.WEBSERVER_LOG_FILTER_MAPPING,
+        tracing_settings=app_settings.WEBSERVER_TRACING,
+    )
+
+    if app_settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY":
+
+        app = create_application_auth()
+    else:
+        app, _ = _setup_app_from_settings(app_settings)
 
     return app
 
