@@ -84,7 +84,7 @@ from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic impor
 )
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
-from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
+from simcore_service_autoscaling.utils.buffer_machines import (
     get_deactivated_buffer_ec2_tags,
 )
 from simcore_service_autoscaling.utils.utils_docker import (
