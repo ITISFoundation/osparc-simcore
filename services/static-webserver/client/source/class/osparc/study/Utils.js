@@ -250,6 +250,22 @@ qx.Class.define("osparc.study.Utils", {
       return Array.from(services);
     },
 
+    extractComputationalServices: function(workbench) {
+      const computationals = Object.values(workbench).filter(node => {
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
+        return metadata && osparc.data.model.Node.isComputational(metadata);
+      });
+      return computationals;
+    },
+
+    extractDynamicServices: function(workbench) {
+      const dynamics = Object.values(workbench).filter(node => {
+        const metadata = osparc.store.Services.getMetadata(node["key"], node["version"]);
+        return metadata && osparc.data.model.Node.isDynamic(metadata);
+      });
+      return dynamics;
+    },
+
     extractFilePickers: function(workbench) {
       const parameters = Object.values(workbench).filter(srv => srv["key"].includes("simcore/services/frontend/file-picker"));
       return parameters;
@@ -277,20 +293,28 @@ qx.Class.define("osparc.study.Utils", {
       return parameters;
     },
 
-    canCreateFunction: function(workbench) {
+    isPotentialFunction: function(workbench) {
       // in order to create a function, the pipeline needs:
-      // - at least one parameter (or file-picker (file type parameter))
-      // - at least one probe
+      // - at least one parameter or one probe
+      //   - for now, only float types are allowed
+      // - at least one computational service
+      // - no dynamic services
 
       // const filePickers = osparc.study.Utils.extractFilePickers(workbench);
       // const parameters = osparc.study.Utils.extractParameters(workbench);
       // const probes = osparc.study.Utils.extractProbes(workbench);
       // return (filePickers.length + parameters.length) && probes.length;
 
-      // - for now, only float types are allowed
       const parameters = osparc.study.Utils.extractFunctionableParameters(workbench);
       const probes = osparc.study.Utils.extractFunctionableProbes(workbench);
-      return parameters.length && probes.length;
+      const computationals = osparc.study.Utils.extractComputationalServices(workbench);
+      const dynamics = osparc.study.Utils.extractDynamicServices(workbench);
+
+      return (
+        (parameters.length || probes.length) &&
+        computationals.length > 0 &&
+        dynamics.length === 0
+      );
     },
 
     getCantReadServices: function(studyServices = []) {
