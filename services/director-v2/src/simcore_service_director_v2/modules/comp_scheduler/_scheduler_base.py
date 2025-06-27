@@ -209,10 +209,13 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         iteration: Iteration,
         pipeline_tasks: dict[NodeIDStr, CompTaskAtDB],
+        current_result: RunningState,
     ) -> RunningState:
         pipeline_state_from_tasks = get_pipeline_state_from_task_states(
             list(pipeline_tasks.values()),
         )
+        if pipeline_state_from_tasks == current_result:
+            return pipeline_state_from_tasks
         _logger.debug(
             "pipeline %s is currently in %s",
             f"{user_id=}_{project_id=}_{iteration=}",
@@ -672,7 +675,7 @@ class BaseCompScheduler(ABC):
 
                 # 6. Update the run result
                 pipeline_result = await self._update_run_result_from_tasks(
-                    user_id, project_id, iteration, comp_tasks
+                    user_id, project_id, iteration, comp_tasks, comp_run.result
                 )
 
                 # 7. Are we done scheduling that pipeline?
