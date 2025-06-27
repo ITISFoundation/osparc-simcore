@@ -980,7 +980,7 @@ async def test_trash_project_in_subfolder(
     assert f"{url}" == "/v0/projects:search"
 
     resp = await client.get(
-        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+        "/v0/projects:search", params={"filters": '{"trashed": true}', "type": "user"}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[ProjectGet].model_validate(await resp.json())
@@ -1008,14 +1008,14 @@ async def test_trash_project_in_subfolder(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     resp = await client.get(
-        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+        "/v0/projects:search", params={"filters": '{"trashed": true}', "type": "user"}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[ProjectGet].model_validate(await resp.json())
     assert page.meta.total == 0
 
     resp = await client.get(
-        "/v0/projects:search", params={"filters": '{"trashed": false}'}
+        "/v0/projects:search", params={"filters": '{"trashed": false}', "type": "user"}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[ProjectGet].model_validate(await resp.json())
@@ -1043,7 +1043,9 @@ async def test_trash_project_explitictly_and_empty_trash_bin(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # LIST trashed projects
-    resp = await client.get("/v0/projects", params={"filters": '{"trashed": true}'})
+    resp = await client.get(
+        "/v0/projects", params={"filters": '{"trashed": true}', "type": "user"}
+    )
     await assert_status(resp, status.HTTP_200_OK)
 
     page = Page[ProjectListItem].model_validate(await resp.json())
@@ -1126,7 +1128,7 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
 
     # - LIST trashed projects (will show only explicit!)
     resp = await client.get(
-        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+        "/v0/projects:search", params={"filters": '{"trashed": true}', "type": "user"}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[ProjectListItem].model_validate(await resp.json())
@@ -1186,7 +1188,7 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
 
     # - LIST trashed projects (will show only explicit!)
     resp = await client.get(
-        "/v0/projects:search", params={"filters": '{"trashed": true}'}
+        "/v0/projects:search", params={"filters": '{"trashed": true}', "type": "user"}
     )
     await assert_status(resp, status.HTTP_200_OK)
     page = Page[ProjectListItem].model_validate(await resp.json())
