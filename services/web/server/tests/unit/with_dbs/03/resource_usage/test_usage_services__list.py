@@ -19,7 +19,7 @@ from models_library.api_schemas_resource_usage_tracker.service_runs import (
 )
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole
@@ -112,7 +112,7 @@ async def test_list_service_usage_user_role_access(
     await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_list_service_usage(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -159,7 +159,7 @@ async def test_list_service_usage(
     assert mock_list_usage_services.call_args[1]["access_all_wallet_usage"] is False
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_list_service_usage_with_order_by_query_param(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -269,7 +269,7 @@ async def test_list_service_usage_with_order_by_query_param(
     assert error["errors"][0]["field"] == "order_by.field"
 
 
-@pytest.mark.parametrize("user_role", [(UserRole.USER)])
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_list_service_usage_with_filters_query_param(
     client: TestClient,
     logged_user: UserInfoDict,

@@ -18,7 +18,7 @@ from models_library.resource_tracker import ServiceResourceUsagesFilters
 from models_library.rest_ordering import OrderBy
 from pydantic import AnyUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.webserver_login import UserInfoDict
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.db.models import UserRole

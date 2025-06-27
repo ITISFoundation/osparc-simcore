@@ -15,11 +15,12 @@ import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
+from common_library.users_enums import UserRole
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict, UserRole
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from pytest_simcore.pydantic_models import (
     assert_validation_model,
     walk_model_examples_in_package,
