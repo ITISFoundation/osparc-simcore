@@ -166,18 +166,18 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
-      if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId());
-        addMessages.setPaddingLeft(10);
-        addMessages.addListener("messageAdded", e => {
-          const data = e.getData();
-          if (data["conversationId"]) {
-            this.setConversationId(data["conversationId"]);
-            this.addMessage(data);
-          }
-        });
-        this._add(addMessages);
-      }
+      const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId()).set({
+        enabled: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
+        paddingLeft: 10,
+      });
+      addMessages.addListener("messageAdded", e => {
+        const data = e.getData();
+        if (data["conversationId"]) {
+          this.setConversationId(data["conversationId"]);
+          this.addMessage(data);
+        }
+      });
+      this._add(addMessages);
     },
 
     __getNextRequest: function() {

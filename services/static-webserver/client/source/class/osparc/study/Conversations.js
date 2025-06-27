@@ -307,15 +307,16 @@ qx.Class.define("osparc.study.Conversations", {
       conversationsLayout.add(conversationPage);
 
       if (this.__newConversationButton === null) {
+          const studyData = this.getStudyData();
         // initialize the new button only once
         const newConversationButton = this.__newConversationButton = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/plus/12",
           toolTipText: this.tr("Add new conversation"),
           allowGrowX: false,
           backgroundColor: "transparent",
+          enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
         });
         newConversationButton.addListener("execute", () => {
-          const studyData = this.getStudyData();
           osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
             .then(conversationDt => {
               this.__addConversationPage(conversationDt);
