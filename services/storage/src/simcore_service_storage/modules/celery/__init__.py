@@ -13,7 +13,7 @@ from ...models import FileMetaData
 
 def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
     async def on_startup() -> None:
-        app.state.celery_client = await create_task_manager(
+        app.state.task_manager = await create_task_manager(
             create_app(celery_settings), celery_settings
         )
 
@@ -24,7 +24,7 @@ def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
 
 
 def get_task_manager_from_app(app: FastAPI) -> CeleryTaskManager:
-    assert hasattr(app.state, "celery_client")  # nosec
-    celery_client = app.state.celery_client
-    assert isinstance(celery_client, CeleryTaskManager)  # nosec
-    return celery_client
+    assert hasattr(app.state, "task_manager")  # nosec
+    task_manager = app.state.task_manager
+    assert isinstance(task_manager, CeleryTaskManager)  # nosec
+    return task_manager
