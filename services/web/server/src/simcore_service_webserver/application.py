@@ -29,6 +29,7 @@ from .groups.plugin import setup_groups
 from .invitations.plugin import setup_invitations
 from .licenses.plugin import setup_licenses
 from .login.plugin import setup_login
+from .login_auth.plugin import setup_login_auth
 from .long_running_tasks import setup_long_running_tasks
 from .notifications.plugin import setup_notifications
 from .payments.plugin import setup_payments
@@ -169,6 +170,25 @@ def create_application() -> web.Application:
     return app
 
 
+def create_application_auth() -> web.Application:
+    app = create_safe_application()
+    setup_settings(app)
+    setup_rest(app)
+    setup_db(app)
+
+    setup_login_auth(app)
+
+    # NOTE: *last* events
+    app.on_startup.append(_welcome_banner)
+    app.on_shutdown.append(_finished_banner)
+
+    _logger.debug(
+        "Routes in application-auth: \n %s", pformat(app.router.named_resources())
+    )
+
+    return app
+
+
 def run_service(app: web.Application, config: dict[str, Any]):
     web.run_app(
         app,
@@ -177,9 +197,3 @@ def run_service(app: web.Application, config: dict[str, Any]):
         # this gets overriden by the gunicorn config in /docker/boot.sh
         access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
-
-
-__all__: tuple[str, ...] = (
-    "create_application",
-    "run_service",
-)

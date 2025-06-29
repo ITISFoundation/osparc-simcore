@@ -10,17 +10,15 @@ from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
-from models_library.projects import ProjectTemplateType
+from models_library.projects import ProjectTemplateType, ProjectType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
-from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
-from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..folders import _folders_repository
 from ..users.api import get_user_email_legacy
@@ -80,7 +78,7 @@ async def _aggregate_data_to_projects_from_other_sources(
         _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=prj,
-            is_template=prj["type"] == ProjectTypeDB.TEMPLATE.value,
+            is_template=prj["type"] == ProjectType.TEMPLATE.value,
             app=app,
         )
         for prj in db_projects
@@ -202,13 +200,15 @@ async def list_projects(  # pylint: disable=too-many-arguments
     return final_projects, total_number_projects
 
 
-async def list_projects_full_depth(
+async def list_projects_full_depth(  # pylint: disable=too-many-arguments
     app: web.Application,
     *,
     user_id: UserID,
     product_name: str,
     # attrs filter
     trashed: bool | None,
+    filter_by_project_type: ProjectTypeAPI,
+    filter_by_template_type: ProjectTemplateType | None,
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -225,7 +225,14 @@ async def list_projects_full_depth(
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
-        filter_by_project_type=ProjectType.STANDARD,
+        filter_by_project_type=ProjectTypeAPI.to_project_type_db(
+            filter_by_project_type
+        ),
+        filter_by_template_type=(
+            ProjectTemplateTypeDB(filter_by_template_type)
+            if filter_by_template_type
+            else None
+        ),
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,

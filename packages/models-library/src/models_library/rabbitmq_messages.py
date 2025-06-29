@@ -316,3 +316,13 @@ class WalletCreditsLimitReachedMessage(RabbitMessageBase):
 
     def routing_key(self) -> str | None:
         return f"{self.wallet_id}.{self.credits_limit}"
+
+
+class ComputationalPipelineStatusMessage(RabbitMessageBase, ProjectMessageBase):
+    channel_name: Literal["io.simcore.service.computation.pipeline-status"] = (
+        "io.simcore.service.computation.pipeline-status"
+    )
+    run_result: RunningState
+
+    def routing_key(self) -> str | None:
+        return f"{self.project_id}"

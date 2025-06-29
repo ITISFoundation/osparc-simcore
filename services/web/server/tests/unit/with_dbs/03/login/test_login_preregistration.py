@@ -66,22 +66,6 @@ def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
 @pytest.mark.parametrize(
     "user_role", [role for role in UserRole if role >= UserRole.USER]
 )
-async def test_check_auth(client: TestClient, logged_user: UserInfoDict):
-    assert client.app
-
-    response = await client.get("/v0/auth:check")
-    await assert_status(response, status.HTTP_204_NO_CONTENT)
-
-    response = await client.post("/v0/auth/logout")
-    await assert_status(response, status.HTTP_200_OK)
-
-    response = await client.get("/v0/auth:check")
-    await assert_status(response, status.HTTP_401_UNAUTHORIZED)
-
-
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
 async def test_unregister_account(
     client: TestClient, logged_user: UserInfoDict, mocked_send_email: MagicMock
 ):

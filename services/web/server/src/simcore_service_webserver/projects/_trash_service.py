@@ -26,7 +26,7 @@ from .exceptions import (
     ProjectRunningConflictError,
     ProjectsBatchDeleteError,
 )
-from .models import ProjectDict, ProjectPatchInternalExtended
+from .models import ProjectDict, ProjectPatchInternalExtended, ProjectTypeAPI
 
 _logger = logging.getLogger(__name__)
 
@@ -172,6 +172,8 @@ async def list_explicitly_trashed_projects(
             user_id=user_id,
             product_name=product_name,
             trashed=True,
+            filter_by_project_type=ProjectTypeAPI.user,
+            filter_by_template_type=None,
             offset=page_params.offset,
             limit=page_params.limit,
             order_by=OrderBy(field=IDStr("trashed"), direction=OrderDirection.ASC),

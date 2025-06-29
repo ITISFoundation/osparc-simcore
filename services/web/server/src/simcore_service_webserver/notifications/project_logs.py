@@ -4,6 +4,7 @@ from typing import Final
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.rabbitmq_messages import (
+    ComputationalPipelineStatusMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
@@ -21,6 +22,7 @@ _SUBSCRIBABLE_EXCHANGES: Final[list[type[RabbitMessageBase]]] = [
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
     ProgressRabbitMessageProject,
+    ComputationalPipelineStatusMessage,
 ]
 
 

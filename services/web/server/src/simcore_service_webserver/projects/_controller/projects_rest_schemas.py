@@ -207,6 +207,8 @@ class ProjectSearchExtraQueryParams(
     PageQueryParameters,
     FiltersQueryParameters[ProjectFilters],
 ):
+    project_type: Annotated[ProjectTypeAPI, Field(alias="type")] = ProjectTypeAPI.all
+    template_type: ProjectTemplateType | None = None
     text: Annotated[
         str | None,
         Field(
@@ -226,6 +228,20 @@ class ProjectSearchExtraQueryParams(
     _empty_is_none = field_validator("text", mode="before")(
         empty_str_to_none_pre_validator
     )
+
+    _template_type_null_or_none_str_to_none_validator = field_validator(
+        "template_type", mode="before"
+    )(null_or_none_str_to_none_validator)
+
+    @model_validator(mode="after")
+    def _check_template_type_compatibility(self):
+        if (
+            self.project_type in [ProjectTypeAPI.all, ProjectTypeAPI.user]
+            and self.template_type is not None
+        ):
+            msg = f"When {self.project_type=} is `all` or `user` the {self.template_type=} should be None"
+            raise ValueError(msg)
+        return self
 
 
 class ProjectsSearchQueryParams(

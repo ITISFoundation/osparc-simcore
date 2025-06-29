@@ -187,6 +187,8 @@ async def list_projects_full_search(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         trashed=query_params.filters.trashed,
+        filter_by_project_type=query_params.project_type,
+        filter_by_template_type=query_params.template_type,
         search_by_multi_columns=query_params.text,
         search_by_project_name=query_params.filters.search_by_project_name,
         offset=query_params.offset,

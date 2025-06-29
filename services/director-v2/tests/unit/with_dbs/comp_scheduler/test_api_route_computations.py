@@ -854,7 +854,7 @@ async def test_get_computation_from_empty_project(
     assert returned_computation
     expected_computation = ComputationGet(
         id=proj.uuid,
-        state=RunningState.UNKNOWN,
+        state=RunningState.NOT_STARTED,
         pipeline_details=PipelineDetails(
             adjacency_list={}, node_states={}, progress=None
         ),

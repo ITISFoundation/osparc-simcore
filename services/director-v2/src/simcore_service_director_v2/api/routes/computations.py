@@ -93,16 +93,20 @@ router = APIRouter()
 
 
 async def _check_pipeline_not_running_or_raise_409(
-    comp_tasks_repo: CompTasksRepository, computation: ComputationCreate
+    comp_runs_repo: CompRunsRepository,
+    computation: ComputationCreate,
 ) -> None:
-    pipeline_state = utils.get_pipeline_state_from_task_states(
-        await comp_tasks_repo.list_computational_tasks(computation.project_id)
-    )
-    if utils.is_pipeline_running(pipeline_state):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
+    with contextlib.suppress(ComputationalRunNotFoundError):
+        last_run = await comp_runs_repo.get(
+            user_id=computation.user_id, project_id=computation.project_id
         )
+        pipeline_state = last_run.result
+
+        if utils.is_pipeline_running(pipeline_state):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Project {computation.project_id} already started, current state is {pipeline_state}",
+            )
 
 
 async def _check_pipeline_startable(
@@ -302,7 +306,7 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         project: ProjectAtDB = await project_repo.get_project(computation.project_id)
 
         # check if current state allow to modify the computation
-        await _check_pipeline_not_running_or_raise_409(comp_tasks_repo, computation)
+        await _check_pipeline_not_running_or_raise_409(comp_runs_repo, computation)
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
@@ -353,20 +357,14 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
                 projects_metadata_repo=projects_metadata_repo,
             )
 
-        # filter the tasks by the effective pipeline
-        filtered_tasks = [
-            t
-            for t in comp_tasks
-            if f"{t.node_id}" in set(minimal_computational_dag.nodes())
-        ]
-        pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)
-
         # get run details if any
         last_run: CompRunsAtDB | None = None
+        pipeline_state = RunningState.NOT_STARTED
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation.user_id, project_id=computation.project_id
             )
+            pipeline_state = last_run.result
 
         return ComputationGet(
             id=computation.project_id,
@@ -449,19 +447,8 @@ async def get_computation(
     # check that project actually exists
     await project_repo.get_project(project_id)
 
-    pipeline_dag, all_tasks, filtered_tasks = await analyze_pipeline(
+    pipeline_dag, all_tasks, _filtered_tasks = await analyze_pipeline(
         project_id, comp_pipelines_repo, comp_tasks_repo
-    )
-
-    pipeline_state: RunningState = utils.get_pipeline_state_from_task_states(
-        filtered_tasks
-    )
-
-    _logger.debug(
-        "Computational task status by %s for %s has %s",
-        f"{user_id=}",
-        f"{project_id=}",
-        f"{pipeline_state=}",
     )
 
     # create the complete DAG graph
@@ -472,8 +459,17 @@ async def get_computation(
 
     # get run details if any
     last_run: CompRunsAtDB | None = None
+    pipeline_state = RunningState.NOT_STARTED
     with contextlib.suppress(ComputationalRunNotFoundError):
         last_run = await comp_runs_repo.get(user_id=user_id, project_id=project_id)
+        pipeline_state = last_run.result
+
+    _logger.debug(
+        "Computational task status by %s for %s has %s",
+        f"{user_id=}",
+        f"{project_id=}",
+        f"{pipeline_state=}",
+    )
 
     self_url = request.url.remove_query_params("user_id")
     return ComputationGet(
@@ -536,23 +532,18 @@ async def stop_computation(
         tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
         # create the complete DAG graph
         complete_dag = create_complete_dag_from_tasks(tasks)
-        # filter the tasks by the effective pipeline
-        filtered_tasks = [
-            t for t in tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
-        ]
-        pipeline_state = utils.get_pipeline_state_from_task_states(filtered_tasks)
-
-        if utils.is_pipeline_running(pipeline_state):
-            await stop_pipeline(
-                request.app, user_id=computation_stop.user_id, project_id=project_id
-            )
-
-        # get run details if any
+        # stop the pipeline if it is running
         last_run: CompRunsAtDB | None = None
+        pipeline_state = RunningState.UNKNOWN
         with contextlib.suppress(ComputationalRunNotFoundError):
             last_run = await comp_runs_repo.get(
                 user_id=computation_stop.user_id, project_id=project_id
             )
+            pipeline_state = last_run.result
+            if utils.is_pipeline_running(last_run.result):
+                await stop_pipeline(
+                    request.app, user_id=computation_stop.user_id, project_id=project_id
+                )
 
         return ComputationGet(
             id=project_id,
@@ -594,15 +585,20 @@ async def delete_computation(
     comp_tasks_repo: Annotated[
         CompTasksRepository, Depends(get_repository(CompTasksRepository))
     ],
+    comp_runs_repo: Annotated[
+        CompRunsRepository, Depends(get_repository(CompRunsRepository))
+    ],
 ) -> None:
     try:
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # check if current state allow to stop the computation
-        comp_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_computational_tasks(
-            project_id
-        )
-        pipeline_state = utils.get_pipeline_state_from_task_states(comp_tasks)
+        pipeline_state = RunningState.UNKNOWN
+        with contextlib.suppress(ComputationalRunNotFoundError):
+            last_run = await comp_runs_repo.get(
+                user_id=computation_stop.user_id, project_id=project_id
+            )
+            pipeline_state = last_run.result
         if utils.is_pipeline_running(pipeline_state):
             if not computation_stop.force:
                 raise HTTPException(
@@ -634,12 +630,10 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: list[CompTaskAtDB] = (
-                    await comp_tasks_repo.list_computational_tasks(project_id)
+                last_run = await comp_runs_repo.get(
+                    user_id=computation_stop.user_id, project_id=project_id
                 )
-                pipeline_state = utils.get_pipeline_state_from_task_states(
-                    comp_tasks,
-                )
+                pipeline_state = last_run.result
                 return utils.is_pipeline_stopped(pipeline_state)
 
             # wait for the pipeline to be stopped

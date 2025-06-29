@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
@@ -26,6 +26,7 @@ async def client(
     api_version_prefix: str,
     mock_env_devel_environment: EnvVarsDict,
     mock_env_deployer_pipeline: EnvVarsDict,
+    mocked_db_setup_in_setup_security: MockType,
 ) -> TestClient:
     app = create_safe_application()
 

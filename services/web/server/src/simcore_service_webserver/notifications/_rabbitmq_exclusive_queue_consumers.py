@@ -7,6 +7,7 @@ from typing import Final
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.rabbitmq_messages import (
+    ComputationalPipelineStatusMessage,
     EventRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
@@ -97,6 +98,21 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
+async def _computational_pipeline_status_message_parser(
+    app: web.Application, data: bytes
+) -> bool:
+    rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
+    project = await _projects_service.get_project_for_user(
+        app,
+        f"{rabbit_message.project_id}",
+        rabbit_message.user_id,
+        include_state=True,
+    )
+    await _projects_service.notify_project_state_update(app, project)
+
+    return True
+
+
 async def _log_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = LoggerRabbitMessage.model_validate_json(data)
     await send_message_to_user(
@@ -169,6 +185,11 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
     SubcribeArgumentsTuple(
         WalletCreditsMessage.get_channel_name(),
         _osparc_credits_message_parser,
+        {"topics": []},
+    ),
+    SubcribeArgumentsTuple(
+        ComputationalPipelineStatusMessage.get_channel_name(),
+        _computational_pipeline_status_message_parser,
         {"topics": []},
     ),
 )
