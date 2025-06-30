@@ -1,4 +1,4 @@
-""" This test suite does not intend to re-test pydantic but rather
+"""This test suite does not intend to re-test pydantic but rather
 check some "corner cases" or critical setups with pydantic model such that:
 
 - we can ensure a given behaviour is preserved through updates
@@ -6,13 +6,14 @@ check some "corner cases" or critical setups with pydantic model such that:
 
 """
 
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Literal, Union, get_args, get_origin
 
 import pytest
 from common_library.json_serialization import json_dumps
 from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink
-from pydantic import BaseModel, Field, TypeAdapter, ValidationError
+from models_library.utils.change_case import snake_to_camel
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from pydantic.types import Json
 from pydantic.version import version_short
 
@@ -120,7 +121,7 @@ def test_union_types_coercion():
             {"$ref": "#/$defs/DatCoreFileLink"},
             {"$ref": "#/$defs/DownloadLink"},
             {"type": "array", "items": {}},
-            {"type": "object"},
+            {"type": "object", "additionalProperties": True},
         ],
     }
 
@@ -154,7 +155,7 @@ def test_union_types_coercion():
     MINIMAL = 2  # <--- index of the example with the minimum required fields
     assert SimCoreFileLink in get_args(OutputTypes)
     example = SimCoreFileLink.model_validate(
-        SimCoreFileLink.model_config["json_schema_extra"]["examples"][MINIMAL]
+        SimCoreFileLink.model_json_schema()["examples"][MINIMAL]
     )
     model = Func.model_validate(
         {
@@ -183,7 +184,9 @@ def test_nullable_fields_from_pydantic_v1():
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/6751
     class MyModel(BaseModel):
         # pydanticv1 would add a default to fields set as nullable
-        nullable_required: str | None  # <--- This was default to =None in pydantic 1 !!!
+        nullable_required: (
+            str | None
+        )  # <--- This was default to =None in pydantic 1 !!!
         nullable_required_with_hyphen: str | None = Field(default=...)
         nullable_optional: str | None = None
 
@@ -209,3 +212,112 @@ def test_nullable_fields_from_pydantic_v1():
     data["nullable_required"] = None
     model = MyModel.model_validate(data)
     assert model.model_dump(exclude_unset=True) == data
+
+
+# BELOW some tests related to depreacated `populate_by_name` in pydantic v2.11+ !!
+#
+# https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
+#
+# `populate_by_name` usage is not recommended in v2.11+ and will be deprecated in v3. Instead, you should use the validate_by_name configuration setting.
+# When validate_by_name=True and validate_by_alias=True, this is strictly equivalent to the previous behavior of populate_by_name=True.
+# In v2.11, we also introduced a validate_by_alias setting that introduces more fine grained control for validation behavior.
+# Here's how you might go about using the new settings to achieve the same behavior:
+#
+
+
+@pytest.mark.parametrize("extra", ["ignore", "allow", "forbid"])
+@pytest.mark.parametrize(
+    "validate_by_alias, validate_by_name",
+    [
+        # NOTE: (False, False) is not allowed: at least one has to be True!
+        # SEE https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.validate_by_alias
+        (False, True),
+        (True, False),
+        (True, True),
+    ],
+)
+def test_model_config_validate_by_alias_and_name(
+    validate_by_alias: bool,
+    validate_by_name: bool,
+    extra: Literal["ignore", "allow", "forbid"],
+):
+    class TestModel(BaseModel):
+        snake_case: str | None = None
+
+        model_config = ConfigDict(
+            validate_by_alias=validate_by_alias,
+            validate_by_name=validate_by_name,
+            extra=extra,
+            alias_generator=snake_to_camel,
+        )
+
+    assert TestModel.model_config.get("populate_by_name") is None
+    assert TestModel.model_config.get("validate_by_alias") is validate_by_alias
+    assert TestModel.model_config.get("validate_by_name") is validate_by_name
+    assert TestModel.model_config.get("extra") == extra
+
+    if validate_by_alias is False:
+
+        if extra == "forbid":
+            with pytest.raises(ValidationError):
+                TestModel.model_validate({"snakeCase": "foo"})
+
+        elif extra == "ignore":
+            model = TestModel.model_validate({"snakeCase": "foo"})
+            assert model.snake_case is None
+            assert model.model_dump() == {"snake_case": None}
+
+        elif extra == "allow":
+            model = TestModel.model_validate({"snakeCase": "foo"})
+            assert model.snake_case is None
+            assert model.model_dump() == {"snake_case": None, "snakeCase": "foo"}
+
+    else:
+        assert TestModel.model_validate({"snakeCase": "foo"}).snake_case == "foo"
+
+    if validate_by_name is False:
+        if extra == "forbid":
+            with pytest.raises(ValidationError):
+                TestModel.model_validate({"snake_case": "foo"})
+
+        elif extra == "ignore":
+            model = TestModel.model_validate({"snake_case": "foo"})
+            assert model.snake_case is None
+            assert model.model_dump() == {"snake_case": None}
+
+        elif extra == "allow":
+            model = TestModel.model_validate({"snake_case": "foo"})
+            assert model.snake_case is None
+            assert model.model_dump() == {"snake_case": "foo"}
+    else:
+        assert TestModel.model_validate({"snake_case": "foo"}).snake_case == "foo"
+
+
+@pytest.mark.parametrize("populate_by_name", [True, False])
+def test_model_config_populate_by_name(populate_by_name: bool):
+    # SEE https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
+    class TestModel(BaseModel):
+        snake_case: str | None = None
+
+        model_config = ConfigDict(
+            populate_by_name=populate_by_name,
+            extra="forbid",  # easier to check the effect of populate_by_name!
+            alias_generator=snake_to_camel,
+        )
+
+    # checks how they are set
+    assert TestModel.model_config.get("populate_by_name") is populate_by_name
+    assert TestModel.model_config.get("extra") == "forbid"
+
+    # NOTE how defaults work with populate_by_name!!
+    assert TestModel.model_config.get("validate_by_name") == populate_by_name
+    assert TestModel.model_config.get("validate_by_alias") is True  # Default
+
+    # validate_by_alias BEHAVIUOR defaults to True
+    TestModel.model_validate({"snakeCase": "foo"})
+
+    if populate_by_name:
+        assert TestModel.model_validate({"snake_case": "foo"}).snake_case == "foo"
+    else:
+        with pytest.raises(ValidationError):
+            TestModel.model_validate({"snake_case": "foo"})
