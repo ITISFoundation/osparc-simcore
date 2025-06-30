@@ -825,9 +825,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       switch (this.getCurrentContext()) {
         case "studiesAndFolders":
+          requestParams.type = "user";
           requestParams.workspaceId = this.getCurrentWorkspaceId();
           requestParams.folderId = this.getCurrentFolderId();
-          requestParams.type = "user";
           break;
         case "templates":
           requestParams.type = "template";
@@ -840,27 +840,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           requestParams.accessRights = "public";
           break;
         case "searchProjects": {
+          requestParams.type = "user";
           // Use the ``search`` functionality only if the user types some text
           // tags should only be used to filter the current context (search context ot workspace/folder context)
           const filterData = this._searchBarFilter.getFilterData();
           if (filterData.text) {
             requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
-            // requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
+            requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
           }
-          requestParams.type = "user";
           break;
         }
         case "searchTemplates":
         case "searchPublicTemplates": {
+          requestParams.type = "template";
           // Use the ``search`` functionality only if the user types some text
           // tags should only be used to filter the current context (search context ot workspace/folder context)
           const filterData = this._searchBarFilter.getFilterData();
           if (filterData.text) {
             requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
-            // requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
+            requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
           }
-          requestParams.type = "template";
-          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           break;
         }
       }
