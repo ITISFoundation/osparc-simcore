@@ -21,7 +21,7 @@ from ..core.settings import ApplicationSettings
 from ..models import AssociatedInstance
 from . import utils_docker
 
-_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+).*$")
+_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+)\..+$")
 _logger = logging.getLogger(__name__)
 
 
