@@ -132,6 +132,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __dropHereUI: null,
     __selectionRectInitPos: null,
     __selectionRectRepr: null,
+    __rectAnnotationRepr: null,
     __panning: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
@@ -1448,14 +1449,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__annotationInitPos = null;
       }
       if (this.__annotating) {
-        if (this.__consolidateAnnotation(annotationInitPos, this.__rectAnnotationRepr)) {
-          if (this.__rectAnnotationRepr) {
-            osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
-            this.__rectAnnotationRepr = null;
-          }
-          this.__annotating = null;
-          this.__toolHint.setValue(null);
-        }
+        this.__consolidateAnnotation(annotationInitPos);
       }
 
       if (this.__panning) {
@@ -1894,15 +1888,21 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const y = Math.min(initPos.y, currentPos.y);
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
-      if ([null, undefined].includes(this.__rectAnnotationRepr)) {
+      if (this.__rectAnnotationRepr) {
+        osparc.wrapper.Svg.updateRect(this.__rectAnnotationRepr, width, height, x, y);
+      } else {
         const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
         this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y, color);
-      } else {
-        osparc.wrapper.Svg.updateRect(this.__rectAnnotationRepr, width, height, x, y);
       }
     },
 
-    __consolidateAnnotation: function(initPos, annotation) {
+    __consolidateAnnotation: function(initPos) {
+      const annotationTypes = osparc.workbench.Annotation.TYPES;
+      if (type === annotationTypes.RECT && !this.__rectAnnotationRepr) {
+        osparc.FlashMessenger.logAs(this.tr("Draw a rectangle first"), "WARNING");
+        return;
+      }
+
       const type = this.__annotating;
       const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
       const serializeData = {
@@ -1910,14 +1910,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         color,
         attributes: {}
       };
-
-      const annotationTypes = osparc.workbench.Annotation.TYPES;
       if (type === annotationTypes.RECT) {
-        if ([null, undefined].includes(annotation)) {
-          osparc.FlashMessenger.logAs(this.tr("Draw a rectangle first"), "WARNING");
-          return false;
-        }
-        serializeData.attributes = osparc.wrapper.Svg.getRectAttributes(annotation);
+        serializeData.attributes = osparc.wrapper.Svg.getRectAttributes(this.__rectAnnotationRepr);
       } else {
         serializeData.attributes = initPos;
       }
@@ -1940,9 +1934,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           noteEditor.addListener("cancel", () => win.close());
           break;
         }
-        case annotationTypes.RECT:
+        case annotationTypes.RECT: {
           this.__addAnnotation(serializeData);
+          if (this.__rectAnnotationRepr) {
+            osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
+            this.__rectAnnotationRepr = null;
+          }
           break;
+        }
         case annotationTypes.TEXT: {
           const tempAnnotation = new osparc.workbench.Annotation(null, {
             type: annotationTypes.TEXT,
@@ -1976,9 +1975,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           win.open();
           break;
         }
+        case annotationTypes.CONVERSATION: {
+          console.log("CONVERSATION", initPos);
+          break;
+        }
       }
 
-      return true;
+      this.__annotating = null;
+      this.__toolHint.setValue(null);
     },
 
     __addAnnotation: function(data, id) {
