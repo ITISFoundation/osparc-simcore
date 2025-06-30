@@ -66,14 +66,14 @@ from simcore_service_autoscaling.modules.docker import (
     AutoscalingDocker,
     get_docker_client,
 )
-from simcore_service_autoscaling.utils.cluster_scaling import (
-    node_host_name_from_ec2_private_dns,
-)
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY,
     _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY,
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+)
+from simcore_service_autoscaling.utils.utils_ec2 import (
+    node_host_name_from_ec2_private_dns,
 )
 from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
