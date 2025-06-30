@@ -17,8 +17,6 @@
 
 qx.Class.define("osparc.workbench.BaseNodeUI", {
   extend: qx.ui.window.Window,
-  include: osparc.filter.MFilterable,
-  implement: osparc.filter.IFilterable,
   type: "abstract",
 
   construct: function() {
@@ -308,33 +306,5 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
 
       e.stopPropagation();
     },
-
-    // implement osparc.filter.IFilterable
-    _filter: function() {
-      this.setOpacity(0.4);
-    },
-
-    // implement osparc.filter.IFilterable
-    _unfilter: function() {
-      this.setOpacity(1);
-    },
-
-    /**
-      * @abstract
-      */
-    _shouldApplyFilter: function(data) {
-      throw new Error("Abstract method called!");
-    },
-
-    // implement osparc.filter.IFilterable
-    _shouldReactToFilter: function(data) {
-      if (data.text && data.text.length > 1) {
-        return true;
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      return false;
-    }
   }
 });
