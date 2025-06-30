@@ -1145,6 +1145,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       switch (this.getCurrentContext()) {
         case "studiesAndFolders":
           this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Workspace and Shared Workspaces");
           this._toolbar.show();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1153,10 +1154,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "workspaces":
           this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Workspace and Shared Workspaces");
           this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case "search":
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("search");
           this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
@@ -1166,6 +1169,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "templates":
           this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Templates");
           this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
@@ -1173,6 +1177,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "public":
           this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Public Projects");
           this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
@@ -1180,6 +1185,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "trash":
           this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Workspace and Shared Workspaces");
           this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
