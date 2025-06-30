@@ -160,7 +160,7 @@ moto==5.1.4
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
 mypy-extensions==1.0.0
     # via mypy
@@ -177,6 +177,8 @@ packaging==24.0
     #   pytest-sugar
 pathable==0.4.4
     # via jsonschema-path
+pathspec==0.12.1
+    # via mypy
 pluggy==1.5.0
     # via pytest
 ply==3.11
