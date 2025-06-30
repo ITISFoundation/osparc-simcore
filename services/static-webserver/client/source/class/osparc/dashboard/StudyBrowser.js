@@ -1137,9 +1137,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           let searchContext = null;
           switch (this.getCurrentContext()) {
             case "templates":
+            case "searchTemplates":
               searchContext = "searchTemplates";
               break;
             case "publicTemplates":
+            case "searchPublicTemplates":
               searchContext = "searchPublicTemplates";
               break;
             default:
@@ -1157,7 +1159,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _changeContext: function(context, workspaceId = null, folderId = null) {
       if (
-        context !== "searchProjects" && // reload studies for a new search
+        !context.includes("search") && // load projects if search string changed
         context === this.getCurrentContext() &&
         workspaceId === this.getCurrentWorkspaceId() &&
         folderId === this.getCurrentFolderId()
