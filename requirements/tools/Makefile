@@ -147,3 +147,34 @@ report: ## generates a report of updated requirements that shall be pasted in th
 	@python check_changes.py >> report.ignore.md
 	@cat report.ignore.md
 	@echo SEE $(shell realpath report.ignore.md)
+
+# OpenTelemetry packages found in the repository
+OTEL_PACKAGES := opentelemetry-api \
+	opentelemetry-exporter-otlp \
+	opentelemetry-instrumentation-aio-pika \
+	opentelemetry-instrumentation-aiohttp-client \
+	opentelemetry-instrumentation-aiohttp-server \
+	opentelemetry-instrumentation-aiopg \
+	opentelemetry-instrumentation-asyncpg \
+	opentelemetry-instrumentation-botocore \
+	opentelemetry-instrumentation-celery \
+	opentelemetry-instrumentation-fastapi \
+	opentelemetry-instrumentation-httpx \
+	opentelemetry-instrumentation-logging \
+	opentelemetry-instrumentation-redis \
+	opentelemetry-instrumentation-requests \
+	opentelemetry-sdk
+
+# Pydantic packages found in the repository
+PYDANTIC_PACKAGES := pydantic \
+	pydantic-extra-types \
+	pydantic-settings
+
+
+reqs-otel: ## upgrades all OpenTelemetry libraries repository-wise
+	# Upgrading all OpenTelemetry packages
+	@$(foreach pkg,$(OTEL_PACKAGES),echo "Upgrading $(pkg)..."; $(MAKE) reqs-all upgrade=$(pkg);)
+
+reqs-pydantic: ## upgrades all Pydantic libraries repository-wise
+	# Upgrading all Pydantic packages
+	@$(foreach pkg,$(PYDANTIC_PACKAGES),echo "Upgrading $(pkg)..."; $(MAKE) reqs-all upgrade=$(pkg);)

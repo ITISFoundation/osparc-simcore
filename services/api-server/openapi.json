@@ -5669,7 +5669,8 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     {
                       "type": "null"
@@ -7529,7 +7530,8 @@
               "schema": {
                 "anyOf": [
                   {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                   },
                   {
                     "type": "null"
@@ -7649,7 +7651,8 @@
               "schema": {
                 "anyOf": [
                   {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                   },
                   {
                     "type": "null"
@@ -7783,7 +7786,8 @@
                 "items": {
                   "anyOf": [
                     {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     {
                       "type": "null"
@@ -8237,6 +8241,7 @@
       "JSONFunctionInputSchema": {
         "properties": {
           "schema_content": {
+            "additionalProperties": true,
             "type": "object",
             "title": "JSON Schema",
             "description": "JSON Schema",
@@ -8255,6 +8260,7 @@
       "JSONFunctionOutputSchema": {
         "properties": {
           "schema_content": {
+            "additionalProperties": true,
             "type": "object",
             "title": "JSON Schema",
             "description": "JSON Schema",
@@ -9982,6 +9988,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10025,6 +10032,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10036,6 +10044,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10114,6 +10123,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10156,6 +10166,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10167,6 +10178,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10278,6 +10290,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10333,6 +10346,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10344,6 +10358,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10434,6 +10449,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10488,6 +10504,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10499,6 +10516,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10583,6 +10601,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10644,6 +10663,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10655,6 +10675,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10895,6 +10916,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10944,6 +10966,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10955,6 +10978,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11003,6 +11027,7 @@
           "content_schema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11086,6 +11111,7 @@
           "content_schema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11249,7 +11275,6 @@
           },
           "workspace_path": {
             "type": "string",
-            "pattern": "^workspace/.*",
             "format": "path",
             "title": "Workspace Path",
             "description": "The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'"

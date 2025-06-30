@@ -21,7 +21,9 @@ from pytest_simcore.helpers.webserver_login import (
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _trash_service
-from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.projects.models import (
+    ProjectDict,
+)
 from simcore_service_webserver.trash import trash_service
 
 

@@ -69,8 +69,9 @@ pyyaml==6.0.2
     #   pre-commit
 ruff==0.9.9
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==75.8.2
+setuptools==80.9.0
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pip-tools
 tomlkit==0.13.2

@@ -12,6 +12,7 @@
 aiohttp>=3.7.4, !=3.11.13                     # https://github.com/advisories/GHSA-v6wp-4m6f-gcjg, 3.11.13 was yanked https://github.com/aio-libs/aiohttp/issues/10617
 certifi>=2023.7.22                            # https://github.com/advisories/GHSA-xqr8-7jwr-rhp7
 cryptography>=41.0.6                          # https://github.com/advisories/GHSA-v8gr-m533-ghj9
+h11>=0.16.0                                   # https://github.com/advisories/GHSA-vqfr-h8mv-ghfj
 httpx>=0.23.0                                 # https://github.com/advisories/GHSA-h8pj-cxx2-jfg2 / CVE-2021-41945
 jinja2>=2.11.3                                # https://github.com/advisories/GHSA-g3rq-g295-4j3m
 mako>=1.2.2                                   # https://github.com/advisories/GHSA-v973-fxgf-6xhp
@@ -21,11 +22,11 @@ py>=1.11.0                                    # https://github.com/advisories/GH
 pyyaml>=5.4                                   # https://github.com/advisories/GHSA-8q59-q68h-6hv4
 redis>=4.5.4                                  # https://github.com/advisories/GHSA-24wv-mv5m-xv4h
 rsa>=4.1                                      # https://github.com/advisories/GHSA-537h-rv9q-vvph
+setuptools>=78.1.1                            # https://github.com/advisories/GHSA-5rjg-fvgr-3xxf
 sqlalchemy>=1.3.3                             # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 starlette>=0.27.0                             # https://github.com/advisories/GHSA-qj8w-rv5x-2v9h
 ujson>=5.4.0                                  # https://github.com/advisories/GHSA-fh56-85cw-5pq6, https://github.com/advisories/GHSA-wpqr-jcpx-745r
 urllib3>=1.26.5                               # https://github.com/advisories/GHSA-q2q7-5pp4-w6pg
-
 
 
 #
@@ -50,6 +51,18 @@ httpx!=0.28.0  # Waiting for fix in respx: https://github.com/lundberg/respx/pul
 #
 pydantic>=2.10.0    # Avoids inter-version compatibility serialization errors as: _pickle.UnpicklingError: NEWOBJ class argument must be a type, not _AnnotatedAlias
 
+
+protobuf<5.29.4 # Cannot update to https://github.com/advisories/GHSA-8qvm-5x2c-j2w7 because it fails with
+#
+# E     TypeError: Descriptors cannot be created directly.
+# E     If this call came from a _pb2.py file, your generated code is out of date and must be regenerated with protoc >= 3.19.0.
+# E     If you cannot immediately regenerate your protos, some other possible workarounds are:
+# E      1. Downgrade the protobuf package to 3.20.x or lower.
+# E      2. Set PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python (but this will use pure-Python parsing and will be much slower).
+# E
+# E     More information: https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates
+#
+# NOTE: see test__configs.py to reproduce fast this problem
 
 
 #

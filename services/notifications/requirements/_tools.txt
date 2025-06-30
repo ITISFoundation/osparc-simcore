@@ -67,8 +67,10 @@ pyyaml==6.0.2
     #   pre-commit
 ruff==0.11.2
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==78.1.0
-    # via pip-tools
+setuptools==80.9.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   pip-tools
 tomlkit==0.13.2
     # via pylint
 typing-extensions==4.13.0

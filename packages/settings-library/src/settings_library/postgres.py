@@ -10,6 +10,7 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+from pydantic.config import JsonDict
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -41,7 +42,6 @@ class PostgresSettings(BaseCustomSettings):
         Field(
             description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
             validation_alias=AliasChoices(
-                "POSTGRES_CLIENT_NAME",
                 # This is useful when running inside a docker container, then the hostname is set each client gets a different name
                 "HOST",
                 "HOSTNAME",
@@ -103,17 +103,34 @@ class PostgresSettings(BaseCustomSettings):
             return urlunparse(parsed_uri._replace(query=updated_query))
         return uri
 
-    model_config = SettingsConfigDict(
-        json_schema_extra={
-            "examples": [
-                # minimal required
-                {
-                    "POSTGRES_HOST": "localhost",
-                    "POSTGRES_PORT": "5432",
-                    "POSTGRES_USER": "usr",
-                    "POSTGRES_PASSWORD": "secret",
-                    "POSTGRES_DB": "db",
-                }
-            ],
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # minimal required
+                    {
+                        "POSTGRES_HOST": "localhost",
+                        "POSTGRES_PORT": "5432",
+                        "POSTGRES_USER": "usr",
+                        "POSTGRES_PASSWORD": "secret",
+                        "POSTGRES_DB": "db",
+                    },
+                    # full example
+                    {
+                        "POSTGRES_HOST": "localhost",
+                        "POSTGRES_PORT": "5432",
+                        "POSTGRES_USER": "usr",
+                        "POSTGRES_PASSWORD": "secret",
+                        "POSTGRES_DB": "db",
+                        "POSTGRES_MINSIZE": 1,
+                        "POSTGRES_MAXSIZE": 50,
+                        "POSTGRES_CLIENT_NAME": "my_app",  # first-choice
+                        "HOST": "should be ignored",
+                        "HOST_NAME": "should be ignored",
+                    },
+                ],
+            }
+        )
+
+    model_config = SettingsConfigDict(json_schema_extra=_update_json_schema_extra)
