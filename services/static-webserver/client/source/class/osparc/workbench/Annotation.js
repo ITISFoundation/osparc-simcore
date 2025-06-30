@@ -76,7 +76,8 @@ qx.Class.define("osparc.workbench.Annotation", {
       check: "Color",
       event: "changeColor",
       init: "#FFFF01",
-      apply: "__applyColor"
+      nullable: true,
+      apply: "__applyColor",
     },
 
     attributes: {
@@ -223,11 +224,14 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     serialize: function() {
-      return {
+      const data = {
         type: this.getType(),
         attributes: this.getAttributes(),
-        color: this.getColor()
-      };
+      }
+      if (this.getColor()) {
+        data.color = this.getColor();
+      }
+      return data;
     }
   }
 });
