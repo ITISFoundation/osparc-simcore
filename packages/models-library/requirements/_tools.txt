@@ -58,8 +58,10 @@ platformdirs==4.3.6
     #   virtualenv
 pre-commit==4.1.0
     # via -r requirements/../../../requirements/devenv.txt
-pygments==2.19.1
-    # via rich
+pygments==2.19.2
+    # via
+    #   -c requirements/_test.txt
+    #   rich
 pylint==3.3.4
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.2.0
