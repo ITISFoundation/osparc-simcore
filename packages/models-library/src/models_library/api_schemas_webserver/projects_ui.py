@@ -73,7 +73,11 @@ class AnnotationUI(BaseModel):
                     },
                     {
                         "type": "conversation",
-                        "attributes": {"x": 415, "y": 100},
+                        "attributes": {
+                            "x": 415,
+                            "y": 100,
+                            "conversationId": 2,
+                        },
                     },
                 ]
             },
@@ -178,6 +182,7 @@ class StudyUI(OutputSchema):
                                 "attributes": {
                                     "x": 119,
                                     "y": 223,
+                                    "conversation": 2,
                                 },
                             },
                         },
