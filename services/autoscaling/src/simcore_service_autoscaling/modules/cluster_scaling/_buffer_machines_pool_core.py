@@ -45,10 +45,10 @@ from ...core.settings import get_application_settings
 from ...models import BufferPool, BufferPoolManager
 from ...utils.buffer_machines import (
     dump_pre_pulled_images_as_tags,
+    ec2_buffer_startup_script,
     get_deactivated_buffer_ec2_tags,
     load_pre_pulled_images_from_tags,
 )
-from ...utils.cluster_scaling import ec2_buffer_startup_script
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation
 from ..ssm import get_ssm_client

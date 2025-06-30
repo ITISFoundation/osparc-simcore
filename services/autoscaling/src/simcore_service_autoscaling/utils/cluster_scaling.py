@@ -85,25 +85,6 @@ async def ec2_startup_script(
     return " && ".join(startup_commands)
 
 
-def ec2_buffer_startup_script(
-    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
-) -> str:
-    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
-    if ec2_boot_specific.pre_pull_images:
-        assert app_settings.AUTOSCALING_REGISTRY  # nosec
-        startup_commands.extend(
-            (
-                utils_docker.get_docker_login_on_start_bash_command(
-                    app_settings.AUTOSCALING_REGISTRY
-                ),
-                utils_docker.write_compose_file_command(
-                    ec2_boot_specific.pre_pull_images
-                ),
-            )
-        )
-    return " && ".join(startup_commands)
-
-
 def _instance_type_by_type_name(
     ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
 ) -> bool:
