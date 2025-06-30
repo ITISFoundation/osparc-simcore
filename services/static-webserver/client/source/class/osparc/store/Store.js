@@ -79,10 +79,13 @@ qx.Class.define("osparc.store.Store", {
       check: [
         "studiesAndFolders",
         "workspaces",
-        "search",
         "templates",
         "public",
         "trash",
+        "searchProjects",
+        "searchTemplates",
+        "searchPublicProjects",
+        // OM check these
       ],
       init: "studiesAndFolders",
       nullable: false,
