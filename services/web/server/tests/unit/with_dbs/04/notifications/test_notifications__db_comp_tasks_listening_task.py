@@ -5,30 +5,29 @@
 # pylint:disable=too-many-arguments
 # pylint:disable=protected-access
 
-from ast import Assert
 import asyncio
-from datetime import timedelta
 import json
 import logging
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
+from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
 import pytest
-from tenacity import stop_after_attempt
-from common_library.async_tools import delayed_start
-from models_library.projects_nodes import InputsDict
-from pytest_simcore.helpers.logging_tools import log_context
 import simcore_service_webserver
 import simcore_service_webserver.db_listener
 import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
 from aiohttp.test_utils import TestClient
+from common_library.async_tools import delayed_start
 from faker import Faker
 from models_library.projects import ProjectAtDB
+from models_library.projects_nodes import InputsDict
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
@@ -37,13 +36,12 @@ from simcore_service_webserver.db_listener._db_comp_tasks_listening_task import 
     create_comp_tasks_listening_task,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
+from tenacity import stop_after_attempt
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-
-from simcore_service_webserver.projects.models import ProjectDict
 
 logger = logging.getLogger(__name__)
 
@@ -214,14 +212,9 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
         assert any(
             call.args[1] == updated_task_id
             for call in spied_get_changed_comp_task_row.call_args_list
-        ), (
-            f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
-        )
+        ), f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
     else:
         spied_get_changed_comp_task_row.assert_not_called()
-
-
-from pathlib import Path
 
 
 @pytest.fixture
@@ -264,7 +257,6 @@ async def _check_for_stability(
                 )
 
 
-@pytest.mark.testit
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_db_listener_upgrades_projects_row_correctly(
     with_started_listening_task: None,
@@ -289,9 +281,11 @@ async def test_db_listener_upgrades_projects_row_correctly(
             project_id=f"{some_project.uuid}",
             node_id=node_id,
             outputs=node_data.get("outputs", {}),
-            node_class=NodeClass.INTERACTIVE
-            if "dynamic" in node_data["key"]
-            else NodeClass.COMPUTATIONAL,
+            node_class=(
+                NodeClass.INTERACTIVE
+                if "dynamic" in node_data["key"]
+                else NodeClass.COMPUTATIONAL
+            ),
             inputs=node_data.get("inputs", InputsDict()),
         )
         for node_id, node_data in fake_2connected_jupyterlabs_workbench.items()
@@ -299,9 +293,9 @@ async def test_db_listener_upgrades_projects_row_correctly(
     assert len(tasks) == 2, "Expected two tasks for the two JupyterLab nodes"
     first_jupyter_task = tasks[0]
     second_jupyter_task = tasks[1]
-    assert len(second_jupyter_task["inputs"]) > 0, (
-        "Expected inputs for the second JupyterLab task"
-    )
+    assert (
+        len(second_jupyter_task["inputs"]) > 0
+    ), "Expected inputs for the second JupyterLab task"
     number_of_inputs_linked = len(second_jupyter_task["inputs"])
 
     # simulate a concurrent change in all the outputs of first jupyterlab
@@ -372,9 +366,9 @@ async def test_db_listener_upgrades_projects_row_correctly(
                             mock_dynamic_service_rpc.call_args_list,
                         )
                     # Assert that the dynamic service RPC was called
-                    assert mock_dynamic_service_rpc.call_count > 0, (
-                        "Dynamic service retrieve RPC was not called"
-                    )
+                    assert (
+                        mock_dynamic_service_rpc.call_count > 0
+                    ), "Dynamic service retrieve RPC was not called"
                     # now get we check which ports were retrieved, we expect all of them
                     all_ports = set()
                     for call in mock_dynamic_service_rpc.call_args_list:
