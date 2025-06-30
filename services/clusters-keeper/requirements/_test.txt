@@ -197,7 +197,9 @@ parse==1.20.2
 pathable==0.4.4
     # via jsonschema-path
 pluggy==1.6.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 ply==3.11
     # via jsonpath-ng
 propcache==0.3.1
@@ -222,19 +224,23 @@ pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pyparsing==3.2.3
     # via moto
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
