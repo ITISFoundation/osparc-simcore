@@ -195,7 +195,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
 
         const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
         if (
-          studyBrowserContext === "search" ||
+          studyBrowserContext === "searchProjects" ||
           studyBrowserContext === "workspaces"
         ) {
           const editButton = new qx.ui.menu.Button(this.tr("Edit..."), "@FontAwesome5Solid/pencil-alt/12");

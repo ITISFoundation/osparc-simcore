@@ -276,14 +276,14 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       if (
-        studyBrowserContext === "search" ||
+        studyBrowserContext === "searchProjects" ||
         studyBrowserContext === "studiesAndFolders"
       ) {
         const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => this.__editFolder(), this);
         menu.add(editButton);
 
-        if (studyBrowserContext === "search") {
+        if (studyBrowserContext === "searchProjects") {
           const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/external-link-alt/12");
           openLocationButton.addListener("execute", () => {
             const folder = this.getFolder();
