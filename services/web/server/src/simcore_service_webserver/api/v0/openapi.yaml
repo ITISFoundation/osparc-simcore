@@ -8466,6 +8466,7 @@ components:
           - note
           - rect
           - text
+          - conversation
           title: Type
         color:
           type: string
