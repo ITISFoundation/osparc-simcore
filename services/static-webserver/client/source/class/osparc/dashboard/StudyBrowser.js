@@ -52,10 +52,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       check: [
         "studiesAndFolders",
         "workspaces",
-        "search",
         "templates",
         "public",
         "trash",
+        "searchProjects",
+        "searchTemplates",
+        "searchPublicProjects",
       ],
       nullable: false,
       init: "studiesAndFolders",
@@ -166,7 +168,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadWorkspaces: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        ["studiesAndFolders", "templates", "public"].includes(this.getCurrentContext()) ||
+        !["workspaces", "trash", "searchProjects"].includes(this.getCurrentContext()) ||
         this.__loadingWorkspaces
       ) {
         return;
@@ -174,19 +176,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       let request = null;
       switch (this.getCurrentContext()) {
-        case "search": {
+        case "workspaces":
+          request = osparc.store.Workspaces.getInstance().fetchWorkspaces();
+          break;
+        case "trash":
+          request = osparc.store.Workspaces.getInstance().fetchAllTrashedWorkspaces();
+          break;
+        case "searchProjects": {
           const filterData = this._searchBarFilter.getFilterData();
           const text = filterData.text ? encodeURIComponent(filterData.text) : "";
           request = osparc.store.Workspaces.getInstance().searchWorkspaces(text, this.getOrderBy());
           break;
         }
-        case "workspaces": {
-          request = osparc.store.Workspaces.getInstance().fetchWorkspaces();
-          break;
-        }
-        case "trash":
-          request = osparc.store.Workspaces.getInstance().fetchAllTrashedWorkspaces();
-          break;
       }
 
       this.__loadingWorkspaces = true;
@@ -834,6 +835,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
             requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
           }
+          requestParams.type = ["templates", "public"].includes(this.getCurrentContext()) ? "template" : "user";
           break;
         }
       }
@@ -867,9 +869,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "studiesAndFolders":
           request = osparc.data.Resources.fetch("studies", "getPage", params, options);
           break;
-        case "search":
-          request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
-          break;
         case "templates":
           request = osparc.store.Templates.fetchTemplatesNonPublicPaginated(params, options);
           break;
@@ -878,6 +877,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "trash":
           request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+          break;
+        case "search":
+          request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
       }
       return request;
@@ -1145,7 +1147,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       switch (this.getCurrentContext()) {
         case "studiesAndFolders":
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Workspace and Shared Workspaces");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
           this._toolbar.show();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1154,7 +1156,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "workspaces":
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Workspace and Shared Workspaces");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
           this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
@@ -1185,7 +1187,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "trash":
           this._searchBarFilter.resetFilters();
-          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Workspace and Shared Workspaces");
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
           this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();

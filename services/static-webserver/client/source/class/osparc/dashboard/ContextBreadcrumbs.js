@@ -55,18 +55,16 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
       this._removeAll();
 
       const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
-      if (currentContext !== "studiesAndFolders") {
-        return;
-      }
+      if (currentContext === "studiesAndFolders") {
+        if (this.getCurrentFolderId()) {
+          const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
+          this.__createUpstreamButtons(currentFolder);
+        }
 
-      if (this.getCurrentFolderId()) {
-        const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
-        this.__createUpstreamButtons(currentFolder);
-      }
-
-      const currentFolderButton = this.__createCurrentFolderButton();
-      if (currentFolderButton) {
-        this._add(currentFolderButton);
+        const currentFolderButton = this.__createCurrentFolderButton();
+        if (currentFolderButton) {
+          this._add(currentFolderButton);
+        }
       }
     },
 

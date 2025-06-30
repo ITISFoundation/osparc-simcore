@@ -297,10 +297,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           this.__setIcon(osparc.store.Workspaces.iconPath(32));
           title.setValue(this.tr("Shared Workspaces"));
           break;
-        case "search":
-          this.__setIcon("@FontAwesome5Solid/search/24");
-          title.setValue(this.tr("Search results"));
-          break;
         case "templates": {
           this.__setIcon("@FontAwesome5Solid/copy/24");
           title.setValue(this.tr("Templates"));
@@ -321,6 +317,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           });
           break;
         }
+        case "searchProjects":
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Search Projects results"));
+          break;
+        case "searchTemplates":
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Search Templates results"));
+          break;
+        case "searchPublicProjects":
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Search Public Projects results"));
+          break;
       }
     },
 
