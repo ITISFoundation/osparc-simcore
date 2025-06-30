@@ -1980,6 +1980,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           const conversationTitle = `${initPos.x}, ${initPos.y}`;
           osparc.study.Conversations.addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.PROJECT_ANNOTATION)
             .then(conversationData => {
+              serializeData.attributes.conversationId = conversationData["conversationId"];
               osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationData["conversationId"]);
             })
             .catch(() => {
