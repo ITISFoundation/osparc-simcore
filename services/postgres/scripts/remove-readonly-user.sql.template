@@ -1,16 +1,6 @@
--- Revoke all privileges the user has on the public schema
-REVOKE ALL PRIVILEGES ON SCHEMA public FROM ${POSTGRES_READONLY_USER};
+-- Revoke readonly role from user
+REVOKE ${POSTGRES_DB}_readonly FROM ${POSTGRES_READONLY_USER};
 
--- Revoke all privileges the user has on tables and sequences in the public schema
-REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM ${POSTGRES_READONLY_USER};
-REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM ${POSTGRES_READONLY_USER};
-
--- Revoke any future privileges set via ALTER DEFAULT PRIVILEGES
-ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM ${POSTGRES_READONLY_USER};
-ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM ${POSTGRES_READONLY_USER};
-
--- Drop the user
 DROP USER ${POSTGRES_READONLY_USER};
 
--- Listing all users
-SELECT * FROM pg_roles;
+SELECT * FROM pg_roles WHERE rolname NOT LIKE 'pg_%';
