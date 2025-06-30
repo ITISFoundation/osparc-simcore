@@ -262,7 +262,7 @@ qx.Class.define("osparc.study.Conversations", {
         .then(conversations => {
           if (conversations.length) {
             // Sort conversations by created date, newest first
-            conversations.sort((a, b) => new Date(b.created) - new Date(a.created));
+            conversations.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
             conversations.forEach(conversation => this.__addConversationPage(conversation));
             if (this.__openConversationId) {
               const conversationsLayout = this.getChildControl("conversations-layout");
