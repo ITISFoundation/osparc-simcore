@@ -1976,7 +1976,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           break;
         }
         case annotationTypes.CONVERSATION: {
-          console.log("CONVERSATION", initPos);
+          const conversationTitle = `${x}, ${y}`;
+          osparc.study.Conversations.addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.PROJECT_ANNOTATION)
+            .then(conversationData => {
+              console.log("Conversation created", conversationData);
+              osparc.study.Conversations.popUpInWindow(this.getStudy().serialize());
+            });
           break;
         }
       }

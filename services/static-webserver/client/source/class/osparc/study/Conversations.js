@@ -48,7 +48,7 @@ qx.Class.define("osparc.study.Conversations", {
   statics: {
     TYPES: {
       PROJECT_STATIC: "PROJECT_STATIC",
-      PROJECT_DYNAMIC: "PROJECT_DYNAMIC",
+      PROJECT_ANNOTATION: "PROJECT_ANNOTATION",
     },
 
     popUpInWindow: function(studyData) {
