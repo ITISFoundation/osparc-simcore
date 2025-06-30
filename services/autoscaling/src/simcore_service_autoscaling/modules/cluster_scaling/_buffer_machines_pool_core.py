@@ -35,24 +35,24 @@ from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..constants import (
+from ...constants import (
     BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
     BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
     DOCKER_PULL_COMMAND,
     PREPULL_COMMAND_NAME,
 )
-from ..core.settings import get_application_settings
-from ..models import BufferPool, BufferPoolManager
-from ..utils.auto_scaling_core import ec2_buffer_startup_script
-from ..utils.buffer_machines_pool_core import (
+from ...core.settings import get_application_settings
+from ...models import BufferPool, BufferPoolManager
+from ...utils.buffer_machines import (
     dump_pre_pulled_images_as_tags,
     get_deactivated_buffer_ec2_tags,
     load_pre_pulled_images_from_tags,
 )
-from .auto_scaling_mode_base import BaseAutoscaling
-from .ec2 import get_ec2_client
-from .instrumentation import get_instrumentation, has_instrumentation
-from .ssm import get_ssm_client
+from ...utils.cluster_scaling import ec2_buffer_startup_script
+from ..ec2 import get_ec2_client
+from ..instrumentation import get_instrumentation, has_instrumentation
+from ..ssm import get_ssm_client
+from ._provider_protocol import AutoscalingProvider
 
 _logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ async def _analyze_running_instance_state(
 
 
 async def _analyse_current_state(
-    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, *, auto_scaling_mode: AutoscalingProvider
 ) -> BufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
@@ -119,7 +119,7 @@ async def _analyse_current_state(
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped", "pending", "running", "stopping"],
     )
     buffers_manager = BufferPoolManager()
@@ -229,7 +229,7 @@ async def _add_remove_buffer_instances(
     app: FastAPI,
     buffers_manager: BufferPoolManager,
     *,
-    auto_scaling_mode: BaseAutoscaling,
+    auto_scaling_mode: AutoscalingProvider,
 ) -> BufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
@@ -265,7 +265,9 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
+                tags=get_deactivated_buffer_ec2_tags(
+                    auto_scaling_mode.get_ec2_tags(app)
+                ),
                 startup_script=ec2_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
@@ -397,7 +399,7 @@ async def _handle_image_pre_pulling(
 
 
 async def monitor_buffer_machines(
-    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, *, auto_scaling_mode: AutoscalingProvider
 ) -> None:
     """Buffer machine creation works like so:
     1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm

@@ -22,7 +22,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_autoscaling.core.errors import Ec2InvalidDnsNameError
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceData
-from simcore_service_autoscaling.utils.auto_scaling_core import (
+from simcore_service_autoscaling.utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
     get_machine_buffer_type,
