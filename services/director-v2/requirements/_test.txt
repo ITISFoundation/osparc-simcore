@@ -213,7 +213,9 @@ partd==1.4.2
 pillow==11.2.1
     # via bokeh
 pluggy==1.6.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
 propcache==0.3.1
@@ -225,7 +227,11 @@ psutil==7.0.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -234,19 +240,19 @@ pytest==8.3.5
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-xdist
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.1
+pytest-docker==3.2.2
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
-pytest-xdist==3.6.1
+pytest-xdist==3.7.0
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via

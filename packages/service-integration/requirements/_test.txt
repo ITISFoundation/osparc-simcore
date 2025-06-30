@@ -19,14 +19,19 @@ pluggy==1.5.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==8.3.5
+    #   pytest-cov
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in

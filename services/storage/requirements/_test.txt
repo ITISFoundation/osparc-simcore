@@ -243,7 +243,9 @@ pandas==2.2.3
 pathable==0.4.4
     # via jsonschema-path
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 ply==3.11
     # via jsonpath-ng
 pprintpp==0.4.0
@@ -274,9 +276,13 @@ pydantic-core==2.27.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pyparsing==3.2.1
     # via moto
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -286,19 +292,19 @@ pytest==8.3.5
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
 pytest-celery==1.1.3
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker-tools==3.1.3
+pytest-docker-tools==3.1.9
     # via pytest-celery
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
