@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, Literal
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
@@ -94,6 +94,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         str | None,
         Field(None, description="Stack name defined upon deploy (see main Makefile)"),
     ]
+
+    WEBSERVER_APP_FACTORY_NAME: Annotated[
+        Literal["WEBSERVER_FULL_APP_FACTORY", "WEBSERVER_AUTHZ_APP_FACTORY"],
+        Field(
+            description="Application factory to be lauched by the gunicorn server",
+        ),
+    ] = "WEBSERVER_FULL_APP_FACTORY"
 
     WEBSERVER_DEV_FEATURES_ENABLED: Annotated[
         bool,

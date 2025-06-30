@@ -32,7 +32,7 @@ from .._meta import (
     APP_WORKER_STARTED_BANNER_MSG,
 )
 from ..api.rest.routes import setup_rest_api_routes
-from ..api.rpc.routes import setup_rpc_api_routes
+from ..api.rpc.routes import setup_rpc_routes
 from ..dsm import setup_dsm
 from ..dsm_cleaner import setup_dsm_cleaner
 from ..exceptions.handlers import set_exception_handlers
@@ -90,12 +90,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     setup_s3(app)
     setup_client_session(app)
 
-    if not settings.STORAGE_WORKER_MODE:
+    if settings.STORAGE_CELERY and not settings.STORAGE_WORKER_MODE:
         setup_rabbitmq(app)
-        setup_rpc_api_routes(app)
 
-        assert settings.STORAGE_CELERY  # nosec
         setup_task_manager(app, celery_settings=settings.STORAGE_CELERY)
+
+        setup_rpc_routes(app)
     setup_rest_api_long_running_tasks_for_uploads(app)
     setup_rest_api_routes(app, API_VTAG)
     set_exception_handlers(app)

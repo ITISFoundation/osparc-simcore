@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.69.0
+  version: 0.69.1
 servers:
 - url: ''
   description: webserver
@@ -238,13 +238,13 @@ paths:
       tags:
       - auth
       summary: Check Auth
-      description: checks if user is authenticated in the platform
-      operationId: check_authentication
+      description: checks whether user request is authenticated
+      operationId: check_auth
       responses:
         '204':
           description: Successful Response
         '401':
-          description: unauthorized reset due to invalid token code
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -4608,6 +4608,20 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: type
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/ProjectTypeAPI'
+          default: all
+      - name: template_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/ProjectTemplateType'
+          - type: 'null'
+          title: Template Type
       - name: text
         in: query
         required: false
