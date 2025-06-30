@@ -41,8 +41,6 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       "border-radius": "4px"
     });
 
-    this.subscribeToFilterGroup("workbench");
-
     const captionBar = this.getChildControl("captionbar");
     captionBar.set({
       cursor: "move",
