@@ -43,21 +43,25 @@ def _scheduler_auth(app: FastAPI) -> ClusterAuthentication:
 
 class ComputationalAutoscalingProvider:
     async def get_monitored_nodes(self, app: FastAPI) -> list[Node]:
+        assert self  # nosec
         return await utils_docker.get_worker_nodes(get_docker_client(app))
 
     def get_ec2_tags(self, app: FastAPI) -> EC2Tags:
+        assert self  # nosec
         app_settings = get_application_settings(app)
         return utils_ec2.get_ec2_tags_computational(app_settings)
 
     def get_new_node_docker_tags(
         self, app: FastAPI, ec2_instance_data: EC2InstanceData
     ) -> dict[DockerLabelKey, str]:
+        assert self  # nosec
         assert app  # nosec
         return {
             DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance_data.type
         }
 
     async def list_unrunnable_tasks(self, app: FastAPI) -> list[DaskTask]:
+        assert self  # nosec
         try:
             unrunnable_tasks = await dask.list_unrunnable_tasks(
                 _scheduler_url(app), _scheduler_auth(app)
@@ -83,17 +87,20 @@ class ComputationalAutoscalingProvider:
             return []
 
     def get_task_required_resources(self, task) -> Resources:
+        assert self  # nosec
         return utils.resources_from_dask_task(task)
 
     async def get_task_defined_instance(
         self, app: FastAPI, task
     ) -> InstanceTypeType | None:
+        assert self  # nosec
         assert app  # nosec
         return cast(InstanceTypeType | None, utils.get_task_instance_restriction(task))
 
     async def compute_node_used_resources(
         self, app: FastAPI, instance: AssociatedInstance
     ) -> Resources:
+        assert self  # nosec
         try:
             resource = await dask.get_worker_used_resources(
                 _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
@@ -124,6 +131,7 @@ class ComputationalAutoscalingProvider:
     async def compute_cluster_used_resources(
         self, app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
+        assert self  # nosec
         list_of_used_resources: list[Resources] = await logged_gather(
             *(self.compute_node_used_resources(app, i) for i in instances)
         )
@@ -135,6 +143,7 @@ class ComputationalAutoscalingProvider:
     async def compute_cluster_total_resources(
         self, app: FastAPI, instances: list[AssociatedInstance]
     ) -> Resources:
+        assert self  # nosec
         try:
             return await dask.compute_cluster_total_resources(
                 _scheduler_url(app), _scheduler_auth(app), instances
@@ -145,6 +154,7 @@ class ComputationalAutoscalingProvider:
     async def is_instance_active(
         self, app: FastAPI, instance: AssociatedInstance
     ) -> bool:
+        assert self  # nosec
         if not utils_docker.is_node_osparc_ready(instance.node):
             return False
 
@@ -156,6 +166,7 @@ class ComputationalAutoscalingProvider:
     async def is_instance_retired(
         self, app: FastAPI, instance: AssociatedInstance
     ) -> bool:
+        assert self  # nosec
         if not utils_docker.is_node_osparc_ready(instance.node):
             return False
         return await dask.is_worker_retired(
@@ -163,4 +174,5 @@ class ComputationalAutoscalingProvider:
         )
 
     async def try_retire_nodes(self, app: FastAPI) -> None:
+        assert self  # nosec
         await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))
