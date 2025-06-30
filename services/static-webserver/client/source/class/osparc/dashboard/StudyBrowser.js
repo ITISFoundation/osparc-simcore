@@ -776,6 +776,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // loose equality: will do a Number to String conversion if necessary
         sameContext &= key in currentParams && currentParams[key] == value;
       });
+
+      if (!sameContext) {
+        console.log("not sameContext", currentParams, reqParams);
+      }
+
       return !sameContext;
     },
 
@@ -894,10 +899,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.data.Resources.fetch("studies", "getPage", params, options);
           break;
         case "templates":
-          request = osparc.store.Templates.fetchTemplatesNonPublicPaginated(params, options);
-          break;
         case "publicTemplates":
-          request = osparc.store.Templates.fetchTemplatesPublicPaginated(params, options);
+          // The distinction is done in the frontend
+          request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
           break;
         case "trash":
           request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
@@ -907,8 +911,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "searchTemplates":
         case "searchPublicTemplates":
-          // OM: use Templates store
-          request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+          // The distinction is done in the frontend
+          request = osparc.store.Templates.searchTemplatesPaginated(params, options);
           break;
       }
       return request;
