@@ -1448,7 +1448,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__annotationInitPos = null;
       }
       if (this.__annotating) {
-        if (this.__consolidateAnnotation(this.__annotating, annotationInitPos, this.__rectAnnotationRepr)) {
+        if (this.__consolidateAnnotation(annotationInitPos, this.__rectAnnotationRepr)) {
           if (this.__rectAnnotationRepr) {
             osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
             this.__rectAnnotationRepr = null;
@@ -1590,10 +1590,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.setScale(closestDown);
     },
 
-    startConversation: function() {
-      this.__toolHint.setValue(this.tr("Pick the position"));
-    },
-
     startAnnotationsNote: function() {
       this.__annotating = osparc.workbench.Annotation.TYPES.NOTE;
       this.__toolHint.setValue(this.tr("Pick the position"));
@@ -1606,6 +1602,16 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     startAnnotationsText: function(workbenchPos) {
       this.__annotating = osparc.workbench.Annotation.TYPES.TEXT;
+      if (workbenchPos) {
+        this.__annotationInitPos = workbenchPos;
+        this.__mouseUp();
+      } else {
+        this.__toolHint.setValue(this.tr("Pick the position"));
+      }
+    },
+
+    startConversation: function(workbenchPos) {
+      this.__annotating = osparc.workbench.Annotation.TYPES.CONVERSATION;
       if (workbenchPos) {
         this.__annotationInitPos = workbenchPos;
         this.__mouseUp();
@@ -1896,7 +1902,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __consolidateAnnotation: function(type, initPos, annotation) {
+    __consolidateAnnotation: function(initPos, annotation) {
+      const type = this.__annotating;
       const annotationTypes = osparc.workbench.Annotation.TYPES;
       const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
       const serializeData = {
