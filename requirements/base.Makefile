@@ -9,13 +9,14 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 .DEFAULT_GOAL := help
 
 DO_CLEAN_OR_UPGRADE:=$(if $(clean),,--upgrade)
-UPGRADE_OPTION := $(if $(upgrade),--upgrade-package "$(upgrade)",$(DO_CLEAN_OR_UPGRADE))
+STARTSWITH_UPGRADE := $(if $(startswith),$(shell grep '^$(startswith)' $(basename $@).txt 2>/dev/null | cut -d= -f1 | xargs -n1 echo --upgrade-package),)
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package "$(upgrade)",$(if $(startswith),$(STARTSWITH_UPGRADE),$(DO_CLEAN_OR_UPGRADE))
 
 
 objects = $(sort $(wildcard *.in))
 outputs := $(objects:.in=.txt)
 
-reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo
+reqs: $(outputs) ## pip-compiles all requirements/*.in -> requirements/*.txt; make reqs upgrade=foo will only upgrade package foo; make reqs startswith=pytest will upgrade packages starting with pytest
 
 touch:
 	@$(foreach p,${objects},touch ${p};)
@@ -35,6 +36,12 @@ help: ## this colorful help
 	@echo "Recipes for '$(notdir $(CURDIR))':"
 	@echo ""
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "Examples:"
+	@echo "  make reqs                   # Upgrade all packages"
+	@echo "  make reqs upgrade=pytest    # Upgrade only pytest package"
+	@echo "  make reqs startswith=pytest # Upgrade all packages starting with 'pytest'"
+	@echo "  make reqs clean=1           # Clean and rebuild all requirements"
 	@echo ""
 
 
