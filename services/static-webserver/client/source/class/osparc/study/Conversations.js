@@ -46,6 +46,11 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   statics: {
+    TYPES: {
+      PROJECT_STATIC: "PROJECT_STATIC",
+      PROJECT_DYNAMIC: "PROJECT_DYNAMIC",
+    },
+
     popUpInWindow: function(studyData) {
       const conversations = new osparc.study.Conversations(studyData);
       const title = qx.locale.Manager.tr("Conversations");
@@ -58,14 +63,14 @@ qx.Class.define("osparc.study.Conversations", {
       return win;
     },
 
-    addConversation: function(studyId, name = "new 1") {
+    addConversation: function(studyId, name = "new 1", type = this.TYPES.PROJECT_STATIC) {
       const params = {
         url: {
           studyId,
         },
         data: {
           name,
-          "type": "PROJECT_STATIC",
+          type,
         }
       };
       return osparc.data.Resources.fetch("conversations", "addConversation", params)
@@ -259,6 +264,7 @@ qx.Class.define("osparc.study.Conversations", {
             this.__addTempConversationPage();
           }
         })
+        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
@@ -307,15 +313,16 @@ qx.Class.define("osparc.study.Conversations", {
       conversationsLayout.add(conversationPage);
 
       if (this.__newConversationButton === null) {
+          const studyData = this.getStudyData();
         // initialize the new button only once
         const newConversationButton = this.__newConversationButton = new qx.ui.form.Button().set({
           icon: "@FontAwesome5Solid/plus/12",
           toolTipText: this.tr("Add new conversation"),
           allowGrowX: false,
           backgroundColor: "transparent",
+          enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
         });
         newConversationButton.addListener("execute", () => {
-          const studyData = this.getStudyData();
           osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
             .then(conversationDt => {
               this.__addConversationPage(conversationDt);

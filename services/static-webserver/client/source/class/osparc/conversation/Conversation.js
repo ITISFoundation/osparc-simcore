@@ -82,6 +82,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       };
       const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/10").set({
         ...buttonsAesthetics,
+        visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       renameButton.addListener("execute", () => {
         const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
@@ -112,6 +113,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
         ...buttonsAesthetics,
         paddingLeft: 4, // adds spacing between buttons
+        visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       closeButton.addListener("execute", () => {
         const deleteConversation = () => {
@@ -166,18 +168,18 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
-      if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId());
-        addMessages.setPaddingLeft(10);
-        addMessages.addListener("messageAdded", e => {
-          const data = e.getData();
-          if (data["conversationId"]) {
-            this.setConversationId(data["conversationId"]);
-            this.addMessage(data);
-          }
-        });
-        this._add(addMessages);
-      }
+      const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId()).set({
+        enabled: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
+        paddingLeft: 10,
+      });
+      addMessages.addListener("messageAdded", e => {
+        const data = e.getData();
+        if (data["conversationId"]) {
+          this.setConversationId(data["conversationId"]);
+          this.addMessage(data);
+        }
+      });
+      this._add(addMessages);
     },
 
     __getNextRequest: function() {
@@ -197,7 +199,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
+      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options)
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __reloadMessages: function(removeMessages = true) {
