@@ -12,7 +12,7 @@ from servicelib.fastapi.postgres_lifespan import (
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
-from ..api.rpc.routing import rpc_api_routes_lifespan
+from ..api.rpc.routes import rpc_api_routes_lifespan
 from ..clients.postgres import postgres_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
 from .settings import ApplicationSettings

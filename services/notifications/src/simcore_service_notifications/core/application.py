@@ -15,7 +15,7 @@ from servicelib.fastapi.tracing import (
 from servicelib.logging_utils import config_all_loggers
 
 from .._meta import API_VTAG, APP_NAME, SUMMARY, VERSION
-from ..api.rest.routing import initialize_rest_api
+from ..api.rest.routes import initialize_rest_api
 from . import events
 from .settings import ApplicationSettings
 
