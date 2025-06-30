@@ -22,12 +22,13 @@ qx.Class.define("osparc.study.Conversations", {
   /**
     * @param studyData {Object} Study Data
     */
-  construct: function(studyData) {
+  construct: function(studyData, openConversationId = null) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
 
     this.__conversations = [];
+    this.__openConversationId = openConversationId;
 
     this.set({
       studyData,
@@ -51,7 +52,7 @@ qx.Class.define("osparc.study.Conversations", {
       PROJECT_ANNOTATION: "PROJECT_ANNOTATION",
     },
 
-    popUpInWindow: function(studyData) {
+    popUpInWindow: function(studyData, openConversationId = null) {
       const conversations = new osparc.study.Conversations(studyData);
       const title = qx.locale.Manager.tr("Conversations");
       const viewWidth = 600;
@@ -161,6 +162,7 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   members: {
+    __openConversationId: null,
     __conversations: null,
     __newConversationButton: null,
     __wsHandlers: null,
@@ -259,7 +261,17 @@ qx.Class.define("osparc.study.Conversations", {
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
         .then(conversations => {
           if (conversations.length) {
+            // Sort conversations by created date, newest first
+            conversations.sort((a, b) => new Date(b.created) - new Date(a.created));
             conversations.forEach(conversation => this.__addConversationPage(conversation));
+            if (this.__openConversationId) {
+              const conversationsLayout = this.getChildControl("conversations-layout");
+              const conversation = conversationsLayout.getSelectables().find(c => c.getConversationId() === this.__openConversationId);
+              if (conversation) {
+                conversationsLayout.setSelection([conversation]);
+              }
+              this.__openConversationId = null; // reset it so it does not open again
+            }
           } else {
             this.__addTempConversationPage();
           }
