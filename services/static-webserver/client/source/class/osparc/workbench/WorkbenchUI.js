@@ -1976,16 +1976,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           break;
         }
         case annotationTypes.CONVERSATION: {
-          const annotation = this.__addAnnotation(serializeData);
           const conversationTitle = `${initPos.x}, ${initPos.y}`;
           osparc.study.Conversations.addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.PROJECT_ANNOTATION)
             .then(conversationData => {
               serializeData.attributes.conversationId = conversationData["conversationId"];
+              this.__addAnnotation(serializeData);
               osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationData["conversationId"]);
-            })
-            .catch(() => {
-              // remove annotation if conversation creation fails
-              this.__removeAnnotation(annotation.getId());
             });
           break;
         }

@@ -101,7 +101,7 @@ qx.Class.define("osparc.workbench.Annotation", {
   members: {
     __svgLayer: null,
 
-    __drawAnnotation: async function(attrs) {
+    __drawAnnotation: function(attrs) {
       if (this.__svgLayer === null) {
         return;
       }
@@ -124,7 +124,13 @@ qx.Class.define("osparc.workbench.Annotation", {
           break;
         case this.self().TYPES.CONVERSATION: {
           const text = `${attrs.x}, ${attrs.y}`;
-          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, text, "#00FF00", 12);
+          const conversationData = {
+            conversationId: attrs.conversationId,
+            title: attrs.text || text,
+          }
+          representation = new osparc.workbench.ConversationUI(conversationData);
+          // OM: Add it to the svgLayer or something
+          representation.moveTo(attrs.x, attrs.y);
           representation.isSVG = false;
           break;
         }
@@ -241,9 +247,7 @@ qx.Class.define("osparc.workbench.Annotation", {
         type,
         attributes: this.getAttributes(),
       }
-      if (type !== this.self().TYPES.CONVERSATION) {
-        data.color = this.getColor();
-      }
+      data.color = this.getColor();
       return data;
     }
   }
