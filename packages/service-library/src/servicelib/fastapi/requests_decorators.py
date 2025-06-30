@@ -60,6 +60,9 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
 
         # Create two tasks:
         # one to poll the request and check if the client disconnected
+        # sometimes canceling a task doesn't cancel the task immediately. If the poller task is not "killed" immediately, the client doesn't
+        # get a response, and the request "hangs". For this reason, we use an event to signal the poller task to stop.
+        # See: https://github.com/ITISFoundation/osparc-issues/issues/1922
         kill_poller_event = asyncio.Event()
         poller_task = asyncio.create_task(
             _disconnect_poller(kill_poller_event, request, sentinel),
