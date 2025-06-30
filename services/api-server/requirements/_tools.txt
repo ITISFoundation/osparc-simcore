@@ -45,7 +45,7 @@ mypy==1.16.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via
     #   -c requirements/_test.txt
     #   black

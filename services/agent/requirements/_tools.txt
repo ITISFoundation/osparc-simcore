@@ -30,7 +30,7 @@ mccabe==0.7.0
     # via pylint
 mypy==1.16.1
     # via -r requirements/../../../requirements/devenv.txt
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via
     #   black
     #   mypy

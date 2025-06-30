@@ -203,7 +203,7 @@ multidict==6.1.0
     #   yarl
 mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 networkx==2.8.8
     # via cfn-lint
