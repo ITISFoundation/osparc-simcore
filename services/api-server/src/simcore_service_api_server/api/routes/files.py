@@ -287,6 +287,7 @@ async def upload_files(files: list[UploadFile] = FileParam(...)):
     response_model=ClientFileUploadData,
     responses=_FILE_STATUS_CODES,
 )
+@cancel_on_disconnect
 async def get_upload_links(
     request: Request,
     client_file: UserFileToProgramJob | UserFile,
@@ -421,6 +422,7 @@ async def abort_multipart_upload(
     response_model=OutputFile,
     responses=_FILE_STATUS_CODES,
 )
+@cancel_on_disconnect
 async def complete_multipart_upload(
     request: Request,
     file_id: UUID,
