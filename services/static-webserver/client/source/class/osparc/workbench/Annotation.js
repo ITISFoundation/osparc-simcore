@@ -111,29 +111,41 @@ qx.Class.define("osparc.workbench.Annotation", {
         case this.self().TYPES.NOTE: {
           const user = osparc.store.Groups.getInstance().getUserByGroupId(attrs.recipientGid);
           representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.getLabel() : "", attrs.text);
+          representation.isSVG = true;
           break;
         }
         case this.self().TYPES.RECT:
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
+          representation.isSVG = true;
           break;
         case this.self().TYPES.TEXT:
           representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
+          representation.isSVG = true;
           break;
         case this.self().TYPES.CONVERSATION: {
           const text = `${attrs.x}, ${attrs.y}`;
           representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, text, "#00FF00", 12);
+          representation.isSVG = false;
           break;
         }
       }
       if (representation) {
-        osparc.wrapper.Svg.makeDraggable(representation);
-        representation.node.addEventListener("click", e => {
-          this.fireDataEvent("annotationClicked", e.ctrlKey);
-          e.stopPropagation();
-        }, this);
-        representation.on("dragstart", () => this.fireEvent("annotationStartedMoving"));
-        representation.on("dragmove", () => this.fireEvent("annotationMoving"));
-        representation.on("dragend", () => this.fireEvent("annotationStoppedMoving"));
+        if (representation.isSVG) {
+          osparc.wrapper.Svg.makeDraggable(representation);
+          representation.node.addEventListener("click", e => {
+            this.fireDataEvent("annotationClicked", e.ctrlKey);
+            e.stopPropagation();
+          }, this);
+          representation.on("dragstart", () => this.fireEvent("annotationStartedMoving"));
+          representation.on("dragmove", () => this.fireEvent("annotationMoving"));
+          representation.on("dragend", () => this.fireEvent("annotationStoppedMoving"));
+        } else {
+          representation.addListener("tap", e => {
+            this.fireDataEvent("annotationClicked", e.ctrlKey);
+            e.stopPropagation();
+          }, this);
+          // OM: handle drag events for non-SVG representations
+        }
         this.setRepresentation(representation);
       }
     },
