@@ -835,37 +835,30 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           requestParams.folderId = this.getCurrentFolderId();
           break;
         case "templates":
+        case "searchTemplates":
           requestParams.type = "template";
           requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "non-public";
           break;
         case "publicTemplates":
+        case "searchPublicTemplates":
           requestParams.type = "template";
           requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "public";
           break;
         case "searchProjects": {
           requestParams.type = "user";
-          // Use the ``search`` functionality only if the user types some text
-          // tags should only be used to filter the current context (search context ot workspace/folder context)
-          const filterData = this._searchBarFilter.getFilterData();
-          if (filterData.text) {
-            requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
-            requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
-          }
           break;
         }
-        case "searchTemplates":
-        case "searchPublicTemplates": {
-          requestParams.type = "template";
-          // Use the ``search`` functionality only if the user types some text
-          // tags should only be used to filter the current context (search context ot workspace/folder context)
-          const filterData = this._searchBarFilter.getFilterData();
-          if (filterData.text) {
-            requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
-            requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
-          }
-          break;
+      }
+
+      if (this.getCurrentContext().includes("search")) {
+        // Use the ``search`` functionality only if the user types some text
+        // tags should only be used to filter the current context (search context ot workspace/folder context)
+        const filterData = this._searchBarFilter.getFilterData();
+        if (filterData.text) {
+          requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
+          requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
         }
       }
 
@@ -1216,7 +1209,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "templates":
         case "searchTemplates":
-          this._searchBarFilter.resetFilters();
+          if (this.getCurrentContext() === "templates") {
+            this._searchBarFilter.resetFilters();
+          }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Templates");
           this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
@@ -1225,7 +1220,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case "publicTemplates":
         case "searchPublicTemplates":
-          this._searchBarFilter.resetFilters();
+          if (this.getCurrentContext() === "publicTemplates") {
+            this._searchBarFilter.resetFilters();
+          }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Public Projects");
           this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
