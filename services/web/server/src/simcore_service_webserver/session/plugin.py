@@ -41,4 +41,9 @@ def setup_session(app: web.Application):
         samesite=settings.SESSION_COOKIE_SAMESITE,
     )
     aiohttp_session.setup(app=app, storage=encrypted_cookie_sessions)
-    app.middlewares[-1].__middleware_name__ = f"{__name__}.session"  # type: ignore[attr-defined] # PC this attribute does not exist and mypy does not like it
+    setattr(  # noqa: B010
+        # aiohttp_session.setup has appended a middleware. We add an identifier (mostly for debugging)
+        app.middlewares[-1],
+        "__middleware_name__",
+        f"{__name__}.session",
+    )

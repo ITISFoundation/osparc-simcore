@@ -173,6 +173,21 @@ mypy: $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this 
 	$(CURDIR)/src
 
 
+.PHONY: mypy-debug
+mypy-debug: $(REPO_BASE_DIR)/mypy.ini  ## runs mypy with profiling and reporting enabled
+	@rm -rf $(CURDIR)/.mypy-report
+	@mkdir -p $(CURDIR)/.mypy-report
+	@mypy \
+	  --config-file=$(REPO_BASE_DIR)/mypy.ini \
+	  --show-error-context \
+	  --show-traceback \
+	  --verbose \
+	  --linecount-report $(CURDIR)/.mypy-report \
+	  --any-exprs-report $(CURDIR)/.mypy-report \
+	  $(CURDIR)/src \
+	  | tee $(CURDIR)/.mypy-report/mypy.logs
+
+
 .PHONY: codestyle
 codestyle codestyle-ci: ## enforces codestyle (isort & black) finally runs pylint & mypy
 	@$(SCRIPTS_DIR)/codestyle.bash $(if $(findstring -ci,$@),ci,development) $(shell basename "${SRC_DIR}")
