@@ -3,6 +3,7 @@ from operator import itemgetter
 from typing import Final
 
 from aws_library.ec2 import AWS_TAG_VALUE_MAX_LENGTH, AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2._models import EC2InstanceBootSpecific
 from common_library.json_serialization import json_dumps
 from models_library.docker import DockerGenericTag
 from pydantic import TypeAdapter
@@ -14,6 +15,8 @@ from ..constants import (
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
     PRE_PULLED_IMAGES_RE,
 )
+from ..core.settings import ApplicationSettings
+from .utils import utils_docker
 
 _NAME_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
@@ -85,3 +88,22 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     if assembled_json:
         return TypeAdapter(list[DockerGenericTag]).validate_json(assembled_json)
     return []
+
+
+def ec2_buffer_startup_script(
+    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
+) -> str:
+    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
+    if ec2_boot_specific.pre_pull_images:
+        assert app_settings.AUTOSCALING_REGISTRY  # nosec
+        startup_commands.extend(
+            (
+                utils_docker.get_docker_login_on_start_bash_command(
+                    app_settings.AUTOSCALING_REGISTRY
+                ),
+                utils_docker.write_compose_file_command(
+                    ec2_boot_specific.pre_pull_images
+                ),
+            )
+        )
+    return " && ".join(startup_commands)
