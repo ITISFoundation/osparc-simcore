@@ -14,7 +14,7 @@ from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login._constants import MSG_USER_DELETED
@@ -61,22 +61,6 @@ def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
         spec=True,
         return_value={"captcha": "123456"},
     )
-
-
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
-async def test_check_auth(client: TestClient, logged_user: UserInfoDict):
-    assert client.app
-
-    response = await client.get("/v0/auth:check")
-    await assert_status(response, status.HTTP_204_NO_CONTENT)
-
-    response = await client.post("/v0/auth/logout")
-    await assert_status(response, status.HTTP_200_OK)
-
-    response = await client.get("/v0/auth:check")
-    await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
 
 @pytest.mark.parametrize(

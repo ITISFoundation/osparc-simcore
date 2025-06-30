@@ -15,6 +15,7 @@ from celery.worker.worker import WorkController
 from celery_library.common import create_task_manager
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
+from celery_library.types import register_celery_types
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
@@ -25,6 +26,7 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
@@ -32,7 +34,8 @@ pytest_plugins = [
 
 class FakeAppServer(BaseAppServer):
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
-        pass
+        startup_completed_event.set()
+        await self.shutdown_event.wait()  # wait for shutdown
 
 
 @pytest.fixture
@@ -122,6 +125,8 @@ async def celery_task_manager(
     celery_settings: CelerySettings,
     with_celery_worker: TestWorkController,
 ) -> CeleryTaskManager:
+    register_celery_types()
+
     return await create_task_manager(
         celery_app,
         celery_settings,

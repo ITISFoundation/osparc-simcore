@@ -95,7 +95,7 @@ async def test_invalid_invitation_if_guest_is_already_registered_in_product(
 
     # user exists, and we skip product registration to do this test
     mocker.patch(
-        "pytest_simcore.helpers.webserver_login.auto_add_user_to_product_group",
+        "pytest_simcore.helpers.webserver_users.groups_service.auto_add_user_to_product_group",
         return_value=f"Mocked in {__file__}. SKIPPED auto_add_user_to_product_group",
         autospec=True,
     )
