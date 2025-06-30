@@ -841,7 +841,7 @@ async def _launch_instances(
         elif isinstance(r, list):
             new_pending_instances.extend(r)
         else:
-            new_pending_instances.append(r)  # type: ignore[unreachable]
+            new_pending_instances.append(r)
 
     log_message = (
         f"{sum(n for n in capped_needed_machines.values())} new machines launched"
