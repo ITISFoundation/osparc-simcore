@@ -52,6 +52,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       NOTE: "note",
       RECT: "rect",
       TEXT: "text",
+      CONVERSATION: "conversation",
     },
   },
 
@@ -66,6 +67,7 @@ qx.Class.define("osparc.workbench.Annotation", {
         "note", // osparc.workbench.Annotation.TYPES.NOTE
         "rect", // osparc.workbench.Annotation.TYPES.RECT
         "text", // osparc.workbench.Annotation.TYPES.TEXT
+        "conversation", // osparc.workbench.Annotation.TYPES.CONVERSATION
       ],
       nullable: false
     },
@@ -116,6 +118,11 @@ qx.Class.define("osparc.workbench.Annotation", {
         case this.self().TYPES.TEXT:
           representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
           break;
+        case this.self().TYPES.CONVERSATION: {
+          console.log("attrs", attrs);
+          representation = this.__svgLayer.drawAnnotationRect(100, 30, attrs.x, attrs.y, "#00FF00");
+          break;
+        }
       }
       if (representation) {
         osparc.wrapper.Svg.makeDraggable(representation);
