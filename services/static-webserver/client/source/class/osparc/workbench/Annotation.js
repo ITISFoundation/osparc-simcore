@@ -224,11 +224,12 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     serialize: function() {
+      const type = this.getType();
       const data = {
-        type: this.getType(),
+        type,
         attributes: this.getAttributes(),
       }
-      if (this.getColor()) {
+      if (type !== this.self().TYPES.CONVERSATION) {
         data.color = this.getColor();
       }
       return data;
