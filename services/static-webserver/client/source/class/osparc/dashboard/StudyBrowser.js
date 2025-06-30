@@ -1150,9 +1150,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
           this._changeContext(searchContext);
         } else {
+          let backToContext = "studiesAndFolders";
+          switch (this.getCurrentContext()) {
+            case "templates":
+            case "searchTemplates":
+              backToContext = "templates";
+              break;
+            case "publicTemplates":
+            case "searchPublicTemplates":
+              backToContext = "publicTemplates";
+              break;
+          }
           const workspaceId = this.getCurrentWorkspaceId();
           const folderId = this.getCurrentFolderId();
-          this._changeContext("studiesAndFolders", workspaceId, folderId);
+          this._changeContext(backToContext, workspaceId, folderId);
         }
       });
     },
