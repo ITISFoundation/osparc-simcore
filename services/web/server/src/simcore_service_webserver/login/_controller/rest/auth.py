@@ -287,19 +287,3 @@ async def logout(request: web.Request) -> web.Response:
         await security_web.forget_identity(request, response)
 
         return response
-
-
-@routes.get(f"/{API_VTAG}/auth:check", name="check_authentication")
-@login_required
-async def check_auth(request: web.Request) -> web.Response:
-    # lightweight endpoint for checking if users are authenticated
-    # used primarily by Traefik auth middleware to verify session cookies
-
-    # NOTE: for future development
-    # if database access is added here, services like jupyter-math
-    # which load a lot of resources will have a big performance hit
-    # consider caching some properties required by this endpoint or rely on Redis
-
-    assert request  # nosec
-
-    return web.json_response(status=status.HTTP_204_NO_CONTENT)

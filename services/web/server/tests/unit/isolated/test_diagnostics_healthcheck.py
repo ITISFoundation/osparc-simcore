@@ -14,6 +14,7 @@ import pytest
 import simcore_service_webserver
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from pytest_mock import MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -29,7 +30,6 @@ from simcore_service_webserver.diagnostics._healthcheck import (
 from simcore_service_webserver.diagnostics.plugin import setup_diagnostics
 from simcore_service_webserver.diagnostics.settings import DiagnosticsSettings
 from simcore_service_webserver.rest.plugin import setup_rest
-from simcore_service_webserver.security.plugin import setup_security
 from tenacity import retry
 from tenacity.before import before_log
 from tenacity.stop import stop_after_attempt
@@ -104,6 +104,7 @@ def mock_environment(
 
 @pytest.fixture
 async def client(
+    mocked_db_setup_in_setup_security: MockType,
     unused_tcp_port_factory: Callable,
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     api_version_prefix: str,
@@ -155,7 +156,6 @@ async def client(
 
     # activates some sub-modules
     assert setup_settings(app)
-    setup_security(app)
     setup_rest(app)
 
     setup_diagnostics(app)

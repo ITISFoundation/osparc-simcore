@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp.client_exceptions import ClientConnectionError
 from aiohttp.test_utils import TestClient
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -22,7 +22,6 @@ from simcore_service_webserver.application_settings import (
     setup_settings,
 )
 from simcore_service_webserver.rest.plugin import setup_rest
-from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 
 
@@ -101,6 +100,7 @@ async def client(
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     mock_orphaned_services: MagicMock,
     app_environment: EnvVarsDict,
+    mocked_db_setup_in_setup_security: MockType,
 ):
     # app_environment are in place
     assert {key: os.environ[key] for key in app_environment} == app_environment
@@ -112,8 +112,9 @@ async def client(
     assert expected_activity_settings == settings.WEBSERVER_ACTIVITY
 
     setup_session(app)
-    setup_security(app)
     setup_rest(app)
+    assert mocked_db_setup_in_setup_security.called
+
     assert setup_activity(app)
 
     return await aiohttp_client(app)
