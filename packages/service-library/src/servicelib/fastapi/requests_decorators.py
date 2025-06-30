@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 class _HandlerWithRequestArg(Protocol):
     __name__: str
 
-    async def __call__(self, request: Request, *args: Any, **kwargs: Any) -> Any:
-        ...
+    async def __call__(self, request: Request, *args: Any, **kwargs: Any) -> Any: ...
 
 
 def _validate_signature(handler: _HandlerWithRequestArg):
@@ -36,13 +35,15 @@ def _validate_signature(handler: _HandlerWithRequestArg):
 _POLL_INTERVAL_S: float = 0.01
 
 
-async def _disconnect_poller(request: Request, result: Any):
+async def _disconnect_poller(close_event: asyncio.Event, request: Request, result: Any):
     """
     Poll for a disconnect.
     If the request disconnects, stop polling and return.
     """
     while not await request.is_disconnected():
         await asyncio.sleep(_POLL_INTERVAL_S)
+        if close_event.is_set():
+            break
     return result
 
 
@@ -59,8 +60,9 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
 
         # Create two tasks:
         # one to poll the request and check if the client disconnected
+        kill_poller_event = asyncio.Event()
         poller_task = asyncio.create_task(
-            _disconnect_poller(request, sentinel),
+            _disconnect_poller(kill_poller_event, request, sentinel),
             name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
         )
         # , and another which is the request handler
@@ -72,6 +74,7 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
         done, pending = await asyncio.wait(
             [poller_task, handler_task], return_when=asyncio.FIRST_COMPLETED
         )
+        kill_poller_event.set()
 
         # One has completed, cancel the other
         for t in pending:
