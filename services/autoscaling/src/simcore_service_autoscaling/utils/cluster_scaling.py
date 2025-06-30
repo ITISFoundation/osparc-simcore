@@ -1,7 +1,6 @@
 import functools
 import logging
-import re
-from typing import Final, TypeAlias
+from typing import TypeAlias
 
 from aws_library.ec2 import (
     EC2InstanceBootSpecific,
@@ -19,37 +18,9 @@ from ..core.errors import (
 )
 from ..core.settings import ApplicationSettings
 from ..models import AssociatedInstance
-from . import utils_docker
+from . import utils_docker, utils_ec2
 
-_EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+)\..+$")
 _logger = logging.getLogger(__name__)
-
-
-def node_host_name_from_ec2_private_dns(
-    ec2_instance_data: EC2InstanceData,
-) -> str:
-    """returns the node host name 'ip-10-2-3-22' from the ec2 private dns
-    Raises:
-        Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
-    """
-    if match := re.match(_EC2_INTERNAL_DNS_RE, ec2_instance_data.aws_private_dns):
-        host_name: str = match.group("host_name")
-        return host_name
-    raise Ec2InvalidDnsNameError(aws_private_dns_name=ec2_instance_data.aws_private_dns)
-
-
-def node_ip_from_ec2_private_dns(
-    ec2_instance_data: EC2InstanceData,
-) -> str:
-    """returns the node ipv4 from the ec2 private dns string
-    Raises:
-        Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
-    """
-    return (
-        node_host_name_from_ec2_private_dns(ec2_instance_data)
-        .removeprefix("ip-")
-        .replace("-", ".")
-    )
 
 
 async def associate_ec2_instances_with_nodes(
@@ -65,7 +36,9 @@ async def associate_ec2_instances_with_nodes(
 
     for instance_data in ec2_instances:
         try:
-            docker_node_name = node_host_name_from_ec2_private_dns(instance_data)
+            docker_node_name = utils_ec2.node_host_name_from_ec2_private_dns(
+                instance_data
+            )
         except Ec2InvalidDnsNameError:
             _logger.exception("Unexpected EC2 private dns name")
             non_associated_instances.append(instance_data)

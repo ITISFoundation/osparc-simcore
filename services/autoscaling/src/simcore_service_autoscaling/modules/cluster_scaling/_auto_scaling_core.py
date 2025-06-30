@@ -49,7 +49,6 @@ from ...utils.cluster_scaling import (
     ec2_startup_script,
     find_selected_instance_type_for_task,
     get_machine_buffer_type,
-    node_host_name_from_ec2_private_dns,
     sort_drained_nodes,
 )
 from ...utils.rabbitmq import (
@@ -285,7 +284,7 @@ async def _try_attach_pending_ec2s(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     for instance_data in cluster.pending_ec2s:
         try:
-            node_host_name = node_host_name_from_ec2_private_dns(
+            node_host_name = utils_ec2.node_host_name_from_ec2_private_dns(
                 instance_data.ec2_instance
             )
             if new_node := await utils_docker.find_node_with_name(

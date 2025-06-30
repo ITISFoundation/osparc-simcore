@@ -21,7 +21,7 @@ from ..core.errors import (
     DaskWorkerNotFoundError,
 )
 from ..models import AssociatedInstance, DaskTask, DaskTaskId
-from ..utils.cluster_scaling import (
+from ..utils.utils_ec2 import (
     node_host_name_from_ec2_private_dns,
     node_ip_from_ec2_private_dns,
 )
