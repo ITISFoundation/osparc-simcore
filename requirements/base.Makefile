@@ -9,8 +9,7 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 .DEFAULT_GOAL := help
 
 DO_CLEAN_OR_UPGRADE:=$(if $(clean),,--upgrade)
-STARTSWITH_UPGRADE := $(if $(startswith),$(shell grep '^$(startswith)' $(basename $@).txt 2>/dev/null | cut -d= -f1 | xargs -n1 echo --upgrade-package),)
-UPGRADE_OPTION := $(if $(upgrade),--upgrade-package "$(upgrade)",$(if $(startswith),$(STARTSWITH_UPGRADE),$(DO_CLEAN_OR_UPGRADE))
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package "$(upgrade)",$(DO_CLEAN_OR_UPGRADE))
 
 
 objects = $(sort $(wildcard *.in))
@@ -51,10 +50,28 @@ help: ## this colorful help
 #       extracting subsets of requiremenst like e.g _dask-distributed.*
 #
 %.txt: %.in
-	cd ..; \
-	uv pip compile $(UPGRADE_OPTION) \
-		--no-header \
-		--output-file requirements/$@ requirements/$<
+	@if [ -n "$(startswith)" ]; then \
+		MATCHING_PACKAGES=$$(grep '^$(startswith)' $@ 2>/dev/null | cut -d= -f1); \
+		if [ -z "$$MATCHING_PACKAGES" ]; then \
+			echo "No packages starting with '$(startswith)' found in $@. Skipping."; \
+			exit 0; \
+		fi; \
+		STARTSWITH_UPGRADE=$$(echo "$$MATCHING_PACKAGES" | xargs -n1 echo --upgrade-package); \
+		cd ..; \
+		uv pip compile $$STARTSWITH_UPGRADE \
+			--no-header \
+			--output-file requirements/$@ requirements/$<; \
+	elif [ -n "$(upgrade)" ]; then \
+		cd ..; \
+		uv pip compile --upgrade-package "$(upgrade)" \
+			--no-header \
+			--output-file requirements/$@ requirements/$<; \
+	else \
+		cd ..; \
+		uv pip compile $(DO_CLEAN_OR_UPGRADE) \
+			--no-header \
+			--output-file requirements/$@ requirements/$<; \
+	fi
 
 _test.txt: _base.txt
 
