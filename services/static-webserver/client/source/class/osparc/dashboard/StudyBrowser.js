@@ -1138,7 +1138,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._searchBarFilter.addListener("filterChanged", e => {
         const filterData = e.getData();
         if (filterData.text) {
-          this._changeContext("search");
+          let searchContext = null;
+          switch (this.getCurrentContext()) {
+            case "templates":
+              searchContext = "searchTemplates";
+              break;
+            case "publicTemplates":
+              searchContext = "searchPublicTemplates";
+              break;
+            default:
+              searchContext = "searchProjects";
+              break;
+          }
+          this._changeContext(searchContext);
         } else {
           const workspaceId = this.getCurrentWorkspaceId();
           const folderId = this.getCurrentFolderId();
@@ -1149,7 +1161,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _changeContext: function(context, workspaceId = null, folderId = null) {
       if (
-        context !== "search" && // reload studies for a new search
+        context !== "searchProjects" && // reload studies for a new search
         context === this.getCurrentContext() &&
         workspaceId === this.getCurrentWorkspaceId() &&
         folderId === this.getCurrentFolderId()
