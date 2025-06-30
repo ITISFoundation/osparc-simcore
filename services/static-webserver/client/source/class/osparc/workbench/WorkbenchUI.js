@@ -1904,13 +1904,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __consolidateAnnotation: function(initPos, annotation) {
       const type = this.__annotating;
-      const annotationTypes = osparc.workbench.Annotation.TYPES;
       const color = this.__annotationLastColor ? this.__annotationLastColor : osparc.workbench.Annotation.DEFAULT_COLOR;
       const serializeData = {
         type,
         color,
         attributes: {}
       };
+
+      const annotationTypes = osparc.workbench.Annotation.TYPES;
       if (type === annotationTypes.RECT) {
         if ([null, undefined].includes(annotation)) {
           osparc.FlashMessenger.logAs(this.tr("Draw a rectangle first"), "WARNING");
@@ -1920,55 +1921,63 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       } else {
         serializeData.attributes = initPos;
       }
-      if (type === annotationTypes.NOTE) {
-        const noteEditor = new osparc.editor.AnnotationNoteCreator(this.getStudy());
-        const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor);
-        noteEditor.addListener("addNote", () => {
-          const gid = noteEditor.getRecipientGid();
-          serializeData.attributes.recipientGid = gid;
-          serializeData.attributes.text = noteEditor.getNote();
-          const user = osparc.store.Groups.getInstance().getUserByGroupId(gid)
-          if (user) {
-            osparc.notification.Notifications.pushNewAnnotationNote(user.getUserId(), this.getStudy().getUuid());
-          }
+
+      switch (type) {
+        case annotationTypes.NOTE: {
+          const noteEditor = new osparc.editor.AnnotationNoteCreator(this.getStudy());
+          const win = osparc.editor.AnnotationNoteCreator.popUpInWindow(noteEditor);
+          noteEditor.addListener("addNote", () => {
+            const gid = noteEditor.getRecipientGid();
+            serializeData.attributes.recipientGid = gid;
+            serializeData.attributes.text = noteEditor.getNote();
+            const user = osparc.store.Groups.getInstance().getUserByGroupId(gid)
+            if (user) {
+              osparc.notification.Notifications.pushNewAnnotationNote(user.getUserId(), this.getStudy().getUuid());
+            }
+            this.__addAnnotation(serializeData);
+            win.close();
+          }, this);
+          noteEditor.addListener("cancel", () => win.close());
+          break;
+        }
+        case annotationTypes.RECT:
           this.__addAnnotation(serializeData);
-          win.close();
-        }, this);
-        noteEditor.addListener("cancel", () => win.close());
-      } else if (type === annotationTypes.RECT) {
-        this.__addAnnotation(serializeData);
-      } else if (type === annotationTypes.TEXT) {
-        const tempAnnotation = new osparc.workbench.Annotation(null, {
-          type: annotationTypes.TEXT,
-          color,
-          attributes: {
-            text: "",
-            fontSize: 12
-          }
-        });
-        const annotationEditor = new osparc.editor.AnnotationEditor(tempAnnotation);
-        annotationEditor.addAddButtons();
-        tempAnnotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
-        annotationEditor.addListener("appear", () => {
-          const textField = annotationEditor.getChildControl("text-field");
-          textField.focus();
-          textField.activate();
-        });
-        const win = osparc.ui.window.Window.popUpInWindow(annotationEditor, "Add Text Annotation", 220, 135).set({
-          clickAwayClose: true,
-          showClose: true
-        });
-        annotationEditor.addListener("addAnnotation", () => {
-          win.close();
-          const form = annotationEditor.getForm();
-          serializeData.attributes.text = form.getItem("text").getValue();
-          serializeData.attributes.color = form.getItem("color").getValue();
-          serializeData.color = form.getItem("color").getValue();
-          serializeData.attributes.fontSize = form.getItem("size").getValue();
-          this.__addAnnotation(serializeData);
-        }, this);
-        win.open();
+          break;
+        case annotationTypes.TEXT: {
+          const tempAnnotation = new osparc.workbench.Annotation(null, {
+            type: annotationTypes.TEXT,
+            color,
+            attributes: {
+              text: "",
+              fontSize: 12
+            }
+          });
+          const annotationEditor = new osparc.editor.AnnotationEditor(tempAnnotation);
+          annotationEditor.addAddButtons();
+          tempAnnotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
+          annotationEditor.addListener("appear", () => {
+            const textField = annotationEditor.getChildControl("text-field");
+            textField.focus();
+            textField.activate();
+          });
+          const win = osparc.ui.window.Window.popUpInWindow(annotationEditor, "Add Text Annotation", 220, 135).set({
+            clickAwayClose: true,
+            showClose: true
+          });
+          annotationEditor.addListener("addAnnotation", () => {
+            win.close();
+            const form = annotationEditor.getForm();
+            serializeData.attributes.text = form.getItem("text").getValue();
+            serializeData.attributes.color = form.getItem("color").getValue();
+            serializeData.color = form.getItem("color").getValue();
+            serializeData.attributes.fontSize = form.getItem("size").getValue();
+            this.__addAnnotation(serializeData);
+          }, this);
+          win.open();
+          break;
+        }
       }
+
       return true;
     },
 
