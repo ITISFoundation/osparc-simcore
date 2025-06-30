@@ -144,13 +144,15 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         let text = null;
         switch (context) {
           case "studiesAndFolders":
-          case "search":
+          case "searchProjects":
             text = this.tr("No Projects found");
             break;
           case "templates":
+          case "searchTemplates":
             text = this.tr("No Templates found");
             break;
-          case "public":
+          case "publicTemplates":
+          case "searchPublicTemplates":
             text = this.tr("No Public Projects found");
             break;
           case "template":

@@ -53,11 +53,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         "studiesAndFolders",
         "workspaces",
         "templates",
-        "public",
+        "publicTemplates",
         "trash",
         "searchProjects",
         "searchTemplates",
-        "searchPublicProjects",
+        "searchPublicTemplates",
       ],
       nullable: false,
       init: "studiesAndFolders",
@@ -290,9 +290,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               break;
             }
             case "templates":
-            case "public":
             case "searchTemplates":
-            case "searchPublicProjects": {
+            case "publicTemplates":
+            case "searchPublicTemplates": {
               const templates = resp["data"];
               templates.forEach(template => template["resourceType"] = "template");
               // For now, filtered in the frontend
@@ -301,7 +301,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const productEveryoneGid = groupsStore.getEveryoneProductGroup().getGroupId();
               const filteredTemplates = templates.filter(template => {
                 const publicAccess = everyoneGid in template["accessRights"] || productEveryoneGid in template["accessRights"];
-                if (["public", "searchPublicProjects"].includes(this.getCurrentContext())) {
+                if (["publicTemplates", "searchPublicTemplates"].includes(this.getCurrentContext())) {
                   return publicAccess;
                 }
                 return !publicAccess;
@@ -798,8 +798,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           case "searchTemplates":
             urlParams.accessRights = "non-public";
             break;
-          case "public":
-          case "searchPublicProjects":
+          case "publicTemplates":
+          case "searchPublicTemplates":
             urlParams.accessRights = "public";
             break;
         }
@@ -834,7 +834,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "non-public";
           break;
-        case "public":
+        case "publicTemplates":
           requestParams.type = "template";
           requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "public";
@@ -851,7 +851,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         }
         case "searchTemplates":
-        case "searchPublicProjects": {
+        case "searchPublicTemplates": {
           // Use the ``search`` functionality only if the user types some text
           // tags should only be used to filter the current context (search context ot workspace/folder context)
           const filterData = this._searchBarFilter.getFilterData();
@@ -860,7 +860,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             // requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
           }
           requestParams.type = "template";
-          requestParams.templateType = "TEMPLATE";
+          requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           break;
         }
       }
@@ -897,7 +897,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "templates":
           request = osparc.store.Templates.fetchTemplatesNonPublicPaginated(params, options);
           break;
-        case "public":
+        case "publicTemplates":
           request = osparc.store.Templates.fetchTemplatesPublicPaginated(params, options);
           break;
         case "trash":
@@ -907,7 +907,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
         case "searchTemplates":
-        case "searchPublicProjects":
+        case "searchPublicTemplates":
           // OM: use Templates store
           request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
           break;
@@ -1132,7 +1132,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
 
       this._resourceFilter.addListener("templatesContext", () => this._changeContext("templates"));
-      this._resourceFilter.addListener("publicContext", () => this._changeContext("public"));
+      this._resourceFilter.addListener("publicTemplatesContext", () => this._changeContext("publicTemplates"));
       this._resourceFilter.addListener("trashContext", () => this._changeContext("trash"));
 
       this._searchBarFilter.addListener("filterChanged", e => {
@@ -1208,8 +1208,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.invalidateStudies();
           this.__reloadStudies();
           break;
-        case "public":
-        case "searchPublicProjects":
+        case "publicTemplates":
+        case "searchPublicTemplates":
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Public Projects");
           this._toolbar.show();

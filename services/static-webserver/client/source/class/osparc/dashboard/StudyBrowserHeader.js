@@ -302,7 +302,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           title.setValue(this.tr("Templates"));
           break;
         }
-        case "public": {
+        case "publicTemplates": {
           this.__setIcon("@FontAwesome5Solid/globe/24");
           title.setValue(this.tr("Public Projects"));
           break;
@@ -325,7 +325,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           this.__setIcon("@FontAwesome5Solid/search/24");
           title.setValue(this.tr("Search Templates results"));
           break;
-        case "searchPublicProjects":
+        case "searchPublicTemplates":
           this.__setIcon("@FontAwesome5Solid/search/24");
           title.setValue(this.tr("Search Public Projects results"));
           break;
