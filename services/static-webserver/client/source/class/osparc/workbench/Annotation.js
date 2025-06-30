@@ -124,14 +124,8 @@ qx.Class.define("osparc.workbench.Annotation", {
           break;
         case this.self().TYPES.CONVERSATION: {
           const text = `${attrs.x}, ${attrs.y}`;
-          const conversationData = {
-            conversationId: attrs.conversationId,
-            title: attrs.text || text,
-          }
-          representation = new osparc.workbench.ConversationUI(conversationData);
-          // OM: Add it to the svgLayer or something
-          representation.moveTo(attrs.x, attrs.y);
-          representation.isSVG = false;
+          representation = this.__svgLayer.drawAnnotationConversation(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
+          representation.isSVG = true;
           break;
         }
       }

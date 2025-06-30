@@ -274,6 +274,61 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
+    drawAnnotationConversation: function(draw, x, y, color) {
+      // Group to keep all elements together
+      const bubble = draw.group();
+
+      // Rounded rectangle as the base
+      const rect = draw.rect(280, 60)
+        .radius(15)
+        .fill("none")
+        .stroke({
+          width: 2,
+          color,
+        });
+      bubble.add(rect);
+
+      // Icon (simple speech bubble using path or text)
+      const icon = draw.text('💬')
+        .font({ size: 24 })
+        .move(10, 18);
+      bubble.add(icon);
+
+      // Title text
+      const title = draw.text('Hello')
+        .font({
+          size: 16,
+          anchor: 'start'
+        })
+        .move(50, 22);
+      bubble.add(title);
+
+      // Button (small circle with i or icon)
+      const button = draw.circle(24)
+        .fill('#ccc')
+        .move(250, 18);
+      const btnText = draw.text('➤')
+        .font({
+          size: 14,
+          anchor: 'middle',
+          leading: '1'
+        })
+        .move(250 + 12 - 7, 18 + 12 - 10); // center text in circle
+
+      bubble.add(button);
+      bubble.add(btnText);
+
+      // Add a click event to the button
+      button.click(function () {
+        alert('Popup or conversation panel here!');
+      });
+      btnText.click(function () {
+        alert('Popup or conversation panel here!');
+      });
+
+      return bubble;
+    },
+
     updateText: function(representation, label) {
       if (representation.type === "text") {
         representation.text(label);

@@ -105,6 +105,10 @@ qx.Class.define("osparc.workbench.SvgWidget", {
       return osparc.wrapper.Svg.drawAnnotationRect(this.__canvas, width, height, x, y, color);
     },
 
+    drawAnnotationConversation: function(x, y, color) {
+      return osparc.wrapper.Svg.drawAnnotationConversation(this.__canvas, x, y, color);
+    },
+
     drawDashedRect: function(width, height, x = 0, y = 0) {
       return osparc.wrapper.Svg.drawDashedRect(this.__canvas, width, height, x, y);
     },
