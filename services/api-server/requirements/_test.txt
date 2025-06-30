@@ -243,12 +243,12 @@ pycparser==2.22
     # via
     #   -c requirements/_base.txt
     #   cffi
-pydantic==2.10.3
+pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fastapi
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -383,6 +383,11 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   sqlalchemy2-stubs
     #   types-boto3
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 tzdata==2025.1
     # via faker
 urllib3==2.2.3

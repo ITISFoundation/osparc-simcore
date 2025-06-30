@@ -22,12 +22,12 @@ pluggy==1.5.0
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -71,5 +71,10 @@ typing-extensions==4.12.2
     #   -c requirements/_base.txt
     #   pydantic
     #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 tzdata==2025.1
     # via faker

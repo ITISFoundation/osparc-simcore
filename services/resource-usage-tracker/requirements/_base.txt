@@ -508,7 +508,7 @@ psycopg2-binary==2.9.9
     # via sqlalchemy
 pycryptodome==3.21.0
     # via stream-zip
-pydantic==2.10.2
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -565,9 +565,9 @@ pydantic==2.10.2
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.9.0
+pydantic-extra-types==2.10.5
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -586,7 +586,7 @@ pydantic-extra-types==2.9.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.6.1
+pydantic-settings==2.7.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -881,12 +881,16 @@ typing-extensions==4.12.2
     #   opentelemetry-sdk
     #   pydantic
     #   pydantic-core
+    #   pydantic-extra-types
     #   rich-toolkit
     #   typer
     #   types-aiobotocore
     #   types-aiobotocore-ec2
     #   types-aiobotocore-s3
     #   types-aiobotocore-ssm
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 tzdata==2024.1
     # via pandas
 tzlocal==5.2

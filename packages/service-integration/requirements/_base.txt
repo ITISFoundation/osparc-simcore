@@ -81,7 +81,7 @@ pluggy==1.5.0
     # via pytest
 propcache==0.3.0
     # via yarl
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -92,9 +92,9 @@ pydantic==2.10.6
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.2
+pydantic-extra-types==2.10.5
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -162,6 +162,9 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 urllib3==2.3.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
