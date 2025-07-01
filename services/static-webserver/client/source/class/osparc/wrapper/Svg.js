@@ -333,10 +333,9 @@ qx.Class.define("osparc.wrapper.Svg", {
         const ellipsis = '…';
         let low = 0;
         let high = text.length;
-
         // Binary search for the max fitting length
         while (low < high) {
-          let mid = Math.floor((low + high) / 2);
+          const mid = Math.floor((low + high) / 2);
           label.text(text.slice(0, mid) + ellipsis);
           if (label.bbox().width <= maxWidth) {
             low = mid + 1;
@@ -344,7 +343,6 @@ qx.Class.define("osparc.wrapper.Svg", {
             high = mid;
           }
         }
-
         return text.slice(0, low - 1) + ellipsis;
       }
 
