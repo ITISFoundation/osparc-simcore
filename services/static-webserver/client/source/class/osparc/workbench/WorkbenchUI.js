@@ -1185,11 +1185,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const initData = studyUI.getAnnotationsInitData();
       const annotations = initData ? initData : studyUI.getAnnotations();
       Object.entries(annotations).forEach(([annotationId, annotation]) => {
-        if (annotation instanceof osparc.workbench.Annotation) {
-          this.__addAnnotation(annotation.serialize(), annotationId);
-        } else {
-          this.__addAnnotation(annotation, annotationId);
-        }
+        const annotationData = annotation instanceof osparc.workbench.Annotation ? annotation.serialize() : annotation;
+        this.__addAnnotation(annotationData, annotationId);
       });
       if (initData) {
         studyUI.nullAnnotationsInitData();
@@ -1997,7 +1994,6 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__addAnnotationListeners(annotation);
       this.__annotations[annotation.getId()] = annotation;
       this.getStudy().getUi().addAnnotation(annotation);
-      return annotation;
     },
 
     __removeAnnotation: function(id) {
