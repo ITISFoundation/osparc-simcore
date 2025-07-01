@@ -10,10 +10,13 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
+from common_library.users_enums import AccountRequestStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
+from models_library.api_schemas_webserver.users import UserAccountGet
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
@@ -194,4 +197,25 @@ async def test_request_an_account(
     assert mimetext["From"] == product.support_email
     assert mimetext["To"] == product.product_owners_email or product.support_email
 
-    # TODO: switch to PO user and check if request is listed
+    # check it appears in PO center
+    async with NewUser(
+        user_data={
+            "email": "po-user@email.com",
+            "name": "po-user-fixture",
+            "role": UserRole.PRODUCT_OWNER,
+        },
+        app=client.app,
+    ) as product_owner_user, switch_client_session_to(client, product_owner_user):
+
+        response = await client.get(
+            "v0/admin/user-accounts?limit=20&offset=0&review_status=PENDING"
+        )
+
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+
+        assert len(data) == 1
+        user = UserAccountGet.model_validate(data[0])
+        assert user.first_name == user_data["firstName"]
+        assert not user.registered
+        assert user.status is None
+        assert user.account_request_status == AccountRequestStatus.PENDING
