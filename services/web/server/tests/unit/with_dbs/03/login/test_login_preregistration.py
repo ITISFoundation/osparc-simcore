@@ -168,7 +168,7 @@ async def test_request_an_account(
     assert client.app
     # A form similar to the one in https://github.com/ITISFoundation/osparc-simcore/pull/5378
     user_data = {
-        **AccountRequestInfo.model_config["json_schema_extra"]["example"]["form"],
+        **AccountRequestInfo.model_json_schema()["example"]["form"],
         # fields required in the form
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
@@ -188,8 +188,10 @@ async def test_request_an_account(
 
     product = get_product(client.app, product_name="osparc")
 
-    # sent email?
+    # check email was sent
     mimetext = mocked_send_email.call_args[1]["message"]
     assert "account" in mimetext["Subject"].lower()
     assert mimetext["From"] == product.support_email
     assert mimetext["To"] == product.product_owners_email or product.support_email
+
+    # TODO: switch to PO user and check if request is listed

@@ -12,9 +12,9 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.utils import fire_and_forget_task
+from simcore_service_webserver.users._users_rest import PreRegisteredUserGet
 
 from ...._meta import API_VTAG
 from ....constants import RQ_PRODUCT_KEY
@@ -71,10 +71,20 @@ async def request_product_account(request: web.Request):
     assert body.captcha  # nosec
 
     if body.captcha != session.get(CAPTCHA_SESSION_KEY):
-        raise web.HTTPUnprocessableEntity(
-            text=MSG_WRONG_CAPTCHA__INVALID, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        raise web.HTTPUnprocessableEntity(text=MSG_WRONG_CAPTCHA__INVALID)
     session.pop(CAPTCHA_SESSION_KEY, None)
+
+    pre_user_profile = PreRegisteredUserGet.model_validate(
+        # TODO: can raise vliadation error
+        body.form
+    )
+
+    user_profile = await _preregistration_service.create_pre_registration(
+        # TODO: this raises AlreadyPreRegisteredError or ValidationError or anything regarding
+        request.app,
+        profile=pre_user_profile,
+        product_name=product.name,
+    )
 
     # send email to fogbugz or user itself
     fire_and_forget_task(

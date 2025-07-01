@@ -45,7 +45,7 @@ async def pre_register_user(
     app: web.Application,
     *,
     profile: PreRegisteredUserGet,
-    creator_user_id: UserID,
+    creator_user_id: UserID | None,
     product_name: ProductName,
 ) -> UserAccountGet:
 
