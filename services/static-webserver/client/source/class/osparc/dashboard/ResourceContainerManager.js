@@ -139,7 +139,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __nonGroupedContainer: null,
     __groupedContainers: null,
 
-    evaluateNoResourcesFoundLabel: function(cards, context) {
+    __evaluateNoResourcesFoundLabel: function(cards, context) {
       if (this.__noResourcesFound) {
         let text = null;
         switch (context) {
@@ -161,7 +161,11 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           case "service":
             text = this.tr("No Apps found");
             break;
+          default:
+            text = this.tr("No Resources found");
+            break;
         }
+
         this.__noResourcesFound.set({
           value: text,
           visibility: text && cards.length === 0 ? "visible" : "excluded",
@@ -309,6 +313,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     setResourcesToList: function(resourcesList) {
       this.__resourcesList = resourcesList;
+
+      this.__evaluateNoResourcesFoundLabel(resourcesList);
     },
 
     __cleanAll: function() {

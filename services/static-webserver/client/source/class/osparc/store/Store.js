@@ -85,7 +85,6 @@ qx.Class.define("osparc.store.Store", {
         "searchProjects",
         "searchTemplates",
         "searchPublicTemplates",
-        // OM check these
       ],
       init: "studiesAndFolders",
       nullable: false,
