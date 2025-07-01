@@ -269,16 +269,16 @@ async def current_study(
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
-    grant_access_rights: Callable[..., Awaitable[None]],
+    grant_service_access_rights: Callable[..., dict[str, Any]],
 ) -> ProjectAtDB:
-
-    await grant_access_rights(
+    # 1. grant current_user execution access to services in this study
+    grant_service_access_rights(
         group_id=current_user["primary_gid"],
         service_key=sleeper_service["schema"]["key"],
         service_version=sleeper_service["schema"]["version"],
         product_name=osparc_product_name,
     )
-    await grant_access_rights(
+    grant_service_access_rights(
         group_id=current_user["primary_gid"],
         service_key=dy_static_file_server_dynamic_sidecar_service["schema"]["key"],
         service_version=dy_static_file_server_dynamic_sidecar_service["schema"][
@@ -286,7 +286,7 @@ async def current_study(
         ],
         product_name=osparc_product_name,
     )
-    await grant_access_rights(
+    grant_service_access_rights(
         group_id=current_user["primary_gid"],
         service_key=dy_static_file_server_dynamic_sidecar_compose_spec_service[
             "schema"
@@ -297,6 +297,7 @@ async def current_study(
         product_name=osparc_product_name,
     )
 
+    # create project for this user
     project_at_db = await project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
