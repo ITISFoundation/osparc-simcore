@@ -234,7 +234,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
     },
 
     __titleTapped: function() {
-      if (osparc.store.Store.getInstance().getStudyBrowserContext() === "studiesAndFolders") {
+      if (osparc.store.Store.getInstance().getStudyBrowserContext() === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS) {
         const workspaceId = this.getCurrentWorkspaceId();
         const folderId = null;
         this.setCurrentFolderId(folderId);
@@ -272,7 +272,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
 
       const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       switch (currentContext) {
-        case "studiesAndFolders": {
+        case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS: {
           const workspaceId = this.getCurrentWorkspaceId();
           title.setCursor("pointer");
           title.addListener("tap", this.__titleTapped, this);
@@ -293,25 +293,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           }
           break;
         }
-        case "workspaces":
+        case osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES:
           this.__setIcon(osparc.store.Workspaces.iconPath(32));
           title.setValue(this.tr("Shared Workspaces"));
           break;
-        case "search":
-          this.__setIcon("@FontAwesome5Solid/search/24");
-          title.setValue(this.tr("Search results"));
-          break;
-        case "templates": {
+        case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES: {
           this.__setIcon("@FontAwesome5Solid/copy/24");
           title.setValue(this.tr("Templates"));
           break;
         }
-        case "public": {
+        case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES: {
           this.__setIcon("@FontAwesome5Solid/globe/24");
           title.setValue(this.tr("Public Projects"));
           break;
         }
-        case "trash": {
+        case osparc.dashboard.StudyBrowser.CONTEXT.TRASH: {
           this.__setIcon("@FontAwesome5Solid/trash/24");
           title.setValue(this.tr("Recently Deleted"));
           const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
@@ -321,6 +317,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           });
           break;
         }
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Projects results"));
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Templates results"));
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Public Projects results"));
+          break;
       }
     },
 
@@ -383,7 +391,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const roleText = this.getChildControl("role-text");
       const roleIcon = this.getChildControl("role-icon");
       const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
-      if (currentContext === "studiesAndFolders" && value && Object.keys(value).length) {
+      if (currentContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS && value && Object.keys(value).length) {
         editButton.setVisibility(value["delete"] ? "visible" : "excluded");
         const menu = new qx.ui.menu.Menu().set({
           position: "bottom-right"
