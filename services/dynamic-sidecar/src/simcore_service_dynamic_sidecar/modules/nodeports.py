@@ -276,7 +276,7 @@ async def _get_data_from_port(
             archive_files: set[Path]
 
             if _is_zip_file(downloaded_file):
-                prunable_folder = PrunableFolder(final_path.parent)
+                prunable_folder = PrunableFolder(final_path)
                 with log_context(
                     _logger,
                     logging.DEBUG,
