@@ -479,7 +479,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
 ) -> Iterator[
-    Callable[[tuple[RunningState], bool, str | None, str | None], dict[str, Any]]
+    Callable[[tuple[RunningState, ...], bool, str | None, str | None], dict[str, Any]]
 ]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
@@ -487,7 +487,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
     created_project_uuids = []
 
     def _(  # noqa: C901
-        expected_states: tuple[RunningState],
+        expected_states: tuple[RunningState, ...],
         press_open: bool,
         template_id: str | None,
         service_version: str | None,
@@ -505,6 +505,16 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                 if template_id is not None
                 else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
             )
+
+            # Enhanced context for better debugging when timeout occurs
+            operation_type = "template" if template_id is not None else "new project"
+            ctx.logger.info(
+                "Waiting for project to open: %s (timeout: %s seconds, expected_states: %s)",
+                operation_type,
+                (timeout + 10 * SECOND) / 1000,
+                expected_states,
+            )
+
             with log_in_and_out.expect_event(
                 "framereceived", waiter, timeout=timeout + 10 * SECOND
             ):
@@ -685,8 +695,13 @@ def create_project_from_new_button(
 ) -> Callable[[str], dict[str, Any]]:
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
-        expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, False, None, None)
+        expected_states = (RunningState.NOT_STARTED,)
+        return create_new_project_and_delete(
+            expected_states,
+            False,  # noqa: FBT003
+            None,
+            None,
+        )
 
     return _
 
@@ -700,8 +715,13 @@ def create_project_from_template_dashboard(
 ) -> Callable[[str], dict[str, Any]]:
     def _(template_id: str) -> dict[str, Any]:
         find_and_click_template_in_dashboard(template_id)
-        expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, True, template_id, None)
+        expected_states = (RunningState.NOT_STARTED,)
+        return create_new_project_and_delete(
+            expected_states,
+            True,  # noqa: FBT003
+            template_id,
+            None,
+        )
 
     return _
 
@@ -722,11 +742,15 @@ def create_project_from_service_dashboard(
         find_and_start_service_in_dashboard(
             service_type, service_name, service_key_prefix
         )
-        expected_states = (RunningState.UNKNOWN,)
+        expected_states = (RunningState.NOT_STARTED,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
+        # press_open=True, template_id=None, service_version=service_version
         return create_new_project_and_delete(
-            expected_states, True, None, service_version
+            expected_states,
+            True,
+            None,
+            service_version,  # noqa: FBT003
         )
 
     return _
