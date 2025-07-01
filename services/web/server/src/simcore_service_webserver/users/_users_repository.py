@@ -720,7 +720,7 @@ async def review_user_pre_registration(
 
         # Add invitation extras to the existing extras if provided
         if invitation_extras is not None:
-            assert list(invitation_extras.keys()) == "invitation"  # nosec
+            assert list(invitation_extras.keys()) == ["invitation"]  # nosec
 
             # Get the current extras first
             current_extras_result = await conn.execute(
