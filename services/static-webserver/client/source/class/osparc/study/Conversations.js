@@ -53,7 +53,7 @@ qx.Class.define("osparc.study.Conversations", {
     },
 
     popUpInWindow: function(studyData, openConversationId = null) {
-      const conversations = new osparc.study.Conversations(studyData);
+      const conversations = new osparc.study.Conversations(studyData, openConversationId);
       const title = qx.locale.Manager.tr("Conversations");
       const viewWidth = 600;
       const viewHeight = 700;
