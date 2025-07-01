@@ -100,9 +100,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
       this.__workspacesAndFoldersTree.contextChanged(context);
 
-      this.__templatesButton.setValue(context === "templates");
-      this.__publicProjectsButton.setValue(context === "publicTemplates");
-      this.__trashButton.setValue(context === "trash");
+      this.__templatesButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
+      this.__publicProjectsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES);
+      this.__trashButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TRASH);
     },
 
     /* WORKSPACES AND FOLDERS */

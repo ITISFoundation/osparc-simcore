@@ -148,17 +148,17 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
           case "study": {
             const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
             switch (studyBrowserContext) {
-              case "studiesAndFolders":
-              case "searchProjects":
-              case "trash":
+              case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
+              case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+              case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
                 text = this.tr("No Projects found");
                 break;
-              case "templates":
-              case "searchTemplates":
+              case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
+              case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
                 text = this.tr("No Templates found");
                 break;
-              case "publicTemplates":
-              case "searchPublicTemplates":
+              case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
+              case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
                 text = this.tr("No Public Projects found");
                 break;
             }

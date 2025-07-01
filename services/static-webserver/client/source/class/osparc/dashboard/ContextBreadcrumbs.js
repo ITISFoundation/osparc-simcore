@@ -55,7 +55,7 @@ qx.Class.define("osparc.dashboard.ContextBreadcrumbs", {
       this._removeAll();
 
       const currentContext = osparc.store.Store.getInstance().getStudyBrowserContext();
-      if (currentContext === "studiesAndFolders") {
+      if (currentContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS) {
         if (this.getCurrentFolderId()) {
           const currentFolder = osparc.store.Folders.getInstance().getFolder(this.getCurrentFolderId());
           this.__createUpstreamButtons(currentFolder);

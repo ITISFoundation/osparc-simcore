@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards("templates");
+      const cards = this._resourcesContainer.reloadCards(osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", () => this.__itemClicked(card), this);

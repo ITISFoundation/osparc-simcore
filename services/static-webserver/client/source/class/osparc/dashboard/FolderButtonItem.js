@@ -276,19 +276,19 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       if (
-        studyBrowserContext === "searchProjects" ||
-        studyBrowserContext === "studiesAndFolders"
+        studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS ||
+        studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS
       ) {
         const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => this.__editFolder(), this);
         menu.add(editButton);
 
-        if (studyBrowserContext === "searchProjects") {
+        if (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) {
           const openLocationButton = new qx.ui.menu.Button(this.tr("Open location"), "@FontAwesome5Solid/external-link-alt/12");
           openLocationButton.addListener("execute", () => {
             const folder = this.getFolder();
             this.fireDataEvent("changeContext", {
-              context: "studiesAndFolders",
+              context: osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,
               workspaceId: folder.getWorkspaceId(),
               folderId: folder.getParentFolderId(),
             });
@@ -306,7 +306,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
         const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
         trashButton.addListener("execute", () => this.fireDataEvent("trashFolderRequested", this.getFolderId()), this);
         menu.add(trashButton);
-      } else if (studyBrowserContext === "trash") {
+      } else if (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
         const restoreButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
         restoreButton.addListener("execute", () => this.fireDataEvent("untrashFolderRequested", this.getFolder()), this);
         menu.add(restoreButton);
@@ -325,7 +325,7 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
     __itemSelected: function() {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       // do not allow selecting workspace
-      if (studyBrowserContext !== "trash") {
+      if (studyBrowserContext !== osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
         this.fireDataEvent("folderSelected", this.getFolderId());
       }
     },
