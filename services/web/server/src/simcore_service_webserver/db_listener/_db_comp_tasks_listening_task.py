@@ -18,7 +18,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.background_task import periodic_task
-from servicelib.logging_utils import log_catch
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
@@ -74,56 +73,55 @@ async def _get_changed_comp_task_row(
 async def _handle_db_notification(
     app: web.Application, payload: CompTaskNotificationPayload, conn: SAConnection
 ) -> None:
-    with log_catch(_logger, reraise=False):
-        try:
-            the_project_owner = await _get_project_owner(conn, payload.project_id)
-            changed_row = await _get_changed_comp_task_row(conn, payload.task_id)
-            if not changed_row:
-                _logger.warning(
-                    "No comp_tasks row found for project_id=%s node_id=%s",
-                    payload.project_id,
-                    payload.node_id,
-                )
-                return
-
-            if any(f in payload.changes for f in ["outputs", "run_hash"]):
-                await update_node_outputs(
-                    app,
-                    the_project_owner,
-                    payload.project_id,
-                    payload.node_id,
-                    changed_row.outputs,
-                    changed_row.run_hash,
-                    node_errors=changed_row.errors,
-                    ui_changed_keys=None,
-                )
-
-            if "state" in payload.changes and (changed_row.state is not None):
-                await _update_project_state(
-                    app,
-                    the_project_owner,
-                    payload.project_id,
-                    payload.node_id,
-                    convert_state_from_db(changed_row.state),
-                    node_errors=changed_row.errors,
-                )
-
-        except exceptions.ProjectNotFoundError as exc:
+    try:
+        the_project_owner = await _get_project_owner(conn, payload.project_id)
+        changed_row = await _get_changed_comp_task_row(conn, payload.task_id)
+        if not changed_row:
             _logger.warning(
-                "Project %s was not found and cannot be updated. Maybe was it deleted?",
-                exc.project_uuid,
+                "No comp_tasks row found for project_id=%s node_id=%s",
+                payload.project_id,
+                payload.node_id,
             )
-        except exceptions.ProjectOwnerNotFoundError as exc:
-            _logger.warning(
-                "Project owner of project %s could not be found, is the project valid?",
-                exc.project_uuid,
+            return
+
+        if any(f in payload.changes for f in ["outputs", "run_hash"]):
+            await update_node_outputs(
+                app,
+                the_project_owner,
+                payload.project_id,
+                payload.node_id,
+                changed_row.outputs,
+                changed_row.run_hash,
+                node_errors=changed_row.errors,
+                ui_changed_keys=None,
             )
-        except exceptions.NodeNotFoundError as exc:
-            _logger.warning(
-                "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
-                exc.node_uuid,
-                exc.project_uuid,
+
+        if "state" in payload.changes and (changed_row.state is not None):
+            await _update_project_state(
+                app,
+                the_project_owner,
+                payload.project_id,
+                payload.node_id,
+                convert_state_from_db(changed_row.state),
+                node_errors=changed_row.errors,
             )
+
+    except exceptions.ProjectNotFoundError as exc:
+        _logger.warning(
+            "Project %s was not found and cannot be updated. Maybe was it deleted?",
+            exc.project_uuid,
+        )
+    except exceptions.ProjectOwnerNotFoundError as exc:
+        _logger.warning(
+            "Project owner of project %s could not be found, is the project valid?",
+            exc.project_uuid,
+        )
+    except exceptions.NodeNotFoundError as exc:
+        _logger.warning(
+            "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
+            exc.node_uuid,
+            exc.project_uuid,
+        )
 
 
 async def _listen(app: web.Application) -> NoReturn:

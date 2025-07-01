@@ -364,6 +364,11 @@ def mocked_resource_usage_tracker_service_fcts(
 
 
 @pytest.fixture
+def product_name(faker: Faker) -> str:
+    return faker.name()
+
+
+@pytest.fixture
 def product_api_base_url(faker: Faker) -> AnyHttpUrl:
     return TypeAdapter(AnyHttpUrl).validate_python(faker.url())
 
@@ -906,7 +911,7 @@ async def test_get_computation_from_not_started_computation_task(
             node_states={
                 t.node_id: NodeState(
                     modified=True,
-                    current_status=RunningState.NOT_STARTED,
+                    currentStatus=RunningState.NOT_STARTED,
                     progress=None,
                     dependencies={
                         NodeID(node)
@@ -978,7 +983,7 @@ async def test_get_computation_from_published_computation_task(
             node_states={
                 t.node_id: NodeState(
                     modified=True,
-                    current_status=RunningState.PUBLISHED,
+                    currentStatus=RunningState.PUBLISHED,
                     dependencies={
                         NodeID(node)
                         for node, next_nodes in fake_workbench_adjacency.items()

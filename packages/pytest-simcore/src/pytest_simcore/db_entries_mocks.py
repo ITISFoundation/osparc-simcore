@@ -10,13 +10,11 @@ from uuid import uuid4
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
@@ -66,7 +64,7 @@ def create_registered_user(
 
 @pytest.fixture
 async def project(
-    sqlalchemy_async_engine: AsyncEngine, faker: Faker, product_name: ProductName
+    sqlalchemy_async_engine: AsyncEngine, faker: Faker
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
@@ -113,12 +111,6 @@ async def project(
                     ProjectNodeCreate(node_id=NodeID(node_id), **default_node_config)
                     for node_id in inserted_project.workbench
                 ],
-            )
-            await con.execute(
-                projects_to_products.insert().values(
-                    project_uuid=f"{inserted_project.uuid}",
-                    product_name=product_name,
-                )
             )
         print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")

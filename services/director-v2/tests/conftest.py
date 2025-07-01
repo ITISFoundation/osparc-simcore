@@ -43,7 +43,6 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
@@ -356,6 +355,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
+
     fake_data = ApiKeyGet.model_validate(ApiKeyGet.model_json_schema()["examples"][0])
 
     async def _create(
