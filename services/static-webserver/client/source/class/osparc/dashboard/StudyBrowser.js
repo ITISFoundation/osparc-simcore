@@ -181,7 +181,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadWorkspaces: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        ![osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES, osparc.dashboard.StudyBrowser.CONTEXT.TRASH, osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS].includes(this.getCurrentContext()) ||
+        ![
+          osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES,
+          osparc.dashboard.StudyBrowser.CONTEXT.TRASH,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+        ].includes(this.getCurrentContext()) ||
         this.__loadingWorkspaces
       ) {
         return;
@@ -224,7 +228,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __reloadFolders: function() {
       if (
         !osparc.auth.Manager.getInstance().isLoggedIn() ||
-        ![osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, osparc.dashboard.StudyBrowser.CONTEXT.TRASH, osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS].includes(this.getCurrentContext()) ||
+        ![
+          osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,
+          osparc.dashboard.StudyBrowser.CONTEXT.TRASH,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+        ].includes(this.getCurrentContext()) ||
         this.__loadingFolders
       ) {
         return;
@@ -313,7 +321,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               const productEveryoneGid = groupsStore.getEveryoneProductGroup().getGroupId();
               const filteredTemplates = templates.filter(template => {
                 const publicAccess = everyoneGid in template["accessRights"] || productEveryoneGid in template["accessRights"];
-                if ([osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES, osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES].includes(this.getCurrentContext())) {
+                if ([
+                  osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES,
+                  osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+                ].includes(this.getCurrentContext())) {
                   return publicAccess;
                 }
                 return !publicAccess;
@@ -668,7 +679,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         card.addListener("tap", e => this.__studyCardClicked(card, e.getNativeEvent().shiftKey), this);
         this._populateCardMenu(card);
 
-        if ([osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS, osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS].includes(this.getCurrentContext())) {
+        if ([
+          osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+        ].includes(this.getCurrentContext())) {
           this.__attachDragHandlers(card);
         }
       });

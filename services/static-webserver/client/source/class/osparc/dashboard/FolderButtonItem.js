@@ -276,8 +276,8 @@ qx.Class.define("osparc.dashboard.FolderButtonItem", {
 
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       if (
-        studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS ||
-        studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS
+        studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS ||
+        studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS
       ) {
         const editButton = new qx.ui.menu.Button(this.tr("Rename..."), "@FontAwesome5Solid/pencil-alt/12");
         editButton.addListener("execute", () => this.__editFolder(), this);

@@ -323,7 +323,10 @@ qx.Class.define("osparc.dashboard.WorkspacesAndFoldersTree", {
       if (selection) {
         selection.removeAll();
       }
-      if (context === osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS || context === osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES) {
+      if ([
+        osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,
+        osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES,
+      ].includes(context)) {
         const workspaceId = context === osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES ? -1 : this.getCurrentWorkspaceId();
         const folderId = this.getCurrentFolderId();
         const locationModel = this.__getModel(workspaceId, folderId);
