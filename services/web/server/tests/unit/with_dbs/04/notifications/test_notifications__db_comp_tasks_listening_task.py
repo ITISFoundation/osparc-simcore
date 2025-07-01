@@ -304,9 +304,6 @@ async def test_db_listener_upgrades_projects_row_correctly(
     ) -> None:
         with log_context(logging.INFO, msg=f"Updating output {port_index + 1}"):
             async with sqlalchemy_async_engine.begin() as conn:
-                # For JSON columns, we need to use jsonb_set or fetch-modify-update
-                # Since it's JSON (not JSONB), let's use the safer fetch-modify approach
-                # Use SELECT FOR UPDATE to lock the row for concurrent access
                 result = await conn.execute(
                     comp_tasks.select()
                     .with_only_columns([comp_tasks.c.outputs])
@@ -325,13 +322,6 @@ async def test_db_listener_upgrades_projects_row_correctly(
                     .values(outputs=current_outputs)
                     .where(comp_tasks.c.task_id == first_jupyter_task["task_id"])
                 )
-
-    # await asyncio.gather(
-    #     *(
-    #         _update_first_jupyter_task_output(i, {"data": i})
-    #         for i in range(number_of_inputs_linked)
-    #     )
-    # )
 
     @delayed_start(timedelta(seconds=2))
     async def _change_outputs_sequentially(sleep: float = 0.1) -> None:
@@ -383,6 +373,6 @@ async def test_db_listener_upgrades_projects_row_correctly(
                     )
 
     await _check_for_stability(_check_retrieve_rpc_called, number_of_inputs_linked)
-
+    await asyncio.wait_for(sequential_task, timeout=60)
     assert sequential_task.done(), "Sequential task did not complete"
     assert not sequential_task.cancelled(), "Sequential task was cancelled unexpectedly"
