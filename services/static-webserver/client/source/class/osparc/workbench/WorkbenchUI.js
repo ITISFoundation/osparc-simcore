@@ -1211,16 +1211,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         edge.setSelected(true);
       } else if (this.__isSelectedItemAnAnnotation()) {
         const annotation = this.__getAnnotation(newID);
-        this.__setSelectedAnnotations([annotation]);
-        const annotationEditor = this.__getAnnotationEditorView();
-        annotationEditor.setAnnotation(annotation);
-        annotationEditor.makeItModal();
-        annotationEditor.addListener("deleteAnnotation", () => {
-          annotationEditor.exclude();
-          this.__removeAnnotation(annotation.getId());
-          this.resetSelection();
-        }, this);
-        annotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
+        this.__annotationSelected(annotation);
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
@@ -1240,6 +1231,29 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __getAnnotation: function() {
       return this.__isSelectedItemAnAnnotation() ? this.__annotations[this.__selectedItemId] : null;
+    },
+
+    __annotationSelected: function(annotation) {
+      this.__setSelectedAnnotations([annotation]);
+      switch (annotation.getType()) {
+        case osparc.workbench.Annotation.TYPES.CONVERSATION: {
+          const studyData = this.getStudy().serialize();
+          osparc.study.Conversations.popUpInWindow(studyData, annotation.getAttributes()["conversationId"]);
+          break;
+        }
+        default: {
+          const annotationEditor = this.__getAnnotationEditorView();
+          annotationEditor.setAnnotation(annotation);
+          annotationEditor.makeItModal();
+          annotationEditor.addListener("deleteAnnotation", () => {
+            annotationEditor.exclude();
+            this.__removeAnnotation(annotation.getId());
+            this.resetSelection();
+          }, this);
+          annotation.addListener("changeColor", e => this.__annotationLastColor = e.getData());
+          break;
+        }
+      }
     },
 
     __scaleCoordinates: function(x, y) {

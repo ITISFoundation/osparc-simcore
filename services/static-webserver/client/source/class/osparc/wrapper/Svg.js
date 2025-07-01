@@ -319,11 +319,6 @@ qx.Class.define("osparc.wrapper.Svg", {
         .move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
       bubble.add(title);
 
-      // Add a click event to the button
-      icon.click(() => {
-        alert('Popup or conversation panel here!');
-      });
-
       return bubble;
     },
 

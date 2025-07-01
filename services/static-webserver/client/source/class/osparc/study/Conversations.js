@@ -261,8 +261,8 @@ qx.Class.define("osparc.study.Conversations", {
       osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
         .then(conversations => {
           if (conversations.length) {
-            // Sort conversations by created date, newest first
-            conversations.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
+            // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
+            conversations.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
             conversations.forEach(conversation => this.__addConversationPage(conversation));
             if (this.__openConversationId) {
               const conversationsLayout = this.getChildControl("conversations-layout");
