@@ -219,3 +219,5 @@ async def test_request_an_account(
         assert not user.registered
         assert user.status is None
         assert user.account_request_status == AccountRequestStatus.PENDING
+
+    # TODO add a test for reregistration `AlreadyPreRegisteredError`
