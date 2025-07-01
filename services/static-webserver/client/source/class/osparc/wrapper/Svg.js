@@ -274,55 +274,53 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    drawAnnotationConversation: function(draw, x, y, color) {
+    drawAnnotationConversation: function(draw, x, y) {
+      const color = qx.theme.manager.Color.getInstance().getTheme().colors["text"];
+      const bubbleWidth = 150;
+      const bubbleHeight = 30;
+      const padding = 6;
+
       // Group to keep all elements together
       const bubble = draw.group();
+      bubble.move(x, y);
 
       // Rounded rectangle as the base
-      const rect = draw.rect(280, 60)
-        .radius(15)
+      const rect = draw.rect(bubbleWidth, bubbleHeight)
+        .radius(4)
         .fill("none")
         .stroke({
-          width: 2,
           color,
+          width: 1.5,
         });
       bubble.add(rect);
 
       // Icon (simple speech bubble using path or text)
+      const iconSize = 16;
       const icon = draw.text('💬')
-        .font({ size: 24 })
-        .move(10, 18);
+        .font({
+          size: iconSize
+        })
+        .move(padding, (bubbleHeight - iconSize) / 2)
+        .attr({
+          cursor: "pointer"
+        });
       bubble.add(icon);
 
       // Title text
+      const titleFontSize = 12;
+      const defaultFont = osparc.utils.Utils.getDefaultFont();
       const title = draw.text('Hello')
         .font({
-          size: 16,
+          fill: color,
+          size: titleFontSize,
+          family: defaultFont["family"],
           anchor: 'start'
         })
-        .move(50, 22);
+        .move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
       bubble.add(title);
 
-      // Button (small circle with i or icon)
-      const button = draw.circle(24)
-        .fill('#ccc')
-        .move(250, 18);
-      const btnText = draw.text('➤')
-        .font({
-          size: 14,
-          anchor: 'middle',
-          leading: '1'
-        })
-        .move(250 + 12 - 7, 18 + 12 - 10); // center text in circle
-
-      bubble.add(button);
-      bubble.add(btnText);
-
       // Add a click event to the button
-      button.click(function () {
-        alert('Popup or conversation panel here!');
-      });
-      btnText.click(function () {
+      icon.click(() => {
         alert('Popup or conversation panel here!');
       });
 
