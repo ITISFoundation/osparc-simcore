@@ -14,7 +14,6 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.utils import fire_and_forget_task
-from simcore_service_webserver.users._users_rest import PreRegisteredUserGet
 
 from ...._meta import API_VTAG
 from ....constants import RQ_PRODUCT_KEY
@@ -22,8 +21,9 @@ from ....products import products_web
 from ....products.models import Product
 from ....security import security_service, security_web
 from ....security.decorators import permission_required
-from ....session.api import get_session
-from ....users.api import get_user_credentials, set_user_as_deleted
+from ....session import api as session_service
+from ....users import api as users_service
+from ....users._common.schemas import PreRegisteredUserGet
 from ....utils import MINUTE
 from ....utils_rate_limiting import global_rate_limit_route
 from ... import _preregistration_service
@@ -35,6 +35,7 @@ from ..._constants import (
 from ..._login_service import flash_response, notify_user_logout
 from ...decorators import login_required
 from ...settings import LoginSettingsForProduct, get_plugin_settings
+from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 
@@ -62,9 +63,10 @@ def _get_ipinfo(request: web.Request) -> dict[str, Any]:
     name="request_product_account",
 )
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
+@handle_rest_requests_exceptions
 async def request_product_account(request: web.Request):
     product = products_web.get_current_product(request)
-    session = await get_session(request)
+    session = await session_service.get_session(request)
 
     body = await parse_request_body_as(AccountRequestInfo, request)
     assert body.form  # nosec
@@ -74,22 +76,17 @@ async def request_product_account(request: web.Request):
         raise web.HTTPUnprocessableEntity(text=MSG_WRONG_CAPTCHA__INVALID)
     session.pop(CAPTCHA_SESSION_KEY, None)
 
-    pre_user_profile = PreRegisteredUserGet.model_validate(
-        # TODO: can raise vliadation error
-        body.form
-    )
-
-    user_profile = await _preregistration_service.create_pre_registration(
-        # TODO: this raises AlreadyPreRegisteredError or ValidationError or anything regarding
+    # create pre-regiatration or raise if already exists
+    await _preregistration_service.create_pre_registration(
         request.app,
-        profile=pre_user_profile,
+        profile=PreRegisteredUserGet.model_validate(body.form),
         product_name=product.name,
     )
 
-    # send email to fogbugz or user itself
+    # if created send email to fogbugz or user itself
     fire_and_forget_task(
         _preregistration_service.send_account_request_email_to_support(
-            request,
+            request=request,
             product=product,
             request_form=body.form,
             ipinfo=_get_ipinfo(request),
@@ -108,6 +105,7 @@ class _AuthenticatedContext(BaseModel):
 @routes.post(f"/{API_VTAG}/auth/unregister", name="unregister_account")
 @login_required
 @permission_required("user.profile.delete")
+@handle_rest_requests_exceptions
 async def unregister_account(request: web.Request):
     req_ctx = _AuthenticatedContext.model_validate(request)
     body = await parse_request_body_as(UnregisterCheck, request)
@@ -118,7 +116,9 @@ async def unregister_account(request: web.Request):
     )
 
     # checks before deleting
-    credentials = await get_user_credentials(request.app, user_id=req_ctx.user_id)
+    credentials = await users_service.get_user_credentials(
+        request.app, user_id=req_ctx.user_id
+    )
     if body.email != credentials.email.lower() or not security_service.check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):
@@ -134,7 +134,7 @@ async def unregister_account(request: web.Request):
         extra=get_log_record_extra(user_id=req_ctx.user_id),
     ):
         # update user table
-        await set_user_as_deleted(request.app, user_id=req_ctx.user_id)
+        await users_service.set_user_as_deleted(request.app, user_id=req_ctx.user_id)
 
         # logout
         await notify_user_logout(
@@ -160,8 +160,9 @@ async def unregister_account(request: web.Request):
 
 @routes.get(f"/{API_VTAG}/auth/captcha", name="create_captcha")
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
+@handle_rest_requests_exceptions
 async def create_captcha(request: web.Request):
-    session = await get_session(request)
+    session = await session_service.get_session(request)
 
     captcha_text, image_data = await _preregistration_service.create_captcha()
 
