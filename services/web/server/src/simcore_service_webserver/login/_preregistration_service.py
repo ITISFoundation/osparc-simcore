@@ -12,12 +12,12 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode
-from simcore_service_webserver.users._users_rest import PreRegisteredUserGet
 
 from ..email.utils import send_email_from_template
 from ..products import products_web
 from ..products.models import Product
 from ..users import _users_service
+from ..users.schemas import PreRegisteredUserGet
 
 _logger = logging.getLogger(__name__)
 
