@@ -24,16 +24,23 @@ class RunningState(str, Enum):
     SEE StateType for task state
     """
 
-    UNKNOWN = "UNKNOWN"
-    PUBLISHED = "PUBLISHED"
-    NOT_STARTED = "NOT_STARTED"
-    PENDING = "PENDING"
-    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
-    STARTED = "STARTED"
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
-    ABORTED = "ABORTED"
-    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
+    UNKNOWN = "UNKNOWN"  # Error state, disapeared from the system (dask backend lost the task and we do not know what is the state)
+    NOT_STARTED = "NOT_STARTED"  # Default when project is created
+
+    PUBLISHED = (
+        "PUBLISHED"  # project is awainting for the compu schedule to pick the task
+    )
+    PENDING = "PENDING"  # Comp scheduler takes over, and the task is waiting for a worker to pick it up
+
+    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"  # There are no clusters available to run the task, waiting for one to become available
+    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"  # There is no worker available to run the task, waiting for one to become available
+    # PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED
+
+    STARTED = "STARTED"  # Worker took the task and is executing it
+
+    SUCCESS = "SUCCESS"  # Finished
+    FAILED = "FAILED"  # Finished
+    ABORTED = "ABORTED"  # Finished
 
     @staticmethod
     def list_running_states() -> list["RunningState"]:

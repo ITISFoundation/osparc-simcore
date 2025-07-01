@@ -1,5 +1,6 @@
 from typing import Annotated, Any, TypeAlias
 
+from models_library.computations import CollectionRunID
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -72,6 +73,7 @@ class ComputationCreate(BaseModel):
             description="contains information about the wallet used to bill the running service"
         ),
     ] = None
+    collection_run_id: CollectionRunID
 
     @field_validator("product_name")
     @classmethod

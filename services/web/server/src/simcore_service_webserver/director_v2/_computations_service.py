@@ -1,8 +1,14 @@
 from decimal import Decimal
 
 from aiohttp import web
-from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationCollectionRunRpcGet,
+    ComputationRunRpcGet,
+)
 from models_library.computations import (
+    CollectionRunID,
+    ComputationCollectionRunTaskWithAttributes,
+    ComputationCollectionRunWithAttributes,
     ComputationRunWithAttributes,
     ComputationTaskWithAttributes,
 )
@@ -35,6 +41,7 @@ from ..projects.projects_metadata_service import (
     get_project_uuids_by_root_parent_project_id,
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
+from ._comp_run_collections_service import get_comp_run_collection_or_none_by_id
 
 
 async def _get_projects_metadata(
@@ -286,6 +293,182 @@ async def list_computations_latest_iteration_tasks(
         )
         for item, credits_or_none in zip(
             _tasks_get.items, _service_run_osparc_credits, strict=True
+        )
+    ]
+    return _tasks_get.total, _tasks_get_output
+
+
+### NEW:
+
+
+async def _get_root_project_names_v2(
+    app: web.Application, items: list[ComputationCollectionRunRpcGet]
+) -> list[str]:
+    """Resolve root project names from computation items"""
+    root_uuids: list[ProjectID] = []
+    for item in items:
+        if root_id := item.info.get("project_metadata", {}).get(
+            "root_parent_project_id"
+        ):
+            root_uuids.append(ProjectID(root_id))
+        else:
+            assert len(item.project_ids) > 0  # nosec
+            root_uuids.append(ProjectID(item.project_ids[0]))
+
+    return await batch_get_project_name(app, projects_uuids=root_uuids)
+
+
+async def list_computation_collection_runs(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    # filters
+    filter_by_root_project_id: ProjectID | None = None,
+    # pagination
+    offset: int,
+    limit: NonNegativeInt,
+) -> tuple[int, list[ComputationCollectionRunWithAttributes]]:
+    child_projects_with_root = None
+    if filter_by_root_project_id:
+        await check_user_project_permission(
+            app,
+            project_id=filter_by_root_project_id,
+            user_id=user_id,
+            product_name=product_name,
+        )
+        # NOTE: Can be improved with checking if the provided project is a root project
+        child_projects = await get_project_uuids_by_root_parent_project_id(
+            app, root_parent_project_uuid=filter_by_root_project_id
+        )
+        child_projects_with_root = [*child_projects, filter_by_root_project_id]
+
+    rpc_client = get_rabbitmq_rpc_client(app)
+    _runs_get = await computations.list_computation_collection_runs_page(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_ids=child_projects_with_root,
+        offset=offset,
+        limit=limit,
+    )
+
+    # NOTE: MD: can be improved with a single batch call
+    _comp_run_collections = await limited_gather(
+        *[
+            get_comp_run_collection_or_none_by_id(
+                app, collection_run_id=_run.collection_run_id
+            )
+            for _run in _runs_get.items
+        ],
+        limit=20,
+    )
+    # Get Root project names
+    _projects_root_names = await _get_root_project_names_v2(app, _runs_get.items)
+
+    _computational_runs_output = [
+        ComputationCollectionRunWithAttributes(
+            collection_run_id=item.collection_run_id,
+            project_ids=item.project_ids,
+            state=item.state,
+            info=item.info,
+            submitted_at=item.submitted_at,
+            started_at=item.started_at,
+            ended_at=item.ended_at,
+            name=(
+                run_collection.client_generated_display_name
+                if run_collection
+                else project_root_name
+            ),
+        )
+        for item, run_collection, project_root_name in zip(
+            _runs_get.items, _comp_run_collections, _projects_root_names, strict=True
+        )
+    ]
+
+    return _runs_get.total, _computational_runs_output
+
+
+async def list_computation_collection_run_tasks(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    collection_run_id: CollectionRunID,
+    # pagination
+    offset: int,
+    limit: NonNegativeInt,
+) -> tuple[int, list[ComputationCollectionRunTaskWithAttributes]]:
+    rpc_client = get_rabbitmq_rpc_client(app)
+    _tasks_get = await computations.list_computation_collection_run_tasks_page(
+        rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        collection_run_id=collection_run_id,
+        offset=offset,
+        limit=limit,
+    )
+
+    # Get unique set of all project_uuids from comp_tasks
+    unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
+    # NOTE: MD: can be improved with a single batch call
+    project_dicts = await limited_gather(
+        *[
+            get_project_dict_legacy(app, project_uuid=project_uuid)
+            for project_uuid in unique_project_uuids
+        ],
+        limit=20,
+    )
+    # Build a dict: project_uuid -> workbench
+    project_uuid_to_workbench = {prj["uuid"]: prj["workbench"] for prj in project_dicts}
+
+    # Fetch projects metadata concurrently
+    _projects_metadata = await _get_projects_metadata(
+        app, project_uuids=[item.project_uuid for item in _tasks_get.items]
+    )
+
+    _service_run_ids = [item.service_run_id for item in _tasks_get.items]
+    _is_product_billable = await is_product_billable(app, product_name=product_name)
+    _service_run_osparc_credits: list[Decimal | None]
+    if _is_product_billable:
+        # NOTE: MD: can be improved with a single batch call
+        _service_run_osparc_credits = await limited_gather(
+            *[
+                _get_credits_or_zero_by_service_run_id(
+                    rpc_client, service_run_id=_run_id
+                )
+                for _run_id in _service_run_ids
+            ],
+            limit=20,
+        )
+    else:
+        _service_run_osparc_credits = [None for _ in _service_run_ids]
+
+    # Final output
+    _tasks_get_output = [
+        ComputationCollectionRunTaskWithAttributes(
+            project_uuid=item.project_uuid,
+            node_id=item.node_id,
+            state=item.state,
+            progress=item.progress,
+            image=item.image,
+            started_at=item.started_at,
+            ended_at=item.ended_at,
+            log_download_link=item.log_download_link,
+            name=(
+                custom_metadata.get("job_name")
+                if custom_metadata.get("job_name")
+                else project_uuid_to_workbench[f"{item.project_uuid}"][
+                    f"{item.node_id}"
+                ].get("label", "")
+            ),  # type: ignore
+            osparc_credits=credits_or_none,
+        )
+        for item, credits_or_none, custom_metadata in zip(
+            _tasks_get.items,
+            _service_run_osparc_credits,
+            _projects_metadata,
+            strict=True,
         )
     ]
     return _tasks_get.total, _tasks_get_output

@@ -2776,6 +2776,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
+  /v0/computation-collection-runs:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computation Collection Runs
+      operationId: list_computation_collection_runs
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      - name: filter_by_root_project_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Filter By Root Project Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
+  /v0/computation-collection-runs/{collection_run_id}/tasks:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computation Collection Run Tasks
+      operationId: list_computation_collection_run_tasks
+      parameters:
+      - name: collection_run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Collection Run Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
   /v0/projects/{project_id}:xport:
     post:
       tags:
@@ -15830,15 +15904,15 @@ components:
       type: string
       enum:
       - UNKNOWN
-      - PUBLISHED
       - NOT_STARTED
+      - PUBLISHED
       - PENDING
+      - WAITING_FOR_CLUSTER
       - WAITING_FOR_RESOURCES
       - STARTED
       - SUCCESS
       - FAILED
       - ABORTED
-      - WAITING_FOR_CLUSTER
       title: RunningState
       description: 'State of execution of a project''s computational workflow
 

@@ -10700,15 +10700,15 @@
         "type": "string",
         "enum": [
           "UNKNOWN",
-          "PUBLISHED",
           "NOT_STARTED",
+          "PUBLISHED",
           "PENDING",
+          "WAITING_FOR_CLUSTER",
           "WAITING_FOR_RESOURCES",
           "STARTED",
           "SUCCESS",
           "FAILED",
-          "ABORTED",
-          "WAITING_FOR_CLUSTER"
+          "ABORTED"
         ],
         "title": "RunningState",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"

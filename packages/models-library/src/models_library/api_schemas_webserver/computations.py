@@ -8,17 +8,20 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    field_validator,
 )
 
 from ..api_schemas_directorv2.computations import (
     ComputationGet as _DirectorV2ComputationGet,
 )
 from ..basic_types import IDStr
+from ..computations import CollectionRunID
 from ..projects import CommitID, ProjectID
 from ..projects_nodes_io import NodeID
 from ..projects_state import RunningState
 from ..rest_ordering import OrderBy, create_ordering_query_model_class
 from ..rest_pagination import PageQueryParameters
+from ..utils.common_validators import null_or_none_str_to_none_validator
 from ._base import (
     InputSchemaWithoutCamelCase,
     OutputSchema,
@@ -153,3 +156,52 @@ class ComputationTaskRestGet(OutputSchema):
     log_download_link: AnyUrl | None
     node_name: str
     osparc_credits: Decimal | None
+
+
+### Computation Collection Run
+
+
+class ComputationCollectionRunListQueryParams(
+    PageQueryParameters,
+):
+    filter_by_root_project_id: ProjectID | None = Field(
+        default=None,
+    )
+
+    _null_or_none_to_none = field_validator("filter_by_root_project_id", mode="before")(
+        null_or_none_str_to_none_validator
+    )
+
+
+class ComputationCollectionRunRestGet(OutputSchema):
+    collection_run_id: CollectionRunID
+    project_ids: list[str]
+    state: RunningState
+    info: dict[str, Any]
+    submitted_at: datetime
+    started_at: datetime | None
+    ended_at: datetime | None
+    name: str
+
+
+class ComputationCollectionRunPathParams(BaseModel):
+    collection_run_id: CollectionRunID
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+
+class ComputationCollectionRunTaskListQueryParams(
+    PageQueryParameters,
+): ...
+
+
+class ComputationCollectionRunTaskRestGet(OutputSchema):
+    project_uuid: ProjectID
+    node_id: NodeID
+    state: RunningState
+    progress: float
+    image: dict[str, Any]
+    started_at: datetime | None
+    ended_at: datetime | None
+    log_download_link: AnyUrl | None
+    osparc_credits: Decimal | None
+    name: str

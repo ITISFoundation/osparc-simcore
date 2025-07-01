@@ -1348,6 +1348,11 @@
               }
             ],
             "description": "contains information about the wallet used to bill the running service"
+          },
+          "collection_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Collection Run Id"
           }
         },
         "type": "object",
@@ -1355,7 +1360,8 @@
           "user_id",
           "project_id",
           "product_name",
-          "product_api_base_url"
+          "product_api_base_url",
+          "collection_run_id"
         ],
         "title": "ComputationCreate"
       },
@@ -2789,15 +2795,15 @@
         "type": "string",
         "enum": [
           "UNKNOWN",
-          "PUBLISHED",
           "NOT_STARTED",
+          "PUBLISHED",
           "PENDING",
+          "WAITING_FOR_CLUSTER",
           "WAITING_FOR_RESOURCES",
           "STARTED",
           "SUCCESS",
           "FAILED",
-          "ABORTED",
-          "WAITING_FOR_CLUSTER"
+          "ABORTED"
         ],
         "title": "RunningState",
         "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"

@@ -1,5 +1,11 @@
+from datetime import datetime
+from typing import Annotated, Any
+
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
-from pydantic import ConfigDict, PositiveInt
+from pydantic import BaseModel, BeforeValidator, ConfigDict, PositiveInt
 
 from .comp_tasks import BaseCompTaskAtDB, Image
 
@@ -75,3 +81,22 @@ class CompRunSnapshotTaskAtDBGet(BaseCompTaskAtDB):
 
 class CompRunSnapshotTaskAtDBCreate(BaseCompTaskAtDB):
     run_id: PositiveInt
+
+
+def _none_to_zero_float_pre_validator(value: Any):
+    if value is None:
+        return 0.0
+    return value
+
+
+class CompRunSnapshotTaskDBGet(BaseModel):
+    snapshot_task_id: PositiveInt
+    run_id: PositiveInt
+    project_uuid: ProjectID
+    node_id: NodeID
+    state: RunningState
+    progress: Annotated[float, BeforeValidator(_none_to_zero_float_pre_validator)]
+    image: dict[str, Any]
+    started_at: datetime | None
+    ended_at: datetime | None
+    iteration: PositiveInt
