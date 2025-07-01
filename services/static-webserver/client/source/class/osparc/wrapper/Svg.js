@@ -274,7 +274,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    drawAnnotationConversation: function(draw, x = 50, y = 50) {
+    drawAnnotationConversation: function(draw, x = 50, y = 50, title = "Conversation") {
       const color = qx.theme.manager.Color.getInstance().getTheme().colors["text"];
       const bubbleWidth = 150;
       const bubbleHeight = 30;
@@ -309,7 +309,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       // Title text
       const titleFontSize = 12;
       const defaultFont = osparc.utils.Utils.getDefaultFont();
-      const title = draw.text('Hello')
+      const title = draw.text(title)
         .font({
           fill: color,
           size: titleFontSize,
