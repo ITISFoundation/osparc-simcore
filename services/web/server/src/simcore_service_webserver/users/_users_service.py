@@ -477,6 +477,7 @@ async def approve_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
+    invitation_extras: dict[str, Any] | None = None,
 ) -> int:
     """Approve a user account based on their pre-registration email.
 
@@ -517,6 +518,7 @@ async def approve_user_account(
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=AccountRequestStatus.APPROVED,
+        invitation_extras=invitation_extras,
     )
 
     return pre_registration_id

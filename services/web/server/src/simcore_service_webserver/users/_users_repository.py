@@ -694,6 +694,7 @@ async def review_user_pre_registration(
     pre_registration_id: int,
     reviewed_by: UserID,
     new_status: AccountRequestStatus,
+    invitation_extras: dict[str, Any] | None = None,
 ) -> None:
     """Updates the account request status of a pre-registered user.
 
@@ -703,19 +704,44 @@ async def review_user_pre_registration(
         pre_registration_id: ID of the pre-registration record
         reviewed_by: ID of the user who reviewed the request
         new_status: New status (APPROVED or REJECTED)
+        invitation_extras: Optional invitation data to store in extras field
     """
     if new_status not in (AccountRequestStatus.APPROVED, AccountRequestStatus.REJECTED):
         msg = f"Invalid status for review: {new_status}. Must be APPROVED or REJECTED."
         raise ValueError(msg)
 
     async with transaction_context(engine, connection) as conn:
+        # Base update values
+        update_values = {
+            "account_request_status": new_status,
+            "account_request_reviewed_by": reviewed_by,
+            "account_request_reviewed_at": sa.func.now(),
+        }
+
+        # Add invitation extras to the existing extras if provided
+        if invitation_extras is not None:
+            assert list(invitation_extras.keys()) == "invitation"  # nosec
+
+            # Get the current extras first
+            current_extras_result = await conn.execute(
+                sa.select(users_pre_registration_details.c.extras).where(
+                    users_pre_registration_details.c.id == pre_registration_id
+                )
+            )
+            current_extras_row = current_extras_result.one_or_none()
+            current_extras = (
+                current_extras_row.extras
+                if current_extras_row and current_extras_row.extras
+                else {}
+            )
+
+            # Merge with invitation extras
+            merged_extras = {**current_extras, **invitation_extras}
+            update_values["extras"] = merged_extras
+
         await conn.execute(
             users_pre_registration_details.update()
-            .values(
-                account_request_status=new_status,
-                account_request_reviewed_by=reviewed_by,
-                account_request_reviewed_at=sa.func.now(),
-            )
+            .values(**update_values)
             .where(users_pre_registration_details.c.id == pre_registration_id)
         )
 
