@@ -274,7 +274,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    drawAnnotationConversation: function(draw, x, y) {
+    drawAnnotationConversation: function(draw, x = 50, y = 50) {
       const color = qx.theme.manager.Color.getInstance().getTheme().colors["text"];
       const bubbleWidth = 150;
       const bubbleHeight = 30;
