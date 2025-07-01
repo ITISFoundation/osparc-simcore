@@ -364,11 +364,6 @@ def mocked_resource_usage_tracker_service_fcts(
 
 
 @pytest.fixture
-def product_name(osparc_product_name: str) -> str:
-    return osparc_product_name
-
-
-@pytest.fixture
 def product_api_base_url(faker: Faker) -> AnyHttpUrl:
     return TypeAdapter(AnyHttpUrl).validate_python(faker.url())
 
