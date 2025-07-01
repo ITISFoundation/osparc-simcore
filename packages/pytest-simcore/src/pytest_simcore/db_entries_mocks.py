@@ -15,6 +15,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.services import services_access_rights
@@ -66,8 +67,27 @@ def create_registered_user(
 
 
 @pytest.fixture
+async def product_db(
+    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
+) -> AsyncIterator[ProductName]:
+    async with sqlalchemy_async_engine.begin() as con:
+        result = await con.execute(
+            products.insert().values(**product).returning(sa.literal_column("*"))
+        )
+        created_product = result.one()
+    print(f"--> created product {created_product.name=}")
+    yield created_product.name
+
+    async with sqlalchemy_async_engine.begin() as con:
+        await con.execute(
+            products.delete().where(products.c.name == created_product.name)
+        )
+    print(f"<-- deleted product {created_product.name=}")
+
+
+@pytest.fixture
 async def project(
-    sqlalchemy_async_engine: AsyncEngine, faker: Faker, product_name: ProductName
+    sqlalchemy_async_engine: AsyncEngine, faker: Faker, product_db: ProductName
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
@@ -118,7 +138,7 @@ async def project(
             await con.execute(
                 projects_to_products.insert().values(
                     project_uuid=f"{inserted_project.uuid}",
-                    product_name=product_name,
+                    product_name=product_db,
                 )
             )
         print(f"--> created {inserted_project=}")
