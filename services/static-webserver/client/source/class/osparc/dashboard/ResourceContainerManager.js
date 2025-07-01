@@ -141,7 +141,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __resourceType: null,
     __noResourcesFound: null,
 
-    __evaluateNoResourcesFoundLabel: function(cards) {
+    __evaluateNoResourcesFoundLabel: function() {
       if (this.__noResourcesFound) {
         let text = null;
         switch (this.__resourceType) {
@@ -177,7 +177,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
         this.__noResourcesFound.set({
           value: text,
-          visibility: text && cards.length === 0 ? "visible" : "excluded",
+          visibility: text && this.__resourcesList.length === 0 ? "visible" : "excluded",
         });
       }
     },
@@ -323,7 +323,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     setResourcesToList: function(resourcesList) {
       this.__resourcesList = resourcesList;
 
-      this.__evaluateNoResourcesFoundLabel(resourcesList);
+      // delay it a bit to avoid the initial flickering
+      setTimeout(() => this.__evaluateNoResourcesFoundLabel(), 1000);
     },
 
     __cleanAll: function() {
