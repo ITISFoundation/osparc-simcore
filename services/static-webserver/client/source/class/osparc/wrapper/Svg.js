@@ -353,6 +353,8 @@ qx.Class.define("osparc.wrapper.Svg", {
       // Move label to proper position
       label.move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
 
+      bubble.back();
+
       return bubble;
     },
 
