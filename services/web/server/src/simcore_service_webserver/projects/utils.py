@@ -93,6 +93,12 @@ def clone_project_document(
             project_copy["ui"].get("slideshow", {})
         )
 
+        # exclude conversations
+        annotations = project_copy.get("ui", {}).get("annotations", {}).copy()
+        for ann_id, ann in annotations.items():
+            if ann["type"] == "conversation":
+                project_copy["ui"]["annotations"].pop(ann_id)
+
     if clean_output_data:
         for node_data in project_copy.get("workbench", {}).values():
             for field in _FIELDS_TO_DELETE:
