@@ -309,7 +309,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       // Title text
       const titleFontSize = 12;
       const defaultFont = osparc.utils.Utils.getDefaultFont();
-      const title = draw.text(title)
+      const label = draw.text(title)
         .font({
           fill: color,
           size: titleFontSize,
@@ -317,7 +317,7 @@ qx.Class.define("osparc.wrapper.Svg", {
           anchor: 'start'
         })
         .move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
-      bubble.add(title);
+      bubble.add(label);
 
       return bubble;
     },
