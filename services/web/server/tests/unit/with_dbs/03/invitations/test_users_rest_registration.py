@@ -633,7 +633,7 @@ async def test_approve_user_account_with_credits_only(
         "email": test_email,
         "invitation": {
             # No trial_account_days
-            "extra_credits_in_usd": 50.0,
+            "extraCreditsInUsd": 50.0,
         },
     }
 
