@@ -224,13 +224,11 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     serialize: function() {
-      const type = this.getType();
-      const data = {
-        type,
+      return {
+        type: this.getType(),
         attributes: this.getAttributes(),
-      }
-      data.color = this.getColor();
-      return data;
+        color: this.getColor(),
+      };
     }
   }
 });
