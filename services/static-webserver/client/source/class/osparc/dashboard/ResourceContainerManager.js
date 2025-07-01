@@ -142,44 +142,42 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __noResourcesFound: null,
 
     __evaluateNoResourcesFoundLabel: function() {
-      if (this.__noResourcesFound) {
-        let text = null;
-        switch (this.__resourceType) {
-          case "study": {
-            const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
-            switch (studyBrowserContext) {
-              case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
-              case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-              case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
-                text = this.tr("No Projects found");
-                break;
-              case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
-              case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-                text = this.tr("No Templates found");
-                break;
-              case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
-              case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-                text = this.tr("No Public Projects found");
-                break;
-            }
-            break;
+      let text = null;
+      switch (this.__resourceType) {
+        case "study": {
+          const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+          switch (studyBrowserContext) {
+            case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
+            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+            case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
+              text = this.tr("No Projects found");
+              break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
+            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+              text = this.tr("No Templates found");
+              break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
+            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+              text = this.tr("No Public Projects found");
+              break;
           }
-          case "template":
-            text = this.tr("No Tutorials found");
-            break;
-          case "service":
-            text = this.tr("No Apps found");
-            break;
-          default:
-            text = this.tr("No Resources found");
-            break;
+          break;
         }
-
-        this.__noResourcesFound.set({
-          value: text,
-          visibility: text && this.__resourcesList.length === 0 ? "visible" : "excluded",
-        });
+        case "template":
+          text = this.tr("No Tutorials found");
+          break;
+        case "service":
+          text = this.tr("No Apps found");
+          break;
+        default:
+          text = this.tr("No Resources found");
+          break;
       }
+
+      this.__noResourcesFound.set({
+        value: text,
+        visibility: text && this.__resourcesList.length === 0 ? "visible" : "excluded",
+      });
     },
 
     addNonResourceCard: function(card) {
