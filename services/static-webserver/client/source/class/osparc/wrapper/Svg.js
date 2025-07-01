@@ -319,6 +319,42 @@ qx.Class.define("osparc.wrapper.Svg", {
         .move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
       bubble.add(label);
 
+      // Compute available width for text
+      const availableWidth = bubbleWidth - padding * 2 - iconSize - 8;
+
+      // Helper: truncate text with ellipsis
+      const fitTextWithEllipsis = (fullText, maxWidth) => {
+        let text = fullText;
+        label.text(text);
+        if (label.bbox().width <= maxWidth) {
+          return text
+        };
+
+        const ellipsis = '…';
+        let low = 0;
+        let high = text.length;
+
+        // Binary search for the max fitting length
+        while (low < high) {
+          let mid = Math.floor((low + high) / 2);
+          label.text(text.slice(0, mid) + ellipsis);
+          if (label.bbox().width <= maxWidth) {
+            low = mid + 1;
+          } else {
+            high = mid;
+          }
+        }
+
+        return text.slice(0, low - 1) + ellipsis;
+      }
+
+      // Truncate if needed
+      const fittedText = fitTextWithEllipsis(title, availableWidth);
+      label.text(fittedText);
+
+      // Move label to proper position
+      label.move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
+
       return bubble;
     },
 
