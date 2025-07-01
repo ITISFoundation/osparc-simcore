@@ -32,7 +32,12 @@ def create_tip_plan_from_dashboard(
 ) -> Callable[[str], dict[str, Any]]:
     def _(plan_name_test_id: str) -> dict[str, Any]:
         find_and_start_tip_plan_in_dashboard(plan_name_test_id)
-        expected_states = (RunningState.UNKNOWN,)
-        return create_new_project_and_delete(expected_states, False, None, None)
+        expected_states = (RunningState.NOT_STARTED,)
+        return create_new_project_and_delete(
+            expected_states,
+            False,  # noqa: FBT003
+            None,
+            None,
+        )
 
     return _
