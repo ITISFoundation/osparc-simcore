@@ -38,12 +38,16 @@ class _ClientDisconnectedError(Exception):
     """Internal exception raised by the poller task when the client disconnects."""
 
 
-async def _disconnect_poller_for_task_group(request: Request):
+async def _disconnect_poller_for_task_group(
+    close_event: asyncio.Event, request: Request
+):
     """
     Polls for client disconnection and raises _ClientDisconnectedError if it occurs.
     """
     while not await request.is_disconnected():
         await asyncio.sleep(_POLL_INTERVAL_S)
+        if close_event.is_set():
+            return
     raise _ClientDisconnectedError()
 
 
@@ -61,16 +65,20 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
     @wraps(handler)
     async def wrapper(request: Request, *args, **kwargs):
         sentinel = object()
+        kill_poller_task_event = asyncio.Event()
         try:
             async with asyncio.TaskGroup() as tg:
+
+                tg.create_task(
+                    _disconnect_poller_for_task_group(kill_poller_task_event, request),
+                    name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
+                )
                 handler_task = tg.create_task(
                     handler(request, *args, **kwargs),
                     name=f"cancel_on_disconnect/handler/{handler.__name__}/{id(sentinel)}",
                 )
-                tg.create_task(
-                    _disconnect_poller_for_task_group(request),
-                    name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
-                )
+                await handler_task
+                kill_poller_task_event.set()
 
             return handler_task.result()
 
