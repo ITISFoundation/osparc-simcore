@@ -766,6 +766,7 @@ async def search_merged_pre_and_registered_users(
             users_pre_registration_details.c.account_request_reviewed_at,
             users.c.status,
             invited_by,
+            users_pre_registration_details.c.created,
         )
 
         join_condition = users.c.id == users_pre_registration_details.c.user_id

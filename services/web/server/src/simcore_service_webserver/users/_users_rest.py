@@ -223,7 +223,10 @@ async def list_users_accounts(request: web.Request) -> web.Response:
 
     def _to_domain_model(user: dict[str, Any]) -> UserAccountGet:
         return UserAccountGet(
-            extras=user.pop("extras") or {}, pre_registration_id=user.pop("id"), **user
+            extras=user.pop("extras") or {},
+            pre_registration_id=user.pop("id"),
+            pre_registration_created=user.pop("created"),
+            **user,
         )
 
     page = Page[UserAccountGet].model_validate(
