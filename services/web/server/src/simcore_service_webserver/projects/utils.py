@@ -93,7 +93,7 @@ def clone_project_document(
             project_copy["ui"].get("slideshow", {})
         )
 
-        # exclude conversations
+        # exclude annotations UI info for conversations done in the source project
         annotations = project_copy.get("ui", {}).get("annotations", {}).copy()
         for ann_id, ann in annotations.items():
             if ann["type"] == "conversation":
