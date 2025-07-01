@@ -60,10 +60,17 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
 
     @wraps(handler)
     async def wrapper(request: Request, *args, **kwargs):
+        sentinel = object()
         try:
             async with asyncio.TaskGroup() as tg:
-                handler_task = tg.create_task(handler(request, *args, **kwargs))
-                tg.create_task(_disconnect_poller_for_task_group(request))
+                handler_task = tg.create_task(
+                    handler(request, *args, **kwargs),
+                    name=f"cancel_on_disconnect/handler/{handler.__name__}/{id(sentinel)}",
+                )
+                tg.create_task(
+                    _disconnect_poller_for_task_group(request),
+                    name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
+                )
 
             return handler_task.result()
 
