@@ -121,7 +121,7 @@ qx.Class.define("osparc.workbench.Annotation", {
           break;
         case this.self().TYPES.CONVERSATION: {
           const text = `${attrs.x}, ${attrs.y}`;
-          representation = this.__svgLayer.drawAnnotationConversation(attrs.x, attrs.y, text);
+          representation = this.__svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.title);
           break;
         }
       }
