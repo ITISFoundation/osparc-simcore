@@ -9,5 +9,5 @@ Sources:
 * https://www.reddit.com/r/PostgreSQL/comments/1hvxw0s/understanding_the_public_schema_in_postgresql/
 */
 
--- It is not global. Execute this per database
+-- As a superuser, run the following command in all of your databases
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
