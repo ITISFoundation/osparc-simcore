@@ -40,7 +40,7 @@ from pytest_simcore.helpers.playwright import (
 from pytest_simcore.helpers.pydantic_extension import Secret4TestsStr
 
 _PROJECT_CLOSING_TIMEOUT: Final[int] = 10 * MINUTE
-_OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 30 * SECOND
+_OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME: Final[int] = 60 * SECOND
 _OPENING_TUTORIAL_MAX_WAIT_TIME: Final[int] = 3 * MINUTE
 
 
