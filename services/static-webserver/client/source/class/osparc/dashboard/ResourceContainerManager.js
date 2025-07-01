@@ -31,6 +31,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__foldersList = [];
     this.__resourcesList = [];
     this.__groupedContainersList = [];
+    this.__resourceType = resourceType || "study";
 
     if (resourceType === "study") {
       const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.CardContainer();
@@ -135,26 +136,34 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __groupedContainersList: null,
     __foldersContainer: null,
     __workspacesContainer: null,
-    __noResourcesFound: null,
     __nonGroupedContainer: null,
     __groupedContainers: null,
+    __resourceType: null,
+    __noResourcesFound: null,
 
-    __evaluateNoResourcesFoundLabel: function(cards, context) {
+    __evaluateNoResourcesFoundLabel: function(cards) {
       if (this.__noResourcesFound) {
         let text = null;
-        switch (context) {
-          case "studiesAndFolders":
-          case "searchProjects":
-            text = this.tr("No Projects found");
+        switch (this.__resourceType) {
+          case "study": {
+            const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+            switch (studyBrowserContext) {
+              case "studiesAndFolders":
+              case "searchProjects":
+              case "trash":
+                text = this.tr("No Projects found");
+                break;
+              case "templates":
+              case "searchTemplates":
+                text = this.tr("No Templates found");
+                break;
+              case "publicTemplates":
+              case "searchPublicTemplates":
+                text = this.tr("No Public Projects found");
+                break;
+            }
             break;
-          case "templates":
-          case "searchTemplates":
-            text = this.tr("No Templates found");
-            break;
-          case "publicTemplates":
-          case "searchPublicTemplates":
-            text = this.tr("No Public Projects found");
-            break;
+          }
           case "template":
             text = this.tr("No Tutorials found");
             break;
