@@ -175,11 +175,6 @@ qx.Class.define("osparc.info.ServiceUtils", {
         alignY: "middle"
       }));
 
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
-        font: "text-13"
-      });
-      descriptionLayout.add(label);
-
       const description = new osparc.ui.markdown.Markdown();
       // display markdown link content if that's the case
       if (
@@ -197,8 +192,10 @@ qx.Class.define("osparc.info.ServiceUtils", {
             console.error(err);
             description.setValue(serviceData["description"]);
           });
-      } else {
+      } else if (serviceData["description"]) {
         description.setValue(serviceData["description"]);
+      } else {
+        description.setValue(this.tr("No description"));
       }
       descriptionLayout.add(description);
 

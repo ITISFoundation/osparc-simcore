@@ -1,0 +1,32 @@
+/*
+Create read-only role for ${POSTGRES_DB} database.
+
+This role can be used to give read-only access to the ${POSTGRES_DB} database
+to users.
+
+Permission grants inspired from: https://stackoverflow.com/questions/760210/how-do-you-create-a-read-only-user-in-postgresql/762649#762649
+IMPORTANT: must be executed while connected to the ${POSTGRES_DB} database
+           as it refers to public schema in that database.
+*/
+
+CREATE ROLE ${POSTGRES_DB}_readonly NOLOGIN;
+
+GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_DB}_readonly;
+
+-- https://stackoverflow.com/questions/17338621/what-does-grant-usage-on-schema-do-exactly
+GRANT USAGE ON SCHEMA public TO ${POSTGRES_DB}_readonly;
+
+-- Grant permissions for (existing) tables, sequences, functions
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${POSTGRES_DB}_readonly;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO ${POSTGRES_DB}_readonly;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO ${POSTGRES_DB}_readonly;
+
+-- Grant permissions for (future) tables, sequences, functions
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+   GRANT SELECT ON TABLES TO ${POSTGRES_DB}_readonly;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+   GRANT SELECT ON SEQUENCES TO ${POSTGRES_DB}_readonly;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+   GRANT EXECUTE ON FUNCTIONS TO ${POSTGRES_DB}_readonly;
+
+SELECT * FROM pg_roles WHERE rolname NOT LIKE 'pg_%';

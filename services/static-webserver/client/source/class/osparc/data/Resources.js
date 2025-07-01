@@ -610,7 +610,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           getPageFilteredSorted: {
             method: "GET",
-            url: statics.API + "/projects?type=template&template_type={templateType}&offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/projects?type=template&offset={offset}&limit={limit}&order_by={orderBy}&template_type={templateType}"
+          },
+          getPageSearchFilteredSorted: {
+            method: "GET",
+            url: statics.API + "/projects:search?type=template&offset={offset}&limit={limit}&order_by={orderBy}&template_type={templateType}&text={text}"
           },
         }
       },
