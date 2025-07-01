@@ -40,7 +40,7 @@ class SlideshowUI(TypedDict):
 
 
 class AnnotationUI(BaseModel):
-    type: Literal["note", "rect", "text"]
+    type: Literal["note", "rect", "text", "conversation"]
     color: Annotated[Color, PlainSerializer(Color.as_hex)]
     attributes: Annotated[dict, Field(description="svg attributes")]
 
@@ -70,6 +70,15 @@ class AnnotationUI(BaseModel):
                         "type": "text",
                         "color": "#0000FF",
                         "attributes": {"x": 415, "y": 100, "text": "Hey!"},
+                    },
+                    {
+                        "type": "conversation",
+                        "attributes": {
+                            "conversationId": 2,
+                            "x": 415,
+                            "y": 100,
+                            "title": "My chat",
+                        },
                     },
                 ]
             },
@@ -167,6 +176,15 @@ class StudyUI(OutputSchema):
                                     "text": "pppoo",
                                     "color": "#E9AEAB",
                                     "fontSize": 12,
+                                },
+                            },
+                            "cf94f068-259c-4192-89f9-b2a56d51249d": {
+                                "type": "conversation",
+                                "attributes": {
+                                    "conversationId": 2,
+                                    "x": 119,
+                                    "y": 223,
+                                    "title": "My chat",
                                 },
                             },
                         },
