@@ -58,7 +58,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
-    // OM here
     "window-popup-background": "rgba(225, 225, 225, 1)",
     "window-caption-background": "background-main",
     "window-caption-background-active": "background-main-3",

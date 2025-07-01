@@ -508,7 +508,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       return (
         this.getBlocked() === true || // It could be blocked by IN_USE or UNKNOWN_SERVICE
-        (this.isResourceType("study") && (studyBrowserContext === "trash")) // It could a trashed study
+        (this.isResourceType("study") && (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.TRASH)) // It could a trashed study
       );
     },
 
