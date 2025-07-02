@@ -97,7 +97,6 @@ async def cancel_async_job(
         job_id=task_id,
         job_id_data=_get_job_id_data(user_id, product_name),
     )
-    return
 
 
 @router.get("/{task_id}/result", response_model=TaskResult, name="get_async_job_result")
