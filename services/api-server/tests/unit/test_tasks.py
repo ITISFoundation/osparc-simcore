@@ -1,7 +1,8 @@
 from typing import Any
 
 import pytest
-from httpx import AsyncClient
+from fastapi import status
+from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.async_jobs_server import AsyncJobSideEffects
@@ -15,7 +16,9 @@ async def async_jobs_rpc_side_effects() -> Any:
 
 @pytest.fixture
 def mocked_async_jobs_rpc_api(
-    mocker: MockerFixture, async_jobs_rpc_side_effects: Any
+    mocker: MockerFixture,
+    async_jobs_rpc_side_effects: Any,
+    mocked_app_dependencies: None,
 ) -> dict[str, MockType]:
     """
     Mocks the catalog's simcore service RPC API for testing purposes.
@@ -46,10 +49,10 @@ def mocked_async_jobs_rpc_api(
 
 
 async def test_get_async_jobs(
-    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType]
+    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
 ):
 
-    response = await client.get("/v0/tasks")
-    assert response.status_code == 200
-    ApiServerEnvelope[list[TaskGet]].model_validate_json(response.json())
+    response = await client.get("/v0/tasks", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
     assert mocked_async_jobs_rpc_api["list_jobs"].called
