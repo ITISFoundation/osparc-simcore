@@ -1544,14 +1544,13 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: a previous unit-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      - name: a previous unit-test job failed or was cancelled
+        if: ${{ contains(join(needs.*.result, ','), 'failure') || contains(join(needs.*.result, ','), 'cancelled') }}
         run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
-          echo "${{ join(needs.*.result, ',') }}"
+          echo "::error title=ERROR::one of the unit-tests failed or was cancelled!"
           exit 1
       - name: all the previous unit-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') }}
         run: echo "::notice All good!"
 
   integration-test-webserver-01:
@@ -1876,13 +1875,13 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: a previous integration-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      - name: a previous integration-test job failed or was cancelled
+        if: ${{ contains(join(needs.*.result, ','), 'failure') || contains(join(needs.*.result, ','), 'cancelled') }}
         run: |
-          echo "::error title=ERROR::one of the integration-tests failed!"
+          echo "::error title=ERROR::one of the integration-tests failed or was cancelled!"
           exit 1
       - name: all the previous integration-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') }}
         run: echo "::notice All good!"
 
   system-test-public-api:
@@ -2111,13 +2110,13 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: a previous system-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      - name: a previous system-test job failed or was cancelled
+        if: ${{ contains(join(needs.*.result, ','), 'failure') || contains(join(needs.*.result, ','), 'cancelled') }}
         run: |
-          echo "::error title=ERROR::one of the system-tests failed!"
+          echo "::error title=ERROR::one of the system-tests failed or was cancelled!"
           exit 1
       - name: all the previous system-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') }}
         run: echo "::notice All good!"
 
   deploy:
