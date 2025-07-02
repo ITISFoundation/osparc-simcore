@@ -22,25 +22,20 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
     _buildLayout() {
       this._removeAll();
 
+      // Range defaults: today
       const defaultFrom = new Date();
-      // Range defaults
-      // from last 24h...
-      defaultFrom.setDate(defaultFrom.getDate() - 1);
-      // .. to now
       const defaultTo = new Date();
 
       this.__from = this.__addDateInput("From", defaultFrom);
       this.__until = this.__addDateInput("Until", defaultTo);
 
-      const lastDayBtn = new qx.ui.form.Button("Last 24h").set({
+      const lastDayBtn = new qx.ui.form.Button("Today").set({
         allowStretchY: false,
         alignY: "bottom"
       });
       lastDayBtn.addListener("execute", () => {
         const today = new Date();
-        const last24h = new Date(today);
-        last24h.setDate(today.getDate() - 1);
-        this.__from.setValue(last24h);
+        this.__from.setValue(today);
         this.__until.setValue(today);
       });
       this._add(lastDayBtn);
