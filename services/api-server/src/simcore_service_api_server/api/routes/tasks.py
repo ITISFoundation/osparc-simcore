@@ -17,6 +17,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
 
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.rabbitmq import get_rabbitmq_rpc_client
@@ -26,12 +27,11 @@ router = APIRouter()
 _logger = logging.getLogger(__name__)
 
 
-# Helper to build job_id_data from user context (for demo, expects user_id and product_name as query params)
 def _get_job_id_data(user_id: UserID, product_name: ProductName) -> AsyncJobNameData:
     return AsyncJobNameData(user_id=user_id, product_name=product_name)
 
 
-@router.get("", response_model=list[TaskGet])
+@router.get("", response_model=ApiServerEnvelope[list[TaskGet]])
 async def get_async_jobs(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
@@ -43,20 +43,21 @@ async def get_async_jobs(
         job_id_data=_get_job_id_data(user_id, product_name),
         filter_="",
     )
-    return [
+    data = [
         TaskGet(
-            task_id=str(job.job_id),
+            task_id=f"{job.job_id}",
             task_name=job.job_name,
             status_href=router.url_path_for(
-                "get_async_job_status", task_id=str(job.job_id)
+                "get_async_job_status", task_id=f"{job.job_id}"
             ),
-            abort_href=router.url_path_for("cancel_async_job", task_id=str(job.job_id)),
+            abort_href=router.url_path_for("cancel_async_job", task_id=f"{job.job_id}"),
             result_href=router.url_path_for(
-                "get_async_job_result", task_id=str(job.job_id)
+                "get_async_job_result", task_id=f"{job.job_id}"
             ),
         )
         for job in user_async_jobs
     ]
+    return ApiServerEnvelope(data=data)
 
 
 @router.get("/{task_id}", response_model=TaskStatus, name="get_async_job_status")
@@ -72,7 +73,7 @@ async def get_async_job_status(
         job_id=task_id,
         job_id_data=_get_job_id_data(user_id, product_name),
     )
-    _task_id = str(async_job_rpc_status.job_id)
+    _task_id = f"{async_job_rpc_status.job_id}"
     return TaskStatus(
         task_progress=TaskProgress(
             task_id=_task_id, percent=async_job_rpc_status.progress.percent_value
