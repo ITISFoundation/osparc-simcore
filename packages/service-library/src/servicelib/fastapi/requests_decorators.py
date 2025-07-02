@@ -95,7 +95,7 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
             ) from eg
 
         except* Exception as eg:
-            raise eg.exceptions[0]
+            raise eg.exceptions[0]  # pylint: disable=no-member
 
     return wrapper
 
