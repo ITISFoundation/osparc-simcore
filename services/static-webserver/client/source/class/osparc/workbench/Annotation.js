@@ -124,7 +124,9 @@ qx.Class.define("osparc.workbench.Annotation", {
           break;
         }
       }
+
       if (representation) {
+        // handle click events
         switch (this.getType()) {
           case this.self().TYPES.NOTE:
           case this.self().TYPES.RECT:
@@ -142,10 +144,13 @@ qx.Class.define("osparc.workbench.Annotation", {
             });
             break;
         }
+
+        // handle moving events
         osparc.wrapper.Svg.makeDraggable(representation);
         representation.on("dragstart", () => this.fireEvent("annotationStartedMoving"));
         representation.on("dragmove", () => this.fireEvent("annotationMoving"));
         representation.on("dragend", () => this.fireEvent("annotationStoppedMoving"));
+
         this.setRepresentation(representation);
       }
     },
