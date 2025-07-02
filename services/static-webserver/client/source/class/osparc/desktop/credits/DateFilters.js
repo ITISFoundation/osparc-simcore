@@ -29,16 +29,16 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
       this.__from = this.__addDateInput("From", defaultFrom);
       this.__until = this.__addDateInput("Until", defaultTo);
 
-      const lastDayBtn = new qx.ui.form.Button("Today").set({
+      const todayBtn = new qx.ui.form.Button("Today").set({
         allowStretchY: false,
         alignY: "bottom"
       });
-      lastDayBtn.addListener("execute", () => {
+      todayBtn.addListener("execute", () => {
         const today = new Date();
         this.__from.setValue(today);
         this.__until.setValue(today);
       });
-      this._add(lastDayBtn);
+      this._add(todayBtn);
 
       const lastWeekBtn = new qx.ui.form.Button("Last week").set({
         allowStretchY: false,
