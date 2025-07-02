@@ -15,6 +15,7 @@ from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.services import services_access_rights
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
@@ -183,3 +184,74 @@ def comp_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str,
         conn.execute(
             comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
         )
+
+
+@pytest.fixture
+def grant_service_access_rights(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[Callable[..., dict[str, Any]]]:
+    """Fixture to grant access rights on a service for a given group.
+
+    Creates a row in the services_access_rights table with the provided parameters and cleans up after the test.
+    """
+    created_entries: list[tuple[str, str, int, str]] = []
+
+    def creator(
+        *,
+        service_key: str,
+        service_version: str,
+        group_id: int = 1,
+        product_name: str = "osparc",
+        execute_access: bool = True,
+        write_access: bool = False,
+    ) -> dict[str, Any]:
+        values = {
+            "key": service_key,
+            "version": service_version,
+            "gid": group_id,
+            "product_name": product_name,
+            "execute_access": execute_access,
+            "write_access": write_access,
+        }
+
+        # Directly use SQLAlchemy to insert and retrieve the row
+        with postgres_db.begin() as conn:
+            # Insert the row
+            conn.execute(services_access_rights.insert().values(**values))
+
+            # Retrieve the inserted row
+            result = conn.execute(
+                sa.select(services_access_rights).where(
+                    sa.and_(
+                        services_access_rights.c.key == service_key,
+                        services_access_rights.c.version == service_version,
+                        services_access_rights.c.gid == group_id,
+                        services_access_rights.c.product_name == product_name,
+                    )
+                )
+            )
+            row = result.one()
+
+            # Track the entry for cleanup
+            created_entries.append(
+                (service_key, service_version, group_id, product_name)
+            )
+
+            # Convert row to dict
+            return dict(row._asdict())
+
+    yield creator
+
+    # Cleanup all created entries
+    with postgres_db.begin() as conn:
+        for key, version, gid, product in created_entries:
+            conn.execute(
+                services_access_rights.delete().where(
+                    sa.and_(
+                        services_access_rights.c.key == key,
+                        services_access_rights.c.version == version,
+                        services_access_rights.c.gid == gid,
+                        services_access_rights.c.product_name == product,
+                    )
+                )
+            )
