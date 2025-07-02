@@ -154,11 +154,25 @@ qx.Class.define("osparc.workbench.Annotation", {
     getRepresentationPosition: function() {
       const representation = this.getRepresentation();
       if (representation) {
-        const attrs = osparc.wrapper.Svg.getRectAttributes(representation);
-        return {
-          x: parseInt(attrs.x),
-          y: parseInt(attrs.y)
-        };
+        switch (this.getType()) {
+          case this.self().TYPES.RECT:
+          case this.self().TYPES.TEXT:
+          case this.self().TYPES.NOTE: {
+            const attrs = osparc.wrapper.Svg.getRectAttributes(representation);
+            return {
+              x: parseInt(attrs.x),
+              y: parseInt(attrs.y),
+            };
+          }
+          case this.self().TYPES.CONVERSATION: {
+            const x = representation.transform().x;
+            const y = representation.transform().y;
+            return {
+              x,
+              y,
+            };
+          }
+        }
       }
       return null;
     },
