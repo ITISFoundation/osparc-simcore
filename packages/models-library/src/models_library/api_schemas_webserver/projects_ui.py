@@ -41,7 +41,7 @@ class SlideshowUI(TypedDict):
 
 class AnnotationUI(BaseModel):
     type: Literal["note", "rect", "text", "conversation"]
-    color: Annotated[Color, PlainSerializer(Color.as_hex)]
+    color: Annotated[Color | None, PlainSerializer(Color.as_hex)] = None
     attributes: Annotated[dict, Field(description="svg attributes")]
 
     @staticmethod
