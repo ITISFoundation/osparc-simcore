@@ -43,7 +43,7 @@ async def create_project_conversation(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.create_conversation(
         app,
@@ -70,7 +70,7 @@ async def list_project_conversations(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="write",
+        permission="read",
     )
     return await conversations_service.list_conversations_for_project(
         app,
