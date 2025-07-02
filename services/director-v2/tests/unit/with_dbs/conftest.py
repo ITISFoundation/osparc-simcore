@@ -293,6 +293,7 @@ async def create_comp_run_snapshot_tasks(
                     project_id=project.uuid,
                     node_id=NodeID(node_id),
                 ),
+                "state": StateType.PUBLISHED.value,
             }
             task_config.update(**overrides_kwargs)
             async with sqlalchemy_async_engine.begin() as conn:
