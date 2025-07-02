@@ -8458,7 +8458,7 @@ components:
       - stats
       - limits
       title: Activity
-    AnnotationUI:
+    AnnotationUI-Input:
       properties:
         type:
           type: string
@@ -8466,10 +8466,13 @@ components:
           - note
           - rect
           - text
+          - conversation
           title: Type
         color:
-          type: string
-          format: color
+          anyOf:
+          - type: string
+            format: color
+          - type: 'null'
           title: Color
         attributes:
           type: object
@@ -8479,7 +8482,29 @@ components:
       type: object
       required:
       - type
-      - color
+      - attributes
+      title: AnnotationUI
+    AnnotationUI-Output:
+      properties:
+        type:
+          type: string
+          enum:
+          - note
+          - rect
+          - text
+          - conversation
+          title: Type
+        color:
+          type: string
+          title: Color
+        attributes:
+          type: object
+          title: Attributes
+          description: svg attributes
+      additionalProperties: false
+      type: object
+      required:
+      - type
       - attributes
       title: AnnotationUI
     Announcement:
