@@ -63,102 +63,6 @@ qx.Class.define("osparc.study.Conversations", {
       }, this);
       return win;
     },
-
-    addConversation: function(studyId, name = "new 1", type = this.TYPES.PROJECT_STATIC) {
-      const params = {
-        url: {
-          studyId,
-        },
-        data: {
-          name,
-          type,
-        }
-      };
-      return osparc.data.Resources.fetch("conversations", "addConversation", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    deleteConversation: function(studyId, conversationId) {
-      const params = {
-        url: {
-          studyId,
-          conversationId,
-        },
-      };
-      return osparc.data.Resources.fetch("conversations", "deleteConversation", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    renameConversation: function(studyId, conversationId, name) {
-      const params = {
-        url: {
-          studyId,
-          conversationId,
-        },
-        data: {
-          name,
-        }
-      };
-      return osparc.data.Resources.fetch("conversations", "renameConversation", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    addMessage: function(studyId, conversationId, message) {
-      const params = {
-        url: {
-          studyId,
-          conversationId,
-        },
-        data: {
-          "content": message,
-          "type": "MESSAGE",
-        }
-      };
-      return osparc.data.Resources.fetch("conversations", "addMessage", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    editMessage: function(studyId, conversationId, messageId, message) {
-      const params = {
-        url: {
-          studyId,
-          conversationId,
-          messageId,
-        },
-        data: {
-          "content": message,
-        },
-      };
-      return osparc.data.Resources.fetch("conversations", "editMessage", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    deleteMessage: function(message) {
-      const params = {
-        url: {
-          studyId: message["projectId"],
-          conversationId: message["conversationId"],
-          messageId: message["messageId"],
-        },
-      };
-      return osparc.data.Resources.fetch("conversations", "deleteMessage", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    notifyUser: function(studyId, conversationId, userGroupId) {
-      const params = {
-        url: {
-          studyId,
-          conversationId,
-        },
-        data: {
-          "content": userGroupId.toString(), // eventually the backend will accept integers
-          "type": "NOTIFICATION",
-        }
-      };
-      return osparc.data.Resources.fetch("conversations", "addMessage", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
   },
 
   members: {
@@ -335,7 +239,7 @@ qx.Class.define("osparc.study.Conversations", {
           enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
         });
         newConversationButton.addListener("execute", () => {
-          osparc.study.Conversations.addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
+          osparc.store.Conversations.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
             .then(conversationDt => {
               this.__addConversationPage(conversationDt);
               const newConversationPage = this.__getConversation(conversationDt["conversationId"]);

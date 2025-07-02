@@ -90,11 +90,11 @@ qx.Class.define("osparc.conversation.Conversation", {
           titleEditor.close();
           const newLabel = e.getData()["newLabel"];
           if (this.getConversationId()) {
-            osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
+            osparc.store.Conversations.getInstance().renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
               .then(() => this.renameConversation(newLabel));
           } else {
             // create new conversation first
-            osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
+            osparc.store.Conversations.getInstance().addConversation(this.__studyData["uuid"], newLabel)
               .then(data => {
                 this.setConversationId(data["conversationId"]);
                 this.getChildControl("button").setLabel(newLabel);
@@ -117,7 +117,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       });
       closeButton.addListener("execute", () => {
         const deleteConversation = () => {
-          osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
+          osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId())
             .then(() => this.fireEvent("conversationDeleted"));
         }
         if (this.__messagesList.getChildren().length === 0) {
