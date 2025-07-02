@@ -8,6 +8,7 @@ import time
 from collections.abc import Iterable
 
 import pytest
+import pytest_asyncio
 from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.aiopg_utils import DatabaseError
 from tenacity import retry
@@ -24,11 +25,12 @@ async def fails_to_reach_pg_db():
     raise DatabaseError
 
 
-@pytest.fixture
-def incidents_manager(event_loop) -> dict:
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def incidents_manager() -> dict:
     incidents = []
     monitor_slow_callbacks.enable(slow_duration_secs=0.2, incidents=incidents)
 
+    event_loop = asyncio.get_running_loop()
     asyncio.ensure_future(slow_task(0.3), loop=event_loop)  # noqa: RUF006
     asyncio.ensure_future(slow_task(0.3), loop=event_loop)  # noqa: RUF006
     asyncio.ensure_future(slow_task(0.4), loop=event_loop)  # noqa: RUF006

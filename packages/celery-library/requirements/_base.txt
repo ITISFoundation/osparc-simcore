@@ -225,7 +225,7 @@ psutil==7.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 pycryptodome==3.23.0
     # via stream-zip
-pydantic==2.11.4
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -255,7 +255,7 @@ pydantic==2.11.4
     #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.4
+pydantic-extra-types==2.10.5
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in

@@ -28,24 +28,28 @@ packaging==24.2
     #   -c requirements/_base.txt
     #   pytest
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 psycopg2-binary==2.9.10
     # via
     #   -c requirements/_base.txt
     #   aiopg
     #   sqlalchemy
-pytest==8.3.5
+pygments==2.19.2
+    # via pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-instafail
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.0
+pytest-docker==3.2.2
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in

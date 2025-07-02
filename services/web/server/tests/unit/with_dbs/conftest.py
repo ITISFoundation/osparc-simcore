@@ -205,7 +205,7 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-@pytest_asyncio.fixture(loop_scope="function")
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def web_server(
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,

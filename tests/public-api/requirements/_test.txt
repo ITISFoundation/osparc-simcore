@@ -64,11 +64,13 @@ propcache==0.3.0
     # via
     #   aiohttp
     #   yarl
-pytest==8.3.5
+pygments==2.19.2
+    # via pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
 python-dotenv==1.0.1
     # via -r requirements/_test.in

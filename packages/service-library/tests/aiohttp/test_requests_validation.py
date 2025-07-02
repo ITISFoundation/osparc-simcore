@@ -7,6 +7,7 @@ from collections.abc import Callable
 from uuid import UUID
 
 import pytest
+import pytest_asyncio
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from common_library.json_serialization import json_dumps
@@ -98,8 +99,8 @@ class MyBody(BaseModel):
         return cls(x=faker.pyint(), y=faker.pybool(), z=Sub.create_fake(faker))
 
 
-@pytest.fixture
-def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def client(aiohttp_client: Callable, faker: Faker) -> TestClient:
     """
     Some app that:
 
@@ -162,7 +163,7 @@ def client(event_loop, aiohttp_client: Callable, faker: Faker) -> TestClient:
     # adds handler
     app.add_routes([web.get("/projects/{project_uuid}", _handler)])
 
-    return event_loop.run_until_complete(aiohttp_client(app))
+    return await aiohttp_client(app)
 
 
 @pytest.fixture

@@ -518,7 +518,7 @@ pycparser==2.22
     # via cffi
 pycryptodome==3.21.0
     # via stream-zip
-pydantic==2.10.3
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -581,9 +581,9 @@ pydantic==2.10.3
     #   fastapi-pagination
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.0
+pydantic-extra-types==2.10.5
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -603,7 +603,7 @@ pydantic-extra-types==2.10.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-pydantic-settings==2.6.1
+pydantic-settings==2.7.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -858,6 +858,9 @@ typing-extensions==4.12.2
     #   pydantic-extra-types
     #   rich-toolkit
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 urllib3==2.2.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
