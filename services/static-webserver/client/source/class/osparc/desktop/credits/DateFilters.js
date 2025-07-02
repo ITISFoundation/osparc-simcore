@@ -23,8 +23,10 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
       this._removeAll();
 
       const defaultFrom = new Date();
-      // Range defaults to last 24h
-      defaultFrom.defaultFrom(defaultFrom.getDate() - 1);
+      // Range defaults
+      // from last 24h...
+      defaultFrom.setDate(defaultFrom.getDate() - 1);
+      // .. to now
       const defaultTo = new Date();
 
       this.__from = this.__addDateInput("From", defaultFrom);
