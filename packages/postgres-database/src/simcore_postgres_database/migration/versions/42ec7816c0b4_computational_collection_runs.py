@@ -1,7 +1,7 @@
 """computational collection runs
 
 Revision ID: 42ec7816c0b4
-Revises: 4f6fd2586491
+Revises: d159ac30983c
 Create Date: 2025-07-01 13:30:02.736058+00:00
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "42ec7816c0b4"
-down_revision = "4f6fd2586491"
+down_revision = "d159ac30983c"
 branch_labels = None
 depends_on = None
 
@@ -54,6 +54,11 @@ def upgrade():
     )
     op.add_column(
         "comp_runs", sa.Column("collection_run_id", sa.String(), nullable=False)
+    )
+    op.create_unique_constraint(
+        "comp_runs_project_collection_run_id_unique_constraint",
+        "comp_runs",
+        ["project_uuid", "collection_run_id"],
     )
 
     # Data migration: Create collection run records for existing comp_runs
