@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.async_jobs_server import AsyncJobSideEffects
 from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
@@ -54,5 +54,24 @@ async def test_get_async_jobs(
 
     response = await client.get("/v0/tasks", auth=auth)
     assert response.status_code == status.HTTP_200_OK
-    ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
     assert mocked_async_jobs_rpc_api["list_jobs"].called
+    result = ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
+    assert len(result.data) > 0
+    assert all(isinstance(task, TaskGet) for task in result.data)
+    task = result.data[0]
+    assert task.abort_href == f"/v0/tasks/{task.task_id}:cancel"
+    assert task.result_href == f"/v0/tasks/{task.task_id}/result"
+    assert task.status_href == f"/v0/tasks/{task.task_id}"
+
+
+async def test_get_async_jobs_status(
+    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
+):
+    task_id = "123e4567-e89b-12d3-a456-426614174000"
+    response = await client.get(
+        f"/v0/tasks/{task_id}/status", auth=auth, follow_redirects=True
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert mocked_async_jobs_rpc_api["status"].called
+    assert mocked_async_jobs_rpc_api["status"].call_args[1]["job_id"] == task_id
+    TaskStatus.model_validate_json(response.text)

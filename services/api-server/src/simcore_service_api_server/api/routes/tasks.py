@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
@@ -15,6 +15,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
@@ -33,6 +34,7 @@ def _get_job_id_data(user_id: UserID, product_name: ProductName) -> AsyncJobName
 
 @router.get("", response_model=ApiServerEnvelope[list[TaskGet]])
 async def get_async_jobs(
+    app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
@@ -43,15 +45,18 @@ async def get_async_jobs(
         job_id_data=_get_job_id_data(user_id, product_name),
         filter_="",
     )
+    app_router = app.router
     data = [
         TaskGet(
             task_id=f"{job.job_id}",
             task_name=job.job_name,
-            status_href=router.url_path_for(
+            status_href=app_router.url_path_for(
                 "get_async_job_status", task_id=f"{job.job_id}"
             ),
-            abort_href=router.url_path_for("cancel_async_job", task_id=f"{job.job_id}"),
-            result_href=router.url_path_for(
+            abort_href=app_router.url_path_for(
+                "cancel_async_job", task_id=f"{job.job_id}"
+            ),
+            result_href=app_router.url_path_for(
                 "get_async_job_result", task_id=f"{job.job_id}"
             ),
         )
@@ -84,7 +89,7 @@ async def get_async_job_status(
 
 
 @router.delete(
-    "/{task_id}/cancel", status_code=status.HTTP_204_NO_CONTENT, name="cancel_async_job"
+    "/{task_id}:cancel", status_code=status.HTTP_204_NO_CONTENT, name="cancel_async_job"
 )
 async def cancel_async_job(
     task_id: AsyncJobId,
