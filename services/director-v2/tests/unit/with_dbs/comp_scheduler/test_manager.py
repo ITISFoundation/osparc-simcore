@@ -18,6 +18,7 @@ from unittest import mock
 import pytest
 from _helpers import PublishedProject, assert_comp_runs, assert_comp_runs_empty
 from fastapi import FastAPI
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectAtDB
 from models_library.projects_state import RunningState
 from pytest_mock.plugin import MockerFixture
@@ -146,6 +147,7 @@ async def test_schedule_all_pipelines(
     sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     scheduler_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     assert published_project.project.prj_owner
@@ -156,6 +158,7 @@ async def test_schedule_all_pipelines(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
     # this directly schedule a new pipeline
     scheduler_rabbit_client_parser.assert_called_once_with(
@@ -247,6 +250,7 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
     run_metadata: RunMetadataDict,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    fake_collection_run_id: CollectionRunID,
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     assert published_project.project.prj_owner
@@ -257,6 +261,7 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
     # this directly schedule a new pipeline
     scheduler_rabbit_client_parser.assert_called_once_with(
@@ -327,6 +332,7 @@ async def test_empty_pipeline_is_not_scheduled(
     sqlalchemy_async_engine: AsyncEngine,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     caplog: pytest.LogCaptureFixture,
+    fake_collection_run_id: CollectionRunID,
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     user = create_registered_user()
@@ -340,6 +346,7 @@ async def test_empty_pipeline_is_not_scheduled(
             project_id=empty_project.uuid,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
+            collection_run_id=fake_collection_run_id,
         )
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     scheduler_rabbit_client_parser.assert_not_called()
@@ -355,6 +362,7 @@ async def test_empty_pipeline_is_not_scheduled(
             project_id=empty_project.uuid,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
+            collection_run_id=fake_collection_run_id,
         )
     assert len(caplog.records) == 1
     assert "no computational dag defined" in caplog.records[0].message

@@ -587,7 +587,7 @@ async def test_list_group_by_collection_run_id(
     total_count, items = await CompRunsRepository(
         sqlalchemy_async_engine
     ).list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         offset=0,
         limit=10,
@@ -682,7 +682,7 @@ async def test_list_group_by_collection_run_id_with_mixed_states_returns_started
 
     # Test the list_group_by_collection_run_id function
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         offset=0,
         limit=10,
@@ -748,7 +748,7 @@ async def test_list_group_by_collection_run_id_all_success_returns_success(
 
     # Test the function
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         offset=0,
         limit=10,
@@ -815,7 +815,7 @@ async def test_list_group_by_collection_run_id_with_failed_returns_failed(
 
     # Test the function
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         offset=0,
         limit=10,
@@ -880,7 +880,7 @@ async def test_list_group_by_collection_run_id_with_aborted_returns_aborted(
 
     # Test the function
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         offset=0,
         limit=10,
@@ -945,7 +945,7 @@ async def test_list_group_by_collection_run_id_with_unknown_returns_unknown(
 
     # Test the function
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         offset=0,
         limit=10,
@@ -1004,7 +1004,7 @@ async def test_list_group_by_collection_run_id_with_project_filter(
 
     # Test with project filter for only first two projects
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
         project_ids=[
             published_project_1.project.uuid,
@@ -1051,7 +1051,7 @@ async def test_list_group_by_collection_run_id_pagination(
 
     # Test first page
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project.user["id"],
         offset=0,
         limit=2,
@@ -1062,7 +1062,7 @@ async def test_list_group_by_collection_run_id_pagination(
 
     # Test second page
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project.user["id"],
         offset=2,
         limit=2,
@@ -1073,7 +1073,7 @@ async def test_list_group_by_collection_run_id_pagination(
 
     # Test last page
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_project.user["id"],
         offset=4,
         limit=2,
@@ -1092,7 +1092,7 @@ async def test_list_group_by_collection_run_id_empty_result(
     repo = CompRunsRepository(sqlalchemy_async_engine)
 
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=fake_user_id,
         offset=0,
         limit=10,
@@ -1143,7 +1143,7 @@ async def test_list_group_by_collection_run_id_with_different_users(
 
     # Test for user1 - should only see their own runs
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=user1["id"],
         offset=0,
         limit=10,
@@ -1158,7 +1158,7 @@ async def test_list_group_by_collection_run_id_with_different_users(
 
     # Test for user2 - should only see their own runs
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=user2["id"],
         offset=0,
         limit=10,
@@ -1217,7 +1217,7 @@ async def test_list_group_by_collection_run_id_state_priority_precedence(
 
     # Test the function
     total_count, items = await repo.list_group_by_collection_run_id(
-        product_name=run_metadata.get("product_name", "osparc"),
+        product_name=run_metadata.get("product_name"),
         user_id=published_projects[0].user["id"],
         offset=0,
         limit=10,
