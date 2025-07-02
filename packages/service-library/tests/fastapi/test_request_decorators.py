@@ -5,7 +5,6 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -18,29 +17,24 @@ POLLER_CLEANUP_DELAY_S = 100.0
 @pytest.fixture
 def long_running_poller_mock(
     monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[asyncio.Event, Request, Any], Awaitable]:
+) -> Callable[[asyncio.Event, Request], Awaitable]:
 
-    async def _mock_disconnect_poller(
-        close_event: asyncio.Event, request: Request, result: Any
-    ):
+    async def _mock_disconnect_poller(close_event: asyncio.Event, request: Request):
         _mock_disconnect_poller.called = True
         while not await request.is_disconnected():
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(2)
             if close_event.is_set():
-                # Simulate a long cleanup procedure
-                await asyncio.sleep(POLLER_CLEANUP_DELAY_S)
                 break
-        return result
 
     monkeypatch.setattr(
-        "servicelib.fastapi.requests_decorators._disconnect_poller",
+        "servicelib.fastapi.requests_decorators._disconnect_poller_for_task_group",
         _mock_disconnect_poller,
     )
     return _mock_disconnect_poller
 
 
 async def test_decorator_waits_for_poller_cleanup(
-    long_running_poller_mock: Callable[[asyncio.Event, Request, Any], Awaitable],
+    long_running_poller_mock: Callable[[asyncio.Event, Request], Awaitable],
 ):
     """
     Tests that the decorator's wrapper waits for the poller task to finish
