@@ -82,7 +82,9 @@ typing-extensions==4.13.0
     #   -c requirements/_base.txt
     #   anyio
 tzdata==2025.2
-    # via faker
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 urllib3==2.3.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
