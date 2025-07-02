@@ -1,12 +1,15 @@
 from typing import Any
 
 import pytest
+from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.async_jobs_server import AsyncJobSideEffects
 from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
+
+_faker = Faker()
 
 
 @pytest.fixture
@@ -67,7 +70,7 @@ async def test_get_async_jobs(
 async def test_get_async_jobs_status(
     client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
 ):
-    task_id = "123e4567-e89b-12d3-a456-426614174000"
+    task_id = f"{_faker.uuid4()}"
     response = await client.get(f"/v0/tasks/{task_id}", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     assert mocked_async_jobs_rpc_api["status"].called
