@@ -12,6 +12,7 @@ comp_run_collections = sa.Table(
     sa.Column(
         "collection_run_id",
         UUID(as_uuid=True),
+        server_default=sa.text("gen_random_uuid()"),
         nullable=False,
         primary_key=True,
     ),

@@ -30,7 +30,7 @@ async def create_comp_run_collection(
             created=func.now(),
             modified=func.now(),
         )
-        .returning(comp_run_collections.c.collection_id)
+        .returning(comp_run_collections.c.collection_run_id)
     )
     collection_id_tuple: tuple[UUID] = await result.first()
     return TypeAdapter(CollectionRunID).validate_python(collection_id_tuple[0])

@@ -89,7 +89,7 @@ async def start_computation(request: web.Request) -> web.Response:
     )
     group_id_or_none = custom_metadata.get("group_id")
 
-    comp_run_collection: CompRunCollectionDBGet | None
+    comp_run_collection: CompRunCollectionDBGet | None = None
     if group_id_or_none:
         comp_run_collection = await get_comp_run_collection_or_none_by_client_generated_id(
             request.app, client_generated_id=group_id_or_none  # type: ignore
@@ -109,7 +109,7 @@ async def start_computation(request: web.Request) -> web.Response:
     if group_id_or_none in {None, "", "00000000-0000-0000-0000-000000000000"}:
         generated_by_system = True
         client_or_system_generated_id = (
-            f"system-generated-{path_params.project_id}{uuid.uuid4}"
+            f"system-generated/{path_params.project_id}/{uuid.uuid4()}"
         )
     else:
         # assert isinstance(group_id_or_none, str)  # nosec
@@ -118,7 +118,7 @@ async def start_computation(request: web.Request) -> web.Response:
     group_name = custom_metadata.get("group_name", "No Group Name")
     # job_name_or_none = custom_metadata.get("job_name")
 
-    collection_id = await create_comp_run_collection(
+    collection_run_id = await create_comp_run_collection(
         request.app,
         client_or_system_generated_id=client_or_system_generated_id,
         client_or_system_generated_display_name=group_name,  # type: ignore
@@ -132,7 +132,7 @@ async def start_computation(request: web.Request) -> web.Response:
         "simcore_user_agent": simcore_user_agent,
         "use_on_demand_clusters": group_properties.use_on_demand_clusters,
         "wallet_info": wallet_info,
-        "collection_id": collection_id,
+        "collection_run_id": collection_run_id,
     }
 
     run_policy = get_project_run_policy(request.app)

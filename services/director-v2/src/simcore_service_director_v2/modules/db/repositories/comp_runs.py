@@ -391,8 +391,8 @@ class CompRunsRepository(BaseRepository):
             comp_runs.c.collection_run_id,
             sa.func.array_agg(comp_runs.c.project_uuid).label("project_ids"),
             sa.func.array_agg(comp_runs.c.result).label("states"),
-            # For simplicity, we use min here:
-            sa.func.min(comp_runs.c.metadata).label("info"),
+            # For simplicity, we use any metadata from the collection (first one in aggregation order):
+            sa.literal_column("(jsonb_agg(comp_runs.metadata))[1]").label("info"),
             sa.func.min(comp_runs.c.created).label("submitted_at"),
             sa.func.min(comp_runs.c.started).label("started_at"),
             sa.func.min(comp_runs.c.run_id).label("min_run_id"),
@@ -416,7 +416,7 @@ class CompRunsRepository(BaseRepository):
             )
 
         base_select_query_with_group_by = base_select_query.group_by(
-            comp_runs.c.group_by_flag
+            comp_runs.c.collection_run_id
         )
 
         count_query = sa.select(sa.func.count()).select_from(
@@ -441,7 +441,7 @@ class CompRunsRepository(BaseRepository):
                         collection_run_id=row["collection_run_id"],
                         project_ids=row["project_ids"],
                         state=resolved_state,
-                        info=row["info"],
+                        info={} if row["info"] is None else row["info"],
                         submitted_at=row["submitted_at"],
                         started_at=row["started_at"],
                         ended_at=row["ended_at"],
@@ -475,7 +475,7 @@ class CompRunsRepository(BaseRepository):
                         metadata=jsonable_encoder(metadata),
                         use_on_demand_clusters=use_on_demand_clusters,
                         dag_adjacency_list=dag_adjacency_list,
-                        collection_run_id=collection_run_id,
+                        collection_run_id=f"{collection_run_id}",
                     )
                     .returning(literal_column("*"))
                 )
