@@ -6,10 +6,9 @@ from models_library.api_schemas_notifications import NOTIFICATIONS_RPC_NAMESPACE
 from servicelib.rabbitmq import RPCRouter
 
 from ...clients.rabbitmq import get_rabbitmq_rpc_server
+from . import _notifications
 
-ROUTERS: list[RPCRouter] = [
-    # import and use all routers here
-]
+ROUTERS: list[RPCRouter] = [_notifications.router]
 
 
 async def rpc_api_routes_lifespan(app: FastAPI) -> AsyncIterator[State]:
