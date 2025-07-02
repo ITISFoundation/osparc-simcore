@@ -46,7 +46,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
     WIDTH: 350,
     TIME_RANGES: [{
       key: 1,
-      label: "Today"
+      label: "Last 24h"
     }, {
       key: 7,
       label: "Last week"

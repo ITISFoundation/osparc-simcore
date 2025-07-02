@@ -21,11 +21,28 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
   members: {
     _buildLayout() {
       this._removeAll();
-      const defaultFrom = new Date()
-      defaultFrom.setMonth(defaultFrom.getMonth() - 1)
-      // Range defaults to previous month
+
+      const defaultFrom = new Date();
+      // Range defaults to last 24h
+      defaultFrom.defaultFrom(today.getDate() - 1);
+      const defaultTo = new Date();
+
       this.__from = this.__addDateInput("From", defaultFrom);
-      this.__until = this.__addDateInput("Until");
+      this.__until = this.__addDateInput("Until", defaultTo);
+
+      const lastDayBtn = new qx.ui.form.Button("Last 24h").set({
+        allowStretchY: false,
+        alignY: "bottom"
+      });
+      lastDayBtn.addListener("execute", () => {
+        const today = new Date();
+        const last24h = new Date(today);
+        last24h.setDate(today.getDate() - 1);
+        this.__from.setValue(last24h);
+        this.__until.setValue(today);
+      });
+      this._add(lastDayBtn);
+
       const lastWeekBtn = new qx.ui.form.Button("Last week").set({
         allowStretchY: false,
         alignY: "bottom"
@@ -38,6 +55,7 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
         this.__until.setValue(today);
       });
       this._add(lastWeekBtn);
+
       const lastMonthBtn = new qx.ui.form.Button("Last month").set({
         allowStretchY: false,
         alignY: "bottom"
@@ -50,6 +68,7 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
         this.__until.setValue(today);
       });
       this._add(lastMonthBtn);
+
       const lastYearBtn = new qx.ui.form.Button("Last year").set({
         allowStretchY: false,
         alignY: "bottom"
