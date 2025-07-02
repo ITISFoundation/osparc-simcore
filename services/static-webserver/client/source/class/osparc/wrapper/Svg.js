@@ -300,10 +300,10 @@ qx.Class.define("osparc.wrapper.Svg", {
         .font({
           size: iconSize
         })
-        .move(padding, (bubbleHeight - iconSize) / 2)
         .attr({
           cursor: "pointer"
-        });
+        })
+        .move(padding, (bubbleHeight - iconSize) / 2);
       bubble.add(icon);
 
       // Title text
@@ -315,6 +315,9 @@ qx.Class.define("osparc.wrapper.Svg", {
           size: titleFontSize,
           family: defaultFont["family"],
           anchor: 'start'
+        })
+        .attr({
+          cursor: "pointer"
         })
         .move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
       bubble.add(label);

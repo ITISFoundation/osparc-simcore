@@ -125,11 +125,19 @@ qx.Class.define("osparc.workbench.Annotation", {
         }
       }
       if (representation) {
+        switch (this.getType()) {
+          case this.self().TYPES.NOTE:
+          case this.self().TYPES.RECT:
+          case this.self().TYPES.TEXT:
+            representation.node.addEventListener("click", e => {
+              this.fireDataEvent("annotationClicked", e.ctrlKey);
+              e.stopPropagation();
+            }, this);
+            break;
+          case this.self().TYPES.CONVERSATION:
+            break;
+        }
         osparc.wrapper.Svg.makeDraggable(representation);
-        representation.node.addEventListener("click", e => {
-          this.fireDataEvent("annotationClicked", e.ctrlKey);
-          e.stopPropagation();
-        }, this);
         representation.on("dragstart", () => this.fireEvent("annotationStartedMoving"));
         representation.on("dragmove", () => this.fireEvent("annotationMoving"));
         representation.on("dragend", () => this.fireEvent("annotationStoppedMoving"));

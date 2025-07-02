@@ -523,7 +523,13 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addAnnotationListeners: function(annotation) {
       annotation.addListener("annotationStartedMoving", () => {
-        this.__selectAnnotation(annotation);
+        if ([
+          osparc.workbench.Annotation.TYPES.NOTE,
+          osparc.workbench.Annotation.TYPES.RECT,
+          osparc.workbench.Annotation.TYPES.TEXT,
+        ].includes(annotation.getType())) {
+          this.__selectAnnotation(annotation);
+        }
         this.__itemStartedMoving();
       }, this);
 
