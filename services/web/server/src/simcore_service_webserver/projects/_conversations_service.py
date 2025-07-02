@@ -70,7 +70,7 @@ async def list_project_conversations(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.list_conversations_for_project(
         app,
@@ -95,7 +95,7 @@ async def update_project_conversation(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.update_conversation(
         app,
@@ -118,7 +118,7 @@ async def delete_project_conversation(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     await conversations_service.delete_conversation(
         app,
@@ -170,7 +170,7 @@ async def create_project_conversation_message(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.create_message(
         app,
@@ -224,7 +224,7 @@ async def update_project_conversation_message(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.update_message(
         app,
@@ -249,7 +249,7 @@ async def delete_project_conversation_message(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     await conversations_service.delete_message(
         app,
