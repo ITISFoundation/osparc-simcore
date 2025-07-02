@@ -76,3 +76,23 @@ async def test_get_async_jobs_status(
     assert mocked_async_jobs_rpc_api["status"].called
     assert f"{mocked_async_jobs_rpc_api['status'].call_args[1]['job_id']}" == task_id
     TaskStatus.model_validate_json(response.text)
+
+
+async def test_cancel_async_job(
+    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
+):
+    task_id = f"{_faker.uuid4()}"
+    response = await client.post(f"/v0/tasks/{task_id}:cancel", auth=auth)
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert mocked_async_jobs_rpc_api["cancel"].called
+    assert f"{mocked_async_jobs_rpc_api['cancel'].call_args[1]['job_id']}" == task_id
+
+
+async def test_get_async_job_result(
+    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
+):
+    task_id = f"{_faker.uuid4()}"
+    response = await client.get(f"/v0/tasks/{task_id}/result", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    assert mocked_async_jobs_rpc_api["result"].called
+    assert f"{mocked_async_jobs_rpc_api['result'].call_args[1]['job_id']}" == task_id

@@ -88,7 +88,7 @@ async def get_async_job_status(
     )
 
 
-@router.delete(
+@router.post(
     "/{task_id}:cancel", status_code=status.HTTP_204_NO_CONTENT, name="cancel_async_job"
 )
 async def cancel_async_job(

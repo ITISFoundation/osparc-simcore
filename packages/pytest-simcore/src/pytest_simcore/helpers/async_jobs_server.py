@@ -17,7 +17,7 @@ class AsyncJobSideEffects:
     @validate_call(config={"arbitrary_types_allowed": True})
     async def cancel(
         self,
-        rabbitmq_rpc_client: RabbitMQRPCClient,
+        rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
