@@ -116,8 +116,8 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
             const trItem = new qx.ui.form.ListItem(tr.label, null, tr.key);
             control.add(trItem);
           });
-          // default one week
-          const found = control.getSelectables().find(trItem => trItem.getModel() === 7);
+          // default last 24h
+          const found = control.getSelectables().find(trItem => trItem.getModel() === 1);
           if (found) {
             control.setSelection([found]);
           }
