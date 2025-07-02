@@ -310,7 +310,7 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       "conversations": {
-        useCache: false,
+        useCache: false, // It has its own cache handler
         endpoints: {
           addConversation: {
             method: "POST",
