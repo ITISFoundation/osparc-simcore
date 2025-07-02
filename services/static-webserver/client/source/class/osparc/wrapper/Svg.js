@@ -358,6 +358,8 @@ qx.Class.define("osparc.wrapper.Svg", {
 
       bubble.back();
 
+      bubble["clickables"] = [icon, label];
+
       return bubble;
     },
 

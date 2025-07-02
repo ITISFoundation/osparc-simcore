@@ -135,6 +135,11 @@ qx.Class.define("osparc.workbench.Annotation", {
             }, this);
             break;
           case this.self().TYPES.CONVERSATION:
+            representation["clickables"].forEach(clickable => {
+              clickable.click(() => {
+                this.fireDataEvent("annotationClicked", false);
+              }, this);
+            });
             break;
         }
         osparc.wrapper.Svg.makeDraggable(representation);
