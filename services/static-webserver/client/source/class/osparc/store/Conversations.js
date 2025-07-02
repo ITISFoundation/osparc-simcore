@@ -22,11 +22,31 @@ qx.Class.define("osparc.store.Conversations", {
   construct: function() {
     this.base(arguments);
 
-    this.__pricingPlansCached = [];
+    this.__projectConversations = {};
   },
 
   members: {
-    __pricingPlansCached: null,
+    __projectConversations: null,
+
+    getConversations: function(studyId) {
+      const params = {
+        url: {
+          studyId,
+          offset: 0,
+          limit: 42,
+        }
+      };
+      return osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
+        .then(conversations => {
+          if (conversations.length) {
+            // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
+            conversations.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
+          }
+          // OM add to cache
+          return conversations;
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
 
     addConversation: function(studyId, name = "new 1", type = this.TYPES.PROJECT_STATIC) {
       const params = {
@@ -39,6 +59,7 @@ qx.Class.define("osparc.store.Conversations", {
         }
       };
       return osparc.data.Resources.fetch("conversations", "addConversation", params)
+        .then
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 

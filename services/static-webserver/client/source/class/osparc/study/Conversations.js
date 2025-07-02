@@ -155,18 +155,9 @@ qx.Class.define("osparc.study.Conversations", {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      const params = {
-        url: {
-          studyId: studyData["uuid"],
-          offset: 0,
-          limit: 42,
-        }
-      };
-      osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
+      osparc.store.Conversations.getInstance().getConversations(studyData["uuid"])
         .then(conversations => {
           if (conversations.length) {
-            // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
-            conversations.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
             conversations.forEach(conversation => this.__addConversationPage(conversation));
             if (this.__openConversationId) {
               const conversationsLayout = this.getChildControl("conversations-layout");
@@ -180,7 +171,6 @@ qx.Class.define("osparc.study.Conversations", {
             this.__addTempConversationPage();
           }
         })
-        .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
