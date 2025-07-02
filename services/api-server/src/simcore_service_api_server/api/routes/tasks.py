@@ -12,17 +12,15 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobId,
     AsyncJobNameData,
 )
-from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
 
+from ...services_rpc.async_jobs import AsyncJobClient
 from ..dependencies.authentication import get_current_user_id
-from ..dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ..dependencies.services import get_product_name
+from ..dependencies.tasks import get_async_jobs_client
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
@@ -37,11 +35,9 @@ async def get_async_jobs(
     app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
+    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
     user_async_jobs = await async_jobs.list_jobs(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id_data=_get_job_id_data(user_id, product_name),
         filter_="",
     )
@@ -70,11 +66,9 @@ async def get_async_job_status(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
+    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
     async_job_rpc_status = await async_jobs.status(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=task_id,
         job_id_data=_get_job_id_data(user_id, product_name),
     )
@@ -95,11 +89,9 @@ async def cancel_async_job(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
+    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
     await async_jobs.cancel(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=task_id,
         job_id_data=_get_job_id_data(user_id, product_name),
     )
@@ -110,11 +102,9 @@ async def get_async_job_result(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    rabbitmq_rpc_client: Annotated[RabbitMQRPCClient, Depends(get_rabbitmq_rpc_client)],
+    async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
     async_job_rpc_result = await async_jobs.result(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=task_id,
         job_id_data=_get_job_id_data(user_id, product_name),
     )
