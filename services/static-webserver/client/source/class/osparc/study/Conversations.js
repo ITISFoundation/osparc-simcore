@@ -109,7 +109,7 @@ qx.Class.define("osparc.study.Conversations", {
                 this.__updateConversationName(conversation);
                 break;
               case "conversation:deleted":
-                this.__removeConversationPage(conversation);
+                this.__removeConversationPage(conversation["conversationId"]);
                 break;
             }
           }
@@ -187,7 +187,7 @@ qx.Class.define("osparc.study.Conversations", {
         osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
           if (conversationId === data["conversationId"]) {
-            this.__removeConversationPage(conversationData, true);
+            this.__removeConversationPage(conversationId, true);
           }
         });
       } else {
@@ -250,8 +250,7 @@ qx.Class.define("osparc.study.Conversations", {
       conversationsLayout.getChildControl("bar").add(this.__newConversationButton);
     },
 
-    __removeConversationPage: function(conversationData, changeSelection = false) {
-      const conversationId = conversationData["conversationId"];
+    __removeConversationPage: function(conversationId, changeSelection = false) {
       const conversation = this.__getConversation(conversationId);
       if (conversation) {
         const conversationsLayout = this.getChildControl("conversations-layout");
