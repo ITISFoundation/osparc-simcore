@@ -298,9 +298,6 @@ async def list_computations_latest_iteration_tasks(
     return _tasks_get.total, _tasks_get_output
 
 
-### NEW:
-
-
 async def _get_root_project_names_v2(
     app: web.Application, items: list[ComputationCollectionRunRpcGet]
 ) -> list[str]:

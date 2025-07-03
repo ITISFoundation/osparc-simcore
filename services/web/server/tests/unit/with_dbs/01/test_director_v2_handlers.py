@@ -298,9 +298,6 @@ async def test_list_computations_latest_iteration(
         assert ComputationTaskRestGet.model_validate(data[0])
 
 
-### NEW:
-
-
 @pytest.fixture
 def mock_rpc_list_computation_collection_runs_page(
     mocker: MockerFixture,
