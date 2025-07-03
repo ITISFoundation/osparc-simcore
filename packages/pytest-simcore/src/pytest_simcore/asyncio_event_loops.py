@@ -24,6 +24,14 @@ def event_loop_policy():
     return uvloop.EventLoopPolicy()
 
 
+async def test_using_uvloop_event_loop():
+    """Tests that `pytest_simcore.asyncio_event_loops` plugin is used and has an effect
+
+    Manually import and add it your test-suite to run this test.
+    """
+    assert isinstance(asyncio.get_event_loop_policy(), uvloop.EventLoopPolicy)
+
+
 @pytest.fixture
 async def loop() -> asyncio.AbstractEventLoop:
     """Override the event loop inside `aiohttp.pytest_plugin` with the one from `pytest-asyncio`.

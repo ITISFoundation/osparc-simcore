@@ -100,6 +100,7 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 from types_aiobotocore_ec2.type_defs import TagTypeDef
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.aws_server",
     "pytest_simcore.aws_ec2_service",
     "pytest_simcore.aws_iam_service",
