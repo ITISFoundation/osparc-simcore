@@ -14,4 +14,4 @@ async def send_email(
 ) -> None:
     # TODO: render email template with message and recipient details
     #       and send the email using an email service
-    _logger.info(f"Sending email notification to {recipient.email}")
+    _logger.info(f"Sending email notification to {recipient.address}")
