@@ -117,7 +117,7 @@ async def test_list(
                 metadata=run_metadata,
                 use_on_demand_clusters=faker.pybool(),
                 dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
-                collection_run_id=fake_collection_run_id,
+                collection_run_id=faker.uuid4(),
             )
             for n in range(50)
         )
@@ -274,7 +274,6 @@ async def test_create(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
-    fake_collection_run_id: CollectionRunID,
 ):
     with pytest.raises(ProjectNotFoundError):
         await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -284,7 +283,7 @@ async def test_create(
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
             dag_adjacency_list={},
-            collection_run_id=fake_collection_run_id,
+            collection_run_id=faker.uuid4(),
         )
     published_project = await publish_project()
     with pytest.raises(UserNotFoundError):
@@ -295,7 +294,7 @@ async def test_create(
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
             dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
-            collection_run_id=fake_collection_run_id,
+            collection_run_id=faker.uuid4(),
         )
 
     created = await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -305,7 +304,7 @@ async def test_create(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
-        collection_run_id=fake_collection_run_id,
+        collection_run_id=faker.uuid4(),
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -321,7 +320,7 @@ async def test_create(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
-        collection_run_id=fake_collection_run_id,
+        collection_run_id=faker.uuid4(),
     )
     assert created != got
     assert created.iteration == got.iteration + 1

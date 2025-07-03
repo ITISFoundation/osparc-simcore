@@ -166,7 +166,7 @@ async def _assert_start_pipeline(
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
-    fake_collection_run_id: CollectionRunID,
+    collection_run_id: CollectionRunID,
 ) -> tuple[CompRunsAtDB, list[CompTaskAtDB]]:
     exp_published_tasks = deepcopy(published_project.tasks)
     assert published_project.project.prj_owner
@@ -176,7 +176,7 @@ async def _assert_start_pipeline(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
-        collection_run_id=fake_collection_run_id,
+        collection_run_id=collection_run_id,
     )
 
     # check the database is correctly updated, the run is published
