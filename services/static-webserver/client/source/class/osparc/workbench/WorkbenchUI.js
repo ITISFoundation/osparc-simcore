@@ -1960,7 +1960,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           break;
         }
         case annotationTypes.TEXT: {
-          const tempAnnotation = new osparc.workbench.Annotation(null, {
+          const tempAnnotation = new osparc.workbench.Annotation({
             type: annotationTypes.TEXT,
             color,
             attributes: {
@@ -2010,7 +2010,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __addAnnotation: function(data, id) {
-      const annotation = new osparc.workbench.Annotation(this.__svgLayer, data, id);
+      const annotation = new osparc.workbench.Annotation(data, id);
+      annotation.setSvgCanvas(this.__svgLayer);
       this.__addAnnotationListeners(annotation);
       this.__annotations[annotation.getId()] = annotation;
       this.getStudy().getUi().addAnnotation(annotation);

@@ -19,16 +19,11 @@ qx.Class.define("osparc.workbench.Annotation", {
   extend: qx.core.Object,
 
   /**
-    * @param svgLayer {Object} SVG canvas
     * @param data {Object} data containing type, color, attributes and (optional) id
     * @param id {String} data
     */
-  construct: function(svgLayer, data, id) {
+  construct: function(data, id) {
     this.base();
-
-    if (svgLayer) {
-      this.__svgLayer = svgLayer;
-    }
 
     if (id === undefined) {
       id = osparc.utils.Utils.uuidV4();
@@ -70,7 +65,6 @@ qx.Class.define("osparc.workbench.Annotation", {
         "conversation", // osparc.workbench.Annotation.TYPES.CONVERSATION
       ],
       nullable: false,
-      apply: "__drawAnnotation"
     },
 
     color: {
@@ -86,9 +80,15 @@ qx.Class.define("osparc.workbench.Annotation", {
       nullable: false,
     },
 
+    svgCanvas: {
+      init: null,
+      nullable: false,
+      apply: "__drawAnnotation",
+    },
+
     representation: {
       init: null
-    }
+    },
   },
 
   events: {
@@ -99,10 +99,8 @@ qx.Class.define("osparc.workbench.Annotation", {
   },
 
   members: {
-    __svgLayer: null,
-
-    __drawAnnotation: function() {
-      if (this.__svgLayer === null) {
+    __drawAnnotation: function(svgLayer) {
+      if (svgLayer === null) {
         return;
       }
 
@@ -111,17 +109,17 @@ qx.Class.define("osparc.workbench.Annotation", {
       switch (this.getType()) {
         case this.self().TYPES.NOTE: {
           const user = osparc.store.Groups.getInstance().getUserByGroupId(attrs.recipientGid);
-          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.getLabel() : "", attrs.text);
+          representation = svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.getLabel() : "", attrs.text);
           break;
         }
         case this.self().TYPES.RECT:
-          representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
+          representation = svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
         case this.self().TYPES.TEXT:
-          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
+          representation = svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
           break;
         case this.self().TYPES.CONVERSATION: {
-          representation = this.__svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.text);
+          representation = svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.text);
           const conversationId = attrs.conversationId;
           if (conversationId) {
             osparc.store.Conversations.getInstance().addListener("conversationRenamed", e => {
@@ -244,6 +242,11 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     setSelected: function(selected) {
+      const svgCanvas = this.getSvgCanvas();
+      if (svgCanvas === null) {
+        return;
+      };
+
       const representation = this.getRepresentation();
       if (representation) {
         switch (this.getType()) {
@@ -251,7 +254,7 @@ qx.Class.define("osparc.workbench.Annotation", {
           case this.self().TYPES.TEXT: {
             if (selected) {
               if (!("bBox" in representation.node)) {
-                const bBox = this.__svgLayer.drawBoundingBox(this);
+                const bBox = svgCanvas.drawBoundingBox(this);
                 representation.node["bBox"] = bBox;
               }
             } else if ("bBox" in representation.node) {
@@ -265,11 +268,18 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     serialize: function() {
-      return {
+      const serializeData = {
         type: this.getType(),
         attributes: this.getAttributes(),
-        color: this.getColor(),
       };
+      if ([
+        this.self().TYPES.RECT,
+        this.self().TYPES.TEXT,
+        this.self().TYPES.NOTE,
+      ].includes(this.getType())) {
+        serializeData.color = this.getColor();
+      }
+      return serializeData;
     }
   }
 });
