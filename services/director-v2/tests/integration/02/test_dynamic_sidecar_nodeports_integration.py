@@ -28,6 +28,7 @@ from helpers.shared_comp_utils import (
 )
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
+from models_library.products import ProductName
 from models_library.projects import (
     Node,
     NodesDict,
@@ -915,6 +916,13 @@ async def _assert_retrieve_completed(
                 assert (
                     _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
+
+
+def product_name(osparc_product_name: ProductName) -> ProductName:
+    """
+    override the product name to be used in these tests
+    """
+    return osparc_product_name
 
 
 @pytest.mark.flaky(max_runs=3)
