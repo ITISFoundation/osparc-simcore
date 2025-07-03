@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": "Orchestrates the pipeline of services defined by the user",
-    "version": "2.3.0"
+    "version": "2.4.0"
   },
   "servers": [
     {
