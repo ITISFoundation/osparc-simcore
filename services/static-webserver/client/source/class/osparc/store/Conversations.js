@@ -44,6 +44,17 @@ qx.Class.define("osparc.store.Conversations", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    getConversation: function(studyId, conversationId) {
+      const params = {
+        url: {
+          studyId,
+          conversationId,
+        }
+      };
+      return osparc.data.Resources.fetch("conversations", "getConversation", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
     addConversation: function(studyId, name = "new 1", type = osparc.study.Conversations.TYPES.PROJECT_STATIC) {
       const params = {
         url: {

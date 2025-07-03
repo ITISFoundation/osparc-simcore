@@ -1238,8 +1238,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__setSelectedAnnotations([annotation]);
       switch (annotation.getType()) {
         case osparc.workbench.Annotation.TYPES.CONVERSATION: {
-          const studyData = this.getStudy().serialize();
-          osparc.study.Conversations.popUpInWindow(studyData, annotation.getAttributes()["conversationId"]);
+          this.__popUpConversation(annotation.getAttributes()["conversationId"]);
           break;
         }
         default: {
@@ -1994,7 +1993,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
               serializeData.attributes.conversationId = conversationData["conversationId"];
               serializeData.attributes.text = conversationData["name"];
               this.__addAnnotation(serializeData);
-              osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationData["conversationId"]);
+              this.__popUpConversation(conversationData["conversationId"]);
             });
           break;
         }
@@ -2033,6 +2032,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__clearAnnotation(annotation);
         this.getStudy().getUi().removeAnnotation(id);
       }
+    },
+
+    __popUpConversation: function(conversationId) {
+      osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationId);
     },
 
     __dropFile: async function(e) {
