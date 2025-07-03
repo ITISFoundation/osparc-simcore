@@ -13,11 +13,11 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobNameData,
 )
 from models_library.products import ProductName
-from models_library.rest_error import ErrorGet
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
 
+from ...models.schemas.errors import ErrorGet
 from ...services_rpc.async_jobs import AsyncJobClient
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_product_name
