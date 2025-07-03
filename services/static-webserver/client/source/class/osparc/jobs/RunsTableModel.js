@@ -155,10 +155,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       if (nRequests > 1) {
         const requests = [];
         for (let i=firstRow; i <= lastRow; i += serverMaxLimit) {
-        // fetch the first page only
-          if (i < 1) {
-            requests.push(getFetchPromise(i, i > lastRow - serverMaxLimit + 1 ? reqLimit % osparc.store.Jobs.SERVER_MAX_LIMIT : serverMaxLimit))
-          }
+          requests.push(getFetchPromise(i, i > lastRow - serverMaxLimit + 1 ? reqLimit % serverMaxLimit : serverMaxLimit))
         }
         Promise.all(requests)
           .then(responses => this._onRowDataLoaded(responses.flat()))
