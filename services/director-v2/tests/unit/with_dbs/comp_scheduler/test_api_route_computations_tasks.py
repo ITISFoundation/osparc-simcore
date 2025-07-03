@@ -120,6 +120,7 @@ async def project_id(
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    product_db: dict[str, Any],
 ) -> ProjectID:
     """project uuid of a saved project (w/ tasks up-to-date)"""
 
@@ -133,6 +134,7 @@ async def project_id(
     )
     # insert tasks -> comp_tasks
     comp_tasks = await create_tasks(user=user, project=proj)
+    assert comp_tasks
 
     return proj.uuid
 
@@ -166,7 +168,7 @@ async def test_get_all_tasks_log_files(
     assert resp.status_code == status.HTTP_200_OK
     log_files = TypeAdapter(list[TaskLogFileGet]).validate_json(resp.text)
     assert log_files
-    assert all(l.download_link for l in log_files)
+    assert all(file.download_link for file in log_files)
 
 
 async def test_get_task_logs_file(
