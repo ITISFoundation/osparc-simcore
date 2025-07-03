@@ -306,7 +306,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
             async with sqlalchemy_async_engine.begin() as conn:
                 result = await conn.execute(
                     comp_tasks.select()
-                    .with_only_columns([comp_tasks.c.outputs])
+                    .with_only_columns(comp_tasks.c.outputs)
                     .where(comp_tasks.c.task_id == first_jupyter_task["task_id"])
                     .with_for_update()
                 )
