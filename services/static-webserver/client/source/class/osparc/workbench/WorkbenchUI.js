@@ -2018,7 +2018,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       if (annotation.getType() === osparc.workbench.Annotation.TYPES.CONVERSATION) {
         osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
-          if (data.getAttributes()["conversationId"] === conversationId) {
+          if (annotation.getAttributes()["conversationId"] === data["conversationId"]) {
             this.__removeAnnotation(annotation.getId());
           }
         }, this);

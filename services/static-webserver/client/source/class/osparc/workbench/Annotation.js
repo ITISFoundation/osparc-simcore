@@ -126,7 +126,7 @@ qx.Class.define("osparc.workbench.Annotation", {
           if (conversationId) {
             osparc.store.Conversations.getInstance().addListener("conversationRenamed", e => {
               const data = e.getData();
-              if (data.conversationId === conversationId) {
+              if (conversationId === data["conversationId"]) {
                 this.setText(data.name);
               }
             }, this);
