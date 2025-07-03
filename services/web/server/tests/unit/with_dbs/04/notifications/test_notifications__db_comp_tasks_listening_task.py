@@ -324,7 +324,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
                 )
 
     @delayed_start(timedelta(seconds=2))
-    async def _change_outputs_sequentially(sleep: float = 0.1) -> None:
+    async def _change_outputs_sequentially(sleep: float) -> None:
         """
         Sequentially updates the outputs of the second JupyterLab task to trigger the dynamic service RPC.
         """
