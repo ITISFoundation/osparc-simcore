@@ -17,14 +17,14 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
-from simcore_service_api_server.exceptions.task_errors import (
+
+from ..exceptions.service_errors_utils import service_exception_mapper
+from ..exceptions.task_errors import (
     TaskCancelledError,
     TaskError,
     TaskResultMissingError,
     TaskSchedulerError,
 )
-
-from ..exceptions.service_errors_utils import service_exception_mapper
 
 _exception_mapper = functools.partial(
     service_exception_mapper, service_name="Async jobs"
