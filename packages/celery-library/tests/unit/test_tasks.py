@@ -95,7 +95,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await celery_task_manager.send_task(
         TaskMetadata(
             name=fake_file_processor.__name__,
         ),
@@ -125,7 +125,7 @@ async def test_submitting_task_with_failure_results_with_error(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await celery_task_manager.send_task(
         TaskMetadata(
             name=failure_task.__name__,
         ),
@@ -153,7 +153,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await celery_task_manager.send_task(
         TaskMetadata(
             name=dreamer_task.__name__,
         ),
@@ -187,7 +187,7 @@ async def test_listing_task_uuids_contains_submitted_task(
 ):
     task_context = TaskContext(user_id=42)
 
-    task_uuid = await celery_task_manager.submit_task(
+    task_uuid = await celery_task_manager.send_task(
         TaskMetadata(
             name=dreamer_task.__name__,
         ),
