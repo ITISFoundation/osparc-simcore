@@ -80,7 +80,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   members: {
-    __includeChildren: false,
+    __includeChildren: null,
 
     // overridden
     sortByColumn(columnIndex, ascending) {
