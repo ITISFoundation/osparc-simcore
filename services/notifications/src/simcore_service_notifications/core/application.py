@@ -27,8 +27,8 @@ def _initialise_logger(settings: ApplicationSettings):
     logging.basicConfig(level=settings.LOG_LEVEL.value)  # NOSONAR
     logging.root.setLevel(settings.LOG_LEVEL.value)
     config_all_loggers(
-        log_format_local_dev_enabled=settings.NOTIFICATIONS_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.NOTIFICATIONS_VOLUMES_LOG_FILTER_MAPPING,
+        log_format_local_dev_enabled=settings.NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=settings.NOTIFICATIONS_LOG_FILTER_MAPPING,
         tracing_settings=settings.NOTIFICATIONS_TRACING,
     )
 

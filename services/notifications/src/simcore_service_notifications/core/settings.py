@@ -67,6 +67,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
+    NOTIFICATIONS_WORKER_MODE: Annotated[
+        bool, Field(description="If True, run as a worker")
+    ] = False
+
     NOTIFICATIONS_POSTGRES: Annotated[
         PostgresSettings,
         Field(
