@@ -33,7 +33,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
     this.setTableModel(model);
 
     this.set({
-      statusBarVisible: false,
+      statusBarVisible: true,
       headerCellHeight: 26,
       rowHeight: 26,
     });
