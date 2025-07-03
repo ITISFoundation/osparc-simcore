@@ -186,13 +186,15 @@ async def create_pipeline(
 
 
 @pytest.fixture
-def comp_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str, Any]]]:
+async def create_comp_task(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     created_task_ids: list[int] = []
 
-    def creator(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
+    async def creator(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
         task_config = {"project_id": f"{project_id}"} | task_kwargs
-        with postgres_db.connect() as conn:
-            result = conn.execute(
+        async with sqlalchemy_async_engine.begin() as conn:
+            result = await conn.execute(
                 comp_tasks.insert()
                 .values(**task_config)
                 .returning(sa.literal_column("*"))
@@ -205,8 +207,8 @@ def comp_task(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str,
     yield creator
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
             comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
         )
 
