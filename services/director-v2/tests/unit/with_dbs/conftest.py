@@ -25,7 +25,7 @@ from simcore_postgres_database.models.comp_run_snapshot_tasks import (
     comp_run_snapshot_tasks,
 )
 from simcore_postgres_database.models.comp_runs import comp_runs
-from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import (
     CompRunsAtDB,
@@ -50,10 +50,8 @@ async def create_pipeline(
 
 @pytest.fixture
 async def create_tasks(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[Callable[..., Awaitable[list[CompTaskAtDB]]]]:
-    created_task_ids: list[int] = []
-
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
+) -> Callable[..., Awaitable[list[CompTaskAtDB]]]:
     async def _(
         user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs
     ) -> list[CompTaskAtDB]:
@@ -105,24 +103,12 @@ async def create_tasks(
                 ),
             }
             task_config.update(**overrides_kwargs)
-            async with sqlalchemy_async_engine.begin() as conn:
-                result = await conn.execute(
-                    comp_tasks.insert()
-                    .values(**task_config)
-                    .returning(sa.literal_column("*"))
-                )
-                new_task = CompTaskAtDB.model_validate(result.first())
-                created_tasks.append(new_task)
-            created_task_ids.extend([t.task_id for t in created_tasks if t.task_id])
+            task_dict = await create_comp_task(**task_config)
+            new_task = CompTaskAtDB.model_validate(task_dict)
+            created_tasks.append(new_task)
         return created_tasks
 
-    yield _
-
-    # cleanup
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
-        )
+    return _
 
 
 @pytest.fixture
