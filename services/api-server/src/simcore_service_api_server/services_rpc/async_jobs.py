@@ -20,7 +20,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
 from simcore_service_api_server.exceptions.task_errors import (
     TaskCancelledError,
     TaskError,
-    TaskNotDoneError,
+    TaskResultMissingError,
     TaskSchedulerError,
 )
 
@@ -68,7 +68,7 @@ class AsyncJobClient:
     @_exception_mapper(
         rpc_exception_map={
             JobSchedulerError: TaskSchedulerError,
-            JobNotDoneError: TaskNotDoneError,
+            JobNotDoneError: TaskResultMissingError,
             JobAbortedError: TaskCancelledError,
             JobError: TaskError,
         }

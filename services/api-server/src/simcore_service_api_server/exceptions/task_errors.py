@@ -13,18 +13,13 @@ class TaskMissingError(BaseBackEndError):
     status_code = status.HTTP_404_NOT_FOUND
 
 
-class TaskStatusError(BaseBackEndError):
-    msg_template: str = "Could not get status of task {job_id}"
+class TaskResultMissingError(BaseBackEndError):
+    msg_template: str = "Task {job_id} is not done"
     status_code = status.HTTP_404_NOT_FOUND
 
 
-class TaskNotDoneError(BaseBackEndError):
-    msg_template: str = "Task {job_id} not done"
-    status_code = status.HTTP_409_CONFLICT
-
-
 class TaskCancelledError(BaseBackEndError):
-    msg_template: str = "Task {job_id} cancelled"
+    msg_template: str = "Task {job_id} is cancelled"
     status_code = status.HTTP_409_CONFLICT
 
 

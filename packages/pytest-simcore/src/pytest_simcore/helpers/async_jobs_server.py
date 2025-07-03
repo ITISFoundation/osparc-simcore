@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
@@ -5,6 +7,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobResult,
     AsyncJobStatus,
 )
+from models_library.api_schemas_rpc_async_jobs.exceptions import BaseAsyncjobRpcError
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import validate_call
@@ -12,7 +15,9 @@ from pytest_mock import MockType
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 
+@dataclass
 class AsyncJobSideEffects:
+    exception: BaseAsyncjobRpcError | None = None
 
     @validate_call(config={"arbitrary_types_allowed": True})
     async def cancel(
@@ -23,7 +28,9 @@ class AsyncJobSideEffects:
         job_id: AsyncJobId,
         job_id_data: AsyncJobNameData,
     ) -> None:
-        pass
+        if self.exception is not None:
+            raise self.exception
+        return None
 
     @validate_call(config={"arbitrary_types_allowed": True})
     async def status(
@@ -34,6 +41,9 @@ class AsyncJobSideEffects:
         job_id: AsyncJobId,
         job_id_data: AsyncJobNameData,
     ) -> AsyncJobStatus:
+        if self.exception is not None:
+            raise self.exception
+
         return AsyncJobStatus(
             job_id=job_id,
             progress=ProgressReport(
@@ -53,6 +63,8 @@ class AsyncJobSideEffects:
         job_id: AsyncJobId,
         job_id_data: AsyncJobNameData,
     ) -> AsyncJobResult:
+        if self.exception is not None:
+            raise self.exception
         return AsyncJobResult(result="Success")
 
     @validate_call(config={"arbitrary_types_allowed": True})
@@ -64,6 +76,8 @@ class AsyncJobSideEffects:
         job_id_data: AsyncJobNameData,
         filter_: str = "",
     ) -> list[AsyncJobGet]:
+        if self.exception is not None:
+            raise self.exception
         return [
             AsyncJobGet(
                 job_id=AsyncJobId("123e4567-e89b-12d3-a456-426614174000"),

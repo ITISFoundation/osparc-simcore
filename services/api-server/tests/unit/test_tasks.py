@@ -5,6 +5,13 @@ from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from models_library.api_schemas_rpc_async_jobs.exceptions import (
+    BaseAsyncjobRpcError,
+    JobAbortedError,
+    JobError,
+    JobNotDoneError,
+    JobSchedulerError,
+)
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.async_jobs_server import AsyncJobSideEffects
 from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
@@ -13,8 +20,10 @@ _faker = Faker()
 
 
 @pytest.fixture
-async def async_jobs_rpc_side_effects() -> Any:
-    return AsyncJobSideEffects()
+async def async_jobs_rpc_side_effects(
+    async_job_error: BaseAsyncjobRpcError | None,
+) -> Any:
+    return AsyncJobSideEffects(exception=async_job_error)
 
 
 @pytest.fixture
@@ -51,48 +60,127 @@ def mocked_async_jobs_rpc_api(
     return mocks
 
 
+@pytest.mark.parametrize(
+    "async_job_error, expected_status_code",
+    [
+        (None, status.HTTP_200_OK),
+        (
+            JobSchedulerError(
+                exc=Exception("A very rare exception raised by the scheduler")
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+    ],
+)
 async def test_get_async_jobs(
-    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
+    client: AsyncClient,
+    mocked_async_jobs_rpc_api: dict[str, MockType],
+    auth: BasicAuth,
+    expected_status_code: int,
 ):
 
     response = await client.get("/v0/tasks", auth=auth)
-    assert response.status_code == status.HTTP_200_OK
     assert mocked_async_jobs_rpc_api["list_jobs"].called
-    result = ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
-    assert len(result.data) > 0
-    assert all(isinstance(task, TaskGet) for task in result.data)
-    task = result.data[0]
-    assert task.abort_href == f"/v0/tasks/{task.task_id}:cancel"
-    assert task.result_href == f"/v0/tasks/{task.task_id}/result"
-    assert task.status_href == f"/v0/tasks/{task.task_id}"
+    assert response.status_code == expected_status_code
+
+    if response.status_code == status.HTTP_200_OK:
+        result = ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
+        assert len(result.data) > 0
+        assert all(isinstance(task, TaskGet) for task in result.data)
+        task = result.data[0]
+        assert task.abort_href == f"/v0/tasks/{task.task_id}:cancel"
+        assert task.result_href == f"/v0/tasks/{task.task_id}/result"
+        assert task.status_href == f"/v0/tasks/{task.task_id}"
 
 
+@pytest.mark.parametrize(
+    "async_job_error, expected_status_code",
+    [
+        (None, status.HTTP_200_OK),
+        (
+            JobSchedulerError(
+                exc=Exception("A very rare exception raised by the scheduler")
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+    ],
+)
 async def test_get_async_jobs_status(
-    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
+    client: AsyncClient,
+    mocked_async_jobs_rpc_api: dict[str, MockType],
+    auth: BasicAuth,
+    expected_status_code: int,
 ):
     task_id = f"{_faker.uuid4()}"
     response = await client.get(f"/v0/tasks/{task_id}", auth=auth)
-    assert response.status_code == status.HTTP_200_OK
     assert mocked_async_jobs_rpc_api["status"].called
     assert f"{mocked_async_jobs_rpc_api['status'].call_args[1]['job_id']}" == task_id
-    TaskStatus.model_validate_json(response.text)
+    assert response.status_code == expected_status_code
+    if response.status_code == status.HTTP_200_OK:
+        TaskStatus.model_validate_json(response.text)
 
 
+@pytest.mark.parametrize(
+    "async_job_error, expected_status_code",
+    [
+        (None, status.HTTP_204_NO_CONTENT),
+        (
+            JobSchedulerError(
+                exc=Exception("A very rare exception raised by the scheduler")
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+    ],
+)
 async def test_cancel_async_job(
-    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
+    client: AsyncClient,
+    mocked_async_jobs_rpc_api: dict[str, MockType],
+    auth: BasicAuth,
+    expected_status_code: int,
 ):
     task_id = f"{_faker.uuid4()}"
     response = await client.post(f"/v0/tasks/{task_id}:cancel", auth=auth)
-    assert response.status_code == status.HTTP_204_NO_CONTENT
     assert mocked_async_jobs_rpc_api["cancel"].called
     assert f"{mocked_async_jobs_rpc_api['cancel'].call_args[1]['job_id']}" == task_id
+    assert response.status_code == expected_status_code
 
 
+@pytest.mark.parametrize(
+    "async_job_error, expected_status_code",
+    [
+        (None, status.HTTP_200_OK),
+        (
+            JobError(
+                job_id=_faker.uuid4(),
+                exc_type=Exception,
+                exc_message="An exception from inside the async job",
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+        (
+            JobNotDoneError(job_id=_faker.uuid4()),
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            JobAbortedError(job_id=_faker.uuid4()),
+            status.HTTP_409_CONFLICT,
+        ),
+        (
+            JobSchedulerError(
+                exc=Exception("A very rare exception raised by the scheduler")
+            ),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+    ],
+)
 async def test_get_async_job_result(
-    client: AsyncClient, mocked_async_jobs_rpc_api: dict[str, MockType], auth: BasicAuth
+    client: AsyncClient,
+    mocked_async_jobs_rpc_api: dict[str, MockType],
+    auth: BasicAuth,
+    expected_status_code: int,
 ):
     task_id = f"{_faker.uuid4()}"
     response = await client.get(f"/v0/tasks/{task_id}/result", auth=auth)
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == expected_status_code
     assert mocked_async_jobs_rpc_api["result"].called
     assert f"{mocked_async_jobs_rpc_api['result'].call_args[1]['job_id']}" == task_id
