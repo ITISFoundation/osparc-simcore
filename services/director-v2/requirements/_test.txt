@@ -180,7 +180,7 @@ multidict==6.4.4
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -210,6 +210,8 @@ partd==1.4.2
     # via
     #   -c requirements/_base.txt
     #   dask
+pathspec==0.12.1
+    # via mypy
 pillow==11.2.1
     # via bokeh
 pluggy==1.6.0
