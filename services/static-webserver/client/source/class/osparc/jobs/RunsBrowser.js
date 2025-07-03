@@ -56,7 +56,9 @@ qx.Class.define("osparc.jobs.RunsBrowser", {
           this.getChildControl("header-toolbar").add(control);
           break;
         case "intro-label":
-          control = new qx.ui.basic.Label(this.tr("Select a Run to check the details"));
+          control = new qx.ui.basic.Label(this.tr("Select a Run to check the details")).set({
+            alignY: "middle",
+          });
           this.getChildControl("header-toolbar").add(control);
           break;
         case "jobs-filter":
