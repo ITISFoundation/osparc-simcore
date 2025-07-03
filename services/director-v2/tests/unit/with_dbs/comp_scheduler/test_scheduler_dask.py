@@ -965,6 +965,7 @@ async def with_started_project(
     instrumentation_rabbit_client_parser: mock.AsyncMock,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    product_db: dict[str, Any],
 ) -> RunningProject:
     with_disabled_auto_scheduling.assert_called_once()
     published_project = await publish_project()
@@ -1210,6 +1211,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    product_db: dict[str, Any],
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""

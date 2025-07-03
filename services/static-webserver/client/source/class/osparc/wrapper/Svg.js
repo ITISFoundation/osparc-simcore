@@ -274,12 +274,105 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    updateText: function(representation, label) {
+    drawAnnotationConversation: function(draw, x = 50, y = 50, title = "Conversation") {
+      const color = qx.theme.manager.Color.getInstance().getTheme().colors["text"];
+      const bubbleWidth = 150;
+      const bubbleHeight = 30;
+      const padding = 6;
+
+      // Group to keep all elements together
+      const bubble = draw.group();
+      bubble.move(x, y);
+
+      // Rounded rectangle as the base
+      const rect = draw.rect(bubbleWidth, bubbleHeight)
+        .radius(4)
+        .fill("none")
+        .stroke({
+          color,
+          width: 1.5,
+        });
+      bubble.add(rect);
+
+      // Icon (simple speech bubble using path or text)
+      const iconSize = 16;
+      const icon = draw.text('💬')
+        .font({
+          size: iconSize
+        })
+        .attr({
+          cursor: "pointer"
+        })
+        .move(padding, (bubbleHeight - iconSize) / 2);
+      bubble.add(icon);
+
+      // Title text
+      const titleFontSize = 12;
+      const defaultFont = osparc.utils.Utils.getDefaultFont();
+      const label = draw.text(title)
+        .font({
+          fill: color,
+          size: titleFontSize,
+          family: defaultFont["family"],
+          anchor: 'start'
+        })
+        .attr({
+          cursor: "pointer"
+        })
+        .move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
+      bubble.add(label);
+      bubble.label = label; // store reference for renaming
+
+      // Compute available width for text
+      const availableWidth = bubbleWidth - padding * 2 - iconSize - 8;
+
+      // Helper: truncate text with ellipsis
+      const fitTextWithEllipsis = (fullText, maxWidth) => {
+        let text = fullText;
+        label.text(text);
+        if (label.bbox().width <= maxWidth) {
+          return text
+        };
+
+        const ellipsis = '…';
+        let low = 0;
+        let high = text.length;
+        // Binary search for the max fitting length
+        while (low < high) {
+          const mid = Math.floor((low + high) / 2);
+          label.text(text.slice(0, mid) + ellipsis);
+          if (label.bbox().width <= maxWidth) {
+            low = mid + 1;
+          } else {
+            high = mid;
+          }
+        }
+        return text.slice(0, low - 1) + ellipsis;
+      }
+
+      // Truncate if needed
+      const fittedText = fitTextWithEllipsis(title, availableWidth);
+      label.text(fittedText);
+
+      // Move label to proper position
+      label.move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
+
+      bubble.back();
+
+      bubble["clickables"] = [icon, label];
+
+      return bubble;
+    },
+
+    updateText: function(representation, newText) {
       if (representation.type === "text") {
-        representation.text(label);
+        representation.text(newText);
       } else if (representation.type === "svg") {
         // nested
-        representation["textChild"].innerText = label;
+        representation["textChild"].innerText = newText;
+      } else if (representation.type === "g") {
+        // group
+        representation.label.text(newText);
       }
     },
 
