@@ -19,20 +19,12 @@ qx.Class.define("osparc.store.Conversations", {
   extend: qx.core.Object,
   type: "singleton",
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__projectConversations = {};
-  },
-
   events: {
     "conversationRenamed": "qx.event.type.Data",
     "conversationDeleted": "qx.event.type.Data",
   },
 
   members: {
-    __projectConversations: null,
-
     getConversations: function(studyId) {
       const params = {
         url: {
@@ -47,7 +39,6 @@ qx.Class.define("osparc.store.Conversations", {
             // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
             conversations.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
           }
-          // OM add to cache
           return conversations;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
@@ -64,10 +55,6 @@ qx.Class.define("osparc.store.Conversations", {
         }
       };
       return osparc.data.Resources.fetch("conversations", "addConversation", params)
-        .then(conversation => {
-          // OM add to cache
-          return conversation;
-        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
