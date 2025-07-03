@@ -47,7 +47,7 @@ APP_LOG_LEVEL=${LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
-if [ "${NOTIFICATIONS_WORKER_MODE}" = "true" ]; then
+if [ "${NOTIFICATIONS_WORKER_MODE:-}" = "true" ]; then
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
     exec watchmedo auto-restart \
       --directory /devel/packages \
