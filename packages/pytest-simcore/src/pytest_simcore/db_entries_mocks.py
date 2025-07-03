@@ -151,20 +151,20 @@ async def project(
 
 
 @pytest.fixture
-def create_pipeline(
-    postgres_db: sa.engine.Engine,
-) -> Iterator[Callable[..., dict[str, Any]]]:
+async def create_pipeline(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     created_pipeline_ids: list[str] = []
 
-    def creator(**pipeline_kwargs) -> dict[str, Any]:
+    async def creator(**pipeline_kwargs) -> dict[str, Any]:
         pipeline_config = {
             "project_id": f"{uuid4()}",
             "dag_adjacency_list": {},
             "state": StateType.NOT_STARTED,
         }
         pipeline_config.update(**pipeline_kwargs)
-        with postgres_db.connect() as conn:
-            result = conn.execute(
+        async with sqlalchemy_async_engine.begin() as conn:
+            result = await conn.execute(
                 comp_pipeline.insert()
                 .values(**pipeline_config)
                 .returning(sa.literal_column("*"))
@@ -177,8 +177,8 @@ def create_pipeline(
     yield creator
 
     # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
             comp_pipeline.delete().where(
                 comp_pipeline.c.project_id.in_(created_pipeline_ids)
             )
