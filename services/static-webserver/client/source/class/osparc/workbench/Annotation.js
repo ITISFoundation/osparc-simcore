@@ -19,16 +19,11 @@ qx.Class.define("osparc.workbench.Annotation", {
   extend: qx.core.Object,
 
   /**
-    * @param svgLayer {Object} SVG canvas
     * @param data {Object} data containing type, color, attributes and (optional) id
     * @param id {String} data
     */
-  construct: function(svgLayer, data, id) {
+  construct: function(data, id) {
     this.base();
-
-    if (svgLayer) {
-      this.__svgLayer = svgLayer;
-    }
 
     if (id === undefined) {
       id = osparc.utils.Utils.uuidV4();
@@ -39,14 +34,21 @@ qx.Class.define("osparc.workbench.Annotation", {
     }
     this.set({
       id,
-      type: data.type,
       color,
-      attributes: data.attributes
+      attributes: data.attributes,
+      type: data.type,
     });
   },
 
   statics: {
-    DEFAULT_COLOR: "#FFFF01"
+    DEFAULT_COLOR: "#FFFF01",
+
+    TYPES: {
+      NOTE: "note",
+      RECT: "rect",
+      TEXT: "text",
+      CONVERSATION: "conversation",
+    },
   },
 
   properties: {
@@ -56,26 +58,37 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     type: {
-      check: ["note", "rect", "text"],
-      nullable: false
+      check: [
+        "note", // osparc.workbench.Annotation.TYPES.NOTE
+        "rect", // osparc.workbench.Annotation.TYPES.RECT
+        "text", // osparc.workbench.Annotation.TYPES.TEXT
+        "conversation", // osparc.workbench.Annotation.TYPES.CONVERSATION
+      ],
+      nullable: false,
     },
 
     color: {
       check: "Color",
       event: "changeColor",
       init: "#FFFF01",
-      apply: "__applyColor"
+      nullable: true,
+      apply: "__applyColor",
     },
 
     attributes: {
       check: "Object",
       nullable: false,
-      apply: "__drawAnnotation"
+    },
+
+    svgCanvas: {
+      init: null,
+      nullable: false,
+      apply: "__drawAnnotation",
     },
 
     representation: {
       init: null
-    }
+    },
   },
 
   events: {
@@ -86,36 +99,66 @@ qx.Class.define("osparc.workbench.Annotation", {
   },
 
   members: {
-    __svgLayer: null,
-
-    __drawAnnotation: async function(attrs) {
-      if (this.__svgLayer === null) {
+    __drawAnnotation: function(svgLayer) {
+      if (svgLayer === null) {
         return;
       }
 
+      const attrs = this.getAttributes();
       let representation = null;
       switch (this.getType()) {
-        case "note": {
+        case this.self().TYPES.NOTE: {
           const user = osparc.store.Groups.getInstance().getUserByGroupId(attrs.recipientGid);
-          representation = this.__svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.getLabel() : "", attrs.text);
+          representation = svgLayer.drawAnnotationNote(attrs.x, attrs.y, user ? user.getLabel() : "", attrs.text);
           break;
         }
-        case "rect":
-          representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
+        case this.self().TYPES.RECT:
+          representation = svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
-        case "text":
-          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
+        case this.self().TYPES.TEXT:
+          representation = svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
           break;
+        case this.self().TYPES.CONVERSATION: {
+          representation = svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.text);
+          const conversationId = attrs.conversationId;
+          if (conversationId) {
+            osparc.store.Conversations.getInstance().addListener("conversationRenamed", e => {
+              const data = e.getData();
+              if (conversationId === data["conversationId"]) {
+                this.setText(data.name);
+              }
+            }, this);
+          }
+          break;
+        }
       }
+
       if (representation) {
+        // handle click events
+        switch (this.getType()) {
+          case this.self().TYPES.NOTE:
+          case this.self().TYPES.RECT:
+          case this.self().TYPES.TEXT:
+            representation.node.addEventListener("click", e => {
+              this.fireDataEvent("annotationClicked", e.ctrlKey);
+              e.stopPropagation();
+            }, this);
+            break;
+          case this.self().TYPES.CONVERSATION:
+            representation["clickables"].forEach(clickable => {
+              clickable.click(() => {
+                this.fireDataEvent("annotationClicked", false);
+              }, this);
+            });
+            break;
+        }
+
+        // handle moving events
         osparc.wrapper.Svg.makeDraggable(representation);
-        representation.node.addEventListener("click", e => {
-          this.fireDataEvent("annotationClicked", e.ctrlKey);
-          e.stopPropagation();
-        }, this);
         representation.on("dragstart", () => this.fireEvent("annotationStartedMoving"));
         representation.on("dragmove", () => this.fireEvent("annotationMoving"));
         representation.on("dragend", () => this.fireEvent("annotationStoppedMoving"));
+
         this.setRepresentation(representation);
       }
     },
@@ -124,10 +167,10 @@ qx.Class.define("osparc.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         switch (this.getType()) {
-          case "rect":
+          case this.self().TYPES.RECT:
             osparc.wrapper.Svg.updateItemColor(representation, color);
             break;
-          case "text":
+          case this.self().TYPES.TEXT:
             osparc.wrapper.Svg.updateTextColor(representation, color);
             break;
         }
@@ -137,11 +180,25 @@ qx.Class.define("osparc.workbench.Annotation", {
     getRepresentationPosition: function() {
       const representation = this.getRepresentation();
       if (representation) {
-        const attrs = osparc.wrapper.Svg.getRectAttributes(representation);
-        return {
-          x: parseInt(attrs.x),
-          y: parseInt(attrs.y)
-        };
+        switch (this.getType()) {
+          case this.self().TYPES.RECT:
+          case this.self().TYPES.TEXT:
+          case this.self().TYPES.NOTE: {
+            const attrs = osparc.wrapper.Svg.getRectAttributes(representation);
+            return {
+              x: parseInt(attrs.x),
+              y: parseInt(attrs.y),
+            };
+          }
+          case this.self().TYPES.CONVERSATION: {
+            const x = representation.transform().x;
+            const y = representation.transform().y;
+            return {
+              x,
+              y,
+            };
+          }
+        }
       }
       return null;
     },
@@ -185,14 +242,19 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     setSelected: function(selected) {
+      const svgCanvas = this.getSvgCanvas();
+      if (svgCanvas === null) {
+        return;
+      };
+
       const representation = this.getRepresentation();
       if (representation) {
         switch (this.getType()) {
-          case "rect":
-          case "text": {
+          case this.self().TYPES.RECT:
+          case this.self().TYPES.TEXT: {
             if (selected) {
               if (!("bBox" in representation.node)) {
-                const bBox = this.__svgLayer.drawBoundingBox(this);
+                const bBox = svgCanvas.drawBoundingBox(this);
                 representation.node["bBox"] = bBox;
               }
             } else if ("bBox" in representation.node) {
@@ -206,11 +268,18 @@ qx.Class.define("osparc.workbench.Annotation", {
     },
 
     serialize: function() {
-      return {
+      const serializeData = {
         type: this.getType(),
         attributes: this.getAttributes(),
-        color: this.getColor()
       };
+      if ([
+        this.self().TYPES.RECT,
+        this.self().TYPES.TEXT,
+        this.self().TYPES.NOTE,
+      ].includes(this.getType())) {
+        serializeData.color = this.getColor();
+      }
+      return serializeData;
     }
   }
 });
