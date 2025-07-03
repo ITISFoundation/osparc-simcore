@@ -116,12 +116,8 @@ qx.Class.define("osparc.conversation.Conversation", {
         visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       closeButton.addListener("execute", () => {
-        const deleteConversation = () => {
-          osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId())
-            .then(() => this.fireEvent("conversationDeleted"));
-        }
         if (this.__messagesList.getChildren().length === 0) {
-          deleteConversation();
+          osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
         } else {
           const msg = this.tr("Are you sure you want to delete the conversation?");
           const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
@@ -132,7 +128,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           confirmationWin.open();
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
-              deleteConversation();
+              osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
             }
           }, this);
         }

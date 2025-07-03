@@ -184,7 +184,12 @@ qx.Class.define("osparc.study.Conversations", {
         const conversationId = conversationData["conversationId"];
         conversationPage = new osparc.conversation.Conversation(studyData, conversationId);
         conversationPage.setLabel(conversationData["name"]);
-        conversationPage.addListener("conversationDeleted", () => this.__removeConversationPage(conversationData, true));
+        osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+          const data = e.getData();
+          if (conversationId === data["conversationId"]) {
+            this.__removeConversationPage(conversationData, true);
+          }
+        });
       } else {
         // create a temporary conversation
         conversationPage = new osparc.conversation.Conversation(studyData);
