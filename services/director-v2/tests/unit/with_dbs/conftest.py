@@ -8,7 +8,6 @@
 import datetime
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, cast
-from uuid import uuid4
 
 import arrow
 import pytest
@@ -21,7 +20,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import PositiveInt
 from pydantic.main import BaseModel
-from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_run_snapshot_tasks import (
     comp_run_snapshot_tasks,
 )
@@ -40,38 +39,13 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 @pytest.fixture
 async def create_pipeline(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[Callable[..., Awaitable[CompPipelineAtDB]]]:
-    created_pipeline_ids: list[str] = []
-
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+) -> Callable[..., Awaitable[CompPipelineAtDB]]:
     async def _(**pipeline_kwargs) -> CompPipelineAtDB:
-        pipeline_config = {
-            "project_id": f"{uuid4()}",
-            "dag_adjacency_list": {},
-            "state": StateType.NOT_STARTED,
-        }
-        pipeline_config.update(**pipeline_kwargs)
-        async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                comp_pipeline.insert()
-                .values(**pipeline_config)
-                .returning(sa.literal_column("*"))
-            )
-            assert result
+        created_pipeline_dict = await create_pipeline(**pipeline_kwargs)
+        return CompPipelineAtDB.model_validate(created_pipeline_dict)
 
-            new_pipeline = CompPipelineAtDB.model_validate(result.first())
-            created_pipeline_ids.append(f"{new_pipeline.project_id}")
-            return new_pipeline
-
-    yield _
-
-    # cleanup
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            comp_pipeline.delete().where(
-                comp_pipeline.c.project_id.in_(created_pipeline_ids)
-            )
-        )
+    return _
 
 
 @pytest.fixture
