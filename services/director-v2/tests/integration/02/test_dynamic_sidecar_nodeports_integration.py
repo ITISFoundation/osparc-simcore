@@ -921,6 +921,7 @@ async def _assert_retrieve_completed(
 async def test_nodeports_integration(
     cleanup_services_and_networks: None,
     projects_networks_db: None,
+    product_db: dict[str, Any],
     mocked_service_awaits_manual_interventions: None,
     mock_resource_usage_tracker: None,
     mock_osparc_variables_api_auth_rpc: None,
