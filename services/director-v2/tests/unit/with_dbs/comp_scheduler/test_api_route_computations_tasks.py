@@ -119,7 +119,7 @@ async def project_id(
     user: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     with_product: dict[str, Any],
 ) -> ProjectID:
     """project uuid of a saved project (w/ tasks up-to-date)"""
@@ -133,7 +133,7 @@ async def project_id(
         dag_adjacency_list=fake_workbench_adjacency,
     )
     # insert tasks -> comp_tasks
-    comp_tasks = await create_tasks(user=user, project=proj)
+    comp_tasks = await create_tasks_from_project(user=user, project=proj)
     assert comp_tasks
 
     return proj.uuid

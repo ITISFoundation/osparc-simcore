@@ -874,7 +874,7 @@ async def test_get_computation_from_not_started_computation_task(
     create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     async_client: httpx.AsyncClient,
 ):
     user = create_registered_user()
@@ -891,7 +891,7 @@ async def test_get_computation_from_not_started_computation_task(
     assert response.status_code == status.HTTP_409_CONFLICT, response.text
 
     # now create the expected tasks and the state is good again
-    comp_tasks = await create_tasks(user=user, project=proj)
+    comp_tasks = await create_tasks_from_project(user=user, project=proj)
     response = await async_client.get(get_computation_url)
     assert response.status_code == status.HTTP_200_OK, response.text
     returned_computation = ComputationGet.model_validate(response.json())
@@ -939,7 +939,7 @@ async def test_get_computation_from_published_computation_task(
     create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     async_client: httpx.AsyncClient,
 ):
@@ -949,7 +949,7 @@ async def test_get_computation_from_published_computation_task(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(
+    comp_tasks = await create_tasks_from_project(
         user=user, project=proj, state=StateType.PUBLISHED, progress=0
     )
     comp_runs = await create_comp_run(

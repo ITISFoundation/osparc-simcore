@@ -99,13 +99,13 @@ async def tasks(
     project: ProjectAtDB,
     fake_workbench_adjacency: dict[str, Any],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
 ) -> list[CompTaskAtDB]:
     await create_pipeline(
         project_id=f"{project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(user, project)
+    comp_tasks = await create_tasks_from_project(user, project)
     assert len(comp_tasks) > 0
     return comp_tasks
 

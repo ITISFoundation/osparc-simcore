@@ -49,7 +49,7 @@ async def create_pipeline(
 
 
 @pytest.fixture
-async def create_tasks(
+async def create_tasks_from_project(
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
 ) -> Callable[..., Awaitable[list[CompTaskAtDB]]]:
     async def _(
@@ -277,7 +277,7 @@ async def publish_project(
     create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> Callable[[], Awaitable[PublishedProject]]:
@@ -292,7 +292,7 @@ async def publish_project(
                 project_id=f"{created_project.uuid}",
                 dag_adjacency_list=fake_workbench_adjacency,
             ),
-            tasks=await create_tasks(
+            tasks=await create_tasks_from_project(
                 user=user, project=created_project, state=StateType.PUBLISHED
             ),
         )
@@ -314,7 +314,7 @@ async def running_project(
     create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     create_comp_run_snapshot_tasks: Callable[
         ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
@@ -339,7 +339,7 @@ async def running_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=await create_tasks(
+        tasks=await create_tasks_from_project(
             user=user,
             project=created_project,
             state=StateType.RUNNING,
@@ -364,7 +364,7 @@ async def running_project_mark_for_cancellation(
     create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     create_comp_run_snapshot_tasks: Callable[
         ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
@@ -391,7 +391,7 @@ async def running_project_mark_for_cancellation(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=await create_tasks(
+        tasks=await create_tasks_from_project(
             user=user,
             project=created_project,
             state=StateType.RUNNING,
