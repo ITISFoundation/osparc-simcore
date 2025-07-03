@@ -70,8 +70,8 @@ qx.Class.define("osparc.data.model.Study", {
     this.setWorkbench(workbench);
     workbench.setStudy(this);
 
-    const workbenchUi = new osparc.data.model.StudyUI(studyData.ui);
-    this.setUi(workbenchUi);
+    const studyUI = new osparc.data.model.StudyUI(studyData.ui);
+    this.setUi(studyUI);
 
     this.getWorkbench().buildWorkbench();
   },

@@ -666,37 +666,5 @@ qx.Class.define("osparc.workbench.NodeUI", {
         });
       }
     },
-
-    __filterText: function(text) {
-      const label = this.getNode().getLabel()
-        .trim()
-        .toLowerCase();
-      if (label.indexOf(text) === -1) {
-        return true;
-      }
-      return false;
-    },
-
-    __filterTags: function(tags) {
-      if (tags && tags.length) {
-        const category = this.getNode().getMetaData().category || "";
-        const type = this.getNode().getMetaData().type || "";
-        if (!tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
-          return true;
-        }
-      }
-      return false;
-    },
-
-    // implement osparc.filter.IFilterable
-    _shouldApplyFilter: function(data) {
-      if (data.text) {
-        return this.__filterText(data.text);
-      }
-      if (data.tags && data.tags.length) {
-        return this.__filterTags(data.tags);
-      }
-      return false;
-    }
   }
 });
