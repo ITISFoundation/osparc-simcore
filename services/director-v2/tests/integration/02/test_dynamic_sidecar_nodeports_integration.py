@@ -165,6 +165,7 @@ async def minimal_configuration(
     ensure_swarm_and_networks: None,
     minio_s3_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
+    product_db: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
     await wait_for_catalog_service(current_user["id"], osparc_product_name)
@@ -929,7 +930,6 @@ def product_name(osparc_product_name: ProductName) -> ProductName:
 async def test_nodeports_integration(
     cleanup_services_and_networks: None,
     projects_networks_db: None,
-    product_db: dict[str, Any],
     mocked_service_awaits_manual_interventions: None,
     mock_resource_usage_tracker: None,
     mock_osparc_variables_api_auth_rpc: None,
