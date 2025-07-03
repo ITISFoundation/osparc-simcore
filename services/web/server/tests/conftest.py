@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import contextlib
 import json
 import logging
@@ -487,3 +488,9 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
         "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
         autospec=True,
     )
+
+
+@pytest.fixture
+async def loop() -> asyncio.AbstractEventLoop:
+    """Override the event loop inside pytest-aiohttp with the one from pytest-asyncio."""
+    return asyncio.get_running_loop()
