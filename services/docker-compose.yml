@@ -1163,10 +1163,10 @@ services:
       TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}
       TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
 
-  no-worker:
+  not-worker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-master-github-latest}
     init: true
-    hostname: "no-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "not-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *notifications_environment
       REDIS_HOST: ${REDIS_HOST}
@@ -1174,9 +1174,10 @@ services:
       REDIS_SECURE: ${REDIS_SECURE}
       REDIS_USER: ${REDIS_USER}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      NOTIFICATIONS_WORKER_NAME: "no-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      NOTIFICATIONS_WORKER_NAME: "not-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
+      CELERY_QUEUES: "notifications.default"
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
