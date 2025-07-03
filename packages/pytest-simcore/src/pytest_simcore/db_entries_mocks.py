@@ -35,7 +35,7 @@ def create_registered_user(
 ) -> Iterator[Callable[..., dict]]:
     created_user_ids = []
 
-    def creator(**user_kwargs) -> dict[str, Any]:
+    def _(**user_kwargs) -> dict[str, Any]:
         with postgres_db.connect() as con:
             # removes all users before continuing
             user_config = {
@@ -61,7 +61,7 @@ def create_registered_user(
             created_user_ids.append(user["id"])
         return dict(user._asdict())
 
-    yield creator
+    yield _
 
     with postgres_db.connect() as con:
         con.execute(users.delete().where(users.c.id.in_(created_user_ids)))
@@ -87,7 +87,7 @@ async def create_project(
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
-    async def creator(
+    async def _(
         user: dict[str, Any],
         *,
         project_nodes_overrides: dict[str, Any] | None = None,
@@ -141,7 +141,7 @@ async def create_project(
         created_project_ids.append(f"{inserted_project.uuid}")
         return inserted_project
 
-    yield creator
+    yield _
 
     # cleanup
     async with sqlalchemy_async_engine.begin() as con:
@@ -157,7 +157,7 @@ async def create_pipeline(
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     created_pipeline_ids: list[str] = []
 
-    async def creator(**pipeline_kwargs) -> dict[str, Any]:
+    async def _(**pipeline_kwargs) -> dict[str, Any]:
         pipeline_config = {
             "project_id": f"{uuid4()}",
             "dag_adjacency_list": {},
@@ -175,7 +175,7 @@ async def create_pipeline(
             created_pipeline_ids.append(new_pipeline["project_id"])
             return new_pipeline
 
-    yield creator
+    yield _
 
     # cleanup
     async with sqlalchemy_async_engine.begin() as conn:
@@ -192,7 +192,7 @@ async def create_comp_task(
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     created_task_ids: list[int] = []
 
-    async def creator(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
+    async def _(project_id: ProjectID, **task_kwargs) -> dict[str, Any]:
         task_config = {"project_id": f"{project_id}"} | task_kwargs
         async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
@@ -205,7 +205,7 @@ async def create_comp_task(
             created_task_ids.append(new_task["task_id"])
         return new_task
 
-    yield creator
+    yield _
 
     # cleanup
     async with sqlalchemy_async_engine.begin() as conn:
@@ -224,7 +224,7 @@ def grant_service_access_rights(
     """
     created_entries: list[tuple[str, str, int, str]] = []
 
-    def creator(
+    def _(
         *,
         service_key: str,
         service_version: str,
@@ -268,7 +268,7 @@ def grant_service_access_rights(
             # Convert row to dict
             return dict(row._asdict())
 
-    yield creator
+    yield _
 
     # Cleanup all created entries
     with postgres_db.begin() as conn:
