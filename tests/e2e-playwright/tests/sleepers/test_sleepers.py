@@ -170,6 +170,7 @@ def test_sleepers(
             RunningState.WAITING_FOR_CLUSTER,
             RunningState.WAITING_FOR_RESOURCES,
             RunningState.STARTED,
+            RunningState.SUCCESS,
         ),
         timeout_ms=_WAITING_FOR_PIPELINE_TO_CHANGE_STATE,
     )
