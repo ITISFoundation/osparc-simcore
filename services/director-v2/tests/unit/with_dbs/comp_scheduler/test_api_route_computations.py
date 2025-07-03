@@ -89,6 +89,7 @@ def minimal_configuration(
     faker: Faker,
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
+    product_db: dict[str, Any],
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
@@ -365,11 +366,6 @@ def mocked_resource_usage_tracker_service_fcts(
 
 
 @pytest.fixture
-def product_name(faker: Faker) -> str:
-    return faker.name()
-
-
-@pytest.fixture
 def product_api_base_url(faker: Faker) -> AnyHttpUrl:
     return TypeAdapter(AnyHttpUrl).validate_python(faker.url())
 
@@ -380,7 +376,7 @@ async def test_computation_create_validators(
     fake_workbench_without_outputs: dict[str, Any],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
-    faker: Faker,
+    product_db: dict[str, Any],
     faker_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
@@ -929,7 +925,7 @@ async def test_get_computation_from_not_started_computation_task(
             node_states={
                 t.node_id: NodeState(
                     modified=True,
-                    currentStatus=RunningState.NOT_STARTED,
+                    current_status=RunningState.NOT_STARTED,
                     progress=None,
                     dependencies={
                         NodeID(node)
@@ -1001,7 +997,7 @@ async def test_get_computation_from_published_computation_task(
             node_states={
                 t.node_id: NodeState(
                     modified=True,
-                    currentStatus=RunningState.PUBLISHED,
+                    current_status=RunningState.PUBLISHED,
                     dependencies={
                         NodeID(node)
                         for node, next_nodes in fake_workbench_adjacency.items()

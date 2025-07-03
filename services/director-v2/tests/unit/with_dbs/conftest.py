@@ -352,6 +352,7 @@ async def publish_project(
 
 @pytest.fixture
 async def published_project(
+    product_db: dict[str, Any],
     publish_project: Callable[[], Awaitable[PublishedProject]],
 ) -> PublishedProject:
     return await publish_project()
@@ -359,6 +360,7 @@ async def published_project(
 
 @pytest.fixture
 async def running_project(
+    product_db: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
@@ -419,6 +421,7 @@ async def running_project_mark_for_cancellation(
     ],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
+    product_db: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
     created_project = await project(user, workbench=fake_workbench_without_outputs)
