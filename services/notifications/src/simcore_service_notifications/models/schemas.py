@@ -15,6 +15,5 @@ Recipient: TypeAlias = SMSRecipient | EmailRecipient
 
 
 class NotificationMessage(BaseModel):
-    recipients: list[Recipient]
     event: str
     context: dict[str, Any] | None = None

@@ -1,4 +1,6 @@
-from ..models.schemas import NotificationMessage
+from ..models.schemas import NotificationMessage, Recipient
 
 
-async def send_notification_message(message: NotificationMessage) -> None: ...
+async def send_notification(
+    message: NotificationMessage, *recipients: list[Recipient]
+) -> None: ...
