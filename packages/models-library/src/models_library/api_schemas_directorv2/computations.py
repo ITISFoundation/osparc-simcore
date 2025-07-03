@@ -12,7 +12,7 @@ from pydantic import (
 
 from ..basic_types import IDStr
 from ..projects import ProjectID
-from ..projects_nodes_io import NodeID
+from ..projects_nodes_io import NodeID, SimcoreS3FileID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
 from ..wallets import WalletInfo
@@ -103,6 +103,11 @@ class TaskLogFileGet(BaseModel):
         AnyUrl | None,
         Field(description="Presigned link for log file or None if still not available"),
     ] = None
+
+
+class TaskLogFileIdGet(BaseModel):
+    task_id: NodeID
+    file_id: SimcoreS3FileID | None
 
 
 class TasksSelection(BaseModel):

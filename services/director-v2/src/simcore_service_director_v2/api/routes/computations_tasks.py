@@ -7,9 +7,8 @@ Therefore,
 """
 
 import logging
-from typing import Annotated, NamedTuple
+from typing import Annotated
 
-import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.api_schemas_directorv2.computations import (
     TaskLogFileGet,
@@ -22,11 +21,10 @@ from models_library.users import UserID
 from servicelib.utils import logged_gather
 from starlette import status
 
-from ...models.comp_pipelines import CompPipelineAtDB
-from ...models.comp_tasks import CompTaskAtDB
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
+from ...utils.computations_tasks import PipelineInfo, get_pipeline_info
 from ..dependencies.database import get_repository
 
 log = logging.getLogger(__name__)
@@ -35,13 +33,6 @@ router = APIRouter()
 
 
 # HELPERS -------------------------------------------------------------------
-
-
-class PipelineInfo(NamedTuple):
-    # NOTE: kept old names for legacy but should rename for clarity
-    pipeline_dag: nx.DiGraph
-    all_tasks: list[CompTaskAtDB]  # all nodes in pipeline
-    filtered_tasks: list[CompTaskAtDB]  # nodes that actually run i.e. part of the dag
 
 
 async def analyze_pipeline(
@@ -54,29 +45,19 @@ async def analyze_pipeline(
     reports it back as PipelineInfo
     """
 
-    # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
-    # get the project pipeline
-    pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(
-        project_id
+    pipeline_info = await get_pipeline_info(
+        project_id=project_id,
+        comp_pipelines_repo=comp_pipelines_repo,
+        comp_tasks_repo=comp_tasks_repo,
     )
-    pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
-
-    # get the project task states
-    all_tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
-
-    # filter the tasks by the effective pipeline
-    filtered_tasks = [
-        t for t in all_tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
-    ]
 
     # check that we have the expected tasks
-    if len(filtered_tasks) != len(pipeline_dag):
+    if len(pipeline_info.filtered_tasks) != len(pipeline_info.pipeline_dag):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="The tasks referenced by the pipeline are missing",
         )
-
-    return PipelineInfo(pipeline_dag, all_tasks, filtered_tasks)
+    return pipeline_info
 
 
 # ROUTES HANDLERS --------------------------------------------------------------
