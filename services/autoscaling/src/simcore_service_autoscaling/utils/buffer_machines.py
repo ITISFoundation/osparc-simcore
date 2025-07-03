@@ -16,7 +16,7 @@ from ..constants import (
     PRE_PULLED_IMAGES_RE,
 )
 from ..core.settings import ApplicationSettings
-from .utils import utils_docker
+from . import utils_docker
 
 _NAME_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
