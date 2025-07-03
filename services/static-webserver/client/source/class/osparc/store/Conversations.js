@@ -44,7 +44,7 @@ qx.Class.define("osparc.store.Conversations", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    addConversation: function(studyId, name = "new 1", type = this.TYPES.PROJECT_STATIC) {
+    addConversation: function(studyId, name = "new 1", type = osparc.study.Conversations.TYPES.PROJECT_STATIC) {
       const params = {
         url: {
           studyId,
