@@ -2014,6 +2014,15 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__addAnnotationListeners(annotation);
       this.__annotations[annotation.getId()] = annotation;
       this.getStudy().getUi().addAnnotation(annotation);
+
+      if (annotation.getType() === osparc.workbench.Annotation.TYPES.CONVERSATION) {
+        osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+          const data = e.getData();
+          if (data.getAttributes()["conversationId"] === conversationId) {
+            this.__removeAnnotation(annotation.getId());
+          }
+        }, this);
+      }
     },
 
     __removeAnnotation: function(id) {

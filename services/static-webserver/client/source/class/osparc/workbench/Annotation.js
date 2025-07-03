@@ -130,12 +130,6 @@ qx.Class.define("osparc.workbench.Annotation", {
                 this.setText(data.name);
               }
             }, this);
-            osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
-              const data = e.getData();
-              if (data.conversationId === conversationId) {
-                osparc.wrapper.Svg.removeItem(representation);
-              }
-            }, this);
           }
           break;
         }
