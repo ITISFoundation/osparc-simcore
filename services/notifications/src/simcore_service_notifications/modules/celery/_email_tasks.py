@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 import logging
 
 from celery import Task  # type: ignore[import-untyped]
