@@ -1,7 +1,7 @@
-from fastapi import FastAPI
+from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
-from ...models.schemas import NotificationMessage
+from ...models.schemas import NotificationMessage, Recipient
 from ...services import notifications_service
 
 router = RPCRouter()
@@ -9,8 +9,11 @@ router = RPCRouter()
 
 @router.expose(reraise_if_error_type=())
 async def send_notification_message(
-    app: FastAPI,
+    task_manager: TaskManager,
     *,
     message: NotificationMessage,
+    recipients: list[Recipient],
 ) -> None:
-    await notifications_service.send_notification_message(message=message)
+    await notifications_service.send_notification(
+        task_manager, message=message, recipients=recipients
+    )

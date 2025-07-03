@@ -13,6 +13,7 @@ from servicelib.fastapi.postgres_lifespan import (
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
 from ..api.rpc.routes import rpc_api_routes_lifespan
+from ..clients.celery import celery_lifespan
 from ..clients.postgres import postgres_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
 from .settings import ApplicationSettings
@@ -46,6 +47,9 @@ def create_app_lifespan():
 
     # - rabbitmq
     app_lifespan.add(rabbitmq_lifespan)
+
+    # - celery
+    app_lifespan.add(celery_lifespan)
 
     # - rpc api routes
     app_lifespan.add(rpc_api_routes_lifespan)
