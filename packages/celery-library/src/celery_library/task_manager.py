@@ -37,7 +37,7 @@ class CeleryTaskManager:
     _celery_settings: CelerySettings
     _task_info_store: TaskInfoStore
 
-    async def submit_task(
+    async def send_task(
         self,
         task_metadata: TaskMetadata,
         *,
@@ -47,7 +47,7 @@ class CeleryTaskManager:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Submit {task_metadata.name=}: {task_context=} {task_params=}",
+            msg=f"Send {task_metadata.name=}: {task_context=} {task_params=}",
         ):
             task_uuid = uuid4()
             task_id = build_task_id(task_context, task_uuid)
@@ -55,7 +55,7 @@ class CeleryTaskManager:
                 task_metadata.name,
                 task_id=task_id,
                 kwargs={"task_id": task_id} | task_params,
-                queue=task_metadata.queue.value,
+                queue=task_metadata.queue,
             )
 
             expiry = (
