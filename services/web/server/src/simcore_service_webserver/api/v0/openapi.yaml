@@ -2798,6 +2798,13 @@ paths:
           type: integer
           default: 0
           title: Offset
+      - name: filter_only_running
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Filter Only Running
       - name: filter_by_root_project_id
         in: query
         required: false

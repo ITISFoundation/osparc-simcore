@@ -24,23 +24,24 @@ class RunningState(str, Enum):
     SEE StateType for task state
     """
 
-    UNKNOWN = "UNKNOWN"  # Error state, disapeared from the system (dask backend lost the task and we do not know what is the state)
-    NOT_STARTED = "NOT_STARTED"  # Default when project is created
+    UNKNOWN = "UNKNOWN"  # Error state: the task disappeared from the system (Dask backend lost the task and its state is unknown)
+    NOT_STARTED = "NOT_STARTED"  # Default state when the project is created
 
     PUBLISHED = (
-        "PUBLISHED"  # project is awainting for the compu schedule to pick the task
+        "PUBLISHED"  # The project is awaiting the compute scheduler to pick up the task
     )
-    PENDING = "PENDING"  # Comp scheduler takes over, and the task is waiting for a worker to pick it up
 
-    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"  # There are no clusters available to run the task, waiting for one to become available
-    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"  # There is no worker available to run the task, waiting for one to become available
+    PENDING = "PENDING"  # The compute scheduler has taken over, and the task is waiting for a worker to pick it up
+
+    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"  # No cluster is available to run the task; waiting for one to become available
+    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"  # No worker is available to run the task; waiting for one to become available
     # PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED
 
-    STARTED = "STARTED"  # Worker took the task and is executing it
+    STARTED = "STARTED"  # A worker has picked up the task and is executing it
 
-    SUCCESS = "SUCCESS"  # Finished
-    FAILED = "FAILED"  # Finished
-    ABORTED = "ABORTED"  # Finished
+    SUCCESS = "SUCCESS"  # Task finished successfully
+    FAILED = "FAILED"  # Task finished with an error
+    ABORTED = "ABORTED"  # Task was aborted before completion
 
     @staticmethod
     def list_running_states() -> list["RunningState"]:
