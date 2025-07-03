@@ -119,7 +119,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
     _loadRowData(firstRow, qxLastRow) {
       this.setIsFetching(true);
 
-      qxLastRow = osparc.store.Jobs; // Default to 2 rows for testing purposes
+      qxLastRow = osparc.store.Jobs.SERVER_MAX_LIMIT; // Default to 2 rows for testing purposes
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
