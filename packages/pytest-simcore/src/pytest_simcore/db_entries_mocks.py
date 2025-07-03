@@ -13,7 +13,6 @@ from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
-from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.products import products
@@ -26,6 +25,8 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
+
+from .helpers.postgres_tools import insert_and_get_row_lifespan
 
 
 @pytest.fixture()
