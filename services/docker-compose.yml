@@ -1299,7 +1299,7 @@ services:
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
-      CELERY_QUEUES: "cpu_bound"
+      CELERY_QUEUES: "storage.cpu_bound"
     networks: *storage_networks
 
   rabbit:

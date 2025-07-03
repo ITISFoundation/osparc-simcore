@@ -13,8 +13,8 @@ from ..celery.models import (
 
 
 class TaskManager(Protocol):
-    async def submit_task(
-        self, task_metadata: TaskMetadata, *, task_context: TaskContext, **task_param
+    async def send_task(
+        self, task_metadata: TaskMetadata, *, task_context: TaskContext, **task_params
     ) -> TaskUUID: ...
 
     async def cancel_task(

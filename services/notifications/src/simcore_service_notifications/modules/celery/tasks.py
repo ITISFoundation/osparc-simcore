@@ -1,4 +1,5 @@
 import logging
+from enum import StrEnum
 
 from celery import Celery  # type: ignore[import-untyped]
 from celery_library.task import register_task
@@ -9,6 +10,13 @@ from ...models.schemas import NotificationMessage, SMSRecipient
 from ...modules.celery._email_tasks import EmailRecipient, send_email
 
 _logger = logging.getLogger(__name__)
+
+
+_TASK_QUEUE_PREFIX: str = "notifications"
+
+
+class TaskQueue(StrEnum):
+    DEFAULT = f"{_TASK_QUEUE_PREFIX}.default"
 
 
 def setup_worker_tasks(app: Celery) -> None:

@@ -288,7 +288,7 @@ async def complete_upload_file(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
-    task_uuid = await task_manager.submit_task(
+    task_uuid = await task_manager.send_task(
         TaskMetadata(
             name=remote_complete_upload_file.__name__,
         ),

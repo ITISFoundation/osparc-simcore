@@ -82,7 +82,7 @@ async def rpc_sync_job(
     task_manager: TaskManager, *, job_id_data: AsyncJobNameData, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = sync_job.__name__
-    task_uuid = await task_manager.submit_task(
+    task_uuid = await task_manager.send_task(
         TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
     )
 
@@ -94,7 +94,7 @@ async def rpc_async_job(
     task_manager: TaskManager, *, job_id_data: AsyncJobNameData, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = async_job.__name__
-    task_uuid = await task_manager.submit_task(
+    task_uuid = await task_manager.send_task(
         TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
     )
 
