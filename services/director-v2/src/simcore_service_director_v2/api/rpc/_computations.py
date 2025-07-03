@@ -17,17 +17,17 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 from servicelib.utils import limited_gather
-from simcore_service_director_v2.models.comp_run_snapshot_tasks import (
-    CompRunSnapshotTaskDBGet,
-)
-from simcore_service_director_v2.modules.db.repositories.comp_runs_snapshot_tasks import (
-    CompRunsSnapshotTasksRepository,
-)
 
 from ...core.errors import ComputationalRunNotFoundError
+from ...models.comp_run_snapshot_tasks import (
+    CompRunSnapshotTaskDBGet,
+)
 from ...models.comp_runs import CompRunsAtDB
 from ...models.comp_tasks import ComputationTaskForRpcDBGet
 from ...modules.db.repositories.comp_runs import CompRunsRepository
+from ...modules.db.repositories.comp_runs_snapshot_tasks import (
+    CompRunsSnapshotTasksRepository,
+)
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
 

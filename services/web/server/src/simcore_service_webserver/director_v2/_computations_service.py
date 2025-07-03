@@ -301,7 +301,6 @@ async def list_computations_latest_iteration_tasks(
 async def _get_root_project_names_v2(
     app: web.Application, items: list[ComputationCollectionRunRpcGet]
 ) -> list[str]:
-    """Resolve root project names from computation items"""
     root_uuids: list[ProjectID] = []
     for item in items:
         if root_id := item.info.get("project_metadata", {}).get(
