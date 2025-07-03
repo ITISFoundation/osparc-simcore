@@ -25,6 +25,10 @@ qx.Class.define("osparc.store.Conversations", {
     this.__projectConversations = {};
   },
 
+  events: {
+    "conversationUpdated": "qx.event.type.Data",
+  },
+
   members: {
     __projectConversations: null,
 
@@ -59,7 +63,10 @@ qx.Class.define("osparc.store.Conversations", {
         }
       };
       return osparc.data.Resources.fetch("conversations", "addConversation", params)
-        .then
+        .then(conversation => {
+          // OM add to cache
+          return conversation;
+        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -85,6 +92,13 @@ qx.Class.define("osparc.store.Conversations", {
         }
       };
       return osparc.data.Resources.fetch("conversations", "renameConversation", params)
+        .then(() => {
+          this.fireDataEvent("conversationUpdated", {
+            studyId,
+            conversationId,
+            name,
+          });
+        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 

@@ -321,6 +321,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         })
         .move(padding + iconSize + 8, ((bubbleHeight - titleFontSize) / 2) - 3);
       bubble.add(label);
+      bubble.label = label; // store reference for renaming
 
       // Compute available width for text
       const availableWidth = bubbleWidth - padding * 2 - iconSize - 8;
@@ -363,12 +364,15 @@ qx.Class.define("osparc.wrapper.Svg", {
       return bubble;
     },
 
-    updateText: function(representation, label) {
+    updateText: function(representation, newText) {
       if (representation.type === "text") {
-        representation.text(label);
+        representation.text(newText);
       } else if (representation.type === "svg") {
         // nested
-        representation["textChild"].innerText = label;
+        representation["textChild"].innerText = newText;
+      } else if (representation.type === "g") {
+        // group
+        representation.label.text(newText);
       }
     },
 

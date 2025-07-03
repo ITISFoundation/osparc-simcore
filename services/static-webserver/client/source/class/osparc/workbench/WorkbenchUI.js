@@ -1997,7 +1997,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
           osparc.store.Conversations.getInstance().addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.TYPES.PROJECT_ANNOTATION)
             .then(conversationData => {
               serializeData.attributes.conversationId = conversationData["conversationId"];
-              serializeData.attributes.title = conversationData["name"];
+              serializeData.attributes.text = conversationData["name"];
               this.__addAnnotation(serializeData);
               osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationData["conversationId"]);
             });

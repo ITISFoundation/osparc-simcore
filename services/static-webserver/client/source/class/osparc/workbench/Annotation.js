@@ -39,9 +39,9 @@ qx.Class.define("osparc.workbench.Annotation", {
     }
     this.set({
       id,
-      type: data.type,
       color,
-      attributes: data.attributes
+      attributes: data.attributes,
+      type: data.type,
     });
   },
 
@@ -69,7 +69,8 @@ qx.Class.define("osparc.workbench.Annotation", {
         "text", // osparc.workbench.Annotation.TYPES.TEXT
         "conversation", // osparc.workbench.Annotation.TYPES.CONVERSATION
       ],
-      nullable: false
+      nullable: false,
+      apply: "__drawAnnotation"
     },
 
     color: {
@@ -83,7 +84,6 @@ qx.Class.define("osparc.workbench.Annotation", {
     attributes: {
       check: "Object",
       nullable: false,
-      apply: "__drawAnnotation"
     },
 
     representation: {
@@ -101,11 +101,12 @@ qx.Class.define("osparc.workbench.Annotation", {
   members: {
     __svgLayer: null,
 
-    __drawAnnotation: function(attrs) {
+    __drawAnnotation: function() {
       if (this.__svgLayer === null) {
         return;
       }
 
+      const attrs = this.getAttributes();
       let representation = null;
       switch (this.getType()) {
         case this.self().TYPES.NOTE: {
@@ -120,7 +121,16 @@ qx.Class.define("osparc.workbench.Annotation", {
           representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor(), attrs.fontSize);
           break;
         case this.self().TYPES.CONVERSATION: {
-          representation = this.__svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.title);
+          representation = this.__svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.text);
+          const conversationId = attrs.conversationId;
+          if (conversationId) {
+            osparc.store.Conversations.getInstance().addListener("conversationUpdated", e => {
+              const data = e.getData();
+              if (data.conversationId === conversationId) {
+                this.setText(data.name);
+              }
+            }, this);
+          }
           break;
         }
       }
