@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -13,6 +13,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobNameData,
 )
 from models_library.products import ProductName
+from models_library.rest_error import ErrorGet
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
 from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
@@ -30,7 +31,20 @@ def _get_job_id_data(user_id: UserID, product_name: ProductName) -> AsyncJobName
     return AsyncJobNameData(user_id=user_id, product_name=product_name)
 
 
-@router.get("", response_model=ApiServerEnvelope[list[TaskGet]])
+_DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
+    status.HTTP_500_INTERNAL_SERVER_ERROR: {
+        "description": "Internal server error",
+        "model": ErrorGet,
+    },
+}
+
+
+@router.get(
+    "",
+    response_model=ApiServerEnvelope[list[TaskGet]],
+    responses=_DEFAULT_TASK_STATUS_CODES,
+    status_code=status.HTTP_200_OK,
+)
 async def get_async_jobs(
     app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
@@ -61,7 +75,13 @@ async def get_async_jobs(
     return ApiServerEnvelope(data=data)
 
 
-@router.get("/{task_id}", response_model=TaskStatus, name="get_async_job_status")
+@router.get(
+    "/{task_id}",
+    response_model=TaskStatus,
+    name="get_async_job_status",
+    responses=_DEFAULT_TASK_STATUS_CODES,
+    status_code=status.HTTP_200_OK,
+)
 async def get_async_job_status(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
@@ -83,7 +103,10 @@ async def get_async_job_status(
 
 
 @router.post(
-    "/{task_id}:cancel", status_code=status.HTTP_204_NO_CONTENT, name="cancel_async_job"
+    "/{task_id}:cancel",
+    status_code=status.HTTP_204_NO_CONTENT,
+    name="cancel_async_job",
+    responses=_DEFAULT_TASK_STATUS_CODES,
 )
 async def cancel_async_job(
     task_id: AsyncJobId,
@@ -97,7 +120,23 @@ async def cancel_async_job(
     )
 
 
-@router.get("/{task_id}/result", response_model=TaskResult, name="get_async_job_result")
+@router.get(
+    "/{task_id}/result",
+    response_model=TaskResult,
+    name="get_async_job_result",
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Task result not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Task is cancelled",
+            "model": ErrorGet,
+        },
+        **_DEFAULT_TASK_STATUS_CODES,
+    },
+    status_code=status.HTTP_200_OK,
+)
 async def get_async_job_result(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
