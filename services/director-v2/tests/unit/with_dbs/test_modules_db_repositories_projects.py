@@ -72,7 +72,7 @@ def workbench() -> dict[str, Any]:
 async def project(
     mock_env: EnvVarsDict,
     create_registered_user: Callable[..., dict],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     workbench: dict[str, Any],
 ) -> ProjectAtDB:

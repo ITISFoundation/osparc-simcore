@@ -192,7 +192,7 @@ def test_invalid_computation(
 async def test_start_empty_computation_is_refused(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     osparc_product_name: str,
     osparc_product_api_base_url: str,
@@ -398,7 +398,7 @@ async def test_run_partial_computation(
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: dict[str, Any],
@@ -551,7 +551,7 @@ async def test_run_computation(
     wait_for_catalog_service: Callable[[UserID, str], Awaitable[None]],
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
@@ -670,7 +670,7 @@ async def test_run_computation(
 async def test_abort_computation(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
@@ -750,7 +750,7 @@ async def test_abort_computation(
 async def test_update_and_delete_computation(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
@@ -879,7 +879,7 @@ async def test_update_and_delete_computation(
 async def test_pipeline_with_no_computational_services_still_create_correct_comp_tasks_in_db(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
@@ -926,7 +926,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
 async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     client: TestClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
@@ -998,7 +998,7 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
 async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     client: TestClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     sleeper_service: dict[str, Any],
     jupyter_service: dict[str, Any],
@@ -1083,7 +1083,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
 async def test_burst_create_computations(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,

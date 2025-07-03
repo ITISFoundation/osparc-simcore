@@ -43,7 +43,7 @@ def minimal_configuration(
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
@@ -63,7 +63,7 @@ def cli_runner(minimal_configuration: None) -> CliRunner:
 @pytest.fixture
 async def project_at_db(
     create_registered_user: Callable[..., dict[str, Any]],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
 ) -> ProjectAtDB:

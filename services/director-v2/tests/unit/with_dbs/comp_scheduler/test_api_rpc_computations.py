@@ -40,7 +40,7 @@ async def test_rpc_list_computation_runs_and_tasks(
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
     proj = await project(user, workbench=fake_workbench_without_outputs)
@@ -120,7 +120,7 @@ async def test_rpc_list_computation_runs_with_filtering(
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
 
@@ -177,7 +177,7 @@ async def test_rpc_list_computation_runs_history(
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
 

@@ -99,7 +99,7 @@ def user_id(user_db: dict[str, Any]) -> UserID:
 async def project_id(
     user_db: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ) -> str:
     prj = await project(user=user_db)
     return f"{prj.uuid}"

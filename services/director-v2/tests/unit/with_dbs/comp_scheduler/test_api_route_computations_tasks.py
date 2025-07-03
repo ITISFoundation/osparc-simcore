@@ -120,7 +120,7 @@ async def project_id(
     project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ) -> ProjectID:
     """project uuid of a saved project (w/ tasks up-to-date)"""
 

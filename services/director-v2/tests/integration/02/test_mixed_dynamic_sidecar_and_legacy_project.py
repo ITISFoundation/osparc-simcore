@@ -139,7 +139,7 @@ def user_dict(create_registered_user: Callable) -> dict[str, Any]:
 async def dy_static_file_server_project(
     minimal_configuration: None,
     user_dict: dict[str, Any],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
     dy_static_file_server_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
