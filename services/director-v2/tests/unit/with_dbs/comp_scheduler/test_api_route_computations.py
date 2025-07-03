@@ -88,6 +88,7 @@ def minimal_configuration(
     faker: Faker,
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_publisher: mock.Mock,
+    product_db: dict[str, Any],
 ):
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
@@ -374,7 +375,7 @@ async def test_computation_create_validators(
     fake_workbench_without_outputs: dict[str, Any],
     product_name: str,
     product_api_base_url: AnyHttpUrl,
-    faker: Faker,
+    product_db: dict[str, Any],
 ):
     user = create_registered_user()
     proj = await project(user, workbench=fake_workbench_without_outputs)
