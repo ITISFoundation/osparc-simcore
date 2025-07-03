@@ -33,8 +33,7 @@ def _initialise_logger(settings: ApplicationSettings):
     )
 
 
-def create_app() -> FastAPI:
-    settings = ApplicationSettings.create_from_envs()
+def create_app(settings: ApplicationSettings) -> FastAPI:
     _logger.debug(settings.model_dump_json(indent=2))
 
     _initialise_logger(settings)

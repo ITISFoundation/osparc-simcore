@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_notifications.core.application import create_app
+from simcore_service_notifications.core.settings import ApplicationSettings
 
 
 @pytest.fixture
@@ -37,7 +38,7 @@ def app_environment(
 
 @pytest.fixture
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
-    app: FastAPI = create_app()
+    app: FastAPI = create_app(ApplicationSettings.create_from_envs())
 
     async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app

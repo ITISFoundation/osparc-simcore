@@ -28,7 +28,7 @@ config_all_loggers(
 assert _settings.NOTIFICATIONS_CELERY  # nosec
 the_celery_app = create_celery_app(_settings.NOTIFICATIONS_CELERY)
 
-app_server = FastAPIAppServer(app=create_app())
+app_server = FastAPIAppServer(app=create_app(_settings))
 
 
 def worker_init_wrapper(sender, **_kwargs):
