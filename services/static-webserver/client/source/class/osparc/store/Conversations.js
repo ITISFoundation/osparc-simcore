@@ -26,7 +26,8 @@ qx.Class.define("osparc.store.Conversations", {
   },
 
   events: {
-    "conversationUpdated": "qx.event.type.Data",
+    "conversationRenamed": "qx.event.type.Data",
+    "conversationDeleted": "qx.event.type.Data",
   },
 
   members: {
@@ -78,6 +79,12 @@ qx.Class.define("osparc.store.Conversations", {
         },
       };
       return osparc.data.Resources.fetch("conversations", "deleteConversation", params)
+        .then(() => {
+          this.fireDataEvent("conversationDeleted", {
+            studyId,
+            conversationId,
+          })
+        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -93,7 +100,7 @@ qx.Class.define("osparc.store.Conversations", {
       };
       return osparc.data.Resources.fetch("conversations", "renameConversation", params)
         .then(() => {
-          this.fireDataEvent("conversationUpdated", {
+          this.fireDataEvent("conversationRenamed", {
             studyId,
             conversationId,
             name,

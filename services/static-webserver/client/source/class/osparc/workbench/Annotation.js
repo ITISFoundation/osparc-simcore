@@ -124,10 +124,16 @@ qx.Class.define("osparc.workbench.Annotation", {
           representation = this.__svgLayer.drawAnnotationConversation(attrs.x, attrs.y, attrs.text);
           const conversationId = attrs.conversationId;
           if (conversationId) {
-            osparc.store.Conversations.getInstance().addListener("conversationUpdated", e => {
+            osparc.store.Conversations.getInstance().addListener("conversationRenamed", e => {
               const data = e.getData();
               if (data.conversationId === conversationId) {
                 this.setText(data.name);
+              }
+            }, this);
+            osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+              const data = e.getData();
+              if (data.conversationId === conversationId) {
+                osparc.wrapper.Svg.removeItem(representation);
               }
             }, this);
           }
