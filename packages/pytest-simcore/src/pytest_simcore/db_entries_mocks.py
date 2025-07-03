@@ -71,7 +71,7 @@ def create_registered_user(
 async def product_db(
     sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
 ) -> AsyncIterator[dict[str, Any]]:
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
         table=products,
         values=product,
