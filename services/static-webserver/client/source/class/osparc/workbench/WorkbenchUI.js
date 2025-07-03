@@ -1188,15 +1188,10 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __renderAnnotations: function(studyUI) {
-      const initData = studyUI.getAnnotationsInitData();
-      const annotations = initData ? initData : studyUI.getAnnotations();
-      Object.entries(annotations).forEach(([annotationId, annotation]) => {
-        const annotationData = annotation instanceof osparc.workbench.Annotation ? annotation.serialize() : annotation;
-        this.__addAnnotation(annotationData, annotationId);
+      const annotations = studyUI.getAnnotations();
+      Object.values(annotations).forEach(annotation => {
+        this.__renderAnnotation(annotation);
       });
-      if (initData) {
-        studyUI.nullAnnotationsInitData();
-      }
     },
 
     __setSelectedItem: function(newID) {
@@ -2009,12 +2004,18 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__toolHint.setValue(null);
     },
 
-    __addAnnotation: function(data, id) {
-      const annotation = new osparc.workbench.Annotation(data, id);
+    __addAnnotation: function(annotationData, id) {
+      const annotation = new osparc.workbench.Annotation(annotationData, id);
+      this.getStudy().getUi().addAnnotation(annotation);
+
+      this.__renderAnnotation(annotation);
+    },
+
+    __renderAnnotation: function(annotation) {
       annotation.setSvgCanvas(this.__svgLayer);
+
       this.__addAnnotationListeners(annotation);
       this.__annotations[annotation.getId()] = annotation;
-      this.getStudy().getUi().addAnnotation(annotation);
 
       if (annotation.getType() === osparc.workbench.Annotation.TYPES.CONVERSATION) {
         osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
