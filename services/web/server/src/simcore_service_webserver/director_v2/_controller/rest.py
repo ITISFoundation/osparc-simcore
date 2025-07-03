@@ -112,11 +112,8 @@ async def start_computation(request: web.Request) -> web.Response:
             f"system-generated/{path_params.project_id}/{uuid.uuid4()}"
         )
     else:
-        # assert isinstance(group_id_or_none, str)  # nosec
-        # assert uuid.UUID(group_id_or_none)
         client_or_system_generated_id = f"{group_id_or_none}"
     group_name = custom_metadata.get("group_name", "No Group Name")
-    # job_name_or_none = custom_metadata.get("job_name")
 
     collection_run_id = await create_comp_run_collection(
         request.app,

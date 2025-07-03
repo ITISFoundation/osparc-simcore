@@ -41,14 +41,6 @@ async def get_project_custom_metadata_or_empty_dict(
     return output
 
 
-# async def get_project_metadata_or_none(
-#     app: web.Application, project_uuid: ProjectID
-# ) -> ProjectMetadata | None:
-#     return await _metadata_repository.get_project_metadata_or_none(
-#         engine=get_database_engine(app), project_uuid=project_uuid
-#         )
-
-
 async def set_project_custom_metadata(
     app: web.Application,
     user_id: UserID,
