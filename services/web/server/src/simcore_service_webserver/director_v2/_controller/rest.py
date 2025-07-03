@@ -92,7 +92,7 @@ async def start_computation(request: web.Request) -> web.Response:
     comp_run_collection: CompRunCollectionDBGet | None = None
     if group_id_or_none:
         comp_run_collection = await get_comp_run_collection_or_none_by_client_generated_id(
-            request.app, client_generated_id=group_id_or_none  # type: ignore
+            request.app, client_or_system_generated_id=group_id_or_none  # type: ignore
         )
     if comp_run_collection is not None:
         created_at: datetime = comp_run_collection.created

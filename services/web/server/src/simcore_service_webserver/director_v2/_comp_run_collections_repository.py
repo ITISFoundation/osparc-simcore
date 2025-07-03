@@ -39,7 +39,6 @@ async def create_comp_run_collection(
 async def get_comp_run_collection_or_none_by_id(
     conn, collection_run_id: CollectionRunID
 ) -> CompRunCollectionDBGet | None:
-    """Get a computational run collection by collection_run_id."""
     result = await conn.execute(
         comp_run_collections.select().where(
             comp_run_collections.c.collection_run_id == f"{collection_run_id}"
@@ -52,12 +51,12 @@ async def get_comp_run_collection_or_none_by_id(
 
 
 async def get_comp_run_collection_or_none_by_client_generated_id(
-    conn, client_generated_id: str
+    conn, client_or_system_generated_id: str
 ) -> CompRunCollectionDBGet | None:
-    """Get a computational run collection by client_generated_id."""
     result = await conn.execute(
         comp_run_collections.select().where(
-            comp_run_collections.c.client_generated_id == client_generated_id
+            comp_run_collections.c.client_or_system_generated_id
+            == client_or_system_generated_id
         )
     )
     row = await result.one_or_none()

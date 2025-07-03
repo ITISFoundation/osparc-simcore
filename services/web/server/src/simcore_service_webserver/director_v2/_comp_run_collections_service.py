@@ -37,9 +37,9 @@ async def get_comp_run_collection_or_none_by_id(
 
 async def get_comp_run_collection_or_none_by_client_generated_id(
     app: web.Application,
-    client_generated_id: str,
+    client_or_system_generated_id: str,
 ) -> CompRunCollectionDBGet | None:
     async with get_database_engine(app).acquire() as conn:
         return await _comp_run_collections_repository.get_comp_run_collection_or_none_by_client_generated_id(
-            conn=conn, client_generated_id=client_generated_id
+            conn=conn, client_or_system_generated_id=client_or_system_generated_id
         )
