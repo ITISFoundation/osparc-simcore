@@ -1238,7 +1238,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__setSelectedAnnotations([annotation]);
       switch (annotation.getType()) {
         case osparc.workbench.Annotation.TYPES.CONVERSATION: {
-          this.__popUpConversation(annotation.getAttributes()["conversationId"]);
+          this.__popUpConversation(annotation.getAttributes()["conversationId"], annotation.getId());
           break;
         }
         default: {
@@ -1992,8 +1992,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
             .then(conversationData => {
               serializeData.attributes.conversationId = conversationData["conversationId"];
               serializeData.attributes.text = conversationData["name"];
-              this.__addAnnotation(serializeData);
-              this.__popUpConversation(conversationData["conversationId"]);
+              const annotation = this.__addAnnotation(serializeData);
+              this.__popUpConversation(conversationData["conversationId"], annotation.getId());
             });
           break;
         }
@@ -2008,6 +2008,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.getStudy().getUi().addAnnotation(annotation);
 
       this.__renderAnnotation(annotation);
+
+      return annotation;
     },
 
     __renderAnnotation: function(annotation) {
@@ -2034,8 +2036,26 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       }
     },
 
-    __popUpConversation: function(conversationId) {
+    __popUpConversation: function(conversationId, annotationId) {
       osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationId);
+
+      // Check if conversation still exists, if not, ask to remove annotation
+      osparc.store.Conversations.getInstance().getConversation(this.getStudy().getUuid(), conversationId)
+        .catch(err => {
+          if ("status" in err && err.status === 404) {
+            const win = new osparc.ui.window.Confirmation(this.tr("Do you want to remove the annotation?")).set({
+              caption: this.tr("Conversation not found"),
+              confirmText: this.tr("Delete"),
+              confirmAction: "delete",
+            });
+            win.open();
+            win.addListener("close", () => {
+              if (win.getConfirmed()) {
+                this.__removeAnnotation(annotationId);
+              }
+            });
+          }
+        });
     },
 
     __dropFile: async function(e) {

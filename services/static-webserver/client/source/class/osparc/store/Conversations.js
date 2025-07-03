@@ -51,8 +51,7 @@ qx.Class.define("osparc.store.Conversations", {
           conversationId,
         }
       };
-      return osparc.data.Resources.fetch("conversations", "getConversation", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
+      return osparc.data.Resources.fetch("conversations", "getConversation", params);
     },
 
     addConversation: function(studyId, name = "new 1", type = osparc.study.Conversations.TYPES.PROJECT_STATIC) {
