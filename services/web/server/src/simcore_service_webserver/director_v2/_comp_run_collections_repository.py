@@ -42,10 +42,10 @@ async def get_comp_run_collection_or_none_by_id(
     """Get a computational run collection by collection_run_id."""
     result = await conn.execute(
         comp_run_collections.select().where(
-            comp_run_collections.c.collection_run_id == collection_run_id
+            comp_run_collections.c.collection_run_id == f"{collection_run_id}"
         )
     )
-    row = await result.one_or_none()
+    row = await result.first()
     if row is None:
         return None
     return CompRunCollectionDBGet.model_validate(row)

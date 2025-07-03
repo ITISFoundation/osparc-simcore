@@ -205,14 +205,15 @@ async def list_computations_latest_iteration_tasks(
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def list_computation_collection_runs(request: web.Request) -> web.Response:
-    # Add: Filter by root project ID
-
     req_ctx = ComputationsRequestContext.model_validate(request)
     query_params: ComputationCollectionRunListQueryParams = (
         parse_request_query_parameters_as(
             ComputationCollectionRunListQueryParams, request
         )
     )
+
+    if query_params.filter_only_running is True:
+        raise NotImplementedError
 
     total, items = await _computations_service.list_computation_collection_runs(
         request.app,
@@ -247,15 +248,13 @@ async def list_computation_collection_runs(request: web.Request) -> web.Response
 
 
 @routes.get(
-    f"/{VTAG}/computation-collection-runs/{{collection_run_id}}/tasks",  #: Who should be the owner of computation_collection_id ?
+    f"/{VTAG}/computation-collection-runs/{{collection_run_id}}/tasks",
     name="list_computation_collection_run_tasks",
 )
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def list_computation_collection_run_tasks(request: web.Request) -> web.Response:
-    # Add: Filter by root project ID
-
     req_ctx = ComputationsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(
         ComputationCollectionRunPathParams, request

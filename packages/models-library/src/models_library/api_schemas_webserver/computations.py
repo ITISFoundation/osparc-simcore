@@ -164,6 +164,10 @@ class ComputationTaskRestGet(OutputSchema):
 class ComputationCollectionRunListQueryParams(
     PageQueryParameters,
 ):
+    filter_only_running: bool = Field(
+        default=False,
+        description="If true, only running collection runs are returned",
+    )
     filter_by_root_project_id: ProjectID | None = Field(
         default=None,
     )
