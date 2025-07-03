@@ -6,8 +6,8 @@ from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
 from servicelib.logging_utils import log_context
 
-from ...models.schemas import NotificationMessage, SMSRecipient
-from ...modules.celery._email_tasks import EmailRecipient, send_email
+from ...models.schemas import EmailRecipient, NotificationMessage, SMSRecipient
+from ...modules.celery._email_tasks import EMAIL_CHANNEL_NAME, send_email
 
 _logger = logging.getLogger(__name__)
 
@@ -24,4 +24,4 @@ def setup_worker_tasks(app: Celery) -> None:
     register_pydantic_types(NotificationMessage, EmailRecipient, SMSRecipient)
 
     with log_context(_logger, logging.INFO, msg="worker tasks registration"):
-        register_task(app, send_email)
+        register_task(app, send_email, EMAIL_CHANNEL_NAME)

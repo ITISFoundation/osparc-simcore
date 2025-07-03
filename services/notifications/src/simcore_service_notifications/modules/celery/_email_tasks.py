@@ -6,6 +6,8 @@ from ...models.schemas import EmailRecipient, NotificationMessage
 
 _logger = logging.getLogger(__name__)
 
+EMAIL_CHANNEL_NAME = "email"
+
 
 async def send_email(
     task: Task,
@@ -14,4 +16,4 @@ async def send_email(
 ) -> None:
     # TODO: render email template with message and recipient details
     #       and send the email using an email service
-    _logger.info(f"Sending email notification to {recipient.address}")
+    _logger.info("Sending email notification to %s", recipient.address)
