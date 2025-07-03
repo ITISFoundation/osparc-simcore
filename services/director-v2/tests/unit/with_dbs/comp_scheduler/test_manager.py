@@ -325,7 +325,7 @@ async def test_empty_pipeline_is_not_scheduled(
     initialized_app: FastAPI,
     with_product: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     run_metadata: RunMetadataDict,
     sqlalchemy_async_engine: AsyncEngine,
@@ -334,7 +334,7 @@ async def test_empty_pipeline_is_not_scheduled(
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     user = create_registered_user()
-    empty_project = await project(user)
+    empty_project = await create_project(user)
 
     # the project is not in the comp_pipeline, therefore scheduling it should fail
     with pytest.raises(PipelineNotFoundError):

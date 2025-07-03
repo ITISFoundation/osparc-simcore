@@ -193,13 +193,13 @@ async def test_start_empty_computation_is_refused(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = create_registered_user()
-    empty_project = await project(user)
+    empty_project = await create_project(user)
     with pytest.raises(
         httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"
     ):
@@ -399,7 +399,7 @@ async def test_run_partial_computation(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: dict[str, Any],
     params: PartialComputationParams,
@@ -409,7 +409,7 @@ async def test_run_partial_computation(
 ):
     user = create_registered_user()
     await wait_for_catalog_service(user["id"], osparc_product_name)
-    sleepers_project: ProjectAtDB = await project(
+    sleepers_project: ProjectAtDB = await create_project(
         user, workbench=fake_workbench_without_outputs
     )
 
@@ -552,7 +552,7 @@ async def test_run_computation(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
@@ -563,7 +563,9 @@ async def test_run_computation(
 ):
     user = create_registered_user()
     await wait_for_catalog_service(user["id"], osparc_product_name)
-    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
@@ -671,7 +673,7 @@ async def test_abort_computation(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
     osparc_product_name: str,
@@ -685,7 +687,9 @@ async def test_abort_computation(
             node["inputs"].setdefault("in_2", 120)
             if not isinstance(node["inputs"]["in_2"], dict):
                 node["inputs"]["in_2"] = 120
-    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
@@ -751,7 +755,7 @@ async def test_update_and_delete_computation(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
@@ -760,7 +764,9 @@ async def test_update_and_delete_computation(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = create_registered_user()
-    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
@@ -880,7 +886,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
     osparc_product_api_base_url: str,
@@ -888,7 +894,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
 ):
     user = create_registered_user()
     # create a workbench with just a dynamic service
-    project_with_dynamic_node = await project(
+    project_with_dynamic_node = await create_project(
         user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
@@ -927,14 +933,14 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     client: TestClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
     osparc_product_api_base_url: str,
 ):
     user = create_registered_user()
     # create a workbench with just 2 dynamic service in a cycle
-    project_with_dynamic_node = await project(
+    project_with_dynamic_node = await create_project(
         user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
@@ -999,7 +1005,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
     client: TestClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     sleeper_service: dict[str, Any],
     jupyter_service: dict[str, Any],
     osparc_product_name: str,
@@ -1007,7 +1013,7 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
 ):
     user = create_registered_user()
     # create a workbench with just 2 dynamic service in a cycle
-    project_with_cycly_and_comp_service = await project(
+    project_with_cycly_and_comp_service = await create_project(
         user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
@@ -1084,7 +1090,7 @@ async def test_burst_create_computations(
     async_client: httpx.AsyncClient,
     create_registered_user: Callable,
     with_product: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_workbench_without_outputs: dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
@@ -1094,8 +1100,12 @@ async def test_burst_create_computations(
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
 ):
     user = create_registered_user()
-    sleepers_project = await project(user, workbench=fake_workbench_without_outputs)
-    sleepers_project2 = await project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
+    sleepers_project2 = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
 
     NUMBER_OF_CALLS = 4
 

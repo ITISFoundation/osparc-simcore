@@ -275,7 +275,7 @@ async def create_comp_run_snapshot_tasks(
 @pytest.fixture
 async def publish_project(
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     fake_workbench_without_outputs: dict[str, Any],
@@ -284,7 +284,9 @@ async def publish_project(
     user = create_registered_user()
 
     async def _() -> PublishedProject:
-        created_project = await project(user, workbench=fake_workbench_without_outputs)
+        created_project = await create_project(
+            user, workbench=fake_workbench_without_outputs
+        )
         return PublishedProject(
             user=user,
             project=created_project,
@@ -312,7 +314,7 @@ async def published_project(
 async def running_project(
     with_product: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
@@ -323,7 +325,9 @@ async def running_project(
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
-    created_project = await project(user, workbench=fake_workbench_without_outputs)
+    created_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
     now_time = arrow.utcnow().datetime
     _comp_run = await create_comp_run(
         user=user,
@@ -362,7 +366,7 @@ async def running_project(
 @pytest.fixture
 async def running_project_mark_for_cancellation(
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
@@ -374,7 +378,9 @@ async def running_project_mark_for_cancellation(
     with_product: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
-    created_project = await project(user, workbench=fake_workbench_without_outputs)
+    created_project = await create_project(
+        user, workbench=fake_workbench_without_outputs
+    )
     now_time = arrow.utcnow().datetime
     _comp_run = await create_comp_run(
         user=user,

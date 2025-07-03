@@ -82,7 +82,7 @@ async def with_product(
 
 
 @pytest.fixture
-async def project(
+async def create_project(
     sqlalchemy_async_engine: AsyncEngine, faker: Faker, product_name: ProductName
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
