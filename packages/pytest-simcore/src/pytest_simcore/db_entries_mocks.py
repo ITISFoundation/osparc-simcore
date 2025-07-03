@@ -10,11 +10,15 @@ from uuid import uuid4
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.services import services_access_rights
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_projects_nodes import (
@@ -64,8 +68,21 @@ def create_registered_user(
 
 
 @pytest.fixture
+async def product_db(
+    sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
+) -> AsyncIterator[dict[str, Any]]:
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        sqlalchemy_async_engine,
+        table=products,
+        values=product,
+        pk_col=products.c.name,
+    ) as created_product:
+        yield created_product
+
+
+@pytest.fixture
 async def project(
-    sqlalchemy_async_engine: AsyncEngine, faker: Faker
+    sqlalchemy_async_engine: AsyncEngine, faker: Faker, product_name: ProductName
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
@@ -112,6 +129,12 @@ async def project(
                     ProjectNodeCreate(node_id=NodeID(node_id), **default_node_config)
                     for node_id in inserted_project.workbench
                 ],
+            )
+            await con.execute(
+                projects_to_products.insert().values(
+                    project_uuid=f"{inserted_project.uuid}",
+                    product_name=product_name,
+                )
             )
         print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")

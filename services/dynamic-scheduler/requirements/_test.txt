@@ -67,7 +67,7 @@ idna==3.10
     #   requests
 iniconfig==2.0.0
     # via pytest
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -76,6 +76,8 @@ packaging==24.2
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
+pathspec==0.12.1
+    # via mypy
 playwright==1.50.0
     # via -r requirements/_test.in
 pluggy==1.5.0

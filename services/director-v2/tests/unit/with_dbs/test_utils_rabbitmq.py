@@ -88,6 +88,7 @@ async def project(
     user: dict[str, Any],
     fake_workbench_without_outputs: dict[str, Any],
     project: Callable[..., Awaitable[ProjectAtDB]],
+    product_db: dict[str, Any],
 ) -> ProjectAtDB:
     return await project(user, workbench=fake_workbench_without_outputs)
 

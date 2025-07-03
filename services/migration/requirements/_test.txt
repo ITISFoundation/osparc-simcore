@@ -23,12 +23,14 @@ jsonschema==4.23.0
     # via -r requirements/_test.in
 jsonschema-specifications==2024.10.1
     # via jsonschema
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
     # via pytest
+pathspec==0.12.1
+    # via mypy
 pluggy==1.5.0
     # via
     #   pytest

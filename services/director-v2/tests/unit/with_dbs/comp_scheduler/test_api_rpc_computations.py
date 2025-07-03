@@ -40,6 +40,7 @@ async def test_rpc_list_computation_runs_and_tasks(
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
+    product_db: dict[str, Any],
 ):
     user = create_registered_user()
     proj = await project(user, workbench=fake_workbench_without_outputs)
@@ -119,6 +120,7 @@ async def test_rpc_list_computation_runs_with_filtering(
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
+    product_db: dict[str, Any],
 ):
     user = create_registered_user()
 
@@ -175,6 +177,7 @@ async def test_rpc_list_computation_runs_history(
     create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
+    product_db: dict[str, Any],
 ):
     user = create_registered_user()
 
@@ -186,6 +189,7 @@ async def test_rpc_list_computation_runs_history(
     comp_tasks = await create_tasks(
         user=user, project=proj, state=StateType.PUBLISHED, progress=None
     )
+    assert comp_tasks
     comp_runs_1 = await create_comp_run(
         user=user,
         project=proj,
@@ -195,6 +199,7 @@ async def test_rpc_list_computation_runs_history(
         iteration=1,
         dag_adjacency_list=fake_workbench_adjacency,
     )
+    assert comp_runs_1
     comp_runs_2 = await create_comp_run(
         user=user,
         project=proj,
@@ -204,6 +209,7 @@ async def test_rpc_list_computation_runs_history(
         iteration=2,
         dag_adjacency_list=fake_workbench_adjacency,
     )
+    assert comp_runs_2
     comp_runs_3 = await create_comp_run(
         user=user,
         project=proj,
@@ -213,6 +219,7 @@ async def test_rpc_list_computation_runs_history(
         iteration=3,
         dag_adjacency_list=fake_workbench_adjacency,
     )
+    assert comp_runs_3
 
     output = await rpc_computations.list_computations_iterations_page(
         rpc_client, product_name="osparc", user_id=user["id"], project_ids=[proj.uuid]
