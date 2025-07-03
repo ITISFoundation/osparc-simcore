@@ -13,6 +13,7 @@ from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.products import products
@@ -69,25 +70,19 @@ def create_registered_user(
 @pytest.fixture
 async def product_db(
     sqlalchemy_async_engine: AsyncEngine, product: dict[str, Any]
-) -> AsyncIterator[ProductName]:
-    async with sqlalchemy_async_engine.begin() as con:
-        result = await con.execute(
-            products.insert().values(**product).returning(sa.literal_column("*"))
-        )
-        created_product = result.one()
-    print(f"--> created product {created_product.name=}")
-    yield created_product.name
-
-    async with sqlalchemy_async_engine.begin() as con:
-        await con.execute(
-            products.delete().where(products.c.name == created_product.name)
-        )
-    print(f"<-- deleted product {created_product.name=}")
+) -> AsyncIterator[dict[str, Any]]:
+    async with insert_and_get_row_lifespan(
+        sqlalchemy_async_engine,
+        table=products,
+        values=product,
+        pk_col=products.c.name,
+    ) as created_product:
+        yield created_product
 
 
 @pytest.fixture
 async def project(
-    sqlalchemy_async_engine: AsyncEngine, faker: Faker, product_db: ProductName
+    sqlalchemy_async_engine: AsyncEngine, faker: Faker, product_name: ProductName
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
@@ -138,7 +133,7 @@ async def project(
             await con.execute(
                 projects_to_products.insert().values(
                     project_uuid=f"{inserted_project.uuid}",
-                    product_name=product_db,
+                    product_name=product_name,
                 )
             )
         print(f"--> created {inserted_project=}")
