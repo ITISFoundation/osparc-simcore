@@ -59,10 +59,6 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
   },
 
-  events: {
-    "conversationDeleted": "qx.event.type.Event",
-  },
-
   members: {
     __studyData: null,
     __messages: null,
