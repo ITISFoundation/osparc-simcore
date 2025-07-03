@@ -151,7 +151,9 @@ async def project(
 
 
 @pytest.fixture
-def pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., dict[str, Any]]]:
+def create_pipeline(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[Callable[..., dict[str, Any]]]:
     created_pipeline_ids: list[str] = []
 
     def creator(**pipeline_kwargs) -> dict[str, Any]:

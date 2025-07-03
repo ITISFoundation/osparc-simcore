@@ -176,7 +176,7 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
     spied_get_changed_comp_task_row: MockType,
     logged_user: UserInfoDict,
     project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., dict[str, Any]],
+    create_pipeline: Callable[..., dict[str, Any]],
     comp_task: Callable[..., dict[str, Any]],
     with_started_listening_task: None,
     params: _CompTaskChangeParams,
@@ -185,7 +185,7 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
     mocker: MockerFixture,
 ):
     some_project = await project(logged_user)
-    pipeline(project_id=f"{some_project.uuid}")
+    create_pipeline(project_id=f"{some_project.uuid}")
     # Create 3 tasks with different node_ids
     tasks = [
         comp_task(
@@ -265,7 +265,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
     logged_user: UserInfoDict,
     project: Callable[..., Awaitable[ProjectAtDB]],
     fake_2connected_jupyterlabs_workbench: dict[str, Any],
-    pipeline: Callable[..., dict[str, Any]],
+    create_pipeline: Callable[..., dict[str, Any]],
     comp_task: Callable[..., dict[str, Any]],
     spied_get_changed_comp_task_row: MockType,
     faker: Faker,
@@ -275,7 +275,7 @@ async def test_db_listener_upgrades_projects_row_correctly(
     )
 
     # create the corresponding comp_task entries for the project workbench
-    pipeline(project_id=f"{some_project.uuid}")
+    create_pipeline(project_id=f"{some_project.uuid}")
     tasks = [
         comp_task(
             project_id=f"{some_project.uuid}",
