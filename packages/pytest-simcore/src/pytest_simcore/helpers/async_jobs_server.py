@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 from dataclasses import dataclass
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
