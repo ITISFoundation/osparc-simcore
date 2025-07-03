@@ -1,6 +1,6 @@
 import logging
 from collections import deque
-from typing import Any, cast
+from typing import Any
 
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.basic_types import EnvVarKey, PortInt
@@ -495,9 +495,7 @@ async def merge_settings_before_use(
 
     # merge the settings from the all the involved services
     for compose_spec_key, service_labels in labels_for_involved_services.items():
-        service_settings: SimcoreServiceSettingsLabel = cast(
-            SimcoreServiceSettingsLabel, service_labels.settings
-        )
+        service_settings: SimcoreServiceSettingsLabel = service_labels.settings
         settings.extend(
             # inject compose spec key, used to target container specific services
             _add_compose_destination_containers_to_settings_entries(

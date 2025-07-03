@@ -221,9 +221,9 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 networkx==3.4.2
     # via cfn-lint
@@ -242,6 +242,8 @@ pandas==2.2.3
     # via -r requirements/_test.in
 pathable==0.4.4
     # via jsonschema-path
+pathspec==0.12.1
+    # via mypy
 pluggy==1.5.0
     # via pytest
 ply==3.11

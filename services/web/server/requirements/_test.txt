@@ -162,9 +162,9 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 openapi-schema-validator==0.2.3
     # via openapi-spec-validator
@@ -176,6 +176,8 @@ packaging==24.1
     #   aioresponses
     #   pytest
     #   pytest-sugar
+pathspec==0.12.1
+    # via mypy
 pluggy==1.5.0
     # via pytest
 pprintpp==0.4.0
