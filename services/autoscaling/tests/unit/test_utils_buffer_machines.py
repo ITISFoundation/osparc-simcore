@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import pytest
-from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagValue, EC2Tags
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
@@ -65,8 +65,8 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
-        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags["Name"] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags["Name"]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 
@@ -107,8 +107,8 @@ def test_get_deactivated_buffer_ec2_tags_computational(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
-        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags["Name"] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags["Name"]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 
