@@ -1,9 +1,8 @@
 from enum import StrEnum
 
+from models_library.rpc.notifications.messages import NotificationMessage, Recipient
 from servicelib.celery.models import TaskContext, TaskMetadata
 from servicelib.celery.task_manager import TaskManager
-
-from ..models.schemas import NotificationMessage, Recipient
 
 
 class TaskQueues(StrEnum):

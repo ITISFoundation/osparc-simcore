@@ -3,8 +3,10 @@
 import logging
 
 from celery import Task  # type: ignore[import-untyped]
-
-from ...models.schemas import EmailRecipient, NotificationMessage
+from models_library.rpc.notifications.messages import (
+    EmailRecipient,
+    NotificationMessage,
+)
 
 _logger = logging.getLogger(__name__)
 

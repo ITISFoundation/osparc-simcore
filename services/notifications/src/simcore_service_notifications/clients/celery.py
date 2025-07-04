@@ -6,10 +6,14 @@ from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
+from models_library.rpc.notifications.messages import (
+    EmailRecipient,
+    NotificationMessage,
+    SMSRecipient,
+)
 from settings_library.celery import CelerySettings
 
 from ..core.settings import ApplicationSettings
-from ..models.schemas import EmailRecipient, NotificationMessage, SMSRecipient
 
 _logger = logging.getLogger(__name__)
 
