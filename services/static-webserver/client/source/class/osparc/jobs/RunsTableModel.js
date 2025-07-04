@@ -122,7 +122,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
-      const orderBy = this.getOrderBy();
+        const orderBy = this.getOrderBy();
         let promise;
         if (this.getProjectUuid()) {
           promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy);
