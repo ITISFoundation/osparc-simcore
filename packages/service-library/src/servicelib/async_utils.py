@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections import deque
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from contextlib import suppress
 from dataclasses import dataclass
 from functools import wraps
@@ -210,3 +210,60 @@ def run_sequentially_in_context(
         return wrapper
 
     return decorator
+
+
+TaskCancelCallback = Callable[[], Awaitable[bool]]
+_POLL_INTERVAL_S: float = 0.01
+
+
+class TaskCancelled(Exception):
+    """Internal exception raised by the poller task when the client disconnects."""
+
+
+async def _poller_for_task_group(
+    close_event: asyncio.Event, cancel_awaitable: TaskCancelCallback
+):
+    """
+    Polls for cancellation via the callback and raises TaskCancelled if it occurs.
+    """
+    while not await cancel_awaitable():
+        await asyncio.sleep(_POLL_INTERVAL_S)
+        if close_event.is_set():
+            return
+    raise TaskCancelled()
+
+
+async def run_until_cancelled(
+    *, coro: Coroutine, cancel_callback: TaskCancelCallback
+) -> Any:
+    """
+    Runs the given coroutine until it completes or cancellation is requested.
+
+    This function executes the provided coroutine and periodically checks the given
+    cancel_callback. If cancellation is requested (i.e., cancel_callback returns True),
+    the coroutine is cancelled and a TaskCancelled exception is raised. If the coroutine
+    completes first, its result (or exception) is returned/reraised.
+    """
+    sentinel = object()
+    close_poller_event = asyncio.Event()
+    try:
+        # Create two tasks in a TaskGroup
+        async with asyncio.TaskGroup() as tg:
+
+            # One to poll for cancellation
+            tg.create_task(
+                _poller_for_task_group(close_poller_event, cancel_callback),
+                name=f"run_until_cancelled/poller/{coro.__name__}/{id(sentinel)}",
+            )
+            # The other to run the actual coroutine
+            coro_task = tg.create_task(
+                coro,
+                name=f"run_until_cancelled/coroutine/{coro.__name__}/{id(sentinel)}",
+            )
+            await coro_task
+            close_poller_event.set()
+
+        return coro_task.result()
+
+    except* Exception as eg:
+        raise eg.exceptions[0]  # pylint: disable=no-member

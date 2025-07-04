@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 import logging
 from functools import wraps
@@ -6,6 +5,8 @@ from typing import Any, Protocol
 
 from fastapi import Request, status
 from fastapi.exceptions import HTTPException
+
+from ..async_utils import TaskCancelled, run_until_cancelled
 
 logger = logging.getLogger(__name__)
 
@@ -31,24 +32,6 @@ def _validate_signature(handler: _HandlerWithRequestArg):
 #
 # cancel_on_disconnect based on TaskGroup
 #
-_POLL_INTERVAL_S: float = 0.01
-
-
-class _ClientDisconnectedError(Exception):
-    """Internal exception raised by the poller task when the client disconnects."""
-
-
-async def _disconnect_poller_for_task_group(
-    close_event: asyncio.Event, request: Request
-):
-    """
-    Polls for client disconnection and raises _ClientDisconnectedError if it occurs.
-    """
-    while not await request.is_disconnected():
-        await asyncio.sleep(_POLL_INTERVAL_S)
-        if close_event.is_set():
-            return
-    raise _ClientDisconnectedError()
 
 
 def cancel_on_disconnect(handler: _HandlerWithRequestArg):
@@ -64,28 +47,15 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
 
     @wraps(handler)
     async def wrapper(request: Request, *args, **kwargs):
-        sentinel = object()
-        kill_poller_task_event = asyncio.Event()
+
         try:
-            # Create two tasks in a TaskGroup
-            async with asyncio.TaskGroup() as tg:
+            await run_until_cancelled(
+                coro=handler(request, *args, **kwargs),
+                cancel_callback=request.is_disconnected,
+            )
 
-                # One to poll the `Request` object to check for client disconnection
-                tg.create_task(
-                    _disconnect_poller_for_task_group(kill_poller_task_event, request),
-                    name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
-                )
-                # The other to run the actual request handler
-                handler_task = tg.create_task(
-                    handler(request, *args, **kwargs),
-                    name=f"cancel_on_disconnect/handler/{handler.__name__}/{id(sentinel)}",
-                )
-                await handler_task
-                kill_poller_task_event.set()
+        except TaskCancelled as exc:
 
-            return handler_task.result()
-
-        except* _ClientDisconnectedError as eg:
             logger.info(
                 "Request %s %s cancelled since client %s disconnected.",
                 request.method,
@@ -95,10 +65,7 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Client disconnected",
-            ) from eg
-
-        except* Exception as eg:
-            raise eg.exceptions[0]  # pylint: disable=no-member
+            ) from exc
 
     return wrapper
 
