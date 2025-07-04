@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import threading
 from collections.abc import Iterator
 from threading import Thread
 from unittest.mock import AsyncMock
@@ -19,8 +20,11 @@ from yarl import URL
 
 
 @pytest.fixture
-def server_done_event() -> asyncio.Event:
-    return asyncio.Event()
+def server_done_event() -> threading.Event:
+    # This allows communicate an event between the thread where the server is running
+    # and the test thread. It is used to signal that the server has completed its task
+    # WARNING: do not user asyncio.Event here as it is not thread-safe!
+    return threading.Event()
 
 
 @pytest.fixture
@@ -30,7 +34,7 @@ def server_cancelled_mock() -> AsyncMock:
 
 @pytest.fixture
 def fastapi_router(
-    server_done_event: asyncio.Event, server_cancelled_mock: AsyncMock
+    server_done_event: threading.Event, server_cancelled_mock: AsyncMock
 ) -> APIRouter:
     router = APIRouter()
 
@@ -62,7 +66,6 @@ def fastapi_router(
                 await server_cancelled_mock()
             finally:
                 server_done_event.set()
-                ctx.logger.info("current_loop_id=%s", id(asyncio.get_running_loop()))
 
     @router.get("/sleep-with-background-task")
     async def sleep_with_background_task(
@@ -128,7 +131,7 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
 
 async def test_server_cancels_when_client_disconnects(
     uvicorn_server: URL,
-    server_done_event: asyncio.Event,
+    server_done_event: threading.Event,
     server_cancelled_mock: AsyncMock,
 ):
     # Implementation of RequestCancellationMiddleware is under test here
@@ -142,8 +145,7 @@ async def test_server_cancels_when_client_disconnects(
         assert response.status_code == 200
         assert response.json() == {"message": "Slept for 0.1 seconds"}
 
-        async with asyncio.timeout(10):
-            await server_done_event.wait()
+        server_done_event.wait(10)
         server_done_event.clear()
 
         # 2. check slow call get cancelled
@@ -158,11 +160,8 @@ async def test_server_cancels_when_client_disconnects(
                 )
             ctx.logger.info("client disconnected from server")
 
-        await asyncio.sleep(0.1)  # ensure context switches ???
-
         # request should have been cancelled after the ReadTimoeut!
-        async with asyncio.timeout(5):
-            await server_done_event.wait()
+        server_done_event.wait(5)
         server_cancelled_mock.assert_called_once()
         server_cancelled_mock.reset_mock()
         server_done_event.clear()
@@ -177,6 +176,5 @@ async def test_server_cancels_when_client_disconnects(
             assert response.status_code == 200
 
         # request should have been cancelled after the ReadTimoeut!
-        async with asyncio.timeout(5):
-            await server_done_event.wait()
+        server_done_event.wait(5)
         server_cancelled_mock.assert_called_once()
