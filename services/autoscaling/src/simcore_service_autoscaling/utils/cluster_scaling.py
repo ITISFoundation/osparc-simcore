@@ -23,7 +23,7 @@ from . import utils_docker, utils_ec2
 _logger = logging.getLogger(__name__)
 
 
-async def associate_ec2_instances_with_nodes(
+def associate_ec2_instances_with_nodes(
     nodes: list[Node], ec2_instances: list[EC2InstanceData]
 ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
     """returns the associated and non-associated instances"""

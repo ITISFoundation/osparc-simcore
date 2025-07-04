@@ -95,7 +95,7 @@ async def _analyze_current_cluster(
         state_names=["stopped"],
     )
 
-    attached_ec2s, pending_ec2s = await associate_ec2_instances_with_nodes(
+    attached_ec2s, pending_ec2s = associate_ec2_instances_with_nodes(
         docker_nodes, existing_ec2_instances
     )
 
@@ -339,10 +339,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         allowed_instance_type_names
     ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"
 
-    allowed_instance_types: list[EC2InstanceType] = (
-        await ec2_client.get_ec2_instance_capabilities(
-            cast(set[InstanceTypeType], set(allowed_instance_type_names))
-        )
+    allowed_instance_types: list[
+        EC2InstanceType
+    ] = await ec2_client.get_ec2_instance_capabilities(
+        cast(set[InstanceTypeType], set(allowed_instance_type_names))
     )
 
     def _as_selection(instance_type: EC2InstanceType) -> int:
@@ -949,7 +949,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     )
 
 
-async def _find_terminateable_instances(
+def _find_terminateable_instances(
     app: FastAPI, cluster: Cluster
 ) -> list[AssociatedInstance]:
     app_settings: ApplicationSettings = app.state.settings
@@ -994,7 +994,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     # instances found to be terminateable will now start the termination process.
     new_terminating_instances = []
-    for instance in await _find_terminateable_instances(app, cluster):
+    for instance in _find_terminateable_instances(app, cluster):
         assert instance.node.description is not None  # nosec
         with (
             log_context(
@@ -1076,9 +1076,9 @@ async def _notify_based_on_machine_type(
     launch_time_to_tasks: dict[datetime.datetime, list] = collections.defaultdict(list)
     now = datetime.datetime.now(datetime.UTC)
     for instance in instances:
-        launch_time_to_tasks[
-            instance.ec2_instance.launch_time
-        ] += instance.assigned_tasks
+        launch_time_to_tasks[instance.ec2_instance.launch_time] += (
+            instance.assigned_tasks
+        )
 
     for launch_time, tasks in launch_time_to_tasks.items():
         time_since_launch = now - launch_time

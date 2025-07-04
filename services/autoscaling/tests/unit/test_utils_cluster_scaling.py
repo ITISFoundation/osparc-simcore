@@ -69,7 +69,7 @@ async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
     (
         associated_instances,
         non_associated_instances,
-    ) = await associate_ec2_instances_with_nodes(nodes, ec2_instances)
+    ) = associate_ec2_instances_with_nodes(nodes, ec2_instances)
 
     assert not associated_instances
     assert non_associated_instances
@@ -92,7 +92,7 @@ async def test_associate_ec2_instances_with_corresponding_nodes(
     (
         associated_instances,
         non_associated_instances,
-    ) = await associate_ec2_instances_with_nodes(nodes, ec2_instances)
+    ) = associate_ec2_instances_with_nodes(nodes, ec2_instances)
 
     assert associated_instances
     assert not non_associated_instances
