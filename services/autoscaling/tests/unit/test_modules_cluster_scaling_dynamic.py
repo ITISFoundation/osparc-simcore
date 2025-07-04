@@ -1722,7 +1722,7 @@ async def test__find_terminateable_nodes_with_no_hosts(
             AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
         ],
     )
-    assert await _find_terminateable_instances(initialized_app, active_cluster) == []
+    assert _find_terminateable_instances(initialized_app, active_cluster) == []
 
 
 @pytest.mark.parametrize(
