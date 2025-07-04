@@ -6,7 +6,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobNameData,
 )
 from models_library.projects_nodes_io import LocationID
-from servicelib.celery.models import TaskMetadata
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
@@ -26,10 +25,8 @@ async def compute_path_size(
 ) -> AsyncJobGet:
     task_name = remote_compute_path_size.__name__
     task_uuid = await task_manager.send_task(
-        task_metadata=TaskMetadata(
-            name=task_name,
-        ),
-        task_context=job_id_data.model_dump(),
+        name=task_name,
+        context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         location_id=location_id,
         path=path,
@@ -47,10 +44,8 @@ async def delete_paths(
 ) -> AsyncJobGet:
     task_name = remote_delete_paths.__name__
     task_uuid = await task_manager.send_task(
-        task_metadata=TaskMetadata(
-            name=task_name,
-        ),
-        task_context=job_id_data.model_dump(),
+        name=task_name,
+        context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         location_id=location_id,
         paths=paths,

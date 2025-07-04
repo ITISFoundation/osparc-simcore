@@ -20,7 +20,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
 from servicelib.aiohttp import status
-from servicelib.celery.models import TaskMetadata, TaskUUID
+from servicelib.celery.models import TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from yarl import URL
@@ -289,10 +289,8 @@ async def complete_upload_file(
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
     task_uuid = await task_manager.send_task(
-        TaskMetadata(
-            name=remote_complete_upload_file.__name__,
-        ),
-        task_context=async_job_name_data.model_dump(),
+        name=remote_complete_upload_file.__name__,
+        context=async_job_name_data.model_dump(),
         user_id=async_job_name_data.user_id,
         location_id=location_id,
         file_id=file_id,
@@ -345,13 +343,14 @@ async def is_completed_upload_file(
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
     task_status = await task_manager.get_task_status(
-        task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        context=async_job_name_data.model_dump(),
+        task_uuid=TaskUUID(future_id),
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
-            await task_manager.get_task_result(
-                task_context=async_job_name_data.model_dump(),
+            await task_manager.get_result(
+                context=async_job_name_data.model_dump(),
                 task_uuid=TaskUUID(future_id),
             )
         )

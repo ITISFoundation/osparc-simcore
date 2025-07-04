@@ -27,7 +27,7 @@ from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskID, TaskMetadata
+from servicelib.celery.models import TaskID
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
@@ -83,7 +83,9 @@ async def rpc_sync_job(
 ) -> AsyncJobGet:
     task_name = sync_job.__name__
     task_uuid = await task_manager.send_task(
-        TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
+        name=task_name,
+        context=job_id_data.model_dump(),
+        **kwargs,
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -95,7 +97,9 @@ async def rpc_async_job(
 ) -> AsyncJobGet:
     task_name = async_job.__name__
     task_uuid = await task_manager.send_task(
-        TaskMetadata(name=task_name), task_context=job_id_data.model_dump(), **kwargs
+        name=task_name,
+        context=job_id_data.model_dump(),
+        **kwargs,
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -139,13 +143,13 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 
 @pytest.fixture
 async def register_rpc_routes(
-    async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, celery_task_manager: TaskManager
+    async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, task_manager: TaskManager
 ) -> None:
     await async_jobs_rabbitmq_rpc_client.register_router(
-        _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
+        _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager
     )
     await async_jobs_rabbitmq_rpc_client.register_router(
-        router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
+        router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager
     )
 
 

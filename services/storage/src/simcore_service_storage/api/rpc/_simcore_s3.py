@@ -4,7 +4,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
-from servicelib.celery.models import TaskMetadata
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
@@ -22,10 +21,8 @@ async def copy_folders_from_project(
 ) -> AsyncJobGet:
     task_name = deep_copy_files_from_project.__name__
     task_uuid = await task_manager.send_task(
-        task_metadata=TaskMetadata(
-            name=task_name,
-        ),
-        task_context=job_id_data.model_dump(),
+        name=task_name,
+        context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         body=body,
     )
@@ -41,12 +38,10 @@ async def start_export_data(
 ) -> AsyncJobGet:
     task_name = export_data.__name__
     task_uuid = await task_manager.send_task(
-        task_metadata=TaskMetadata(
-            name=task_name,
-            ephemeral=False,
-            queue=TaskQueue.CPU_BOUND,
-        ),
-        task_context=job_id_data.model_dump(),
+        name=task_name,
+        ephemeral=False,
+        queue=TaskQueue.CPU_BOUND,
+        context=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         paths_to_export=paths_to_export,
     )
