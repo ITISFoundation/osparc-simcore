@@ -21,6 +21,8 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
   construct: function(clickAction, iconPath) {
     this.base(arguments, clickAction);
 
+    this.__imageCache = {};
+
     this.setIconPath(iconPath);
   },
 
@@ -34,11 +36,43 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
   },
 
   members: {
+    __imageCache: null,
+
     __applyIconPath: function(iconPath) {
       const resMgr = qx.util.ResourceManager.getInstance();
-      const iconUrl = resMgr.toUri(iconPath); // Resolves to the correct URL of the asset
+      const iconUrl = resMgr.toUri(iconPath);
 
-      this.setButtonContent(`<img src="${iconUrl}" style="width:14x; height:14px;" alt="icon"/>`);
+      // Create a data URI or use a more cache-friendly approach
+      // Use base64 encoding for small icons (best for caching)
+      this.__loadImageAsDataUri(iconUrl, iconPath);
+    },
+
+    __loadImageAsDataUri: function(iconUrl, iconPath) {
+      if (this.__imageCache[iconPath]) {
+        this.setButtonContent(this.__imageCache[iconPath]);
+        return;
+      }
+
+      // Fetch and convert to data URI for permanent caching
+      fetch(iconUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUri = reader.result;
+            const content = `<img src="${dataUri}" style="width:14px; height:14px;" alt="icon"/>`;
+
+            // Cache the data URI
+            this.__imageCache[iconPath] = content;
+            this.setButtonContent(content);
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(err => {
+          console.warn("Failed to cache icon as data URI:", iconPath, err);
+          // Fallback to original method
+          this.setButtonContent(`<img src="${iconUrl}" style="width:14px; height:14px;" alt="icon"/>`);
+        });
     },
   }
 });

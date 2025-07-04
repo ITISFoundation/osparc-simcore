@@ -72,7 +72,6 @@ qx.Class.define("osparc.jobs.ActivityCenterWindow", {
       });
 
       this.addListener("close", () => {
-        runsBrowser.stopInterval();
         subRunsBrowser.stopInterval();
       });
     },

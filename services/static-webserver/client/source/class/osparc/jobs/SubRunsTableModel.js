@@ -57,10 +57,6 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
     },
   },
 
-  statics: {
-    SERVER_MAX_LIMIT: 49,
-  },
-
   members: {
     // overridden
     sortByColumn(columnIndex, ascending) {
@@ -132,12 +128,13 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       };
 
       // Divides the model row request into several server requests to comply with the number of rows server limit
+      const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
       const reqLimit = lastRow - firstRow + 1; // Number of requested rows
-      const nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT);
+      const nRequests = Math.ceil(reqLimit / serverMaxLimit);
       if (nRequests > 1) {
         const requests = [];
-        for (let i=firstRow; i <= lastRow; i += this.self().SERVER_MAX_LIMIT) {
-          requests.push(getFetchPromise(i, i > lastRow - this.self().SERVER_MAX_LIMIT + 1 ? reqLimit % this.self().SERVER_MAX_LIMIT : this.self().SERVER_MAX_LIMIT))
+        for (let i=firstRow; i <= lastRow; i += serverMaxLimit) {
+          requests.push(getFetchPromise(i, i > lastRow - serverMaxLimit + 1 ? reqLimit % serverMaxLimit : serverMaxLimit))
         }
         Promise.all(requests)
           .then(responses => this._onRowDataLoaded(responses.flat()))
