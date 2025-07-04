@@ -154,7 +154,7 @@ def fake_collection_run_id(faker: Faker) -> CollectionRunID:
 async def create_comp_run(
     sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
-    fake_collection_run_id: CollectionRunID,
+    faker: Faker,
 ) -> AsyncIterator[Callable[..., Awaitable[CompRunsAtDB]]]:
     created_run_ids: list[int] = []
 
@@ -169,7 +169,7 @@ async def create_comp_run(
             "metadata": jsonable_encoder(run_metadata),
             "use_on_demand_clusters": False,
             "dag_adjacency_list": {},
-            "collection_run_id": f"{fake_collection_run_id}",
+            "collection_run_id": faker.uuid4(),
         }
         run_config.update(**run_kwargs)
         async with sqlalchemy_async_engine.begin() as conn:
