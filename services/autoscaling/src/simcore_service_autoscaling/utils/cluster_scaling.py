@@ -124,7 +124,7 @@ def find_selected_instance_type_for_task(
     return selected_instance
 
 
-def get_machine_buffer_type(
+def get_hot_buffer_type(
     available_ec2_types: list[EC2InstanceType],
 ) -> EC2InstanceType:
     assert len(available_ec2_types) > 0  # nosec
@@ -152,7 +152,7 @@ def sort_drained_nodes(
         n for n in all_drained_nodes if n not in terminating_nodes
     ]
     # we need to keep in reserve only the drained nodes of the right type
-    machine_buffer_type = get_machine_buffer_type(available_ec2_types)
+    machine_buffer_type = get_hot_buffer_type(available_ec2_types)
     # NOTE: we keep only in buffer the drained nodes with the right EC2 type, AND the right amount
     buffer_drained_nodes = [
         node
