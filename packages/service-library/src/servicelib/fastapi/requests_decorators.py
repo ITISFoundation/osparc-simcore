@@ -1,6 +1,6 @@
 import inspect
 import logging
-from functools import wraps
+from functools import partial, wraps
 from typing import Any, Protocol
 
 from fastapi import Request, status
@@ -34,6 +34,10 @@ def _validate_signature(handler: _HandlerWithRequestArg):
 #
 
 
+async def _is_client_disconnected(request: Request):
+    return await request.is_disconnected()
+
+
 def cancel_on_disconnect(handler: _HandlerWithRequestArg):
     """
     Decorator that cancels the request handler if the client disconnects.
@@ -49,9 +53,9 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
     async def wrapper(request: Request, *args, **kwargs):
 
         try:
-            await run_until_cancelled(
+            return await run_until_cancelled(
                 coro=handler(request, *args, **kwargs),
-                cancel_callback=request.is_disconnected,
+                cancel_callback=partial(_is_client_disconnected, request),
             )
 
         except TaskCancelled as exc:

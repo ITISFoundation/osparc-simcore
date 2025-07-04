@@ -230,7 +230,7 @@ async def _poller_for_task_group(
         await asyncio.sleep(_POLL_INTERVAL_S)
         if close_event.is_set():
             return
-    raise TaskCancelled()
+    raise TaskCancelled
 
 
 async def run_until_cancelled(
