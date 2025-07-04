@@ -1,7 +1,8 @@
 import asyncio
 import logging
-from typing import NoReturn
+from functools import partial
 
+from servicelib.async_utils import TaskCancelled, run_until_cancelled
 from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -10,29 +11,23 @@ from ..logging_utils import log_context
 _logger = logging.getLogger(__name__)
 
 
-class _TerminateTaskGroupError(Exception):
-    pass
-
-
-async def _message_poller(
-    request: Request, queue: asyncio.Queue, receive: Receive
-) -> NoReturn:
-    while True:
-        message = await receive()
-        if message["type"] == "http.disconnect":
-            _logger.debug(
-                "client disconnected, terminating request to %s!", request.url
-            )
-            raise _TerminateTaskGroupError
-
-        # Puts the message in the queue
-        await queue.put(message)
-
-
 async def _handler(
     app: ASGIApp, scope: Scope, queue: asyncio.Queue[Message], send: Send
 ) -> None:
-    return await app(scope, queue.get, send)
+    await app(scope, queue.get, send)
+
+
+async def _is_client_disconnected(
+    receive: Receive, queue: asyncio.Queue[Message], request: Request
+) -> bool:
+    message = await receive()
+    if message["type"] == "http.disconnect":
+        _logger.debug("client disconnected, terminating request to %s!", request.url)
+        return True
+
+    # Puts the message in the queue
+    await queue.put(message)
+    return False
 
 
 class RequestCancellationMiddleware:
@@ -58,23 +53,22 @@ class RequestCancellationMiddleware:
             return
 
         # Let's make a shared queue for the request messages
-        queue: asyncio.Queue[Message] = asyncio.Queue()
         request = Request(scope)
+        queue: asyncio.Queue[Message] = asyncio.Queue()
 
         with log_context(_logger, logging.DEBUG, f"cancellable request {request.url}"):
             try:
-                async with asyncio.TaskGroup() as tg:
-                    handler_task = tg.create_task(
-                        _handler(self.app, scope, queue, send)
-                    )
-                    poller_task = tg.create_task(
-                        _message_poller(request, queue, receive)
-                    )
-                    await handler_task
-                    poller_task.cancel()
-            except* _TerminateTaskGroupError:
-                if not handler_task.done():
-                    _logger.info(
-                        "The client disconnected. request to %s was cancelled.",
-                        request.url,
-                    )
+                await run_until_cancelled(
+                    coro=_handler(self.app, scope, queue, send),
+                    cancel_callback=partial(
+                        _is_client_disconnected, receive, queue, request
+                    ),
+                    poll_interval=0.0,
+                )
+                return
+
+            except TaskCancelled:
+                _logger.info(
+                    "The client disconnected. request to %s was cancelled.",
+                    request.url,
+                )

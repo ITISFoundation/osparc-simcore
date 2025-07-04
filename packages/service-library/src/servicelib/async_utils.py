@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
+from pydantic import NonNegativeFloat
+
 from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
@@ -221,20 +223,25 @@ class TaskCancelled(Exception):
 
 
 async def _poller_for_task_group(
-    close_event: asyncio.Event, cancel_awaitable: TaskCancelCallback
+    close_event: asyncio.Event,
+    cancel_awaitable: TaskCancelCallback,
+    poll_interval: NonNegativeFloat,
 ):
     """
     Polls for cancellation via the callback and raises TaskCancelled if it occurs.
     """
     while not await cancel_awaitable():
-        await asyncio.sleep(_POLL_INTERVAL_S)
+        await asyncio.sleep(poll_interval)
         if close_event.is_set():
             return
     raise TaskCancelled
 
 
 async def run_until_cancelled(
-    *, coro: Coroutine, cancel_callback: TaskCancelCallback
+    *,
+    coro: Coroutine,
+    cancel_callback: TaskCancelCallback,
+    poll_interval: NonNegativeFloat = _POLL_INTERVAL_S,
 ) -> Any:
     """
     Runs the given coroutine until it completes or cancellation is requested.
@@ -252,7 +259,9 @@ async def run_until_cancelled(
 
             # One to poll for cancellation
             tg.create_task(
-                _poller_for_task_group(close_poller_event, cancel_callback),
+                _poller_for_task_group(
+                    close_poller_event, cancel_callback, poll_interval
+                ),
                 name=f"run_until_cancelled/poller/{coro.__name__}/{id(sentinel)}",
             )
             # The other to run the actual coroutine
