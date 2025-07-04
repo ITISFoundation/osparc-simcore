@@ -41,7 +41,7 @@ from ..projects.projects_metadata_service import (
     get_project_uuids_by_root_parent_project_id,
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ._comp_run_collections_service import get_comp_run_collection_or_none_by_id
+from ._comp_runs_collections_service import get_comp_run_collection_or_none_by_id
 
 
 async def _get_projects_metadata(

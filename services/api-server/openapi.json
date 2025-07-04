@@ -10711,7 +10711,7 @@
           "ABORTED"
         ],
         "title": "RunningState",
-        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state\n\n# Computational backend states explained:\n- UNKNOWN - The backend doesn't know about the task anymore, it has disappeared from the system or it was never created (eg. when we are asking for the task)\n- NOT_STARTED - Default state when the task is created\n- PUBLISHED - The task has been submitted to the computational backend (click on \"Run\" button in the UI)\n- PENDING - Task has been transferred to the Dask scheduler and is waiting for a worker to pick it up (director-v2 --> Dask scheduler)\n   - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)\n- WAITING_FOR_CLUSTER - No cluster (Dask scheduler) is available to run the task; waiting for one to become available\n- WAITING_FOR_RESOURCES - No worker (Dask worker) is available to run the task; waiting for one to become available\n- STARTED - A worker has picked up the task and is executing it\n- SUCCESS - Task finished successfully\n- FAILED - Task finished with an error\n- ABORTED - Task was aborted before completion"
       },
       "ServicePricingPlanGetLegacy": {
         "properties": {
