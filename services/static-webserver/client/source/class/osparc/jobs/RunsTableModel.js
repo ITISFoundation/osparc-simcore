@@ -23,6 +23,8 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
     this.base(arguments);
 
     this.__includeChildren = includeChildren;
+    this.__cachedData = new Map();
+    this.__loadedRanges = [];
 
     this.set({
       projectUuid,
@@ -81,6 +83,8 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
   members: {
     __includeChildren: null,
+    __cachedData: null,
+    __loadedRanges: null,
 
     // overridden
     sortByColumn(columnIndex, ascending) {
