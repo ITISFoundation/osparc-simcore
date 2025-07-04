@@ -268,20 +268,28 @@ qx.Class.define("osparc.po.UsersPending", {
             return;
           }
           if (form.validate()) {
-            const approveUser = () => {
-              approveBtn.setFetching(true);
-              this.__approveUser(email, form)
-                .then(() => {
-                  osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User approved"), "INFO");
-                })
-                .catch(err => osparc.FlashMessenger.logError(err))
-                .finally(() => {
-                  approveBtn.setFetching(false);
-                  win.close();
-                });
-            };
-
-
+            const msg = this.tr("This user has no access to the project. Do you want to share it?");
+            const win = new osparc.ui.window.Confirmation(msg).set({
+              caption: this.tr("Share"),
+              confirmText: this.tr("Share"),
+              confirmAction: "create"
+            });
+            win.center();
+            win.open();
+            win.addListener("close", () => {
+              if (win.getConfirmed()) {
+                approveBtn.setFetching(true);
+                this.__approveUser(email, form)
+                  .then(() => {
+                    osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User approved"), "INFO");
+                  })
+                  .catch(err => osparc.FlashMessenger.logError(err))
+                  .finally(() => {
+                    approveBtn.setFetching(false);
+                    win.close();
+                  });
+              }
+            });
           }
         });
       });
