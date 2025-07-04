@@ -229,7 +229,7 @@ pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.2
+pytest-docker==3.2.3
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
@@ -241,7 +241,7 @@ pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
-pytest-xdist==3.7.0
+pytest-xdist==3.8.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via

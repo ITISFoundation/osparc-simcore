@@ -146,7 +146,7 @@ pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.2
+pytest-docker==3.2.3
     # via -r requirements/_test.in
 pytest-mock==3.14.1
     # via -r requirements/_test.in
