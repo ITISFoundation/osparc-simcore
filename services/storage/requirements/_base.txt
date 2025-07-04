@@ -612,7 +612,7 @@ protobuf==5.29.3
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
-psutil==6.1.1
+psutil==7.0.0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in

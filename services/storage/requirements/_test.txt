@@ -203,6 +203,7 @@ kombu==5.5.3
     # via
     #   -c requirements/_base.txt
     #   celery
+    #   pytest-celery
 lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 lupa==2.4
@@ -261,7 +262,7 @@ propcache==0.2.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-psutil==6.1.1
+psutil==7.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -296,7 +297,7 @@ pytest==8.4.1
     #   pytest-sugar
 pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-celery==1.1.3
+pytest-celery==1.2.0
     # via -r requirements/_test.in
 pytest-cov==6.2.1
     # via -r requirements/_test.in
