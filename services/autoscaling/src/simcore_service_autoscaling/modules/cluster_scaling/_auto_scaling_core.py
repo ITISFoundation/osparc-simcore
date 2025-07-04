@@ -315,13 +315,13 @@ async def _try_attach_pending_ec2s(
     all_drained_nodes = (
         cluster.drained_nodes + cluster.hot_buffer_drained_nodes + new_found_instances
     )
-    drained_nodes, buffer_drained_nodes, _ = sort_drained_nodes(
+    drained_nodes, hot_buffer_drained_nodes, _ = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     return dataclasses.replace(
         cluster,
         drained_nodes=drained_nodes,
-        buffer_drained_nodes=buffer_drained_nodes,
+        hot_buffer_drained_nodes=hot_buffer_drained_nodes,
         pending_ec2s=still_pending_ec2s,
     )
 
@@ -417,7 +417,7 @@ async def _activate_drained_nodes(
         cluster,
         active_nodes=cluster.active_nodes + activated_nodes,
         drained_nodes=remaining_drained_nodes,
-        buffer_drained_nodes=remaining_reserved_drained_nodes,
+        hot_buffer_drained_nodes=remaining_reserved_drained_nodes,
     )
 
 
@@ -483,7 +483,7 @@ async def _start_warm_buffer_instances(
 
     return dataclasses.replace(
         cluster,
-        buffer_ec2s=[
+        warm_buffer_ec2s=[
             i
             for i in cluster.warm_buffer_ec2s
             if i.ec2_instance.id not in started_instance_ids

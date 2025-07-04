@@ -6,10 +6,10 @@ from servicelib.instrumentation import MetricsBase
 
 from ...models import Cluster, WarmBufferPoolManager
 from ._constants import (
-    BUFFER_POOLS_METRICS_DEFINITIONS,
     CLUSTER_METRICS_DEFINITIONS,
     EC2_INSTANCE_LABELS,
     METRICS_NAMESPACE,
+    WARM_BUFFER_POOLS_METRICS_DEFINITIONS,
 )
 from ._utils import TrackedGauge, create_gauge
 
@@ -19,10 +19,10 @@ class ClusterMetrics(MetricsBase):  # pylint: disable=too-many-instance-attribut
     active_nodes: TrackedGauge = field(init=False)
     pending_nodes: TrackedGauge = field(init=False)
     drained_nodes: TrackedGauge = field(init=False)
-    buffer_drained_nodes: TrackedGauge = field(init=False)
+    hot_buffer_drained_nodes: TrackedGauge = field(init=False)
     pending_ec2s: TrackedGauge = field(init=False)
     broken_ec2s: TrackedGauge = field(init=False)
-    buffer_ec2s: TrackedGauge = field(init=False)
+    warm_buffer_ec2s: TrackedGauge = field(init=False)
     disconnected_nodes: TrackedGauge = field(init=False)
     terminating_nodes: TrackedGauge = field(init=False)
     retired_nodes: TrackedGauge = field(init=False)
@@ -124,7 +124,7 @@ class BufferPoolsMetrics(MetricsBase):
 
     def __post_init__(self) -> None:
         buffer_pools_subsystem = f"{self.subsystem}_buffer_machines_pools"
-        for field_name, definition in BUFFER_POOLS_METRICS_DEFINITIONS.items():
+        for field_name, definition in WARM_BUFFER_POOLS_METRICS_DEFINITIONS.items():
             setattr(
                 self,
                 field_name,
@@ -169,7 +169,7 @@ class BufferPoolsMetrics(MetricsBase):
     ) -> None:
         flat_pool = buffer_pool_manager.flatten_buffer_pool()
 
-        for field_name in BUFFER_POOLS_METRICS_DEFINITIONS:
+        for field_name in WARM_BUFFER_POOLS_METRICS_DEFINITIONS:
             tracked_gauge = getattr(self, field_name)
             assert isinstance(tracked_gauge, TrackedGauge)  # nosec
             instances = getattr(flat_pool, field_name)

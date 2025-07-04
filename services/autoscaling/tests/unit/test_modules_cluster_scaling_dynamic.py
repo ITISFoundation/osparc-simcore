@@ -1718,7 +1718,7 @@ async def test__find_terminateable_nodes_with_no_hosts(
             AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
         ],
         drained_nodes=[],
-        buffer_drained_nodes=[
+        hot_buffer_drained_nodes=[
             AssociatedInstance(node=host_node, ec2_instance=fake_ec2_instance_data())
         ],
     )
@@ -1752,7 +1752,7 @@ async def test__try_scale_down_cluster_with_no_nodes(
         drained_nodes=[
             create_associated_instance(drained_host_node, False)  # noqa: FBT003
         ],
-        buffer_drained_nodes=[
+        hot_buffer_drained_nodes=[
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
     )
@@ -1793,7 +1793,7 @@ async def test__activate_drained_nodes_with_no_tasks(
         drained_nodes=[
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
-        buffer_drained_nodes=[
+        hot_buffer_drained_nodes=[
             create_associated_instance(drained_host_node, True)  # noqa: FBT003
         ],
     )
@@ -2014,8 +2014,8 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         expected_num_machines=0,
     )
     assert not analyzed_cluster.active_nodes
-    assert analyzed_cluster.buffer_ec2s
-    assert len(analyzed_cluster.buffer_ec2s) == len(buffer_machines)
+    assert analyzed_cluster.warm_buffer_ec2s
+    assert len(analyzed_cluster.warm_buffer_ec2s) == len(buffer_machines)
 
     # now we should have a warm buffer moved to the hot buffer
     await assert_autoscaled_dynamic_ec2_instances(
@@ -2053,14 +2053,14 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
         expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
     )
     assert not analyzed_cluster.active_nodes
-    assert len(analyzed_cluster.buffer_ec2s) == max(
+    assert len(analyzed_cluster.warm_buffer_ec2s) == max(
         0,
         buffer_count
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
     ), (
         "the warm buffers were not used as expected there should be"
         f" {buffer_count - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER} remaining, "
-        f"found {len(analyzed_cluster.buffer_ec2s)}"
+        f"found {len(analyzed_cluster.warm_buffer_ec2s)}"
     )
     assert (
         len(analyzed_cluster.pending_ec2s)
@@ -2189,8 +2189,8 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     spied_cluster = assert_cluster_state(
         spied_cluster_analysis, expected_calls=1, expected_num_machines=5
     )
-    assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer
-    assert not spied_cluster.buffer_ec2s
+    assert len(spied_cluster.hot_buffer_drained_nodes) == num_hot_buffer
+    assert not spied_cluster.warm_buffer_ec2s
 
     # have a few warm buffers ready with the same type as the hot buffer machines
     await create_buffer_machines(
@@ -2234,8 +2234,8 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     spied_cluster = assert_cluster_state(
         spied_cluster_analysis, expected_calls=1, expected_num_machines=5
     )
-    assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer
-    assert len(spied_cluster.buffer_ec2s) == buffer_count
+    assert len(spied_cluster.hot_buffer_drained_nodes) == num_hot_buffer
+    assert len(spied_cluster.warm_buffer_ec2s) == buffer_count
 
     #
     # BUG REPRODUCTION
@@ -2303,8 +2303,8 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     spied_cluster = assert_cluster_state(
         spied_cluster_analysis, expected_calls=2, expected_num_machines=6
     )
-    assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer - 1
-    assert len(spied_cluster.buffer_ec2s) == buffer_count - 1
+    assert len(spied_cluster.hot_buffer_drained_nodes) == num_hot_buffer - 1
+    assert len(spied_cluster.warm_buffer_ec2s) == buffer_count - 1
     assert len(spied_cluster.active_nodes) == 1
     assert len(spied_cluster.pending_ec2s) == 1
 
@@ -2322,8 +2322,8 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         spied_cluster = assert_cluster_state(
             spied_cluster_analysis, expected_calls=1, expected_num_machines=6
         )
-        assert len(spied_cluster.buffer_drained_nodes) == num_hot_buffer - 1
-        assert len(spied_cluster.buffer_ec2s) == buffer_count - 1
+        assert len(spied_cluster.hot_buffer_drained_nodes) == num_hot_buffer - 1
+        assert len(spied_cluster.warm_buffer_ec2s) == buffer_count - 1
         assert len(spied_cluster.active_nodes) == 1
         assert len(spied_cluster.pending_ec2s) == 1
 
