@@ -35,20 +35,20 @@ async def test_rpc_list_computation_runs_and_tasks(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
-    proj = await project(user, workbench=fake_workbench_without_outputs)
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(
+    comp_tasks = await create_tasks_from_project(
         user=user, project=proj, state=StateType.PUBLISHED, progress=None
     )
     comp_runs = await create_comp_run(
@@ -115,21 +115,21 @@ async def test_rpc_list_computation_runs_with_filtering(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
 
-    proj_1 = await project(user, workbench=fake_workbench_without_outputs)
+    proj_1 = await create_project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
         project_id=f"{proj_1.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(
+    comp_tasks = await create_tasks_from_project(
         user=user, project=proj_1, state=StateType.PUBLISHED, progress=None
     )
     comp_runs = await create_comp_run(
@@ -139,12 +139,12 @@ async def test_rpc_list_computation_runs_with_filtering(
         dag_adjacency_list=fake_workbench_adjacency,
     )
 
-    proj_2 = await project(user, workbench=fake_workbench_without_outputs)
+    proj_2 = await create_project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
         project_id=f"{proj_2.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(
+    comp_tasks = await create_tasks_from_project(
         user=user, project=proj_2, state=StateType.SUCCESS, progress=None
     )
     comp_runs = await create_comp_run(
@@ -172,21 +172,21 @@ async def test_rpc_list_computation_runs_history(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
 
-    proj = await project(user, workbench=fake_workbench_without_outputs)
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(
+    comp_tasks = await create_tasks_from_project(
         user=user, project=proj, state=StateType.PUBLISHED, progress=None
     )
     assert comp_tasks
