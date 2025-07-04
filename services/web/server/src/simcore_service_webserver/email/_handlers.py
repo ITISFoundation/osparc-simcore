@@ -5,23 +5,18 @@ from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..products import products_web
 from ..products.models import Product
 from ..security.decorators import permission_required
-from ..utils import get_traceback_string
 from ..utils_aiohttp import envelope_json_response
 from ._core import check_email_server_responsiveness, send_email_from_template
 from .settings import get_plugin_settings
 
-logger = logging.getLogger(__name__)
-
-
-#
-# API schema models
-#
+_logger = logging.getLogger(__name__)
 
 
 class TestEmail(BaseModel):
@@ -39,18 +34,8 @@ class TestEmail(BaseModel):
 
 class EmailTestFailed(BaseModel):
     test_name: str
-    error_type: str
-    error_message: str
-    traceback: str
-
-    @classmethod
-    def create_from_exception(cls, error: Exception, test_name: str):
-        return cls(
-            test_name=test_name,
-            error_type=f"{type(error)}",
-            error_message=f"{error}",
-            traceback=get_traceback_string(error),
-        )
+    error_code: str | None = None
+    user_message: str = "Email test failed"
 
 
 class EmailTestPassed(BaseModel):
@@ -58,9 +43,6 @@ class EmailTestPassed(BaseModel):
     info: dict[str, Any]
 
 
-#
-# API routes
-#
 routes = web.RouteTableDef()
 
 
@@ -109,10 +91,24 @@ async def test_email(request: web.Request):
         )
 
     except Exception as err:  # pylint: disable=broad-except
-        logger.exception(
-            "test_email failed for %s",
-            f"{settings.model_dump_json(indent=1)}",
+
+        _logger.exception(
+            **create_troubleshootting_log_kwargs(
+                user_error_msg="Email test failed",
+                error=err,
+                error_context={
+                    "template_name": body.template_name,
+                    "to": body.to,
+                    "from_": body.from_ or product.support_email,
+                    "settings": settings.model_dump(),
+                },
+                tip="Check SMTP settings and network connectivity",
+            )
         )
         return envelope_json_response(
-            EmailTestFailed.create_from_exception(error=err, test_name="test_email")
+            EmailTestFailed(
+                test_name="test_email",
+                error_code=getattr(err, "error_code", None),
+                user_message="Email test failed. Please check the logs for more details.",
+            )
         )
