@@ -7,8 +7,6 @@ from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
 
-from pydantic import NonNegativeFloat
-
 from . import tracing
 from .utils_profiling_middleware import dont_profile, is_profiling, profile_context
 
@@ -225,7 +223,7 @@ class TaskCancelled(Exception):
 async def _poller_for_task_group(
     close_event: asyncio.Event,
     cancel_awaitable: TaskCancelCallback,
-    poll_interval: NonNegativeFloat,
+    poll_interval: float,
 ):
     """
     Polls for cancellation via the callback and raises TaskCancelled if it occurs.
@@ -241,7 +239,7 @@ async def run_until_cancelled(
     *,
     coro: Coroutine,
     cancel_callback: TaskCancelCallback,
-    poll_interval: NonNegativeFloat = _POLL_INTERVAL_S,
+    poll_interval: float = _POLL_INTERVAL_S,
 ) -> Any:
     """
     Runs the given coroutine until it completes or cancellation is requested.
