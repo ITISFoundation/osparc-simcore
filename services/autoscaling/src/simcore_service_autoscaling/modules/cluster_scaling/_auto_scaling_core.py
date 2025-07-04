@@ -150,10 +150,10 @@ async def _analyze_current_cluster(
         active_nodes=active_nodes,
         pending_nodes=pending_nodes,
         drained_nodes=drained_nodes,
-        buffer_drained_nodes=hot_buffer_drained_nodes,
+        hot_buffer_drained_nodes=hot_buffer_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
-        buffer_ec2s=[
+        warm_buffer_ec2s=[
             NonAssociatedInstance(ec2_instance=i) for i in buffer_ec2_instances
         ],
         terminating_nodes=terminating_nodes,
@@ -313,7 +313,7 @@ async def _try_attach_pending_ec2s(
             _logger.exception("Unexpected EC2 private dns")
     # NOTE: first provision the reserve drained nodes if possible
     all_drained_nodes = (
-        cluster.drained_nodes + cluster.buffer_drained_nodes + new_found_instances
+        cluster.drained_nodes + cluster.hot_buffer_drained_nodes + new_found_instances
     )
     drained_nodes, buffer_drained_nodes, _ = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
@@ -385,7 +385,9 @@ async def _activate_drained_nodes(
 ) -> Cluster:
     nodes_to_activate = [
         node
-        for node in itertools.chain(cluster.drained_nodes, cluster.buffer_drained_nodes)
+        for node in itertools.chain(
+            cluster.drained_nodes, cluster.hot_buffer_drained_nodes
+        )
         if node.assigned_tasks
     ]
 
@@ -408,7 +410,7 @@ async def _activate_drained_nodes(
     ]
     remaining_reserved_drained_nodes = [
         node
-        for node in cluster.buffer_drained_nodes
+        for node in cluster.hot_buffer_drained_nodes
         if node.ec2_instance.id not in new_active_node_ids
     ]
     return dataclasses.replace(
@@ -428,11 +430,11 @@ async def _start_warm_buffer_instances(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     instances_to_start = [
-        i.ec2_instance for i in cluster.buffer_ec2s if i.assigned_tasks
+        i.ec2_instance for i in cluster.warm_buffer_ec2s if i.assigned_tasks
     ]
 
     if (
-        len(cluster.buffer_drained_nodes)
+        len(cluster.hot_buffer_drained_nodes)
         < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
         # check if we can migrate warm buffers to hot buffers
@@ -444,7 +446,7 @@ async def _start_warm_buffer_instances(
         )
         free_startable_warm_buffers_to_replace_hot_buffers = [
             warm_buffer.ec2_instance
-            for warm_buffer in cluster.buffer_ec2s
+            for warm_buffer in cluster.warm_buffer_ec2s
             if (warm_buffer.ec2_instance.type == hot_buffer_instance_type)
             and not warm_buffer.assigned_tasks
         ]
@@ -458,7 +460,7 @@ async def _start_warm_buffer_instances(
 
         instances_to_start += free_startable_warm_buffers_to_replace_hot_buffers[
             : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            - len(cluster.buffer_drained_nodes)
+            - len(cluster.hot_buffer_drained_nodes)
             - len(unnassigned_pending_ec2s)
             - len(unnassigned_pending_nodes)
         ]
@@ -483,7 +485,7 @@ async def _start_warm_buffer_instances(
         cluster,
         buffer_ec2s=[
             i
-            for i in cluster.buffer_ec2s
+            for i in cluster.warm_buffer_ec2s
             if i.ec2_instance.id not in started_instance_ids
         ],
         pending_ec2s=cluster.pending_ec2s
@@ -559,10 +561,10 @@ async def _assign_tasks_to_current_cluster(
         functools.partial(_try_assign_task_to_ec2_instance, instances=instances)
         for instances in (
             cluster.active_nodes,
-            cluster.drained_nodes + cluster.buffer_drained_nodes,
+            cluster.drained_nodes + cluster.hot_buffer_drained_nodes,
             cluster.pending_nodes,
             cluster.pending_ec2s,
-            cluster.buffer_ec2s,
+            cluster.warm_buffer_ec2s,
         )
     ]
 
@@ -686,7 +688,7 @@ async def _find_needed_instances(
     if (
         num_missing_nodes := (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            - len(cluster.buffer_drained_nodes)
+            - len(cluster.hot_buffer_drained_nodes)
         )
     ) > 0:
         # check if some are already pending
@@ -695,7 +697,7 @@ async def _find_needed_instances(
         ] + [i.ec2_instance for i in cluster.pending_nodes if not i.assigned_tasks]
         if len(remaining_pending_instances) < (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            - len(cluster.buffer_drained_nodes)
+            - len(cluster.hot_buffer_drained_nodes)
         ):
             default_instance_type = get_hot_buffer_type(available_ec2_types)
             num_instances_per_type[default_instance_type] += num_missing_nodes
@@ -1163,7 +1165,7 @@ async def _scale_up_cluster(
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     if not unassigned_tasks and (
-        len(cluster.buffer_drained_nodes)
+        len(cluster.hot_buffer_drained_nodes)
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     ):
         return cluster
@@ -1245,7 +1247,9 @@ async def _notify_autoscaling_status(
 ) -> None:
     monitored_instances = list(
         itertools.chain(
-            cluster.active_nodes, cluster.drained_nodes, cluster.buffer_drained_nodes
+            cluster.active_nodes,
+            cluster.drained_nodes,
+            cluster.hot_buffer_drained_nodes,
         )
     )
 
