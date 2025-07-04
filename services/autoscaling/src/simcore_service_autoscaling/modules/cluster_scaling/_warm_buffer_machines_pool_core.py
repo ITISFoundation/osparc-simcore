@@ -63,10 +63,12 @@ def _record_instance_ready_metrics(app: FastAPI, *, instance: EC2InstanceData) -
             app
         ).buffer_machines_pools_metrics.instances_ready_to_pull_seconds.labels(
             instance_type=instance.type
-        ).observe((arrow.utcnow().datetime - instance.launch_time).total_seconds())
+        ).observe(
+            (arrow.utcnow().datetime - instance.launch_time).total_seconds()
+        )
 
 
-async def _handle_completed_cloud_init_instance(
+def _handle_completed_cloud_init_instance(
     app: FastAPI, *, buffer_pool: WarmBufferPool, instance: EC2InstanceData
 ) -> None:
     """Handle instance that has completed cloud init."""
@@ -91,7 +93,7 @@ async def _handle_ssm_connected_instance(
 
     try:
         if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
-            await _handle_completed_cloud_init_instance(
+            _handle_completed_cloud_init_instance(
                 app, buffer_pool=buffer_pool, instance=instance
             )
         else:
