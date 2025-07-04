@@ -116,7 +116,7 @@ qx.Class.define("osparc.po.UsersPending", {
     _buildLayout: function() {
       this.getChildControl("reload-button");
       this.getChildControl("pending-users-container");
-
+      this.__addHeader();
       this.__populatePendingUsersLayout();
     },
 
@@ -251,8 +251,6 @@ qx.Class.define("osparc.po.UsersPending", {
         .then(resps => {
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
-          const pendingUsersLayout = this.getChildControl("pending-users-layout");
-          pendingUsersLayout.removeAll();
           const sortByDate = (a, b) => {
             const dateA = a.accountRequestReviewedAt ? new Date(a.accountRequestReviewedAt) : new Date(0);
             const dateB = b.accountRequestReviewedAt ? new Date(b.accountRequestReviewedAt) : new Date(0);
@@ -267,6 +265,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
     __reload: function() {
       this.getChildControl("pending-users-layout").removeAll();
+      this.__addHeader();
       this.__populatePendingUsersLayout();
     },
 
