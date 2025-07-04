@@ -7,7 +7,6 @@ from aws_library.s3 import SimcoreS3API
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_context
 from tenacity import retry, wait_random_exponential
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -29,20 +28,19 @@ _logger = logging.getLogger(__name__)
 async def _ensure_s3_bucket(
     client: SimcoreS3API, settings: ApplicationSettings
 ) -> None:
-    with log_context(_logger, logging.DEBUG, msg="setup.s3_bucket.cleanup_ctx"):
-        assert settings.STORAGE_S3  # nosec
-        if await client.bucket_exists(bucket=settings.STORAGE_S3.S3_BUCKET_NAME):
-            _logger.info(
-                "S3 bucket %s exists already, skipping creation",
-                settings.STORAGE_S3.S3_BUCKET_NAME,
-            )
-            return
-        await client.create_bucket(
-            bucket=settings.STORAGE_S3.S3_BUCKET_NAME,
-            region=TypeAdapter(
-                BucketLocationConstraintType | Literal["us-east-1"]
-            ).validate_python(settings.STORAGE_S3.S3_REGION),
+    assert settings.STORAGE_S3  # nosec
+    if await client.bucket_exists(bucket=settings.STORAGE_S3.S3_BUCKET_NAME):
+        _logger.info(
+            "S3 bucket %s exists already, skipping creation",
+            settings.STORAGE_S3.S3_BUCKET_NAME,
         )
+        return
+    await client.create_bucket(
+        bucket=settings.STORAGE_S3.S3_BUCKET_NAME,
+        region=TypeAdapter(
+            BucketLocationConstraintType | Literal["us-east-1"]
+        ).validate_python(settings.STORAGE_S3.S3_REGION),
+    )
 
 
 def setup_s3(app: FastAPI) -> None:
