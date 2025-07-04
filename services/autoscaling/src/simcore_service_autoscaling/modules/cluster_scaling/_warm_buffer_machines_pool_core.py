@@ -56,9 +56,7 @@ from ._provider_protocol import AutoscalingProvider
 _logger = logging.getLogger(__name__)
 
 
-async def _record_instance_ready_metrics(
-    app: FastAPI, *, instance: EC2InstanceData
-) -> None:
+def _record_instance_ready_metrics(app: FastAPI, *, instance: EC2InstanceData) -> None:
     """Record metrics for instances ready to pull images."""
     if has_instrumentation(app):
         get_instrumentation(
@@ -75,7 +73,7 @@ async def _handle_completed_cloud_init_instance(
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
-    await _record_instance_ready_metrics(app, instance=instance)
+    _record_instance_ready_metrics(app, instance=instance)
 
     if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
         instance.type
@@ -109,7 +107,7 @@ async def _handle_ssm_connected_instance(
         buffer_pool.broken_instances.add(instance)
 
 
-async def _handle_unconnected_instance(
+def _handle_unconnected_instance(
     app: FastAPI, *, buffer_pool: WarmBufferPool, instance: EC2InstanceData
 ) -> None:
     """Handle instance not connected to SSM server."""
@@ -144,9 +142,7 @@ async def _analyze_running_instance_state(
             app, buffer_pool=buffer_pool, instance=instance
         )
     else:
-        await _handle_unconnected_instance(
-            app, buffer_pool=buffer_pool, instance=instance
-        )
+        _handle_unconnected_instance(app, buffer_pool=buffer_pool, instance=instance)
 
 
 async def _analyse_current_state(
