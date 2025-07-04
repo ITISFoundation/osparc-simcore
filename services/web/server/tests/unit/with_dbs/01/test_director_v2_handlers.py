@@ -252,52 +252,6 @@ async def test_list_computations_latest_iteration(
         assert ComputationTaskRestGet.model_validate(data[0])
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_list_computations_latest_iteration(
-    director_v2_service_mock: AioResponsesMock,
-    user_project: ProjectDict,
-    client: TestClient,
-    logged_user: LoggedUser,
-    user_role: UserRole,
-    expected: ExpectedResponse,
-    mock_rpc_list_computations_latest_iteration_tasks: None,
-    mock_rpc_list_computations_latest_iteration_tasks_page: None,
-    mock_rpc_list_computation_iterations: None,
-):
-    assert client.app
-    url = client.app.router["list_computations_latest_iteration"].url_for()
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(
-        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
-    )
-    if user_role != UserRole.ANONYMOUS:
-        assert ComputationRunRestGet.model_validate(data[0])
-        assert data[0]["rootProjectName"] == user_project["name"]
-
-    url = client.app.router["list_computation_iterations"].url_for(
-        project_id=f"{user_project['uuid']}"
-    )
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(
-        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
-    )
-    if user_role != UserRole.ANONYMOUS:
-        assert ComputationRunRestGet.model_validate(data[0])
-        assert len(data) == 2
-        assert data[0]["rootProjectName"] == user_project["name"]
-        assert data[1]["rootProjectName"] == user_project["name"]
-
-    url = client.app.router["list_computations_latest_iteration_tasks"].url_for(
-        project_id=f"{user_project['uuid']}"
-    )
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(
-        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
-    )
-    if user_role != UserRole.ANONYMOUS:
-        assert ComputationTaskRestGet.model_validate(data[0])
-
-
 @pytest.fixture
 def mock_rpc_list_computation_collection_runs_page(
     mocker: MockerFixture,
