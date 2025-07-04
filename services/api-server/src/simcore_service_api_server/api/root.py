@@ -18,6 +18,7 @@ from .routes import (
     solvers_jobs_read,
     studies,
     studies_jobs,
+    tasks,
     users,
     wallets,
 )
@@ -65,6 +66,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(
         functions_routes.function_router, tags=["functions"], prefix=_FUNCTIONS_PREFIX
     )
+    router.include_router(tasks.router, tags=["tasks"], prefix="/tasks")
 
     # NOTE: multiple-files upload is currently disabled
     # Web form to upload files at http://localhost:8000/v0/upload-form-view

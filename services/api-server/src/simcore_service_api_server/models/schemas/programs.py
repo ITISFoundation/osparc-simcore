@@ -9,7 +9,7 @@ from pydantic import ConfigDict, StringConstraints
 
 from ..api_resources import compose_resource_name
 from ..basic_types import VersionStr
-from ._base import (
+from .base import (
     ApiServerOutputSchema,
     BaseService,
 )

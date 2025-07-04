@@ -6,7 +6,7 @@ class BaseAsyncjobRpcError(OsparcErrorMixin, RuntimeError):
 
 
 class JobSchedulerError(BaseAsyncjobRpcError):
-    msg_template: str = "Celery exception: {exc}"
+    msg_template: str = "Async job scheduler exception: {exc}"
 
 
 class JobMissingError(BaseAsyncjobRpcError):
