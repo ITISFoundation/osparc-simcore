@@ -183,23 +183,32 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 2,
         });
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.accountRequestStatus.toLowerCase()), {
+        const statusImage = new qx.ui.basic.Image();
+        pendingUsersLayout.add(statusImage, {
           row,
           column: 3,
+        });
+        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.accountRequestStatus.toLowerCase()), {
+          row,
+          column: 4,
         });
         const infoButton = this.self().createInfoButton(pendingUser);
         pendingUsersLayout.add(infoButton, {
           row,
-          column: 4,
+          column: 5,
         });
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
         pendingUsersLayout.add(buttonsLayout, {
           row,
-          column: 5,
+          column: 6,
         });
 
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
+            statusImage.set({
+              source: "@FontAwesome5Solid/hourglass-end/16",
+              textColor: "warning-yellow",
+            });
             const approveButton = this.__createApproveButton(pendingUser.email);
             buttonsLayout.add(approveButton);
             const rejectButton = this.__createRejectButton(pendingUser.email);
@@ -207,12 +216,20 @@ qx.Class.define("osparc.po.UsersPending", {
             break;
           }
           case "REJECTED": {
+            statusImage.set({
+              source: "@FontAwesome5Solid/times/16",
+              textColor: "danger-red",
+            });
             const approveButton = this.__createApproveButton(pendingUser.email);
             approveButton.setEnabled(false); // avoid changing decision for now
             buttonsLayout.add(approveButton);
             break;
           }
           case "APPROVED": {
+            statusImage.set({
+              source: "@FontAwesome5Solid/check/16",
+              textColor: "product-color",
+            });
             const resendEmailButton = this.self().createResendEmailButton(pendingUser.email);
             resendEmailButton.setEnabled(false);
             buttonsLayout.add(resendEmailButton);
