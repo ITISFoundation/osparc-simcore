@@ -127,9 +127,6 @@ def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
         assert MESSAGE_ON_HANDLER_CANCELLATION in server_log
 
 
-# ===================================================================================================
-
-
 @pytest.fixture
 def long_running_poller_mock(
     monkeypatch: pytest.MonkeyPatch,
