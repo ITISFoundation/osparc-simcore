@@ -10,8 +10,8 @@ from servicelib.redis import exclusive
 from ...core.settings import ApplicationSettings
 from ...utils.redis import create_lock_key_and_value
 from ..redis import get_redis_client
-from ._warm_buffer_machines_pool_core import monitor_buffer_machines
 from ._provider_dynamic import DynamicAutoscalingProvider
+from ._warm_buffer_machines_pool_core import monitor_buffer_machines
 
 _TASK_NAME_BUFFER: Final[str] = "Autoscaling Buffer Machines Pool"
 
