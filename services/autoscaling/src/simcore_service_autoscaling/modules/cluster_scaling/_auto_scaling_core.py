@@ -48,7 +48,7 @@ from ...utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
     find_selected_instance_type_for_task,
-    get_machine_buffer_type,
+    get_hot_buffer_type,
     sort_drained_nodes,
 )
 from ...utils.rabbitmq import (
@@ -697,7 +697,7 @@ async def _find_needed_instances(
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             - len(cluster.buffer_drained_nodes)
         ):
-            default_instance_type = get_machine_buffer_type(available_ec2_types)
+            default_instance_type = get_hot_buffer_type(available_ec2_types)
             num_instances_per_type[default_instance_type] += num_missing_nodes
 
     return num_instances_per_type

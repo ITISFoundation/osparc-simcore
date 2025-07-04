@@ -24,7 +24,7 @@ from simcore_service_autoscaling.models import AssociatedInstance, EC2InstanceDa
 from simcore_service_autoscaling.utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
-    get_machine_buffer_type,
+    get_hot_buffer_type,
     sort_drained_nodes,
 )
 from simcore_service_autoscaling.utils.utils_docker import (
@@ -274,7 +274,7 @@ def test_get_machine_buffer_type(
     random_fake_available_instances: list[EC2InstanceType],
 ):
     assert (
-        get_machine_buffer_type(random_fake_available_instances)
+        get_hot_buffer_type(random_fake_available_instances)
         == random_fake_available_instances[0]
     )
 
@@ -299,7 +299,7 @@ def test_sort_drained_nodes(
     create_fake_node: Callable[..., DockerNode],
     create_associated_instance: Callable[..., AssociatedInstance],
 ):
-    machine_buffer_type = get_machine_buffer_type(random_fake_available_instances)
+    machine_buffer_type = get_hot_buffer_type(random_fake_available_instances)
     _NUM_DRAINED_NODES = 20
     _NUM_NODE_WITH_TYPE_BUFFER = (
         3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
