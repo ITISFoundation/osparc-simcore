@@ -132,9 +132,8 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
       // Limit the request to smaller chunks for better pagination
       const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
-      const PAGE_SIZE = serverMaxLimit;
       const nextChunkStart = this.__findNextChunkStart(firstRow);
-      const lastRow = Math.min(nextChunkStart + PAGE_SIZE - 1, this._rowCount - 1);
+      const lastRow = Math.min(nextChunkStart + serverMaxLimit - 1, this._rowCount - 1);
 
       console.info(`📏 Loading sequential chunk: ${nextChunkStart}-${lastRow} (requested: ${firstRow}-${qxLastRow})`);
 
