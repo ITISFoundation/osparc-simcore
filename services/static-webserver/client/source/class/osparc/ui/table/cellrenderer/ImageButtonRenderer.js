@@ -21,6 +21,8 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
   construct: function(clickAction, iconPath) {
     this.base(arguments, clickAction);
 
+    this.__imageCache = {};
+
     this.setIconPath(iconPath);
   },
 
@@ -34,6 +36,8 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
   },
 
   members: {
+    __imageCache: null,
+
     __applyIconPath: function(iconPath) {
       const resMgr = qx.util.ResourceManager.getInstance();
       const iconUrl = resMgr.toUri(iconPath);
@@ -44,15 +48,9 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
     },
 
     __loadImageAsDataUri: function(iconUrl, iconPath) {
-      // Try to use a cached version first
-      if (this.constructor.__imageCache && this.constructor.__imageCache[iconPath]) {
-        this.setButtonContent(this.constructor.__imageCache[iconPath]);
+      if (this.__imageCache[iconPath]) {
+        this.setButtonContent(this.__imageCache[iconPath]);
         return;
-      }
-
-      // Initialize cache if it doesn't exist
-      if (!this.constructor.__imageCache) {
-        this.constructor.__imageCache = {};
       }
 
       // Fetch and convert to data URI for permanent caching
@@ -65,7 +63,7 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
             const content = `<img src="${dataUri}" style="width:14px; height:14px;" alt="icon"/>`;
 
             // Cache the data URI
-            this.constructor.__imageCache[iconPath] = content;
+            this.__imageCache[iconPath] = content;
             this.setButtonContent(content);
           };
           reader.readAsDataURL(blob);
