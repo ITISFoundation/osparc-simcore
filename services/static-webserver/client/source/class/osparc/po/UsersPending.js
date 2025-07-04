@@ -248,7 +248,7 @@ qx.Class.define("osparc.po.UsersPending", {
     __createApproveButton: function(email) {
       const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
       button.addListener("execute", () => {
-        const form = this.createInvitationForm(false);
+        const form = this.self().createInvitationForm(false);
         const approveBtn = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Approve"));
         approveBtn.set({
           appearance: "form-button"
@@ -307,7 +307,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
       let msg = `Are you sure you want to approve ${email}`;
       if (extraCreditsInUsd) {
-        msg += ` with ${extraCreditsInUsd}$ credits`;
+        msg += ` with ${extraCreditsInUsd}$ worth credits`;
       }
       if (trialAccountDays > 0) {
         msg += ` and ${trialAccountDays} days of trial`;
