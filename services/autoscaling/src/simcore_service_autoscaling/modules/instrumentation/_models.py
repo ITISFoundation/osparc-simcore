@@ -4,7 +4,7 @@ from typing import Final
 from prometheus_client import CollectorRegistry, Counter, Histogram
 from servicelib.instrumentation import MetricsBase
 
-from ...models import BufferPoolManager, Cluster
+from ...models import Cluster, WarmBufferPoolManager
 from ._constants import (
     BUFFER_POOLS_METRICS_DEFINITIONS,
     CLUSTER_METRICS_DEFINITIONS,
@@ -165,7 +165,7 @@ class BufferPoolsMetrics(MetricsBase):
         )
 
     def update_from_buffer_pool_manager(
-        self, buffer_pool_manager: BufferPoolManager
+        self, buffer_pool_manager: WarmBufferPoolManager
     ) -> None:
         flat_pool = buffer_pool_manager.flatten_buffer_pool()
 
