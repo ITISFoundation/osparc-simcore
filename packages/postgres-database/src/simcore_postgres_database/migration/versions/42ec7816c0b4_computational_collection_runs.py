@@ -87,8 +87,7 @@ def upgrade():
         SET collection_run_id = (
             SELECT collection_run_id::text
             FROM comp_runs_collections
-            WHERE client_or_system_generated_id LIKE 'migration-generated-%'
-            LIMIT 1
+            WHERE client_or_system_generated_id = 'migration-generated-' || comp_runs.run_id::text
         )
         WHERE collection_run_id IS NULL
         """
