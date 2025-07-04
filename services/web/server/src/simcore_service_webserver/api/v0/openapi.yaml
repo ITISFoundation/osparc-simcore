@@ -17166,6 +17166,12 @@ components:
           - type: integer
           - type: 'null'
           title: Preregistrationid
+        preRegistrationCreated:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Preregistrationcreated
         invitedBy:
           anyOf:
           - type: string
@@ -17217,6 +17223,7 @@ components:
       - postalCode
       - country
       - preRegistrationId
+      - preRegistrationCreated
       - accountRequestStatus
       - registered
       - status
