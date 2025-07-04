@@ -67,12 +67,15 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
         sentinel = object()
         kill_poller_task_event = asyncio.Event()
         try:
+            # Create two tasks in a TaskGroup
             async with asyncio.TaskGroup() as tg:
 
+                # One to poll the `Request` object to check for client disconnection
                 tg.create_task(
                     _disconnect_poller_for_task_group(kill_poller_task_event, request),
                     name=f"cancel_on_disconnect/poller/{handler.__name__}/{id(sentinel)}",
                 )
+                # The other to run the actual request handler
                 handler_task = tg.create_task(
                     handler(request, *args, **kwargs),
                     name=f"cancel_on_disconnect/handler/{handler.__name__}/{id(sentinel)}",
