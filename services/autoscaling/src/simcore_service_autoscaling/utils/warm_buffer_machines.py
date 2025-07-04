@@ -33,7 +33,7 @@ def get_deactivated_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
     return new_base_ec2_tags
 
 
-def is_buffer_machine(tags: EC2Tags) -> bool:
+def is_warm_buffer_machine(tags: EC2Tags) -> bool:
     return bool(BUFFER_MACHINE_TAG_KEY in tags)
 
 
