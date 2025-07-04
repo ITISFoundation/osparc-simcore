@@ -20,11 +20,11 @@ from simcore_service_autoscaling.modules.cluster_scaling._provider_computational
 from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
     DynamicAutoscalingProvider,
 )
-from simcore_service_autoscaling.utils.buffer_machines import (
+from simcore_service_autoscaling.utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
     get_activated_buffer_ec2_tags,
     get_deactivated_buffer_ec2_tags,
-    is_buffer_machine,
+    is_warm_buffer_machine,
     load_pre_pulled_images_from_tags,
 )
 
@@ -121,7 +121,7 @@ def test_get_deactivated_buffer_ec2_tags_computational(
     ],
 )
 def test_is_buffer_machine(tags: EC2Tags, expected_is_buffer: bool):
-    assert is_buffer_machine(tags) is expected_is_buffer
+    assert is_warm_buffer_machine(tags) is expected_is_buffer
 
 
 @pytest.mark.parametrize(
