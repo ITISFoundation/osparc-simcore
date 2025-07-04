@@ -147,9 +147,12 @@ qx.Class.define("osparc.po.UsersPending", {
 
     __addRows: function(pendingUsers) {
       const pendingUsersLayout = this.getChildControl("pending-users-layout");
+      const grid = pendingUsersLayout.getLayout();
 
       let row = 1;
       pendingUsers.forEach(pendingUser => {
+        grid.setRowAlign(row, "left", "middle");
+
         pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.firstName + " " + pendingUser.lastName), {
           row,
           column: 0,
