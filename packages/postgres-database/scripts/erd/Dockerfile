@@ -20,11 +20,6 @@ RUN apt-get update \
   && apt-get clean
 
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade \
-  wheel \
-  setuptools
-
 
 # devenv
 COPY requirements.txt requirements.txt
