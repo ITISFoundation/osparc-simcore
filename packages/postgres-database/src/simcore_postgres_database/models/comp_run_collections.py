@@ -6,8 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from ._common import column_created_datetime, column_modified_datetime
 from .base import metadata
 
-comp_run_collections = sa.Table(
-    "comp_run_collections",
+comp_runs_collections = sa.Table(
+    "comp_runs_collections",
     metadata,
     sa.Column(
         "collection_run_id",
@@ -34,7 +34,7 @@ comp_run_collections = sa.Table(
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
     sa.Index(
-        "ix_comp_run_collections_client_or_system_generated_id",
+        "ix_comp_runs_collections_client_or_system_generated_id",
         "client_or_system_generated_id",
     ),
 )

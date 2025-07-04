@@ -33,7 +33,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
-from simcore_postgres_database.models.comp_run_collections import comp_run_collections
+from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -398,7 +398,7 @@ async def populated_comp_run_collection(
 
     with postgres_db.connect() as con:
         con.execute(
-            comp_run_collections.insert()
+            comp_runs_collections.insert()
             .values(
                 collection_run_id=collection_run_id,
                 client_or_system_generated_id=collection_run_id,
@@ -407,10 +407,10 @@ async def populated_comp_run_collection(
                 created=sa.func.now(),
                 modified=sa.func.now(),
             )
-            .returning(comp_run_collections.c.collection_run_id)
+            .returning(comp_runs_collections.c.collection_run_id)
         )
         yield
-        con.execute(comp_run_collections.delete())
+        con.execute(comp_runs_collections.delete())
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)

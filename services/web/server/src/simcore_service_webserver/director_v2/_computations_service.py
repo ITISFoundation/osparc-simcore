@@ -41,7 +41,7 @@ from ..projects.projects_metadata_service import (
     get_project_uuids_by_root_parent_project_id,
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ._comp_run_collections_service import get_comp_run_collection_or_none_by_id
+from ._comp_runs_collections_service import get_comp_run_collection_or_none_by_id
 
 
 async def _get_projects_metadata(
@@ -350,7 +350,7 @@ async def list_computation_collection_runs(
     )
 
     # NOTE: MD: can be improved with a single batch call
-    _comp_run_collections = await limited_gather(
+    _comp_runs_collections = await limited_gather(
         *[
             get_comp_run_collection_or_none_by_id(
                 app, collection_run_id=_run.collection_run_id
@@ -378,7 +378,7 @@ async def list_computation_collection_runs(
             ),
         )
         for item, run_collection, project_root_name in zip(
-            _runs_get.items, _comp_run_collections, _projects_root_names, strict=True
+            _runs_get.items, _comp_runs_collections, _projects_root_names, strict=True
         )
     ]
 
