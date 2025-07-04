@@ -1075,8 +1075,8 @@ async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
 
 
 @pytest.fixture
-async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
-    async def _(
+def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
+    def _(
         nodes: list[DockerNode], ec2_instances: list[EC2InstanceData]
     ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
         return [], ec2_instances
