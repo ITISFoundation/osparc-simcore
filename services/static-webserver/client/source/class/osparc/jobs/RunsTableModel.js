@@ -121,12 +121,37 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
     // overridden
     _loadRowData(firstRow, qxLastRow) {
+      console.info(`🔄 _loadRowData requested: firstRow=${firstRow}, qxLastRow=${qxLastRow}`);
+
+      // Prevent multiple simultaneous requests
+      if (this.getIsFetching()) {
+        console.info(`⏳ Already fetching data, queuing request for ${firstRow}-${qxLastRow}`);
+        setTimeout(() => this._loadRowData(firstRow, qxLastRow), 100);
+        return;
+      }
+
+      // Limit the request to smaller chunks for better pagination
+      const PAGE_SIZE = 20;
+      const nextChunkStart = this.__findNextSequentialChunk(firstRow);
+      const lastRow = Math.min(nextChunkStart + PAGE_SIZE - 1, this._rowCount - 1);
+
+      console.info(`📏 Loading sequential chunk: ${nextChunkStart}-${lastRow} (requested: ${firstRow}-${qxLastRow})`);
+
+      // Check if we already have all the requested data cached
+      const cachedData = this.__getCachedDataForRange(firstRow, Math.min(qxLastRow, lastRow));
+      if (cachedData.length === (Math.min(qxLastRow, lastRow) - firstRow + 1)) {
+        console.info(`✅ All data cached for range ${firstRow}-${Math.min(qxLastRow, lastRow)}, returning cached data`);
+        this._onRowDataLoaded(cachedData);
+        return;
+      }
+
+      const missingRanges = [{start: nextChunkStart, end: lastRow}];
+      console.info(`📡 Loading next sequential chunk:`, missingRanges);
+
       this.setIsFetching(true);
 
-      const lastRow = Math.min(qxLastRow, this._rowCount - 1);
-      // Returns a request promise with given offset and limit
       const getFetchPromise = (offset, limit) => {
-      const orderBy = this.getOrderBy();
+        const orderBy = this.getOrderBy();
         let promise;
         if (this.getProjectUuid()) {
           promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy);
@@ -152,33 +177,73 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
           });
       };
 
-      // Divides the model row request into several server requests to comply with the number of rows server limit
-      const reqLimit = lastRow - firstRow + 1; // Number of requested rows
-      const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
-      let nRequests = Math.ceil(reqLimit / serverMaxLimit);
-      if (nRequests > 1) {
-        const requests = [];
-        for (let i=firstRow; i <= lastRow; i += serverMaxLimit) {
-          requests.push(getFetchPromise(i, i > lastRow - serverMaxLimit + 1 ? reqLimit % serverMaxLimit : serverMaxLimit))
+      const fetchPromises = missingRanges.map(range => {
+        const rangeSize = range.end - range.start + 1;
+        const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
+
+        if (rangeSize <= serverMaxLimit) {
+          return getFetchPromise(range.start, rangeSize).then(data => ({
+            start: range.start,
+            data: data
+          }));
+        } else {
+          const requests = [];
+          for (let i = range.start; i <= range.end; i += serverMaxLimit) {
+            const chunkSize = Math.min(serverMaxLimit, range.end - i + 1);
+            requests.push(getFetchPromise(i, chunkSize).then(data => ({
+              start: i,
+              data: data
+            })));
+          }
+          return Promise.all(requests).then(chunks => ({
+            start: range.start,
+            data: chunks.flatMap(chunk => chunk.data)
+          }));
         }
-        Promise.all(requests)
-          .then(responses => this._onRowDataLoaded(responses.flat()))
-          .catch(err => {
-            console.error(err);
-            this._onRowDataLoaded(null);
-          })
-          .finally(() => this.setIsFetching(false));
-      } else {
-        getFetchPromise(firstRow, reqLimit)
-          .then(data => {
-            this._onRowDataLoaded(data);
-          })
-          .catch(err => {
-            console.error(err)
-            this._onRowDataLoaded(null);
-          })
-          .finally(() => this.setIsFetching(false));
+      });
+
+      Promise.all(fetchPromises)
+        .then(fetchedRanges => {
+          fetchedRanges.forEach(fetchedRange => {
+            fetchedRange.data.forEach((rowData, index) => {
+              this.__cachedData.set(fetchedRange.start + index, rowData);
+            });
+            this.__loadedRanges.push({start: fetchedRange.start, end: fetchedRange.start + fetchedRange.data.length - 1});
+          });
+
+          const requestedData = this.__getCachedDataForRange(firstRow, lastRow);
+          this._onRowDataLoaded(requestedData);
+        })
+        .catch(err => {
+          console.error(err);
+          this._onRowDataLoaded(null);
+        })
+        .finally(() => this.setIsFetching(false));
+    },
+
+    __findNextSequentialChunk: function(requestedStart) {
+      let consecutiveEnd = -1;
+      for (let i = 0; i < this._rowCount; i++) {
+        if (this.__cachedData.has(i)) {
+          consecutiveEnd = i;
+        } else {
+          break;
+        }
       }
-    }
+
+      const nextStart = consecutiveEnd + 1;
+      console.info(`📍 Consecutive data ends at row ${consecutiveEnd}, next chunk starts at ${nextStart}`);
+      return Math.max(nextStart, 0);
+    },
+
+    __getCachedDataForRange: function(firstRow, lastRow) {
+      const data = [];
+      for (let i = firstRow; i <= lastRow; i++) {
+        if (this.__cachedData.has(i)) {
+          data.push(this.__cachedData.get(i));
+        }
+      }
+      return data;
+    },
   }
 })
