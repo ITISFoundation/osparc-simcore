@@ -8216,6 +8216,18 @@
             "items": {},
             "type": "array",
             "title": "Errors"
+          },
+          "support_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "OEC:([a-fA-F0-9]{12})-(\\d{13,14})"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Id"
           }
         },
         "type": "object",
