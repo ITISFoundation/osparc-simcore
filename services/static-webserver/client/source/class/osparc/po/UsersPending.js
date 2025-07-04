@@ -94,10 +94,7 @@ qx.Class.define("osparc.po.UsersPending", {
           control = new qx.ui.form.Button(this.tr("Reload")).set({
             allowGrowX: false,
           });
-          control.addListener("execute", () => {
-            this.getChildControl("pending-users-layout").removeAll();
-            this.__populatePendingUsersLayout();
-          });
+          control.addListener("execute", () => this.__reload());
           this._add(control);
           break;
         case "pending-users-container":
@@ -245,6 +242,11 @@ qx.Class.define("osparc.po.UsersPending", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    __reload: function() {
+      this.getChildControl("pending-users-layout").removeAll();
+      this.__populatePendingUsersLayout();
+    },
+
     __createApproveButton: function(email) {
       const button = new qx.ui.form.Button(qx.locale.Manager.tr("Approve"));
       button.addListener("execute", () => {
@@ -289,7 +291,10 @@ qx.Class.define("osparc.po.UsersPending", {
           if (win.getConfirmed()) {
             button.setFetching(true);
             this.__rejectUser(email)
-              .then(() => osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User denied"), "INFO"))
+              .then(() => {
+                osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User denied"), "INFO");
+                this.__reload();
+              })
               .catch(err => osparc.FlashMessenger.logError(err))
               .finally(() => button.setFetching(false));
           }
@@ -326,6 +331,7 @@ qx.Class.define("osparc.po.UsersPending", {
           this.__approveUser(email, form)
             .then(() => {
               osparc.FlashMessenger.logAs("User approved", "INFO");
+              this.__reload();
             })
             .catch(err => osparc.FlashMessenger.logError(err))
             .finally(() => {
