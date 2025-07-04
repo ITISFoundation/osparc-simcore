@@ -264,32 +264,10 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         win.open();
         approveBtn.addListener("execute", () => {
-          if (!osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
-            return;
-          }
-          if (form.validate()) {
-            const msg = this.tr("This user has no access to the project. Do you want to share it?");
-            const win = new osparc.ui.window.Confirmation(msg).set({
-              caption: this.tr("Share"),
-              confirmText: this.tr("Share"),
-              confirmAction: "create"
-            });
-            win.center();
-            win.open();
-            win.addListener("close", () => {
-              if (win.getConfirmed()) {
-                approveBtn.setFetching(true);
-                this.__approveUser(email, form)
-                  .then(() => {
-                    osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User approved"), "INFO");
-                  })
-                  .catch(err => osparc.FlashMessenger.logError(err))
-                  .finally(() => {
-                    approveBtn.setFetching(false);
-                    win.close();
-                  });
-              }
-            });
+          if (osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
+            if (form.validate()) {
+              this.__confirmApproveUser(email, form);
+            }
           }
         });
       });
@@ -301,7 +279,7 @@ qx.Class.define("osparc.po.UsersPending", {
       button.addListener("execute", () => {
         const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted"`;
         const win = new osparc.ui.window.Confirmation(msg).set({
-          caption: "Reject",
+          caption: "Reject User",
           confirmText: "Reject",
           confirmAction: "delete",
         });
@@ -318,6 +296,44 @@ qx.Class.define("osparc.po.UsersPending", {
         });
       });
       return button;
+    },
+
+    __confirmApproveUser: function(email, form) {
+      const extraCreditsInUsd = form.getItems()["credits"].getValue();
+      let trialAccountDays = 0;
+      if (form.getItems()["withExpiration"].getValue()) {
+        trialAccountDays = form.getItems()["trialDays"].getValue();
+      }
+
+      let msg = `Are you sure you want to approve ${email}`;
+      if (extraCreditsInUsd) {
+        msg += ` with ${extraCreditsInUsd}$ credits`;
+      }
+      if (trialAccountDays > 0) {
+        msg += ` and ${trialAccountDays} days of trial`;
+      }
+      msg += "?";
+      const win = new osparc.ui.window.Confirmation(msg).set({
+        caption: "Approve User",
+        confirmText: "Approve",
+        confirmAction: "create"
+      });
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          approveBtn.setFetching(true);
+          this.__approveUser(email, form)
+            .then(() => {
+              osparc.FlashMessenger.logAs("User approved", "INFO");
+            })
+            .catch(err => osparc.FlashMessenger.logError(err))
+            .finally(() => {
+              approveBtn.setFetching(false);
+              win.close();
+            });
+        }
+      });
     },
 
     __approveUser: function(email, form) {
