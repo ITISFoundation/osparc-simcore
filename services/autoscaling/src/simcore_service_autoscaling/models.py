@@ -158,7 +158,7 @@ class DaskTask:
 
 
 @dataclass(kw_only=True, slots=True)
-class BufferPool:
+class WarmBufferPool:
     ready_instances: set[EC2InstanceData] = field(default_factory=set)
     pending_instances: set[EC2InstanceData] = field(default_factory=set)
     waiting_to_pull_instances: set[EC2InstanceData] = field(default_factory=set)
@@ -169,7 +169,7 @@ class BufferPool:
 
     def __repr__(self) -> str:
         return (
-            f"BufferPool(ready-count={len(self.ready_instances)}, "
+            f"WarmBufferPool(ready-count={len(self.ready_instances)}, "
             f"pending-count={len(self.pending_instances)}, "
             f"waiting-to-pull-count={len(self.waiting_to_pull_instances)}, "
             f"waiting-to-stop-count={len(self.waiting_to_stop_instances)}, "
@@ -212,20 +212,20 @@ class BufferPool:
 
 
 @dataclass
-class BufferPoolManager:
-    buffer_pools: dict[InstanceTypeType, BufferPool] = field(
-        default_factory=lambda: defaultdict(BufferPool)
+class WarmBufferPoolManager:
+    buffer_pools: dict[InstanceTypeType, WarmBufferPool] = field(
+        default_factory=lambda: defaultdict(WarmBufferPool)
     )
 
     def __repr__(self) -> str:
-        return f"BufferPoolManager({dict(self.buffer_pools)})"
+        return f"WarmBufferPoolManager({dict(self.buffer_pools)})"
 
-    def flatten_buffer_pool(self) -> BufferPool:
+    def flatten_buffer_pool(self) -> WarmBufferPool:
         """returns a flattened buffer pool with all the EC2InstanceData"""
-        flat_pool = BufferPool()
+        flat_pool = WarmBufferPool()
 
         for buffer_pool in self.buffer_pools.values():
-            for f in fields(BufferPool):
+            for f in fields(WarmBufferPool):
                 getattr(flat_pool, f.name).update(getattr(buffer_pool, f.name))
 
         return flat_pool

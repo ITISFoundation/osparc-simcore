@@ -41,7 +41,7 @@ from ...constants import (
     PREPULL_COMMAND_NAME,
 )
 from ...core.settings import get_application_settings
-from ...models import BufferPool, BufferPoolManager
+from ...models import WarmBufferPool, WarmBufferPoolManager
 from ...utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
     ec2_buffer_startup_script,
@@ -57,7 +57,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _analyze_running_instance_state(
-    app: FastAPI, *, buffer_pool: BufferPool, instance: EC2InstanceData
+    app: FastAPI, *, buffer_pool: WarmBufferPool, instance: EC2InstanceData
 ):
     ssm_client = get_ssm_client(app)
     app_settings = get_application_settings(app)
@@ -111,7 +111,7 @@ async def _analyze_running_instance_state(
 
 async def _analyse_current_state(
     app: FastAPI, *, auto_scaling_mode: AutoscalingProvider
-) -> BufferPoolManager:
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -121,7 +121,7 @@ async def _analyse_current_state(
         tags=get_deactivated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped", "pending", "running", "stopping"],
     )
-    buffers_manager = BufferPoolManager()
+    buffers_manager = WarmBufferPoolManager()
     for instance in all_buffer_instances:
         match instance.state:
             case "stopped":
@@ -149,8 +149,8 @@ async def _analyse_current_state(
 
 async def _terminate_unneeded_pools(
     app: FastAPI,
-    buffers_manager: BufferPoolManager,
-) -> BufferPoolManager:
+    buffers_manager: WarmBufferPoolManager,
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -177,8 +177,8 @@ async def _terminate_unneeded_pools(
 
 
 async def _terminate_instances_with_invalid_pre_pulled_images(
-    app: FastAPI, buffers_manager: BufferPoolManager
-) -> BufferPoolManager:
+    app: FastAPI, buffers_manager: WarmBufferPoolManager
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -211,8 +211,8 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
 
 
 async def _terminate_broken_instances(
-    app: FastAPI, buffers_manager: BufferPoolManager
-) -> BufferPoolManager:
+    app: FastAPI, buffers_manager: WarmBufferPoolManager
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     termineatable_instances = set()
     for pool in buffers_manager.buffer_pools.values():
@@ -226,10 +226,10 @@ async def _terminate_broken_instances(
 
 async def _add_remove_buffer_instances(
     app: FastAPI,
-    buffers_manager: BufferPoolManager,
+    buffers_manager: WarmBufferPoolManager,
     *,
     auto_scaling_mode: AutoscalingProvider,
-) -> BufferPoolManager:
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -292,7 +292,7 @@ InstancesToTerminate: TypeAlias = set[EC2InstanceData]
 
 
 async def _handle_pool_image_pulling(
-    app: FastAPI, instance_type: InstanceTypeType, pool: BufferPool
+    app: FastAPI, instance_type: InstanceTypeType, pool: WarmBufferPool
 ) -> tuple[InstancesToStop, InstancesToTerminate]:
     ec2_client = get_ec2_client(app)
     ssm_client = get_ssm_client(app)
@@ -360,7 +360,7 @@ async def _handle_pool_image_pulling(
 
 
 async def _handle_image_pre_pulling(
-    app: FastAPI, buffers_manager: BufferPoolManager
+    app: FastAPI, buffers_manager: WarmBufferPoolManager
 ) -> None:
     ec2_client = get_ec2_client(app)
     instances_to_stop: set[EC2InstanceData] = set()
