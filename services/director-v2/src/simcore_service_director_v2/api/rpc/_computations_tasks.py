@@ -6,16 +6,17 @@ from models_library.projects import ProjectID
 from servicelib.rabbitmq import RPCRouter
 from simcore_sdk.node_ports_common import data_items_utils
 
-from ...core.errors import ComputationalRunNotFoundError, PipelineNotFoundError
+from ...core.errors import PipelineNotFoundError
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
 from ...utils.computations_tasks import get_pipeline_info
+from ..errors.rpc_error import ComputationalTaskMissingError
 
 router = RPCRouter()
 
 
-@router.expose(reraise_if_error_type=(ComputationalRunNotFoundError,))
+@router.expose(reraise_if_error_type=(ComputationalTaskMissingError,))
 async def get_computation_task_log_file_ids(
     app: FastAPI,
     project_id: ProjectID,
@@ -30,7 +31,7 @@ async def get_computation_task_log_file_ids(
             comp_tasks_repo=comp_tasks_repo,
         )
     except PipelineNotFoundError as exc:
-        raise ComputationalRunNotFoundError(project_id=project_id) from exc
+        raise ComputationalTaskMissingError(project_id=project_id) from exc
 
     iter_task_ids = (t.node_id for t in info.filtered_tasks)
 
