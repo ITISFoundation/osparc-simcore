@@ -3,7 +3,7 @@
 
 
 import datetime
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,7 @@ from celery_library.signals import on_worker_init, on_worker_shutdown
 from models_library.basic_types import BootModeEnum
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.modules.celery.tasks import (
@@ -112,3 +113,12 @@ async def with_celery_worker(
         queues=",".join(queue.value for queue in TaskQueue),
     ) as worker:
         yield worker
+
+
+@pytest.fixture
+async def notifications_rabbitmq_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    rpc_client = await rabbitmq_rpc_client("pytest_notifications_rpc_client")
+    assert rpc_client
+    return rpc_client
