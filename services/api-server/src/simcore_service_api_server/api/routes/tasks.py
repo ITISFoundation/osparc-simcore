@@ -1,7 +1,6 @@
 import logging
 from typing import Annotated, Any
 
-from common_library.changelog import create_route_description
 from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
