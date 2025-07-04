@@ -1,7 +1,7 @@
+from models_library.rpc.notifications.messages import NotificationMessage, Recipient
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
-from ...models.schemas import NotificationMessage, Recipient
 from ...services import notifications_service
 
 router = RPCRouter()
