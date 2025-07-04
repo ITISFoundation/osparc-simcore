@@ -336,12 +336,12 @@ def disable_autoscaling_background_task(mocker: MockerFixture) -> None:
 @pytest.fixture
 def disable_buffers_pool_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_autoscaling.modules.cluster_scaling.buffer_machines_pool_task.create_periodic_task",
+        "simcore_service_autoscaling.modules.cluster_scaling.warm_buffer_machines_pool_task.create_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.modules.cluster_scaling.buffer_machines_pool_task.cancel_wait_task",
+        "simcore_service_autoscaling.modules.cluster_scaling.warm_buffer_machines_pool_task.cancel_wait_task",
         autospec=True,
     )
 
