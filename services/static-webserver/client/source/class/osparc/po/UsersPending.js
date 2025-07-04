@@ -179,7 +179,7 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 1,
         });
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.preRegistrationCreated ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationCreated)) : "-"), {
+        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.accountRequestReviewedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.accountRequestReviewedAt)) : "-"), {
           row,
           column: 2,
         });
@@ -236,7 +236,13 @@ qx.Class.define("osparc.po.UsersPending", {
           const reviewedUsers = resps[1];
           const pendingUsersLayout = this.getChildControl("pending-users-layout");
           pendingUsersLayout.removeAll();
-          this.__addHeader();
+          const sortByDate = (a, b) => {
+            const dateA = a.accountRequestReviewedAt ? new Date(a.accountRequestReviewedAt) : new Date(0);
+            const dateB = b.accountRequestReviewedAt ? new Date(b.accountRequestReviewedAt) : new Date(0);
+            return dateB - dateA; // sort by most recent first
+          };
+          pendingUsers.sort(sortByDate);
+          reviewedUsers.sort(sortByDate);
           this.__addRows(pendingUsers.concat(reviewedUsers));
         })
         .catch(err => osparc.FlashMessenger.logError(err));
