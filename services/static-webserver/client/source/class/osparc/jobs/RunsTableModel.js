@@ -135,21 +135,13 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       // Limit the request to smaller chunks for better pagination
       const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
       const PAGE_SIZE = serverMaxLimit;
-      const nextChunkStart = this.__findNextSequentialChunk(firstRow);
+      const nextChunkStart = this.__findNextChunkStart(firstRow);
       const lastRow = Math.min(nextChunkStart + PAGE_SIZE - 1, this._rowCount - 1);
 
       console.info(`📏 Loading sequential chunk: ${nextChunkStart}-${lastRow} (requested: ${firstRow}-${qxLastRow})`);
 
-      // Check if we already have all the requested data cached
-      const cachedData = this.__getCachedDataForRange(firstRow, Math.min(qxLastRow, lastRow));
-      if (cachedData.length === (Math.min(qxLastRow, lastRow) - firstRow + 1)) {
-        console.info(`✅ All data cached for range ${firstRow}-${Math.min(qxLastRow, lastRow)}, returning cached data`);
-        this._onRowDataLoaded(cachedData);
-        return;
-      }
-
-      const missingRanges = [{start: nextChunkStart, end: lastRow}];
-      console.info(`📡 Loading next sequential chunk:`, missingRanges);
+      const rangesToFetch = [{start: nextChunkStart, end: lastRow}];
+      console.info(`📡 Loading next sequential chunk:`, rangesToFetch);
 
       this.setIsFetching(true);
 
@@ -180,7 +172,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
           });
       };
 
-      const fetchPromises = missingRanges.map(range => {
+      const fetchPromises = rangesToFetch.map(range => {
         const rangeSize = range.end - range.start + 1;
 
         if (rangeSize <= serverMaxLimit) {
@@ -205,15 +197,15 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       });
 
       Promise.all(fetchPromises)
-        .then(fetchedRanges => {
-          fetchedRanges.forEach(fetchedRange => {
-            fetchedRange.data.forEach((rowData, index) => {
-              this.__cachedData.set(fetchedRange.start + index, rowData);
+        .then(loadedRanges => {
+          loadedRanges.forEach(loadedRange => {
+            loadedRange.data.forEach((rowData, index) => {
+              this.__cachedData.set(loadedRange.start + index, rowData);
             });
-            this.__loadedRanges.push({start: fetchedRange.start, end: fetchedRange.start + fetchedRange.data.length - 1});
+            this.__loadedRanges.push({start: loadedRange.start, end: loadedRange.start + loadedRange.data.length - 1});
           });
 
-          const requestedData = this.__getCachedDataForRange(firstRow, lastRow);
+          const requestedData = this.__getCachedData(firstRow, lastRow);
           this._onRowDataLoaded(requestedData);
         })
         .catch(err => {
@@ -223,7 +215,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
         .finally(() => this.setIsFetching(false));
     },
 
-    __findNextSequentialChunk: function(requestedStart) {
+    __findNextChunkStart: function() {
       let consecutiveEnd = -1;
       for (let i = 0; i < this._rowCount; i++) {
         if (this.__cachedData.has(i)) {
@@ -238,7 +230,7 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       return Math.max(nextStart, 0);
     },
 
-    __getCachedDataForRange: function(firstRow, lastRow) {
+    __getCachedData: function(firstRow, lastRow) {
       const data = [];
       for (let i = firstRow; i <= lastRow; i++) {
         if (this.__cachedData.has(i)) {
