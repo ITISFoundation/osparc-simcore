@@ -46,8 +46,6 @@ _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     "",
     response_model=ApiServerEnvelope[list[TaskGet]],
     responses=_DEFAULT_TASK_STATUS_CODES,
-    status_code=status.HTTP_200_OK,
-    name="list_tasks",
     description=create_route_description(
         base="List all tasks",
         changelog=[
@@ -87,9 +85,7 @@ async def list_tasks(
 @router.get(
     "/{task_id}",
     response_model=TaskStatus,
-    name="get_task_status",
     responses=_DEFAULT_TASK_STATUS_CODES,
-    status_code=status.HTTP_200_OK,
     description=create_route_description(
         base="Get task status",
         changelog=[
@@ -121,7 +117,6 @@ async def get_task_status(
 @router.post(
     "/{task_id}:cancel",
     status_code=status.HTTP_204_NO_CONTENT,
-    name="cancel_task",
     responses=_DEFAULT_TASK_STATUS_CODES,
     description=create_route_description(
         base="Cancel task",
@@ -146,7 +141,6 @@ async def cancel_task(
 @router.get(
     "/{task_id}/result",
     response_model=TaskResult,
-    name="get_task_result",
     responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "Task result not found",
@@ -158,7 +152,6 @@ async def cancel_task(
         },
         **_DEFAULT_TASK_STATUS_CODES,
     },
-    status_code=status.HTTP_200_OK,
     description=create_route_description(
         base="Get task result",
         changelog=[
