@@ -28,11 +28,11 @@ from pytest_simcore.helpers.aws_ec2 import (
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
-from simcore_service_autoscaling.modules.cluster_scaling._warm_buffer_machines_pool_core import (
-    monitor_buffer_machines,
-)
 from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
     DynamicAutoscalingProvider,
+)
+from simcore_service_autoscaling.modules.cluster_scaling._warm_buffer_machines_pool_core import (
+    monitor_buffer_machines,
 )
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
@@ -161,9 +161,9 @@ async def _test_monitor_buffer_machines(
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
-    assert not all_instances["Reservations"], (
-        f"There should be no instances at the start of the test. Found following instance ids: {[i['InstanceId'] for r in all_instances['Reservations'] if 'Instances' in r for i in r['Instances'] if 'InstanceId' in i]}"
-    )
+    assert not all_instances[
+        "Reservations"
+    ], f"There should be no instances at the start of the test. Found following instance ids: {[i['InstanceId'] for r in all_instances['Reservations'] if 'Instances' in r for i in r['Instances'] if 'InstanceId' in i]}"
 
     # 1. run, this will create as many buffer machines as needed
     with log_context(logging.INFO, "create buffer machines"):
@@ -388,9 +388,9 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
     ],
 ):
     # have machines of correct type with missing pre-pulled images
-    assert len(pre_pull_images) > 1, (
-        "this test relies on pre-pulled images being filled with more than 1 image"
-    )
+    assert (
+        len(pre_pull_images) > 1
+    ), "this test relies on pre-pulled images being filled with more than 1 image"
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
         next(iter(list(ec2_instances_allowed_types_with_only_1_buffered))),
@@ -520,9 +520,9 @@ def pre_pull_images(
             allowed_ec2_types.items(),
         )
     )
-    assert len(allowed_ec2_types_with_pre_pull_images_defined) <= 1, (
-        "more than one type with pre-pulled-images is disallowed in this test!"
-    )
+    assert (
+        len(allowed_ec2_types_with_pre_pull_images_defined) <= 1
+    ), "more than one type with pre-pulled-images is disallowed in this test!"
 
     if allowed_ec2_types_with_pre_pull_images_defined:
         return next(
