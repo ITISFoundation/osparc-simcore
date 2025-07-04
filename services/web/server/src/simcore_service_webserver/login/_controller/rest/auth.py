@@ -39,8 +39,8 @@ from ..._constants import (
 )
 from ..._models import InputSchema
 from ...decorators import login_required
-from ...errors import handle_login_exceptions
 from ...settings import LoginSettingsForProduct, get_plugin_settings
+from ._rest_exceptions import handle_rest_requests_exceptions
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class LoginNextPage(NextPage[CodePageParams]): ...
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
-@handle_login_exceptions
+@handle_rest_requests_exceptions
 async def login(request: web.Request):
     """Login: user submits an email (identification) and a password
 
@@ -218,6 +218,7 @@ class LoginTwoFactorAuthBody(InputSchema):
     "auth_login_2fa",
     unauthorized_reason=MSG_UNAUTHORIZED_LOGIN_2FA,
 )
+@handle_rest_requests_exceptions
 async def login_2fa(request: web.Request):
     """Login (continuation): Submits 2FA code"""
     product: Product = products_web.get_current_product(request)
@@ -266,6 +267,7 @@ class LogoutBody(InputSchema):
 
 @routes.post(f"/{API_VTAG}/auth/logout", name="auth_logout")
 @login_required
+@handle_rest_requests_exceptions
 async def logout(request: web.Request) -> web.Response:
     user_id = request.get(RQT_USERID_KEY, -1)
 

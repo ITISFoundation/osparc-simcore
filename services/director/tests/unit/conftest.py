@@ -19,6 +19,7 @@ from simcore_service_director.core.settings import ApplicationSettings
 
 pytest_plugins = [
     "fixtures.fake_services",
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker",
     "pytest_simcore.docker_compose",

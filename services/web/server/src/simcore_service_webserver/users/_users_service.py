@@ -45,7 +45,7 @@ async def pre_register_user(
     app: web.Application,
     *,
     profile: PreRegisteredUserGet,
-    creator_user_id: UserID,
+    creator_user_id: UserID | None,
     product_name: ProductName,
 ) -> UserAccountGet:
 
@@ -458,6 +458,7 @@ async def search_users_accounts(
             extras=r.extras or {},
             invited_by=r.invited_by,
             pre_registration_id=r.id,
+            pre_registration_created=r.created,
             account_request_status=r.account_request_status,
             account_request_reviewed_by=r.account_request_reviewed_by,
             account_request_reviewed_at=r.account_request_reviewed_at,
@@ -476,6 +477,7 @@ async def approve_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
+    invitation_extras: dict[str, Any] | None = None,
 ) -> int:
     """Approve a user account based on their pre-registration email.
 
@@ -516,6 +518,7 @@ async def approve_user_account(
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=AccountRequestStatus.APPROVED,
+        invitation_extras=invitation_extras,
     )
 
     return pre_registration_id
