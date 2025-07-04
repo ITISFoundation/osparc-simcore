@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import uvicorn
+import uvloop
 from fastapi import APIRouter, BackgroundTasks, FastAPI
 from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.fastapi.cancellation_middleware import RequestCancellationMiddleware
@@ -61,6 +62,7 @@ def fastapi_router(
                 await server_cancelled_mock()
             finally:
                 server_done_event.set()
+                ctx.logger.info("current_loop_id=%s", id(asyncio.get_running_loop()))
 
     @router.get("/sleep-with-background-task")
     async def sleep_with_background_task(
@@ -84,15 +86,19 @@ def fastapi_app(fastapi_router: APIRouter) -> FastAPI:
 
 @pytest.fixture
 def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
+
+    server_host = "127.0.0.1"
     server_port = unused_port()
+    server_url = f"http://{server_host}:{server_port}"
+
     with log_context(
         logging.INFO,
-        msg=f"with uvicorn server on 127.0.0.1:{server_port}",
+        msg=f"with uvicorn server on {server_url}",
     ) as ctx:
 
         config = uvicorn.Config(
             fastapi_app,
-            host="127.0.0.1",
+            host=server_host,
             port=server_port,
             log_level="error",
             loop="uvloop",
@@ -103,8 +109,6 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
         thread.daemon = True
         thread.start()
 
-        server_url = f"http://127.0.0.1:{server_port}"
-
         @retry(wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True)
         def wait_for_server_ready() -> None:
             response = httpx.get(f"{server_url}/")
@@ -114,10 +118,7 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
 
         wait_for_server_ready()
 
-        ctx.logger.info(
-            "server ready at: %s",
-            server_url,
-        )
+        ctx.logger.info("server ready at: %s", server_url)
 
         yield URL(server_url)
 
@@ -131,6 +132,7 @@ async def test_server_cancels_when_client_disconnects(
     server_cancelled_mock: AsyncMock,
 ):
     # Implementation of RequestCancellationMiddleware is under test here
+    assert isinstance(asyncio.get_running_loop(), uvloop.Loop)
 
     async with httpx.AsyncClient(base_url=f"{uvicorn_server}") as client:
         # 1. check standard call still complete as expected
@@ -155,6 +157,8 @@ async def test_server_cancels_when_client_disconnects(
                     timeout=0.1,  # <--- this will enforce the client to disconnect from the server !
                 )
             ctx.logger.info("client disconnected from server")
+
+        await asyncio.sleep(0.1)  # ensure context switches ???
 
         # request should have been cancelled after the ReadTimoeut!
         async with asyncio.timeout(5):
