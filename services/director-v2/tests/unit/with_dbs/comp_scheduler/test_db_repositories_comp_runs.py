@@ -545,12 +545,11 @@ def _normalize_uuids(data):
     """Recursively convert UUID objects to strings in a nested dictionary."""
     if isinstance(data, dict):
         return {k: _normalize_uuids(v) for k, v in data.items()}
-    elif isinstance(data, list):
+    if isinstance(data, list):
         return [_normalize_uuids(i) for i in data]
-    elif isinstance(data, uuid.UUID):
+    if isinstance(data, uuid.UUID):
         return str(data)
-    else:
-        return data
+    return data
 
 
 async def test_list_group_by_collection_run_id(
