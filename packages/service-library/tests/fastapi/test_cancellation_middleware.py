@@ -77,22 +77,25 @@ def fastapi_router(
 def fastapi_app(fastapi_router: APIRouter) -> FastAPI:
     app = FastAPI()
     app.include_router(fastapi_router)
-    app.add_middleware(RequestCancellationMiddleware)
+
+    app.add_middleware(RequestCancellationMiddleware)  # Middleware under test
     return app
 
 
 @pytest.fixture
 def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
-    random_port = unused_port()
+    server_port = unused_port()
     with log_context(
         logging.INFO,
-        msg=f"with uvicorn server on 127.0.0.1:{random_port}",
+        msg=f"with uvicorn server on 127.0.0.1:{server_port}",
     ) as ctx:
+
         config = uvicorn.Config(
             fastapi_app,
             host="127.0.0.1",
-            port=random_port,
+            port=server_port,
             log_level="error",
+            loop="uvloop",
         )
         server = uvicorn.Server(config)
 
@@ -100,22 +103,23 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
         thread.daemon = True
         thread.start()
 
+        server_url = f"http://127.0.0.1:{server_port}"
+
         @retry(wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True)
         def wait_for_server_ready() -> None:
-            with httpx.Client() as client:
-                response = client.get(f"http://127.0.1:{random_port}/")
-                assert (
-                    response.is_success
-                ), f"Server did not start successfully: {response.status_code} {response.text}"
+            response = httpx.get(f"{server_url}/")
+            assert (
+                response.is_success
+            ), f"Server did not start successfully: {response.status_code} {response.text}"
 
         wait_for_server_ready()
 
         ctx.logger.info(
             "server ready at: %s",
-            f"http://127.0.0.1:{random_port}",
+            server_url,
         )
 
-        yield URL(f"http://127.0.0.1:{random_port}")
+        yield URL(server_url)
 
         server.should_exit = True
         thread.join(timeout=10)
@@ -126,40 +130,49 @@ async def test_server_cancels_when_client_disconnects(
     server_done_event: asyncio.Event,
     server_cancelled_mock: AsyncMock,
 ):
+    # Implementation of RequestCancellationMiddleware is under test here
+
     async with httpx.AsyncClient(base_url=f"{uvicorn_server}") as client:
-        # check standard call still complete as expected
+        # 1. check standard call still complete as expected
         with log_context(logging.INFO, msg="client calling endpoint"):
             response = await client.get("/sleep", params={"sleep_time": 0.1})
+
         assert response.status_code == 200
         assert response.json() == {"message": "Slept for 0.1 seconds"}
+
         async with asyncio.timeout(10):
             await server_done_event.wait()
         server_done_event.clear()
 
-        # check slow call get cancelled
+        # 2. check slow call get cancelled
         with log_context(
             logging.INFO, msg="client calling endpoint for cancellation"
         ) as ctx:
             with pytest.raises(httpx.ReadTimeout):
-                response = await client.get(
-                    "/sleep", params={"sleep_time": 10}, timeout=0.1
+                await client.get(
+                    "/sleep",
+                    params={"sleep_time": 10},
+                    timeout=0.1,  # <--- this will enforce the client to disconnect from the server !
                 )
             ctx.logger.info("client disconnected from server")
 
+        # request should have been cancelled after the ReadTimoeut!
         async with asyncio.timeout(5):
             await server_done_event.wait()
         server_cancelled_mock.assert_called_once()
         server_cancelled_mock.reset_mock()
         server_done_event.clear()
 
+        # 3. check background tasks get cancelled as well sadly
         # NOTE: shows that FastAPI BackgroundTasks get cancelled too!
-        # check background tasks get cancelled as well sadly
         with log_context(logging.INFO, msg="client calling endpoint for cancellation"):
             response = await client.get(
                 "/sleep-with-background-task",
                 params={"sleep_time": 2},
             )
             assert response.status_code == 200
+
+        # request should have been cancelled after the ReadTimoeut!
         async with asyncio.timeout(5):
             await server_done_event.wait()
         server_cancelled_mock.assert_called_once()
