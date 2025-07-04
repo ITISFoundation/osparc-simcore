@@ -20,7 +20,6 @@ from typing import TypeAlias, cast
 
 import arrow
 from aws_library.ec2 import (
-    AWSTagValue,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
@@ -43,7 +42,7 @@ from ...constants import (
 )
 from ...core.settings import get_application_settings
 from ...models import BufferPool, BufferPoolManager
-from ...utils.buffer_machines import (
+from ...utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
     ec2_buffer_startup_script,
     get_deactivated_buffer_ec2_tags,
@@ -307,10 +306,8 @@ async def _handle_pool_image_pulling(
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
-                BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
-                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
-                    ssm_command.command_id
-                ),
+                BUFFER_MACHINE_PULLING_EC2_TAG_KEY: "true",
+                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
             },
         )
 
