@@ -45,7 +45,7 @@ class CeleryTaskManager:
         name: TaskName,
         context: TaskContext,
         *,
-        is_ephemeral: bool = False,
+        ephemeral: bool = True,
         queue: TaskQueue = TASK_QUEUE_DEFAULT,
         **params,
     ) -> TaskUUID:
@@ -65,14 +65,14 @@ class CeleryTaskManager:
 
             expiry = (
                 self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
-                if is_ephemeral
+                if ephemeral
                 else self._celery_settings.CELERY_RESULT_EXPIRES
             )
             await self._task_info_store.create_task(
                 task_id,
                 TaskMetadata(
                     name=name,
-                    ephemeral=is_ephemeral,
+                    ephemeral=ephemeral,
                     queue=queue,
                 ),
                 expiry=expiry,
