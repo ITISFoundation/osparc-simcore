@@ -75,6 +75,7 @@ from simcore_service_storage.core.settings import ApplicationSettings
 from simcore_service_storage.datcore_dsm import DatCoreDataManager
 from simcore_service_storage.dsm import get_dsm_provider
 from simcore_service_storage.models import FileMetaData, FileMetaDataAtDB, S3BucketName
+from simcore_service_storage.modules.celery.tasks import TaskQueue
 from simcore_service_storage.modules.s3 import get_s3_client
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy import literal_column
@@ -1021,7 +1022,7 @@ async def with_storage_celery_worker(
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,
-        queues="default,cpu_bound",
+        queues=",".join(queue.value for queue in TaskQueue),
     ) as worker:
         yield worker
 

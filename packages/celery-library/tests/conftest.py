@@ -120,7 +120,7 @@ async def with_celery_worker(
 
 
 @pytest.fixture
-async def celery_task_manager(
+async def task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
     with_celery_worker: TestWorkController,

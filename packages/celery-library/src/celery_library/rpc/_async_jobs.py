@@ -38,7 +38,7 @@ async def cancel(
     assert job_id_data  # nosec
     try:
         await task_manager.cancel_task(
-            task_context=job_id_data.model_dump(),
+            context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -54,7 +54,7 @@ async def status(
 
     try:
         task_status = await task_manager.get_task_status(
-            task_context=job_id_data.model_dump(),
+            context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -84,13 +84,13 @@ async def result(
 
     try:
         _status = await task_manager.get_task_status(
-            task_context=job_id_data.model_dump(),
+            context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
         if not _status.is_done:
             raise JobNotDoneError(job_id=job_id)
         _result = await task_manager.get_task_result(
-            task_context=job_id_data.model_dump(),
+            context=job_id_data.model_dump(),
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -129,7 +129,7 @@ async def list_jobs(
     assert task_manager  # nosec
     try:
         tasks = await task_manager.list_tasks(
-            task_context=job_id_data.model_dump(),
+            context=job_id_data.model_dump(),
         )
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

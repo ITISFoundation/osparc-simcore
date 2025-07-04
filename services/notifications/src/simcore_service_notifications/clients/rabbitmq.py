@@ -17,7 +17,7 @@ async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
 
     app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-        client_name="dynamic_scheduler_rpc_server", settings=rabbit_settings
+        client_name="notifications_rpc_server", settings=rabbit_settings
     )
 
     yield {}

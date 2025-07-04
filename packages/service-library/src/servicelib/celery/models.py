@@ -11,6 +11,17 @@ TaskID: TypeAlias = str
 TaskName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
+
+TaskQueue: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=64,
+    ),
+]
+TASK_QUEUE_DEFAULT: TaskQueue = "default"
+
 TaskUUID: TypeAlias = UUID
 
 
@@ -23,15 +34,10 @@ class TaskState(StrEnum):
     ABORTED = "ABORTED"
 
 
-class TasksQueue(StrEnum):
-    CPU_BOUND = "cpu_bound"
-    DEFAULT = "default"
-
-
 class TaskMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
-    queue: TasksQueue = TasksQueue.DEFAULT
+    queue: TaskQueue = TASK_QUEUE_DEFAULT
 
 
 class Task(BaseModel):
