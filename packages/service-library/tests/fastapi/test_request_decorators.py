@@ -140,7 +140,7 @@ def long_running_poller_mock(
                 break
 
     monkeypatch.setattr(
-        "servicelib.fastapi.requests_decorators._disconnect_poller_for_task_group",
+        "servicelib.async_utils._poller_for_task_group",
         _mock_disconnect_poller,
     )
     return _mock_disconnect_poller
