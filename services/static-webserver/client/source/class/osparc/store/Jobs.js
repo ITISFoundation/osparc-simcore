@@ -33,7 +33,7 @@ qx.Class.define("osparc.store.Jobs", {
   },
 
   statics: {
-    SERVER_MAX_LIMIT: 2, // Default to 2 rows for testing purposes
+    SERVER_MAX_LIMIT: 20,
   },
 
   members: {
