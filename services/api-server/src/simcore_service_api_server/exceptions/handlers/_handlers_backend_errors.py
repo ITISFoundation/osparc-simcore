@@ -1,8 +1,8 @@
 import logging
 
 from common_library.error_codes import create_error_code
-from fastapi import status
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.status_codes_utils import is_5xx_server_error
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -16,15 +16,17 @@ async def backend_error_handler(request: Request, exc: Exception) -> JSONRespons
     assert request  # nosec
     assert isinstance(exc, BaseBackEndError)
     user_error_msg = f"{exc}"
-    if not exc.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
-        oec = create_error_code(exc)
-        user_error_msg += f" [{oec}]"
+    support_id = None
+    if is_5xx_server_error(exc.status_code):
+        support_id = create_error_code(exc)
         _logger.exception(
             **create_troubleshootting_log_kwargs(
                 user_error_msg,
                 error=exc,
-                error_code=oec,
+                error_code=support_id,
                 tip="Unexpected error",
             )
         )
-    return create_error_json_response(user_error_msg, status_code=exc.status_code)
+    return create_error_json_response(
+        user_error_msg, status_code=exc.status_code, support_id=support_id
+    )
