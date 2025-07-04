@@ -558,6 +558,7 @@ async def test_list_group_by_collection_run_id(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     """Test list_group_by_collection_run_id function with simple data insertion and retrieval."""
     # Create a few published projects
@@ -624,6 +625,7 @@ async def test_list_group_by_collection_run_id_with_mixed_states_returns_started
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     """Test that if any state is not final, the grouped state returns STARTED."""
     # Create published projects
@@ -708,6 +710,7 @@ async def test_list_group_by_collection_run_id_all_success_returns_success(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     """Test that if all states are SUCCESS, the grouped state returns SUCCESS."""
     published_project_1 = await publish_project()
@@ -773,6 +776,7 @@ async def test_list_group_by_collection_run_id_with_failed_returns_failed(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     """Test that if any state is FAILED (among final states), the grouped state returns FAILED."""
     published_project_1 = await publish_project()
@@ -840,6 +844,7 @@ async def test_list_group_by_collection_run_id_with_aborted_returns_aborted(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     """Test that if any state is ABORTED (but no FAILED), the grouped state returns ABORTED."""
     published_project_1 = await publish_project()
@@ -905,6 +910,7 @@ async def test_list_group_by_collection_run_id_with_unknown_returns_unknown(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     """Test that if any state is UNKNOWN (but no FAILED/ABORTED), the grouped state returns UNKNOWN."""
     published_project_1 = await publish_project()
@@ -969,6 +975,7 @@ async def test_list_group_by_collection_run_id_with_project_filter(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    with_product: dict[str, Any],
 ):
     """Test list_group_by_collection_run_id with project_ids filter."""
     published_project_1 = await publish_project()
@@ -1033,6 +1040,7 @@ async def test_list_group_by_collection_run_id_pagination(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    with_product: dict[str, Any],
 ):
     """Test pagination functionality of list_group_by_collection_run_id."""
     published_project = await publish_project()
@@ -1093,6 +1101,7 @@ async def test_list_group_by_collection_run_id_empty_result(
     sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     fake_user_id: UserID,
+    with_product: dict[str, Any],
 ):
     """Test list_group_by_collection_run_id returns empty when no runs exist."""
     repo = CompRunsRepository(sqlalchemy_async_engine)
@@ -1114,6 +1123,7 @@ async def test_list_group_by_collection_run_id_with_different_users(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    with_product: dict[str, Any],
 ):
     """Test that list_group_by_collection_run_id filters by user_id correctly."""
     published_project_user1 = await publish_project()
@@ -1184,6 +1194,7 @@ async def test_list_group_by_collection_run_id_state_priority_precedence(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     """Test that state resolution follows correct priority: FAILED > ABORTED > UNKNOWN."""
     published_projects = [await publish_project() for _ in range(4)]

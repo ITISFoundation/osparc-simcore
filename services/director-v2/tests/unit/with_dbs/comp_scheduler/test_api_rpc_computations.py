@@ -239,19 +239,21 @@ async def test_rpc_list_computation_collection_runs_page_and_collection_run_task
     fake_workbench_without_outputs: dict[str, Any],  # <-- Has 4 nodes
     fake_workbench_adjacency: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run_snapshot_tasks: Callable[
         ..., Awaitable[list[CompRunSnapshotTaskDBGet]]
     ],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
     faker: Faker,
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
     projects = [
-        await project(user, workbench=fake_workbench_without_outputs) for _ in range(3)
+        await create_project(user, workbench=fake_workbench_without_outputs)
+        for _ in range(3)
     ]
 
     default_collection_run_id = CollectionRunID(f"{faker.uuid4(cast_to=None)}")
@@ -268,7 +270,7 @@ async def test_rpc_list_computation_collection_runs_page_and_collection_run_task
             project_id=f"{proj.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         )
-        await create_tasks(
+        await create_tasks_from_project(
             user=user, project=proj, state=StateType.PUBLISHED, progress=None
         )
         run = await create_comp_run(
