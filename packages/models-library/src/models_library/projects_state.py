@@ -22,26 +22,32 @@ class RunningState(str, Enum):
     """State of execution of a project's computational workflow
 
     SEE StateType for task state
+
+    # Computational backend states explained:
+    - UNKNOWN - The backend doesn't know about the task anymore, it has disappeared from the system or it was never created (eg. when we are asking for the task)
+    - NOT_STARTED - Default state when the task is created
+    - PUBLISHED - The task has been submitted to the computational backend (click on "Run" button in the UI)
+    - PENDING - Task has been transferred to the Dask scheduler and is waiting for a worker to pick it up (director-v2 --> Dask scheduler)
+       - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)
+    - WAITING_FOR_CLUSTER - No cluster (Dask scheduler) is available to run the task; waiting for one to become available
+    - WAITING_FOR_RESOURCES - No worker (Dask worker) is available to run the task; waiting for one to become available
+    - STARTED - A worker has picked up the task and is executing it
+    - SUCCESS - Task finished successfully
+    - FAILED - Task finished with an error
+    - ABORTED - Task was aborted before completion
+
     """
 
-    UNKNOWN = "UNKNOWN"  # Error state: the task disappeared from the system (Dask backend lost the task and its state is unknown)
-    NOT_STARTED = "NOT_STARTED"  # Default state when the project is created
-
-    PUBLISHED = (
-        "PUBLISHED"  # The project is awaiting the compute scheduler to pick up the task
-    )
-
-    PENDING = "PENDING"  # The compute scheduler has taken over, and the task is waiting for a worker to pick it up
-
-    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"  # No cluster is available to run the task; waiting for one to become available
-    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"  # No worker is available to run the task; waiting for one to become available
-    # PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED
-
-    STARTED = "STARTED"  # A worker has picked up the task and is executing it
-
-    SUCCESS = "SUCCESS"  # Task finished successfully
-    FAILED = "FAILED"  # Task finished with an error
-    ABORTED = "ABORTED"  # Task was aborted before completion
+    UNKNOWN = "UNKNOWN"
+    NOT_STARTED = "NOT_STARTED"
+    PUBLISHED = "PUBLISHED"
+    PENDING = "PENDING"
+    WAITING_FOR_CLUSTER = "WAITING_FOR_CLUSTER"
+    WAITING_FOR_RESOURCES = "WAITING_FOR_RESOURCES"
+    STARTED = "STARTED"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    ABORTED = "ABORTED"
 
     @staticmethod
     def list_running_states() -> list["RunningState"]:

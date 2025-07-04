@@ -34,8 +34,8 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _director_v2_service
 from .._client import DirectorV2RestClient
-from .._comp_runs_collections_models import CompRunCollectionDBGet
-from .._comp_runs_collections_service import (
+from .._comp_run_collections_models import CompRunCollectionDBGet
+from .._comp_run_collections_service import (
     create_comp_run_collection,
     get_comp_run_collection_or_none_by_client_generated_id,
 )
