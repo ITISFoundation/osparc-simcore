@@ -65,7 +65,7 @@ class TaskInfoDict(TypedDict):
 
 def get_task_info(task: asyncio.Task) -> TaskInfoDict:
     def _format_frame(f):
-        return StackInfoDict(f_code=f.f_code, f_lineno=f.f_lineno)
+        return StackInfoDict(f_code=str(f.f_code), f_lineno=str(f.f_lineno))
 
     info = TaskInfoDict(
         txt=str(task),
