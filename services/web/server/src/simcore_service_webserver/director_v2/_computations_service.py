@@ -453,10 +453,10 @@ async def list_computation_collection_run_tasks(
             log_download_link=item.log_download_link,
             name=(
                 custom_metadata.get("job_name")
-                if custom_metadata.get("job_name")
-                else project_uuid_to_workbench[f"{item.project_uuid}"][
+                or project_uuid_to_workbench[f"{item.project_uuid}"][
                     f"{item.node_id}"
-                ].get("label", "")
+                ].get("label")
+                or "Unknown"
             ),
             osparc_credits=credits_or_none,
         )
