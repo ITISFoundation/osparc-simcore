@@ -253,7 +253,7 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 1,
         });
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.date ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.date)) : "-"), {
+        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.preRegistrationCreated ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationCreated)) : "-"), {
           row,
           column: 2,
         });
