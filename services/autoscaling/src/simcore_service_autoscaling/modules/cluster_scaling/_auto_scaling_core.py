@@ -39,11 +39,6 @@ from ...models import (
     NonAssociatedInstance,
 )
 from ...utils import utils_docker, utils_ec2
-from ...utils.buffer_machines import (
-    get_activated_buffer_ec2_tags,
-    get_deactivated_buffer_ec2_tags,
-    is_buffer_machine,
-)
 from ...utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
@@ -55,6 +50,11 @@ from ...utils.rabbitmq import (
     post_autoscaling_status_message,
     post_tasks_log_message,
     post_tasks_progress_message,
+)
+from ...utils.warm_buffer_machines import (
+    get_activated_buffer_ec2_tags,
+    get_deactivated_buffer_ec2_tags,
+    is_buffer_machine,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
