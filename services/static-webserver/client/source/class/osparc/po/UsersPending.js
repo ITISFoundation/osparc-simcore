@@ -297,13 +297,25 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __createRejectButton: function(email) {
-      const button = new osparc.ui.form.FetchButton(qx.locale.Manager.tr("Reject"));
+      const button = new osparc.ui.form.FetchButton("Reject");
       button.addListener("execute", () => {
-        button.setFetching(true);
-        this.__rejectUser(email)
-          .then(() => osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User denied"), "INFO"))
-          .catch(err => osparc.FlashMessenger.logError(err))
-          .finally(() => button.setFetching(false));
+        const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted"`;
+        const win = new osparc.ui.window.Confirmation(msg).set({
+          caption: "Reject",
+          confirmText: "Reject",
+          confirmAction: "delete",
+        });
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            button.setFetching(true);
+            this.__rejectUser(email)
+              .then(() => osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User denied"), "INFO"))
+              .catch(err => osparc.FlashMessenger.logError(err))
+              .finally(() => button.setFetching(false));
+          }
+        });
       });
       return button;
     },
