@@ -133,7 +133,8 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       }
 
       // Limit the request to smaller chunks for better pagination
-      const PAGE_SIZE = 20;
+      const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
+      const PAGE_SIZE = serverMaxLimit;
       const nextChunkStart = this.__findNextSequentialChunk(firstRow);
       const lastRow = Math.min(nextChunkStart + PAGE_SIZE - 1, this._rowCount - 1);
 
@@ -181,7 +182,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
       const fetchPromises = missingRanges.map(range => {
         const rangeSize = range.end - range.start + 1;
-        const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
 
         if (rangeSize <= serverMaxLimit) {
           return getFetchPromise(range.start, rangeSize).then(data => ({
