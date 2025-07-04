@@ -132,7 +132,7 @@ def get_hot_buffer_type(
 
 
 DrainedNodes: TypeAlias = list[AssociatedInstance]
-BufferDrainedNodes: TypeAlias = list[AssociatedInstance]
+HotBufferDrainedNodes: TypeAlias = list[AssociatedInstance]
 TerminatingNodes: TypeAlias = list[AssociatedInstance]
 
 
@@ -140,7 +140,7 @@ def sort_drained_nodes(
     app_settings: ApplicationSettings,
     all_drained_nodes: list[AssociatedInstance],
     available_ec2_types: list[EC2InstanceType],
-) -> tuple[DrainedNodes, BufferDrainedNodes, TerminatingNodes]:
+) -> tuple[DrainedNodes, HotBufferDrainedNodes, TerminatingNodes]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     # first sort out the drained nodes that started termination
     terminating_nodes = [
