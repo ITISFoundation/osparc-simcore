@@ -43,12 +43,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const iconPathStop = "osparc/icons/circle-xmark-text.svg";
-    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop);
+    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", this.self().ICONS.CANCEL);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
-    const iconPathInfo = "osparc/icons/circle-info-text.svg";
-    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo);
+    const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", this.self().ICONS.INFO);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
 
     this.__attachHandlers();
@@ -75,6 +73,12 @@ qx.Class.define("osparc.jobs.RunsTable", {
   },
 
   statics: {
+    // Explicitly declare icon paths to ensure they're included in builds
+    ICONS: {
+      CANCEL: "osparc/icons/circle-xmark-text.svg",
+      INFO: "osparc/icons/circle-info-text.svg"
+    },
+
     COLS: {
       PROJECT_UUID: {
         id: "projectUuid",
