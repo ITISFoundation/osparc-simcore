@@ -143,14 +143,14 @@ async def _analyze_current_cluster(
         else:
             pending_nodes.append(instance)
 
-    drained_nodes, buffer_drained_nodes, terminating_nodes = sort_drained_nodes(
+    drained_nodes, hot_buffer_drained_nodes, terminating_nodes = sort_drained_nodes(
         app_settings, all_drained_nodes, allowed_instance_types
     )
     cluster = Cluster(
         active_nodes=active_nodes,
         pending_nodes=pending_nodes,
         drained_nodes=drained_nodes,
-        buffer_drained_nodes=buffer_drained_nodes,
+        buffer_drained_nodes=hot_buffer_drained_nodes,
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
         buffer_ec2s=[
