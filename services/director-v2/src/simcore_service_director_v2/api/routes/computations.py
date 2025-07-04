@@ -245,6 +245,7 @@ async def _try_start_pipeline(
         )
         or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
+        collection_run_id=computation.collection_run_id,
     )
 
 

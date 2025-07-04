@@ -24,7 +24,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 )
 
 from ..application_settings import get_application_settings
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
@@ -277,7 +277,7 @@ async def get_group_properties(
     product_name: ProductName,
     user_id: UserID,
 ) -> GroupExtraProperties:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
             conn, user_id=user_id, product_name=product_name
         )

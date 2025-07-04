@@ -1,6 +1,4 @@
-""" database submodule associated to the postgres uservice
-
-"""
+"""database submodule associated to the postgres uservice"""
 
 import logging
 
@@ -14,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 
 # API
-get_database_engine = _aiopg.get_database_engine
+get_database_engine_legacy = _aiopg.get_database_engine
 get_engine_state = _aiopg.get_engine_state
 is_service_responsive = _aiopg.is_service_responsive
 is_service_enabled = _aiopg.is_service_enabled
@@ -34,7 +32,7 @@ def setup_db(app: web.Application):
 
     # ensures keys exist
     app[APP_AIOPG_ENGINE_KEY] = None
-    assert get_database_engine(app) is None  # nosec
+    assert get_database_engine_legacy(app) is None  # nosec
 
     # init engines
     app.cleanup_ctx.append(_aiopg.postgres_cleanup_ctx)

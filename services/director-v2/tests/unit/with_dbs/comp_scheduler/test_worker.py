@@ -15,6 +15,7 @@ from unittest import mock
 import pytest
 from _helpers import PublishedProject
 from fastapi import FastAPI
+from models_library.computations import CollectionRunID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -62,6 +63,7 @@ async def test_worker_properly_autocalls_scheduler_api(
     mocked_get_scheduler_worker: mock.Mock,
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
+    fake_collection_run_id: CollectionRunID,
 ):
     assert published_project.project.prj_owner
     await run_new_pipeline(
@@ -70,6 +72,7 @@ async def test_worker_properly_autocalls_scheduler_api(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
     mocked_get_scheduler_worker.assert_called_once_with(initialized_app)
     mocked_get_scheduler_worker.return_value.apply.assert_called_once_with(
@@ -110,6 +113,7 @@ async def test_worker_scheduling_parallelism(
     initialized_app: FastAPI,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     run_metadata: RunMetadataDict,
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     with_disabled_auto_scheduling.assert_called_once()
@@ -128,6 +132,7 @@ async def test_worker_scheduling_parallelism(
             project_id=published_project.project.uuid,
             run_metadata=run_metadata,
             use_on_demand_clusters=False,
+            collection_run_id=fake_collection_run_id,
         )
 
     # whatever scheduling concurrency we call in here, we shall always see the same number of calls to the scheduler

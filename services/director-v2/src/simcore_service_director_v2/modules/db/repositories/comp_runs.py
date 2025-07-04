@@ -6,8 +6,12 @@ import arrow
 import asyncpg  # type: ignore[import-untyped]
 import sqlalchemy as sa
 import sqlalchemy.exc as sql_exc
-from models_library.api_schemas_directorv2.comp_runs import ComputationRunRpcGet
+from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationCollectionRunRpcGet,
+    ComputationRunRpcGet,
+)
 from models_library.basic_types import IDStr
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.rest_ordering import OrderBy, OrderDirection
@@ -87,6 +91,29 @@ def _handle_foreign_key_violation(
         if constraint_name == foreign_key.name and foreign_key.parent is not None:
             exc_type, exc_keys = _POSTGRES_FK_COLUMN_TO_ERROR_MAP[foreign_key.parent]
             raise exc_type(**{k: error_keys.get(k) for k in exc_keys})
+
+
+def _resolve_grouped_state(states: list[RunningState]) -> RunningState:
+    # If any state is not a final state, return STARTED
+    final_states = {
+        RunningState.FAILED,
+        RunningState.ABORTED,
+        RunningState.SUCCESS,
+        RunningState.UNKNOWN,
+    }
+    if any(state not in final_states for state in states):
+        return RunningState.STARTED
+    # All are final states
+    if all(state == RunningState.SUCCESS for state in states):
+        return RunningState.SUCCESS
+    if any(state == RunningState.FAILED for state in states):
+        return RunningState.FAILED
+    if any(state == RunningState.ABORTED for state in states):
+        return RunningState.ABORTED
+    if any(state == RunningState.UNKNOWN for state in states):
+        return RunningState.UNKNOWN
+    # Fallback (should not happen)
+    return RunningState.STARTED
 
 
 class CompRunsRepository(BaseRepository):
@@ -350,6 +377,78 @@ class CompRunsRepository(BaseRepository):
 
             return cast(int, total_count), items
 
+    async def list_group_by_collection_run_id(
+        self,
+        *,
+        product_name: str,
+        user_id: UserID,
+        project_ids: list[ProjectID] | None = None,
+        # pagination
+        offset: int,
+        limit: int,
+    ) -> tuple[int, list[ComputationCollectionRunRpcGet]]:
+        base_select_query = sa.select(
+            comp_runs.c.collection_run_id,
+            sa.func.array_agg(comp_runs.c.project_uuid).label("project_ids"),
+            sa.func.array_agg(comp_runs.c.result).label("states"),
+            # For simplicity, we use any metadata from the collection (first one in aggregation order):
+            sa.literal_column("(jsonb_agg(comp_runs.metadata))[1]").label("info"),
+            sa.func.min(comp_runs.c.created).label("submitted_at"),
+            sa.func.min(comp_runs.c.started).label("started_at"),
+            sa.func.min(comp_runs.c.run_id).label("min_run_id"),
+            sa.case(
+                (
+                    sa.func.bool_or(comp_runs.c.ended.is_(None)),
+                    None,
+                ),
+                else_=sa.func.max(comp_runs.c.ended),
+            ).label("ended_at"),
+        ).where(
+            (comp_runs.c.user_id == user_id)
+            & (comp_runs.c.metadata["product_name"].astext == product_name)
+        )
+
+        if project_ids:
+            base_select_query = base_select_query.where(
+                comp_runs.c.project_uuid.in_(
+                    [f"{project_id}" for project_id in project_ids]
+                )
+            )
+
+        base_select_query_with_group_by = base_select_query.group_by(
+            comp_runs.c.collection_run_id
+        )
+
+        count_query = sa.select(sa.func.count()).select_from(
+            base_select_query_with_group_by.subquery()
+        )
+
+        # Default ordering by min_run_id descending (biggest first)
+        list_query = base_select_query_with_group_by.order_by(
+            desc(literal_column("min_run_id"))
+        )
+
+        list_query = list_query.offset(offset).limit(limit)
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            total_count = await conn.scalar(count_query)
+            items = []
+            async for row in await conn.stream(list_query):
+                db_states = [DB_TO_RUNNING_STATE[s] for s in row["states"]]
+                resolved_state = _resolve_grouped_state(db_states)
+                items.append(
+                    ComputationCollectionRunRpcGet(
+                        collection_run_id=row["collection_run_id"],
+                        project_ids=row["project_ids"],
+                        state=resolved_state,
+                        info={} if row["info"] is None else row["info"],
+                        submitted_at=row["submitted_at"],
+                        started_at=row["started_at"],
+                        ended_at=row["ended_at"],
+                    )
+                )
+            return cast(int, total_count), items
+
     async def create(
         self,
         *,
@@ -359,6 +458,7 @@ class CompRunsRepository(BaseRepository):
         metadata: RunMetadataDict,
         use_on_demand_clusters: bool,
         dag_adjacency_list: dict[str, list[str]],
+        collection_run_id: CollectionRunID,
     ) -> CompRunsAtDB:
         try:
             async with transaction_context(self.db_engine) as conn:
@@ -375,6 +475,7 @@ class CompRunsRepository(BaseRepository):
                         metadata=jsonable_encoder(metadata),
                         use_on_demand_clusters=use_on_demand_clusters,
                         dag_adjacency_list=dag_adjacency_list,
+                        collection_run_id=f"{collection_run_id}",
                     )
                     .returning(literal_column("*"))
                 )

@@ -5,6 +5,7 @@ from typing import Final
 import networkx as nx
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.background_task import create_periodic_task
@@ -45,6 +46,7 @@ async def run_new_pipeline(
     project_id: ProjectID,
     run_metadata: RunMetadataDict,
     use_on_demand_clusters: bool,
+    collection_run_id: CollectionRunID,
 ) -> None:
     """Sets a new pipeline to be scheduled on the computational resources."""
     # ensure the pipeline exists and is populated with something
@@ -77,6 +79,7 @@ async def run_new_pipeline(
         metadata=run_metadata,
         use_on_demand_clusters=use_on_demand_clusters,
         dag_adjacency_list=comp_pipeline_at_db.dag_adjacency_list,
+        collection_run_id=collection_run_id,
     )
 
     tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag)

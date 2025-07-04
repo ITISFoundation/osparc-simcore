@@ -10,7 +10,7 @@ from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard
     TypedDict,
 )
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
 from ..projects.projects_permalink_service import (
     ProjectPermalink,
@@ -84,7 +84,7 @@ async def permalink_factory(
 
     """
     # NOTE: next iterations will mobe this as part of the project repository pattern
-    engine = get_database_engine(request.app)
+    engine = get_database_engine_legacy(request.app)
     async with engine.acquire() as conn:
         access_rights_subquery = (
             sa.select(

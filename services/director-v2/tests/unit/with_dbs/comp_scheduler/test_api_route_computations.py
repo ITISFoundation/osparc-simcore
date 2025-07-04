@@ -33,6 +33,7 @@ from models_library.api_schemas_resource_usage_tracker.pricing_plans import (
     RutPricingPlanGet,
     RutPricingUnitGet,
 )
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_pipeline import PipelineDetails
@@ -376,6 +377,7 @@ async def test_computation_create_validators(
     product_name: str,
     product_api_base_url: AnyHttpUrl,
     with_product: dict[str, Any],
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -385,6 +387,7 @@ async def test_computation_create_validators(
         product_name=product_name,
         product_api_base_url=product_api_base_url,
         use_on_demand_clusters=True,
+        collection_run_id=fake_collection_run_id,
     )
     ComputationCreate(
         user_id=user["id"],
@@ -392,6 +395,7 @@ async def test_computation_create_validators(
         product_name=product_name,
         product_api_base_url=product_api_base_url,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
 
 
@@ -405,6 +409,7 @@ async def test_create_computation(
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -417,6 +422,7 @@ async def test_create_computation(
                 project_id=proj.uuid,
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
+                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -512,6 +518,7 @@ async def test_create_computation_with_wallet(
     sqlalchemy_async_engine: AsyncEngine,
     fake_ec2_cpus: PositiveInt,
     fake_ec2_ram: ByteSize,
+    fake_collection_run_id: CollectionRunID,
 ):
     # In billable product a wallet is passed, with a selected pricing plan
     # the pricing plan contains information about the hardware that should be used
@@ -533,6 +540,7 @@ async def test_create_computation_with_wallet(
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
+                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -619,6 +627,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
     wallet_info: WalletInfo,
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(
@@ -635,6 +644,7 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
+                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -662,6 +672,7 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
     wallet_info: WalletInfo,
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -675,6 +686,7 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
+                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -715,6 +727,7 @@ async def test_start_computation(
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -728,6 +741,7 @@ async def test_start_computation(
                 start_pipeline=True,
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
+                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -749,6 +763,7 @@ async def test_start_computation_with_project_node_resources_defined(
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     assert "json_schema_extra" in ServiceResourcesDictHelpers.model_config
@@ -777,6 +792,7 @@ async def test_start_computation_with_project_node_resources_defined(
                 start_pipeline=True,
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
+                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -797,6 +813,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -810,6 +827,7 @@ async def test_start_computation_with_deprecated_services_raises_406(
                 start_pipeline=True,
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
+                collection_run_id=fake_collection_run_id,
             )
         ),
     )

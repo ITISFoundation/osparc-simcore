@@ -24,7 +24,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 )
 from simcore_postgres_database.utils_services import create_select_latest_services_query
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ._errors import ServiceNotFound
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
@@ -68,7 +68,7 @@ async def iter_latest_product_services(
     assert page_number >= 1  # nosec
     assert ((page_number - 1) * page_size) >= 0  # nosec
 
-    engine: Engine = get_database_engine(app)
+    engine: Engine = get_database_engine_legacy(app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
     # Select query for latest version of the service
@@ -140,7 +140,7 @@ async def validate_requested_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ValidService:
-    engine: Engine = get_database_engine(app)
+    engine: Engine = get_database_engine_legacy(app)
 
     async with engine.acquire() as conn:
         query = sa.select(

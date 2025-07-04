@@ -8,6 +8,7 @@
 import asyncio
 import datetime
 import random
+import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any, cast
 
@@ -15,6 +16,7 @@ import arrow
 import pytest
 from _helpers import PublishedProject
 from faker import Faker
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -89,6 +91,7 @@ async def test_list(
     publish_project: Callable[[], Awaitable[PublishedProject]],
     run_metadata: RunMetadataDict,
     faker: Faker,
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     assert await CompRunsRepository(sqlalchemy_async_engine).list_() == []
@@ -103,6 +106,7 @@ async def test_list(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=fake_collection_run_id,
     )
     assert await CompRunsRepository(sqlalchemy_async_engine).list_() == [created]
 
@@ -115,6 +119,7 @@ async def test_list(
                 metadata=run_metadata,
                 use_on_demand_clusters=faker.pybool(),
                 dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+                collection_run_id=faker.uuid4(),
             )
             for n in range(50)
         )
@@ -281,6 +286,7 @@ async def test_create(
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
             dag_adjacency_list={},
+            collection_run_id=faker.uuid4(),
         )
     published_project = await publish_project()
     with pytest.raises(UserNotFoundError):
@@ -291,6 +297,7 @@ async def test_create(
             metadata=run_metadata,
             use_on_demand_clusters=faker.pybool(),
             dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+            collection_run_id=faker.uuid4(),
         )
 
     created = await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -300,6 +307,7 @@ async def test_create(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=faker.uuid4(),
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -315,6 +323,7 @@ async def test_create(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=faker.uuid4(),
     )
     assert created != got
     assert created.iteration == got.iteration + 1
@@ -334,6 +343,7 @@ async def test_update(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     # this updates nothing but also does not complain
@@ -350,6 +360,7 @@ async def test_update(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=fake_collection_run_id,
     )
 
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
@@ -375,6 +386,7 @@ async def test_set_run_result(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     published_project = await publish_project()
@@ -385,6 +397,7 @@ async def test_set_run_result(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=fake_collection_run_id,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -424,6 +437,7 @@ async def test_mark_for_cancellation(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     published_project = await publish_project()
@@ -434,6 +448,7 @@ async def test_mark_for_cancellation(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=fake_collection_run_id,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -457,6 +472,7 @@ async def test_mark_for_scheduling(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     published_project = await publish_project()
@@ -467,6 +483,7 @@ async def test_mark_for_scheduling(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=fake_collection_run_id,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -492,6 +509,7 @@ async def test_mark_scheduling_done(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     published_project = await publish_project()
@@ -502,6 +520,7 @@ async def test_mark_scheduling_done(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=fake_collection_run_id,
     )
     got = await CompRunsRepository(sqlalchemy_async_engine).get(
         user_id=published_project.user["id"],
@@ -520,3 +539,709 @@ async def test_mark_scheduling_done(
     assert updated != created
     assert updated.scheduled is None
     assert updated.processed is not None
+
+
+def _normalize_uuids(data):
+    """Recursively convert UUID objects to strings in a nested dictionary."""
+    if isinstance(data, dict):
+        return {k: _normalize_uuids(v) for k, v in data.items()}
+    if isinstance(data, list):
+        return [_normalize_uuids(i) for i in data]
+    if isinstance(data, uuid.UUID):
+        return str(data)
+    return data
+
+
+async def test_list_group_by_collection_run_id(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
+):
+    """Test list_group_by_collection_run_id function with simple data insertion and retrieval."""
+    # Create a few published projects
+    published_project_1 = await publish_project()
+    published_project_2 = (
+        await publish_project()
+    )  # Create a shared collection run ID for grouping
+    collection_run_id = fake_collection_run_id
+
+    # Create computation runs with the same collection_run_id
+    await asyncio.gather(
+        CompRunsRepository(sqlalchemy_async_engine).create(
+            user_id=published_project_1.user["id"],
+            project_id=published_project_1.project.uuid,
+            iteration=None,
+            metadata=run_metadata,
+            use_on_demand_clusters=faker.pybool(),
+            dag_adjacency_list=published_project_1.pipeline.dag_adjacency_list,
+            collection_run_id=collection_run_id,
+        ),
+        CompRunsRepository(sqlalchemy_async_engine).create(
+            user_id=published_project_1.user["id"],
+            project_id=published_project_2.project.uuid,
+            iteration=None,
+            metadata=run_metadata,
+            use_on_demand_clusters=faker.pybool(),
+            dag_adjacency_list=published_project_2.pipeline.dag_adjacency_list,
+            collection_run_id=collection_run_id,
+        ),
+    )
+
+    # Test the list_group_by_collection_run_id function
+    total_count, items = await CompRunsRepository(
+        sqlalchemy_async_engine
+    ).list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project_1.user["id"],
+        offset=0,
+        limit=10,
+    )
+
+    # Assertions
+    assert total_count == 1  # One collection group
+    assert len(items) == 1
+
+    collection_item = items[0]
+    assert collection_item.collection_run_id == collection_run_id
+    assert len(collection_item.project_ids) == 2  # Two projects in the collection
+    assert str(published_project_1.project.uuid) in collection_item.project_ids
+    assert str(published_project_2.project.uuid) in collection_item.project_ids
+    assert (
+        collection_item.state
+        == RunningState.STARTED  # Initial state returned to activity overview
+    )
+    assert collection_item.info == _normalize_uuids(run_metadata)
+    assert collection_item.submitted_at is not None
+    assert collection_item.started_at is None  # Not started yet
+    assert collection_item.ended_at is None  # Not ended yet
+
+
+async def test_list_group_by_collection_run_id_with_mixed_states_returns_started(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
+):
+    """Test that if any state is not final, the grouped state returns STARTED."""
+    # Create published projects
+    published_project_1 = await publish_project()
+    published_project_2 = await publish_project()
+    published_project_3 = await publish_project()
+
+    collection_run_id = fake_collection_run_id
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create computation runs with same collection_run_id
+    comp_run_1 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_1.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+    comp_run_2 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_2.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+    comp_run_3 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_3.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_3.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+
+    # Set mixed states: one SUCCESS (final), one FAILED (final), one STARTED (non-final)
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=comp_run_1.iteration,
+        result_state=RunningState.SUCCESS,
+        final_state=True,
+    )
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=comp_run_2.iteration,
+        result_state=RunningState.FAILED,
+        final_state=True,
+    )
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_3.project.uuid,
+        iteration=comp_run_3.iteration,
+        result_state=RunningState.STARTED,
+        final_state=False,
+    )
+
+    # Test the list_group_by_collection_run_id function
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project_1.user["id"],
+        offset=0,
+        limit=10,
+    )
+
+    # Assertions
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert collection_item.collection_run_id == collection_run_id
+    assert collection_item.state == RunningState.STARTED  # Non-final state wins
+
+
+async def test_list_group_by_collection_run_id_all_success_returns_success(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
+):
+    """Test that if all states are SUCCESS, the grouped state returns SUCCESS."""
+    published_project_1 = await publish_project()
+    published_project_2 = await publish_project()
+
+    collection_run_id = fake_collection_run_id
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create computation runs
+    comp_run_1 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_1.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+    comp_run_2 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_2.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+
+    # Set both to SUCCESS
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=comp_run_1.iteration,
+        result_state=RunningState.SUCCESS,
+        final_state=True,
+    )
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=comp_run_2.iteration,
+        result_state=RunningState.SUCCESS,
+        final_state=True,
+    )
+
+    # Test the function
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project_1.user["id"],
+        offset=0,
+        limit=10,
+    )
+
+    # Assertions
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert collection_item.state == RunningState.SUCCESS
+
+
+async def test_list_group_by_collection_run_id_with_failed_returns_failed(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
+):
+    """Test that if any state is FAILED (among final states), the grouped state returns FAILED."""
+    published_project_1 = await publish_project()
+    published_project_2 = await publish_project()
+    published_project_3 = await publish_project()
+
+    collection_run_id = fake_collection_run_id
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create computation runs
+    comp_runs = []
+    for project in [published_project_1, published_project_2, published_project_3]:
+        comp_run = await repo.create(
+            user_id=published_project_1.user["id"],
+            project_id=project.project.uuid,
+            iteration=None,
+            metadata=run_metadata,
+            use_on_demand_clusters=faker.pybool(),
+            dag_adjacency_list=project.pipeline.dag_adjacency_list,
+            collection_run_id=collection_run_id,
+        )
+        comp_runs.append((project, comp_run))
+
+    # Set states: SUCCESS, FAILED, ABORTED (all final states, but FAILED is present)
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=comp_runs[0][0].project.uuid,
+        iteration=comp_runs[0][1].iteration,
+        result_state=RunningState.SUCCESS,
+        final_state=True,
+    )
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=comp_runs[1][0].project.uuid,
+        iteration=comp_runs[1][1].iteration,
+        result_state=RunningState.FAILED,
+        final_state=True,
+    )
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=comp_runs[2][0].project.uuid,
+        iteration=comp_runs[2][1].iteration,
+        result_state=RunningState.ABORTED,
+        final_state=True,
+    )
+
+    # Test the function
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project_1.user["id"],
+        offset=0,
+        limit=10,
+    )
+
+    # Assertions
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert collection_item.state == RunningState.FAILED  # FAILED takes precedence
+
+
+async def test_list_group_by_collection_run_id_with_aborted_returns_aborted(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
+):
+    """Test that if any state is ABORTED (but no FAILED), the grouped state returns ABORTED."""
+    published_project_1 = await publish_project()
+    published_project_2 = await publish_project()
+
+    collection_run_id = fake_collection_run_id
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create computation runs
+    comp_run_1 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_1.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+    comp_run_2 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_2.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+
+    # Set states: SUCCESS, ABORTED (final states, no FAILED)
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=comp_run_1.iteration,
+        result_state=RunningState.SUCCESS,
+        final_state=True,
+    )
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=comp_run_2.iteration,
+        result_state=RunningState.ABORTED,
+        final_state=True,
+    )
+
+    # Test the function
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project_1.user["id"],
+        offset=0,
+        limit=10,
+    )
+
+    # Assertions
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert collection_item.state == RunningState.ABORTED
+
+
+async def test_list_group_by_collection_run_id_with_unknown_returns_unknown(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
+):
+    """Test that if any state is UNKNOWN (but no FAILED/ABORTED), the grouped state returns UNKNOWN."""
+    published_project_1 = await publish_project()
+    published_project_2 = await publish_project()
+
+    collection_run_id = fake_collection_run_id
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create computation runs
+    comp_run_1 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_1.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+    comp_run_2 = await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_2.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id,
+    )
+
+    # Set states: SUCCESS, UNKNOWN (final states, no FAILED/ABORTED)
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=comp_run_1.iteration,
+        result_state=RunningState.SUCCESS,
+        final_state=True,
+    )
+    await repo.set_run_result(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=comp_run_2.iteration,
+        result_state=RunningState.UNKNOWN,  # --> is setup to be FAILED
+        final_state=True,
+    )
+
+    # Test the function
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project_1.user["id"],
+        offset=0,
+        limit=10,
+    )
+
+    # Assertions
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert collection_item.state == RunningState.FAILED
+
+
+async def test_list_group_by_collection_run_id_with_project_filter(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    with_product: dict[str, Any],
+):
+    """Test list_group_by_collection_run_id with project_ids filter."""
+    published_project_1 = await publish_project()
+    published_project_2 = await publish_project()
+    published_project_3 = await publish_project()
+
+    collection_run_id_1 = CollectionRunID(f"{faker.uuid4(cast_to=None)}")
+    collection_run_id_2 = CollectionRunID(f"{faker.uuid4(cast_to=None)}")
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create computation runs with different collection_run_ids
+    await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_1.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_1.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id_1,
+    )
+    await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_2.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_2.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id_1,
+    )
+    await repo.create(
+        user_id=published_project_1.user["id"],
+        project_id=published_project_3.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_3.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id_2,
+    )
+
+    # Test with project filter for only first two projects
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project_1.user["id"],
+        project_ids=[
+            published_project_1.project.uuid,
+            published_project_2.project.uuid,
+        ],
+        offset=0,
+        limit=10,
+    )
+
+    # Should only return collection_run_id_1
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert collection_item.collection_run_id == collection_run_id_1
+    assert len(collection_item.project_ids) == 2
+
+
+async def test_list_group_by_collection_run_id_pagination(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    with_product: dict[str, Any],
+):
+    """Test pagination functionality of list_group_by_collection_run_id."""
+    published_project = await publish_project()
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create multiple collection runs
+    collection_run_ids = []
+    for _ in range(5):
+        collection_run_id = CollectionRunID(f"{faker.uuid4(cast_to=None)}")
+        collection_run_ids.append(collection_run_id)
+
+        project = await publish_project()
+        await repo.create(
+            user_id=published_project.user["id"],
+            project_id=project.project.uuid,
+            iteration=None,
+            metadata=run_metadata,
+            use_on_demand_clusters=faker.pybool(),
+            dag_adjacency_list=project.pipeline.dag_adjacency_list,
+            collection_run_id=collection_run_id,
+        )
+
+    # Test first page
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project.user["id"],
+        offset=0,
+        limit=2,
+    )
+
+    assert total_count == 5
+    assert len(items) == 2
+
+    # Test second page
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project.user["id"],
+        offset=2,
+        limit=2,
+    )
+
+    assert total_count == 5
+    assert len(items) == 2
+
+    # Test last page
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_project.user["id"],
+        offset=4,
+        limit=2,
+    )
+
+    assert total_count == 5
+    assert len(items) == 1
+
+
+async def test_list_group_by_collection_run_id_empty_result(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    fake_user_id: UserID,
+    with_product: dict[str, Any],
+):
+    """Test list_group_by_collection_run_id returns empty when no runs exist."""
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=fake_user_id,
+        offset=0,
+        limit=10,
+    )
+
+    assert total_count == 0
+    assert len(items) == 0
+
+
+async def test_list_group_by_collection_run_id_with_different_users(
+    sqlalchemy_async_engine: AsyncEngine,
+    create_registered_user: Callable[..., dict[str, Any]],
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    with_product: dict[str, Any],
+):
+    """Test that list_group_by_collection_run_id filters by user_id correctly."""
+    published_project_user1 = await publish_project()
+    published_project_user2 = await publish_project()
+
+    user1 = create_registered_user()
+    user2 = create_registered_user()
+
+    collection_run_id_1 = CollectionRunID(f"{faker.uuid4(cast_to=None)}")
+    collection_run_id_2 = CollectionRunID(f"{faker.uuid4(cast_to=None)}")
+
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create runs for different users with same collection_run_id
+    await repo.create(
+        user_id=user1["id"],
+        project_id=published_project_user1.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_user1.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id_1,
+    )
+    await repo.create(
+        user_id=user2["id"],
+        project_id=published_project_user2.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project_user2.pipeline.dag_adjacency_list,
+        collection_run_id=collection_run_id_2,
+    )
+
+    # Test for user1 - should only see their own runs
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=user1["id"],
+        offset=0,
+        limit=10,
+    )
+
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert len(collection_item.project_ids) == 1
+    assert str(published_project_user1.project.uuid) in collection_item.project_ids
+    assert str(published_project_user2.project.uuid) not in collection_item.project_ids
+
+    # Test for user2 - should only see their own runs
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=user2["id"],
+        offset=0,
+        limit=10,
+    )
+
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert len(collection_item.project_ids) == 1
+    assert str(published_project_user2.project.uuid) in collection_item.project_ids
+    assert str(published_project_user1.project.uuid) not in collection_item.project_ids
+
+
+async def test_list_group_by_collection_run_id_state_priority_precedence(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
+):
+    """Test that state resolution follows correct priority: FAILED > ABORTED > UNKNOWN."""
+    published_projects = [await publish_project() for _ in range(4)]
+
+    collection_run_id = fake_collection_run_id
+    repo = CompRunsRepository(sqlalchemy_async_engine)
+
+    # Create computation runs
+    comp_runs = []
+    for project in published_projects:
+        comp_run = await repo.create(
+            user_id=published_projects[0].user["id"],
+            project_id=project.project.uuid,
+            iteration=None,
+            metadata=run_metadata,
+            use_on_demand_clusters=faker.pybool(),
+            dag_adjacency_list=project.pipeline.dag_adjacency_list,
+            collection_run_id=collection_run_id,
+        )
+        comp_runs.append((project, comp_run))
+
+    # Set states: SUCCESS, UNKNOWN, ABORTED, FAILED - should return FAILED
+    states = [
+        RunningState.SUCCESS,
+        RunningState.UNKNOWN,
+        RunningState.ABORTED,
+        RunningState.FAILED,
+    ]
+    for i, (project, comp_run) in enumerate(comp_runs):
+        await repo.set_run_result(
+            user_id=published_projects[0].user["id"],
+            project_id=project.project.uuid,
+            iteration=comp_run.iteration,
+            result_state=states[i],
+            final_state=True,
+        )
+
+    # Test the function
+    total_count, items = await repo.list_group_by_collection_run_id(
+        product_name=run_metadata.get("product_name"),
+        user_id=published_projects[0].user["id"],
+        offset=0,
+        limit=10,
+    )
+
+    # Assertions - FAILED should have highest priority
+    assert total_count == 1
+    assert len(items) == 1
+    collection_item = items[0]
+    assert collection_item.state == RunningState.FAILED

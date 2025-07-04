@@ -3,6 +3,7 @@
 # pylint: disable=unused-import
 
 import asyncio
+import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from unittest.mock import AsyncMock
 
@@ -99,6 +100,7 @@ async def create_pipeline(
                 "start_pipeline": start_pipeline,
                 "product_name": product_name,
                 "product_api_base_url": product_api_base_url,
+                "collection_run_id": str(uuid.uuid4()),
                 **kwargs,
             },
         )

@@ -26,7 +26,7 @@ from pydantic import (
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from simcore_postgres_database.models.classifiers import group_classifiers
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ..scicrunch.db import ResearchResourceRepository
 from ..scicrunch.service_client import SciCrunch
 
@@ -78,7 +78,7 @@ class Classifiers(BaseModel):
 
 class GroupClassifierRepository:
     def __init__(self, app: web.Application):
-        self.engine = get_database_engine(app)
+        self.engine = get_database_engine_legacy(app)
 
     async def _get_bundle(self, gid: int) -> RowProxy | None:
         async with self.engine.acquire() as conn:

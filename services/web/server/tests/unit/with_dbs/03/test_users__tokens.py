@@ -25,7 +25,7 @@ from pytest_simcore.helpers.webserver_tokens import (
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.db.plugin import get_database_engine_legacy
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ async def tokens_db_cleanup(
     client: TestClient,
 ) -> AsyncIterator[None]:
     assert client.app
-    engine = get_database_engine(client.app)
+    engine = get_database_engine_legacy(client.app)
 
     yield None
 
@@ -75,7 +75,7 @@ async def fake_tokens(
             "token_secret": faker.md5(raw_output=False),
         }
         await create_token_in_db(
-            get_database_engine(client.app),
+            get_database_engine_legacy(client.app),
             user_id=logged_user["id"],
             token_service=data["service"],
             token_data=data,
@@ -115,7 +115,7 @@ async def test_create_token(
     data, error = await assert_status(resp, expected)
     if not error:
         db_token = await get_token_from_db(
-            get_database_engine(client.app), token_data=token
+            get_database_engine_legacy(client.app), token_data=token
         )
         assert db_token
         assert db_token["token_data"] == token
@@ -191,5 +191,7 @@ async def test_delete_token(
 
     if not error:
         assert not (
-            await get_token_from_db(get_database_engine(client.app), token_service=sid)
+            await get_token_from_db(
+                get_database_engine_legacy(client.app), token_service=sid
+            )
         )
