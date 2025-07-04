@@ -24,6 +24,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,
 )
+from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from .._meta import API_VTAG
@@ -302,36 +303,39 @@ async def approve_user_account(request: web.Request) -> web.Response:
 
     invitation_extras = None
     if approval_data.invitation:
-        _logger.debug(
+        with log_context(
+            _logger,
+            logging.DEBUG,
             "User is being approved with invitation %s for user %s",
             approval_data.invitation.model_dump_json(indent=1),
             approval_data.email,
-        )
+        ):
+            # Generate invitation
+            invitation_params = ApiInvitationInputs(
+                issuer=str(req_ctx.user_id),
+                guest=approval_data.email,
+                trial_account_days=approval_data.invitation.trial_account_days,
+                extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
+            )
 
-        # Generate invitation
-        invitation_params = ApiInvitationInputs(
-            issuer=str(req_ctx.user_id),
-            guest=approval_data.email,
-            trial_account_days=approval_data.invitation.trial_account_days,
-            extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
-        )
+            invitation_result = await invitations_service.generate_invitation(
+                request.app, params=invitation_params
+            )
 
-        invitation_result = await invitations_service.generate_invitation(
-            request.app, params=invitation_params
-        )
+            assert (  # nosec
+                invitation_result.extra_credits_in_usd
+                == approval_data.invitation.extra_credits_in_usd
+            )
+            assert (  # nosec
+                invitation_result.trial_account_days
+                == approval_data.invitation.trial_account_days
+            )
+            assert invitation_result.guest == approval_data.email  # nosec
 
-        assert (  # nosec
-            invitation_result.extra_credits_in_usd
-            == approval_data.invitation.extra_credits_in_usd
-        )
-        assert (  # nosec
-            invitation_result.trial_account_days
-            == approval_data.invitation.trial_account_days
-        )
-        assert invitation_result.guest == approval_data.email  # nosec
-
-        # Store invitation data in extras
-        invitation_extras = {"invitation": invitation_result.model_dump(mode="json")}
+            # Store invitation data in extras
+            invitation_extras = {
+                "invitation": invitation_result.model_dump(mode="json")
+            }
 
     # Approve the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _users_service.approve_user_account(
@@ -342,6 +346,11 @@ async def approve_user_account(request: web.Request) -> web.Response:
         invitation_extras=invitation_extras,
     )
     assert pre_registration_id  # nosec
+
+    if invitation_extras:
+        _logger.debug(
+            "Sending invitation email for user %s [STILL MISSING]", approval_data.email
+        )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
