@@ -47,7 +47,9 @@ pydantic==2.10.6
     # via -r requirements/_test_wo_playwright.in
 pydantic-core==2.27.2
     # via pydantic
-pytest==8.3.5
+pygments==2.19.2
+    # via pytest
+pytest==8.4.1
     # via
     #   pytest-html
     #   pytest-instafail

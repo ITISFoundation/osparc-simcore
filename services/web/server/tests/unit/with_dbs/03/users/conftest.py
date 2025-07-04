@@ -3,11 +3,11 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import asyncio
 from collections.abc import AsyncGenerator, AsyncIterable, Callable
 from typing import Any
 
 import pytest
+import pytest_asyncio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestServer
@@ -22,9 +22,8 @@ from simcore_service_webserver.db.plugin import get_asyncpg_engine, setup_db
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-@pytest.fixture
-def web_server(
-    event_loop: asyncio.AbstractEventLoop,
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def web_server(
     app_environment: EnvVarsDict,  # configs
     postgres_db: sa.engine.Engine,  # db-ready
     webserver_test_server_port: int,
@@ -37,9 +36,7 @@ def web_server(
     setup_settings(app)
     setup_db(app)
 
-    return event_loop.run_until_complete(
-        aiohttp_server(app, port=webserver_test_server_port)
-    )
+    return await aiohttp_server(app, port=webserver_test_server_port)
 
 
 @pytest.fixture

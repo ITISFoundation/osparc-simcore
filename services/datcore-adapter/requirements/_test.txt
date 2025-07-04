@@ -57,10 +57,16 @@ packaging==24.2
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-pytest==8.3.5
+pygments==2.17.2
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -70,21 +76,21 @@ pytest==8.3.5
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
-pytest-xdist==3.6.1
+pytest-xdist==3.8.0
     # via -r requirements/_test.in
 requests==2.32.3
     # via
