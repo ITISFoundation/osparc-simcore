@@ -24,7 +24,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
 
     this.__includeChildren = includeChildren;
     this.__cachedData = new Map();
-    this.__loadedRanges = [];
 
     this.set({
       projectUuid,
@@ -86,7 +85,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   members: {
     __includeChildren: null,
     __cachedData: null,
-    __loadedRanges: null,
 
     // overridden
     sortByColumn(columnIndex, ascending) {
@@ -202,7 +200,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
             loadedRange.data.forEach((rowData, index) => {
               this.__cachedData.set(loadedRange.start + index, rowData);
             });
-            this.__loadedRanges.push({start: loadedRange.start, end: loadedRange.start + loadedRange.data.length - 1});
           });
 
           const requestedData = this.__getCachedData(firstRow, lastRow);
