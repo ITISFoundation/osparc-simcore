@@ -32,7 +32,7 @@ async def create_comp_run_collection(
         )
         .returning(comp_runs_collections.c.collection_run_id)
     )
-    collection_id_tuple: tuple[UUID] = await result.first()
+    collection_id_tuple: tuple[UUID] = result.one()
     return TypeAdapter(CollectionRunID).validate_python(collection_id_tuple[0])
 
 
@@ -44,7 +44,7 @@ async def get_comp_run_collection_or_none_by_id(
             comp_runs_collections.c.collection_run_id == f"{collection_run_id}"
         )
     )
-    row = await result.first()
+    row = result.one_or_none()
     if row is None:
         return None
     return CompRunCollectionDBGet.model_validate(row)
@@ -59,7 +59,7 @@ async def get_comp_run_collection_or_none_by_client_generated_id(
             == client_or_system_generated_id
         )
     )
-    row = await result.one_or_none()
+    row = result.one_or_none()
     if row is None:
         return None
     return CompRunCollectionDBGet.model_validate(row)
