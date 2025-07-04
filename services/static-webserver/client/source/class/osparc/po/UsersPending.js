@@ -76,7 +76,7 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     createInfoButton: function(infoMetadata) {
-      const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16");
+      const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
       infoButton.addListener("execute", () => {
         const container = new qx.ui.container.Scroll();
         container.add(new osparc.ui.basic.JsonTreeWidget(infoMetadata, "pendingUserInfo"));
@@ -206,7 +206,7 @@ qx.Class.define("osparc.po.UsersPending", {
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
             statusImage.set({
-              source: "@FontAwesome5Solid/hourglass-end/16",
+              source: "@FontAwesome5Solid/hourglass-end/14",
               textColor: "warning-yellow",
             });
             const approveButton = this.__createApproveButton(pendingUser.email);
@@ -217,7 +217,7 @@ qx.Class.define("osparc.po.UsersPending", {
           }
           case "REJECTED": {
             statusImage.set({
-              source: "@FontAwesome5Solid/times/16",
+              source: "@FontAwesome5Solid/times/14",
               textColor: "danger-red",
             });
             const approveButton = this.__createApproveButton(pendingUser.email);
@@ -227,7 +227,7 @@ qx.Class.define("osparc.po.UsersPending", {
           }
           case "APPROVED": {
             statusImage.set({
-              source: "@FontAwesome5Solid/check/16",
+              source: "@FontAwesome5Solid/check/14",
               textColor: "product-color",
             });
             const resendEmailButton = this.self().createResendEmailButton(pendingUser.email);
