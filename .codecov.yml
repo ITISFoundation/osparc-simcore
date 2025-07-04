@@ -25,9 +25,6 @@ component_management:
         branches:
           - "!master"
   individual_components:
-    - component_id: api
-      paths:
-        - api/**
     - component_id: pkg_aws_library
       paths:
         - packages/aws-library/**
