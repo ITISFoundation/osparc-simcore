@@ -143,27 +143,6 @@ qx.Class.define("osparc.po.UsersPending", {
         row: 0,
         column: 2,
       });
-
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
-        font: "text-14"
-      }), {
-        row: 0,
-        column: 3,
-      });
-
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Info")).set({
-        font: "text-14"
-      }), {
-        row: 0,
-        column: 4,
-      });
-
-      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Action")).set({
-        font: "text-14"
-      }), {
-        row: 0,
-        column: 5,
-      });
     },
 
     __addRows: function(pendingUsers) {
