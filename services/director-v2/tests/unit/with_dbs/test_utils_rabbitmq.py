@@ -84,28 +84,28 @@ def user(create_registered_user: Callable[..., dict]) -> dict:
 
 
 @pytest.fixture
-async def project(
+async def with_project(
     user: dict[str, Any],
     fake_workbench_without_outputs: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
-    product_db: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    with_product: dict[str, Any],
 ) -> ProjectAtDB:
-    return await project(user, workbench=fake_workbench_without_outputs)
+    return await create_project(user, workbench=fake_workbench_without_outputs)
 
 
 @pytest.fixture
 async def tasks(
     user: dict[str, Any],
-    project: ProjectAtDB,
+    with_project: ProjectAtDB,
     fake_workbench_adjacency: dict[str, Any],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
 ) -> list[CompTaskAtDB]:
     await create_pipeline(
-        project_id=f"{project.uuid}",
+        project_id=f"{with_project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(user, project)
+    comp_tasks = await create_tasks_from_project(user, with_project)
     assert len(comp_tasks) > 0
     return comp_tasks
 
@@ -162,7 +162,7 @@ async def test_publish_service_stopped_metrics(
 async def test_publish_service_resource_tracking_started(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     user: dict[str, Any],
-    project: ProjectAtDB,
+    with_project: ProjectAtDB,
     simcore_user_agent: str,
     tasks: list[CompTaskAtDB],
     mocked_message_parser: mock.AsyncMock,
@@ -191,10 +191,10 @@ async def test_publish_service_resource_tracking_started(
         simcore_user_agent=simcore_user_agent,
         user_id=user["id"],
         user_email=faker.email(),
-        project_id=project.uuid,
-        project_name=project.name,
+        project_id=with_project.uuid,
+        project_name=with_project.name,
         node_id=random_task.node_id,
-        node_name=project.workbench[NodeIDStr(f"{random_task.node_id}")].label,
+        node_name=with_project.workbench[NodeIDStr(f"{random_task.node_id}")].label,
         parent_project_id=None,
         parent_node_id=None,
         root_parent_project_id=None,

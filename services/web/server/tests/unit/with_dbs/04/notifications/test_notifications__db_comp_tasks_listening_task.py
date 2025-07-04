@@ -175,20 +175,20 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
     mock_project_subsystem: dict[str, mock.Mock],
     spied_get_changed_comp_task_row: MockType,
     logged_user: UserInfoDict,
-    project: Callable[..., Awaitable[ProjectAtDB]],
-    pipeline: Callable[..., dict[str, Any]],
-    comp_task: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     with_started_listening_task: None,
     params: _CompTaskChangeParams,
     task_class: NodeClass,
     faker: Faker,
     mocker: MockerFixture,
 ):
-    some_project = await project(logged_user)
-    pipeline(project_id=f"{some_project.uuid}")
+    some_project = await create_project(logged_user)
+    await create_pipeline(project_id=f"{some_project.uuid}")
     # Create 3 tasks with different node_ids
     tasks = [
-        comp_task(
+        await create_comp_task(
             project_id=f"{some_project.uuid}",
             node_id=faker.uuid4(),
             outputs=json.dumps({}),
@@ -263,21 +263,21 @@ async def test_db_listener_upgrades_projects_row_correctly(
     mock_dynamic_service_rpc: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_2connected_jupyterlabs_workbench: dict[str, Any],
-    pipeline: Callable[..., dict[str, Any]],
-    comp_task: Callable[..., dict[str, Any]],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
+    create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
     spied_get_changed_comp_task_row: MockType,
     faker: Faker,
 ):
-    some_project = await project(
+    some_project = await create_project(
         logged_user, workbench=fake_2connected_jupyterlabs_workbench
     )
 
     # create the corresponding comp_task entries for the project workbench
-    pipeline(project_id=f"{some_project.uuid}")
+    await create_pipeline(project_id=f"{some_project.uuid}")
     tasks = [
-        comp_task(
+        await create_comp_task(
             project_id=f"{some_project.uuid}",
             node_id=node_id,
             outputs=node_data.get("outputs", {}),

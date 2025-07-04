@@ -83,7 +83,7 @@ async def test_manager_starts_and_auto_schedules_pipelines(
     mocked_schedule_all_pipelines: mock.Mock,
     initialized_app: FastAPI,
     sqlalchemy_async_engine: AsyncEngine,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     mocked_schedule_all_pipelines.assert_called()
@@ -95,7 +95,7 @@ async def test_schedule_all_pipelines_empty_db(
     initialized_app: FastAPI,
     scheduler_rabbit_client_parser: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
 
@@ -112,7 +112,7 @@ async def test_schedule_all_pipelines_concurently_runs_exclusively_and_raises(
     with_disabled_auto_scheduling: mock.Mock,
     initialized_app: FastAPI,
     mocker: MockerFixture,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     CONCURRENCY = 5
     # NOTE: this ensure no flakyness as empty scheduling is very fast
@@ -328,9 +328,9 @@ async def test_empty_pipeline_is_not_scheduled(
     with_disabled_auto_scheduling: mock.Mock,
     with_disabled_scheduler_worker: mock.Mock,
     initialized_app: FastAPI,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     run_metadata: RunMetadataDict,
     sqlalchemy_async_engine: AsyncEngine,
@@ -340,7 +340,7 @@ async def test_empty_pipeline_is_not_scheduled(
 ):
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     user = create_registered_user()
-    empty_project = await project(user)
+    empty_project = await create_project(user)
 
     # the project is not in the comp_pipeline, therefore scheduling it should fail
     with pytest.raises(PipelineNotFoundError):

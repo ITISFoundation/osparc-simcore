@@ -58,7 +58,7 @@ async def test_get(
     fake_project_id: ProjectID,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     with pytest.raises(ComputationalRunNotFoundError):
         await CompRunsRepository(sqlalchemy_async_engine).get(
@@ -92,7 +92,7 @@ async def test_list(
     run_metadata: RunMetadataDict,
     faker: Faker,
     fake_collection_run_id: CollectionRunID,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     assert await CompRunsRepository(sqlalchemy_async_engine).list_() == []
 
@@ -276,7 +276,7 @@ async def test_create(
     run_metadata: RunMetadataDict,
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     with pytest.raises(ProjectNotFoundError):
         await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -344,7 +344,7 @@ async def test_update(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     # this updates nothing but also does not complain
     updated = await CompRunsRepository(sqlalchemy_async_engine).update(
@@ -387,7 +387,7 @@ async def test_set_run_result(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     published_project = await publish_project()
     created = await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -438,7 +438,7 @@ async def test_mark_for_cancellation(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     published_project = await publish_project()
     created = await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -473,7 +473,7 @@ async def test_mark_for_scheduling(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     published_project = await publish_project()
     created = await CompRunsRepository(sqlalchemy_async_engine).create(
@@ -510,7 +510,7 @@ async def test_mark_scheduling_done(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     fake_collection_run_id: CollectionRunID,
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
 ):
     published_project = await publish_project()
     created = await CompRunsRepository(sqlalchemy_async_engine).create(
