@@ -5,6 +5,7 @@
 
 
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 from _helpers import PublishedProject
 from models_library.computations import CollectionRunID
@@ -35,6 +36,7 @@ async def test_list_computation_collection_run_tasks(
     ],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
 
@@ -47,6 +49,7 @@ async def test_list_computation_collection_run_tasks(
         published_project.user,
         published_project.project,
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=f"{fake_collection_run_id}",
     )
 
     # 3. create snapshot tasks for that run
@@ -75,6 +78,7 @@ async def test_list_computation_collection_run_tasks_empty(
     sqlalchemy_async_engine: AsyncEngine,
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     # Use a random user_id unlikely to have tasks
@@ -97,6 +101,7 @@ async def test_list_computation_collection_run_tasks_pagination(
     ],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     published_project = await publish_project()
@@ -105,6 +110,7 @@ async def test_list_computation_collection_run_tasks_pagination(
         published_project.user,
         published_project.project,
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=f"{fake_collection_run_id}",
     )
     snapshot_tasks = await create_comp_run_snapshot_tasks(
         user=published_project.user,
@@ -143,6 +149,7 @@ async def test_list_computation_collection_run_tasks_wrong_user(
     ],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     published_project = await publish_project()
@@ -150,6 +157,7 @@ async def test_list_computation_collection_run_tasks_wrong_user(
         published_project.user,
         published_project.project,
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=f"{fake_collection_run_id}",
     )
     await create_comp_run_snapshot_tasks(
         user=published_project.user,
@@ -176,6 +184,7 @@ async def test_list_computation_collection_run_tasks_multiple_comp_runs_same_col
     ],
     osparc_product_name: ProductName,
     fake_collection_run_id: CollectionRunID,
+    with_product: dict[str, Any],
 ):
     repo = CompRunsSnapshotTasksRepository(db_engine=sqlalchemy_async_engine)
     published_project1 = await publish_project()
