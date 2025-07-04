@@ -23,8 +23,8 @@ from ..._constants import (
 from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import envelope_response
 from ..._models import InputSchema
-from ...errors import handle_login_exceptions
 from ...settings import LoginSettingsForProduct, get_plugin_settings
+from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class Resend2faBody(InputSchema):
     name="auth_resend_2fa_code",
     one_time_access=False,
 )
-@handle_login_exceptions
+@handle_rest_requests_exceptions
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email"""
     product: Product = products_web.get_current_product(request)
