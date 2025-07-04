@@ -78,7 +78,11 @@ pydantic-core==2.27.2
     #   pydantic
 pyee==12.1.1
     # via playwright
-pytest==8.3.5
+pygments==2.19.2
+    # via
+    #   -r requirements/_test_wo_playwright.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest-base-url
