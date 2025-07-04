@@ -9,6 +9,7 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -109,6 +110,7 @@ async def test_worker_scheduling_parallelism(
     initialized_app: FastAPI,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     run_metadata: RunMetadataDict,
+    with_product: dict[str, Any],
 ):
     with_disabled_auto_scheduling.assert_called_once()
 
