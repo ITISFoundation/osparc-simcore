@@ -282,15 +282,16 @@ qx.Class.define("osparc.po.UsersPending", {
           }
           case "REJECTED": {
             const approveButton = this.self().createApproveButton(pendingUser.email);
+            approveButton.setEnabled(false); // avoid changing decision for now
             buttonsLayout.add(approveButton);
             break;
           }
           case "APPROVED": {
-            /*
             const resendEmailButton = this.self().createResendEmailButton(pendingUser.email);
+            resendEmailButton.setEnabled(false);
             buttonsLayout.add(resendEmailButton);
-            */
             const rejectButton = this.self().createRejectButton(pendingUser.email);
+            rejectButton.setEnabled(false); // avoid changing decision for now
             buttonsLayout.add(rejectButton);
             break;
           }
