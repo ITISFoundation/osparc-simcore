@@ -22,7 +22,6 @@ from pytest_simcore.helpers.faker_factories import random_project, random_user
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.s3 import S3Settings
-from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
@@ -100,9 +99,9 @@ def create_valid_file_uuid(
 
 
 @pytest.fixture()
-def default_configuration(
+async def default_configuration(
     node_ports_config: None,
-    create_pipeline: Callable[[str], str],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_task: Callable[..., str],
     default_configuration_file: Path,
     project_id: str,
@@ -110,7 +109,7 @@ def default_configuration(
 ) -> dict[str, Any]:
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
-    create_pipeline(project_id)
+    await create_pipeline(project_id=project_id)
     return _set_configuration(create_task, project_id, node_uuid, json_configuration)
 
 
@@ -167,15 +166,15 @@ def create_store_link(
 
 
 @pytest.fixture()
-def create_special_configuration(
+async def create_special_configuration(
     node_ports_config: None,
-    create_pipeline: Callable[[str], str],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_task: Callable[..., str],
     empty_configuration_file: Path,
     project_id: str,
     node_uuid: str,
-) -> Callable:
-    def _create(
+) -> Callable[..., Awaitable[tuple[dict, str, str]]]:
+    async def _create(
         inputs: list[tuple[str, str, Any]] | None = None,
         outputs: list[tuple[str, str, Any]] | None = None,
         project_id: str = project_id,
@@ -184,7 +183,7 @@ def create_special_configuration(
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs if inputs else [])
         _assign_config(config_dict, "outputs", outputs if outputs else [])
-        project_id = create_pipeline(project_id)
+        await create_pipeline(project_id=project_id)
         config_dict = _set_configuration(
             create_task, project_id, node_id, json.dumps(config_dict)
         )
@@ -194,13 +193,13 @@ def create_special_configuration(
 
 
 @pytest.fixture()
-def create_2nodes_configuration(
+async def create_2nodes_configuration(
     node_ports_config: None,
-    create_pipeline: Callable[[str], str],
+    create_pipeline: Callable[..., Awaitable[dict[str, Any]]],
     create_task: Callable[..., str],
     empty_configuration_file: Path,
-) -> Callable:
-    def _create(
+) -> Callable[..., Awaitable[tuple[dict, str, str]]]:
+    async def _create(
         prev_node_inputs: list[tuple[str, str, Any]],
         prev_node_outputs: list[tuple[str, str, Any]],
         inputs: list[tuple[str, str, Any]],
@@ -209,7 +208,7 @@ def create_2nodes_configuration(
         previous_node_id: str,
         node_id: str,
     ) -> tuple[dict, str, str]:
-        create_pipeline(project_id)
+        await create_pipeline(project_id=project_id)
 
         # create previous node
         previous_config_dict = json.loads(empty_configuration_file.read_text())
@@ -239,34 +238,6 @@ def create_2nodes_configuration(
         return config_dict, project_id, node_id
 
     return _create
-
-
-@pytest.fixture
-def create_pipeline(postgres_db: sa.engine.Engine) -> Iterator[Callable[[str], str]]:
-    created_pipeline_ids: list[str] = []
-
-    def _create(project_id: str) -> str:
-        with postgres_db.connect() as conn:
-            result = conn.execute(
-                comp_pipeline.insert()  # pylint: disable=no-value-for-parameter
-                .values(project_id=project_id)
-                .returning(comp_pipeline.c.project_id)
-            )
-            row = result.first()
-            assert row
-            new_pipeline_id = row[comp_pipeline.c.project_id]
-        created_pipeline_ids.append(f"{new_pipeline_id}")
-        return new_pipeline_id
-
-    yield _create
-
-    # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
-            comp_pipeline.delete().where(  # pylint: disable=no-value-for-parameter
-                comp_pipeline.c.project_id.in_(created_pipeline_ids)
-            )
-        )
 
 
 @pytest.fixture

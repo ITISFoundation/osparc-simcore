@@ -38,7 +38,10 @@ qx.Class.define("osparc.data.model.StudyUI", {
     });
 
     if ("annotations" in studyDataUI) {
-      this.__annotationsInitData = studyDataUI["annotations"];
+      Object.entries(studyDataUI["annotations"]).forEach(([annotationId, annotationData]) => {
+        const annotation = new osparc.workbench.Annotation(annotationData, annotationId);
+        this.addAnnotation(annotation);
+      });
     }
   },
 
@@ -99,20 +102,10 @@ qx.Class.define("osparc.data.model.StudyUI", {
   },
 
   members: {
-    __annotationsInitData: null,
-
     __applyMode: function(mode) {
       if (mode === "guided") {
         this.setMode("app");
       }
-    },
-
-    getAnnotationsInitData: function() {
-      return this.__annotationsInitData;
-    },
-
-    nullAnnotationsInitData: function() {
-      this.__annotationsInitData = null;
     },
 
     addAnnotation: function(annotation) {

@@ -28,10 +28,6 @@ RUN apt-get update \
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
 COPY --from=uv_build /uv /uvx /bin/
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade \
-  wheel \
-  setuptools
 
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/uv \
