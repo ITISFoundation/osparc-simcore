@@ -22,6 +22,10 @@ _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName
 async def get_computation_task_log_file_ids(
     rabbitmq_rpc_client: RabbitMQRPCClient, *, project_id: ProjectID
 ) -> list[TaskLogFileIdGet]:
+    """
+    Raises:
+        ComputationalRunNotFoundError
+    """
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("get_computation_task_log_file_ids"),
