@@ -272,7 +272,42 @@ qx.Class.define("osparc.po.UsersPending", {
         approveBtn.addListener("execute", () => {
           if (osparc.data.Permissions.getInstance().canDo("user.invitation.generate", true)) {
             if (form.validate()) {
-              this.__confirmApproveUser(email, form);
+              const extraCreditsInUsd = form.getItems()["credits"].getValue();
+              let trialAccountDays = 0;
+              if (form.getItems()["withExpiration"].getValue()) {
+                trialAccountDays = form.getItems()["trialDays"].getValue();
+              }
+
+              let msg = `Are you sure you want to approve ${email}`;
+              if (extraCreditsInUsd) {
+                msg += ` with ${extraCreditsInUsd}$ worth credits`;
+              }
+              if (trialAccountDays > 0) {
+                msg += ` and ${trialAccountDays} days of trial`;
+              }
+              msg += "?";
+              const confWin = new osparc.ui.window.Confirmation(msg).set({
+                caption: "Approve User",
+                confirmText: "Approve",
+                confirmAction: "create"
+              });
+              confWin.center();
+              confWin.open();
+              confWin.addListener("close", () => {
+                if (confWin.getConfirmed()) {
+                  approveBtn.setFetching(true);
+                  this.__approveUser(email, form)
+                    .then(() => {
+                      osparc.FlashMessenger.logAs("User approved", "INFO");
+                      this.__reload();
+                    })
+                    .catch(err => osparc.FlashMessenger.logError(err))
+                    .finally(() => {
+                      approveBtn.setFetching(false);
+                      win.close();
+                    });
+                }
+              });
             }
           }
         });
@@ -305,45 +340,6 @@ qx.Class.define("osparc.po.UsersPending", {
         });
       });
       return button;
-    },
-
-    __confirmApproveUser: function(email, form) {
-      const extraCreditsInUsd = form.getItems()["credits"].getValue();
-      let trialAccountDays = 0;
-      if (form.getItems()["withExpiration"].getValue()) {
-        trialAccountDays = form.getItems()["trialDays"].getValue();
-      }
-
-      let msg = `Are you sure you want to approve ${email}`;
-      if (extraCreditsInUsd) {
-        msg += ` with ${extraCreditsInUsd}$ worth credits`;
-      }
-      if (trialAccountDays > 0) {
-        msg += ` and ${trialAccountDays} days of trial`;
-      }
-      msg += "?";
-      const win = new osparc.ui.window.Confirmation(msg).set({
-        caption: "Approve User",
-        confirmText: "Approve",
-        confirmAction: "create"
-      });
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          approveBtn.setFetching(true);
-          this.__approveUser(email, form)
-            .then(() => {
-              osparc.FlashMessenger.logAs("User approved", "INFO");
-              this.__reload();
-            })
-            .catch(err => osparc.FlashMessenger.logError(err))
-            .finally(() => {
-              approveBtn.setFetching(false);
-              win.close();
-            });
-        }
-      });
     },
 
     __approveUser: function(email, form) {
