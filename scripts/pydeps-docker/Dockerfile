@@ -33,11 +33,6 @@ ARG HOME_DIR
 RUN mkdir -p ${HOME_DIR}
 COPY .pydeps ${HOME_DIR}/.pydeps
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade \
-  wheel \
-  setuptools
-
 
 # devenv
 RUN --mount=type=cache,target=/root/.cache/uv \

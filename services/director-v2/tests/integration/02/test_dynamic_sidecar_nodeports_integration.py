@@ -165,7 +165,7 @@ async def minimal_configuration(
     ensure_swarm_and_networks: None,
     minio_s3_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
-    product_db: dict[str, Any],
+    with_product: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
     await wait_for_catalog_service(current_user["id"], osparc_product_name)
@@ -262,7 +262,7 @@ def current_user(create_registered_user: Callable) -> dict[str, Any]:
 @pytest.fixture
 async def current_study(
     current_user: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_dy_workbench: dict[str, Any],
     sleeper_service: dict,
     dy_static_file_server_dynamic_sidecar_service: dict,
@@ -300,7 +300,7 @@ async def current_study(
     )
 
     # create project for this user
-    project_at_db = await project(current_user, workbench=fake_dy_workbench)
+    project_at_db = await create_project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(

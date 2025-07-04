@@ -185,10 +185,10 @@ async def test_invalid_ports(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     option_r_clone_settings: RCloneSettings | None,
 ):
-    config_dict, _, _ = create_special_configuration()
+    config_dict, _, _ = await create_special_configuration()
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
         project_id=project_id,
@@ -223,14 +223,14 @@ async def test_port_value_accessors(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     item_type: str,
     item_value: ItemConcreteValue,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
 ):  # pylint: disable=W0613, W0621
     item_key = TypeAdapter(ServicePortKey).validate_python("some_key")
-    config_dict, _, _ = create_special_configuration(
+    config_dict, _, _ = await create_special_configuration(
         inputs=[(item_key, item_type, item_value)],
         outputs=[(item_key, item_type, None)],
     )
@@ -266,7 +266,7 @@ async def test_port_value_accessors(
     ],
 )
 async def test_port_file_accessors(
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     s3_simcore_location: LocationID,
     item_type: str,
     item_value: str,
@@ -287,7 +287,7 @@ async def test_port_file_accessors(
 
     config_value["path"] = f"{project_id}/{node_uuid}/{Path(config_value['path']).name}"
 
-    config_dict, _project_id, _node_uuid = create_special_configuration(
+    config_dict, _project_id, _node_uuid = await create_special_configuration(
         inputs=[("in_1", item_type, config_value)],
         outputs=[("out_34", item_type, None)],
     )
@@ -367,11 +367,11 @@ async def test_adding_new_ports(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: RCloneSettings | None,
 ):
-    config_dict, project_id, node_uuid = create_special_configuration()
+    config_dict, project_id, node_uuid = await create_special_configuration()
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
         project_id=project_id,
@@ -418,11 +418,11 @@ async def test_removing_ports(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: RCloneSettings | None,
 ):
-    config_dict, project_id, node_uuid = create_special_configuration(
+    config_dict, project_id, node_uuid = await create_special_configuration(
         inputs=[("in_14", "integer", 15), ("in_17", "boolean", False)],
         outputs=[("out_123", "string", "blahblah"), ("out_2", "number", -12.3)],
     )  # pylint: disable=W0612
@@ -469,14 +469,14 @@ async def test_get_value_from_previous_node(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
-    create_2nodes_configuration: Callable,
+    create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     create_node_link: Callable,
     item_type: str,
     item_value: ItemConcreteValue,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
 ):
-    config_dict, _, _ = create_2nodes_configuration(
+    config_dict, _, _ = await create_2nodes_configuration(
         prev_node_inputs=None,
         prev_node_outputs=[("output_int", item_type, item_value)],
         inputs=[("in_15", item_type, create_node_link("output_int"))],
@@ -515,7 +515,7 @@ async def test_get_value_from_previous_node(
     ],
 )
 async def test_get_file_from_previous_node(
-    create_2nodes_configuration: Callable,
+    create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
@@ -527,7 +527,7 @@ async def test_get_file_from_previous_node(
     option_r_clone_settings: RCloneSettings | None,
     constant_uuid4: None,
 ):
-    config_dict, _, _ = create_2nodes_configuration(
+    config_dict, _, _ = await create_2nodes_configuration(
         prev_node_inputs=None,
         prev_node_outputs=[
             ("output_int", item_type, await create_store_link(item_value))
@@ -572,7 +572,7 @@ async def test_get_file_from_previous_node(
     ],
 )
 async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
-    create_2nodes_configuration: Callable,
+    create_2nodes_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
@@ -586,7 +586,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     option_r_clone_settings: RCloneSettings | None,
     constant_uuid4: None,
 ):
-    config_dict, _, this_node_uuid = create_2nodes_configuration(
+    config_dict, _, this_node_uuid = await create_2nodes_configuration(
         prev_node_inputs=None,
         prev_node_outputs=[("in_15", item_type, await create_store_link(item_value))],
         inputs=[("in_15", item_type, create_node_link("in_15"))],
@@ -635,7 +635,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     ],
 )
 async def test_file_mapping(
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
@@ -650,7 +650,7 @@ async def test_file_mapping(
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     constant_uuid4: None,
 ):
-    config_dict, project_id, node_uuid = create_special_configuration(
+    config_dict, project_id, node_uuid = await create_special_configuration(
         inputs=[("in_1", item_type, await create_store_link(item_value))],
         outputs=[("out_1", item_type, None)],
         project_id=project_id,
@@ -735,7 +735,7 @@ async def test_regression_concurrent_port_update_fails(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     int_item_value: int,
     parallel_int_item_value: int,
     port_count: int,
@@ -747,7 +747,7 @@ async def test_regression_concurrent_port_update_fails(
     """
 
     outputs = [(f"value_{i}", "integer", None) for i in range(port_count)]
-    config_dict, _, _ = create_special_configuration(inputs=[], outputs=outputs)
+    config_dict, _, _ = await create_special_configuration(inputs=[], outputs=outputs)
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
@@ -824,7 +824,7 @@ async def test_batch_update_inputs_outputs(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
-    create_special_configuration: Callable,
+    create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     port_count: int,
     option_r_clone_settings: RCloneSettings | None,
     faker: Faker,
@@ -836,7 +836,9 @@ async def test_batch_update_inputs_outputs(
 
     outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
     inputs = [(f"value_in_{i}", "integer", None) for i in range(port_count)]
-    config_dict, _, _ = create_special_configuration(inputs=inputs, outputs=outputs)
+    config_dict, _, _ = await create_special_configuration(
+        inputs=inputs, outputs=outputs
+    )
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
