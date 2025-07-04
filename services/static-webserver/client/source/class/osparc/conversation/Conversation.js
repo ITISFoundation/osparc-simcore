@@ -59,10 +59,6 @@ qx.Class.define("osparc.conversation.Conversation", {
     },
   },
 
-  events: {
-    "conversationDeleted": "qx.event.type.Event",
-  },
-
   members: {
     __studyData: null,
     __messages: null,
@@ -82,6 +78,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       };
       const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/10").set({
         ...buttonsAesthetics,
+        visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       renameButton.addListener("execute", () => {
         const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
@@ -89,11 +86,11 @@ qx.Class.define("osparc.conversation.Conversation", {
           titleEditor.close();
           const newLabel = e.getData()["newLabel"];
           if (this.getConversationId()) {
-            osparc.study.Conversations.renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
+            osparc.store.Conversations.getInstance().renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
               .then(() => this.renameConversation(newLabel));
           } else {
             // create new conversation first
-            osparc.study.Conversations.addConversation(this.__studyData["uuid"], newLabel)
+            osparc.store.Conversations.getInstance().addConversation(this.__studyData["uuid"], newLabel)
               .then(data => {
                 this.setConversationId(data["conversationId"]);
                 this.getChildControl("button").setLabel(newLabel);
@@ -112,14 +109,11 @@ qx.Class.define("osparc.conversation.Conversation", {
       const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
         ...buttonsAesthetics,
         paddingLeft: 4, // adds spacing between buttons
+        visibility: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]) ? "visible" : "excluded",
       });
       closeButton.addListener("execute", () => {
-        const deleteConversation = () => {
-          osparc.study.Conversations.deleteConversation(this.__studyData["uuid"], this.getConversationId())
-            .then(() => this.fireEvent("conversationDeleted"));
-        }
         if (this.__messagesList.getChildren().length === 0) {
-          deleteConversation();
+          osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
         } else {
           const msg = this.tr("Are you sure you want to delete the conversation?");
           const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
@@ -130,7 +124,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           confirmationWin.open();
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
-              deleteConversation();
+              osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
             }
           }, this);
         }
@@ -166,18 +160,18 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
-      if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
-        const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId());
-        addMessages.setPaddingLeft(10);
-        addMessages.addListener("messageAdded", e => {
-          const data = e.getData();
-          if (data["conversationId"]) {
-            this.setConversationId(data["conversationId"]);
-            this.addMessage(data);
-          }
-        });
-        this._add(addMessages);
-      }
+      const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId()).set({
+        enabled: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
+        paddingLeft: 10,
+      });
+      addMessages.addListener("messageAdded", e => {
+        const data = e.getData();
+        if (data["conversationId"]) {
+          this.setConversationId(data["conversationId"]);
+          this.addMessage(data);
+        }
+      });
+      this._add(addMessages);
     },
 
     __getNextRequest: function() {
@@ -197,7 +191,8 @@ qx.Class.define("osparc.conversation.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options);
+      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options)
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __reloadMessages: function(removeMessages = true) {

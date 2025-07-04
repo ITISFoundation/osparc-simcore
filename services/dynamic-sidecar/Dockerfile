@@ -143,13 +143,6 @@ RUN uv venv "${VIRTUAL_ENV}" \
   && mkdir -p "${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}"
 
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  echo ${UV_CONCURRENT_INSTALLS} && \
-  uv pip install --upgrade  \
-  wheel \
-  setuptools
-
-
 WORKDIR /build
 
 
