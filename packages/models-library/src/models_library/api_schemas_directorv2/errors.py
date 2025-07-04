@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, Field
 
 
@@ -15,3 +16,11 @@ class ErrorType(BaseModel):
 
 class ErrorEnveloped(BaseModel):
     error: ErrorType
+
+
+class BaseRpcError(OsparcErrorMixin, Exception):
+    pass
+
+
+class ComputationalTaskMissingError(BaseRpcError):
+    msg_template = "Computational run not found for project {project_id}"

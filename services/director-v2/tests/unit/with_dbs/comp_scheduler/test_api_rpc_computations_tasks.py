@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.api_schemas_directorv2.computations import TaskLogFileIdGet
+from models_library.api_schemas_directorv2.errors import ComputationalTaskMissingError
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -11,9 +12,6 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2 import (
     computations_tasks as rpc_computations_tasks,
 )
 from simcore_postgres_database.models.comp_pipeline import StateType
-from simcore_service_director_v2.api.errors.rpc_error import (
-    ComputationalTaskMissingError,
-)
 from simcore_service_director_v2.models.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB

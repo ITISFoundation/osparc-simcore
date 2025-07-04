@@ -24,7 +24,7 @@ async def get_computation_task_log_file_ids(
 ) -> list[TaskLogFileIdGet]:
     """
     Raises:
-        ComputationalRunNotFoundError
+        ComputationalTaskMissingError
     """
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,

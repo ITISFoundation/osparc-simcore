@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.computations import TaskLogFileIdGet
+from models_library.api_schemas_directorv2.errors import ComputationalTaskMissingError
 from models_library.projects import ProjectID
 from servicelib.rabbitmq import RPCRouter
 from simcore_sdk.node_ports_common import data_items_utils
@@ -11,7 +12,6 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
 from ...utils.computations_tasks import get_pipeline_info
-from ..errors.rpc_error import ComputationalTaskMissingError
 
 router = RPCRouter()
 
