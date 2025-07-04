@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated, Any
 
+from common_library.changelog import create_route_description
 from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
@@ -15,12 +16,16 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
-from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
 
+from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ...services_rpc.async_jobs import AsyncJobClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.tasks import get_async_jobs_client
+from ._constants import (
+    FMSG_CHANGELOG_NEW_IN_VERSION,
+    create_route_description,
+)
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
@@ -43,8 +48,16 @@ _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     response_model=ApiServerEnvelope[list[TaskGet]],
     responses=_DEFAULT_TASK_STATUS_CODES,
     status_code=status.HTTP_200_OK,
+    name="list_tasks",
+    description=create_route_description(
+        base="List all tasks",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
-async def get_async_jobs(
+async def list_tasks(
     app: Annotated[FastAPI, Depends(get_app)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
@@ -60,13 +73,11 @@ async def get_async_jobs(
             task_id=f"{job.job_id}",
             task_name=job.job_name,
             status_href=app_router.url_path_for(
-                "get_async_job_status", task_id=f"{job.job_id}"
+                "get_task_status", task_id=f"{job.job_id}"
             ),
-            abort_href=app_router.url_path_for(
-                "cancel_async_job", task_id=f"{job.job_id}"
-            ),
+            abort_href=app_router.url_path_for("cancel_task", task_id=f"{job.job_id}"),
             result_href=app_router.url_path_for(
-                "get_async_job_result", task_id=f"{job.job_id}"
+                "get_task_result", task_id=f"{job.job_id}"
             ),
         )
         for job in user_async_jobs
@@ -77,11 +88,18 @@ async def get_async_jobs(
 @router.get(
     "/{task_id}",
     response_model=TaskStatus,
-    name="get_async_job_status",
+    name="get_task_status",
     responses=_DEFAULT_TASK_STATUS_CODES,
     status_code=status.HTTP_200_OK,
+    description=create_route_description(
+        base="Get task status",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
-async def get_async_job_status(
+async def get_task_status(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
@@ -104,10 +122,17 @@ async def get_async_job_status(
 @router.post(
     "/{task_id}:cancel",
     status_code=status.HTTP_204_NO_CONTENT,
-    name="cancel_async_job",
+    name="cancel_task",
     responses=_DEFAULT_TASK_STATUS_CODES,
+    description=create_route_description(
+        base="Cancel task",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
-async def cancel_async_job(
+async def cancel_task(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
@@ -122,7 +147,7 @@ async def cancel_async_job(
 @router.get(
     "/{task_id}/result",
     response_model=TaskResult,
-    name="get_async_job_result",
+    name="get_task_result",
     responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "Task result not found",
@@ -135,8 +160,15 @@ async def cancel_async_job(
         **_DEFAULT_TASK_STATUS_CODES,
     },
     status_code=status.HTTP_200_OK,
+    description=create_route_description(
+        base="Get task result",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
+        ],
+    ),
+    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
 )
-async def get_async_job_result(
+async def get_task_result(
     task_id: AsyncJobId,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
