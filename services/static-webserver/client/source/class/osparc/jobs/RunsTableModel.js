@@ -30,6 +30,8 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       projectUuid,
     });
 
+    this.setBlockSize(osparc.store.Jobs.SERVER_MAX_LIMIT);
+
     const jobsCols = osparc.jobs.RunsTable.COLS;
     const colLabels = Object.values(jobsCols).map(col => col.label);
     const colIDs = Object.values(jobsCols).map(col => col.id);
