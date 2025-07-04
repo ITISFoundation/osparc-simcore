@@ -7,6 +7,7 @@ from aiohttp import web
 from captcha.image import ImageCaptcha
 from common_library.json_serialization import json_dumps
 from models_library.emails import LowerCaseEmailStr
+from models_library.products import ProductName
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
@@ -15,6 +16,8 @@ from servicelib.utils_secrets import generate_passcode
 from ..email.utils import send_email_from_template
 from ..products import products_web
 from ..products.models import Product
+from ..users import _users_service
+from ..users.schemas import PreRegisteredUserGet
 
 _logger = logging.getLogger(__name__)
 
@@ -122,3 +125,12 @@ async def create_captcha() -> tuple[str, bytes]:
     image_data = img_byte_arr.getvalue()
 
     return (captcha_text, image_data)
+
+
+async def create_pre_registration(
+    app: web.Application, profile: PreRegisteredUserGet, product_name: ProductName
+):
+
+    await _users_service.pre_register_user(
+        app, profile=profile, creator_user_id=None, product_name=product_name
+    )

@@ -463,7 +463,7 @@ async def test_2fa_sms_failure_during_login(
                 response, status.HTTP_503_SERVICE_UNAVAILABLE
             )
             assert not data
-            assert error["errors"][0]["message"].startswith(MSG_2FA_UNAVAILABLE[:10])
+            assert error["message"].startswith(MSG_2FA_UNAVAILABLE[:10])
 
             # Expects logs like 'Failed while setting up 2FA code and sending SMS to 157XXXXXXXX3 [OEC:140392495277888]'
             assert f"{user_phone_number[:3]}" in caplog.text

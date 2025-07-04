@@ -23,6 +23,7 @@ from models_library.api_schemas_webserver.users import (
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
     DEFAULT_TEST_PASSWORD,
@@ -457,3 +458,263 @@ async def test_reject_user_account(
     )
     # Should fail as the account is already reviewed
     assert resp.status == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.PRODUCT_OWNER,
+    ],
+)
+async def test_approve_user_account_with_full_invitation_details(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+):
+    """Test approving user account with complete invitation details (trial days + credits)"""
+    assert client.app
+
+    test_email = faker.email()
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # 2. Approve the user with full invitation details
+    approval_payload = {
+        "email": test_email,
+        "invitation": {
+            "trialAccountDays": 30,
+            "extraCreditsInUsd": 100.0,
+        },
+    }
+
+    url = client.app.router["approve_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=approval_payload,
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 3. Verify the user account status and invitation data in extras
+    resp = await client.get(
+        "/v0/admin/user-accounts:search",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    assert len(found) == 1
+
+    user_data = found[0]
+    assert user_data["accountRequestStatus"] == "APPROVED"
+    assert user_data["accountRequestReviewedBy"] == logged_user["id"]
+    assert user_data["accountRequestReviewedAt"] is not None
+
+    # 4. Verify invitation data is stored in extras
+    assert "invitation" in user_data["extras"]
+    invitation_data = user_data["extras"]["invitation"]
+    assert invitation_data["guest"] == test_email
+    assert invitation_data["issuer"] == str(logged_user["id"])
+    assert invitation_data["trial_account_days"] == 30
+    assert invitation_data["extra_credits_in_usd"] == 100.0
+    assert "invitation_url" in invitation_data
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_approve_user_account_with_trial_days_only(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+):
+    """Test approving user account with only trial days"""
+    assert client.app
+
+    test_email = faker.email()
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # 2. Approve the user with only trial days
+    approval_payload = {
+        "email": test_email,
+        "invitation": {
+            "trialAccountDays": 15,
+            # No extra_credits_in_usd
+        },
+    }
+
+    url = client.app.router["approve_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=approval_payload,
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 3. Verify invitation data in extras
+    resp = await client.get(
+        "/v0/admin/user-accounts:search",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    user_data = found[0]
+
+    assert "invitation" in user_data["extras"]
+    invitation_data = user_data["extras"]["invitation"]
+    assert invitation_data["trial_account_days"] == 15
+    assert invitation_data["extra_credits_in_usd"] is None
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.PRODUCT_OWNER],
+)
+async def test_approve_user_account_with_credits_only(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+    mock_invitations_service_http_api: AioResponsesMock,
+):
+    """Test approving user account with only extra credits"""
+    assert client.app
+
+    test_email = faker.email()
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # 2. Approve the user with only extra credits
+    approval_payload = {
+        "email": test_email,
+        "invitation": {
+            # No trial_account_days
+            "extraCreditsInUsd": 50.0,
+        },
+    }
+
+    url = client.app.router["approve_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=approval_payload,
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 3. Verify invitation data in extras
+    resp = await client.get(
+        "/v0/admin/user-accounts:search",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    user_data = found[0]
+
+    assert "invitation" in user_data["extras"]
+    invitation_data = user_data["extras"]["invitation"]
+    assert invitation_data["trial_account_days"] is None
+    assert invitation_data["extra_credits_in_usd"] == 50.0
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.PRODUCT_OWNER,
+    ],
+)
+async def test_approve_user_account_without_invitation(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    account_request_form: dict[str, Any],
+    faker: Faker,
+    product_name: ProductName,
+    pre_registration_details_db_cleanup: None,
+):
+    """Test approving user account without any invitation details"""
+    assert client.app
+
+    test_email = faker.email()
+
+    # 1. Create a pre-registered user
+    form_data = account_request_form.copy()
+    form_data["firstName"] = faker.first_name()
+    form_data["lastName"] = faker.last_name()
+    form_data["email"] = test_email
+
+    resp = await client.post(
+        "/v0/admin/user-accounts:pre-register",
+        json=form_data,
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    await assert_status(resp, status.HTTP_200_OK)
+
+    # 2. Approve the user without invitation
+    approval_payload = {
+        "email": test_email,
+        # No invitation field
+    }
+
+    url = client.app.router["approve_user_account"].url_for()
+    resp = await client.post(
+        f"{url}",
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+        json=approval_payload,
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # 3. Verify no invitation data in extras
+    resp = await client.get(
+        "/v0/admin/user-accounts:search",
+        params={"email": test_email},
+        headers={X_PRODUCT_NAME_HEADER: product_name},
+    )
+    found, _ = await assert_status(resp, status.HTTP_200_OK)
+    user_data = found[0]
+
+    assert user_data["accountRequestStatus"] == "APPROVED"
+    # Verify no invitation data stored
+    assert "invitation" not in user_data["extras"]

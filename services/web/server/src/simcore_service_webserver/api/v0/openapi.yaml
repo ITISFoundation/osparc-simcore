@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.69.1
+  version: 0.70.0
 servers:
 - url: ''
   description: webserver
@@ -17259,6 +17259,12 @@ components:
           - type: integer
           - type: 'null'
           title: Preregistrationid
+        preRegistrationCreated:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Preregistrationcreated
         invitedBy:
           anyOf:
           - type: string
@@ -17310,6 +17316,7 @@ components:
       - postalCode
       - country
       - preRegistrationId
+      - preRegistrationCreated
       - accountRequestStatus
       - registered
       - status
