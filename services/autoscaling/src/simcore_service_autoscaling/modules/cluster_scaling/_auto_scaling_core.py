@@ -54,7 +54,7 @@ from ...utils.rabbitmq import (
 from ...utils.warm_buffer_machines import (
     get_activated_buffer_ec2_tags,
     get_deactivated_buffer_ec2_tags,
-    is_buffer_machine,
+    is_warm_buffer_machine,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
@@ -211,7 +211,7 @@ async def _make_pending_buffer_ec2s_join_cluster(
     if buffer_ec2s_pending := [
         i.ec2_instance
         for i in cluster.pending_ec2s
-        if is_buffer_machine(i.ec2_instance.tags)
+        if is_warm_buffer_machine(i.ec2_instance.tags)
         and (DOCKER_JOIN_COMMAND_EC2_TAG_KEY not in i.ec2_instance.tags)
     ]:
         # started buffer instance shall be asked to join the cluster once they are running
