@@ -451,7 +451,7 @@ async def list_computation_collection_run_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            name=(  # type: ignore
+            name=(
                 custom_metadata.get("job_name")
                 if custom_metadata.get("job_name")
                 else project_uuid_to_workbench[f"{item.project_uuid}"][
