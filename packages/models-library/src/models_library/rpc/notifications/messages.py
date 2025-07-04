@@ -1,18 +1,19 @@
+from abc import ABC
 from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import BaseModel, Field
 
 
-class _BaseRecipient(BaseModel):
+class BaseRecipient(BaseModel, ABC):
     type: str
 
 
-class SMSRecipient(_BaseRecipient):
+class SMSRecipient(BaseRecipient):
     type: Literal["sms"]
     phone_number: str
 
 
-class EmailRecipient(_BaseRecipient):
+class EmailRecipient(BaseRecipient):
     type: Literal["email"]
     address: str
 
