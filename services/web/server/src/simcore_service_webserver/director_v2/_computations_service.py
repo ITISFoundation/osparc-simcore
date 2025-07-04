@@ -373,7 +373,7 @@ async def list_computation_collection_runs(
             ended_at=item.ended_at,
             name=(
                 run_collection.client_or_system_generated_display_name
-                if run_collection and run_collection.generated_by_system is False
+                if run_collection and run_collection.is_generated_by_system is False
                 else project_root_name
             ),
         )

@@ -32,13 +32,9 @@ from ...projects.projects_metadata_service import (
 )
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
-from .. import _director_v2_service
+from .. import _comp_runs_collections_service, _director_v2_service
 from .._client import DirectorV2RestClient
 from .._comp_runs_collections_models import CompRunCollectionDBGet
-from .._comp_runs_collections_service import (
-    create_comp_run_collection,
-    get_comp_run_collection_or_none_by_client_generated_id,
-)
 from .._director_v2_abc_service import get_project_run_policy
 from ._rest_exceptions import handle_rest_requests_exceptions
 
@@ -91,7 +87,7 @@ async def start_computation(request: web.Request) -> web.Response:
 
     comp_run_collection: CompRunCollectionDBGet | None = None
     if group_id_or_none:
-        comp_run_collection = await get_comp_run_collection_or_none_by_client_generated_id(
+        comp_run_collection = await _comp_runs_collections_service.get_comp_run_collection_or_none_by_client_generated_id(
             request.app, client_or_system_generated_id=group_id_or_none  # type: ignore
         )
     if comp_run_collection is not None:
@@ -105,9 +101,9 @@ async def start_computation(request: web.Request) -> web.Response:
                     "Therefore, the client is probably wrongly generating it."
                 )
             )
-    generated_by_system = False
+    is_generated_by_system = False
     if group_id_or_none in {None, "", "00000000-0000-0000-0000-000000000000"}:
-        generated_by_system = True
+        is_generated_by_system = True
         client_or_system_generated_id = (
             f"system-generated/{path_params.project_id}/{uuid.uuid4()}"
         )
@@ -115,11 +111,11 @@ async def start_computation(request: web.Request) -> web.Response:
         client_or_system_generated_id = f"{group_id_or_none}"
     group_name = custom_metadata.get("group_name", "No Group Name")
 
-    collection_run_id = await create_comp_run_collection(
+    collection_run_id = await _comp_runs_collections_service.create_comp_run_collection(
         request.app,
         client_or_system_generated_id=client_or_system_generated_id,
         client_or_system_generated_display_name=group_name,  # type: ignore
-        generated_by_system=generated_by_system,
+        is_generated_by_system=is_generated_by_system,
     )
 
     options = {

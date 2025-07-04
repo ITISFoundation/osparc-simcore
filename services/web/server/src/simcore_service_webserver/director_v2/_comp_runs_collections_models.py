@@ -11,7 +11,7 @@ class CompRunCollectionDBGet(BaseModel):
     collection_run_id: CollectionRunID
     client_or_system_generated_id: str
     client_or_system_generated_display_name: str
-    generated_by_system: bool
+    is_generated_by_system: bool
     created: datetime
 
     model_config = ConfigDict(from_attributes=True)

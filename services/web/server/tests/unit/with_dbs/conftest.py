@@ -72,7 +72,7 @@ from simcore_postgres_database.utils_products import (
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
-from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.db.plugin import get_database_engine_legacy
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
@@ -262,7 +262,7 @@ def osparc_product_api_base_url() -> str:
 @pytest.fixture
 async def default_product_name(client: TestClient) -> ProductName:
     assert client.app
-    async with get_database_engine(client.app).acquire() as conn:
+    async with get_database_engine_legacy(client.app).acquire() as conn:
         return await get_default_product_name(conn)
 
 

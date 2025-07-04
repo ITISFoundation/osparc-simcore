@@ -357,7 +357,7 @@ async def populated_comp_run_collection(
                 collection_run_id=collection_run_id,
                 client_or_system_generated_id=collection_run_id,
                 client_or_system_generated_display_name="My Collection Run",
-                generated_by_system=False,
+                is_generated_by_system=False,
                 created=sa.func.now(),
                 modified=sa.func.now(),
             )

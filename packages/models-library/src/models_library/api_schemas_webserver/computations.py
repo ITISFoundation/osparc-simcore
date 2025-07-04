@@ -164,13 +164,11 @@ class ComputationTaskRestGet(OutputSchema):
 class ComputationCollectionRunListQueryParams(
     PageQueryParameters,
 ):
-    filter_only_running: bool = Field(
-        default=False,
-        description="If true, only running collection runs are returned",
-    )
-    filter_by_root_project_id: ProjectID | None = Field(
-        default=None,
-    )
+    filter_only_running: Annotated[
+        bool, Field(description="If true, only running collection runs are returned")
+    ] = False
+
+    filter_by_root_project_id: ProjectID | None = None
 
     _null_or_none_to_none = field_validator("filter_by_root_project_id", mode="before")(
         null_or_none_str_to_none_validator

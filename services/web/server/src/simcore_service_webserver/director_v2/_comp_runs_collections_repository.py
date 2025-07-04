@@ -18,7 +18,7 @@ async def create_comp_run_collection(
     conn,
     client_or_system_generated_id: str,
     client_or_system_generated_display_name: str,
-    generated_by_system: bool,
+    is_generated_by_system: bool,
 ) -> CollectionRunID:
     """Create a new computational run collection."""
     result = await conn.execute(
@@ -26,7 +26,7 @@ async def create_comp_run_collection(
         .values(
             client_or_system_generated_id=client_or_system_generated_id,
             client_or_system_generated_display_name=client_or_system_generated_display_name,
-            generated_by_system=generated_by_system,
+            is_generated_by_system=is_generated_by_system,
             created=func.now(),
             modified=func.now(),
         )

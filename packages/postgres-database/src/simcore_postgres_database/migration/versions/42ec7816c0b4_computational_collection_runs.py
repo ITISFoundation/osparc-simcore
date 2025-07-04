@@ -31,7 +31,7 @@ def upgrade():
         sa.Column(
             "client_or_system_generated_display_name", sa.String(), nullable=False
         ),
-        sa.Column("generated_by_system", sa.Boolean(), nullable=False),
+        sa.Column("is_generated_by_system", sa.Boolean(), nullable=False),
         sa.Column(
             "created",
             sa.DateTime(timezone=True),
@@ -68,7 +68,7 @@ def upgrade():
             collection_run_id,
             client_or_system_generated_id,
             client_or_system_generated_display_name,
-            generated_by_system
+            is_generated_by_system
         )
         SELECT DISTINCT
             gen_random_uuid(),
