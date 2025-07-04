@@ -17,7 +17,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 )
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.async_jobs_server import AsyncJobSideEffects
-from simcore_service_api_server.models.schemas.tasks import ApiServerEnvelope
+from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
 
 _faker = Faker()
 
