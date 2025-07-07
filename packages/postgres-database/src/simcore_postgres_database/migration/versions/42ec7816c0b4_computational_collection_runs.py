@@ -119,4 +119,3 @@ def downgrade():
     )
     op.drop_table("comp_runs_collections")
     # ### end Alembic commands ###
-    # ### end Alembic commands ###
