@@ -1,6 +1,4 @@
-""" Configuration and utilities for service logging
-
-"""
+"""Configuration and utilities for service logging"""
 
 import logging
 
@@ -14,13 +12,14 @@ NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
     "engineio",
+    "engineio.server",
     "inotify.adapters",
-    "gunicorn.access",
     "openapi_spec_validator",
     "servicelib.aiohttp.monitoring",
+    "socketio",
+    "socketio.server",
     "sqlalchemy.engine",
     "sqlalchemy",
-    "socketio",
 )
 
 
@@ -30,7 +29,7 @@ def setup_logging(
     slow_duration: float | None = None,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict,
-    tracing_settings: TracingSettings | None
+    tracing_settings: TracingSettings | None,
 ):
     # service log level
     logging.basicConfig(level=level)

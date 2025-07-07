@@ -74,11 +74,6 @@ def auth_user_factory(socket_id: SocketID):
 
         # REDIS wrapper
         with managed_resource(user_id, client_session_id, app) as resource_registry:
-            _logger.info(
-                "socketio connection from user %s",
-                user_id,
-                extra=get_log_record_extra(user_id=user_id),
-            )
             await resource_registry.set_socket_id(socket_id)
 
         return user_id, product.name, client_session_id
@@ -129,10 +124,16 @@ async def connect(
         user_id, product_name, client_session_id = await auth_user_handler(
             environ["aiohttp.request"]
         )
+        _logger.info(
+            "%s successfully connected with %s",
+            f"{user_id=}",
+            f"{client_session_id=}",
+            extra=get_log_record_extra(user_id=user_id),
+        )
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
 
-        _logger.info("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
+        _logger.debug("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
         await emit(
             app, "SIGNAL_USER_CONNECTED", user_id, app, product_name, client_session_id
@@ -170,7 +171,7 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
             with log_context(
                 _logger,
                 logging.INFO,
-                "disconnection of %s for %s",
+                "disconnection of %s with %s",
                 f"{user_id=}",
                 f"{client_session_id=}",
             ):
