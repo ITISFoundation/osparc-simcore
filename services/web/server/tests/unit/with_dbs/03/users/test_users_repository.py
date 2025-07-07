@@ -170,6 +170,96 @@ async def test_review_user_pre_registration(
         await conn.commit()
 
 
+async def test_review_user_pre_registration_with_invitation_extras(
+    app: web.Application,
+    product_name: ProductName,
+    product_owner_user: dict[str, Any],
+    pre_registration_details_db_cleanup: list[int],
+):
+    # Arrange
+    asyncpg_engine = get_asyncpg_engine(app)
+
+    test_email = "review.with.invitation@example.com"
+    created_by_user_id = product_owner_user["id"]
+    reviewer_id = product_owner_user["id"]
+    institution = "Test Institution"
+    pre_registration_details: dict[str, Any] = {
+        "institution": institution,
+        "pre_first_name": "Review",
+        "pre_last_name": "WithInvitation",
+    }
+
+    # Create a pre-registration to review
+    pre_registration_id = await _users_repository.create_user_pre_registration(
+        asyncpg_engine,
+        email=test_email,
+        created_by=created_by_user_id,
+        product_name=product_name,
+        **pre_registration_details,
+    )
+
+    # Add to cleanup list
+    pre_registration_details_db_cleanup.append(pre_registration_id)
+
+    # Prepare invitation extras (mimicking the structure from _users_rest.py)
+    invitation_extras = {
+        "invitation": {
+            "issuer": str(reviewer_id),
+            "guest": test_email,
+            "trial_account_days": 30,
+            "extra_credits_in_usd": 100.0,
+            "product_name": product_name,
+            "created": "2024-01-01T00:00:00Z",
+        }
+    }
+
+    # Act - review and approve the registration with invitation extras
+    new_status = AccountRequestStatus.APPROVED
+    await _users_repository.review_user_pre_registration(
+        asyncpg_engine,
+        pre_registration_id=pre_registration_id,
+        reviewed_by=reviewer_id,
+        new_status=new_status,
+        invitation_extras=invitation_extras,
+    )
+
+    # Assert - Use list_user_pre_registrations to verify
+    registrations, count = await _users_repository.list_user_pre_registrations(
+        asyncpg_engine,
+        filter_by_pre_email=test_email,
+        filter_by_product_name=product_name,
+    )
+
+    # Check count and that we found our registration
+    assert count == 1
+    assert len(registrations) == 1
+
+    # Get the registration
+    reg = registrations[0]
+
+    # Verify basic details
+    assert reg["id"] == pre_registration_id
+    assert reg["pre_email"] == test_email
+    assert reg["pre_first_name"] == "Review"
+    assert reg["pre_last_name"] == "WithInvitation"
+    assert reg["institution"] == institution
+    assert reg["product_name"] == product_name
+    assert reg["account_request_status"] == new_status
+    assert reg["created_by"] == created_by_user_id
+    assert reg["account_request_reviewed_by"] == reviewer_id
+    assert reg["account_request_reviewed_at"] is not None
+
+    # Verify invitation extras were stored correctly
+    assert reg["extras"] is not None
+    assert "invitation" in reg["extras"]
+    invitation_data = reg["extras"]["invitation"]
+    assert invitation_data["issuer"] == str(reviewer_id)
+    assert invitation_data["guest"] == test_email
+    assert invitation_data["trial_account_days"] == 30
+    assert invitation_data["extra_credits_in_usd"] == 100.0
+    assert invitation_data["product_name"] == product_name
+
+
 async def test_list_user_pre_registrations(
     app: web.Application,
     product_name: ProductName,

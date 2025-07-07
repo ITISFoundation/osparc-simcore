@@ -1,6 +1,5 @@
 # pylint:disable=unused-import
 
-from sys import version
 from typing import Final
 
 from common_library.user_messages import user_message

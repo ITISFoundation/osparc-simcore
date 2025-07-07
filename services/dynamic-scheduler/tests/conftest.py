@@ -21,6 +21,7 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_service_dynamic_scheduler.core.application import create_app
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",

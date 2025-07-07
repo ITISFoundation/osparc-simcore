@@ -217,7 +217,9 @@ packaging==24.2
 pamqp==3.3.0
     # via aiormq
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 propcache==0.3.0
     # via
     #   aiohttp
@@ -290,20 +292,22 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.1
-    # via rich
+    # via
+    #   pytest
+    #   rich
 pyinstrument==5.0.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via arrow

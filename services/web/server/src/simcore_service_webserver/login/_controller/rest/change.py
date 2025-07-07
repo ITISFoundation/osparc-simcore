@@ -6,7 +6,6 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import SecretStr, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_users import UsersRepo
@@ -296,9 +295,7 @@ async def change_password(request: web.Request):
     if not security_service.check_password(
         passwords.current.get_secret_value(), user["password_hash"]
     ):
-        raise web.HTTPUnprocessableEntity(
-            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
-        )  # 422
+        raise web.HTTPUnprocessableEntity(text=MSG_WRONG_PASSWORD)  # 422
 
     await db.update_user(
         dict(user),

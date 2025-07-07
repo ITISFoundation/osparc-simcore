@@ -38,8 +38,8 @@ __all__: tuple[str, ...] = (
     "get_user_role",
     "get_users_in_group",
     "is_user_in_product",
-    "set_user_as_deleted",
     "search_public_users",
+    "set_user_as_deleted",
     "update_expired_users",
 )
 # nopycln: file

@@ -107,8 +107,10 @@ pydantic-settings==2.7.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 pygments==2.19.1
-    # via rich
-pytest==8.3.5
+    # via
+    #   pytest
+    #   rich
+pytest==8.4.1
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
