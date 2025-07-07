@@ -158,7 +158,7 @@ jsonschema-specifications==2024.10.1
     #   openapi-schema-validator
 lazy-object-proxy==1.10.0
     # via openapi-spec-validator
-mako==1.3.9
+mako==1.3.10
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

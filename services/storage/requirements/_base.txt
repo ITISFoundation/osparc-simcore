@@ -356,7 +356,7 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 kombu==5.5.3
     # via celery
-mako==1.3.9
+mako==1.3.10
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

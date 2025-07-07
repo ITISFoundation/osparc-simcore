@@ -145,7 +145,7 @@ lazy-object-proxy==1.10.0
     # via openapi-spec-validator
 lupa==2.4
     # via fakeredis
-mako==1.3.2
+mako==1.3.10
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
