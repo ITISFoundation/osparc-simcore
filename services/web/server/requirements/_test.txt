@@ -279,7 +279,7 @@ rich==13.4.2
     # via
     #   -c requirements/_base.txt
     #   typer
-setuptools==69.1.1
+setuptools==80.9.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
