@@ -354,7 +354,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const readOnlyInfo = this.getChildControl("read-only-info")
       if (study) {
         this.getChildControl("study-title-options").setStudy(study);
-        study.bind("savePending", readOnlyInfo, "visibility", {
+        study.bind("savePending", savingStudyIcon, "visibility", {
           converter: value => value && ["workbench", "pipeline"].includes(study.getUi().getMode()) ? "visible" : "excluded"
         });
         study.bind("readOnly", readOnlyInfo, "visibility", {
