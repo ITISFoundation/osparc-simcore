@@ -387,7 +387,6 @@ async def test_computation_create_validators(
         product_name=product_name,
         product_api_base_url=product_api_base_url,
         use_on_demand_clusters=True,
-        collection_run_id=fake_collection_run_id,
     )
     ComputationCreate(
         user_id=user["id"],
@@ -395,7 +394,6 @@ async def test_computation_create_validators(
         product_name=product_name,
         product_api_base_url=product_api_base_url,
         use_on_demand_clusters=False,
-        collection_run_id=fake_collection_run_id,
     )
 
 
@@ -422,7 +420,6 @@ async def test_create_computation(
                 project_id=proj.uuid,
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
-                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -540,7 +537,6 @@ async def test_create_computation_with_wallet(
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
-                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -644,7 +640,6 @@ async def test_create_computation_with_wallet_with_invalid_pricing_unit_name_rai
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
-                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -686,7 +681,6 @@ async def test_create_computation_with_wallet_with_no_clusters_keeper_raises_503
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 wallet_info=wallet_info,
-                collection_run_id=fake_collection_run_id,
             )
         ),
     )
@@ -702,6 +696,7 @@ async def test_start_computation_without_product_fails(
     create_registered_user: Callable[..., dict[str, Any]],
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     async_client: httpx.AsyncClient,
+    fake_collection_run_id: CollectionRunID,
 ):
     user = create_registered_user()
     proj = await create_project(user, workbench=fake_workbench_without_outputs)
@@ -709,6 +704,32 @@ async def test_start_computation_without_product_fails(
     response = await async_client.post(
         create_computation_url,
         json={
+            "user_id": f"{user['id']}",
+            "project_id": f"{proj.uuid}",
+            "start_pipeline": f"{True}",
+            "collection_run_id": f"{fake_collection_run_id}",
+        },
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
+
+
+async def test_start_computation_without_collection_run_id_fails(
+    minimal_configuration: None,
+    mocked_director_service_fcts: respx.MockRouter,
+    mocked_catalog_service_fcts: respx.MockRouter,
+    product_name: str,
+    fake_workbench_without_outputs: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    async_client: httpx.AsyncClient,
+):
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+    create_computation_url = httpx.URL("/v2/computations")
+    response = await async_client.post(
+        create_computation_url,
+        json={
+            "product_name": product_name,
             "user_id": f"{user['id']}",
             "project_id": f"{proj.uuid}",
             "start_pipeline": f"{True}",
