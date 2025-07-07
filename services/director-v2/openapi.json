@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-director-v2",
     "description": "Orchestrates the pipeline of services defined by the user",
-    "version": "2.3.0"
+    "version": "2.4.0"
   },
   "servers": [
     {
@@ -1348,6 +1348,19 @@
               }
             ],
             "description": "contains information about the wallet used to bill the running service"
+          },
+          "collection_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Run Id",
+            "description": "In case start_pipeline is True, this is the collection run id to which the comp run belongs."
           }
         },
         "type": "object",
@@ -2789,18 +2802,18 @@
         "type": "string",
         "enum": [
           "UNKNOWN",
-          "PUBLISHED",
           "NOT_STARTED",
+          "PUBLISHED",
           "PENDING",
+          "WAITING_FOR_CLUSTER",
           "WAITING_FOR_RESOURCES",
           "STARTED",
           "SUCCESS",
           "FAILED",
-          "ABORTED",
-          "WAITING_FOR_CLUSTER"
+          "ABORTED"
         ],
         "title": "RunningState",
-        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state\n\n# Computational backend states explained:\n- UNKNOWN - The backend doesn't know about the task anymore, it has disappeared from the system or it was never created (eg. when we are asking for the task)\n- NOT_STARTED - Default state when the task is created\n- PUBLISHED - The task has been submitted to the computational backend (click on \"Run\" button in the UI)\n- PENDING - Task has been transferred to the Dask scheduler and is waiting for a worker to pick it up (director-v2 --> Dask scheduler)\n   - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)\n- WAITING_FOR_CLUSTER - No cluster (Dask scheduler) is available to run the task; waiting for one to become available\n- WAITING_FOR_RESOURCES - No worker (Dask worker) is available to run the task; waiting for one to become available\n- STARTED - A worker has picked up the task and is executing it\n- SUCCESS - Task finished successfully\n- FAILED - Task finished with an error\n- ABORTED - Task was aborted before completion"
       },
       "SchedulerData": {
         "properties": {
