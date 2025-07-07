@@ -9951,21 +9951,18 @@ components:
         test_name:
           type: string
           title: Test Name
-        error_type:
+        error_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Code
+        user_message:
           type: string
-          title: Error Type
-        error_message:
-          type: string
-          title: Error Message
-        traceback:
-          type: string
-          title: Traceback
+          title: User Message
+          default: Email test failed
       type: object
       required:
       - test_name
-      - error_type
-      - error_message
-      - traceback
       title: EmailTestFailed
     EmailTestPassed:
       properties:
