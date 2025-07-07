@@ -22,7 +22,11 @@ from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings
 
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS: Final[tuple[str]] = ("werkzeug",)
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
+    "httpcore",
+    "httpx",
+    "werkzeug",
+)
 
 _logger = logging.getLogger(__name__)
 
