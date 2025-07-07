@@ -81,7 +81,7 @@ termcolor==2.5.0
     # via pytest-sugar
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   anyio
     #   pydantic

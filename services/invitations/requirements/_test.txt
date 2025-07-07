@@ -79,7 +79,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 termcolor==2.5.0
     # via pytest-sugar
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio

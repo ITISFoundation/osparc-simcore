@@ -176,7 +176,7 @@ types-python-jose==3.4.0.20250224
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   mypy
