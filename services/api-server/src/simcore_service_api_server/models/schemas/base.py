@@ -1,12 +1,12 @@
 import urllib.parse
-from typing import Annotated
+from typing import Annotated, Generic, TypeVar
 
 import packaging.version
 from models_library.utils.change_case import camel_to_snake
 from models_library.utils.common_validators import trim_string_before
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, StringConstraints
 
-from ...models._utils_pydantic import UriSchema
+from .._utils_pydantic import UriSchema
 from ..basic_types import VersionStr
 
 
@@ -83,3 +83,10 @@ class BaseService(BaseModel):
     @classmethod
     def compose_resource_name(cls, key: str, version: str) -> str:
         raise NotImplementedError("Subclasses must implement this method")
+
+
+DataT = TypeVar("DataT")
+
+
+class ApiServerEnvelope(BaseModel, Generic[DataT]):
+    data: DataT

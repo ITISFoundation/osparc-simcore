@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.9.0"
+    "version": "0.9.1"
   },
   "paths": {
     "/v0/meta": {
@@ -7977,6 +7977,18 @@
             "items": {},
             "type": "array",
             "title": "Errors"
+          },
+          "support_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "OEC:([a-fA-F0-9]{12})-(\\d{13,14})"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Id"
           }
         },
         "type": "object",
