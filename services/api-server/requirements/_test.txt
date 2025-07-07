@@ -123,12 +123,12 @@ greenlet==3.1.1
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
     #   uvicorn
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -225,7 +225,9 @@ pbr==6.1.1
     #   jschema-to-python
     #   sarif-om
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 propcache==0.2.1
     # via
     #   -c requirements/_base.txt
@@ -252,6 +254,10 @@ pydantic-core==2.27.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
+pygments==2.18.0
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pyinstrument==5.0.0
     # via
     #   -c requirements/_base.txt
@@ -262,20 +268,20 @@ pyrsistent==0.20.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.0
+pytest-docker==3.2.3
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in

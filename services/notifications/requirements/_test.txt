@@ -23,11 +23,11 @@ docker==7.1.0
     # via -r requirements/_test.in
 faker==37.1.0
     # via -r requirements/_test.in
-h11==0.14.0
+h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -49,18 +49,24 @@ packaging==24.2
     #   -c requirements/_base.txt
     #   pytest
 pluggy==1.5.0
-    # via pytest
-pytest==8.3.5
+    # via
+    #   pytest
+    #   pytest-cov
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in

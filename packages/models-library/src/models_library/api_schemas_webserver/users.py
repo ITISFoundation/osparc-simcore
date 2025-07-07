@@ -300,8 +300,9 @@ class UserAccountGet(OutputSchema):
         ),
     ] = DEFAULT_FACTORY
 
-    # pre-registration
+    # pre-registration NOTE: that some users have no pre-registartion and therefore all options here can be none
     pre_registration_id: int | None
+    pre_registration_created: datetime | None
     invited_by: str | None = None
     account_request_status: AccountRequestStatus | None
     account_request_reviewed_by: UserID | None = None

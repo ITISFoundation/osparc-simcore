@@ -26,7 +26,7 @@ opentelemetry-instrumentation-celery
 opentelemetry-instrumentation-botocore
 orjson
 packaging
-pydantic[dotenv]
+pydantic
 tenacity
 typer
 types-aiobotocore[s3] # s3 storage

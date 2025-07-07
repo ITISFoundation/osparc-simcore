@@ -37,12 +37,14 @@ from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.minio_service",
@@ -355,7 +357,6 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_osparc_variables_api_auth_rpc(mocker: MockerFixture) -> None:
-
     fake_data = ApiKeyGet.model_validate(ApiKeyGet.model_json_schema()["examples"][0])
 
     async def _create(
