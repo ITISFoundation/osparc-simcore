@@ -25,7 +25,7 @@ from ..prometheus_metrics import (
 )
 from .typing_extension import Handler
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 _PROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
 
@@ -67,7 +67,7 @@ def middleware_factory(
         start_time = perf_counter()
         try:
             if enter_middleware_cb:
-                with log_catch(logger=log, reraise=False):
+                with log_catch(logger=_logger, reraise=False):
                     await enter_middleware_cb(request)
 
             metrics = request.app[_PROMETHEUS_METRICS]
@@ -110,7 +110,7 @@ def middleware_factory(
             )
 
             if exit_middleware_cb:
-                with log_catch(logger=log, reraise=False):
+                with log_catch(logger=_logger, reraise=False):
                     await exit_middleware_cb(request, response)
 
         return response
