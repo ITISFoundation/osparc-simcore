@@ -885,6 +885,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return studyDiffs;
     },
 
+    // didStudyChange takes around 0.5ms
     didStudyChange: function() {
       const studyDiffs = this.__getStudyDiffs();
       return Boolean(Object.keys(studyDiffs.delta).length);
