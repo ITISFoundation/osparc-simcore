@@ -32,9 +32,14 @@ qx.Class.define("osparc.jobs.JobsButton", {
       toolTipText: this.tr("Activity Center"),
     });
 
-    this.addListener("tap", () => osparc.jobs.ActivityCenterWindow.openWindow(), this);
+    this.addListener("tap", () => {
+      osparc.jobs.ActivityCenterWindow.openWindow();
+      this.__fetchNJobs();
+    }, this);
 
-    this.fetchNJobs();
+    this.__fetchNJobs();
+
+    this.__attachListener();
   },
 
   members: {
@@ -76,10 +81,20 @@ qx.Class.define("osparc.jobs.JobsButton", {
       return control || this.base(arguments, id);
     },
 
-    fetchNJobs: function() {
+    __fetchNJobs: function() {
       const jobsStore = osparc.store.Jobs.getInstance();
       jobsStore.fetchJobsLatest()
         .then(jobs => this.__updateJobsButton(jobs.length))
+    },
+
+    __attachListener: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      socket.on("projectStateUpdated", data => {
+        console.log("projectStateUpdated", data);
+        const state = data["state"]; // "STARTED"
+        // for now this is needed
+        const state = data["locked"];
+      }, this);
     },
 
     __updateJobsButton: function(isActive) {
