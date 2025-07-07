@@ -97,7 +97,10 @@ qx.Class.define("osparc.jobs.JobsButton", {
       const filters = undefined; // use default filters
       const resolveWResponse = true;
       jobsStore.fetchJobsLatest(runningOnly, offset, limit, orderBy, filters, resolveWResponse)
-        .then(resp => this.__updateJobsButton(Boolean(resp["_meta"]["total"])));
+        .then(resp => {
+          // here we have the real number of jobs running
+          this.__updateJobsButton(Boolean(resp["_meta"]["total"]));
+        });
     },
 
     __attachSocketListener: function() {
@@ -106,6 +109,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
       socket.on("projectStateUpdated", content => {
         // for now, we can only access the activity of my user, not the whole project...
         if (osparc.study.Utils.amIRunningTheStudy(content)) {
+          // we know that I am running at least one study
           this.__updateJobsButton(true);
         }
         // ...in the next iteration: listen to main store's "studyStateChanged", which will cover all users
