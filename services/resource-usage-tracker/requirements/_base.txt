@@ -179,7 +179,7 @@ frozenlist==1.4.1
     # via
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.65.0
+googleapis-common-protos==1.70.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
