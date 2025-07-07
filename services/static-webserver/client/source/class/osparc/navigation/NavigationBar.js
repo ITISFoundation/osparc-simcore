@@ -218,9 +218,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("left-items").add(control);
           break;
         case "saving-study-icon":
-          control = new qx.ui.basic.Image().set({
-            toolTipText: this.tr("Saving pipeline..."),
-            source: "@FontAwesome5Solid/cloud-upload-alt/14",
+          control = new qx.ui.basic.Atom().set({
+            icon: "@FontAwesome5Solid/cloud-upload-alt/14",
+            label: this.tr("Saving..."),
+            font: "text-12",
             opacity: 0.8,
           });
           this.getChildControl("left-items").add(control);
