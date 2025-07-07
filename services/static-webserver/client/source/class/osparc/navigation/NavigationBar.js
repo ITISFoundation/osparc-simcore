@@ -112,18 +112,20 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         converter: s => s ? "visible" : "excluded"
       });
 
-      const savingStudyIcon = this.getChildControl("saving-study-icon");
-      this.bind("study", savingStudyIcon, "visibility", {
-        converter: s => {
-          if (s) {
-            s.addListener("changeSavePending", e => {
-              const isSaving = e.getData();
-              savingStudyIcon.setVisibility(isSaving ? "visible" : "excluded");
-            });
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        const savingStudyIcon = this.getChildControl("saving-study-icon");
+        this.bind("study", savingStudyIcon, "visibility", {
+          converter: s => {
+            if (s) {
+              s.addListener("changeSavePending", e => {
+                const isSaving = e.getData();
+                savingStudyIcon.setVisibility(isSaving ? "visible" : "excluded");
+              });
+            }
+            return "excluded";
           }
-          return "excluded";
-        }
-      });
+        });
+      }
 
       // center-items
       this.getChildControl("read-only-info");
