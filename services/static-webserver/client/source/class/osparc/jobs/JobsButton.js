@@ -54,16 +54,21 @@ qx.Class.define("osparc.jobs.JobsButton", {
           });
           break;
         }
-        case "number":
-          control = new qx.ui.basic.Label().set({
-            backgroundColor: "background-main-1",
-            font: "text-12"
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "4px"
+        case "is-active-icon-outline":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/12").set({
+            textColor: osparc.navigation.NavigationBar.BG_COLOR,
           });
           this._add(control, {
-            bottom: 8,
+            bottom: 10,
+            right: 2
+          });
+          break;
+        case "is-active-icon":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/8").set({
+            textColor: "strong-main",
+          });
+          this._add(control, {
+            bottom: 12,
             right: 4
           });
           break;
@@ -74,15 +79,20 @@ qx.Class.define("osparc.jobs.JobsButton", {
     fetchNJobs: function() {
       const jobsStore = osparc.store.Jobs.getInstance();
       jobsStore.fetchJobsLatest()
-        .then(jobsResp => this.__updateJobsButton(jobsResp["_meta"]["total"]))
+        .then(jobs => this.__updateJobsButton(jobs.length))
     },
 
-    __updateJobsButton: function(nActiveJobs) {
+    __updateJobsButton: function(isActive) {
+      isActive = true;
       this.getChildControl("icon");
-      const number = this.getChildControl("number");
-
-      const nJobs = nActiveJobs > osparc.store.Jobs.SERVER_MAX_LIMIT ? (osparc.store.Jobs.SERVER_MAX_LIMIT + "+") : nActiveJobs;
-      number.setValue(nJobs.toString());
+      [
+        this.getChildControl("is-active-icon-outline"),
+        this.getChildControl("is-active-icon"),
+      ].forEach(control => {
+        control.set({
+          visibility: isActive ? "visible" : "excluded"
+        });
+      });
     },
   }
 });

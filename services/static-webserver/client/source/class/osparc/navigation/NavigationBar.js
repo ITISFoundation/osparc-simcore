@@ -50,7 +50,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingLeft: 10,
       paddingRight: 10,
       height: this.self().HEIGHT,
-      backgroundColor: "background-main-1",
+      backgroundColor: this.self().BG_COLOR,
     });
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
@@ -72,6 +72,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   statics: {
+    BG_COLOR: "background-main-1",
     HEIGHT: 50,
     SMALL_SCREEN_BREAKPOINT: 800,
 
