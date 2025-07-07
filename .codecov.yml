@@ -130,6 +130,7 @@ comment:
 
 
 ignore:
+  - "api/tests"
   - "test_*.py"
   - "**/generated_models/*.py"
   - "**/generated_code/*.py"
