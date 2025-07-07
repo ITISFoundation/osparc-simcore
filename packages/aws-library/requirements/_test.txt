@@ -84,9 +84,9 @@ flexparser==0.4
     # via pint
 graphql-core==3.2.6
     # via moto
-h11==0.14.0
+h11==0.16.0
     # via httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via
