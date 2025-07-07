@@ -39,7 +39,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
 
     this.__fetchNJobs();
 
-    this.__attachListener();
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    if (socket.isConnected()) {
+      this.__attachSocketListener();
+    } else {
+      socket.addListener("connect", () => this.__attachSocketListener());
+    }
   },
 
   members: {
@@ -87,18 +92,19 @@ qx.Class.define("osparc.jobs.JobsButton", {
         .then(jobs => this.__updateJobsButton(jobs.length))
     },
 
-    __attachListener: function() {
+    __attachSocketListener: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
-      socket.on("projectStateUpdated", data => {
-        console.log("projectStateUpdated", data);
-        const state = data["state"]; // "STARTED"
-        // for now this is needed
-        const state = data["locked"];
+
+      socket.on("projectStateUpdated", content => {
+        // for now, we can only access the activity of my user, not the whole project...
+        if (osparc.study.Utils.amIRunningTheStudy(content)) {
+          this.__updateJobsButton(true);
+        }
+        // ...in the next iteration: listen to main store's "studyStateChanged"
       }, this);
     },
 
     __updateJobsButton: function(isActive) {
-      isActive = true;
       this.getChildControl("icon");
       [
         this.getChildControl("is-active-icon-outline"),
