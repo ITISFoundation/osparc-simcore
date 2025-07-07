@@ -106,13 +106,15 @@ class CustomFormatter(logging.Formatter):
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = (
-    "log_level=%(levelname)s "
-    "| log_timestamp=%(asctime)s "
-    "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
-    "| log_uid=%(log_uid)s "
-    "| log_oec=%(log_oec)s"
-    "| log_msg=%(message)s"
+DEFAULT_FORMATTING = " | ".join(
+    [
+        "log_level=%(levelname)s",
+        "log_timestamp=%(asctime)s",
+        "log_source=%(name)s:%(funcName)s(%(lineno)d)",
+        "log_uid=%(log_uid)s",
+        "log_oec=%(log_oec)s",
+        "log_msg=%(message)s",
+    ]
 )
 LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
 
@@ -138,17 +140,19 @@ def config_all_loggers(
 
     fmt = DEFAULT_FORMATTING
     if tracing_settings is not None:
-        fmt = (
-            "log_level=%(levelname)s "
-            "| log_timestamp=%(asctime)s "
-            "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
-            "| log_uid=%(log_uid)s "
-            "| log_oec=%(log_oec)s"
-            "| log_trace_id=%(otelTraceID)s "
-            "| log_span_id=%(otelSpanID)s "
-            "| log_resource.service.name=%(otelServiceName)s "
-            "| log_trace_sampled=%(otelTraceSampled)s] "
-            "| log_msg=%(message)s"
+        fmt = " | ".join(
+            [
+                "log_level=%(levelname)s",
+                "log_timestamp=%(asctime)s",
+                "log_source=%(name)s:%(funcName)s(%(lineno)d)",
+                "log_uid=%(log_uid)s",
+                "log_oec=%(log_oec)s",
+                "log_trace_id=%(otelTraceID)s",
+                "log_span_id=%(otelSpanID)s",
+                "log_resource.service.name=%(otelServiceName)s",
+                "log_trace_sampled=%(otelTraceSampled)s",
+                "log_msg=%(message)s",
+            ]
         )
         setup_log_tracing(tracing_settings=tracing_settings)
     if log_format_local_dev_enabled:
@@ -339,7 +343,6 @@ def log_decorator(
     logger_obj = logger or _logger
 
     def _decorator(func_or_coro: F) -> F:
-
         _log_exc_kwargs = LogExceptionsKwargsDict(
             logger=logger_obj,
             level=level,
@@ -420,7 +423,7 @@ def log_context(
     logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
     yield
     duration = (
-        f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
+        f" in {(datetime.now() - start).total_seconds()}s"  # noqa: DTZ005
         if log_duration
         else ""
     )
