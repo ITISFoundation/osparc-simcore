@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.69.1
+  version: 0.70.0
 servers:
 - url: ''
   description: webserver
@@ -2769,6 +2769,87 @@ paths:
           type: boolean
           default: false
           title: Include Children
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
+  /v0/computation-collection-runs:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computation Collection Runs
+      operationId: list_computation_collection_runs
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      - name: filter_only_running
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Filter Only Running
+      - name: filter_by_root_project_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Filter By Root Project Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
+  /v0/computation-collection-runs/{collection_run_id}/tasks:
+    get:
+      tags:
+      - computations
+      - projects
+      summary: List Computation Collection Run Tasks
+      operationId: list_computation_collection_run_tasks
+      parameters:
+      - name: collection_run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Collection Run Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
       responses:
         '200':
           description: Successful Response
@@ -15855,20 +15936,32 @@ components:
       type: string
       enum:
       - UNKNOWN
-      - PUBLISHED
       - NOT_STARTED
+      - PUBLISHED
       - PENDING
+      - WAITING_FOR_CLUSTER
       - WAITING_FOR_RESOURCES
       - STARTED
       - SUCCESS
       - FAILED
       - ABORTED
-      - WAITING_FOR_CLUSTER
       title: RunningState
-      description: 'State of execution of a project''s computational workflow
-
-
-        SEE StateType for task state'
+      description: "State of execution of a project's computational workflow\n\nSEE\
+        \ StateType for task state\n\n# Computational backend states explained:\n\
+        - UNKNOWN - The backend doesn't know about the task anymore, it has disappeared\
+        \ from the system or it was never created (eg. when we are asking for the\
+        \ task)\n- NOT_STARTED - Default state when the task is created\n- PUBLISHED\
+        \ - The task has been submitted to the computational backend (click on \"\
+        Run\" button in the UI)\n- PENDING - Task has been transferred to the Dask\
+        \ scheduler and is waiting for a worker to pick it up (director-v2 --> Dask\
+        \ scheduler)\n   - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER\
+        \ -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)\n- WAITING_FOR_CLUSTER\
+        \ - No cluster (Dask scheduler) is available to run the task; waiting for\
+        \ one to become available\n- WAITING_FOR_RESOURCES - No worker (Dask worker)\
+        \ is available to run the task; waiting for one to become available\n- STARTED\
+        \ - A worker has picked up the task and is executing it\n- SUCCESS - Task\
+        \ finished successfully\n- FAILED - Task finished with an error\n- ABORTED\
+        \ - Task was aborted before completion"
     SelectBox:
       properties:
         structure:
@@ -17166,6 +17259,12 @@ components:
           - type: integer
           - type: 'null'
           title: Preregistrationid
+        preRegistrationCreated:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Preregistrationcreated
         invitedBy:
           anyOf:
           - type: string
@@ -17217,6 +17316,7 @@ components:
       - postalCode
       - country
       - preRegistrationId
+      - preRegistrationCreated
       - accountRequestStatus
       - registered
       - status

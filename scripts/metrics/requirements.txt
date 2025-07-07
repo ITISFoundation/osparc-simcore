@@ -1,5 +1,5 @@
 black
 httpx[http2]
-pydantic[email,dotenv]
+pydantic[email]
 pylint
-typer[all]
+typer

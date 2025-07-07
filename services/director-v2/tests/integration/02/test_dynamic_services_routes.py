@@ -97,9 +97,11 @@ def user_id(user_db: dict[str, Any]) -> UserID:
 
 @pytest.fixture
 async def project_id(
-    user_db: dict[str, Any], project: Callable[..., Awaitable[ProjectAtDB]]
+    user_db: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    with_product: dict[str, Any],
 ) -> str:
-    prj = await project(user=user_db)
+    prj = await create_project(user=user_db)
     return f"{prj.uuid}"
 
 
