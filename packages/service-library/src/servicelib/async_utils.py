@@ -223,13 +223,13 @@ class TaskCancelled(Exception):
 async def _poller_for_task_group(
     close_event: asyncio.Event,
     cancel_awaitable: TaskCancelCallback,
-    poll_interval_s: float,
+    poll_interval: float,
 ):
     """
     Polls for cancellation via the callback and raises TaskCancelled if it occurs.
     """
     while not await cancel_awaitable():
-        await asyncio.sleep(poll_interval_s)
+        await asyncio.sleep(poll_interval)
         if close_event.is_set():
             return
     raise TaskCancelled
@@ -239,7 +239,7 @@ async def run_until_cancelled(
     *,
     coro: Coroutine,
     cancel_callback: TaskCancelCallback,
-    poll_interval_s: float = _POLL_INTERVAL_S,
+    poll_interval: float = _POLL_INTERVAL_S,
 ) -> Any:
     """
     Runs the given coroutine until it completes or cancellation is requested.
@@ -258,7 +258,7 @@ async def run_until_cancelled(
             # One to poll for cancellation
             tg.create_task(
                 _poller_for_task_group(
-                    close_poller_event, cancel_callback, poll_interval_s
+                    close_poller_event, cancel_callback, poll_interval
                 ),
                 name=f"run_until_cancelled/poller/{coro.__name__}/{id(sentinel)}",
             )
