@@ -14,13 +14,15 @@ NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
     "engineio",
+    "engineio.server",
     "inotify.adapters",
     "gunicorn.access",
     "openapi_spec_validator",
     "servicelib.aiohttp.monitoring",
+    "socketio",
+    "socketio.server",
     "sqlalchemy.engine",
     "sqlalchemy",
-    "socketio",
 )
 
 
