@@ -66,6 +66,9 @@ def print_as_envfile(
             typer.echo(f"# {field.description}")
         if isinstance(value, Enum):
             value = value.value
+        elif isinstance(value, dict | list):
+            # Serialize complex objects as JSON to ensure they can be parsed correctly
+            value = json_dumps(value)
         typer.echo(f"{name}={value}")
 
 
