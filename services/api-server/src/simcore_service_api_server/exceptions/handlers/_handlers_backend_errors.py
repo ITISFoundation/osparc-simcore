@@ -12,9 +12,7 @@ from ._utils import create_error_json_response
 _logger = logging.getLogger(__name__)
 
 
-async def backend_error_handler(
-    request: Request, exc: BaseBackEndError
-) -> JSONResponse:
+async def backend_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert request  # nosec
     assert isinstance(exc, BaseBackEndError)
     user_error_msg = f"{exc}"
