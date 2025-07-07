@@ -349,7 +349,7 @@ async def is_completed_upload_file(
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
-            await task_manager.get_result(
+            await task_manager.get_task_result(
                 context=async_job_name_data.model_dump(),
                 task_uuid=TaskUUID(future_id),
             )
