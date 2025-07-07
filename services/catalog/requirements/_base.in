@@ -19,6 +19,6 @@
 aiocache[redis,msgpack]
 asyncpg # database
 packaging
-pydantic[dotenv] # data models
+pydantic
 pyyaml
 tenacity
