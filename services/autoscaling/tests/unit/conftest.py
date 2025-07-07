@@ -78,18 +78,18 @@ from simcore_service_autoscaling.models import (
     Cluster,
     DaskTaskResources,
 )
-from simcore_service_autoscaling.modules import auto_scaling_core
-from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
-    DynamicAutoscaling,
+from simcore_service_autoscaling.modules.cluster_scaling import _auto_scaling_core
+from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
+    DynamicAutoscalingProvider,
 )
 from simcore_service_autoscaling.modules.docker import AutoscalingDocker
 from simcore_service_autoscaling.modules.ec2 import SimcoreEC2API
-from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
-    get_deactivated_buffer_ec2_tags,
-)
 from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
+)
+from simcore_service_autoscaling.utils.warm_buffer_machines import (
+    get_deactivated_warm_buffer_ec2_tags,
 )
 from tenacity import after_log, before_sleep_log, retry
 from tenacity.retry import retry_if_exception_type
@@ -325,12 +325,12 @@ def mocked_ec2_instances_envs(
 @pytest.fixture
 def disable_autoscaling_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_task.create_periodic_task",
+        "simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_task.create_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_task.cancel_wait_task",
+        "simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_task.cancel_wait_task",
         autospec=True,
     )
 
@@ -338,12 +338,12 @@ def disable_autoscaling_background_task(mocker: MockerFixture) -> None:
 @pytest.fixture
 def disable_buffers_pool_background_task(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_autoscaling.modules.buffer_machines_pool_task.create_periodic_task",
+        "simcore_service_autoscaling.modules.cluster_scaling.warm_buffer_machines_pool_task.create_periodic_task",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_autoscaling.modules.buffer_machines_pool_task.cancel_wait_task",
+        "simcore_service_autoscaling.modules.cluster_scaling.warm_buffer_machines_pool_task.cancel_wait_task",
         autospec=True,
     )
 
@@ -446,10 +446,10 @@ def service_monitored_labels(
     app_settings: ApplicationSettings,
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    return {
-        key: "true"
-        for key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
-    }
+    return dict.fromkeys(
+        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
+        "true",
+    )
 
 
 @pytest.fixture
@@ -849,10 +849,10 @@ def cluster() -> Callable[..., Cluster]:
                 active_nodes=[],
                 pending_nodes=[],
                 drained_nodes=[],
-                buffer_drained_nodes=[],
+                hot_buffer_drained_nodes=[],
                 pending_ec2s=[],
                 broken_ec2s=[],
-                buffer_ec2s=[],
+                warm_buffer_ec2s=[],
                 disconnected_nodes=[],
                 terminating_nodes=[],
                 retired_nodes=[],
@@ -903,7 +903,7 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
         return returned_node
 
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.set_node_availability",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.set_node_availability",
         autospec=True,
         side_effect=_fake_set_node_availability,
     )
@@ -927,7 +927,7 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
         return updated_node
 
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.tag_node",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.tag_node",
         autospec=True,
         side_effect=fake_tag_node,
     )
@@ -1044,7 +1044,7 @@ def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeT
 @pytest.fixture
 def mock_find_node_with_name_returns_none(mocker: MockerFixture) -> Iterator[mock.Mock]:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.utils_docker.find_node_with_name",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.find_node_with_name",
         autospec=True,
         return_value=None,
     )
@@ -1071,18 +1071,18 @@ def with_short_ec2_instances_max_start_time(
 
 @pytest.fixture
 async def spied_cluster_analysis(mocker: MockerFixture) -> MockType:
-    return mocker.spy(auto_scaling_core, "_analyze_current_cluster")
+    return mocker.spy(_auto_scaling_core, "_analyze_current_cluster")
 
 
 @pytest.fixture
-async def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
-    async def _(
+def mocked_associate_ec2_instances_with_nodes(mocker: MockerFixture) -> mock.Mock:
+    def _(
         nodes: list[DockerNode], ec2_instances: list[EC2InstanceData]
     ) -> tuple[list[AssociatedInstance], list[EC2InstanceData]]:
         return [], ec2_instances
 
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_core.associate_ec2_instances_with_nodes",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.associate_ec2_instances_with_nodes",
         autospec=True,
         side_effect=_,
     )
@@ -1185,8 +1185,8 @@ async def create_buffer_machines(
 
         resource_tags: list[TagTypeDef] = [
             {"Key": tag_key, "Value": tag_value}
-            for tag_key, tag_value in get_deactivated_buffer_ec2_tags(
-                initialized_app, DynamicAutoscaling()
+            for tag_key, tag_value in get_deactivated_warm_buffer_ec2_tags(
+                DynamicAutoscalingProvider().get_ec2_tags(initialized_app)
             ).items()
         ]
         if pre_pull_images is not None and instance_state_name == "stopped":

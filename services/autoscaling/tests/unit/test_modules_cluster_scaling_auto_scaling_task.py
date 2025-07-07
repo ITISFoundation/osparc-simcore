@@ -40,7 +40,7 @@ def app_environment(
 @pytest.fixture
 def mock_background_task(mocker: MockerFixture) -> mock.Mock:
     return mocker.patch(
-        "simcore_service_autoscaling.modules.auto_scaling_task.auto_scale_cluster",
+        "simcore_service_autoscaling.modules.cluster_scaling.auto_scaling_task.auto_scale_cluster",
         autospec=True,
     )
 
