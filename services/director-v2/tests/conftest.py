@@ -37,6 +37,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
