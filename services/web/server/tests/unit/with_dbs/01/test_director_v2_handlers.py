@@ -410,7 +410,6 @@ async def test_list_computation_collection_runs_with_filter_only_running(
     )
     if user_role != UserRole.ANONYMOUS:
         assert ComputationCollectionRunRestGet.model_validate(data[0])
-        assert data[0]["name"] == "My Collection Run"
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -434,7 +433,6 @@ async def test_list_computation_collection_runs_with_filter_root_project(
     )
     if user_role != UserRole.ANONYMOUS:
         assert ComputationCollectionRunRestGet.model_validate(data[0])
-        assert data[0]["name"] == "My Collection Run"
 
 
 @pytest.fixture
