@@ -520,7 +520,6 @@ class CompRunsRepository(BaseRepository):
                         use_on_demand_clusters=use_on_demand_clusters,
                         dag_adjacency_list=dag_adjacency_list,
                         collection_run_id=f"{collection_run_id}",
-                        collection_run_id=f"{collection_run_id}",
                     )
                     .returning(literal_column("*"))
                 )

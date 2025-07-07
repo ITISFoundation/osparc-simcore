@@ -107,7 +107,6 @@ async def test_list(
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
         collection_run_id=fake_collection_run_id,
-        collection_run_id=fake_collection_run_id,
     )
     assert await CompRunsRepository(sqlalchemy_async_engine).list_() == [created]
 
@@ -120,7 +119,6 @@ async def test_list(
                 metadata=run_metadata,
                 use_on_demand_clusters=faker.pybool(),
                 dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
-                collection_run_id=faker.uuid4(),
                 collection_run_id=faker.uuid4(),
             )
             for n in range(50)
