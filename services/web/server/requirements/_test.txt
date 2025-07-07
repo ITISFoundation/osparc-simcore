@@ -95,12 +95,12 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
     #   uvicorn
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
