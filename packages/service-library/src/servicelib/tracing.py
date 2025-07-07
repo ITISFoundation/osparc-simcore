@@ -81,7 +81,7 @@ def with_profiled_span(
                     profiler.stop()
                     span.set_attribute(
                         _PROFILE_ATTRIBUTE_NAME,
-                        profiler.output_text(unicode=True, color=False),
+                        profiler.output_text(unicode=True, color=False, show_all=True),
                     )
 
             except Exception as e:
