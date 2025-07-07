@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock
 import pytest
 import requests
 from fastapi import FastAPI, Query, Request
+from servicelib.async_utils import TaskCancelCallback
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 
 POLLER_CLEANUP_DELAY_S = 100.0
@@ -130,11 +131,15 @@ def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
 @pytest.fixture
 def long_running_poller_mock(
     monkeypatch: pytest.MonkeyPatch,
-) -> Callable[[asyncio.Event, Request], Awaitable]:
+) -> Callable[[asyncio.Event, TaskCancelCallback, float], Awaitable]:
 
-    async def _mock_disconnect_poller(close_event: asyncio.Event, request: Request):
+    async def _mock_disconnect_poller(
+        close_event: asyncio.Event,
+        cancel_awaitable: TaskCancelCallback,
+        poll_interval: float,
+    ):
         _mock_disconnect_poller.called = True
-        while not await request.is_disconnected():
+        while not await cancel_awaitable():
             await asyncio.sleep(2)
             if close_event.is_set():
                 break
@@ -147,7 +152,9 @@ def long_running_poller_mock(
 
 
 async def test_decorator_waits_for_poller_cleanup(
-    long_running_poller_mock: Callable[[asyncio.Event, Request], Awaitable],
+    long_running_poller_mock: Callable[
+        [asyncio.Event, TaskCancelCallback, float], Awaitable
+    ],
 ):
     """
     Tests that the decorator's wrapper waits for the poller task to finish
