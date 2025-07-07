@@ -28,10 +28,6 @@ qx.Class.define("osparc.store.Jobs", {
     },
   },
 
-  events: {
-    "changeJobsActive": "qx.event.type.Data",
-  },
-
   statics: {
     SERVER_MAX_LIMIT: 49,
   },
@@ -62,9 +58,6 @@ qx.Class.define("osparc.store.Jobs", {
       };
       return osparc.data.Resources.fetch("runs", "getPageLatest", params, options)
         .then(jobsResp => {
-          if (runningOnly) {
-            this.fireDataEvent("changeJobsActive", jobsResp["_meta"]["total"]);
-          }
           const jobsActive = [];
           if ("data" in jobsResp) {
             jobsResp["data"].forEach(jobActiveData => {

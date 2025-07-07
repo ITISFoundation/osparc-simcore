@@ -34,9 +34,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
 
     this.addListener("tap", () => osparc.jobs.ActivityCenterWindow.openWindow(), this);
 
-    const jobsStore = osparc.store.Jobs.getInstance();
-    jobsStore.addListener("changeJobsActive", e => this.__updateJobsButton(e.getData()), this);
-    jobsStore.fetchJobsLatest();
+    this.fetchNJobs();
   },
 
   members: {
@@ -71,6 +69,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    fetchNJobs: function() {
+      const jobsStore = osparc.store.Jobs.getInstance();
+      jobsStore.fetchJobsLatest()
+        .then(jobsResp => this.__updateJobsButton(jobsResp["_meta"]["total"]))
     },
 
     __updateJobsButton: function(nActiveJobs) {
