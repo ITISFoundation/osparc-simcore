@@ -48,8 +48,6 @@ qx.Class.define("osparc.jobs.JobsButton", {
   },
 
   members: {
-    __fetchNJobs: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
