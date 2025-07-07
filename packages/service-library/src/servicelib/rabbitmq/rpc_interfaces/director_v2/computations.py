@@ -6,9 +6,12 @@ from models_library.api_schemas_directorv2 import (
     DIRECTOR_V2_RPC_NAMESPACE,
 )
 from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationCollectionRunRpcGetPage,
+    ComputationCollectionRunTaskRpcGetPage,
     ComputationRunRpcGetPage,
     ComputationTaskRpcGetPage,
 )
+from models_library.computations import CollectionRunID
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rabbitmq_basic_types import RPCMethodName
@@ -113,4 +116,61 @@ async def list_computations_latest_iteration_tasks_page(
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(result, ComputationTaskRpcGetPage)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_computation_collection_runs_page(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_ids: list[ProjectID] | None,
+    # pagination
+    offset: int = 0,
+    limit: int = 20,
+) -> ComputationCollectionRunRpcGetPage:
+    result = await rabbitmq_rpc_client.request(
+        DIRECTOR_V2_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python(
+            "list_computation_collection_runs_page"
+        ),
+        product_name=product_name,
+        user_id=user_id,
+        project_ids=project_ids,
+        offset=offset,
+        limit=limit,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, ComputationCollectionRunRpcGetPage)  # nosec
+    return result
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def list_computation_collection_run_tasks_page(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    collection_run_id: CollectionRunID,
+    # pagination
+    offset: int = 0,
+    limit: int = 20,
+    # ordering
+    order_by: OrderBy | None = None,
+) -> ComputationCollectionRunTaskRpcGetPage:
+    result = await rabbitmq_rpc_client.request(
+        DIRECTOR_V2_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python(
+            "list_computation_collection_run_tasks_page"
+        ),
+        product_name=product_name,
+        user_id=user_id,
+        collection_run_id=collection_run_id,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
+        timeout_s=_DEFAULT_TIMEOUT_S,
+    )
+    assert isinstance(result, ComputationCollectionRunTaskRpcGetPage)  # nosec
     return result

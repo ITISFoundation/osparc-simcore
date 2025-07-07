@@ -12,7 +12,7 @@ from sqlalchemy import func, literal_column
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from .errors import WalletAccessForbiddenError, WalletNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ async def create_wallet(
     description: str | None,
     thumbnail: str | None,
 ) -> WalletDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         result = await conn.execute(
             wallets.insert()
             .values(
@@ -90,7 +90,7 @@ async def list_wallets_for_user(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         result = await conn.execute(stmt)
         rows = await result.fetchall() or []
         output: list[UserWalletDB] = [UserWalletDB.model_validate(row) for row in rows]
@@ -112,7 +112,7 @@ async def list_wallets_owned_by_user(
             & (wallets.c.product_name == product_name)
         )
     )
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         results = await conn.execute(stmt)
         rows = await results.fetchall() or []
         return [row.wallet_id for row in rows]
@@ -145,7 +145,7 @@ async def get_wallet_for_user(
         )
     )
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
@@ -178,7 +178,7 @@ async def get_wallet(
             & (wallets.c.product_name == product_name)
         )
     )
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
@@ -195,7 +195,7 @@ async def update_wallet(
     status: WalletStatus,
     product_name: ProductName,
 ) -> WalletDB:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         result = await conn.execute(
             wallets.update()
             .values(
@@ -222,7 +222,7 @@ async def delete_wallet(
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> None:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         await conn.execute(
             wallets.delete().where(
                 (wallets.c.wallet_id == wallet_id)
