@@ -53,7 +53,7 @@ starlette==0.46.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   fastapi
     #   pydantic

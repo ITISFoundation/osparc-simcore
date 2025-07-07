@@ -140,7 +140,7 @@ termcolor==2.5.0
     # via pytest-sugar
 types-psycopg2==2.9.21.20250318
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio
