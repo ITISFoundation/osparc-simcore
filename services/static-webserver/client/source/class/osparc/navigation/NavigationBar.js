@@ -112,6 +112,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         converter: s => s ? "visible" : "excluded"
       });
 
+      const savingStudyIcon = this.getChildControl("saving-study-icon");
+      this.bind("study", savingStudyIcon, "visibility", {
+        converter: s => s ? "visible" : "excluded"
+      });
+
       // center-items
       this.getChildControl("read-only-info");
 
@@ -200,6 +205,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "study-title-options":
           control = new osparc.navigation.StudyTitleWOptions();
           control.addListener("openLogger", () => this.fireEvent("openLogger"));
+          this.getChildControl("left-items").add(control);
+          break;
+        case "saving-study-icon":
+          control = new qx.ui.basic.Image().set({
+            toolTipText: this.tr("Saving pipeline..."),
+            source: "@FontAwesome5Solid/cloud-upload-alt/14",
+            opacity: 0.8,
+            // visibility: "excluded",
+          });
           this.getChildControl("left-items").add(control);
           break;
         case "read-only-info": {
