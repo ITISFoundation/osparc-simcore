@@ -151,9 +151,9 @@ async def _create_autoscaling_status_message(
     total_nodes = (
         len(cluster.active_nodes)
         + len(cluster.drained_nodes)
-        + len(cluster.buffer_drained_nodes)
+        + len(cluster.hot_buffer_drained_nodes)
     )
-    drained_nodes = len(cluster.drained_nodes) + len(cluster.buffer_drained_nodes)
+    drained_nodes = len(cluster.drained_nodes) + len(cluster.hot_buffer_drained_nodes)
 
     return RabbitAutoscalingStatusMessage.model_construct(
         origin=origin,

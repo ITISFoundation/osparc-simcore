@@ -587,7 +587,7 @@ jobs:
   unit-test-autoscaling:
     needs: changes
     if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 22 # temporary: mypy takes a huge amount of time to run here, maybe we should cache it
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
     name: "[unit] autoscaling"
     runs-on: ${{ matrix.os }}
     strategy:

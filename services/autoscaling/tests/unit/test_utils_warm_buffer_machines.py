@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import pytest
-from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagValue, EC2Tags
 from faker import Faker
 from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
@@ -14,17 +14,17 @@ from simcore_service_autoscaling.constants import (
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
 )
-from simcore_service_autoscaling.modules.auto_scaling_mode_computational import (
-    ComputationalAutoscaling,
+from simcore_service_autoscaling.modules.cluster_scaling._provider_computational import (
+    ComputationalAutoscalingProvider,
 )
-from simcore_service_autoscaling.modules.auto_scaling_mode_dynamic import (
-    DynamicAutoscaling,
+from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic import (
+    DynamicAutoscalingProvider,
 )
-from simcore_service_autoscaling.utils.buffer_machines_pool_core import (
+from simcore_service_autoscaling.utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
-    get_activated_buffer_ec2_tags,
-    get_deactivated_buffer_ec2_tags,
-    is_buffer_machine,
+    get_activated_warm_buffer_ec2_tags,
+    get_deactivated_warm_buffer_ec2_tags,
+    is_warm_buffer_machine,
     load_pre_pulled_images_from_tags,
 )
 
@@ -37,9 +37,9 @@ def test_get_activated_buffer_ec2_tags_dynamic(
     enabled_dynamic_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = DynamicAutoscaling()
-    activated_buffer_tags = get_activated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+    auto_scaling_mode = DynamicAutoscalingProvider()
+    activated_buffer_tags = get_activated_warm_buffer_ec2_tags(
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     assert (
         auto_scaling_mode.get_ec2_tags(initialized_app)
@@ -55,9 +55,9 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
     enabled_dynamic_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = DynamicAutoscaling()
-    deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+    auto_scaling_mode = DynamicAutoscalingProvider()
+    deactivated_buffer_tags = get_deactivated_warm_buffer_ec2_tags(
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix
     expected_tags = (
@@ -65,8 +65,8 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
-        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags["Name"] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags["Name"]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 
@@ -79,9 +79,9 @@ def test_get_activated_buffer_ec2_tags_computational(
     enabled_computational_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = ComputationalAutoscaling()
-    activated_buffer_tags = get_activated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+    auto_scaling_mode = ComputationalAutoscalingProvider()
+    activated_buffer_tags = get_activated_warm_buffer_ec2_tags(
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     assert (
         auto_scaling_mode.get_ec2_tags(initialized_app)
@@ -97,9 +97,9 @@ def test_get_deactivated_buffer_ec2_tags_computational(
     enabled_computational_mode: EnvVarsDict,
     initialized_app: FastAPI,
 ):
-    auto_scaling_mode = ComputationalAutoscaling()
-    deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
-        initialized_app, auto_scaling_mode
+    auto_scaling_mode = ComputationalAutoscalingProvider()
+    deactivated_buffer_tags = get_deactivated_warm_buffer_ec2_tags(
+        auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix
     expected_tags = (
@@ -107,8 +107,8 @@ def test_get_deactivated_buffer_ec2_tags_computational(
         | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     )
     assert "Name" in expected_tags
-    expected_tags[AWSTagKey("Name")] = TypeAdapter(AWSTagValue).validate_python(
-        str(expected_tags[AWSTagKey("Name")]) + "-buffer"
+    expected_tags["Name"] = TypeAdapter(AWSTagValue).validate_python(
+        str(expected_tags["Name"]) + "-buffer"
     )
     assert expected_tags == deactivated_buffer_tags
 
@@ -121,7 +121,7 @@ def test_get_deactivated_buffer_ec2_tags_computational(
     ],
 )
 def test_is_buffer_machine(tags: EC2Tags, expected_is_buffer: bool):
-    assert is_buffer_machine(tags) is expected_is_buffer
+    assert is_warm_buffer_machine(tags) is expected_is_buffer
 
 
 @pytest.mark.parametrize(
