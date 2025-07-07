@@ -23,7 +23,7 @@ from simcore_service_autoscaling.modules.cluster_scaling._provider_dynamic impor
 from simcore_service_autoscaling.utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
     get_activated_warm_buffer_ec2_tags,
-    get_deactivated_buffer_ec2_tags,
+    get_deactivated_warm_buffer_ec2_tags,
     is_warm_buffer_machine,
     load_pre_pulled_images_from_tags,
 )
@@ -56,7 +56,7 @@ def test_get_deactivated_buffer_ec2_tags_dynamic(
     initialized_app: FastAPI,
 ):
     auto_scaling_mode = DynamicAutoscalingProvider()
-    deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
+    deactivated_buffer_tags = get_deactivated_warm_buffer_ec2_tags(
         auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix
@@ -98,7 +98,7 @@ def test_get_deactivated_buffer_ec2_tags_computational(
     initialized_app: FastAPI,
 ):
     auto_scaling_mode = ComputationalAutoscalingProvider()
-    deactivated_buffer_tags = get_deactivated_buffer_ec2_tags(
+    deactivated_buffer_tags = get_deactivated_warm_buffer_ec2_tags(
         auto_scaling_mode.get_ec2_tags(initialized_app)
     )
     # when deactivated the buffer EC2 name has an additional -buffer suffix

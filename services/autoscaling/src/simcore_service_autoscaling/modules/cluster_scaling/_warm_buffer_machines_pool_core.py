@@ -44,8 +44,8 @@ from ...core.settings import get_application_settings
 from ...models import WarmBufferPool, WarmBufferPoolManager
 from ...utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
-    ec2_buffer_startup_script,
-    get_deactivated_buffer_ec2_tags,
+    ec2_warm_buffer_startup_script,
+    get_deactivated_warm_buffer_ec2_tags,
     load_pre_pulled_images_from_tags,
 )
 from ..ec2 import get_ec2_client
@@ -156,7 +156,7 @@ async def _analyse_current_state(
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+        tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped", "pending", "running", "stopping"],
     )
     buffers_manager = WarmBufferPoolManager()
@@ -302,10 +302,10 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=get_deactivated_buffer_ec2_tags(
+                tags=get_deactivated_warm_buffer_ec2_tags(
                     auto_scaling_mode.get_ec2_tags(app)
                 ),
-                startup_script=ec2_buffer_startup_script(
+                startup_script=ec2_warm_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
                 ami_id=ec2_boot_specific.ami_id,

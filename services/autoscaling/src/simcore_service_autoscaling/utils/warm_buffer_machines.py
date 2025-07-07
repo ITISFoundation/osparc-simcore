@@ -25,7 +25,7 @@ def get_activated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
     return base_ec2_tags | ACTIVATED_BUFFER_MACHINE_EC2_TAGS
 
 
-def get_deactivated_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
+def get_deactivated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
     new_base_ec2_tags = base_ec2_tags | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
     new_base_ec2_tags[_NAME_EC2_TAG_KEY] = TypeAdapter(AWSTagValue).validate_python(
         f"{new_base_ec2_tags[_NAME_EC2_TAG_KEY]}-buffer"
@@ -90,7 +90,7 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     return []
 
 
-def ec2_buffer_startup_script(
+def ec2_warm_buffer_startup_script(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> str:
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
