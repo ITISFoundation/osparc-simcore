@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -22,10 +23,11 @@ class StorageService:
         user_id: UserID,
         product_name: ProductName,
         paths_to_export: list[PathToExport],
-    ):
-        return await start_export_data(
+    ) -> AsyncJobGet:
+        async_job_get, _ = await start_export_data(
             self._rpc_client,
             user_id=user_id,
             product_name=product_name,
             paths_to_export=paths_to_export,
         )
+        return async_job_get
