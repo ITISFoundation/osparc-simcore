@@ -21,7 +21,7 @@ from . import utils_docker
 _NAME_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
-def get_activated_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
+def get_activated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
     return base_ec2_tags | ACTIVATED_BUFFER_MACHINE_EC2_TAGS
 
 

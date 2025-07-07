@@ -52,7 +52,7 @@ from ...utils.rabbitmq import (
     post_tasks_progress_message,
 )
 from ...utils.warm_buffer_machines import (
-    get_activated_buffer_ec2_tags,
+    get_activated_warm_buffer_ec2_tags,
     get_deactivated_buffer_ec2_tags,
     is_warm_buffer_machine,
 )
@@ -89,7 +89,7 @@ async def _analyze_current_cluster(
         state_names=["terminated"],
     )
 
-    buffer_ec2_instances = await get_ec2_client(app).get_instances(
+    warm_buffer_ec2_instances = await get_ec2_client(app).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=get_deactivated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped"],
@@ -154,7 +154,7 @@ async def _analyze_current_cluster(
         pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
         warm_buffer_ec2s=[
-            NonAssociatedInstance(ec2_instance=i) for i in buffer_ec2_instances
+            NonAssociatedInstance(ec2_instance=i) for i in warm_buffer_ec2_instances
         ],
         terminating_nodes=terminating_nodes,
         terminated_instances=[
@@ -203,7 +203,7 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
     )
 
 
-async def _make_pending_buffer_ec2s_join_cluster(
+async def _make_pending_warm_buffer_ec2s_join_cluster(
     app: FastAPI,
     cluster: Cluster,
 ) -> Cluster:
@@ -339,10 +339,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         allowed_instance_type_names
     ), "EC2_INSTANCES_ALLOWED_TYPES cannot be empty!"
 
-    allowed_instance_types: list[
-        EC2InstanceType
-    ] = await ec2_client.get_ec2_instance_capabilities(
-        cast(set[InstanceTypeType], set(allowed_instance_type_names))
+    allowed_instance_types: list[EC2InstanceType] = (
+        await ec2_client.get_ec2_instance_capabilities(
+            cast(set[InstanceTypeType], set(allowed_instance_type_names))
+        )
     )
 
     def _as_selection(instance_type: EC2InstanceType) -> int:
@@ -469,7 +469,7 @@ async def _start_warm_buffer_instances(
         return cluster
 
     with log_context(
-        _logger, logging.INFO, f"start {len(instances_to_start)} buffer machines"
+        _logger, logging.INFO, f"start {len(instances_to_start)} warm buffer machines"
     ):
         started_instances = await get_ec2_client(app).start_instances(
             instances_to_start
@@ -477,7 +477,9 @@ async def _start_warm_buffer_instances(
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
         await get_ec2_client(app).set_instances_tags(
             started_instances,
-            tags=get_activated_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+            tags=get_activated_warm_buffer_ec2_tags(
+                auto_scaling_mode.get_ec2_tags(app)
+            ),
         )
     started_instance_ids = [i.id for i in started_instances]
 
@@ -682,7 +684,7 @@ async def _find_needed_instances(
         ),
     )
 
-    # 2. check the buffer needs
+    # 2. check the hot buffer needs
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     if (
@@ -1076,9 +1078,9 @@ async def _notify_based_on_machine_type(
     launch_time_to_tasks: dict[datetime.datetime, list] = collections.defaultdict(list)
     now = datetime.datetime.now(datetime.UTC)
     for instance in instances:
-        launch_time_to_tasks[instance.ec2_instance.launch_time] += (
-            instance.assigned_tasks
-        )
+        launch_time_to_tasks[
+            instance.ec2_instance.launch_time
+        ] += instance.assigned_tasks
 
     for launch_time, tasks in launch_time_to_tasks.items():
         time_since_launch = now - launch_time
@@ -1289,7 +1291,7 @@ async def auto_scale_cluster(
     # cleanup
     cluster = await _cleanup_disconnected_nodes(app, cluster)
     cluster = await _terminate_broken_ec2s(app, cluster)
-    cluster = await _make_pending_buffer_ec2s_join_cluster(app, cluster)
+    cluster = await _make_pending_warm_buffer_ec2s_join_cluster(app, cluster)
     cluster = await _try_attach_pending_ec2s(
         app, cluster, auto_scaling_mode, allowed_instance_types
     )
