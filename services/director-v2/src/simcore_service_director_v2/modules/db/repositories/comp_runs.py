@@ -502,7 +502,6 @@ class CompRunsRepository(BaseRepository):
         use_on_demand_clusters: bool,
         dag_adjacency_list: dict[str, list[str]],
         collection_run_id: CollectionRunID,
-        collection_run_id: CollectionRunID,
     ) -> CompRunsAtDB:
         try:
             async with transaction_context(self.db_engine) as conn:
