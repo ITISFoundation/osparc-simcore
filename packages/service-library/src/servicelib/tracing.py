@@ -71,22 +71,22 @@ def with_profiled_span(
         span_name = f"{func.__module__}.{func.__qualname__}"
 
         with tracer.start_as_current_span(span_name) as span:
-            try:
-                profiler = pyinstrument.Profiler(async_mode="enabled")
-                profiler.start()
+            profiler = pyinstrument.Profiler(async_mode="enabled")
+            profiler.start()
 
-                try:
-                    return await func(*args, **kwargs)
-                finally:
-                    profiler.stop()
-                    span.set_attribute(
-                        _PROFILE_ATTRIBUTE_NAME,
-                        profiler.output_text(unicode=True, color=False, show_all=True),
-                    )
+            try:
+                return await func(*args, **kwargs)
 
             except Exception as e:
                 span.record_exception(e)
-                span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+                span.set_status(trace.Status(trace.StatusCode.ERROR, f"{e}"))
                 raise
+
+            finally:
+                profiler.stop()
+                span.set_attribute(
+                    _PROFILE_ATTRIBUTE_NAME,
+                    profiler.output_text(unicode=True, color=False, show_all=True),
+                )
 
     return wrapper
