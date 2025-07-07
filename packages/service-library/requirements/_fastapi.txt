@@ -120,7 +120,7 @@ starlette==0.46.0
     # via fastapi
 typer==0.16.0
     # via fastapi-cli
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   anyio
     #   fastapi

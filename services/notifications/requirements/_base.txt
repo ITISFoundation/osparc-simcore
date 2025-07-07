@@ -534,7 +534,7 @@ typer==0.15.2
     #   fastapi-cli
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.13.0
+typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic

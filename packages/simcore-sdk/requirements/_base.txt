@@ -457,7 +457,7 @@ typer==0.15.2
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic

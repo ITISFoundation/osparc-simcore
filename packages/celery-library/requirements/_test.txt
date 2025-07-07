@@ -176,7 +176,7 @@ tenacity==9.1.2
     #   pytest-celery
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio

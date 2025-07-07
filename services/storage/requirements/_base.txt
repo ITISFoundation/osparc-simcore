@@ -1085,7 +1085,7 @@ types-awscrt==0.23.10
     # via botocore-stubs
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic

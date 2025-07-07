@@ -88,7 +88,7 @@ tomlkit==0.13.2
     # via pylint
 types-cachetools==5.5.0.20240820
     # via -r requirements/_tools.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

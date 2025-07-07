@@ -111,7 +111,7 @@ types-awscrt==0.23.10
     # via botocore-stubs
 types-s3transfer==0.11.3
     # via boto3-stubs
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   boto3-stubs

@@ -73,7 +73,7 @@ setuptools==78.1.0
     # via pip-tools
 tomlkit==0.13.2
     # via pylint
-typing-extensions==4.13.0
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

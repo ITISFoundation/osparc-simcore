@@ -290,7 +290,7 @@ sniffio==1.3.1
     #   asgi-lifespan
 sympy==1.13.3
     # via cfn-lint
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio
