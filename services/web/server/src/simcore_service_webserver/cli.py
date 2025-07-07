@@ -54,7 +54,10 @@ def _setup_app_from_settings(
 
 
 async def app_factory() -> web.Application:
-    """Created to launch app from gunicorn (see docker/boot.sh)"""
+    """WARNING: this is called in the entrypoint of the service. DO NOT CHAGE THE NAME!
+
+    Created to launch app from gunicorn (see docker/boot.sh)
+    """
     from .application import create_application_auth
     from .log import setup_logging
 
