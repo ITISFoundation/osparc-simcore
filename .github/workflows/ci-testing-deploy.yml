@@ -324,13 +324,10 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/webserver.bash typecheck
       - name: test isolated
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -361,7 +358,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -392,7 +388,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -453,10 +448,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/storage.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/storage.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -489,10 +482,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/agent.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/agent.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -522,10 +513,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/notifications.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/notifications.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -555,7 +544,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/api.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -586,13 +574,10 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/api-server.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/api-server.bash test
       - name: OAS backwards compatibility check
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/api-server.bash openapi-diff
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -623,10 +608,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/autoscaling.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/autoscaling.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -657,7 +640,6 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/catalog.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/catalog.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
@@ -666,7 +648,6 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -705,13 +686,11 @@ jobs:
           pushd services/clusters-keeper && \
           make mypy
       - name: test
-        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/clusters-keeper && \
           make test-ci-unit
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -742,7 +721,6 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/datcore-adapter.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
@@ -751,7 +729,6 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./services/datcore-adapter/test_failures
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -782,7 +759,6 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/director.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/director.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
@@ -791,7 +767,6 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./services/director/test_failures
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -822,7 +797,6 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/director-v2.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/director-v2.bash test
       - name: upload failed tests logs
         if: ${{ failure() }}
@@ -831,7 +805,6 @@ jobs:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -862,10 +835,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/aws-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/aws-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -906,10 +877,8 @@ jobs:
         - name: typecheck
           run: ./ci/github/unit-testing/celery-library.bash typecheck
         - name: test
-          if: ${{ !cancelled() }}
           run: ./ci/github/unit-testing/celery-library.bash test
         - uses: codecov/codecov-action@v5
-          if: ${{ !cancelled() }}
           env:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           with:
@@ -939,10 +908,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -973,10 +940,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1007,10 +972,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/payments.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/payments.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1041,10 +1004,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-scheduler.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1082,13 +1043,11 @@ jobs:
           pushd services/resource-usage-tracker && \
           make mypy
       - name: test
-        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1119,10 +1078,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1161,13 +1118,11 @@ jobs:
           pushd services/efs-guardian && \
           make mypy
       - name: test
-        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/efs-guardian && \
           make test-ci-unit
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1222,10 +1177,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/postgres-database.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1256,10 +1209,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/invitations.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/invitations.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1290,10 +1241,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/service-integration.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-integration.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1324,10 +1273,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1358,10 +1305,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/settings-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/settings-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1394,7 +1339,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1427,7 +1371,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/common-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1457,10 +1400,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/notifications-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/notifications-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1493,10 +1434,8 @@ jobs:
       - name: typecheck
         run: ./ci/github/unit-testing/simcore-sdk.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/simcore-sdk.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1585,11 +1524,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1627,11 +1562,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1669,11 +1600,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1719,11 +1646,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1763,11 +1686,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1806,11 +1725,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/docker-api-proxy/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/docker-api-proxy.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1850,11 +1765,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1918,9 +1829,6 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
     needs: [changes, build-test-images]
@@ -1961,9 +1869,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/swarm-deploy.bash clean_up
+
 
   system-test-e2e:
     needs: [changes, build-test-images]
@@ -1999,29 +1905,22 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash test
       - name: dump docker logs
         id: docker_logs_dump
-        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload screenshots
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_logs
           path: tests/e2e/logs
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-e2e-playwright:
     needs: [changes, build-test-images]
@@ -2058,16 +1957,13 @@ jobs:
           ./ci/github/system-testing/e2e-playwright.bash test
       - name: dump docker logs
         id: docker_logs_dump
-        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_tracing
@@ -2093,9 +1989,6 @@ jobs:
         run: ./ci/github/system-testing/environment-setup.bash install
       - name: test
         run: ./ci/github/system-testing/environment-setup.bash test
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/environment-setup.bash clean_up
 
   system-tests:
     # NOTE: this is a github required status check!

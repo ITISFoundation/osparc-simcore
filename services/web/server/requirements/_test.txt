@@ -95,12 +95,12 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
     #   uvicorn
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -139,7 +139,7 @@ jsonschema==3.2.0
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-mako==1.2.2
+mako==1.3.10
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -279,7 +279,7 @@ rich==13.4.2
     # via
     #   -c requirements/_base.txt
     #   typer
-setuptools==69.1.1
+setuptools==80.9.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -331,7 +331,7 @@ types-passlib==1.7.7.20241221
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs

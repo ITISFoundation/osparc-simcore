@@ -61,7 +61,7 @@ pyyaml==6.0.2
     #   -r requirements/_test.in
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   flexcache

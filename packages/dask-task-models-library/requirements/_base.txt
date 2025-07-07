@@ -163,7 +163,7 @@ typer==0.15.4
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20250516
     # via arrow
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   pydantic
     #   pydantic-core

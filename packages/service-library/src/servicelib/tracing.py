@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from contextvars import Token
 from typing import TypeAlias
 
 from opentelemetry import context as otcontext
@@ -23,7 +24,7 @@ def get_context() -> TracingContext:
 
 @contextmanager
 def use_tracing_context(context: TracingContext):
-    token: object | None = None
+    token: Token[otcontext.Context] | None = None
     if context is not None:
         token = otcontext.attach(context)
     try:

@@ -313,7 +313,7 @@ sortedcontainers==2.4.0
     # via fakeredis
 sympy==1.14.0
     # via cfn-lint
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio
