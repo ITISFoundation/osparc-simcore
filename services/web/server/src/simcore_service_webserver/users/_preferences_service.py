@@ -19,7 +19,7 @@ from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesRepo,
 )
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from . import _preferences_repository
 from ._preferences_models import (
     ALL_FRONTEND_PREFERENCES,
@@ -75,7 +75,7 @@ async def get_frontend_user_preference(
 async def get_frontend_user_preferences_aggregation(
     app: web.Application, *, user_id: UserID, product_name: ProductName
 ) -> AggregatedPreferences:
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         group_extra_properties = (
             await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
                 conn, user_id=user_id, product_name=product_name
