@@ -1,12 +1,12 @@
-from enum import StrEnum
+import logging
 
 from models_library.rpc.notifications.messages import NotificationMessage, Recipient
 from servicelib.celery.models import TaskContext
 from servicelib.celery.task_manager import TaskManager
 
+from ..modules.celery.tasks import TaskQueue
 
-class TaskQueues(StrEnum):
-    DEFAULT = "notifications.default"
+_logger = logging.getLogger(__name__)
 
 
 async def send_notification(
@@ -19,7 +19,7 @@ async def send_notification(
         await task_manager.send_task(
             name=f"notifications.{recipient.type}",
             context=TaskContext(),
-            queue=TaskQueues.DEFAULT,
+            queue=TaskQueue.DEFAULT,
             message=message,
             recipient=recipient,
         )

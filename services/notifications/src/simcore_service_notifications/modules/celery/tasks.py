@@ -16,11 +16,11 @@ from ...modules.celery._email_tasks import EMAIL_CHANNEL_NAME, send_email
 _logger = logging.getLogger(__name__)
 
 
-_TASK_QUEUE_PREFIX: str = "notifications"
+_NOTIFICATIONS_PREFIX: str = "notifications"
 
 
 class TaskQueue(StrEnum):
-    DEFAULT = f"{_TASK_QUEUE_PREFIX}.default"
+    DEFAULT = f"{_NOTIFICATIONS_PREFIX}.default"
 
 
 def setup_worker_tasks(app: Celery) -> None:
@@ -28,4 +28,6 @@ def setup_worker_tasks(app: Celery) -> None:
     register_pydantic_types(NotificationMessage, EmailRecipient, SMSRecipient)
 
     with log_context(_logger, logging.INFO, msg="worker tasks registration"):
-        register_task(app, send_email, EMAIL_CHANNEL_NAME)
+        register_task(
+            app, send_email, ".".join((_NOTIFICATIONS_PREFIX, EMAIL_CHANNEL_NAME))
+        )

@@ -7,6 +7,7 @@ from models_library.rpc.notifications.messages import (
     EmailRecipient,
     NotificationMessage,
 )
+from servicelib.celery.models import TaskID
 
 _logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ EMAIL_CHANNEL_NAME = "email"
 
 async def send_email(
     task: Task,
+    task_id: TaskID,
     message: NotificationMessage,
     recipient: EmailRecipient,
 ) -> None:
