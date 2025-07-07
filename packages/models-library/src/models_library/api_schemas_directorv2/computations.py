@@ -76,7 +76,7 @@ class ComputationCreate(BaseModel):
     collection_run_id: Annotated[
         CollectionRunID | None,
         Field(
-            description="contains information about the wallet used to bill the running service"
+            description="In case start_pipeline is True, this is the collection run id to which the comp run belongs."
         ),
     ] = None
 
