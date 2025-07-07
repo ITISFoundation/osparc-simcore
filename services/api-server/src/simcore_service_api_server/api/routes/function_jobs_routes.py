@@ -1,7 +1,8 @@
 from typing import Annotated, Final
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi_pagination.api import create_page
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionClass,
@@ -17,8 +18,10 @@ from models_library.functions_errors import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.fastapi.dependencies import get_app
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..._service_jobs import JobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...services_http.director_v2 import DirectorV2Api
@@ -27,7 +30,7 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
-from ..dependencies.services import get_api_client
+from ..dependencies.services import get_api_client, get_job_service
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, solvers_jobs_read, studies_jobs
@@ -295,5 +298,60 @@ async def function_job_outputs(
                     async_pg_engine=async_pg_engine,
                 )
             ).results
+        )
+    raise UnsupportedFunctionClassError(function_class=function.function_class)
+
+
+@function_job_router.post(
+    "/{function_job_id:uuid}/logs",
+    response_model=TaskGet,
+    responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
+)
+async def start_function_job_logs(
+    function_job_id: FunctionJobID,
+    app: Annotated[FastAPI, Depends(get_app)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
+):
+    function, function_job = await get_function_from_functionjobid(
+        wb_api_rpc=wb_api_rpc,
+        function_job_id=function_job_id,
+        user_id=user_id,
+        product_name=product_name,
+    )
+    app_router = app.router
+
+    if (
+        function.function_class == FunctionClass.PROJECT
+        and function_job.function_class == FunctionClass.PROJECT
+    ):
+        async_job_get = await job_service.start_log_export(
+            job_id=function_job.project_job_id,
+        )
+        _task_id = f"{async_job_get.job_id}"
+        return TaskGet(
+            task_id=_task_id,
+            task_name=async_job_get.job_name,
+            status_href=app_router.url_path_for("get_task_status", task_id=_task_id),
+            abort_href=app_router.url_path_for("cancel_task", task_id=_task_id),
+            result_href=app_router.url_path_for("get_task_result", task_id=_task_id),
+        )
+
+    if (
+        function.function_class == FunctionClass.SOLVER
+        and function_job.function_class == FunctionClass.SOLVER
+    ):
+        async_job_get = await job_service.start_log_export(
+            job_id=function_job.solver_job_id,
+        )
+        _task_id = f"{async_job_get.job_id}"
+        return TaskGet(
+            task_id=_task_id,
+            task_name=async_job_get.job_name,
+            status_href=app_router.url_path_for("get_task_status", task_id=_task_id),
+            abort_href=app_router.url_path_for("cancel_task", task_id=_task_id),
+            result_href=app_router.url_path_for("get_task_result", task_id=_task_id),
         )
     raise UnsupportedFunctionClassError(function_class=function.function_class)

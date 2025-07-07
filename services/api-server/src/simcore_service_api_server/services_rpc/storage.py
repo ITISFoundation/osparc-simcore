@@ -16,18 +16,18 @@ _exception_mapper = partial(service_exception_mapper, service_name="Storage")
 @dataclass(frozen=True, kw_only=True)
 class StorageService:
     _rpc_client: RabbitMQRPCClient
+    _user_id: UserID
+    _product_name: ProductName
 
     @_exception_mapper(rpc_exception_map={})
     async def start_data_export(
         self,
-        user_id: UserID,
-        product_name: ProductName,
         paths_to_export: list[PathToExport],
     ) -> AsyncJobGet:
         async_job_get, _ = await start_export_data(
             self._rpc_client,
-            user_id=user_id,
-            product_name=product_name,
+            user_id=self._user_id,
+            product_name=self._product_name,
             paths_to_export=paths_to_export,
         )
         return async_job_get
