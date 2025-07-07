@@ -6,14 +6,13 @@ import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 from models_library.api_schemas__common.health import HealthCheckGet
-from models_library.errors import (
-    RABBITMQ_CLIENT_UNHEALTHY_MSG,
-)
+from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from pytest_mock import MockerFixture
 from simcore_service_notifications.api.rest._health import HealthCheckError
 
 pytest_simcore_core_services_selection = [
     "rabbit",
+    "redis",
 ]
 
 
