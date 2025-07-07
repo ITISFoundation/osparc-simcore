@@ -59,7 +59,6 @@ def middleware_factory(
     async def middleware_handler(request: web.Request, handler: Handler):
         # See https://prometheus.io/docs/concepts/metric_types
 
-        log_exception: BaseException | None = None
         response: web.StreamResponse = web.HTTPInternalServerError()
 
         canonical_endpoint = request.path
@@ -92,16 +91,10 @@ def middleware_factory(
 
         except web.HTTPServerError as exc:
             response = exc
-            log_exception = exc
             raise
 
         except web.HTTPException as exc:
             response = exc
-            log_exception = None
-            raise
-
-        except Exception as exc:  # pylint: disable=broad-except
-            log_exception = exc
             raise
 
         finally:
@@ -119,20 +112,6 @@ def middleware_factory(
             if exit_middleware_cb:
                 with log_catch(logger=log, reraise=False):
                     await exit_middleware_cb(request, response)
-
-            if log_exception:
-                log.error(
-                    'Unexpected server error "%s" from access: %s "%s %s" done '
-                    "in %3.2f secs. Responding with status %s",
-                    type(log_exception),
-                    request.remote,
-                    request.method,
-                    request.path,
-                    response_latency_seconds,
-                    response.status,
-                    exc_info=log_exception,
-                    stack_info=True,
-                )
 
         return response
 
