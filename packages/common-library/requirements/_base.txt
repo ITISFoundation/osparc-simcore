@@ -13,7 +13,7 @@ pydantic-core==2.27.2
     # via pydantic
 pydantic-extra-types==2.10.2
     # via -r requirements/_base.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   pydantic
     #   pydantic-core

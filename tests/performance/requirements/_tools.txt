@@ -73,7 +73,7 @@ setuptools==80.9.0
     #   pip-tools
 tomlkit==0.13.2
     # via pylint
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_test.txt
     #   mypy

@@ -70,11 +70,11 @@ pyyaml==6.0.2
     #   watchdog
 ruff==0.9.10
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==76.0.0
+setuptools==80.9.0
     # via pip-tools
 tomlkit==0.13.2
     # via pylint
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
