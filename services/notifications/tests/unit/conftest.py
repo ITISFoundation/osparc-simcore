@@ -14,6 +14,7 @@ from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
@@ -143,3 +144,8 @@ async def notifications_rabbitmq_rpc_client(
     rpc_client = await rabbitmq_rpc_client("pytest_notifications_rpc_client")
     assert rpc_client
     return rpc_client
+
+
+@pytest.fixture
+def test_client(fastapi_app: FastAPI) -> TestClient:
+    return TestClient(fastapi_app)
