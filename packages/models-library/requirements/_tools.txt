@@ -60,8 +60,10 @@ platformdirs==4.3.6
     #   virtualenv
 pre-commit==4.1.0
     # via -r requirements/../../../requirements/devenv.txt
-pygments==2.19.1
-    # via rich
+pygments==2.19.2
+    # via
+    #   -c requirements/_test.txt
+    #   rich
 pylint==3.3.4
     # via -r requirements/../../../requirements/devenv.txt
 pyproject-hooks==1.2.0
@@ -77,7 +79,7 @@ rich==13.9.4
     # via typer
 ruff==0.9.9
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==75.8.2
+setuptools==80.9.0
     # via pip-tools
 shellingham==1.5.4
     # via typer
@@ -85,7 +87,7 @@ tomlkit==0.13.2
     # via pylint
 typer==0.15.2
     # via -r requirements/_tools.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

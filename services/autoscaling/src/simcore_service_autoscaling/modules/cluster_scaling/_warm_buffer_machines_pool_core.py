@@ -20,7 +20,6 @@ from typing import TypeAlias, cast
 
 import arrow
 from aws_library.ec2 import (
-    AWSTagValue,
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
@@ -35,94 +34,132 @@ from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
-from ..constants import (
+from ...constants import (
     BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
     BUFFER_MACHINE_PULLING_EC2_TAG_KEY,
     DOCKER_PULL_COMMAND,
     PREPULL_COMMAND_NAME,
 )
-from ..core.settings import get_application_settings
-from ..models import BufferPool, BufferPoolManager
-from ..utils.auto_scaling_core import ec2_buffer_startup_script
-from ..utils.buffer_machines_pool_core import (
+from ...core.settings import get_application_settings
+from ...models import WarmBufferPool, WarmBufferPoolManager
+from ...utils.warm_buffer_machines import (
     dump_pre_pulled_images_as_tags,
-    get_deactivated_buffer_ec2_tags,
+    ec2_warm_buffer_startup_script,
+    get_deactivated_warm_buffer_ec2_tags,
     load_pre_pulled_images_from_tags,
 )
-from .auto_scaling_mode_base import BaseAutoscaling
-from .ec2 import get_ec2_client
-from .instrumentation import get_instrumentation, has_instrumentation
-from .ssm import get_ssm_client
+from ..ec2 import get_ec2_client
+from ..instrumentation import get_instrumentation, has_instrumentation
+from ..ssm import get_ssm_client
+from ._provider_protocol import AutoscalingProvider
 
 _logger = logging.getLogger(__name__)
 
 
-async def _analyze_running_instance_state(
-    app: FastAPI, *, buffer_pool: BufferPool, instance: EC2InstanceData
-):
-    ssm_client = get_ssm_client(app)
+def _record_instance_ready_metrics(app: FastAPI, *, instance: EC2InstanceData) -> None:
+    """Record metrics for instances ready to pull images."""
+    if has_instrumentation(app):
+        get_instrumentation(
+            app
+        ).buffer_machines_pools_metrics.instances_ready_to_pull_seconds.labels(
+            instance_type=instance.type
+        ).observe(
+            (arrow.utcnow().datetime - instance.launch_time).total_seconds()
+        )
+
+
+def _handle_completed_cloud_init_instance(
+    app: FastAPI, *, buffer_pool: WarmBufferPool, instance: EC2InstanceData
+) -> None:
+    """Handle instance that has completed cloud init."""
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    _record_instance_ready_metrics(app, instance=instance)
+
+    if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+        instance.type
+    ].pre_pull_images:
+        buffer_pool.waiting_to_pull_instances.add(instance)
+    else:
+        buffer_pool.waiting_to_stop_instances.add(instance)
+
+
+async def _handle_ssm_connected_instance(
+    app: FastAPI, *, buffer_pool: WarmBufferPool, instance: EC2InstanceData
+) -> None:
+    """Handle instance connected to SSM server."""
+    ssm_client = get_ssm_client(app)
+
+    try:
+        if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
+            _handle_completed_cloud_init_instance(
+                app, buffer_pool=buffer_pool, instance=instance
+            )
+        else:
+            buffer_pool.pending_instances.add(instance)
+    except (
+        SSMCommandExecutionResultError,
+        SSMCommandExecutionTimeoutError,
+    ):
+        _logger.exception(
+            "Unnexpected error when checking EC2 cloud initialization completion!. "
+            "The machine will be terminated. TIP: check the initialization phase for errors."
+        )
+        buffer_pool.broken_instances.add(instance)
+
+
+def _handle_unconnected_instance(
+    app: FastAPI, *, buffer_pool: WarmBufferPool, instance: EC2InstanceData
+) -> None:
+    """Handle instance not connected to SSM server."""
+    app_settings = get_application_settings(app)
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+
+    is_broken = bool(
+        (arrow.utcnow().datetime - instance.launch_time)
+        > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+    )
+
+    if is_broken:
+        _logger.error(
+            "The machine does not connect to the SSM server after %s. It will be terminated. TIP: check the initialization phase for errors.",
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
+        )
+        buffer_pool.broken_instances.add(instance)
+    else:
+        buffer_pool.pending_instances.add(instance)
+
+
+async def _analyze_running_instance_state(
+    app: FastAPI, *, buffer_pool: WarmBufferPool, instance: EC2InstanceData
+) -> None:
+    """Analyze and categorize running instance based on its current state."""
+    ssm_client = get_ssm_client(app)
 
     if BUFFER_MACHINE_PULLING_EC2_TAG_KEY in instance.tags:
         buffer_pool.pulling_instances.add(instance)
     elif await ssm_client.is_instance_connected_to_ssm_server(instance.id):
-        try:
-            if await ssm_client.wait_for_has_instance_completed_cloud_init(instance.id):
-                if has_instrumentation(app):
-                    get_instrumentation(
-                        app
-                    ).buffer_machines_pools_metrics.instances_ready_to_pull_seconds.labels(
-                        instance_type=instance.type
-                    ).observe(
-                        (arrow.utcnow().datetime - instance.launch_time).total_seconds()
-                    )
-                if app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                    instance.type
-                ].pre_pull_images:
-                    buffer_pool.waiting_to_pull_instances.add(instance)
-                else:
-                    buffer_pool.waiting_to_stop_instances.add(instance)
-            else:
-                buffer_pool.pending_instances.add(instance)
-        except (
-            SSMCommandExecutionResultError,
-            SSMCommandExecutionTimeoutError,
-        ):
-            _logger.exception(
-                "Unnexpected error when checking EC2 cloud initialization completion!. "
-                "The machine will be terminated. TIP: check the initialization phase for errors."
-            )
-            buffer_pool.broken_instances.add(instance)
-    else:
-        is_broken = bool(
-            (arrow.utcnow().datetime - instance.launch_time)
-            > app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME
+        await _handle_ssm_connected_instance(
+            app, buffer_pool=buffer_pool, instance=instance
         )
-
-        if is_broken:
-            _logger.error(
-                "The machine does not connect to the SSM server after %s. It will be terminated. TIP: check the initialization phase for errors.",
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME,
-            )
-            buffer_pool.broken_instances.add(instance)
-        else:
-            buffer_pool.pending_instances.add(instance)
+    else:
+        _handle_unconnected_instance(app, buffer_pool=buffer_pool, instance=instance)
 
 
 async def _analyse_current_state(
-    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
-) -> BufferPoolManager:
+    app: FastAPI, *, auto_scaling_mode: AutoscalingProvider
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
 
     all_buffer_instances = await ec2_client.get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
+        tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped", "pending", "running", "stopping"],
     )
-    buffers_manager = BufferPoolManager()
+    buffers_manager = WarmBufferPoolManager()
     for instance in all_buffer_instances:
         match instance.state:
             case "stopped":
@@ -150,8 +187,8 @@ async def _analyse_current_state(
 
 async def _terminate_unneeded_pools(
     app: FastAPI,
-    buffers_manager: BufferPoolManager,
-) -> BufferPoolManager:
+    buffers_manager: WarmBufferPoolManager,
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -178,8 +215,8 @@ async def _terminate_unneeded_pools(
 
 
 async def _terminate_instances_with_invalid_pre_pulled_images(
-    app: FastAPI, buffers_manager: BufferPoolManager
-) -> BufferPoolManager:
+    app: FastAPI, buffers_manager: WarmBufferPoolManager
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -212,8 +249,8 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
 
 
 async def _terminate_broken_instances(
-    app: FastAPI, buffers_manager: BufferPoolManager
-) -> BufferPoolManager:
+    app: FastAPI, buffers_manager: WarmBufferPoolManager
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     termineatable_instances = set()
     for pool in buffers_manager.buffer_pools.values():
@@ -227,10 +264,10 @@ async def _terminate_broken_instances(
 
 async def _add_remove_buffer_instances(
     app: FastAPI,
-    buffers_manager: BufferPoolManager,
+    buffers_manager: WarmBufferPoolManager,
     *,
-    auto_scaling_mode: BaseAutoscaling,
-) -> BufferPoolManager:
+    auto_scaling_mode: AutoscalingProvider,
+) -> WarmBufferPoolManager:
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -265,8 +302,10 @@ async def _add_remove_buffer_instances(
                     name=ec2_type,
                     resources=Resources.create_as_empty(),  # fake resources
                 ),
-                tags=get_deactivated_buffer_ec2_tags(app, auto_scaling_mode),
-                startup_script=ec2_buffer_startup_script(
+                tags=get_deactivated_warm_buffer_ec2_tags(
+                    auto_scaling_mode.get_ec2_tags(app)
+                ),
+                startup_script=ec2_warm_buffer_startup_script(
                     ec2_boot_specific, app_settings
                 ),
                 ami_id=ec2_boot_specific.ami_id,
@@ -291,7 +330,7 @@ InstancesToTerminate: TypeAlias = set[EC2InstanceData]
 
 
 async def _handle_pool_image_pulling(
-    app: FastAPI, instance_type: InstanceTypeType, pool: BufferPool
+    app: FastAPI, instance_type: InstanceTypeType, pool: WarmBufferPool
 ) -> tuple[InstancesToStop, InstancesToTerminate]:
     ec2_client = get_ec2_client(app)
     ssm_client = get_ssm_client(app)
@@ -305,10 +344,8 @@ async def _handle_pool_image_pulling(
         await ec2_client.set_instances_tags(
             tuple(pool.waiting_to_pull_instances),
             tags={
-                BUFFER_MACHINE_PULLING_EC2_TAG_KEY: AWSTagValue("true"),
-                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: AWSTagValue(
-                    ssm_command.command_id
-                ),
+                BUFFER_MACHINE_PULLING_EC2_TAG_KEY: "true",
+                BUFFER_MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY: ssm_command.command_id,
             },
         )
 
@@ -361,7 +398,7 @@ async def _handle_pool_image_pulling(
 
 
 async def _handle_image_pre_pulling(
-    app: FastAPI, buffers_manager: BufferPoolManager
+    app: FastAPI, buffers_manager: WarmBufferPoolManager
 ) -> None:
     ec2_client = get_ec2_client(app)
     instances_to_stop: set[EC2InstanceData] = set()
@@ -397,7 +434,7 @@ async def _handle_image_pre_pulling(
 
 
 async def monitor_buffer_machines(
-    app: FastAPI, *, auto_scaling_mode: BaseAutoscaling
+    app: FastAPI, *, auto_scaling_mode: AutoscalingProvider
 ) -> None:
     """Buffer machine creation works like so:
     1. a EC2 is created with an EBS attached volume wO auto prepulling and wO auto connect to swarm

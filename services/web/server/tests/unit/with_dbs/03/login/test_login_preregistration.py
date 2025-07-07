@@ -10,10 +10,13 @@ from unittest.mock import MagicMock
 import pytest
 from aiohttp import ClientResponseError
 from aiohttp.test_utils import TestClient
+from common_library.users_enums import AccountRequestStatus
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
+from models_library.api_schemas_webserver.users import UserAccountGet
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
@@ -57,7 +60,7 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
 @pytest.fixture
 def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.login._controller.rest.preregistration.get_session",
+        "simcore_service_webserver.login._controller.rest.preregistration.session_service.get_session",
         spec=True,
         return_value={"captcha": "123456"},
     )
@@ -168,7 +171,7 @@ async def test_request_an_account(
     assert client.app
     # A form similar to the one in https://github.com/ITISFoundation/osparc-simcore/pull/5378
     user_data = {
-        **AccountRequestInfo.model_config["json_schema_extra"]["example"]["form"],
+        **AccountRequestInfo.model_json_schema()["example"]["form"],
         # fields required in the form
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
@@ -188,8 +191,33 @@ async def test_request_an_account(
 
     product = get_product(client.app, product_name="osparc")
 
-    # sent email?
+    # check email was sent
     mimetext = mocked_send_email.call_args[1]["message"]
     assert "account" in mimetext["Subject"].lower()
     assert mimetext["From"] == product.support_email
     assert mimetext["To"] == product.product_owners_email or product.support_email
+
+    # check it appears in PO center
+    async with NewUser(
+        user_data={
+            "email": "po-user@email.com",
+            "name": "po-user-fixture",
+            "role": UserRole.PRODUCT_OWNER,
+        },
+        app=client.app,
+    ) as product_owner_user, switch_client_session_to(client, product_owner_user):
+
+        response = await client.get(
+            "v0/admin/user-accounts?limit=20&offset=0&review_status=PENDING"
+        )
+
+        data, _ = await assert_status(response, status.HTTP_200_OK)
+
+        assert len(data) == 1
+        user = UserAccountGet.model_validate(data[0])
+        assert user.first_name == user_data["firstName"]
+        assert not user.registered
+        assert user.status is None
+        assert user.account_request_status == AccountRequestStatus.PENDING
+
+    # TODO add a test for reregistration `AlreadyPreRegisteredError`

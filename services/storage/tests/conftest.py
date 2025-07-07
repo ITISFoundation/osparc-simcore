@@ -88,6 +88,7 @@ from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.cli_runner",

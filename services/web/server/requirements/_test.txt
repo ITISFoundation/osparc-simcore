@@ -95,12 +95,12 @@ greenlet==2.0.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
     #   uvicorn
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
@@ -139,7 +139,7 @@ jsonschema==3.2.0
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-mako==1.2.2
+mako==1.3.10
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -179,7 +179,9 @@ packaging==24.1
 pathspec==0.12.1
     # via mypy
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
 propcache==0.3.1
@@ -202,13 +204,14 @@ pydantic-core==2.27.1
 pygments==2.15.1
     # via
     #   -c requirements/_base.txt
+    #   pytest
     #   rich
 pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -220,25 +223,25 @@ pytest==8.3.5
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-docker==3.2.0
+pytest-docker==3.2.3
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
 pytest-sugar==1.0.0
     # via -r requirements/_test.in
-pytest-xdist==3.6.1
+pytest-xdist==3.8.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via
@@ -276,7 +279,7 @@ rich==13.4.2
     # via
     #   -c requirements/_base.txt
     #   typer
-setuptools==69.1.1
+setuptools==80.9.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -328,7 +331,7 @@ types-passlib==1.7.7.20241221
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs

@@ -93,7 +93,9 @@ pint==0.24.4
 platformdirs==4.3.8
     # via pint
 pluggy==1.6.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
 prompt-toolkit==3.0.51
@@ -106,7 +108,11 @@ psutil==7.0.0
     #   pytest-celery
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -117,13 +123,13 @@ pytest==8.3.5
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
 pytest-celery==1.2.0
     # via -r requirements/_test.in
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via -r requirements/_test.in
 pytest-docker-tools==3.1.9
     # via pytest-celery
@@ -131,7 +137,7 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -170,7 +176,7 @@ tenacity==9.1.2
     #   pytest-celery
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio

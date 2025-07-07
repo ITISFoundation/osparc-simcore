@@ -92,23 +92,29 @@ packaging==24.2
 pathspec==0.12.1
     # via mypy
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 propcache==0.3.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via
@@ -149,7 +155,7 @@ types-psutil==7.0.0.20250218
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   mypy

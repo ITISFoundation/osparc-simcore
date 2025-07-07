@@ -69,11 +69,11 @@ pyyaml==6.0.2
     #   pre-commit
 ruff==0.9.9
     # via -r requirements/../../../requirements/devenv.txt
-setuptools==75.8.2
+setuptools==80.9.0
     # via pip-tools
 tomlkit==0.13.2
     # via pylint
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   mypy
