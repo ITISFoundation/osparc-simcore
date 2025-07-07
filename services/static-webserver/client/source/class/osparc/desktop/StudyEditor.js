@@ -794,6 +794,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
     },
 
+    // ------------------ IDLING TRACKER ------------------
     __startIdlingTracker: function() {
       if (this.__studyEditorIdlingTracker) {
         this.__studyEditorIdlingTracker.stop();
@@ -810,7 +811,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__studyEditorIdlingTracker = null;
       }
     },
+    // ------------------ IDLING TRACKER ------------------
 
+    // ------------------ AUTO SAVER ------------------
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
       const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
@@ -835,6 +838,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__autoSaveTimer.restart();
       }
     },
+    // ------------------ AUTO SAVER ------------------
 
     __stopTimers: function() {
       this.__stopIdlingTracker();
