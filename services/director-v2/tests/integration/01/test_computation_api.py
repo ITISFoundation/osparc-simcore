@@ -170,7 +170,6 @@ COMPUTATION_URL: str = "v2/computations"
                 "project_id": "16e60a5d-834e-4267-b44d-3af49171bf21",
                 "product_name": "not a product",
                 "product_api_base_url": "http://invalid",
-                "collection_run_id": "16e60a5d-834e-4267-b44d-3af49171bf21",
             },
             status.HTTP_404_NOT_FOUND,
         ),
@@ -997,7 +996,6 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "start_pipeline": False,
             "product_name": osparc_product_name,
             "product_api_base_url": osparc_product_api_base_url,
-            "collection_run_id": str(uuid.uuid4()),
         },
     )
     assert (
@@ -1084,7 +1082,6 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
             "start_pipeline": False,
             "product_name": osparc_product_name,
             "product_api_base_url": osparc_product_api_base_url,
-            "collection_run_id": str(uuid.uuid4()),
         },
     )
     assert (

@@ -100,7 +100,9 @@ async def create_pipeline(
                 "start_pipeline": start_pipeline,
                 "product_name": product_name,
                 "product_api_base_url": product_api_base_url,
-                "collection_run_id": str(uuid.uuid4()),
+                "collection_run_id": (
+                    str(uuid.uuid4()) if start_pipeline is True else None
+                ),
                 **kwargs,
             },
         )

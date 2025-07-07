@@ -224,6 +224,11 @@ async def _try_start_pipeline(
         wallet_id = computation.wallet_info.wallet_id
         wallet_name = computation.wallet_info.wallet_name
 
+    if computation.collection_run_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Project {computation.project_id} has no collection run ID",
+        )
     await run_new_pipeline(
         app,
         user_id=computation.user_id,
