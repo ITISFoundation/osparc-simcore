@@ -114,7 +114,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       const savingStudyIcon = this.getChildControl("saving-study-icon");
       this.bind("study", savingStudyIcon, "visibility", {
-        converter: s => s ? "visible" : "excluded"
+        converter: s => {
+          if (s) {
+            s.addListener("changeSavePending", e => {
+              const isSaving = e.getData();
+              savingStudyIcon.setVisibility(isSaving ? "visible" : "excluded");
+            });
+          }
+          return "excluded";
+        }
       });
 
       // center-items
@@ -212,7 +220,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             toolTipText: this.tr("Saving pipeline..."),
             source: "@FontAwesome5Solid/cloud-upload-alt/14",
             opacity: 0.8,
-            // visibility: "excluded",
           });
           this.getChildControl("left-items").add(control);
           break;
