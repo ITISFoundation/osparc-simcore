@@ -1350,9 +1350,17 @@
             "description": "contains information about the wallet used to bill the running service"
           },
           "collection_run_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Collection Run Id"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Run Id",
+            "description": "contains information about the wallet used to bill the running service"
           }
         },
         "type": "object",
@@ -1360,8 +1368,7 @@
           "user_id",
           "project_id",
           "product_name",
-          "product_api_base_url",
-          "collection_run_id"
+          "product_api_base_url"
         ],
         "title": "ComputationCreate"
       },

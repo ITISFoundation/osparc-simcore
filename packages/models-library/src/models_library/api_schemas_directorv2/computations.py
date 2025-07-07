@@ -73,7 +73,12 @@ class ComputationCreate(BaseModel):
             description="contains information about the wallet used to bill the running service"
         ),
     ] = None
-    collection_run_id: CollectionRunID
+    collection_run_id: Annotated[
+        CollectionRunID | None,
+        Field(
+            description="contains information about the wallet used to bill the running service"
+        ),
+    ] = None
 
     @field_validator("product_name")
     @classmethod
@@ -82,6 +87,20 @@ class ComputationCreate(BaseModel):
     ):
         if info.data.get("start_pipeline") and v is None:
             msg = "product_name must be set if computation shall start!"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("collection_run_id")
+    @classmethod
+    def _ensure_collection_run_id_dependency_on_start_pipeline(
+        cls, v, info: ValidationInfo
+    ):
+        start_pipeline = info.data.get("start_pipeline")
+        if start_pipeline and v is None:
+            msg = "collection_run_id must be provided when start_pipeline is True!"
+            raise ValueError(msg)
+        if not start_pipeline and v is not None:
+            msg = "collection_run_id must be None when start_pipeline is False!"
             raise ValueError(msg)
         return v
 
