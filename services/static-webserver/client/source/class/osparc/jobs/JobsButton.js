@@ -90,8 +90,14 @@ qx.Class.define("osparc.jobs.JobsButton", {
 
     __fetchNJobs: function() {
       const jobsStore = osparc.store.Jobs.getInstance();
-      jobsStore.fetchJobsLatest()
-        .then(jobs => this.__updateJobsButton(jobs.length))
+      const runningOnly = true;
+      const offset = 0;
+      const limit = 1;
+      const orderBy = undefined; // use default order
+      const filters = undefined; // use default filters
+      const resolveWResponse = true;
+      jobsStore.fetchJobsLatest(runningOnly, offset, limit, orderBy, filters, resolveWResponse)
+        .then(resp => this.__updateJobsButton(Boolean(resp["_meta"]["total"])));
     },
 
     __attachSocketListener: function() {
@@ -130,8 +136,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
         this.__refreshTimer.dispose();
       }
 
-      // Create and start new timer (30 seconds = 30000ms)
-      this.__refreshTimer = new qx.event.Timer(30000);
+      this.__refreshTimer = new qx.event.Timer(20000);
       this.__refreshTimer.addListener("interval", () => this.__fetchNJobs(), this);
       this.__refreshTimer.start();
     },
