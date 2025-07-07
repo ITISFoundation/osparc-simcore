@@ -63,7 +63,7 @@ class RequestCancellationMiddleware:
                     cancel_callback=partial(
                         _is_client_disconnected, receive, queue, request
                     ),
-                    poll_interval=0.0,
+                    poll_interval_s=0.0,
                 )
                 return
 
