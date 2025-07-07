@@ -30,11 +30,11 @@ faker==36.1.1
     # via -r requirements/_test_wo_playwright.txt
 greenlet==3.1.1
     # via playwright
-h11==0.14.0
+h11==0.16.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   httpx

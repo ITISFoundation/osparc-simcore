@@ -18,11 +18,11 @@ coverage==7.6.12
     #   pytest-cov
 faker==37.0.0
     # via -r requirements/_test.in
-h11==0.14.0
+h11==0.16.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_base.txt
     #   httpx
