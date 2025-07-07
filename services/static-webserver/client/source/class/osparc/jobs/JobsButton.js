@@ -48,6 +48,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
   },
 
   members: {
+    __fetchNJobs: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -100,7 +102,7 @@ qx.Class.define("osparc.jobs.JobsButton", {
         if (osparc.study.Utils.amIRunningTheStudy(content)) {
           this.__updateJobsButton(true);
         }
-        // ...in the next iteration: listen to main store's "studyStateChanged"
+        // ...in the next iteration: listen to main store's "studyStateChanged", which will cover all users
       }, this);
     },
 
@@ -114,6 +116,24 @@ qx.Class.define("osparc.jobs.JobsButton", {
           visibility: isActive ? "visible" : "excluded"
         });
       });
+
+      // Start or restart timer when isActive is true
+      if (isActive) {
+        this.__startRefreshTimer();
+      }
+    },
+
+    __startRefreshTimer: function() {
+      // Stop existing timer if running
+      if (this.__refreshTimer) {
+        this.__refreshTimer.stop();
+        this.__refreshTimer.dispose();
+      }
+
+      // Create and start new timer (30 seconds = 30000ms)
+      this.__refreshTimer = new qx.event.Timer(30000);
+      this.__refreshTimer.addListener("interval", () => this.__fetchNJobs(), this);
+      this.__refreshTimer.start();
     },
   }
 });
