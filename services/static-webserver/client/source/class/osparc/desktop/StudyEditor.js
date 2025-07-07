@@ -105,6 +105,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   statics: {
     AUTO_SAVE_INTERVAL: 3000,
+    DIFF_CHECK_INTERVAL: 300,
     READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
   },
 
@@ -114,6 +115,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __workbenchView: null,
     __slideshowView: null,
     __autoSaveTimer: null,
+    __savingTimer: null,
     __studyEditorIdlingTracker: null,
     __studyDataInBackend: null,
     __updatingStudy: null,
@@ -226,6 +228,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
         this.__startAutoSaveTimer();
+        this.__startSavingTimer();
       } else {
         const msg = this.self().READ_ONLY_TEXT;
         osparc.FlashMessenger.logAs(msg, "WARNING");
@@ -794,6 +797,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
     },
 
+    // ------------------ IDLING TRACKER ------------------
     __startIdlingTracker: function() {
       if (this.__studyEditorIdlingTracker) {
         this.__studyEditorIdlingTracker.stop();
@@ -810,7 +814,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__studyEditorIdlingTracker = null;
       }
     },
+    // ------------------ IDLING TRACKER ------------------
 
+    // ------------------ AUTO SAVER ------------------
     __startAutoSaveTimer: function() {
       // Save every 3 seconds
       const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
@@ -835,10 +841,32 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__autoSaveTimer.restart();
       }
     },
+    // ------------------ AUTO SAVER ------------------
+
+    // ---------------- SAVING TIMER ------------------
+    __startSavingTimer: function() {
+      const timer = this.__savingTimer = new qx.event.Timer(this.self().DIFF_CHECK_INTERVAL);
+      timer.addListener("interval", () => {
+        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
+          return;
+        }
+        this.getStudy().setSavePending(this.didStudyChange());
+      }, this);
+      timer.start();
+    },
+
+    __stopSavingTimer: function() {
+      if (this.__savingTimer && this.__savingTimer.isEnabled()) {
+        this.__savingTimer.stop();
+        this.__savingTimer.setEnabled(false);
+      }
+    },
+    // ---------------- SAVING TIMER ------------------
 
     __stopTimers: function() {
       this.__stopIdlingTracker();
       this.__stopAutoSaveTimer();
+      this.__stopSavingTimer();
     },
 
     __getStudyDiffs: function() {
@@ -857,6 +885,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return studyDiffs;
     },
 
+    // didStudyChange takes around 0.5ms
     didStudyChange: function() {
       const studyDiffs = this.__getStudyDiffs();
       return Boolean(Object.keys(studyDiffs.delta).length);
