@@ -12,6 +12,8 @@ from typing import Any
 import pytest
 import servicelib
 from faker import Faker
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -107,58 +109,11 @@ async def get_redis_client_sdk(
         await _cleanup_redis_data(clients_manager)
 
 
-@pytest.fixture()
-def uninstrument_opentelemetry():
-    yield
-    try:
-        from opentelemetry.instrumentation.redis import RedisInstrumentor
-
-        RedisInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
-
-        BotocoreInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.requests import RequestsInstrumentor
-
-        RequestsInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.aiopg import AiopgInstrumentor
-
-        AiopgInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
-
-        AsyncPGInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
-        FastAPIInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.aiohttp_client import (
-            AioHttpClientInstrumentor,
-        )
-
-        AioHttpClientInstrumentor().uninstrument()
-    except ImportError:
-        pass
-    try:
-        from opentelemetry.instrumentation.aiohttp_server import (
-            AioHttpServerInstrumentor,
-        )
-
-        AioHttpServerInstrumentor().uninstrument()
-    except ImportError:
-        pass
+@pytest.fixture
+def mock_otel_collector(mocker: MockerFixture) -> InMemorySpanExporter:
+    memory_exporter = InMemorySpanExporter()
+    span_processor = SimpleSpanProcessor(memory_exporter)
+    mocker.patch(
+        "servicelib.fastapi.tracing._create_span_processor", return_value=span_processor
+    )
+    return memory_exporter

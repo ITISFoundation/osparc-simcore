@@ -4,7 +4,7 @@
 import importlib
 import random
 import string
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -68,9 +68,9 @@ def set_and_clean_settings_env_vars(
 )
 async def test_valid_tracing_settings(
     mocked_app: FastAPI,
+    mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
-    uninstrument_opentelemetry: Iterator[None],
 ):
     tracing_settings = TracingSettings()
     async for _ in get_tracing_instrumentation_lifespan(
@@ -102,9 +102,9 @@ async def test_valid_tracing_settings(
 )
 async def test_invalid_tracing_settings(
     mocked_app: FastAPI,
+    mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
-    uninstrument_opentelemetry: Iterator[None],
 ):
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
@@ -157,9 +157,9 @@ def manage_package(request):
 )
 async def test_tracing_setup_package_detection(
     mocked_app: FastAPI,
+    mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: Callable[[], None],
     tracing_settings_in: Callable[[], dict[str, Any]],
-    uninstrument_opentelemetry: Iterator[None],
     manage_package,
 ):
     package_name = manage_package
@@ -196,7 +196,6 @@ async def test_trace_id_in_response_header(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable,
     tracing_settings_in: Callable,
-    uninstrument_opentelemetry: Iterator[None],
     server_response: PlainTextResponse | HTTPException,
 ) -> None:
     tracing_settings = TracingSettings()
