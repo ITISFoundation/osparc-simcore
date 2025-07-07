@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from pydantic import BaseModel, Field
 
@@ -9,12 +9,12 @@ class BaseRecipient(BaseModel, ABC):
 
 
 class SMSRecipient(BaseRecipient):
-    type: Literal["sms"]
+    type: Annotated[str, Field(frozen=True)] = "sms"
     phone_number: str
 
 
 class EmailRecipient(BaseRecipient):
-    type: Literal["email"]
+    type: Annotated[str, Field(frozen=True)] = "email"
     address: str
 
 

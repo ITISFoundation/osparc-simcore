@@ -2,43 +2,62 @@
 # pylint: disable=unused-argument
 
 from collections.abc import AsyncIterator
+from typing import Final
 
 import pytest
-import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
+
+_LIFESPAN_TIMEOUT: Final[int] = 30
 
 
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     mock_environment: EnvVarsDict,
-    rabbit_service: RabbitSettings,
-    postgres_db: sa.engine.Engine,  # waiting for postgres service to start
-    postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **mock_environment,
-            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
-            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
-            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
-            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
-            "RABBIT_USER": rabbit_service.RABBIT_USER,
-            **postgres_env_vars_dict,
         },
     )
 
 
 @pytest.fixture
-async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
-    app: FastAPI = create_app(ApplicationSettings.create_from_envs())
+def enabled_rabbitmq(
+    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
+) -> RabbitSettings:
+    return rabbit_service
+
+
+@pytest.fixture
+def enabled_redis(
+    app_environment: EnvVarsDict, redis_service: RedisSettings
+) -> RedisSettings:
+    return redis_service
+
+
+@pytest.fixture
+def app_settings(
+    app_environment: EnvVarsDict,
+    enabled_rabbitmq: RabbitSettings,
+    enabled_redis: RedisSettings,
+) -> ApplicationSettings:
+    settings = ApplicationSettings.create_from_envs()
+    print(f"{settings.model_dump_json(indent=2)=}")
+    return settings
+
+
+@pytest.fixture
+async def initialized_app(app_settings: ApplicationSettings) -> AsyncIterator[FastAPI]:
+    app: FastAPI = create_app(app_settings)
 
     async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app

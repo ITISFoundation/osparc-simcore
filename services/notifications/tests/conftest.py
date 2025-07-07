@@ -15,7 +15,7 @@ from celery.contrib.testing.worker import (  # type: ignore[import-untyped]
     start_worker,
 )
 from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
-from celery.worker.worker import WorkController  # type: ignore[import-untyped]
+from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from models_library.basic_types import BootModeEnum
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -32,7 +32,6 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.postgres_service",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -81,7 +80,7 @@ def celery_config() -> dict[str, Any]:
 
 @pytest.fixture
 async def with_celery_worker(
-    mock_environment: EnvVarsDict,
+    app_environment: EnvVarsDict,
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[TestWorkController]:
