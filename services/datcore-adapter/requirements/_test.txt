@@ -52,8 +52,9 @@ idna==3.6
     #   requests
 iniconfig==2.0.0
     # via pytest
-packaging==24.2
+packaging==25.0
     # via
+    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pluggy==1.5.0

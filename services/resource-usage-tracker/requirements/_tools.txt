@@ -78,7 +78,6 @@ ruff==0.9.9
     # via -r requirements/../../../requirements/devenv.txt
 setuptools==74.0.0
     # via
-    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pip-tools
 tomlkit==0.13.2
