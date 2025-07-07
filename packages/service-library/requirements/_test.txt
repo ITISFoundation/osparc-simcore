@@ -65,11 +65,11 @@ greenlet==3.1.1
     # via
     #   -c requirements/_aiohttp.txt
     #   sqlalchemy
-h11==0.14.0
+h11==0.16.0
     # via
     #   -c requirements/_fastapi.txt
     #   httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via
     #   -c requirements/_fastapi.txt
     #   httpx
@@ -264,8 +264,9 @@ types-requests==2.32.0.20250301
     # via types-tqdm
 types-tqdm==4.67.0.20250301
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
+    #   -c requirements/_aiohttp.txt
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   anyio
