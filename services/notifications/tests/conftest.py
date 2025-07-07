@@ -24,9 +24,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.modules.celery.tasks import (
-    TaskQueue,  # type: ignore[import-untyped]
-)
-from simcore_service_notifications.modules.celery.tasks import (
+    TaskQueue,
     setup_worker_tasks,
 )
 
