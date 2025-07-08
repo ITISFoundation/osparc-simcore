@@ -183,6 +183,12 @@ def _set_logging_handler(
         )
 
 
+def _get_all_loggers() -> list[logging.Logger]:
+    manager = logging.Logger.manager
+    root_logger = logging.getLogger()
+    return [root_logger] + [logging.getLogger(name) for name in manager.loggerDict]
+
+
 def _apply_logger_filters(
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
 ) -> None:
@@ -220,14 +226,9 @@ def config_all_loggers(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
-    the_manager = logging.Logger.manager
-    root_logger = logging.getLogger()
-    loggers = [root_logger] + [
-        logging.getLogger(name) for name in the_manager.loggerDict
-    ]
-
-    # Apply handlers to loggers
-    for logger in loggers:
+    # Get all loggers and apply formatting
+    all_loggers = _get_all_loggers()
+    for logger in all_loggers:
         _set_logging_handler(
             logger,
             fmt=fmt,
@@ -265,14 +266,11 @@ async def setup_async_loggers(
     )
 
     # Set up async logging infrastructure
-    log_queue = queue.Queue()
+    log_queue: queue.Queue = queue.Queue()
     # Create handler with proper formatting
     handler = logging.StreamHandler()
     handler.setFormatter(
-        CustomFormatter(
-            fmt,
-            log_format_local_dev_enabled=log_format_local_dev_enabled,
-        )
+        CustomFormatter(fmt, log_format_local_dev_enabled=log_format_local_dev_enabled)
     )
 
     # Create and start the queue listener
@@ -284,14 +282,8 @@ async def setup_async_loggers(
     # Create queue handler for loggers
     queue_handler = logging.handlers.QueueHandler(log_queue)
 
-    # Configure all existing loggers - add queue handler alongside existing handlers
-    manager = logging.Logger.manager
-    root_logger = logging.getLogger()
-    all_loggers = [root_logger] + [
-        logging.getLogger(name) for name in manager.loggerDict
-    ]
-
-    # Add queue handler to all loggers (preserving existing handlers)
+    # Get all loggers and add queue handler alongside existing handlers
+    all_loggers = _get_all_loggers()
     for logger in all_loggers:
         logger.addHandler(queue_handler)
 
