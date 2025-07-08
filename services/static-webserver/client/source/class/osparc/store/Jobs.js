@@ -73,8 +73,7 @@ qx.Class.define("osparc.store.Jobs", {
     },
 
     fetchJobsHistory: function(
-      studyId,
-      includeChildren = false,
+      projectId,
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
@@ -85,8 +84,7 @@ qx.Class.define("osparc.store.Jobs", {
     ) {
       const params = {
         url: {
-          studyId,
-          includeChildren,
+          projectId,
           offset,
           limit,
           orderBy: JSON.stringify(orderBy),
@@ -113,7 +111,7 @@ qx.Class.define("osparc.store.Jobs", {
     },
 
     fetchSubJobs: function(
-      projectUuid,
+      collectionRunId,
       orderBy = {
         field: "started_at",
         direction: "desc"
@@ -121,16 +119,15 @@ qx.Class.define("osparc.store.Jobs", {
     ) {
       const params = {
         url: {
-          studyId: projectUuid,
+          collectionRunId,
           orderBy: JSON.stringify(orderBy),
-          includeChildren: false,
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("subRuns", params, "getPageLatest")
         .then(subJobsData => {
           const subJobs = [];
           subJobsData.forEach(subJobData => {
-            subJobs.push(this.addSubJob(subJobData));
+            subJobs.push(this.addSubJob(collectionRunId, subJobData));
           });
           return subJobs;
         })
@@ -139,7 +136,7 @@ qx.Class.define("osparc.store.Jobs", {
 
     __addJob: function(jobData) {
       const jobs = this.getJobs();
-      const jobFound = jobs.find(job => job.getProjectUuid() === jobData["projectUuid"]);
+      const jobFound = jobs.find(job => job.getCollectionRunId() === jobData["collectionRunId"]);
       if (jobFound) {
         jobFound.updateJob(jobData);
         return jobFound;
@@ -149,22 +146,22 @@ qx.Class.define("osparc.store.Jobs", {
       return job;
     },
 
-    addSubJob: function(subJobData) {
-      let job = this.getJob(subJobData["projectUuid"]);
+    addSubJob: function(collectionRunId, subJobData) {
+      let job = this.getJob(collectionRunId);
       if (!job) {
         const jobs = this.getJobs();
         job = new osparc.data.Job({
-          "projectUuid": subJobData["projectUuid"],
+          collectionRunId,
         });
         jobs.push(job);
       }
-      const subJob = job.addSubJob(subJobData);
+      const subJob = job.addSubJob(collectionRunId, subJobData);
       return subJob;
     },
 
-    getJob: function(projectUuid) {
+    getJob: function(collectionRunId) {
       const jobs = this.getJobs();
-      return jobs.find(job => job.getProjectUuid() === projectUuid);
+      return jobs.find(job => job.getCollectionRunId() === collectionRunId);
     },
   }
 });
