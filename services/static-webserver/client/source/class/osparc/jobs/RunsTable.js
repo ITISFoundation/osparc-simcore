@@ -19,16 +19,16 @@
 qx.Class.define("osparc.jobs.RunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(projectUuid = null, includeChildren = false, runningOnly = true) {
+  construct: function(projectId = null, runningOnly = true) {
     this.base(arguments);
 
     this.set({
-      projectUuid,
+      projectId,
       runningOnly,
     });
 
-    const model = new osparc.jobs.RunsTableModel(projectUuid, includeChildren);
-    this.bind("projectUuid", model, "projectUuid");
+    const model = new osparc.jobs.RunsTableModel(projectId);
+    this.bind("projectId", model, "projectId");
     this.bind("runningOnly", model, "runningOnly");
     this.setTableModel(model);
 
@@ -56,11 +56,11 @@ qx.Class.define("osparc.jobs.RunsTable", {
   },
 
   properties: {
-    projectUuid: {
+    projectId: {
       check: "String",
       init: null,
       nullable: true,
-      event: "changeProjectUuid",
+      event: "changeProjectId",
     },
 
     runningOnly: {
@@ -84,7 +84,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
         width: 200
       },
       PROJECT_IDS: {
-        id: "projectUuid",
+        id: "projectIds",
         column: 1,
         label: qx.locale.Manager.tr("Project Ids"),
         width: 200
@@ -170,7 +170,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["collectionRunId"]);
           if (!job) {
             return;
           }
@@ -208,9 +208,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
         if (confirmationWin.getConfirmed()) {
           const params = {
             url: {
-              "studyId": rowData["projectUuid"],
+              "studyId": rowData["projectId"],
             },
           };
+          // confirm with @matusdrobuliak66 if this works
           osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
             .then(() => osparc.FlashMessenger.logAs(this.tr("Stopping pipeline"), "INFO"))
             .catch(err => osparc.FlashMessenger.logError(err));

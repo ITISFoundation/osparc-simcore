@@ -106,9 +106,8 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
       runsHistoryLayout.add(introText);
 
       const projectUuid = projectData["uuid"];
-      const includeChildren = true;
       const runningOnly = false;
-      const runsTable = this.__runsTable = new osparc.jobs.RunsTable(projectUuid, includeChildren, runningOnly);
+      const runsTable = this.__runsTable = new osparc.jobs.RunsTable(projectUuid, runningOnly);
       const columnModel = runsTable.getTableColumnModel();
       // Hide project name column
       columnModel.setColumnVisible(osparc.jobs.RunsTable.COLS.NAME.column, false);

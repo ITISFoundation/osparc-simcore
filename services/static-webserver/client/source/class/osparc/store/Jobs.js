@@ -73,8 +73,7 @@ qx.Class.define("osparc.store.Jobs", {
     },
 
     fetchJobsHistory: function(
-      studyId,
-      includeChildren = false,
+      projectId,
       offset = 0,
       limit = this.self().SERVER_MAX_LIMIT,
       orderBy = {
@@ -85,8 +84,7 @@ qx.Class.define("osparc.store.Jobs", {
     ) {
       const params = {
         url: {
-          studyId,
-          includeChildren,
+          projectId,
           offset,
           limit,
           orderBy: JSON.stringify(orderBy),
@@ -123,7 +121,6 @@ qx.Class.define("osparc.store.Jobs", {
         url: {
           studyId: projectUuid,
           orderBy: JSON.stringify(orderBy),
-          includeChildren: false,
         }
       };
       return osparc.data.Resources.getInstance().getAllPages("subRunsOld", params, "getPageLatest")
