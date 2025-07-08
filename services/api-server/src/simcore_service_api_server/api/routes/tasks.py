@@ -26,12 +26,16 @@ from ._constants import (
     create_route_description,
 )
 
+_ASYNC_JOB_CLIENT_NAME = "API_SERVER"
+
 router = APIRouter()
 _logger = logging.getLogger(__name__)
 
 
 def _get_job_id_data(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
-    return AsyncJobFilter(user_id=user_id, product_name=product_name)
+    return AsyncJobFilter(
+        user_id=user_id, product_name=product_name, client_name=_ASYNC_JOB_CLIENT_NAME
+    )
 
 
 _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
@@ -61,7 +65,7 @@ async def list_tasks(
     async_jobs: Annotated[AsyncJobClient, Depends(get_async_jobs_client)],
 ):
     user_async_jobs = await async_jobs.list_jobs(
-        job_id_data=_get_job_id_data(user_id, product_name),
+        job_filter=_get_job_id_data(user_id, product_name),
         filter_="",
     )
     app_router = app.router
@@ -102,7 +106,7 @@ async def get_task_status(
 ):
     async_job_rpc_status = await async_jobs.status(
         job_id=task_id,
-        job_id_data=_get_job_id_data(user_id, product_name),
+        job_filter=_get_job_id_data(user_id, product_name),
     )
     _task_id = f"{async_job_rpc_status.job_id}"
     return TaskStatus(
@@ -134,7 +138,7 @@ async def cancel_task(
 ):
     await async_jobs.cancel(
         job_id=task_id,
-        job_id_data=_get_job_id_data(user_id, product_name),
+        job_filter=_get_job_id_data(user_id, product_name),
     )
 
 
@@ -168,6 +172,6 @@ async def get_task_result(
 ):
     async_job_rpc_result = await async_jobs.result(
         job_id=task_id,
-        job_id_data=_get_job_id_data(user_id, product_name),
+        job_filter=_get_job_id_data(user_id, product_name),
     )
     return TaskResult(result=async_job_rpc_result.result, error=None)
