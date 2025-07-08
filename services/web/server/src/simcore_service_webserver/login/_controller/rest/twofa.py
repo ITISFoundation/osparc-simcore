@@ -12,6 +12,7 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import session_access_required
+from ....web_utils import envelope_response
 from ... import _twofa_service
 from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._models import InputSchema
@@ -23,7 +24,6 @@ from ...constants import (
     MSG_UNKNOWN_EMAIL,
 )
 from ...settings import LoginSettingsForProduct, get_plugin_settings
-from ...web_utils import envelope_response
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)

@@ -18,6 +18,7 @@ from ....security import security_service
 from ....users import api as users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_utils import flash_response
 from ... import _confirmation_service, _confirmation_web
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
@@ -37,7 +38,6 @@ from ...constants import (
 )
 from ...decorators import login_required
 from ...settings import LoginOptions, get_plugin_options
-from ...web_utils import flash_response
 
 _logger = logging.getLogger(__name__)
 

@@ -33,6 +33,7 @@ from ....session.access_policies import session_access_required
 from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_utils import flash_response
 from ... import _confirmation_service, _security_service, _twofa_service
 from ..._invitations_service import ConfirmedInvitationData
 from ..._login_repository_legacy import (
@@ -59,7 +60,6 @@ from ...settings import (
     get_plugin_options,
     get_plugin_settings,
 )
-from ...web_utils import flash_response
 
 _logger = logging.getLogger(__name__)
 
