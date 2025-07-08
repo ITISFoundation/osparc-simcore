@@ -81,9 +81,7 @@ async def upsert_comp_run_collection(
         modified=func.now(),
     )
     on_update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[
-            comp_runs_collections.c.client_or_system_generated_display_name
-        ],
+        index_elements=[comp_runs_collections.c.client_or_system_generated_id],
         set_={
             "modified": func.now(),
         },
@@ -91,5 +89,5 @@ async def upsert_comp_run_collection(
     result = await conn.stream(
         on_update_stmt.returning(comp_runs_collections.c.collection_run_id)
     )
-    collection_id_tuple: tuple[UUID] = result.one()
+    collection_id_tuple: tuple[UUID] = await result.one()
     return TypeAdapter(CollectionRunID).validate_python(collection_id_tuple[0])
