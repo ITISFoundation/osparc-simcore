@@ -69,8 +69,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     deleteEnabled: {
       check: "Boolean",
       init: true,
-      nullable: false,
-      event: "changeMultiSelect",
+      nullable: true,
       apply: "__applyDeleteEnabled",
     },
   },
