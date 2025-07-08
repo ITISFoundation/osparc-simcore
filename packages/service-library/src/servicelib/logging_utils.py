@@ -266,7 +266,7 @@ async def setup_async_loggers(
     )
 
     # Set up async logging infrastructure
-    log_queue: queue.Queue = queue.Queue()
+    log_queue = queue.Queue()
     # Create handler with proper formatting
     handler = logging.StreamHandler()
     handler.setFormatter(
