@@ -63,12 +63,6 @@ class _PageParams(BaseModel):
 
 
 class RegisterPhoneNextPage(NextPage[_PageParams]):
-    logger: str = "user"
-    level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
-    message: str
-
-
-class RegisterPhoneNextPage(NextPage[_PageParams]):
     logger: str = Field("user", deprecated=True)
     level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
     message: str
