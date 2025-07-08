@@ -3,7 +3,7 @@ from typing import Annotated, Final, cast
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Header, Request
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FileMetaDataGetv010,
@@ -284,7 +284,7 @@ async def complete_upload_file(
     # NOTE: completing a multipart upload on AWS can take up to several minutes
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    async_job_name_data = AsyncJobNameData(
+    async_job_name_data = AsyncJobFilter(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
@@ -292,7 +292,7 @@ async def complete_upload_file(
         TaskMetadata(
             name=remote_complete_upload_file.__name__,
         ),
-        task_context=async_job_name_data.model_dump(),
+        task_filter=async_job_name_data.model_dump(),
         user_id=async_job_name_data.user_id,
         location_id=location_id,
         file_id=file_id,
@@ -340,18 +340,18 @@ async def is_completed_upload_file(
     # therefore we wait a bit to see if it completes fast and return a 204
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
-    async_job_name_data = AsyncJobNameData(
+    async_job_name_data = AsyncJobFilter(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
     )
     task_status = await task_manager.get_task_status(
-        task_context=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        task_filter=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
             await task_manager.get_task_result(
-                task_context=async_job_name_data.model_dump(),
+                task_filter=async_job_name_data.model_dump(),
                 task_uuid=TaskUUID(future_id),
             )
         )

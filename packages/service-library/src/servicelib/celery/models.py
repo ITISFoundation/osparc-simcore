@@ -14,8 +14,6 @@ TaskUUID: TypeAlias = UUID
 
 
 class TaskFilterBase(BaseModel):
-    __root__: dict[str, str]
-
     model_config = ConfigDict(extra="forbid")
 
 

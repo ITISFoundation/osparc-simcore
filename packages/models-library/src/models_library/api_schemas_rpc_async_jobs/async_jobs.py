@@ -2,6 +2,7 @@ from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
 from pydantic import BaseModel, StringConstraints
+from servicelib.celery.models import TaskFilterBase
 
 from ..products import ProductName
 from ..progress_bar import ProgressReport
@@ -33,8 +34,12 @@ class AsyncJobAbort(BaseModel):
     job_id: AsyncJobId
 
 
-class AsyncJobNameData(BaseModel):
+class AsyncJobFilter(TaskFilterBase):
     """Data for controlling access to an async job"""
 
     product_name: ProductName
     user_id: UserID
+    client_name: Annotated[
+        str,
+        StringConstraints(min_length=1, pattern=r"^[^\s]+$"),
+    ]

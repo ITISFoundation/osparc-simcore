@@ -9,8 +9,8 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobId,
-    AsyncJobNameData,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -30,8 +30,8 @@ router = APIRouter()
 _logger = logging.getLogger(__name__)
 
 
-def _get_job_id_data(user_id: UserID, product_name: ProductName) -> AsyncJobNameData:
-    return AsyncJobNameData(user_id=user_id, product_name=product_name)
+def _get_job_id_data(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
+    return AsyncJobFilter(user_id=user_id, product_name=product_name)
 
 
 _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {

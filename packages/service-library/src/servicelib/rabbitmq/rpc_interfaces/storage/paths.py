@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobGet,
-    AsyncJobNameData,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.products import ProductName
@@ -21,13 +21,13 @@ async def compute_path_size(
     product_name: ProductName,
     location_id: LocationID,
     path: Path,
-) -> tuple[AsyncJobGet, AsyncJobNameData]:
-    job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
+) -> tuple[AsyncJobGet, AsyncJobFilter]:
+    job_id_data = AsyncJobFilter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName("compute_path_size"),
-        job_id_data=job_id_data,
+        job_filter=job_id_data,
         location_id=location_id,
         path=path,
     )
@@ -41,13 +41,13 @@ async def delete_paths(
     product_name: ProductName,
     location_id: LocationID,
     paths: set[Path],
-) -> tuple[AsyncJobGet, AsyncJobNameData]:
-    job_id_data = AsyncJobNameData(user_id=user_id, product_name=product_name)
+) -> tuple[AsyncJobGet, AsyncJobFilter]:
+    job_id_data = AsyncJobFilter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName("delete_paths"),
-        job_id_data=job_id_data,
+        job_filter=job_id_data,
         location_id=location_id,
         paths=paths,
     )

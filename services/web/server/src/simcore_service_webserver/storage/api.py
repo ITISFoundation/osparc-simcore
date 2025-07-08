@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobNameData
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
@@ -117,7 +117,7 @@ async def copy_data_folders_from_project(
             rabbitmq_client,
             method_name="copy_folders_from_project",
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id_data=AsyncJobNameData(user_id=user_id, product_name=product_name),
+            job_filter=AsyncJobFilter(user_id=user_id, product_name=product_name),
             body=TypeAdapter(FoldersBody).validate_python(
                 {
                     "source": source_project,

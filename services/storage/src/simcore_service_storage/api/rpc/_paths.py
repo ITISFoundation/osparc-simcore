@@ -2,8 +2,8 @@ import logging
 from pathlib import Path
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobGet,
-    AsyncJobNameData,
 )
 from models_library.projects_nodes_io import LocationID
 from servicelib.celery.models import TaskMetadata
@@ -20,7 +20,7 @@ router = RPCRouter()
 @router.expose(reraise_if_error_type=None)
 async def compute_path_size(
     task_manager: TaskManager,
-    job_id_data: AsyncJobNameData,
+    job_id_data: AsyncJobFilter,
     location_id: LocationID,
     path: Path,
 ) -> AsyncJobGet:
@@ -29,7 +29,7 @@ async def compute_path_size(
         task_metadata=TaskMetadata(
             name=task_name,
         ),
-        task_context=job_id_data.model_dump(),
+        task_filter=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         location_id=location_id,
         path=path,
@@ -41,7 +41,7 @@ async def compute_path_size(
 @router.expose(reraise_if_error_type=None)
 async def delete_paths(
     task_manager: TaskManager,
-    job_id_data: AsyncJobNameData,
+    job_id_data: AsyncJobFilter,
     location_id: LocationID,
     paths: set[Path],
 ) -> AsyncJobGet:
@@ -50,7 +50,7 @@ async def delete_paths(
         task_metadata=TaskMetadata(
             name=task_name,
         ),
-        task_context=job_id_data.model_dump(),
+        task_filter=job_id_data.model_dump(),
         user_id=job_id_data.user_id,
         location_id=location_id,
         paths=paths,

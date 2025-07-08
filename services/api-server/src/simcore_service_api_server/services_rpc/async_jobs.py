@@ -2,9 +2,9 @@ import functools
 from dataclasses import dataclass
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
-    AsyncJobNameData,
     AsyncJobResult,
     AsyncJobStatus,
 )
@@ -40,14 +40,12 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def cancel(
-        self, *, job_id: AsyncJobId, job_id_data: AsyncJobNameData
-    ) -> None:
+    async def cancel(self, *, job_id: AsyncJobId, job_id_data: AsyncJobFilter) -> None:
         return await async_jobs.cancel(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=job_id,
-            job_id_data=job_id_data,
+            job_filter=job_id_data,
         )
 
     @_exception_mapper(
@@ -56,13 +54,13 @@ class AsyncJobClient:
         }
     )
     async def status(
-        self, *, job_id: AsyncJobId, job_id_data: AsyncJobNameData
+        self, *, job_id: AsyncJobId, job_id_data: AsyncJobFilter
     ) -> AsyncJobStatus:
         return await async_jobs.status(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=job_id,
-            job_id_data=job_id_data,
+            job_filter=job_id_data,
         )
 
     @_exception_mapper(
@@ -74,7 +72,7 @@ class AsyncJobClient:
         }
     )
     async def result(
-        self, *, job_id: AsyncJobId, job_id_data: AsyncJobNameData
+        self, *, job_id: AsyncJobId, job_id_data: AsyncJobFilter
     ) -> AsyncJobResult:
         return await async_jobs.result(
             self._rabbitmq_rpc_client,
@@ -89,11 +87,11 @@ class AsyncJobClient:
         }
     )
     async def list_jobs(
-        self, *, filter_: str, job_id_data: AsyncJobNameData
+        self, *, filter_: str, job_id_data: AsyncJobFilter
     ) -> list[AsyncJobGet]:
         return await async_jobs.list_jobs(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             filter_=filter_,
-            job_id_data=job_id_data,
+            job_filter=job_id_data,
         )

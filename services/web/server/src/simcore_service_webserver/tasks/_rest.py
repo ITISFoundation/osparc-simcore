@@ -15,8 +15,8 @@ from models_library.api_schemas_long_running_tasks.tasks import (
     TaskStatus,
 )
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobId,
-    AsyncJobNameData,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from pydantic import BaseModel
@@ -69,7 +69,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
     user_async_jobs = await async_jobs.list_jobs(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        job_id_data=AsyncJobNameData(
+        job_filter=AsyncJobFilter(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
         filter_="",
@@ -119,7 +119,7 @@ async def get_async_job_status(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
-        job_id_data=AsyncJobNameData(
+        job_filter=AsyncJobFilter(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
@@ -154,7 +154,7 @@ async def cancel_async_job(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
-        job_id_data=AsyncJobNameData(
+        job_filter=AsyncJobFilter(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
@@ -181,7 +181,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         job_id=async_job_get.task_id,
-        job_id_data=AsyncJobNameData(
+        job_id_data=AsyncJobFilter(
             user_id=_req_ctx.user_id, product_name=_req_ctx.product_name
         ),
     )
