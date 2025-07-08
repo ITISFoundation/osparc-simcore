@@ -14,6 +14,7 @@ from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG
 from ..login import login_service
+from ..login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
 from ..login.constants import (
     CAPTCHA_SESSION_KEY,
     MSG_LOGGED_OUT,
@@ -33,7 +34,6 @@ from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ..web_utils import flash_response
 from . import _service
-from ._controller._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 
