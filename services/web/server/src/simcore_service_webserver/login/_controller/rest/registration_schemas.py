@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Annotated, Literal
 
 from models_library.emails import LowerCaseEmailStr
 from pydantic import (
@@ -18,20 +18,23 @@ _logger = logging.getLogger(__name__)
 
 
 class InvitationCheck(InputSchema):
-    invitation: str = Field(..., description="Invitation code")
+    invitation: Annotated[str, Field(description="Invitation code")]
 
 
 class InvitationInfo(InputSchema):
-    email: LowerCaseEmailStr | None = Field(
-        None, description="Email associated to invitation or None"
-    )
+    email: Annotated[
+        LowerCaseEmailStr | None,
+        Field(description="Email associated to invitation or None"),
+    ] = None
 
 
 class RegisterBody(InputSchema):
     email: LowerCaseEmailStr
     password: SecretStr
-    confirm: SecretStr | None = Field(None, description="Password confirmation")
-    invitation: str | None = Field(None, description="Invitation code")
+    confirm: Annotated[SecretStr | None, Field(description="Password confirmation")] = (
+        None
+    )
+    invitation: Annotated[str | None, Field(description="Invitation code")] = None
 
     _password_confirm_match = field_validator("confirm")(check_confirm_password_match)
     model_config = ConfigDict(
@@ -50,13 +53,19 @@ class RegisterBody(InputSchema):
 
 class RegisterPhoneBody(InputSchema):
     email: LowerCaseEmailStr
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
+    phone: Annotated[
+        str, Field(description="Phone number E.164, needed on the deployments with 2FA")
+    ]
 
 
 class _PageParams(BaseModel):
     expiration_2fa: PositiveInt | None = None
+
+
+class RegisterPhoneNextPage(NextPage[_PageParams]):
+    logger: str = "user"
+    level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
+    message: str
 
 
 class RegisterPhoneNextPage(NextPage[_PageParams]):
