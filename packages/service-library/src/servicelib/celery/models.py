@@ -5,7 +5,7 @@ from uuid import UUID
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, StringConstraints
 
 TaskID: TypeAlias = str
 TaskName: TypeAlias = Annotated[
@@ -15,7 +15,6 @@ TaskUUID: TypeAlias = UUID
 
 
 class TaskFilter(BaseModel):
-    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def from_async_job_filter(cls, async_job_filter: AsyncJobFilter) -> "TaskFilter":
