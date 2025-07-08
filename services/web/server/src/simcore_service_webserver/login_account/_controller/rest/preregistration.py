@@ -13,14 +13,13 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task
 
 from ...._meta import API_VTAG
-from ....login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
-from ....login._login_service import notify_user_logout
+from ....login import login_service
 from ....login.constants import (
     CAPTCHA_SESSION_KEY,
     MSG_LOGGED_OUT,
     MSG_WRONG_CAPTCHA__INVALID,
 )
-from ....login.settings import LoginSettingsForProduct, get_plugin_settings
+from ....login.settings import get_plugin_settings
 from ....login.web_utils import flash_response
 from ....login_auth.decorators import login_required
 from ....models import AuthenticatedRequestContext
@@ -34,11 +33,9 @@ from ....users._common.schemas import PreRegisteredUserGet
 from ....utils import MINUTE
 from ....utils_rate_limiting import global_rate_limit_route
 from ... import _preregistration_service
+from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
-
-
-routes = web.RouteTableDef()
 
 
 def _get_ipinfo(request: web.Request) -> dict[str, Any]:
@@ -54,6 +51,9 @@ def _get_ipinfo(request: web.Request) -> dict[str, Any]:
         "peername": peername,
         "test_url": f"https://ipinfo.io/{x_real_ip}/json",
     }
+
+
+routes = web.RouteTableDef()
 
 
 @routes.post(
@@ -104,9 +104,7 @@ async def unregister_account(request: web.Request):
     body = await parse_request_body_as(UnregisterCheck, request)
 
     product: Product = products_web.get_current_product(request)
-    settings: LoginSettingsForProduct = get_plugin_settings(
-        request.app, product_name=product.name
-    )
+    settings = get_plugin_settings(request.app, product_name=product.name)
 
     # checks before deleting
     credentials = await users_service.get_user_credentials(
@@ -130,7 +128,7 @@ async def unregister_account(request: web.Request):
         await users_service.set_user_as_deleted(request.app, user_id=req_ctx.user_id)
 
         # logout
-        await notify_user_logout(
+        await login_service.notify_user_logout(
             request.app, user_id=req_ctx.user_id, client_session_id=None
         )
         response = flash_response(MSG_LOGGED_OUT, "INFO")

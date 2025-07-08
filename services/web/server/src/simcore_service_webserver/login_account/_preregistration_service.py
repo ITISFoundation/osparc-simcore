@@ -128,7 +128,7 @@ async def create_captcha() -> tuple[str, bytes]:
 
 
 async def create_pre_registration(
-    app: web.Application, profile: PreRegisteredUserGet, product_name: ProductName
+    app: web.Application, *, profile: PreRegisteredUserGet, product_name: ProductName
 ):
 
     await _users_service.pre_register_user(
