@@ -174,13 +174,10 @@ qx.Class.define("osparc.jobs.RunsTable", {
           if (!job) {
             return;
           }
-          const allInfo = {
-            "image": job.getInfo() ? osparc.utils.Utils.deepCloneObject(job.getInfo()) : {},
-            "customMetadata": job.getCustomMetadata() ? osparc.utils.Utils.deepCloneObject(job.getCustomMetadata()) : {},
-          }
-          const runInfo = new osparc.jobs.Info(allInfo);
+          const info = job.getInfo() ? osparc.utils.Utils.deepCloneObject(job.getInfo()) : {}
+          const runInfo = new osparc.jobs.Info(info);
           const win = osparc.jobs.Info.popUpInWindow(runInfo);
-          win.setCaption(rowData["projectName"]);
+          win.setCaption(rowData["name"]);
           break;
         }
         case "cancel": {
@@ -193,7 +190,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
     },
 
     __cancelRun: function(rowData) {
-      const msg = this.tr("Are you sure you want to cancel") + " <b>" + rowData["projectName"] + "</b>?";
+      const msg = this.tr("Are you sure you want to cancel") + " <b>" + rowData["name"] + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Cancel Run"),
         confirmText: this.tr("Cancel"),
