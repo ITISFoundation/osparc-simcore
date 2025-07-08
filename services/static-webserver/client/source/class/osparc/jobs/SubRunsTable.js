@@ -62,10 +62,10 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         label: qx.locale.Manager.tr("Node Id"),
         width: 200
       },
-      NODE_NAME: {
-        id: "nodeName",
+      NAME: {
+        id: "name",
         column: 2,
-        label: qx.locale.Manager.tr("Node"),
+        label: qx.locale.Manager.tr("Name"),
         width: 100
       },
       APP: {
@@ -162,7 +162,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           }
           const jobInfo = new osparc.jobs.Info(subJob.getImage());
           const win = osparc.jobs.Info.popUpInWindow(jobInfo);
-          win.setCaption(rowData["nodeName"]);
+          win.setCaption(rowData["name"]);
           break;
         }
         case "logs": {
@@ -176,7 +176,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           }
           const logDownloadLink = subJob.getLogDownloadLink()
           if (logDownloadLink) {
-            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".zip");
+            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["name"] + ".zip");
           } else {
             osparc.FlashMessenger.logAs(this.tr("No logs available"), "WARNING");
           }

@@ -111,14 +111,14 @@ qx.Class.define("osparc.data.Job", {
   members: {
     __subJobs: null,
 
-    addSubJob: function(subJobData) {
+    addSubJob: function(collectionRunId, subJobData) {
       const subJobFound = this.__subJobs.find(subJb => subJb.getNodeId() === subJobData["nodeId"]);
       if (subJobFound) {
         subJobFound.updateSubJob(subJobData);
         return subJobFound;
       }
 
-      const subJob = new osparc.data.SubJob(subJobData);
+      const subJob = new osparc.data.SubJob(collectionRunId, subJobData);
       this.__subJobs.push(subJob);
       return subJob;
     },

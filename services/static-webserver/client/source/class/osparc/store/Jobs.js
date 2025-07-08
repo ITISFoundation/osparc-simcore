@@ -127,7 +127,7 @@ qx.Class.define("osparc.store.Jobs", {
         .then(subJobsData => {
           const subJobs = [];
           subJobsData.forEach(subJobData => {
-            subJobs.push(this.addSubJob(subJobData));
+            subJobs.push(this.addSubJob(collectionRunId, subJobData));
           });
           return subJobs;
         })
@@ -146,16 +146,16 @@ qx.Class.define("osparc.store.Jobs", {
       return job;
     },
 
-    addSubJob: function(subJobData) {
-      let job = this.getJob(subJobData["collectionRunId"]);
+    addSubJob: function(collectionRunId, subJobData) {
+      let job = this.getJob(collectionRunId);
       if (!job) {
         const jobs = this.getJobs();
         job = new osparc.data.Job({
-          "collectionRunId": subJobData["collectionRunId"],
+          collectionRunId,
         });
         jobs.push(job);
       }
-      const subJob = job.addSubJob(subJobData);
+      const subJob = job.addSubJob(collectionRunId, subJobData);
       return subJob;
     },
 

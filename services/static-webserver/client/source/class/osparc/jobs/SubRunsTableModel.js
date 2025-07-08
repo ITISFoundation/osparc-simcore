@@ -113,7 +113,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
               data.push({
                 [subJobsCols.COLLECTION_RUN_ID.id]: subJob.getCollectionRunId(),
                 [subJobsCols.NODE_ID.id]: subJob.getNodeId(),
-                [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
+                [subJobsCols.NAME.id]: subJob.getName(),
                 [subJobsCols.APP.id]: appName + ":" + displayVersion,
                 [subJobsCols.STATE.id]: osparc.data.Job.STATUS_LABELS[subJob.getState()] || subJob.getState(),
                 [subJobsCols.PROGRESS.id]: subJob.getProgress() * 100 + "%",
