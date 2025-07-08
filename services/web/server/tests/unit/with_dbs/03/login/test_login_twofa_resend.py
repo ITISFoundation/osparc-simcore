@@ -13,7 +13,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.login._controller.rest.auth import (
+from simcore_service_webserver.login._controller.rest.auth_schemas import (
     CodePageParams,
     NextPage,
 )

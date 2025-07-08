@@ -1,10 +1,7 @@
 import logging
-from typing import Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.emails import LowerCaseEmailStr
-from pydantic import Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -15,7 +12,6 @@ from ....session.access_policies import session_access_required
 from ....web_utils import envelope_response
 from ... import _twofa_service
 from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
-from ..._models import InputSchema
 from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -25,16 +21,12 @@ from ...constants import (
 )
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import handle_rest_requests_exceptions
+from .twofa_schemas import Resend2faBody
 
 _logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
-
-
-class Resend2faBody(InputSchema):
-    email: LowerCaseEmailStr = Field(..., description="User email (identifier)")
-    via: Literal["SMS", "Email"] = "SMS"
 
 
 @routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
