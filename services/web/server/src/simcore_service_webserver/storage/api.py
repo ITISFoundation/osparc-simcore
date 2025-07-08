@@ -4,6 +4,7 @@ import datetime
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator
+from http import client
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
@@ -30,12 +31,14 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
 )
 from yarl import URL
 
+from ..constants import ASYNC_JOB_CLIENT_NAME
 from ..projects.models import ProjectDict
 from ..projects.utils import NodesMap
 from ..rabbitmq import get_rabbitmq_rpc_client
 from .settings import StorageSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
+
 
 _TOTAL_TIMEOUT_TO_COPY_DATA_SECS: Final[int] = 60 * 60
 _SIMCORE_LOCATION: Final[LocationID] = 0
@@ -117,7 +120,11 @@ async def copy_data_folders_from_project(
             rabbitmq_client,
             method_name="copy_folders_from_project",
             rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_filter=AsyncJobFilter(user_id=user_id, product_name=product_name),
+            job_filter=AsyncJobFilter(
+                user_id=user_id,
+                product_name=product_name,
+                client_name=ASYNC_JOB_CLIENT_NAME,
+            ),
             body=TypeAdapter(FoldersBody).validate_python(
                 {
                     "source": source_project,
