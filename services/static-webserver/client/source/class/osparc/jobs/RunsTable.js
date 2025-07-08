@@ -181,7 +181,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
           break;
         }
         case "cancel": {
-          this.__cancelRun(rowData);
+          this.__cancelRunCollection(rowData);
           break;
         }
         default:
@@ -189,7 +189,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
       }
     },
 
-    __cancelRun: function(rowData) {
+    __cancelRunCollection: function(rowData) {
       const msg = this.tr("Are you sure you want to cancel") + " <b>" + rowData["name"] + "</b>?";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Cancel Run"),
@@ -203,14 +203,17 @@ qx.Class.define("osparc.jobs.RunsTable", {
       confirmationWin.open();
       confirmationWin.addListener("close", () => {
         if (confirmationWin.getConfirmed()) {
-          const params = {
-            url: {
-              "studyId": rowData["projectId"],
-            },
-          };
-          // confirm with @matusdrobuliak66 if this works
-          osparc.data.Resources.fetch("runPipeline", "stopPipeline", params)
-            .then(() => osparc.FlashMessenger.logAs(this.tr("Stopping pipeline"), "INFO"))
+          const promises = [];
+          rowData["projectIds"].forEach(projectId => {
+            const params = {
+              url: {
+                "studyId": projectId,
+              },
+            };
+            promises.push(osparc.data.Resources.fetch("runPipeline", "stopPipeline", params))
+          });
+          Promise.all(promises)
+            .then(() => osparc.FlashMessenger.logAs(this.tr("Stopping Run"), "INFO"))
             .catch(err => osparc.FlashMessenger.logError(err));
         }
       }, this);
