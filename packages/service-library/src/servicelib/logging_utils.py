@@ -674,35 +674,3 @@ def _apply_logger_filters(
 
         log_filter = GeneralLogFilter(filtered_routes)
         logger.addFilter(log_filter)
-
-
-# Alias for backward compatibility and simpler API
-async_logging_context = setup_async_loggers
-
-# =============================================================================
-# SUMMARY: ASYNC LOGGING REFACTORING COMPLETED
-# =============================================================================
-#
-# This module now provides robust, non-blocking async logging infrastructure with:
-#
-# 1. CORE FEATURES:
-#    - Unlimited queue size (no more queue.Full errors)
-#    - Proper context manager-based lifecycle management
-#    - Clean separation of sync and async logging setup
-#
-# 2. API OPTIONS:
-#    - setup_async_loggers(): Async context manager for non-blocking logging
-#    - async_logging_context: Alias for backward compatibility
-#    - config_all_loggers(): Original synchronous setup (unchanged)
-#
-# 3. BEST PRACTICES IMPLEMENTED:
-#    - No global state (context manager based)
-#    - Proper resource cleanup
-#    - SuperFastPython async logging patterns
-#    - Thread-safe queue operations
-#    - Backward compatibility maintained
-#
-# Usage examples available in:
-# - async_logging_example_new.py (basic async logging)
-#
-# =============================================================================
