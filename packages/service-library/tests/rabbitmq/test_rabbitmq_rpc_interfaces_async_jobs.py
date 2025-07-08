@@ -69,9 +69,9 @@ async def async_job_rpc_server(  # noqa: C901
             raise JobMissingError(job_id=f"{job_id}")
 
         async def status(
-            self, job_id: AsyncJobId, job_id_data: AsyncJobFilter
+            self, job_id: AsyncJobId, job_filter: AsyncJobFilter
         ) -> AsyncJobStatus:
-            assert job_id_data
+            assert job_filter
             task = self._get_task(job_id)
             return AsyncJobStatus(
                 job_id=job_id,
@@ -79,30 +79,30 @@ async def async_job_rpc_server(  # noqa: C901
                 done=task.done(),
             )
 
-        async def cancel(self, job_id: AsyncJobId, job_id_data: AsyncJobFilter) -> None:
+        async def cancel(self, job_id: AsyncJobId, job_filter: AsyncJobFilter) -> None:
             assert job_id
-            assert job_id_data
+            assert job_filter
             task = self._get_task(job_id)
             task.cancel()
 
         async def result(
-            self, job_id: AsyncJobId, job_id_data: AsyncJobFilter
+            self, job_id: AsyncJobId, job_filter: AsyncJobFilter
         ) -> AsyncJobResult:
-            assert job_id_data
+            assert job_filter
             task = self._get_task(job_id)
             assert task.done()
             return AsyncJobResult(
                 result={
                     "data": task.result(),
                     "job_id": job_id,
-                    "job_id_data": job_id_data,
+                    "job_id_data": job_filter,
                 }
             )
 
         async def list_jobs(
-            self, filter_: str, job_id_data: AsyncJobFilter
+            self, filter_: str, job_filter: AsyncJobFilter
         ) -> list[AsyncJobGet]:
-            assert job_id_data
+            assert job_filter
             assert filter_ is not None
 
             return [
@@ -113,8 +113,8 @@ async def async_job_rpc_server(  # noqa: C901
                 for t in self.tasks
             ]
 
-        async def submit(self, job_id_data: AsyncJobFilter) -> AsyncJobGet:
-            assert job_id_data
+        async def submit(self, job_filter: AsyncJobFilter) -> AsyncJobGet:
+            assert job_filter
             job_id = faker.uuid4(cast_to=None)
             self.tasks.append(asyncio.create_task(_slow_task(), name=f"{job_id}"))
             return AsyncJobGet(job_id=job_id, job_name="fake_job_name")
@@ -156,7 +156,7 @@ async def test_async_jobs_methods(
             rpc_client,
             rpc_namespace=namespace,
             job_id=job_id,
-            job_id_data=job_filter,
+            job_filter=job_filter,
         )
 
 
@@ -246,6 +246,6 @@ async def test_submit_and_wait(
         result={
             "data": None,
             "job_id": job_composed_result.status.job_id,
-            "job_id_data": job_filter,
+            "job_filter": job_filter,
         }
     )
