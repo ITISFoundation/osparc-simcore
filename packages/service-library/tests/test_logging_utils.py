@@ -436,7 +436,6 @@ async def test_setup_async_loggers_basic(
 
     # Check that the log message was captured
     assert "Test async log message" in caplog.text
-    assert "Async logging setup completed" in caplog.text
 
 
 async def test_setup_async_loggers_with_filters(

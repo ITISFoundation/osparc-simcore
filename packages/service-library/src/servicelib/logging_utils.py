@@ -214,17 +214,17 @@ def config_all_loggers(
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
     """
-    the_manager: logging.Manager = logging.Logger.manager
-    root_logger = logging.getLogger()
-    loggers = [root_logger] + [
-        logging.getLogger(name) for name in the_manager.loggerDict
-    ]
-
     # Create format string
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
+
+    the_manager: logging.Manager = logging.Logger.manager
+    root_logger = logging.getLogger()
+    loggers = [root_logger] + [
+        logging.getLogger(name) for name in the_manager.loggerDict
+    ]
 
     # Apply handlers to loggers
     for logger in loggers:
@@ -241,9 +241,9 @@ def config_all_loggers(
 @asynccontextmanager
 async def setup_async_loggers(
     *,
-    log_format_local_dev_enabled: bool = False,
-    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]] | None = None,
-    tracing_settings: TracingSettings | None = None,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_settings: TracingSettings | None,
 ) -> AsyncGenerator[None, None]:
     """
     Async context manager for non-blocking logging infrastructure.
@@ -273,12 +273,7 @@ async def setup_async_loggers(
         if logger_filter_mapping:
             _apply_logger_filters(logger_filter_mapping)
 
-        _logger.info("Async logging setup completed")
-
-        try:
-            yield
-        finally:
-            _logger.debug("Async logging context exiting")
+        yield
 
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
