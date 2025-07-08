@@ -26,6 +26,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.tracing import with_profiled_span
 
 from .._meta import API_VTAG
 from ..exception_handling import (
@@ -111,6 +112,7 @@ routes = web.RouteTableDef()
 
 @routes.get(f"/{API_VTAG}/me", name="get_my_profile")
 @login_required
+@with_profiled_span
 @_handle_users_exceptions
 async def get_my_profile(request: web.Request) -> web.Response:
     product: Product = products_web.get_current_product(request)
