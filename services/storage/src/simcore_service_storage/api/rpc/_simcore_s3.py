@@ -16,7 +16,7 @@ router = RPCRouter()
 @router.expose(reraise_if_error_type=None)
 async def copy_folders_from_project(
     task_manager: TaskManager,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
     body: FoldersBody,
 ) -> AsyncJobGet:
     task_name = deep_copy_files_from_project.__name__
@@ -24,8 +24,8 @@ async def copy_folders_from_project(
         task_metadata=TaskMetadata(
             name=task_name,
         ),
-        task_filter=job_id_data.model_dump(),
-        user_id=job_id_data.user_id,
+        task_filter=job_filter,
+        user_id=job_filter.user_id,
         body=body,
     )
 
@@ -35,7 +35,7 @@ async def copy_folders_from_project(
 @router.expose()
 async def start_export_data(
     task_manager: TaskManager,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
     paths_to_export: list[PathToExport],
 ) -> AsyncJobGet:
     task_name = export_data.__name__
@@ -45,8 +45,8 @@ async def start_export_data(
             ephemeral=False,
             queue=TasksQueue.CPU_BOUND,
         ),
-        task_filter=job_id_data.model_dump(),
-        user_id=job_id_data.user_id,
+        task_filter=job_filter,
+        user_id=job_filter.user_id,
         paths_to_export=paths_to_export,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

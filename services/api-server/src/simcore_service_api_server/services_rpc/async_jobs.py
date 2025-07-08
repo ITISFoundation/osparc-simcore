@@ -40,12 +40,12 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def cancel(self, *, job_id: AsyncJobId, job_id_data: AsyncJobFilter) -> None:
+    async def cancel(self, *, job_id: AsyncJobId, job_filter: AsyncJobFilter) -> None:
         return await async_jobs.cancel(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=job_id,
-            job_filter=job_id_data,
+            job_filter=job_filter,
         )
 
     @_exception_mapper(
@@ -54,13 +54,13 @@ class AsyncJobClient:
         }
     )
     async def status(
-        self, *, job_id: AsyncJobId, job_id_data: AsyncJobFilter
+        self, *, job_id: AsyncJobId, job_filter: AsyncJobFilter
     ) -> AsyncJobStatus:
         return await async_jobs.status(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=job_id,
-            job_filter=job_id_data,
+            job_filter=job_filter,
         )
 
     @_exception_mapper(
@@ -72,13 +72,13 @@ class AsyncJobClient:
         }
     )
     async def result(
-        self, *, job_id: AsyncJobId, job_id_data: AsyncJobFilter
+        self, *, job_id: AsyncJobId, job_filter: AsyncJobFilter
     ) -> AsyncJobResult:
         return await async_jobs.result(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             job_id=job_id,
-            job_id_data=job_id_data,
+            job_filter=job_filter,
         )
 
     @_exception_mapper(
@@ -87,11 +87,11 @@ class AsyncJobClient:
         }
     )
     async def list_jobs(
-        self, *, filter_: str, job_id_data: AsyncJobFilter
+        self, *, filter_: str, job_filter: AsyncJobFilter
     ) -> list[AsyncJobGet]:
         return await async_jobs.list_jobs(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             filter_=filter_,
-            job_filter=job_id_data,
+            job_filter=job_filter,
         )
