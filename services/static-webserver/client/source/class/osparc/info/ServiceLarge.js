@@ -347,14 +347,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return osparc.info.ServiceUtils.createAccessRights(this.getService());
     },
 
-    __createClassifiers: function() {
-      return osparc.info.ServiceUtils.createClassifiers(this.getService());
-    },
-
-    __createQuality: function() {
-      return osparc.info.ServiceUtils.createQuality(this.getService());
-    },
-
     __createThumbnail: function() {
       let maxWidth = 190;
       let maxHeight = 220;
@@ -470,33 +462,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
         this.setService(updatedServiceData);
         this.fireDataEvent("updateService", updatedServiceData);
       }, this);
-    },
-
-    __openClassifiers: function() {
-      const title = this.tr("Classifiers");
-      let classifiers = null;
-      if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
-        classifiers = new osparc.metadata.ClassifiersEditor(this.getService());
-        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-        classifiers.addListener("updateClassifiers", e => {
-          win.close();
-          const updatedServiceData = e.getData();
-          this.setService(updatedServiceData);
-          this.fireDataEvent("updateService", updatedServiceData);
-        }, this);
-      } else {
-        classifiers = new osparc.metadata.ClassifiersViewer(this.getService());
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-      }
-    },
-
-    __openQuality: function() {
-      const qualityEditor = osparc.info.ServiceUtils.openQuality(this.getService());
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedServiceData = e.getData();
-        this.setService(updatedServiceData);
-        this.fireDataEvent("updateService", updatedServiceData);
-      });
     },
 
     __openThumbnailEditor: function() {
