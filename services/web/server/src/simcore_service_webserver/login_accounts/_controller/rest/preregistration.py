@@ -56,6 +56,20 @@ def _get_ipinfo(request: web.Request) -> dict[str, Any]:
 routes = web.RouteTableDef()
 
 
+@routes.get(f"/{API_VTAG}/auth/captcha", name="create_captcha")
+@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
+@handle_rest_requests_exceptions
+async def create_captcha(request: web.Request):
+    session = await session_service.get_session(request)
+
+    captcha_text, image_data = await _preregistration_service.create_captcha()
+
+    # Store captcha text in session
+    session[CAPTCHA_SESSION_KEY] = captcha_text
+
+    return web.Response(body=image_data, content_type="image/png")
+
+
 @routes.post(
     f"/{API_VTAG}/auth/request-account",
     name="request_product_account",
@@ -147,17 +161,3 @@ async def unregister_account(request: web.Request):
         )
 
         return response
-
-
-@routes.get(f"/{API_VTAG}/auth/captcha", name="create_captcha")
-@global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
-@handle_rest_requests_exceptions
-async def create_captcha(request: web.Request):
-    session = await session_service.get_session(request)
-
-    captcha_text, image_data = await _preregistration_service.create_captcha()
-
-    # Store captcha text in session
-    session[CAPTCHA_SESSION_KEY] = captcha_text
-
-    return web.Response(body=image_data, content_type="image/png")
