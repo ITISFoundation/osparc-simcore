@@ -56,7 +56,7 @@ qx.Class.define("osparc.task.TasksButton", {
         }
         case "number":
           control = new qx.ui.basic.Label().set({
-            backgroundColor: "background-main-1",
+            backgroundColor: osparc.navigation.NavigationBar.BG_COLOR,
             paddingLeft: 4,
             font: "text-12"
           });
