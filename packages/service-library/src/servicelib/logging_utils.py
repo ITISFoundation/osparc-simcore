@@ -14,7 +14,7 @@ import sys
 from asyncio import iscoroutinefunction
 from collections.abc import AsyncGenerator, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
@@ -611,15 +611,6 @@ class AsyncLoggingContext:
         return None
 
 
-async def _logging_keep_alive() -> None:
-    """
-    Simple keep-alive function for the logging infrastructure.
-    This function does nothing but allows the background task to run.
-    """
-    # Just sleep to keep the task alive - the real work is done in the context manager
-    await asyncio.sleep(1.0)
-
-
 @asynccontextmanager
 async def setup_async_loggers(
     *,
@@ -630,9 +621,6 @@ async def setup_async_loggers(
 ) -> AsyncGenerator[None, None]:
     """
     Async context manager for non-blocking logging infrastructure.
-
-    This function sets up the async logging infrastructure using the background_task
-    infrastructure for proper lifecycle management.
 
     Usage:
         async with setup_async_loggers(log_format_local_dev_enabled=True):
@@ -669,83 +657,6 @@ async def setup_async_loggers(
             _logger.debug("Async logging context exiting")
 
 
-@asynccontextmanager
-async def setup_async_loggers_with_background_task(
-    *,
-    log_format_local_dev_enabled: bool = False,
-    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]] | None = None,
-    tracing_settings: TracingSettings | None = None,
-    handlers: list[logging.Handler] | None = None,
-    log_monitoring_interval: int = 10,  # seconds
-) -> AsyncGenerator[None, None]:
-    """
-    Enhanced async context manager using background_task infrastructure.
-
-    This function sets up the async logging infrastructure with a background task
-    that monitors the logging queue for health metrics.
-
-    Usage:
-        async with setup_async_loggers_with_background_task(
-            log_format_local_dev_enabled=True,
-            log_monitoring_interval=5
-        ):
-            # Your async application code here
-            logger.info("This is non-blocking with monitoring!")
-
-    Args:
-        log_format_local_dev_enabled: Enable local development formatting
-        logger_filter_mapping: Mapping of logger names to filtered message substrings
-        tracing_settings: OpenTelemetry tracing configuration
-        handlers: Custom handlers to use (defaults to StreamHandler)
-        log_monitoring_interval: Interval in seconds for monitoring background task
-    """
-    # Import background_task locally to avoid circular imports
-    from . import background_task
-
-    # Create format string
-    fmt = _setup_format_string(
-        tracing_settings=tracing_settings,
-        log_format_local_dev_enabled=log_format_local_dev_enabled,
-    )
-
-    # Define the monitoring task
-    async def log_monitoring_task() -> None:
-        """Background task to monitor logging queue health."""
-        # This could be extended to monitor queue size, listener health, etc.
-        _logger.debug("Async logging monitoring task running")
-
-        # Check if we have access to the queue for monitoring
-        # This is a placeholder for more sophisticated monitoring
-        manager: logging.Manager = logging.Logger.manager
-        active_loggers_count = len(manager.loggerDict)
-        _logger.debug("Active loggers count: %d", active_loggers_count)
-
-    # Start the async logging context with background monitoring
-    async with (
-        AsyncLoggingContext(
-            handlers=handlers,
-            log_format_local_dev_enabled=log_format_local_dev_enabled,
-            fmt=fmt,
-        ),
-        background_task.periodic_task(
-            log_monitoring_task,
-            interval=timedelta(seconds=log_monitoring_interval),
-            task_name="async_logging_monitor",
-            raise_on_error=False,
-        ),
-    ):
-        # Apply filters if provided
-        if logger_filter_mapping:
-            _apply_logger_filters(logger_filter_mapping)
-
-        _logger.info("Async logging with background monitoring setup completed")
-
-        try:
-            yield
-        finally:
-            _logger.debug("Async logging with background monitoring context exiting")
-
-
 def _apply_logger_filters(
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
 ) -> None:
@@ -775,22 +686,14 @@ async_logging_context = setup_async_loggers
 # 1. CORE FEATURES:
 #    - Unlimited queue size (no more queue.Full errors)
 #    - Proper context manager-based lifecycle management
-#    - Integration with background_task infrastructure
 #    - Clean separation of sync and async logging setup
 #
 # 2. API OPTIONS:
-#    - setup_async_loggers(): Basic async context manager
-#    - setup_async_loggers_with_background_task(): Enhanced version with monitoring
+#    - setup_async_loggers(): Async context manager for non-blocking logging
 #    - async_logging_context: Alias for backward compatibility
 #    - config_all_loggers(): Original synchronous setup (unchanged)
 #
-# 3. BACKGROUND TASK INTEGRATION:
-#    - Uses periodic_task from background_task.py for monitoring
-#    - Automatic lifecycle management
-#    - Concurrent task support
-#    - Graceful shutdown handling
-#
-# 4. BEST PRACTICES IMPLEMENTED:
+# 3. BEST PRACTICES IMPLEMENTED:
 #    - No global state (context manager based)
 #    - Proper resource cleanup
 #    - SuperFastPython async logging patterns
@@ -799,7 +702,5 @@ async_logging_context = setup_async_loggers
 #
 # Usage examples available in:
 # - async_logging_example_new.py (basic async logging)
-# - async_logging_with_background_task_example.py (with monitoring)
-# - background_task_logging_example.py (integration with background tasks)
 #
 # =============================================================================
