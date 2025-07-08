@@ -175,13 +175,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
     /**
       * @param serviceData {Object} Serialized Service Object
-      * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(serviceData) {
-      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
-        alignY: "middle"
-      }));
-
       const description = new osparc.ui.markdown.Markdown();
       // display markdown link content if that's the case
       if (
@@ -204,7 +199,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
       } else {
         description.setValue(this.tr("No description"));
       }
-      descriptionLayout.add(description);
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(description);
 
       return scrollContainer;
     },
@@ -362,6 +358,158 @@ qx.Class.define("osparc.info.ServiceUtils", {
         row++;
       });
     },
+
+    infoElementsToLayout: function(infoElements) {
+      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const decorateAction = action => {
+          action.button.set({
+            alignY: "middle",
+          });
+          action.button.addListener("execute", () => {
+            const cb = action.callback;
+            if (typeof cb === "string") {
+              action.ctx.fireEvent(cb);
+            } else {
+              cb.call(action.ctx);
+            }
+          }, this);
+      };
+
+      if ("TITLE" in infoElements) {
+        const extraInfo = infoElements["TITLE"];
+        const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+        if (extraInfo.action && extraInfo.action.button) {
+          decorateAction(extraInfo.action);
+          titleLayout.add(extraInfo.action.button);
+        }
+
+        if (extraInfo.view) {
+          titleLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        container.add(titleLayout);
+      }
+
+
+      const centerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+      if ("THUMBNAIL" in infoElements) {
+        const extraInfo = infoElements["THUMBNAIL"];
+        const thumbnailLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+
+        if (extraInfo.action && extraInfo.action.button) {
+          decorateAction(extraInfo.action);
+          thumbnailLayout.add(extraInfo.action.button);
+        }
+
+        if (extraInfo.view) {
+          thumbnailLayout.add(extraInfo.view, {
+            flex: 1,
+          });
+        }
+
+        centerLayout.add(thumbnailLayout);
+      }
+
+      const positions = {
+        SERVICE_ID: {
+          row: 0,
+        },
+        KEY: {
+          row: 1,
+        },
+        INTEGRATION_VERSION: {
+          row: 2,
+        },
+        VERSION: {
+          row: 3,
+        },
+        DATE: {
+          row: 4,
+        },
+        CONTACT: {
+          row: 5,
+        },
+        AUTHORS: {
+          row: 6,
+        },
+        ACCESS_RIGHTS: {
+          row: 7,
+        },
+        DESCRIPTION_ONLY: {
+          row: 8,
+        },
+      };
+
+      const grid = new qx.ui.layout.Grid(6, 6);
+      grid.setColumnAlign(0, "right", "middle"); // titles
+      const gridLayout = new qx.ui.container.Composite(grid);
+
+      Object.keys(positions).forEach(key => {
+        if (key in infoElements) {
+          const infoElement = infoElements[key];
+          const gridInfo = positions[key];
+
+          let col = 0;
+          if (infoElement.label) {
+            const title = new qx.ui.basic.Label(infoElement.label).set({
+              alignX: "right",
+            });
+            gridLayout.add(title, {
+              row: gridInfo.row,
+              column: col + 0,
+            });
+          }
+          col++;
+
+          if (infoElement.action && infoElement.action.button) {
+            decorateAction(infoElement.action);
+            gridLayout.add(infoElement.action.button, {
+              row: gridInfo.row,
+              column: col + 1,
+            });
+          }
+          col++;
+
+          if (infoElement.view) {
+            gridLayout.add(infoElement.view, {
+              row: gridInfo.row,
+              column: col + 2,
+            });
+          }
+          col++;
+        }
+      });
+      centerLayout.add(gridLayout, {
+        flex: 1,
+      });
+      container.add(centerLayout);
+
+      if ("DESCRIPTION" in infoElements) {
+        const infoElement = infoElements["DESCRIPTION"];
+        const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+        if (infoElement.action && infoElement.action.button) {
+          decorateAction(infoElement.action);
+          descriptionLayout.add(infoElement.action.button);
+        }
+
+        if (infoElement.view) {
+          descriptionLayout.add(infoElement.view, {
+            flex: 1,
+          });
+        }
+
+        container.add(descriptionLayout);
+      }
+
+      return container;
+    },
+
 
     /**
       * @param serviceData {Object} Serialized Service Object
