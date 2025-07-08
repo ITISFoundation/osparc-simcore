@@ -238,7 +238,9 @@ qx.Class.define("osparc.info.StudyLarge", {
       return osparc.info.StudyUtils.createUuid(this.getStudy());
     },
 
-    __createThumbnail: function(maxWidth = 190, maxHeight = 220) {
+    __createThumbnail: function() {
+      const maxWidth = 190;
+      const maxHeight = 220;
       const thumb = osparc.info.StudyUtils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
       thumb.set({
         maxWidth: 120,
