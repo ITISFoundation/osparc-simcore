@@ -1,6 +1,4 @@
 import logging
-from contextlib import suppress
-from json import JSONDecodeError
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
@@ -8,13 +6,7 @@ from common_library.error_codes import create_error_code
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from pydantic import (
-    BaseModel,
-    Field,
-    PositiveInt,
-    SecretStr,
     TypeAdapter,
-    ValidationError,
-    field_validator,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -35,7 +27,6 @@ from ....utils_aiohttp import create_redirect_to_page_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
 from ... import _confirmation_service, _security_service, _twofa_service
-from ..._invitations_service import ConfirmedInvitationData
 from ..._login_repository_legacy import (
     AsyncpgStorage,
     ConfirmationTokenDict,
@@ -48,7 +39,6 @@ from ..._login_service import (
     RESET_PASSWORD,
     notify_user_confirmation,
 )
-from ..._models import InputSchema, check_confirm_password_match
 from ...constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
     MSG_PASSWORD_CHANGED,
@@ -60,25 +50,17 @@ from ...settings import (
     get_plugin_options,
     get_plugin_settings,
 )
+from .confirmation_schemas import (
+    CodePathParam,
+    PhoneConfirmationBody,
+    ResetPasswordConfirmation,
+    parse_extra_credits_in_usd_or_none,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
-
-
-class _PathParam(BaseModel):
-    code: SecretStr
-
-
-def _parse_extra_credits_in_usd_or_none(
-    confirmation: ConfirmationTokenDict,
-) -> PositiveInt | None:
-    with suppress(ValidationError, JSONDecodeError):
-        confirmation_data = confirmation.get("data", "EMPTY") or "EMPTY"
-        invitation = ConfirmedInvitationData.model_validate_json(confirmation_data)
-        return invitation.extra_credits_in_usd
-    return None
 
 
 async def _handle_confirm_registration(
@@ -100,7 +82,7 @@ async def _handle_confirm_registration(
         app,
         user_id=user_id,
         product_name=product_name,
-        extra_credits_in_usd=_parse_extra_credits_in_usd_or_none(confirmation),
+        extra_credits_in_usd=parse_extra_credits_in_usd_or_none(confirmation),
     )
 
 
@@ -143,7 +125,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = products_web.get_current_product(request)
 
-    path_params = parse_request_path_parameters_as(_PathParam, request)
+    path_params = parse_request_path_parameters_as(CodePathParam, request)
 
     confirmation: ConfirmationTokenDict | None = (
         await _confirmation_service.validate_confirmation_code(
@@ -213,14 +195,6 @@ async def validate_confirmation_and_redirect(request: web.Request):
     raise web.HTTPFound(location=redirect_to_login_url)
 
 
-class PhoneConfirmationBody(InputSchema):
-    email: LowerCaseEmailStr
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
-    code: SecretStr
-
-
 @routes.post("/v0/auth/validate-code-register", name="auth_phone_confirmation")
 @global_rate_limit_route(number_of_requests=5, interval_seconds=MINUTE)
 @session_access_required(
@@ -269,13 +243,6 @@ async def phone_confirmation(request: web.Request):
     )
 
 
-class ResetPasswordConfirmation(InputSchema):
-    password: SecretStr
-    confirm: SecretStr
-
-    _password_confirm_match = field_validator("confirm")(check_confirm_password_match)
-
-
 @routes.post("/v0/auth/reset-password/{code}", name="complete_reset_password")
 @global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR)
 async def complete_reset_password(request: web.Request):
@@ -288,7 +255,7 @@ async def complete_reset_password(request: web.Request):
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = products_web.get_current_product(request)
 
-    path_params = parse_request_path_parameters_as(_PathParam, request)
+    path_params = parse_request_path_parameters_as(CodePathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
 
     confirmation = await _confirmation_service.validate_confirmation_code(
