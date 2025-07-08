@@ -3,8 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from models_library.authentification import TwoFactorAuthentificationMethod
-from models_library.emails import LowerCaseEmailStr
-from pydantic import BaseModel, Field, PositiveInt, SecretStr, TypeAdapter
+from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -21,10 +20,8 @@ from ....session.access_policies import (
     session_access_required,
 )
 from ....users import preferences_api as user_preferences_api
-from ....utils_aiohttp import NextPage
 from ....web_utils import envelope_response, flash_response
 from ... import _auth_service, _login_service, _security_service, _twofa_service
-from ..._models import InputSchema
 from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -42,25 +39,12 @@ from ...constants import (
 from ...decorators import login_required
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import handle_rest_requests_exceptions
+from .auth_schemas import LoginBody, LoginTwoFactorAuthBody, LogoutBody
 
 log = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
-
-
-class LoginBody(InputSchema):
-    email: LowerCaseEmailStr
-    password: SecretStr
-
-
-class CodePageParams(BaseModel):
-    message: str
-    expiration_2fa: PositiveInt | None = None
-    next_url: str | None = None
-
-
-class LoginNextPage(NextPage[CodePageParams]): ...
 
 
 @routes.post(f"/{API_VTAG}/auth/login", name="auth_login")
@@ -209,11 +193,6 @@ async def login(request: web.Request):
     )
 
 
-class LoginTwoFactorAuthBody(InputSchema):
-    email: LowerCaseEmailStr
-    code: SecretStr
-
-
 @routes.post(f"/{API_VTAG}/auth/validate-code-login", name="auth_login_2fa")
 @session_access_required(
     "auth_login_2fa",
@@ -258,12 +237,6 @@ async def login_2fa(request: web.Request):
     await _twofa_service.delete_2fa_code(request.app, login_2fa_.email)
 
     return await _security_service.login_granted_response(request, user=dict(user))
-
-
-class LogoutBody(InputSchema):
-    client_session_id: str | None = Field(
-        None, examples=["5ac57685-c40f-448f-8711-70be1936fd63"]
-    )
 
 
 @routes.post(f"/{API_VTAG}/auth/logout", name="auth_logout")
