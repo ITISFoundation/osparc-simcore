@@ -16,7 +16,7 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.celery.models import TaskState
+from servicelib.celery.models import TaskFilter, TaskState
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 from servicelib.rabbitmq import RPCRouter
@@ -38,7 +38,7 @@ async def cancel(
     assert job_filter  # nosec
     try:
         await task_manager.cancel_task(
-            task_filter=job_filter,
+            task_filter=TaskFilter.model_validate(job_filter.model_dump()),
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -54,7 +54,7 @@ async def status(
 
     try:
         task_status = await task_manager.get_task_status(
-            task_filter=job_filter,
+            task_filter=TaskFilter.model_validate(job_filter.model_dump()),
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -82,15 +82,17 @@ async def result(
     assert job_id  # nosec
     assert job_filter  # nosec
 
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+
     try:
         _status = await task_manager.get_task_status(
-            task_filter=job_filter,
+            task_filter=task_filter,
             task_uuid=job_id,
         )
         if not _status.is_done:
             raise JobNotDoneError(job_id=job_id)
         _result = await task_manager.get_task_result(
-            task_filter=job_filter,
+            task_filter=task_filter,
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -129,7 +131,7 @@ async def list_jobs(
     assert task_manager  # nosec
     try:
         tasks = await task_manager.list_tasks(
-            task_filter=job_filter,
+            task_filter=TaskFilter.model_validate(job_filter.model_dump()),
         )
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
