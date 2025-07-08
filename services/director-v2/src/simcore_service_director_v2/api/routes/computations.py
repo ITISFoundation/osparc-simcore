@@ -467,7 +467,7 @@ async def get_computation(
     last_run: CompRunsAtDB | None = None
     pipeline_state = RunningState.NOT_STARTED
     with contextlib.suppress(ComputationalRunNotFoundError):
-        last_run = await comp_runs_repo.get(user_id=user_id, project_id=project_id)
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
         pipeline_state = last_run.result
 
     _logger.debug(
