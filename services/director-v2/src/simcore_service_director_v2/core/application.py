@@ -99,6 +99,7 @@ _NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
     "httpcore",
+    "httpx",
 )
 
 
@@ -201,9 +202,7 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         socketio.setup(app)
         notifier.setup(app)
 
-    if (
-        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
-    ):
+    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED:
         dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
 
     if computational_backend_enabled:
