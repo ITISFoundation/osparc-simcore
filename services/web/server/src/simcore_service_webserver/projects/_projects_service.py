@@ -112,13 +112,14 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..storage import api as storage_service
-from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
+from ..users import users_service
 from ..users.exceptions import UserNotFoundError
 from ..users.preferences_api import (
     PreferredWalletIdFrontendUserPreference,
     UserDefaultWalletNotFoundError,
     get_frontend_user_preference,
 )
+from ..users.users_service import FullNameDict
 from ..wallets import api as wallets_service
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
@@ -1405,7 +1406,8 @@ async def try_open_project_for_user(
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
             owner=Owner(
-                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+                user_id=user_id,
+                **await users_service.get_user_fullname(app, user_id=user_id),
             ),
             notification_cb=None,
         )
@@ -1582,7 +1584,7 @@ async def _get_project_lock_state(
         f"{set_user_ids=}",
     )
     usernames: list[FullNameDict] = [
-        await get_user_fullname(app, user_id=uid) for uid in set_user_ids
+        await users_service.get_user_fullname(app, user_id=uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
     if set_user_ids.issubset({user_id}) and not await _user_has_another_client_open(
@@ -1889,13 +1891,13 @@ async def remove_project_dynamic_services(
         user_id,
     )
 
-    user_name_data: FullNameDict = user_name or await get_user_fullname(
+    user_name_data: FullNameDict = user_name or await users_service.get_user_fullname(
         app, user_id=user_id
     )
 
     user_role: UserRole | None = None
     try:
-        user_role = await get_user_role(app, user_id=user_id)
+        user_role = await users_service.get_user_role(app, user_id=user_id)
     except UserNotFoundError:
         user_role = None
 

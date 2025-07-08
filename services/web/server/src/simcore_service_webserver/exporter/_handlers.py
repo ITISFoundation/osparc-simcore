@@ -18,7 +18,7 @@ from ..login.decorators import login_required
 from ..projects._projects_service import create_user_notification_cb
 from ..redis import get_redis_lock_manager_client_sdk
 from ..security.decorators import permission_required
-from ..users.api import get_user_fullname
+from ..users.users_service import get_user_fullname
 from ._formatter.archive import get_sds_archive_path
 from .exceptions import SDSException
 from .utils import CleanupFileResponse

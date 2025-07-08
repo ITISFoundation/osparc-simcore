@@ -16,7 +16,8 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users.api import (
+from simcore_service_webserver.users.exceptions import UserNotFoundError
+from simcore_service_webserver.users.users_service import (
     delete_user_without_projects,
     get_guest_user_ids_and_names,
     get_user,
@@ -30,7 +31,6 @@ from simcore_service_webserver.users.api import (
     set_user_as_deleted,
     update_expired_users,
 )
-from simcore_service_webserver.users.exceptions import UserNotFoundError
 
 
 @pytest.fixture

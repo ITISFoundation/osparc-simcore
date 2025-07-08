@@ -22,8 +22,8 @@ from ..conversations._socketio import (
     notify_conversation_updated,
 )
 from ..projects._groups_repository import list_project_groups
+from ..users import users_service
 from ..users._users_service import get_users_in_group
-from ..users.api import get_user_primary_group_id
 from . import _conversation_repository
 
 _logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ async def create_conversation(
     if project_uuid is None:
         raise NotImplementedError
 
-    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     created_conversation = await _conversation_repository.create(
         app,
@@ -121,7 +121,7 @@ async def delete_conversation(
         conversation_id=conversation_id,
     )
 
-    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     await notify_conversation_deleted(
         app,
