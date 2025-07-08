@@ -298,35 +298,23 @@ qx.Class.define("osparc.info.StudyUtils", {
         centerLayout.add(thumbnailLayout);
       }
 
-      const positions = {
-        AUTHOR: {
-          row: 0,
-        },
-        ACCESS_RIGHTS: {
-          row: 1,
-        },
-        CREATED: {
-          row: 2,
-        },
-        MODIFIED: {
-          row: 3,
-        },
-        TAGS: {
-          row: 4,
-        },
-        LOCATION: {
-          row: 5,
-        },
-      };
+      const gridKeys = [
+        "AUTHOR",
+        "ACCESS_RIGHTS",
+        "CREATED",
+        "MODIFIED",
+        "TAGS",
+        "LOCATION",
+      ];
 
       const grid = new qx.ui.layout.Grid(6, 6);
       grid.setColumnAlign(0, "right", "middle"); // titles
       const gridLayout = new qx.ui.container.Composite(grid);
 
-      Object.keys(positions).forEach(key => {
+      let row = 0;
+      gridKeys.forEach(key => {
         if (key in infoElements) {
           const infoElement = infoElements[key];
-          const gridInfo = positions[key];
 
           let col = 0;
           if (infoElement.label) {
@@ -334,7 +322,7 @@ qx.Class.define("osparc.info.StudyUtils", {
               alignX: "right",
             });
             gridLayout.add(title, {
-              row: gridInfo.row,
+              row,
               column: col + 0,
             });
           }
@@ -343,7 +331,7 @@ qx.Class.define("osparc.info.StudyUtils", {
           if (infoElement.action && infoElement.action.button) {
             decorateAction(infoElement.action);
             gridLayout.add(infoElement.action.button, {
-              row: gridInfo.row,
+              row,
               column: col + 1,
             });
           }
@@ -351,11 +339,12 @@ qx.Class.define("osparc.info.StudyUtils", {
 
           if (infoElement.view) {
             gridLayout.add(infoElement.view, {
-              row: gridInfo.row,
+              row,
               column: col + 2,
             });
           }
           col++;
+          row++;
         }
       });
       centerLayout.add(gridLayout, {
