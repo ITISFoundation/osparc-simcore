@@ -11,7 +11,7 @@ from servicelib.aiohttp.application_setup import (
 )
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
-from simcore_service_webserver.login_account.plugin import setup_login_account
+from simcore_service_webserver.login_accounts.plugin import setup_login_account
 
 from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
@@ -23,7 +23,7 @@ from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
-from ..login_account._controller.rest import preregistration
+from ..login_accounts._controller.rest import preregistration
 from ..login_auth.plugin import setup_login_auth
 from ..products import products_service
 from ..products.models import ProductName
