@@ -2,13 +2,12 @@ from collections.abc import Callable, Coroutine
 from contextlib import contextmanager
 from contextvars import Token
 from functools import wraps
-from typing import Any, TypeAlias
+from typing import Any, Final, TypeAlias
 
 import pyinstrument
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from servicelib.redis._client import Final
 from settings_library.tracing import TracingSettings
 
 TracingContext: TypeAlias = otcontext.Context | None
@@ -86,7 +85,7 @@ def with_profiled_span(
                 profiler.stop()
                 span.set_attribute(
                     _PROFILE_ATTRIBUTE_NAME,
-                    profiler.output_text(unicode=True, color=False, show_all=True),
+                    profiler.output_text(unicode=True, color=False),
                 )
 
     return wrapper
