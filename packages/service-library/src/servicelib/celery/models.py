@@ -18,7 +18,7 @@ class TaskFilter(BaseModel):
 
     @classmethod
     def from_async_job_filter(cls, async_job_filter: AsyncJobFilter) -> "TaskFilter":
-        cls.model_validate(async_job_filter.model_dump())
+        return cls.model_validate(async_job_filter.model_dump())
 
 
 class TaskState(StrEnum):
