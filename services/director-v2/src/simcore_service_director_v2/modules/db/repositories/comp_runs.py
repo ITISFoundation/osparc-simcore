@@ -106,9 +106,9 @@ class CompRunsRepository(BaseRepository):
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(
-                    (comp_runs.c.project_uuid == f"{project_id}")
+                    (comp_runs.c.user_id == user_id)
+                    & (comp_runs.c.project_uuid == f"{project_id}")
                     & (comp_runs.c.iteration == iteration if iteration else True)
-                    & (comp_runs.c.user_id == user_id if user_id else True)
                 )
                 .order_by(desc(comp_runs.c.iteration))
                 .limit(1)
