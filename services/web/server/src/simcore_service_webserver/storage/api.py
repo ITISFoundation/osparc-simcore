@@ -4,7 +4,6 @@ import datetime
 import logging
 import urllib.parse
 from collections.abc import AsyncGenerator
-from http import client
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
