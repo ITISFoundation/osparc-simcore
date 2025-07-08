@@ -12,28 +12,28 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task
 
-from ...._meta import API_VTAG
-from ....login import login_service
-from ....login.constants import (
+from .._meta import API_VTAG
+from ..login import login_service
+from ..login.constants import (
     CAPTCHA_SESSION_KEY,
     MSG_LOGGED_OUT,
     MSG_WRONG_CAPTCHA__INVALID,
 )
-from ....login.settings import get_plugin_settings
-from ....login_auth.decorators import login_required
-from ....models import AuthenticatedRequestContext
-from ....products import products_web
-from ....products.models import Product
-from ....security import security_service, security_web
-from ....security.decorators import permission_required
-from ....session import api as session_service
-from ....users import api as users_service
-from ....users._common.schemas import PreRegisteredUserGet
-from ....utils import MINUTE
-from ....utils_rate_limiting import global_rate_limit_route
-from ....web_utils import flash_response
-from ... import _preregistration_service
-from ._rest_exceptions import handle_rest_requests_exceptions
+from ..login.settings import get_plugin_settings
+from ..login_auth.decorators import login_required
+from ..models import AuthenticatedRequestContext
+from ..products import products_web
+from ..products.models import Product
+from ..security import security_service, security_web
+from ..security.decorators import permission_required
+from ..session import api as session_service
+from ..users import api as users_service
+from ..users._common.schemas import PreRegisteredUserGet
+from ..utils import MINUTE
+from ..utils_rate_limiting import global_rate_limit_route
+from ..web_utils import flash_response
+from . import _service
+from ._controller._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ routes = web.RouteTableDef()
 async def create_captcha(request: web.Request):
     session = await session_service.get_session(request)
 
-    captcha_text, image_data = await _preregistration_service.create_captcha()
+    captcha_text, image_data = await _service.create_captcha()
 
     # Store captcha text in session
     session[CAPTCHA_SESSION_KEY] = captcha_text
@@ -89,7 +89,7 @@ async def request_product_account(request: web.Request):
     session.pop(CAPTCHA_SESSION_KEY, None)
 
     # create pre-regiatration or raise if already exists
-    await _preregistration_service.create_pre_registration(
+    await _service.create_pre_registration(
         request.app,
         profile=PreRegisteredUserGet.model_validate(body.form),
         product_name=product.name,
@@ -97,7 +97,7 @@ async def request_product_account(request: web.Request):
 
     # if created send email to fogbugz or user itself
     fire_and_forget_task(
-        _preregistration_service.send_account_request_email_to_support(
+        _service.send_account_request_email_to_support(
             request=request,
             product=product,
             request_form=body.form,
@@ -150,7 +150,7 @@ async def unregister_account(request: web.Request):
 
         # send email in the background
         fire_and_forget_task(
-            _preregistration_service.send_close_account_email(
+            _service.send_close_account_email(
                 request,
                 user_email=credentials.email,
                 user_first_name=credentials.display_name,

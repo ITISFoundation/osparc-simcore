@@ -30,10 +30,10 @@ from simcore_service_webserver._resources import webserver_resources
 from simcore_service_webserver.email._core import _remove_comments, _render_template
 from simcore_service_webserver.email._handlers import EmailTestFailed, EmailTestPassed
 from simcore_service_webserver.email.plugin import setup_email
-from simcore_service_webserver.login_accounts._controller.rest.preregistration import (
+from simcore_service_webserver.login_accounts._controller.rest._controler_rest import (
     _get_ipinfo,
 )
-from simcore_service_webserver.login_accounts._preregistration_service import (
+from simcore_service_webserver.login_accounts._service import (
     _json_encoder_and_dumps,
 )
 
