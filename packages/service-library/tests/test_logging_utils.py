@@ -28,6 +28,22 @@ from tenacity import (
 )
 
 _logger = logging.getLogger(__name__)
+
+
+async def _assert_check_log_message(
+    caplog: pytest.LogCaptureFixture, expected_message: str
+) -> None:
+    """Helper to reliably check if a log message appears in caplog using tenacity."""
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.01),
+        stop=stop_after_delay(2.0),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert expected_message in caplog.text
+
+
 _ALL_LOGGING_LEVELS = [
     logging.CRITICAL,
     logging.ERROR,
@@ -437,18 +453,7 @@ async def test_setup_async_loggers_basic(
         test_logger = logging.getLogger("test_async_logger")
         test_logger.info("Test async log message")
 
-        # Wait for log message to appear in caplog using tenacity
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.01),
-            stop=stop_after_delay(2.0),
-            reraise=True,
-            retry=retry_if_exception_type(AssertionError),
-        ):
-            with attempt:
-                assert "Test async log message" in caplog.text
-
-    # Check that the log message was captured
-    assert "Test async log message" in caplog.text
+        await _assert_check_log_message(caplog, "Test async log message")
 
 
 async def test_setup_async_loggers_with_filters(
@@ -478,17 +483,8 @@ async def test_setup_async_loggers_with_filters(
         test_logger.info("This is an unfiltered message")
         unfiltered_logger.info("This is from unfiltered logger")
 
-        # Wait for log messages to appear in caplog using tenacity
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.01),
-            stop=stop_after_delay(2.0),
-            reraise=True,
-            retry=retry_if_exception_type(AssertionError),
-        ):
-            with attempt:
-                # Check that unfiltered messages were captured
-                assert "This is an unfiltered message" in caplog.text
-                assert "This is from unfiltered logger" in caplog.text
+        await _assert_check_log_message(caplog, "This is an unfiltered message")
+        await _assert_check_log_message(caplog, "This is from unfiltered logger")
 
     # Check that filtered message was not captured
     assert "This is a filtered_message" not in caplog.text
@@ -515,17 +511,7 @@ async def test_setup_async_loggers_with_tracing_settings(
         test_logger = logging.getLogger("test_tracing_logger")
         test_logger.info("Test message with tracing settings")
 
-        # Wait for log message to appear in caplog using tenacity
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.01),
-            stop=stop_after_delay(2.0),
-            reraise=True,
-            retry=retry_if_exception_type(AssertionError),
-        ):
-            with attempt:
-                assert "Test message with tracing settings" in caplog.text
-
-    assert "Test message with tracing settings" in caplog.text
+        await _assert_check_log_message(caplog, "Test message with tracing settings")
 
 
 async def test_setup_async_loggers_context_manager_cleanup(
@@ -545,15 +531,7 @@ async def test_setup_async_loggers_context_manager_cleanup(
         # During the context, handlers should be replaced
         test_logger.info("Message during context")
 
-        # Wait for log message to appear in caplog using tenacity
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.01),
-            stop=stop_after_delay(2.0),
-            reraise=True,
-            retry=retry_if_exception_type(AssertionError),
-        ):
-            with attempt:
-                assert "Message during context" in caplog.text
+        await _assert_check_log_message(caplog, "Message during context")
 
 
 async def test_setup_async_loggers_exception_handling(
@@ -577,15 +555,7 @@ async def test_setup_async_loggers_exception_handling(
             test_logger = logging.getLogger("test_exception_logger")
             test_logger.info("Message before exception")
 
-            # Wait for log message to appear in caplog using tenacity
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(0.01),
-                stop=stop_after_delay(2.0),
-                reraise=True,
-                retry=retry_if_exception_type(AssertionError),
-            ):
-                with attempt:
-                    assert "Message before exception" in caplog.text
+            await _assert_check_log_message(caplog, "Message before exception")
 
             # Raise an exception to test cleanup
             _raise_test_exception()
