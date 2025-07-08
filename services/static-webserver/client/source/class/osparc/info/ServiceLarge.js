@@ -96,16 +96,12 @@ qx.Class.define("osparc.info.ServiceLarge", {
     _rebuildLayout: function() {
       this._removeAll();
 
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const deprecated = this.__createDeprecated();
       if (deprecated) {
         vBox.add(deprecated);
       }
-
-      const description = this.__createDescription();
-      const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
-      description.addAt(editInTitle, 0);
 
       const copyMetadataButton = new qx.ui.form.Button(this.tr("Copy Raw metadata"), "@FontAwesome5Solid/copy/12").set({
         allowGrowX: false
@@ -114,10 +110,9 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
       if (
         this.getService()["descriptionUi"] &&
-        !osparc.service.Utils.canIWrite(this.getService()["accessRights"]) &&
-        description.getChildren().length > 1
+        !osparc.service.Utils.canIWrite(this.getService()["accessRights"])
       ) {
-        // Show also the copy Id buttons too
+        // In case of service instance, show also the copy Id buttons too
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
         if (this.getNodeId()) {
           const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
@@ -135,14 +130,12 @@ qx.Class.define("osparc.info.ServiceLarge", {
           buttonsLayout.add(copyNodeIdButton);
           vBox.add(buttonsLayout);
         }
-        // Also copyMetadataButton if tester
-        if (osparc.data.Permissions.getInstance().isTester()) {
-          buttonsLayout.add(copyMetadataButton);
-          vBox.add(buttonsLayout);
-        }
+
         // Show description only
-        vBox.add(description.getChildren()[1]);
+        const description = this.__createDescription();
+        vBox.add(description);
       } else {
+        // Icon and title
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
         const icon = this.__createIcon();
         const iconLayout = this.__createViewWithEdit(icon, this.__openIconEditor);
@@ -152,47 +145,28 @@ qx.Class.define("osparc.info.ServiceLarge", {
         hBox.add(titleLayout);
         vBox.add(hBox);
 
-        const extraInfo = this.__extraInfo();
-        const extraInfoLayout = this.__createExtraInfo(extraInfo);
-        const bounds = this.getBounds();
-        const offset = 30;
-        const maxThumbnailHeight = extraInfo.length*20;
-        let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-        let thumbnailWidth = widgetWidth - 2 * osparc.info.CardLarge.PADDING - osparc.info.CardLarge.EXTRA_INFO_WIDTH;
-        thumbnailWidth = Math.min(thumbnailWidth - 20, osparc.info.CardLarge.THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-        thumbnailLayout.getLayout().set({
-          alignX: "center"
-        });
-        const infoAndThumbnail = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center"
-        }));
-        infoAndThumbnail.add(extraInfoLayout);
-        infoAndThumbnail.add(thumbnailLayout, {
-          flex: 1
-        });
-        vBox.add(infoAndThumbnail);
+        // Rest of information
+        const infoElements = this.__infoElements();
+        const isStudy = false;
+        const infoLayout = osparc.info.Utils.infoElementsToLayout(infoElements, isStudy);
+        vBox.add(infoLayout);
 
-        if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
-          const descriptionUi = this.__createDescriptionUi();
-          if (descriptionUi) {
-            vBox.add(descriptionUi);
-          }
-        }
-        vBox.add(description);
-
+        // Resources info if not billable
         if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
           const resources = this.__createResources();
           if (resources) {
             vBox.add(resources);
           }
         }
-        vBox.add(copyMetadataButton);
       }
 
+      // Copy metadata button
+      vBox.add(copyMetadataButton);
+
+      // All in a scroll container
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
+
       this._add(scrollContainer, {
         flex: 1
       });
@@ -246,77 +220,99 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return title;
     },
 
-    __extraInfo: function() {
-      const extraInfo = [];
+    __infoElements: function() {
+      const canIWrite = osparc.service.Utils.canIWrite(this.getService()["accessRights"]);
+
+      const infoLayout = {
+        "THUMBNAIL": {
+          view: this.__createThumbnail(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(canIWrite),
+            callback: canIWrite ? this.__openThumbnailEditor : null,
+            ctx: this,
+          },
+        },
+        "KEY": {
+          label: this.tr("Key"),
+          view: this.__createKey(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyKeyToClipboard,
+            ctx: this,
+          },
+        },
+        "VERSION": {
+          label: this.tr("Version"),
+          view: this.__createDisplayVersion(),
+          action: {
+            button: canIWrite ? osparc.utils.Utils.getEditButton() : null,
+            callback: this.__openVersionDisplayEditor,
+            ctx: this,
+          },
+        },
+        "DATE": {
+          label: this.tr("Released Date"),
+          view: this.__createReleasedDate(),
+          action: null,
+        },
+        "CONTACT": {
+          label: this.tr("Contact"),
+          view: this.__createContact(),
+          action: null,
+        },
+        "AUTHORS": {
+          label: this.tr("Authors"),
+          view: this.__createAuthors(),
+          action: null,
+        },
+        "ACCESS_RIGHTS": {
+          label: this.tr("Access"),
+          view: this.__createAccessRights(),
+          action: {
+            button: canIWrite ? osparc.utils.Utils.getEditButton() : null,
+            callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
+            ctx: this,
+          },
+        },
+        "DESCRIPTION": {
+          view: this.__createDescription(),
+          action: {
+            button: osparc.utils.Utils.getEditButton(canIWrite),
+            callback: canIWrite ? this.__openDescriptionEditor : null,
+            ctx: this,
+          },
+        },
+      };
 
       if (this.getNodeId()) {
-        extraInfo.push({
-          label: this.tr("SERVICE ID"),
+        infoLayout["SERVICE_ID"] = {
+          label: this.tr("Service ID"),
           view: this.__createNodeId(),
           action: {
             button: osparc.utils.Utils.getCopyButton(),
             callback: this.__copyNodeIdToClipboard,
             ctx: this
-          }
-        });
+          },
+        };
       }
 
-      extraInfo.push({
-        label: this.tr("Key"),
-        view: this.__createKey(),
-        action: {
-          button: osparc.utils.Utils.getCopyButton(),
-          callback: this.__copyKeyToClipboard,
-          ctx: this
-        }
-      });
-
-      if (osparc.data.Permissions.getInstance().isTester() || osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
-        extraInfo.push({
+      if (osparc.data.Permissions.getInstance().isTester() || canIWrite) {
+        infoLayout["INTEGRATION_VERSION"] = {
           label: this.tr("Integration Version"),
           view: this.__createIntegrationVersion(),
-          action: null
-        });
+          action: null,
+        };
       }
 
-      extraInfo.push({
-        label: this.tr("Version"),
-        view: this.__createDisplayVersion(),
-        action: {
-          button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
-          callback: this.__openVersionDisplayEditor,
-          ctx: this
-        }
-      }, {
-        label: this.tr("Released Date"),
-        view: this.__createReleasedDate(),
-        action: null
-      }, {
-        label: this.tr("Contact"),
-        view: this.__createContact(),
-        action: null
-      }, {
-        label: this.tr("Authors"),
-        view: this.__createAuthors(),
-        action: null
-      }, {
-        label: this.tr("Access"),
-        view: this.__createAccessRights(),
-        action: {
-          button: osparc.service.Utils.canIWrite(this.getService()["accessRights"]) ? osparc.utils.Utils.getEditButton() : null,
-          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
-          ctx: this
-        }
-      });
+      if (canIWrite) {
+        infoLayout["DESCRIPTION_ONLY"] = {
+          label: this.tr("Description only"),
+          view: this.__createDescriptionUi(),
+          action: null,
+        };
+      }
 
-      return extraInfo;
-    },
-
-    __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.info.Utils.extraInfosToGrid(extraInfo).set({
-        width: osparc.info.CardLarge.EXTRA_INFO_WIDTH
-      });
-      return moreInfo;
+      return infoLayout;
     },
 
     __createNodeId: function() {
@@ -351,15 +347,9 @@ qx.Class.define("osparc.info.ServiceLarge", {
       return osparc.info.ServiceUtils.createAccessRights(this.getService());
     },
 
-    __createClassifiers: function() {
-      return osparc.info.ServiceUtils.createClassifiers(this.getService());
-    },
-
-    __createQuality: function() {
-      return osparc.info.ServiceUtils.createQuality(this.getService());
-    },
-
-    __createThumbnail: function(maxWidth, maxHeight = 160) {
+    __createThumbnail: function() {
+      let maxWidth = 190;
+      let maxHeight = 220;
       // make sure maxs are not larger than the mins
       const minWidth = Math.max(120, maxWidth);
       const minHeight = Math.max(139, maxHeight);
@@ -387,9 +377,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
     __createDescriptionUi: function() {
       const cbAutoPorts = new qx.ui.form.CheckBox().set({
-        label: this.tr("Show Description only"),
         toolTipText: this.tr("From all the metadata shown in this view,\nonly the Description will be shown to Users."),
-        iconPosition: "right",
       });
       cbAutoPorts.setValue(Boolean(this.getService()["descriptionUi"]));
       cbAutoPorts.addListener("changeValue", e => {
@@ -474,33 +462,6 @@ qx.Class.define("osparc.info.ServiceLarge", {
         this.setService(updatedServiceData);
         this.fireDataEvent("updateService", updatedServiceData);
       }, this);
-    },
-
-    __openClassifiers: function() {
-      const title = this.tr("Classifiers");
-      let classifiers = null;
-      if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
-        classifiers = new osparc.metadata.ClassifiersEditor(this.getService());
-        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-        classifiers.addListener("updateClassifiers", e => {
-          win.close();
-          const updatedServiceData = e.getData();
-          this.setService(updatedServiceData);
-          this.fireDataEvent("updateService", updatedServiceData);
-        }, this);
-      } else {
-        classifiers = new osparc.metadata.ClassifiersViewer(this.getService());
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-      }
-    },
-
-    __openQuality: function() {
-      const qualityEditor = osparc.info.ServiceUtils.openQuality(this.getService());
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedServiceData = e.getData();
-        this.setService(updatedServiceData);
-        this.fireDataEvent("updateService", updatedServiceData);
-      });
     },
 
     __openThumbnailEditor: function() {
