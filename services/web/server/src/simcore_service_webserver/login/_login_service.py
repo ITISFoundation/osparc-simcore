@@ -12,7 +12,7 @@ from servicelib.aiohttp.status import HTTP_200_OK
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import ConfirmationAction, UserStatus
-from ._constants import (
+from .constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_USER_BANNED,
     MSG_USER_DELETED,

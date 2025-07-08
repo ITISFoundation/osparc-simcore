@@ -12,8 +12,8 @@ from ..groups import api as groups_service
 from ..products.models import Product
 from ..security import security_service
 from . import _login_service
-from ._constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from .constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 
 
 async def get_user_by_email(app: web.Application, *, email: str) -> dict[str, Any]:

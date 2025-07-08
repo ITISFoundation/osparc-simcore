@@ -22,22 +22,22 @@ from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
+from ..login_account._controller.rest import preregistration
 from ..login_auth.plugin import setup_login_auth
 from ..products import products_service
 from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
-from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from ._controller.rest import (
     auth,
     change,
     confirmation,
-    preregistration,
     registration,
     twofa,
 )
 from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
+from .constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,

@@ -33,15 +33,6 @@ from ....utils import MINUTE
 from ....utils_aiohttp import NextPage, envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ... import _auth_service, _confirmation_web, _security_service, _twofa_service
-from ..._constants import (
-    CODE_2FA_SMS_CODE_REQUIRED,
-    MAX_2FA_CODE_RESEND,
-    MAX_2FA_CODE_TRIALS,
-    MSG_2FA_CODE_SENT,
-    MSG_CANT_SEND_MAIL,
-    MSG_UNAUTHORIZED_REGISTER_PHONE,
-    MSG_WEAK_PASSWORD,
-)
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._invitations_service import (
     ConfirmedInvitationData,
@@ -61,6 +52,15 @@ from ..._login_service import (
     notify_user_confirmation,
 )
 from ..._models import InputSchema, check_confirm_password_match
+from ...constants import (
+    CODE_2FA_SMS_CODE_REQUIRED,
+    MAX_2FA_CODE_RESEND,
+    MAX_2FA_CODE_TRIALS,
+    MSG_2FA_CODE_SENT,
+    MSG_CANT_SEND_MAIL,
+    MSG_UNAUTHORIZED_REGISTER_PHONE,
+    MSG_WEAK_PASSWORD,
+)
 from ...settings import (
     LoginOptions,
     LoginSettingsForProduct,

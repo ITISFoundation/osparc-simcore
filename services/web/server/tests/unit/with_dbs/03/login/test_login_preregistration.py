@@ -20,7 +20,7 @@ from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.login._constants import MSG_USER_DELETED
+from simcore_service_webserver.login.constants import MSG_USER_DELETED
 from simcore_service_webserver.products.products_service import get_product
 
 

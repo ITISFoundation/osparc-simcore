@@ -6,17 +6,23 @@ from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
     UnregisterCheck,
 )
-from models_library.users import UserID
-from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.utils import fire_and_forget_task
 
 from ...._meta import API_VTAG
-from ....constants import RQ_PRODUCT_KEY
+from ....login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
+from ....login._login_service import flash_response, notify_user_logout
+from ....login.constants import (
+    CAPTCHA_SESSION_KEY,
+    MSG_LOGGED_OUT,
+    MSG_WRONG_CAPTCHA__INVALID,
+)
+from ....login.settings import LoginSettingsForProduct, get_plugin_settings
+from ....login_auth.decorators import login_required
+from ....models import AuthenticatedRequestContext
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_service, security_web
@@ -27,15 +33,6 @@ from ....users._common.schemas import PreRegisteredUserGet
 from ....utils import MINUTE
 from ....utils_rate_limiting import global_rate_limit_route
 from ... import _preregistration_service
-from ..._constants import (
-    CAPTCHA_SESSION_KEY,
-    MSG_LOGGED_OUT,
-    MSG_WRONG_CAPTCHA__INVALID,
-)
-from ..._login_service import flash_response, notify_user_logout
-from ...decorators import login_required
-from ...settings import LoginSettingsForProduct, get_plugin_settings
-from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
 
@@ -97,17 +94,12 @@ async def request_product_account(request: web.Request):
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-class _AuthenticatedContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
-
 @routes.post(f"/{API_VTAG}/auth/unregister", name="unregister_account")
 @login_required
 @permission_required("user.profile.delete")
 @handle_rest_requests_exceptions
 async def unregister_account(request: web.Request):
-    req_ctx = _AuthenticatedContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(UnregisterCheck, request)
 
     product: Product = products_web.get_current_product(request)
