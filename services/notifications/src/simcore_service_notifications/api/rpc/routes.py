@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 
+from celery_library.rpc import _async_jobs
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from models_library.api_schemas_notifications import NOTIFICATIONS_RPC_NAMESPACE
@@ -9,7 +10,10 @@ from ...clients.celery import get_task_manager_from_app
 from ...clients.rabbitmq import get_rabbitmq_rpc_server
 from . import _notifications
 
-ROUTERS: list[RPCRouter] = [_notifications.router]
+ROUTERS: list[RPCRouter] = [
+    _async_jobs.router,
+    _notifications.router,
+]
 
 
 async def rpc_api_routes_lifespan(app: FastAPI) -> AsyncIterator[State]:
