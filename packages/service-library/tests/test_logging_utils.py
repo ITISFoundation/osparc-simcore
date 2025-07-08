@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+import asyncio
 import logging
 from collections.abc import Iterable
 from contextlib import suppress
@@ -432,8 +433,6 @@ async def test_setup_async_loggers_basic(
         test_logger.info("Test async log message")
 
         # Give some time for async logging to process
-        import asyncio
-
         await asyncio.sleep(0.1)
 
     # Check that the log message was captured
@@ -468,8 +467,6 @@ async def test_setup_async_loggers_with_filters(
         unfiltered_logger.info("This is from unfiltered logger")
 
         # Give some time for async logging to process
-        import asyncio
-
         await asyncio.sleep(0.1)
 
     # Check that filtered message was not captured
@@ -498,8 +495,6 @@ async def test_setup_async_loggers_with_tracing_settings(
         test_logger.info("Test message with tracing settings")
 
         # Give some time for async logging to process
-        import asyncio
-
         await asyncio.sleep(0.1)
 
     assert "Test message with tracing settings" in caplog.text
@@ -523,8 +518,6 @@ async def test_setup_async_loggers_context_manager_cleanup(
         test_logger.info("Message during context")
 
         # Give some time for async logging to process
-        import asyncio
-
         await asyncio.sleep(0.1)
 
 
@@ -550,8 +543,6 @@ async def test_setup_async_loggers_exception_handling(
             test_logger.info("Message before exception")
 
             # Give some time for async logging to process
-            import asyncio
-
             await asyncio.sleep(0.1)
 
             # Raise an exception to test cleanup
