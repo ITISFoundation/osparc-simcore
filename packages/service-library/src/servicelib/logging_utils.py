@@ -12,7 +12,7 @@ import logging.handlers
 import queue
 import sys
 from asyncio import iscoroutinefunction
-from collections.abc import AsyncGenerator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
@@ -245,7 +245,7 @@ async def setup_async_loggers(
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
-) -> AsyncGenerator[None, None]:
+) -> AsyncIterator[None]:
     """
     Async context manager for non-blocking logging infrastructure.
 
