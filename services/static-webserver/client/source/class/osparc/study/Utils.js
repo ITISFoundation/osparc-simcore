@@ -410,7 +410,11 @@ qx.Class.define("osparc.study.Utils", {
         return (
           content["data"]["state"] &&
           content["data"]["state"]["value"] &&
-          ["PUBLISHED", "STARTED"].includes(content["data"]["state"]["value"])
+          [
+            "PUBLISHED",
+            "STARTED",
+            "STOPPING",
+          ].includes(content["data"]["state"]["value"])
         );
       }
       return false;
