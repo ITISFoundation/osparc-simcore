@@ -528,9 +528,6 @@ def set_parent_module_log_level(current_module: str, desired_log_level: int) -> 
     logging.getLogger(parent_module).setLevel(desired_log_level)
 
 
-# Remove the global task variable since we'll use background_task infrastructure
-
-
 class AsyncLoggingContext:
     """
     Async context manager for non-blocking logging infrastructure.
