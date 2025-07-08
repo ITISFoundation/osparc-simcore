@@ -27,7 +27,7 @@ def print_as_envfile(
 ):
     exclude_unset = pydantic_export_options.get("exclude_unset", False)
 
-    for name, field in settings_obj.model_fields.items():
+    for name, field in type(settings_obj).model_fields.items():
         auto_default_from_env = (
             field.json_schema_extra is not None
             and field.json_schema_extra.get("auto_default_from_env", False)
@@ -66,6 +66,9 @@ def print_as_envfile(
             typer.echo(f"# {field.description}")
         if isinstance(value, Enum):
             value = value.value
+        elif isinstance(value, dict | list):
+            # Serialize complex objects as JSON to ensure they can be parsed correctly
+            value = json_dumps(value)
         typer.echo(f"{name}={value}")
 
 
