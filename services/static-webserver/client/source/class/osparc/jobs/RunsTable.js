@@ -44,15 +44,22 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
-    const jobsStore =osparc.store.Jobs.getInstance();
-
     const iconPathStop = "osparc/icons/circle-xmark-text.svg";
-    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop);
+    const shouldShowCancel = cellInfo => {
+      if (cellInfo && cellInfo.rowData && cellInfo.rowData["state"]) {
+        return [
+          "Running",
+        ].includes(cellInfo.rowData["state"]);
+      }
+      return true;
+    }
+    const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop, shouldShowCancel);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
 
     const iconPathInfo = "osparc/icons/circle-info-text.svg";
+    const jobsStore =osparc.store.Jobs.getInstance();
     const shouldShowInfo = cellInfo => {
-      if (cellInfo && cellInfo.rowData) {
+      if (cellInfo && cellInfo.rowData && cellInfo.rowData["collectionRunId"]) {
         const job = jobsStore.getJob(cellInfo.rowData["collectionRunId"]);
         if (!job) {
           return true;
