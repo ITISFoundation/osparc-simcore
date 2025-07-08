@@ -24,7 +24,7 @@ from yarl import URL
 _logger = logging.getLogger(__name__)
 
 try:
-    from opentelemetry.instrumentation.asyncpg import (  # type: ignore[import-not-found]
+    from opentelemetry.instrumentation.asyncpg import (
         AsyncPGInstrumentor,
     )
 
