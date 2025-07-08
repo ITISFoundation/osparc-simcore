@@ -363,7 +363,7 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "runs": {
+      "runsOld": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
           getPageLatest: {
@@ -376,7 +376,7 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "subRuns": {
+      "subRunsOld": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
           getPageLatest: {

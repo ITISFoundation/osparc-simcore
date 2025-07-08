@@ -56,7 +56,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("runs", "getPageLatest", params, options)
+      return osparc.data.Resources.fetch("runsOld", "getPageLatest", params, options)
         .then(jobsResp => {
           const jobsActive = [];
           if ("data" in jobsResp) {
@@ -95,7 +95,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("runs", "getPageHistory", params, options)
+      return osparc.data.Resources.fetch("runsOld", "getPageHistory", params, options)
         .then(jobsResp => {
           if (resolveWResponse) {
             return jobsResp;
@@ -126,7 +126,7 @@ qx.Class.define("osparc.store.Jobs", {
           includeChildren: false,
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("subRuns", params, "getPageLatest")
+      return osparc.data.Resources.getInstance().getAllPages("subRunsOld", params, "getPageLatest")
         .then(subJobsData => {
           const subJobs = [];
           subJobsData.forEach(subJobData => {
