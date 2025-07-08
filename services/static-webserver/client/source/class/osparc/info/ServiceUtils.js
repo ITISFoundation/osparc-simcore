@@ -20,6 +20,13 @@ qx.Class.define("osparc.info.ServiceUtils", {
   type: "static",
 
   statics: {
+    RESOURCES_INFO: {
+      "limit": {
+        label: qx.locale.Manager.tr("Limit"),
+        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
+      }
+    },
+
     /**
       * @param label {String} label
       */
@@ -199,14 +206,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       }
       descriptionLayout.add(description);
 
-      return descriptionLayout;
-    },
-
-    RESOURCES_INFO: {
-      "limit": {
-        label: qx.locale.Manager.tr("Limit"),
-        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
-      }
+      return scrollContainer;
     },
 
     createResourcesInfo: function() {
