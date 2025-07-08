@@ -73,15 +73,8 @@ qx.Class.define("osparc.info.StudyMedium", {
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
       this._add(extraInfoLayout);
 
-      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(8)).set({
-        marginTop: -10 // bring it closer to the extra info
-      });
-      const title = new qx.ui.basic.Label(this.tr("DESCRIPTION")).set({
-        paddingLeft: 14 // align it with the other titles
-      });
-      descriptionLayout.add(title);
-      descriptionLayout.add(osparc.info.StudyUtils.createDescriptionMD(this.getStudy()));
-      this._add(descriptionLayout);
+      const description = osparc.info.StudyUtils.createDescription(this.getStudy());
+      this._add(description);
     },
 
     __createMenuButton: function() {
