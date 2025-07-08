@@ -10,9 +10,9 @@ from typing import Any
 
 import pip
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.testclient import TestClient
 from opentelemetry import trace
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
@@ -21,7 +21,11 @@ from servicelib.fastapi.tracing import (
     get_tracing_instrumentation_lifespan,
     initialize_fastapi_app_tracing,
 )
-from servicelib.tracing import _OSPARC_TRACE_ID_HEADER
+from servicelib.tracing import (
+    _OSPARC_TRACE_ID_HEADER,
+    _PROFILE_ATTRIBUTE_NAME,
+    with_profiled_span,
+)
 from settings_library.tracing import TracingSettings
 
 
@@ -224,3 +228,49 @@ async def test_trace_id_in_response_header(
         trace_id = response.headers[_OSPARC_TRACE_ID_HEADER]
         assert len(trace_id) == 32  # Ensure trace ID is a 32-character hex string
         assert trace_id == handler_data[_OSPARC_TRACE_ID_HEADER]
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318),
+    ],
+    indirect=True,
+)
+async def test_with_profile_span(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: Callable[[], None],
+    tracing_settings_in: Callable,
+):
+    tracing_settings = TracingSettings()
+
+    @with_profiled_span
+    async def handler():
+        current_span = trace.get_current_span()
+        return JSONResponse(
+            content={
+                "trace_id": f"{format(current_span.get_span_context().trace_id, '032x')}"
+            },
+        )
+
+    mocked_app.get("/")(handler)
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_settings=tracing_settings,
+        service_name="Mock-OpenTelemetry-Pytest",
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(mocked_app, add_response_trace_id_header=True)
+        client = TestClient(mocked_app)
+        response = client.get("/")
+        assert response.status_code == status.HTTP_200_OK
+        trace_id = response.json().get("trace_id")
+        assert trace_id is not None
+
+        spans = mock_otel_collector.get_finished_spans()
+        assert any(
+            span.context.trace_id == int(trace_id, 16)
+            and _PROFILE_ATTRIBUTE_NAME in span.attributes.keys()
+            for span in spans
+            if span.context is not None and span.attributes is not None
+        )
