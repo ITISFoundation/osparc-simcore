@@ -264,16 +264,60 @@ async def setup_async_loggers(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
-    # Start the async logging context
-    async with AsyncLoggingContext(
-        log_format_local_dev_enabled=log_format_local_dev_enabled,
-        fmt=fmt,
-    ):
+    # Set up async logging infrastructure
+    log_queue: queue.Queue = queue.Queue()
+    # Create handler with proper formatting
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        CustomFormatter(
+            fmt,
+            log_format_local_dev_enabled=log_format_local_dev_enabled,
+        )
+    )
+
+    # Create and start the queue listener
+    listener = logging.handlers.QueueListener(
+        log_queue, handler, respect_handler_level=True
+    )
+    listener.start()
+
+    # Create queue handler for loggers
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+
+    # Configure all existing loggers - add queue handler alongside existing handlers
+    manager: logging.Manager = logging.Logger.manager
+    root_logger = logging.getLogger()
+    all_loggers = [root_logger] + [
+        logging.getLogger(name) for name in manager.loggerDict
+    ]
+
+    # Add queue handler to all loggers (preserving existing handlers)
+    for logger in all_loggers:
+        logger.addHandler(queue_handler)
+
+    try:
         # Apply filters if provided
         if logger_filter_mapping:
             _apply_logger_filters(logger_filter_mapping)
 
+        _logger.info("Async logging context initialized with unlimited queue")
         yield
+
+    finally:
+        # Cleanup: Remove queue handlers from all loggers
+        try:
+            for logger in all_loggers:
+                if queue_handler in logger.handlers:
+                    logger.removeHandler(queue_handler)
+
+            # Stop the queue listener
+            _logger.debug("Shutting down async logging listener...")
+            listener.stop()
+            _logger.debug("Async logging context cleanup complete")
+
+        except Exception as exc:
+            sys.stderr.write(f"Error during async logging cleanup: {exc}\n")
+            sys.stderr.flush()
 
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
@@ -521,123 +565,3 @@ def guess_message_log_level(message: str) -> LogLevelInt:
 def set_parent_module_log_level(current_module: str, desired_log_level: int) -> None:
     parent_module = ".".join(current_module.split(".")[:-1])
     logging.getLogger(parent_module).setLevel(desired_log_level)
-
-
-class AsyncLoggingContext:
-    """
-    Async context manager for non-blocking logging infrastructure.
-    Based on the pattern from SuperFastPython article.
-    """
-
-    def __init__(
-        self,
-        *,
-        log_format_local_dev_enabled: bool = False,
-        fmt: str | None = None,
-    ) -> None:
-        self.log_format_local_dev_enabled = log_format_local_dev_enabled
-        self.fmt = fmt or _DEFAULT_FORMATTING
-        self.queue: queue.Queue | None = None
-        self.listener: logging.handlers.QueueListener | None = None
-        self.queue_handler: logging.handlers.QueueHandler | None = None
-        self.original_handlers: dict[str, list[logging.Handler]] = {}
-
-    async def __aenter__(self) -> "AsyncLoggingContext":
-        """Set up async logging infrastructure."""
-        await self._setup_async_logging()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Clean up async logging infrastructure."""
-        await self._cleanup_async_logging()
-
-    async def _setup_async_logging(self) -> None:
-        """Configure non-blocking logging using queue-based approach."""
-        # Create unlimited queue for log messages
-        self.queue = queue.Queue()
-
-        # Use default StreamHandler with proper formatting
-        handler = logging.StreamHandler()
-        handler.setFormatter(
-            CustomFormatter(
-                self.fmt,
-                log_format_local_dev_enabled=self.log_format_local_dev_enabled,
-            )
-        )
-
-        # Create and start the queue listener
-        self.listener = logging.handlers.QueueListener(
-            self.queue, handler, respect_handler_level=True
-        )
-        self.listener.start()
-
-        # Create queue handler for loggers
-        self.queue_handler = logging.handlers.QueueHandler(self.queue)
-
-        # Configure all existing loggers
-        await self._configure_loggers()
-
-        _logger.info("Async logging context initialized with unlimited queue")
-
-    async def _configure_loggers(self) -> None:
-        """Add queue handler to all loggers while preserving existing handlers."""
-        # Get all loggers
-        manager: logging.Manager = logging.Logger.manager
-        root_logger = logging.getLogger()
-        all_loggers = [root_logger] + [
-            logging.getLogger(name) for name in manager.loggerDict
-        ]
-
-        # Store original handlers and add queue handler
-        for logger in all_loggers:
-            logger_name = logger.name or "root"
-
-            # Store original handlers
-            self.original_handlers[logger_name] = logger.handlers[:]
-
-            # Add queue handler alongside existing handlers
-            if self.queue_handler:
-                logger.addHandler(self.queue_handler)
-
-        # Allow other coroutines to run
-        await asyncio.sleep(0)
-
-    async def _cleanup_async_logging(self) -> None:
-        """Restore original logging configuration."""
-        try:
-            # Remove queue handlers from all loggers
-            manager: logging.Manager = logging.Logger.manager
-            root_logger = logging.getLogger()
-            all_loggers = [root_logger] + [
-                logging.getLogger(name) for name in manager.loggerDict
-            ]
-
-            for logger in all_loggers:
-                # Remove only the queue handler we added
-                if self.queue_handler and self.queue_handler in logger.handlers:
-                    logger.removeHandler(self.queue_handler)
-
-            # Stop the queue listener
-            if self.listener:
-                _logger.debug("Shutting down async logging listener...")
-                self.listener.stop()
-
-            _logger.debug("Async logging context cleanup complete")
-
-        except Exception as exc:
-            sys.stderr.write(f"Error during async logging cleanup: {exc}\n")
-            sys.stderr.flush()
-        finally:
-            self.queue = None
-            self.listener = None
-            self.queue_handler = None
-            self.original_handlers.clear()
-
-    def get_metrics(self) -> dict[str, Any] | None:
-        """Get logging performance metrics."""
-        if self.queue:
-            return {
-                "queue_size": self.queue.qsize(),
-                "listener_active": self.listener is not None,
-            }
-        return None
