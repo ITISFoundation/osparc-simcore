@@ -35,10 +35,11 @@ def method_name(faker: Faker) -> RPCMethodName:
 
 
 @pytest.fixture
-def job_id_data(faker: Faker) -> AsyncJobFilter:
+def job_filter(faker: Faker) -> AsyncJobFilter:
     return AsyncJobFilter(
         user_id=faker.pyint(min_value=1),
         product_name=faker.word(),
+        client_name="PYTEST_CLIENT_NAME",
     )
 
 
@@ -143,7 +144,7 @@ async def test_async_jobs_methods(
     async_job_rpc_server: RabbitMQRPCClient,
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
     job_id: AsyncJobId,
     method: str,
 ):
@@ -155,7 +156,7 @@ async def test_async_jobs_methods(
             rpc_client,
             rpc_namespace=namespace,
             job_id=job_id,
-            job_id_data=job_id_data,
+            job_id_data=job_filter,
         )
 
 
@@ -164,13 +165,13 @@ async def test_list_jobs(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
 ):
     await list_jobs(
         rpc_client,
         rpc_namespace=namespace,
         filter_="",
-        job_filter=job_id_data,
+        job_filter=job_filter,
     )
 
 
@@ -179,13 +180,13 @@ async def test_submit(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
 ):
     await submit(
         rpc_client,
         rpc_namespace=namespace,
         method_name=method_name,
-        job_filter=job_id_data,
+        job_filter=job_filter,
     )
 
 
@@ -193,14 +194,14 @@ async def test_submit_with_invalid_method_name(
     async_job_rpc_server: RabbitMQRPCClient,
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
 ):
     with pytest.raises(RemoteMethodNotRegisteredError):
         await submit(
             rpc_client,
             rpc_namespace=namespace,
             method_name=RPCMethodName("invalid_method_name"),
-            job_filter=job_id_data,
+            job_filter=job_filter,
         )
 
 
@@ -209,14 +210,14 @@ async def test_submit_and_wait_properly_timesout(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
 ):
     with pytest.raises(TimeoutError):  # noqa: PT012
         async for _job_composed_result in submit_and_wait(
             rpc_client,
             rpc_namespace=namespace,
             method_name=method_name,
-            job_filter=job_id_data,
+            job_filter=job_filter,
             client_timeout=datetime.timedelta(seconds=0.1),
         ):
             pass
@@ -227,13 +228,13 @@ async def test_submit_and_wait(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
 ):
     async for job_composed_result in submit_and_wait(
         rpc_client,
         rpc_namespace=namespace,
         method_name=method_name,
-        job_filter=job_id_data,
+        job_filter=job_filter,
         client_timeout=datetime.timedelta(seconds=10),
     ):
         if not job_composed_result.done:
@@ -245,6 +246,6 @@ async def test_submit_and_wait(
         result={
             "data": None,
             "job_id": job_composed_result.status.job_id,
-            "job_id_data": job_id_data,
+            "job_id_data": job_filter,
         }
     )
