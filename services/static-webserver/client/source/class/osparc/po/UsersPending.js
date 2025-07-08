@@ -143,6 +143,13 @@ qx.Class.define("osparc.po.UsersPending", {
         row: 0,
         column: 2,
       });
+
+      pendingUsersLayout.add(new qx.ui.basic.Label(this.tr("Status")).set({
+        font: "text-14"
+      }), {
+        row: 0,
+        column: 3,
+      });
     },
 
     __addRows: function(pendingUsers) {
@@ -165,32 +172,31 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 2,
         });
-        const statusImage = new qx.ui.basic.Image();
-        pendingUsersLayout.add(statusImage, {
+        const statusChip = new osparc.ui.basic.Chip().set({
+          label: pendingUser.accountRequestStatus.toLowerCase(),
+          allowGrowX: false,
+        });
+        statusChip.getChildControl("label").set({
+          font: "text-12",
+        });
+        pendingUsersLayout.add(statusChip, {
           row,
           column: 3,
-        });
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.accountRequestStatus.toLowerCase()), {
-          row,
-          column: 4,
         });
         const infoButton = this.self().createInfoButton(pendingUser);
         pendingUsersLayout.add(infoButton, {
           row,
-          column: 5,
+          column: 4,
         });
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
         pendingUsersLayout.add(buttonsLayout, {
           row,
-          column: 6,
+          column: 5,
         });
 
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
-            statusImage.set({
-              source: "@FontAwesome5Solid/hourglass-end/14",
-              textColor: "warning-yellow",
-            });
+            statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.WARNING);
             const approveButton = this.__createApproveButton(pendingUser.email);
             buttonsLayout.add(approveButton);
             const rejectButton = this.__createRejectButton(pendingUser.email);
@@ -198,20 +204,14 @@ qx.Class.define("osparc.po.UsersPending", {
             break;
           }
           case "REJECTED": {
-            statusImage.set({
-              source: "@FontAwesome5Solid/times/14",
-              textColor: "danger-red",
-            });
+            statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.ERROR);
             const approveButton = this.__createApproveButton(pendingUser.email);
             approveButton.setEnabled(false); // avoid changing decision for now
             buttonsLayout.add(approveButton);
             break;
           }
           case "APPROVED": {
-            statusImage.set({
-              source: "@FontAwesome5Solid/check/14",
-              textColor: "product-color",
-            });
+            statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.SUCCESS);
             const resendEmailButton = this.self().createResendEmailButton(pendingUser.email);
             resendEmailButton.setEnabled(false);
             buttonsLayout.add(resendEmailButton);
