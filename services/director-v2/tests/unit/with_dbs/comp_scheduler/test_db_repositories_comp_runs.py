@@ -1259,7 +1259,6 @@ async def test_get_latest_run_by_project(
 
     # Create a second user
     second_user = create_registered_user()
-    # second_user_id = UserID(faker.pyint(min_value=1000))
 
     # Create comp runs for the original user
     comp_run_user1_iter1 = await CompRunsRepository(sqlalchemy_async_engine).create(
