@@ -7,9 +7,9 @@ from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from models_library.rpc.notifications.messages import (
-    EmailRecipient,
+    EmailChannel,
     NotificationMessage,
-    SMSRecipient,
+    SMSChannel,
 )
 from settings_library.celery import CelerySettings
 
@@ -28,7 +28,7 @@ async def celery_lifespan(app: FastAPI) -> AsyncIterator[State]:
         )
 
         register_celery_types()
-        register_pydantic_types(NotificationMessage, EmailRecipient, SMSRecipient)
+        register_pydantic_types(NotificationMessage, EmailChannel, SMSChannel)
     yield {}
 
 

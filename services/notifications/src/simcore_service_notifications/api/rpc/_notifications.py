@@ -1,4 +1,4 @@
-from models_library.rpc.notifications.messages import NotificationMessage, Recipient
+from models_library.rpc.notifications.messages import NotificationMessage
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
@@ -12,10 +12,8 @@ async def send_notification_message(
     task_manager: TaskManager,
     *,
     message: NotificationMessage,
-    recipients: list[Recipient],
 ) -> None:
     await notifications_service.send_notification_message(
         task_manager,
         message=message,
-        recipients=recipients,
     )

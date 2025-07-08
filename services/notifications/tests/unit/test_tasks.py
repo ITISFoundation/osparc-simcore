@@ -4,7 +4,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications.messages import (
     send_notification_message,
 )
-from simcore_service_notifications.clients.celery import EmailRecipient
+from simcore_service_notifications.clients.celery import EmailChannel
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -23,8 +23,8 @@ async def test_send_email(
     await send_notification_message(
         notifications_rabbitmq_rpc_client,
         message=NotificationMessage(
-            event="test_event",
+            event_type="on_account_requested",
+            channel=EmailChannel(to="test@example.com"),
             context={"key": "value"},
         ),
-        recipients=[EmailRecipient(address="test@example.com")],
     )

@@ -1,28 +1,29 @@
 from abc import ABC
-from typing import Annotated, Any, TypeAlias
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
-class BaseRecipient(BaseModel, ABC):
+class Channel(BaseModel, ABC):
     type: str
 
-
-class SMSRecipient(BaseRecipient):
-    type: Annotated[str, Field(frozen=True)] = "sms"
-    phone_number: str
-
-
-class EmailRecipient(BaseRecipient):
-    type: Annotated[str, Field(frozen=True)] = "email"
-    address: str
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
 
-Recipient: TypeAlias = Annotated[
-    EmailRecipient | SMSRecipient, Field(discriminator="type")
-]
+class EmailChannel(Channel):
+    type: Literal["email"] = "email"
+    to: EmailStr
+    reply_to: EmailStr | None = None
+
+
+class SMSChannel(Channel):
+    type: Literal["sms"] = "sms"
+    phone_number: str  # Consider using phone number validation library here
 
 
 class NotificationMessage(BaseModel):
-    event: str
-    context: dict[str, Any] | None = None
+    event_type: str  # e.g. "account.registered"
+    channel: Channel
+    context: dict[str, Any] | None = None  # Additional context for the notification
