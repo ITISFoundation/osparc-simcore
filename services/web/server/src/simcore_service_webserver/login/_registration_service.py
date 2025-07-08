@@ -105,3 +105,7 @@ async def notify_user_logout(
         client_session_id,
         app,
     )
+
+
+def get_user_name_from_email(email: str) -> str:
+    return email.split("@")[0]

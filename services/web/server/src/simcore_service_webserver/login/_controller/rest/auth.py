@@ -40,6 +40,7 @@ from ...constants import (
 )
 from ...decorators import login_required
 from ...settings import LoginSettingsForProduct, get_plugin_settings
+from ...web_utils import envelope_response, flash_response
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 log = logging.getLogger(__name__)
@@ -134,7 +135,7 @@ async def login(request: web.Request):
         user_2fa_authentification_method == TwoFactorAuthentificationMethod.SMS
         and not user["phone"]
     ):
-        return _login_service.envelope_response(
+        return envelope_response(
             # LoginNextPage
             {
                 "name": CODE_PHONE_NUMBER_REQUIRED,
@@ -169,7 +170,7 @@ async def login(request: web.Request):
             user_id=user["id"],
         )
 
-        return _login_service.envelope_response(
+        return envelope_response(
             # LoginNextPage
             {
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
@@ -196,7 +197,7 @@ async def login(request: web.Request):
         product=product,
         user_id=user["id"],
     )
-    return _login_service.envelope_response(
+    return envelope_response(
         {
             "name": CODE_2FA_EMAIL_CODE_REQUIRED,
             "parameters": {
@@ -282,7 +283,7 @@ async def logout(request: web.Request) -> web.Response:
         f"{logout_.client_session_id=}",
         extra=get_log_record_extra(user_id=user_id),
     ):
-        response = _login_service.flash_response(MSG_LOGGED_OUT, "INFO")
+        response = flash_response(MSG_LOGGED_OUT, "INFO")
         await _login_service.notify_user_logout(
             request.app, user_id, logout_.client_session_id
         )
