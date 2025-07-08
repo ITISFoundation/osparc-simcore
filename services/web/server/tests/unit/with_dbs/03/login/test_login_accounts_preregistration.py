@@ -60,7 +60,7 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
 @pytest.fixture
 def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.login._controller.rest.preregistration.session_service.get_session",
+        "simcore_service_webserver.login_accounts._controller_rest.session_service.get_session",
         spec=True,
         return_value={"captcha": "123456"},
     )

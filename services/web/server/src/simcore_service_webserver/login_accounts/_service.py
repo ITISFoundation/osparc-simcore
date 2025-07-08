@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import logging
 from io import BytesIO
@@ -112,19 +113,23 @@ async def send_account_request_email_to_support(
 
 
 async def create_captcha() -> tuple[str, bytes]:
-    captcha_text = generate_passcode(number_of_digits=6)
-    image = ImageCaptcha(width=140, height=45)
+    def _run() -> tuple[str, bytes]:
+        captcha_text = generate_passcode(number_of_digits=6)
+        image = ImageCaptcha(width=140, height=45)
 
-    # Generate image
-    data: Image = image.create_captcha_image(
-        chars=captcha_text, color=(221, 221, 221), background=(0, 20, 46)
-    )
+        # Generate image
+        data: Image = image.create_captcha_image(
+            chars=captcha_text, color=(221, 221, 221), background=(0, 20, 46)
+        )
 
-    img_byte_arr = BytesIO()
-    data.save(img_byte_arr, format="PNG")
-    image_data = img_byte_arr.getvalue()
+        img_byte_arr = BytesIO()
+        data.save(img_byte_arr, format="PNG")
+        image_data = img_byte_arr.getvalue()
 
-    return (captcha_text, image_data)
+        return (captcha_text, image_data)
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _run)
 
 
 async def create_pre_registration(
