@@ -220,7 +220,7 @@ def config_all_loggers(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
-    the_manager: logging.Manager = logging.Logger.manager
+    the_manager = logging.Logger.manager
     root_logger = logging.getLogger()
     loggers = [root_logger] + [
         logging.getLogger(name) for name in the_manager.loggerDict
@@ -265,7 +265,7 @@ async def setup_async_loggers(
     )
 
     # Set up async logging infrastructure
-    log_queue: queue.Queue = queue.Queue()
+    log_queue = queue.Queue()
     # Create handler with proper formatting
     handler = logging.StreamHandler()
     handler.setFormatter(
@@ -285,7 +285,7 @@ async def setup_async_loggers(
     queue_handler = logging.handlers.QueueHandler(log_queue)
 
     # Configure all existing loggers - add queue handler alongside existing handlers
-    manager: logging.Manager = logging.Logger.manager
+    manager = logging.Logger.manager
     root_logger = logging.getLogger()
     all_loggers = [root_logger] + [
         logging.getLogger(name) for name in manager.loggerDict
