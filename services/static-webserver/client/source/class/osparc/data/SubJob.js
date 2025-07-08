@@ -18,10 +18,11 @@
 qx.Class.define("osparc.data.SubJob", {
   extend: qx.core.Object,
 
-  construct: function(subJobData) {
+  construct: function(collectionRunId, subJobData) {
     this.base(arguments);
 
     this.set({
+      collectionRunId,
       projectUuid: subJobData["projectUuid"],
       nodeId: subJobData["nodeId"],
     });
@@ -30,6 +31,12 @@ qx.Class.define("osparc.data.SubJob", {
   },
 
   properties: {
+    collectionRunId: {
+      check: "String",
+      nullable: false,
+      init: null,
+    },
+
     projectUuid: {
       check: "String",
       nullable: false,
@@ -42,7 +49,7 @@ qx.Class.define("osparc.data.SubJob", {
       init: null,
     },
 
-    nodeName: {
+    name: {
       check: "String",
       nullable: false,
       init: null,
@@ -94,7 +101,7 @@ qx.Class.define("osparc.data.SubJob", {
   members: {
     updateSubJob: function(subJobData) {
       this.set({
-        nodeName: subJobData["nodeName"],
+        name: subJobData["name"],
         state: subJobData["state"],
         progress: subJobData["progress"],
         startedAt: subJobData["startedAt"] ? new Date(subJobData["startedAt"]) : null,
