@@ -242,7 +242,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    infoElementsToLayout: function(infoElements) {
+    infoElementsToLayout: function(infoElements, isStudy = true) {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const decorateAction = action => {
@@ -298,13 +298,23 @@ qx.Class.define("osparc.info.StudyUtils", {
         centerLayout.add(thumbnailLayout);
       }
 
-      const gridKeys = [
+      const gridKeys = isStudy ? [
         "AUTHOR",
         "ACCESS_RIGHTS",
         "CREATED",
         "MODIFIED",
         "TAGS",
         "LOCATION",
+      ] : [
+        "SERVICE_ID",
+        "KEY",
+        "INTEGRATION_VERSION",
+        "VERSION",
+        "DATE",
+        "CONTACT",
+        "AUTHORS",
+        "ACCESS_RIGHTS",
+        "DESCRIPTION_ONLY",
       ];
 
       const grid = new qx.ui.layout.Grid(6, 6);

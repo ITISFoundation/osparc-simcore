@@ -147,7 +147,8 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
         // Rest of information
         const infoElements = this.__infoElements();
-        const infoLayout = osparc.info.ServiceUtils.infoElementsToLayout(infoElements);
+        const isStudy = false;
+        const infoLayout = osparc.info.StudyUtils.infoElementsToLayout(infoElements, isStudy);
         vBox.add(infoLayout);
 
         // Resources info if not billable
