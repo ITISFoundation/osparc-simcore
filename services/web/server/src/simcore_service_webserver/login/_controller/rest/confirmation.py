@@ -45,7 +45,6 @@ from ..._login_service import (
     CHANGE_EMAIL,
     REGISTRATION,
     RESET_PASSWORD,
-    flash_response,
     notify_user_confirmation,
 )
 from ..._models import InputSchema, check_confirm_password_match
@@ -60,6 +59,7 @@ from ...settings import (
     get_plugin_options,
     get_plugin_settings,
 )
+from ...web_utils import flash_response
 
 _logger = logging.getLogger(__name__)
 

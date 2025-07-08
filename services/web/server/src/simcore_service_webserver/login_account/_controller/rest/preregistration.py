@@ -14,13 +14,14 @@ from servicelib.utils import fire_and_forget_task
 
 from ...._meta import API_VTAG
 from ....login._controller.rest._rest_exceptions import handle_rest_requests_exceptions
-from ....login._login_service import flash_response, notify_user_logout
+from ....login._login_service import notify_user_logout
 from ....login.constants import (
     CAPTCHA_SESSION_KEY,
     MSG_LOGGED_OUT,
     MSG_WRONG_CAPTCHA__INVALID,
 )
 from ....login.settings import LoginSettingsForProduct, get_plugin_settings
+from ....login.web_utils import flash_response
 from ....login_auth.decorators import login_required
 from ....models import AuthenticatedRequestContext
 from ....products import products_web

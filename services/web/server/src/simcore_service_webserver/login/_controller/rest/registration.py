@@ -32,7 +32,13 @@ from ....session.access_policies import (
 from ....utils import MINUTE
 from ....utils_aiohttp import NextPage, envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
-from ... import _auth_service, _confirmation_web, _security_service, _twofa_service
+from ... import (
+    _auth_service,
+    _confirmation_web,
+    _registration_service,
+    _security_service,
+    _twofa_service,
+)
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._invitations_service import (
     ConfirmedInvitationData,
@@ -46,9 +52,6 @@ from ..._login_repository_legacy import (
     get_plugin_storage,
 )
 from ..._login_service import (
-    envelope_response,
-    flash_response,
-    get_user_name_from_email,
     notify_user_confirmation,
 )
 from ..._models import InputSchema, check_confirm_password_match
@@ -67,6 +70,7 @@ from ...settings import (
     get_plugin_options,
     get_plugin_settings,
 )
+from ...web_utils import envelope_response, flash_response
 
 _logger = logging.getLogger(__name__)
 
@@ -398,7 +402,9 @@ async def register_phone(request: web.Request):
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=get_user_name_from_email(registration.email),
+            first_name=_registration_service.get_user_name_from_email(
+                registration.email
+            ),
         )
 
         return envelope_response(

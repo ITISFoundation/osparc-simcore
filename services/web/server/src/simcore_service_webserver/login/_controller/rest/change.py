@@ -24,7 +24,6 @@ from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
-    flash_response,
     validate_user_status,
 )
 from ..._models import InputSchema, create_password_match_validator
@@ -38,6 +37,7 @@ from ...constants import (
 )
 from ...decorators import login_required
 from ...settings import LoginOptions, get_plugin_options
+from ...web_utils import flash_response
 
 _logger = logging.getLogger(__name__)
 
