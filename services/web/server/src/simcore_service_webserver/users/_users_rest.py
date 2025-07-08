@@ -112,8 +112,8 @@ routes = web.RouteTableDef()
 
 @routes.get(f"/{API_VTAG}/me", name="get_my_profile")
 @login_required
-@with_profiled_span
 @_handle_users_exceptions
+@with_profiled_span
 async def get_my_profile(request: web.Request) -> web.Response:
     product: Product = products_web.get_current_product(request)
     req_ctx = UsersRequestContext.model_validate(request)
