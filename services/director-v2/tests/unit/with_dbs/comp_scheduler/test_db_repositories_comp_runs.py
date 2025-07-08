@@ -9,7 +9,7 @@ import asyncio
 import datetime
 import random
 from collections.abc import Awaitable, Callable
-from typing import cast
+from typing import Any, cast
 
 import arrow
 import pytest
@@ -512,3 +512,75 @@ async def test_mark_scheduling_done(
     assert updated != created
     assert updated.scheduled is None
     assert updated.processed is not None
+
+
+async def test_get_with_user_id_none_across_multiple_users(
+    sqlalchemy_async_engine: AsyncEngine,
+    run_metadata: RunMetadataDict,
+    faker: Faker,
+    publish_project: Callable[[], Awaitable[PublishedProject]],
+    create_registered_user: Callable[..., dict[str, Any]],
+):
+    """Test that get() with user_id=None retrieves the latest run regardless of user"""
+    published_project = await publish_project()
+
+    # Create a second user
+    second_user = create_registered_user()
+    # second_user_id = UserID(faker.pyint(min_value=1000))
+
+    # Create comp runs for the original user
+    comp_run_user1_iter1 = await CompRunsRepository(sqlalchemy_async_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+    )
+
+    # Create comp runs for the second user (this should increment iteration)
+    comp_run_user2_iter2 = await CompRunsRepository(sqlalchemy_async_engine).create(
+        user_id=second_user["id"],
+        project_id=published_project.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+    )
+
+    # Create another run for the first user (should be iteration 3)
+    comp_run_user1_iter3 = await CompRunsRepository(sqlalchemy_async_engine).create(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+        iteration=None,
+        metadata=run_metadata,
+        use_on_demand_clusters=faker.pybool(),
+        dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+    )
+
+    # Verify iterations are correct
+    assert comp_run_user1_iter1.iteration == 1
+    assert comp_run_user2_iter2.iteration == 1
+    assert comp_run_user1_iter3.iteration == 2
+
+    # Test get with user_id=None should return the latest run (highest iteration)
+    latest_run = await CompRunsRepository(
+        sqlalchemy_async_engine
+    ).get_latest_run_by_project(
+        project_id=published_project.project.uuid,
+    )
+    assert latest_run == comp_run_user1_iter3
+    assert latest_run.iteration == 2
+
+    # Test get with specific user_id still works
+    user1_latest = await CompRunsRepository(sqlalchemy_async_engine).get(
+        user_id=published_project.user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert user1_latest == comp_run_user1_iter3
+
+    user2_latest = await CompRunsRepository(sqlalchemy_async_engine).get(
+        user_id=second_user["id"],
+        project_id=published_project.project.uuid,
+    )
+    assert user2_latest == comp_run_user2_iter2

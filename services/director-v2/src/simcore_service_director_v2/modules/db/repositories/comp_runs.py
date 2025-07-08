@@ -106,11 +106,27 @@ class CompRunsRepository(BaseRepository):
             result = await conn.execute(
                 sa.select(comp_runs)
                 .where(
-                    (comp_runs.c.user_id == user_id)
-                    & (comp_runs.c.project_uuid == f"{project_id}")
+                    (comp_runs.c.project_uuid == f"{project_id}")
                     & (comp_runs.c.iteration == iteration if iteration else True)
+                    & (comp_runs.c.user_id == user_id if user_id else True)
                 )
                 .order_by(desc(comp_runs.c.iteration))
+                .limit(1)
+            )
+            row = result.one_or_none()
+            if not row:
+                raise ComputationalRunNotFoundError
+            return CompRunsAtDB.model_validate(row)
+
+    async def get_latest_run_by_project(
+        self,
+        project_id: ProjectID,
+    ) -> CompRunsAtDB:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            result = await conn.execute(
+                sa.select(comp_runs)
+                .where(comp_runs.c.project_uuid == f"{project_id}")
+                .order_by(desc(comp_runs.c.run_id))
                 .limit(1)
             )
             row = result.one_or_none()
