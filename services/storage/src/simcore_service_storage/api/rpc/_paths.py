@@ -20,7 +20,7 @@ router = RPCRouter()
 @router.expose(reraise_if_error_type=None)
 async def compute_path_size(
     task_manager: TaskManager,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
     location_id: LocationID,
     path: Path,
 ) -> AsyncJobGet:
@@ -29,8 +29,8 @@ async def compute_path_size(
         task_metadata=TaskMetadata(
             name=task_name,
         ),
-        task_filter=job_id_data.model_dump(),
-        user_id=job_id_data.user_id,
+        task_filter=job_filter,
+        user_id=job_filter.user_id,
         location_id=location_id,
         path=path,
     )
@@ -41,7 +41,7 @@ async def compute_path_size(
 @router.expose(reraise_if_error_type=None)
 async def delete_paths(
     task_manager: TaskManager,
-    job_id_data: AsyncJobFilter,
+    job_filter: AsyncJobFilter,
     location_id: LocationID,
     paths: set[Path],
 ) -> AsyncJobGet:
@@ -50,8 +50,8 @@ async def delete_paths(
         task_metadata=TaskMetadata(
             name=task_name,
         ),
-        task_filter=job_id_data.model_dump(),
-        user_id=job_id_data.user_id,
+        task_filter=job_filter,
+        user_id=job_filter.user_id,
         location_id=location_id,
         paths=paths,
     )

@@ -41,6 +41,9 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 from .._worker_tasks._files import complete_upload_file as remote_complete_upload_file
 from .dependencies.celery import get_task_manager
 
+_ASYNC_JOB_CLIENT_NAME: Final[str] = "STORAGE"
+
+
 _logger = logging.getLogger(__name__)
 
 router = APIRouter(
@@ -287,12 +290,13 @@ async def complete_upload_file(
     async_job_name_data = AsyncJobFilter(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
+        client_name=_ASYNC_JOB_CLIENT_NAME,
     )
     task_uuid = await task_manager.submit_task(
         TaskMetadata(
             name=remote_complete_upload_file.__name__,
         ),
-        task_filter=async_job_name_data.model_dump(),
+        task_filter=async_job_name_data,
         user_id=async_job_name_data.user_id,
         location_id=location_id,
         file_id=file_id,
@@ -343,15 +347,16 @@ async def is_completed_upload_file(
     async_job_name_data = AsyncJobFilter(
         user_id=query_params.user_id,
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
+        client_name=_ASYNC_JOB_CLIENT_NAME,
     )
     task_status = await task_manager.get_task_status(
-        task_filter=async_job_name_data.model_dump(), task_uuid=TaskUUID(future_id)
+        task_filter=async_job_name_data, task_uuid=TaskUUID(future_id)
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
             await task_manager.get_task_result(
-                task_filter=async_job_name_data.model_dump(),
+                task_filter=async_job_name_data,
                 task_uuid=TaskUUID(future_id),
             )
         )
