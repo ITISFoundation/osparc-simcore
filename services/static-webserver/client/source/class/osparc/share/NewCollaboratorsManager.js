@@ -78,7 +78,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           let text = this.__showOrganizations ?
             this.tr("Select users or organizations from the list below.") :
             this.tr("Select users from the list below.");
-          text += this.tr("<br>Search them if they aren't listed.");
+          text += this.tr("<br>Search them if they aren't listed. Only the information that is public is findable.");
           control = new qx.ui.basic.Label().set({
             value: text,
             rich: true,
