@@ -22,8 +22,9 @@ qx.Class.define("osparc.data.Job", {
     this.base(arguments);
 
     this.set({
-      projectUuid: jobData["projectUuid"],
-      projectName: jobData["rootProjectName"] || "",
+      collectionRunId: jobData["collectionRunId"],
+      projectIds: jobData["projectIds"],
+      name: jobData["name"] || "",
       state: jobData["state"] || "UNKNOWN",
       submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
       startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
@@ -36,13 +37,19 @@ qx.Class.define("osparc.data.Job", {
   },
 
   properties: {
-    projectUuid: {
+    collectionRunId: {
       check: "String",
       nullable: false,
       init: null,
     },
 
-    projectName: {
+    projectIds: {
+      check: "Array",
+      nullable: false,
+      init: null,
+    },
+
+    name: {
       check: "String",
       nullable: false,
       init: null,

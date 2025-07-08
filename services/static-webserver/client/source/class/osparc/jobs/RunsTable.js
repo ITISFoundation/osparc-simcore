@@ -39,7 +39,8 @@ qx.Class.define("osparc.jobs.RunsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.PROJECT_UUID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.COLLECTION_RUN_ID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.PROJECT_IDS.column, false);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
 
@@ -76,54 +77,60 @@ qx.Class.define("osparc.jobs.RunsTable", {
 
   statics: {
     COLS: {
-      PROJECT_UUID: {
-        id: "projectUuid",
+      COLLECTION_RUN_ID: {
+        id: "collectionRunId",
         column: 0,
-        label: qx.locale.Manager.tr("Project Id"),
+        label: qx.locale.Manager.tr("Collection Run Id"),
         width: 200
       },
-      PROJECT_NAME: {
-        id: "projectName",
+      PROJECT_IDS: {
+        id: "projectUuid",
         column: 1,
-        label: qx.locale.Manager.tr("Project"),
+        label: qx.locale.Manager.tr("Project Ids"),
+        width: 200
+      },
+      NAME: {
+        id: "name",
+        column: 2,
+        label: qx.locale.Manager.tr("Name"),
         width: 150,
       },
       STATE: {
         id: "state",
-        column: 2,
+        column: 3,
         label: qx.locale.Manager.tr("Status"),
         width: 150,
       },
       SUBMIT: {
         id: "submit",
-        column: 3,
+        column: 4,
         label: qx.locale.Manager.tr("Queued"),
         width: 130,
         sortableMap: "submitted_at",
       },
       START: {
         id: "start",
-        column: 4,
+        column: 5,
         label: qx.locale.Manager.tr("Started"),
         width: 130,
         sortableMap: "started_at",
       },
       END: {
         id: "end",
-        column: 5,
+        column: 6,
         label: qx.locale.Manager.tr("Ended"),
         width: 130,
         sortableMap: "ended_at",
       },
       ACTION_CANCEL: {
         id: "action_cancel",
-        column: 6,
+        column: 7,
         label: qx.locale.Manager.tr("Cancel"),
         width: 50
       },
       ACTION_INFO: {
         id: "action_info",
-        column: 7,
+        column: 8,
         label: qx.locale.Manager.tr("Info"),
         width: 50
       },

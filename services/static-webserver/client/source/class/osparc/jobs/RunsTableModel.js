@@ -136,8 +136,9 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
             const jobsCols = osparc.jobs.RunsTable.COLS;
             jobs.forEach(job => {
               data.push({
-                [jobsCols.PROJECT_UUID.id]: job.getProjectUuid(),
-                [jobsCols.PROJECT_NAME.id]: job.getProjectName(),
+                [jobsCols.COLLECTION_RUN_ID.id]: job.getCollectionRunId(),
+                [jobsCols.PROJECT_IDS.id]: job.getProjectIds().join(", "),
+                [jobsCols.NAME.id]: job.getName(),
                 [jobsCols.STATE.id]: osparc.data.Job.STATUS_LABELS[job.getState()] || job.getState(),
                 [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
                 [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",

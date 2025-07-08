@@ -56,7 +56,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("runsOld", "getPageLatest", params, options)
+      return osparc.data.Resources.fetch("runs", "getPageLatest", params, options)
         .then(jobsResp => {
           const jobsActive = [];
           if ("data" in jobsResp) {
@@ -95,7 +95,7 @@ qx.Class.define("osparc.store.Jobs", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("runsOld", "getPageHistory", params, options)
+      return osparc.data.Resources.fetch("runs", "getPageHistory", params, options)
         .then(jobsResp => {
           if (resolveWResponse) {
             return jobsResp;
@@ -139,7 +139,7 @@ qx.Class.define("osparc.store.Jobs", {
 
     __addJob: function(jobData) {
       const jobs = this.getJobs();
-      const jobFound = jobs.find(job => job.getProjectUuid() === jobData["projectUuid"]);
+      const jobFound = jobs.find(job => job.getCollectionRunId() === jobData["collectionRunId"]);
       if (jobFound) {
         jobFound.updateJob(jobData);
         return jobFound;

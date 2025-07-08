@@ -363,6 +363,20 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
+      "runs": {
+        useCache: false, // handled in osparc.store.Jobs
+        endpoints: {
+          getPageLatest: {
+            method: "GET",
+            // url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}"
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running=false"
+          },
+          getPageHistory: {
+            method: "GET",
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_by_root_project_id={studyId}"
+          },
+        }
+      },
       "runsOld": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
