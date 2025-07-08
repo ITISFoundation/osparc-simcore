@@ -51,7 +51,7 @@ qx.Class.define("osparc.jobs.RunsTable", {
           "Running",
         ].includes(cellInfo.rowData["state"]);
       }
-      return true;
+      return false;
     }
     const fontButtonRendererStop = new osparc.ui.table.cellrenderer.ImageButtonRenderer("cancel", iconPathStop, shouldShowCancel);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_CANCEL.column, fontButtonRendererStop);
@@ -62,11 +62,11 @@ qx.Class.define("osparc.jobs.RunsTable", {
       if (cellInfo && cellInfo.rowData && cellInfo.rowData["collectionRunId"]) {
         const job = jobsStore.getJob(cellInfo.rowData["collectionRunId"]);
         if (!job) {
-          return true;
+          return false;
         }
         return Object.keys(job.getInfo()).length > 0;
       }
-      return true;
+      return false;
     }
     const fontButtonRendererInfo = new osparc.ui.table.cellrenderer.ImageButtonRenderer("info", iconPathInfo, shouldShowInfo);
     columnModel.setDataCellRenderer(this.self().COLS.ACTION_INFO.column, fontButtonRendererInfo);
