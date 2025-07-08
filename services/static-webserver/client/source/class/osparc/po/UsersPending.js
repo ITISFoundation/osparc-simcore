@@ -174,7 +174,6 @@ qx.Class.define("osparc.po.UsersPending", {
         });
         const statusChip = new osparc.ui.basic.Chip().set({
           label: pendingUser.accountRequestStatus.toLowerCase(),
-          allowGrowX: false,
         });
         statusChip.getChildControl("label").set({
           font: "text-12",

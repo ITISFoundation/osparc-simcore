@@ -10,6 +10,10 @@ qx.Class.define("osparc.ui.basic.Chip", {
 
   construct: function(label, icon) {
     this.base(arguments, label, icon);
+
+    this.set({
+      allowGrowX: false,
+    });
   },
 
   properties: {
