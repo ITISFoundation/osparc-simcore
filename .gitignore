@@ -55,7 +55,6 @@ locust_report/
 nosetests.xml
 test_failures/
 
-
 # Translations
 *.mo
 *.pot
@@ -182,3 +181,6 @@ tests/public-api/osparc_python_wheels/*
 
 # osparc-config repo files
 repo.config
+
+# repomix
+.repomix/*
