@@ -19,7 +19,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       showMaximize: false,
       autoDestroy: true,
       modal: true,
-      width: 400,
+      width: 330,
       maxHeight: 500,
       clickAwayClose: true
     });
