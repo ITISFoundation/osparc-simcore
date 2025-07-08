@@ -1,11 +1,16 @@
 """Configuration and utilities for service logging"""
 
 import logging
+from collections.abc import AsyncGenerator
 
 from aiodebug import log_slow_callbacks  # type: ignore[import-untyped]
+from aiohttp import web
 from aiohttp.log import access_logger
-from servicelib.logging_utils import config_all_loggers
+from servicelib.aiohttp.application_setup import ensure_single_setup
+from servicelib.logging_utils import setup_async_loggers
 from settings_library.tracing import TracingSettings
+
+from simcore_service_webserver.application_settings import get_application_settings
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 NOISY_LOGGERS = (
@@ -36,11 +41,11 @@ def setup_logging(
 
     # root
     logging.root.setLevel(level)
-    config_all_loggers(
-        log_format_local_dev_enabled=log_format_local_dev_enabled,
-        logger_filter_mapping=logger_filter_mapping,
-        tracing_settings=tracing_settings,
-    )
+    # config_all_loggers(
+    #     log_format_local_dev_enabled=log_format_local_dev_enabled,
+    #     logger_filter_mapping=logger_filter_mapping,
+    #     tracing_settings=tracing_settings,
+    # )
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
     #
