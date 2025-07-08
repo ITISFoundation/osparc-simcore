@@ -20,7 +20,6 @@ from ....login.constants import (
     MSG_WRONG_CAPTCHA__INVALID,
 )
 from ....login.settings import get_plugin_settings
-from ....login.web_utils import flash_response
 from ....login_auth.decorators import login_required
 from ....models import AuthenticatedRequestContext
 from ....products import products_web
@@ -32,6 +31,7 @@ from ....users import api as users_service
 from ....users._common.schemas import PreRegisteredUserGet
 from ....utils import MINUTE
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_utils import flash_response
 from ... import _preregistration_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 
