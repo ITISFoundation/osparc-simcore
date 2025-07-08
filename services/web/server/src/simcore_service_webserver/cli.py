@@ -13,17 +13,16 @@ Why does this file exist, and why not put this in __main__?
 
 """
 
-from contextlib import AsyncExitStack
 import logging
 import os
+from contextlib import AsyncExitStack
 from typing import Annotated, Final
 
 import typer
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from settings_library.utils_cli import create_settings_command
-
 from servicelib.logging_utils import setup_async_loggers
+from settings_library.utils_cli import create_settings_command
 
 from .application_settings import ApplicationSettings
 from .login import cli as login_cli
@@ -78,9 +77,6 @@ async def app_factory() -> web.Application:
     setup_logging(
         level=app_settings.log_level,
         slow_duration=app_settings.AIODEBUG_SLOW_DURATION_SECS,
-        log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=app_settings.WEBSERVER_LOG_FILTER_MAPPING,
-        tracing_settings=app_settings.WEBSERVER_TRACING,
     )
 
     exit_stack = AsyncExitStack()
