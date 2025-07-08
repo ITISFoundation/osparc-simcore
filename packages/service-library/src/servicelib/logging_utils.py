@@ -6,14 +6,15 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 """
 
 import asyncio
+import contextlib
 import functools
 import logging
 import logging.handlers
 import queue
 import sys
 from asyncio import iscoroutinefunction
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import AsyncGenerator, Callable, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
@@ -149,109 +150,6 @@ LOCAL_TRACING_FORMATTING = (
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| (log_uid=%{WORD:log_uid} \| )?log_msg=%{GREEDYDATA:log_msg}
 
 
-class SafeQueueListener(logging.handlers.QueueListener):
-    """
-    Enhanced QueueListener with error isolation and metrics.
-    """
-
-    def __init__(self, queue_obj: queue.Queue, *handlers: logging.Handler) -> None:
-        super().__init__(queue_obj, *handlers, respect_handler_level=True)
-        self._error_count = 0
-        self._processed_count = 0
-
-    def handle(self, record: logging.LogRecord) -> None:
-        """Handle a record with error isolation."""
-        try:
-            super().handle(record)
-            self._processed_count += 1
-        except Exception as exc:
-            self._error_count += 1
-            # Log to stderr to avoid logging loops
-            sys.stderr.write(f"Async logging handler failed: {exc}\n")
-            sys.stderr.flush()
-
-    def get_metrics(self) -> dict[str, Any]:
-        """Get logging metrics."""
-        return {
-            "processed_count": self._processed_count,
-            "error_count": self._error_count,
-            "queue_size": getattr(self.queue, "qsize", lambda: 0)(),
-        }
-
-
-class AsyncLoggingManager:
-    """
-    Simplified async logging manager with queue-based processing.
-    """
-
-    def __init__(self) -> None:
-        self.queue: queue.Queue | None = None
-        self.listener: SafeQueueListener | None = None
-        self._queue_handler: logging.handlers.QueueHandler | None = None
-
-    def setup(self, handlers: list[logging.Handler] | None = None) -> bool:
-        """
-        Set up the async logging infrastructure.
-
-        Args:
-            handlers: List of handlers to route through async processing
-
-        Returns:
-            True if setup successful, False otherwise
-        """
-        if self.listener is not None:
-            _logger.warning("Async logging already configured")
-            return True
-
-        try:
-            # Create unlimited queue to prevent queue.Full exceptions
-            self.queue = queue.Queue()
-
-            # Use provided handlers or create default console handler
-            target_handlers = handlers or [logging.StreamHandler()]
-
-            # Create and start listener
-            self.listener = SafeQueueListener(self.queue, *target_handlers)
-            self.listener.start()
-
-            # Create queue handler
-            self._queue_handler = logging.handlers.QueueHandler(self.queue)
-
-            _logger.info("Async logging initialized with unlimited queue")
-            return True
-
-        except Exception:
-            _logger.exception("Failed to setup async logging")
-            return False
-
-    def get_queue_handler(self) -> logging.handlers.QueueHandler | None:
-        """Get the queue handler for attaching to loggers."""
-        return self._queue_handler
-
-    def shutdown(self) -> None:
-        """Shutdown the async logging infrastructure gracefully."""
-        if self.listener is not None:
-            try:
-                _logger.debug("Shutting down async logging listener...")
-                self.listener.stop()
-                self.listener = None
-                self.queue = None
-                self._queue_handler = None
-                _logger.debug("Async logging shutdown complete")
-            except Exception as exc:
-                sys.stderr.write(f"Error during async logging shutdown: {exc}\n")
-
-    def get_metrics(self) -> dict[str, Any] | None:
-        """Get async logging performance metrics."""
-        if self.listener and hasattr(self.listener, "get_metrics"):
-            return self.listener.get_metrics()
-        return None
-
-    def is_enabled(self) -> bool:
-        """Check if async logging is currently enabled and running."""
-        return self.listener is not None
-
-
 def _setup_format_string(
     *,
     tracing_settings: TracingSettings | None,
@@ -270,115 +168,6 @@ def _setup_format_string(
     return DEFAULT_FORMATTING
 
 
-def _setup_async_logging(
-    *,
-    loggers: list[logging.Logger],
-    fmt: str,
-    log_format_local_dev_enabled: bool,
-) -> AsyncLoggingManager | None:
-    """Setup async logging and return AsyncLoggingManager if successful."""
-    # Collect existing handlers
-    existing_handlers = []
-    for logger in loggers:
-        existing_handlers.extend(logger.handlers[:])
-
-    # Remove handlers from loggers to avoid duplication
-    for logger in loggers:
-        logger.handlers.clear()
-
-    # Create formatted handlers for async processing
-    formatted_handlers = []
-    for handler in existing_handlers:
-        handler.setFormatter(
-            CustomFormatter(
-                fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
-            )
-        )
-        formatted_handlers.append(handler)
-
-    # Setup async logging infrastructure
-    async_manager = AsyncLoggingManager()
-    if async_manager.setup(formatted_handlers):
-        _logger.info("Async logging enabled with queue-based processing")
-        return async_manager
-
-    _logger.warning("Failed to setup async logging, falling back to synchronous")
-    # Restore original handlers if async setup failed
-    for logger in loggers:
-        for handler in existing_handlers:
-            logger.addHandler(handler)
-    return None
-
-
-def config_all_loggers(
-    *,
-    log_format_local_dev_enabled: bool,
-    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_settings: TracingSettings | None,
-    disable_async_logging: bool = False,
-) -> AsyncLoggingManager | None:
-    """
-    Applies common configuration to ALL registered loggers.
-
-    Args:
-        log_format_local_dev_enabled: Enable local development formatting
-        logger_filter_mapping: Mapping of logger names to filtered message substrings
-        tracing_settings: OpenTelemetry tracing configuration
-        disable_async_logging: Set to True to disable async logging (default: False)
-
-    Returns:
-        AsyncLoggingManager if async logging was enabled, None otherwise
-    """
-    the_manager: logging.Manager = logging.Logger.manager
-    root_logger = logging.getLogger()
-    loggers = [root_logger] + [
-        logging.getLogger(name) for name in the_manager.loggerDict
-    ]
-
-    # Create format string
-    fmt = _setup_format_string(
-        tracing_settings=tracing_settings,
-        log_format_local_dev_enabled=log_format_local_dev_enabled,
-    )
-
-    # Setup async logging by default
-    async_manager = None
-    if not disable_async_logging:
-        async_manager = _setup_async_logging(
-            loggers=loggers,
-            fmt=fmt,
-            log_format_local_dev_enabled=log_format_local_dev_enabled,
-        )
-
-    # Apply handlers to loggers
-    for logger in loggers:
-        if async_manager:
-            queue_handler = async_manager.get_queue_handler()
-            if queue_handler:
-                logger.addHandler(queue_handler)
-        else:
-            _set_logging_handler(
-                logger,
-                fmt=fmt,
-                log_format_local_dev_enabled=log_format_local_dev_enabled,
-            )
-
-    # Apply filters
-    for logger_name, filtered_routes in logger_filter_mapping.items():
-        logger = logging.getLogger(logger_name)
-        if not logger.hasHandlers():
-            _logger.warning(
-                "Logger %s does not have any handlers. Filter will not be added.",
-                logger_name,
-            )
-            continue
-
-        log_filter = GeneralLogFilter(filtered_routes)
-        logger.addFilter(log_filter)
-
-    return async_manager
-
-
 def _set_logging_handler(
     logger: logging.Logger,
     *,
@@ -393,24 +182,52 @@ def _set_logging_handler(
         )
 
 
-def test_logger_propagation(logger: logging.Logger) -> None:
-    """log propagation and levels can sometimes be daunting to get it right.
-
-    This function uses the `logger`` passed as argument to log the same message at different levels
-
-    This should help to visually test a given configuration
-
-    USAGE:
-        from .logging_utils import test_logger_propagation
-        for n in ("aiohttp.access", "gunicorn.access"):
-            test_logger_propagation(logging.getLogger(n))
+def config_all_loggers(
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_settings: TracingSettings | None,
+) -> None:
     """
-    msg = f"TESTING %s log using {logger=}"
-    logger.critical(msg, "critical")
-    logger.error(msg, "error")
-    logger.info(msg, "info")
-    logger.warning(msg, "warning")
-    logger.debug(msg, "debug")
+    Applies common configuration to ALL registered loggers.
+
+    Args:
+        log_format_local_dev_enabled: Enable local development formatting
+        logger_filter_mapping: Mapping of logger names to filtered message substrings
+        tracing_settings: OpenTelemetry tracing configuration
+    """
+    the_manager: logging.Manager = logging.Logger.manager
+    root_logger = logging.getLogger()
+    loggers = [root_logger] + [
+        logging.getLogger(name) for name in the_manager.loggerDict
+    ]
+
+    # Create format string
+    fmt = _setup_format_string(
+        tracing_settings=tracing_settings,
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+    )
+
+    # Apply handlers to loggers
+    for logger in loggers:
+        _set_logging_handler(
+            logger,
+            fmt=fmt,
+            log_format_local_dev_enabled=log_format_local_dev_enabled,
+        )
+
+    # Apply filters
+    for logger_name, filtered_routes in logger_filter_mapping.items():
+        logger = logging.getLogger(logger_name)
+        if not logger.hasHandlers():
+            _logger.warning(
+                "Logger %s does not have any handlers. Filter will not be added.",
+                logger_name,
+            )
+            continue
+
+        log_filter = GeneralLogFilter(filtered_routes)
+        logger.addFilter(log_filter)
 
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
@@ -658,3 +475,293 @@ def guess_message_log_level(message: str) -> LogLevelInt:
 def set_parent_module_log_level(current_module: str, desired_log_level: int) -> None:
     parent_module = ".".join(current_module.split(".")[:-1])
     logging.getLogger(parent_module).setLevel(desired_log_level)
+
+
+# Global reference to keep the logging task alive
+_ASYNC_LOGGING_TASK: asyncio.Task | None = None
+
+
+class AsyncLoggingContext:
+    """
+    Async context manager for non-blocking logging infrastructure.
+    Based on the pattern from SuperFastPython article.
+    """
+
+    def __init__(
+        self,
+        *,
+        handlers: list[logging.Handler] | None = None,
+        log_format_local_dev_enabled: bool = False,
+        fmt: str | None = None,
+    ) -> None:
+        self.handlers = handlers or [logging.StreamHandler()]
+        self.log_format_local_dev_enabled = log_format_local_dev_enabled
+        self.fmt = fmt or DEFAULT_FORMATTING
+        self.queue: queue.Queue | None = None
+        self.listener: logging.handlers.QueueListener | None = None
+        self.queue_handler: logging.handlers.QueueHandler | None = None
+        self.original_handlers: dict[str, list[logging.Handler]] = {}
+
+    async def __aenter__(self) -> "AsyncLoggingContext":
+        """Set up async logging infrastructure."""
+        await self._setup_async_logging()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Clean up async logging infrastructure."""
+        await self._cleanup_async_logging()
+
+    async def _setup_async_logging(self) -> None:
+        """Configure non-blocking logging using queue-based approach."""
+        # Create unlimited queue for log messages
+        self.queue = queue.Queue()
+
+        # Configure handlers with proper formatting
+        formatted_handlers = []
+        for handler in self.handlers:
+            handler.setFormatter(
+                CustomFormatter(
+                    self.fmt,
+                    log_format_local_dev_enabled=self.log_format_local_dev_enabled,
+                )
+            )
+            formatted_handlers.append(handler)
+
+        # Create and start the queue listener
+        self.listener = logging.handlers.QueueListener(
+            self.queue, *formatted_handlers, respect_handler_level=True
+        )
+        self.listener.start()
+
+        # Create queue handler for loggers
+        self.queue_handler = logging.handlers.QueueHandler(self.queue)
+
+        # Configure all existing loggers
+        await self._configure_loggers()
+
+        _logger.info("Async logging context initialized with unlimited queue")
+
+    async def _configure_loggers(self) -> None:
+        """Replace all logger handlers with queue handler."""
+        # Get all loggers
+        manager: logging.Manager = logging.Logger.manager
+        root_logger = logging.getLogger()
+        all_loggers = [root_logger] + [
+            logging.getLogger(name) for name in manager.loggerDict
+        ]
+
+        # Store original handlers and replace with queue handler
+        for logger in all_loggers:
+            logger_name = logger.name or "root"
+
+            # Store original handlers
+            self.original_handlers[logger_name] = logger.handlers[:]
+
+            # Clear existing handlers
+            logger.handlers.clear()
+
+            # Add queue handler
+            if self.queue_handler:
+                logger.addHandler(self.queue_handler)
+
+        # Allow other coroutines to run
+        await asyncio.sleep(0)
+
+    async def _cleanup_async_logging(self) -> None:
+        """Restore original logging configuration."""
+        try:
+            # Restore original handlers
+            manager: logging.Manager = logging.Logger.manager
+            root_logger = logging.getLogger()
+            all_loggers = [root_logger] + [
+                logging.getLogger(name) for name in manager.loggerDict
+            ]
+
+            for logger in all_loggers:
+                logger_name = logger.name or "root"
+                if logger_name in self.original_handlers:
+                    # Clear queue handlers
+                    logger.handlers.clear()
+
+                    # Restore original handlers
+                    for handler in self.original_handlers[logger_name]:
+                        logger.addHandler(handler)
+
+            # Stop the queue listener
+            if self.listener:
+                _logger.debug("Shutting down async logging listener...")
+                self.listener.stop()
+
+            _logger.debug("Async logging context cleanup complete")
+
+        except Exception as exc:
+            sys.stderr.write(f"Error during async logging cleanup: {exc}\n")
+            sys.stderr.flush()
+        finally:
+            self.queue = None
+            self.listener = None
+            self.queue_handler = None
+            self.original_handlers.clear()
+
+    def get_metrics(self) -> dict[str, Any] | None:
+        """Get logging performance metrics."""
+        if self.queue:
+            return {
+                "queue_size": self.queue.qsize(),
+                "listener_active": self.listener is not None,
+            }
+        return None
+
+
+async def _logging_task_runner(
+    *,
+    handlers: list[logging.Handler] | None = None,
+    log_format_local_dev_enabled: bool = False,
+    fmt: str | None = None,
+) -> None:
+    """
+    Background task that manages the async logging infrastructure.
+    Runs indefinitely until canceled.
+    """
+    async with AsyncLoggingContext(
+        handlers=handlers,
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+        fmt=fmt,
+    ):
+        _logger.info("Async logging task started")
+        try:
+            # Use Event instead of sleep loop for better responsiveness
+            shutdown_event = asyncio.Event()
+            await shutdown_event.wait()
+        except asyncio.CancelledError:
+            _logger.debug("Async logging task canceled")
+            raise
+        except Exception:
+            _logger.exception("Async logging task failed")
+            raise
+        finally:
+            _logger.debug("Async logging task finished")
+
+
+async def setup_async_loggers(
+    *,
+    log_format_local_dev_enabled: bool = False,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]] | None = None,
+    tracing_settings: TracingSettings | None = None,
+    handlers: list[logging.Handler] | None = None,
+) -> None:
+    """
+    Set up non-blocking async logging infrastructure.
+
+    This function starts a background task that manages the logging infrastructure
+    for the entire application lifecycle. The task automatically shuts down when
+    the event loop terminates.
+
+    Args:
+        log_format_local_dev_enabled: Enable local development formatting
+        logger_filter_mapping: Mapping of logger names to filtered message substrings
+        tracing_settings: OpenTelemetry tracing configuration
+        handlers: Custom handlers to use (defaults to StreamHandler)
+
+    Note:
+        This function should be called once at application startup.
+        The logging infrastructure will remain active until the event loop shuts down.
+    """
+    global _ASYNC_LOGGING_TASK
+
+    if _ASYNC_LOGGING_TASK and not _ASYNC_LOGGING_TASK.done():
+        _logger.warning("Async logging task already running")
+        return
+
+    # Create format string
+    fmt = _setup_format_string(
+        tracing_settings=tracing_settings,
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+    )
+
+    # Start the background logging task
+    _ASYNC_LOGGING_TASK = asyncio.create_task(
+        _logging_task_runner(
+            handlers=handlers,
+            log_format_local_dev_enabled=log_format_local_dev_enabled,
+            fmt=fmt,
+        )
+    )
+
+    # Allow the task to start
+    await asyncio.sleep(0)
+
+    # Apply filters if provided
+    if logger_filter_mapping:
+        _apply_logger_filters(logger_filter_mapping)
+
+    _logger.info("Async logging setup completed")
+
+
+def _apply_logger_filters(
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+) -> None:
+    """Apply filters to specific loggers."""
+    for logger_name, filtered_routes in logger_filter_mapping.items():
+        logger = logging.getLogger(logger_name)
+        if not logger.hasHandlers():
+            _logger.warning(
+                "Logger %s does not have any handlers. Filter will not be added.",
+                logger_name,
+            )
+            continue
+
+        log_filter = GeneralLogFilter(filtered_routes)
+        logger.addFilter(log_filter)
+
+
+async def shutdown_async_loggers() -> None:
+    """
+    Gracefully shutdown the async logging infrastructure.
+
+    This function should be called during application shutdown to ensure
+    all log messages are processed before termination.
+    """
+    global _ASYNC_LOGGING_TASK
+
+    if _ASYNC_LOGGING_TASK and not _ASYNC_LOGGING_TASK.done():
+        _logger.debug("Shutting down async logging task...")
+        _ASYNC_LOGGING_TASK.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await _ASYNC_LOGGING_TASK
+        _ASYNC_LOGGING_TASK = None
+        _logger.debug("Async logging shutdown complete")
+
+
+@asynccontextmanager
+async def async_logging_context(
+    *,
+    log_format_local_dev_enabled: bool = False,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]] | None = None,
+    tracing_settings: TracingSettings | None = None,
+    handlers: list[logging.Handler] | None = None,
+) -> AsyncGenerator[None, None]:
+    """
+    Async context manager for non-blocking logging.
+
+    Usage:
+        async with async_logging_context(log_format_local_dev_enabled=True):
+            # Your async application code here
+            logger.info("This is non-blocking!")
+
+    Args:
+        log_format_local_dev_enabled: Enable local development formatting
+        logger_filter_mapping: Mapping of logger names to filtered message substrings
+        tracing_settings: OpenTelemetry tracing configuration
+        handlers: Custom handlers to use (defaults to StreamHandler)
+    """
+    await setup_async_loggers(
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+        logger_filter_mapping=logger_filter_mapping,
+        tracing_settings=tracing_settings,
+        handlers=handlers,
+    )
+    try:
+        yield
+    finally:
+        await shutdown_async_loggers()
