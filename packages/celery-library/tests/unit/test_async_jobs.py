@@ -27,7 +27,7 @@ from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskID, TaskMetadata
+from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
@@ -82,8 +82,9 @@ async def rpc_sync_job(
     task_manager: TaskManager, *, job_filter: AsyncJobFilter, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = sync_job.__name__
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(name=task_name), task_filter=job_filter, **kwargs
+        TaskMetadata(name=task_name), task_filter=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -94,8 +95,9 @@ async def rpc_async_job(
     task_manager: TaskManager, *, job_filter: AsyncJobFilter, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = async_job.__name__
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(name=task_name), task_filter=job_filter, **kwargs
+        TaskMetadata(name=task_name), task_filter=task_filter, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -244,7 +246,7 @@ async def test_async_jobs_workflow(
     exposed_rpc_start: str,
     payload: Any,
 ):
-    async_job_get, job_id_data = await _start_task_via_rpc(
+    async_job_get, job_filter = await _start_task_via_rpc(
         async_jobs_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
@@ -257,21 +259,21 @@ async def test_async_jobs_workflow(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         filter_="",  # currently not used
-        job_filter=job_id_data,
+        job_filter=job_filter,
     )
     assert len(jobs) > 0
 
     await _wait_for_job(
         async_jobs_rabbitmq_rpc_client,
         async_job_get=async_job_get,
-        job_filter=job_id_data,
+        job_filter=job_filter,
     )
 
     async_job_result = await async_jobs.result(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        job_id_data=job_id_data,
+        job_filter=job_filter,
     )
     assert async_job_result.result == payload
 
@@ -290,7 +292,7 @@ async def test_async_jobs_cancel(
     product_name: ProductName,
     exposed_rpc_start: str,
 ):
-    async_job_get, job_id_data = await _start_task_via_rpc(
+    async_job_get, job_filter = await _start_task_via_rpc(
         async_jobs_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
@@ -303,20 +305,20 @@ async def test_async_jobs_cancel(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        job_filter=job_id_data,
+        job_filter=job_filter,
     )
 
     await _wait_for_job(
         async_jobs_rabbitmq_rpc_client,
         async_job_get=async_job_get,
-        job_filter=job_id_data,
+        job_filter=job_filter,
     )
 
     jobs = await async_jobs.list_jobs(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         filter_="",  # currently not used
-        job_filter=job_id_data,
+        job_filter=job_filter,
     )
     assert async_job_get.job_id not in [job.job_id for job in jobs]
 
@@ -325,7 +327,7 @@ async def test_async_jobs_cancel(
             async_jobs_rabbitmq_rpc_client,
             rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
             job_id=async_job_get.job_id,
-            job_id_data=job_id_data,
+            job_filter=job_filter,
         )
 
 
@@ -355,7 +357,7 @@ async def test_async_jobs_raises(
     exposed_rpc_start: str,
     error: Exception,
 ):
-    async_job_get, job_id_data = await _start_task_via_rpc(
+    async_job_get, job_filter = await _start_task_via_rpc(
         async_jobs_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
@@ -367,7 +369,7 @@ async def test_async_jobs_raises(
     await _wait_for_job(
         async_jobs_rabbitmq_rpc_client,
         async_job_get=async_job_get,
-        job_filter=job_id_data,
+        job_filter=job_filter,
         stop_after=timedelta(minutes=1),
     )
 
@@ -376,7 +378,7 @@ async def test_async_jobs_raises(
             async_jobs_rabbitmq_rpc_client,
             rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
             job_id=async_job_get.job_id,
-            job_id_data=job_id_data,
+            job_filter=job_filter,
         )
     assert exc.value.exc_type == type(error).__name__
     assert exc.value.exc_msg == f"{error}"

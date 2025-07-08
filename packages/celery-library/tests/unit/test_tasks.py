@@ -20,7 +20,7 @@ from celery_library.utils import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
-    TaskFilterBase,
+    TaskFilter,
     TaskID,
     TaskMetadata,
     TaskState,
@@ -93,7 +93,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_task_manager: CeleryTaskManager,
 ):
-    task_context = TaskFilterBase(user_id=42)
+    task_context = TaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
@@ -123,7 +123,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 async def test_submitting_task_with_failure_results_with_error(
     celery_task_manager: CeleryTaskManager,
 ):
-    task_context = TaskFilterBase(user_id=42)
+    task_context = TaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
@@ -151,7 +151,7 @@ async def test_submitting_task_with_failure_results_with_error(
 async def test_cancelling_a_running_task_aborts_and_deletes(
     celery_task_manager: CeleryTaskManager,
 ):
-    task_context = TaskFilterBase(user_id=42)
+    task_context = TaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(
@@ -185,7 +185,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 async def test_listing_task_uuids_contains_submitted_task(
     celery_task_manager: CeleryTaskManager,
 ):
-    task_context = TaskFilterBase(user_id=42)
+    task_context = TaskFilter(user_id=42)
 
     task_uuid = await celery_task_manager.submit_task(
         TaskMetadata(

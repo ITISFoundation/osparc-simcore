@@ -13,7 +13,7 @@ TaskName: TypeAlias = Annotated[
 TaskUUID: TypeAlias = UUID
 
 
-class TaskFilterBase(BaseModel):
+class TaskFilter(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
@@ -59,7 +59,7 @@ class TaskInfoStore(Protocol):
 
     async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
-    async def list_tasks(self, task_context: TaskFilterBase) -> list[Task]: ...
+    async def list_tasks(self, task_context: TaskFilter) -> list[Task]: ...
 
     async def remove_task(self, task_id: TaskID) -> None: ...
 

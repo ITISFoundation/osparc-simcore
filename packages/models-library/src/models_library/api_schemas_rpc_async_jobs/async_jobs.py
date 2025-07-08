@@ -1,8 +1,7 @@
 from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
-from pydantic import BaseModel, StringConstraints
-from servicelib.celery.models import TaskFilterBase
+from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from ..products import ProductName
 from ..progress_bar import ProgressReport
@@ -12,6 +11,12 @@ AsyncJobId: TypeAlias = UUID
 AsyncJobName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
+
+
+class AsyncJobFilterBase(BaseModel):
+    """Base class for async job filters"""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class AsyncJobStatus(BaseModel):
@@ -34,7 +39,7 @@ class AsyncJobAbort(BaseModel):
     job_id: AsyncJobId
 
 
-class AsyncJobFilter(TaskFilterBase):
+class AsyncJobFilter(AsyncJobFilterBase):
     """Data for controlling access to an async job"""
 
     product_name: ProductName

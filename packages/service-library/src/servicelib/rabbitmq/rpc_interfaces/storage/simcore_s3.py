@@ -12,6 +12,7 @@ from pydantic import TypeAdapter
 
 from ... import RabbitMQRPCClient
 from ..async_jobs.async_jobs import submit
+from ._utils import get_async_job_filter
 
 
 async def copy_folders_from_project(
@@ -21,15 +22,15 @@ async def copy_folders_from_project(
     product_name: ProductName,
     body: FoldersBody,
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
-    job_id_data = AsyncJobFilter(user_id=user_id, product_name=product_name)
+    job_filter = get_async_job_filter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName("copy_folders_from_project"),
-        job_filter=job_id_data,
+        job_filter=job_filter,
         body=body,
     )
-    return async_job_rpc_get, job_id_data
+    return async_job_rpc_get, job_filter
 
 
 async def start_export_data(
@@ -39,7 +40,7 @@ async def start_export_data(
     product_name: ProductName,
     paths_to_export: list[PathToExport],
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
-    job_id_data = AsyncJobFilter(user_id=user_id, product_name=product_name)
+    job_filter = get_async_job_filter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,

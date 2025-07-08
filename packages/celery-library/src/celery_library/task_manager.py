@@ -11,7 +11,7 @@ from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
     Task,
-    TaskFilterBase,
+    TaskFilter,
     TaskID,
     TaskInfoStore,
     TaskMetadata,
@@ -42,7 +42,7 @@ class CeleryTaskManager:
         self,
         task_metadata: TaskMetadata,
         *,
-        task_filter: TaskFilterBase,
+        task_filter: TaskFilter,
         **task_params,
     ) -> TaskUUID:
         with log_context(
@@ -73,9 +73,7 @@ class CeleryTaskManager:
     def _abort_task(self, task_id: TaskID) -> None:
         AbortableAsyncResult(task_id, app=self._celery_app).abort()
 
-    async def cancel_task(
-        self, task_filter: TaskFilterBase, task_uuid: TaskUUID
-    ) -> None:
+    async def cancel_task(self, task_filter: TaskFilter, task_uuid: TaskUUID) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
@@ -91,7 +89,7 @@ class CeleryTaskManager:
         AbortableAsyncResult(task_id, app=self._celery_app).forget()
 
     async def get_task_result(
-        self, task_filter: TaskFilterBase, task_uuid: TaskUUID
+        self, task_filter: TaskFilter, task_uuid: TaskUUID
     ) -> Any:
         with log_context(
             _logger,
@@ -109,7 +107,7 @@ class CeleryTaskManager:
             return result
 
     async def _get_task_progress_report(
-        self, task_filter: TaskFilterBase, task_uuid: TaskUUID, task_state: TaskState
+        self, task_filter: TaskFilter, task_uuid: TaskUUID, task_state: TaskState
     ) -> ProgressReport:
         if task_state in (TaskState.STARTED, TaskState.RETRY, TaskState.ABORTED):
             task_id = build_task_id(task_filter, task_uuid)
@@ -134,7 +132,7 @@ class CeleryTaskManager:
         return TaskState(self._celery_app.AsyncResult(task_id).state)
 
     async def get_task_status(
-        self, task_filter: TaskFilterBase, task_uuid: TaskUUID
+        self, task_filter: TaskFilter, task_uuid: TaskUUID
     ) -> TaskStatus:
         with log_context(
             _logger,
@@ -151,7 +149,7 @@ class CeleryTaskManager:
                 ),
             )
 
-    async def list_tasks(self, task_filter: TaskFilterBase) -> list[Task]:
+    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
         with log_context(
             _logger,
             logging.DEBUG,
