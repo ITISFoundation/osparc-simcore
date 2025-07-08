@@ -51,12 +51,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
     )
 
     # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(
-        level=logging.DEBUG,
-        log_format_local_dev_enabled=True,
-        logger_filter_mapping={},
-        tracing_settings=None,
-    )
+    setup_logging(level=logging.DEBUG)
 
     plugin_settings = StudiesDispatcherSettings.create_from_envs()
     print(plugin_settings.model_dump_json(indent=1))
