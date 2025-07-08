@@ -13,6 +13,7 @@ Why does this file exist, and why not put this in __main__?
 
 """
 
+from contextlib import AsyncExitStack
 import logging
 import os
 from typing import Annotated, Final
@@ -21,6 +22,8 @@ import typer
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 from settings_library.utils_cli import create_settings_command
+
+from servicelib.logging_utils import setup_async_loggers
 
 from .application_settings import ApplicationSettings
 from .login import cli as login_cli
@@ -80,12 +83,26 @@ async def app_factory() -> web.Application:
         tracing_settings=app_settings.WEBSERVER_TRACING,
     )
 
-    if app_settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY":
+    exit_stack = AsyncExitStack()
+    await exit_stack.enter_async_context(
+        setup_async_loggers(
+            log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
+            logger_filter_mapping=app_settings.WEBSERVER_LOG_FILTER_MAPPING,
+            tracing_settings=app_settings.WEBSERVER_TRACING,
+        )
+    )
 
+    if app_settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY":
         app = create_application_auth()
     else:
         app, _ = _setup_app_from_settings(app_settings)
 
+    async def _cleanup_event(app: web.Application) -> None:
+        assert app  # nosec
+        _logger.info("Cleaning up application resources")
+        await exit_stack.aclose()
+
+    app.on_cleanup.append(_cleanup_event)
     return app
 
 
