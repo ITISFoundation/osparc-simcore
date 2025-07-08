@@ -18,6 +18,7 @@ from servicelib.logging_utils import (
     log_decorator,
     log_exceptions,
     set_parent_module_log_level,
+    setup_async_loggers,
 )
 
 _logger = logging.getLogger(__name__)
@@ -325,8 +326,9 @@ def test_log_exceptions_and_suppress_without_exc_info(
     caplog.set_level(level)
 
     exc_msg = "logs exceptions and suppresses"
-    with suppress(ValueError), log_exceptions(
-        _logger, level, "CONTEXT", exc_info=False
+    with (
+        suppress(ValueError),
+        log_exceptions(_logger, level, "CONTEXT", exc_info=False),
     ):
         raise ValueError(exc_msg)
 
@@ -410,3 +412,150 @@ def test_set_parent_module_log_level_(caplog: pytest.LogCaptureFixture):
 
     assert "parent warning" in caplog.text
     assert "child warning" in caplog.text
+
+
+@pytest.mark.parametrize("log_format_local_dev_enabled", [True, False])
+async def test_setup_async_loggers_basic(
+    caplog: pytest.LogCaptureFixture,
+    log_format_local_dev_enabled: bool,
+):
+    """Test basic async logging setup without filters."""
+    caplog.clear()
+    caplog.set_level(logging.INFO)
+
+    async with setup_async_loggers(
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+    ):
+        test_logger = logging.getLogger("test_async_logger")
+        test_logger.info("Test async log message")
+
+        # Give some time for async logging to process
+        import asyncio
+
+        await asyncio.sleep(0.1)
+
+    # Check that the log message was captured
+    assert "Test async log message" in caplog.text
+    assert "Async logging setup completed" in caplog.text
+
+
+async def test_setup_async_loggers_with_filters(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test async logging setup with logger filters."""
+    caplog.clear()
+    caplog.set_level(logging.INFO)
+
+    # Define filter mapping
+    filter_mapping = {
+        "test_filtered_logger": ["filtered_message"],
+    }
+
+    async with setup_async_loggers(
+        log_format_local_dev_enabled=True,
+        logger_filter_mapping=filter_mapping,
+    ):
+        test_logger = logging.getLogger("test_filtered_logger")
+        unfiltered_logger = logging.getLogger("test_unfiltered_logger")
+
+        # This should be filtered out
+        test_logger.info("This is a filtered_message")
+
+        # This should pass through
+        test_logger.info("This is an unfiltered message")
+        unfiltered_logger.info("This is from unfiltered logger")
+
+        # Give some time for async logging to process
+        import asyncio
+
+        await asyncio.sleep(0.1)
+
+    # Check that filtered message was not captured
+    assert "This is a filtered_message" not in caplog.text
+
+    # Check that unfiltered messages were captured
+    assert "This is an unfiltered message" in caplog.text
+    assert "This is from unfiltered logger" in caplog.text
+
+
+async def test_setup_async_loggers_with_tracing_settings(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test async logging setup with tracing settings."""
+    caplog.clear()
+    caplog.set_level(logging.INFO)
+
+    # Note: We can't easily test actual tracing without setting up OpenTelemetry
+    # But we can test that the function accepts the parameter
+    async with setup_async_loggers(
+        log_format_local_dev_enabled=False,
+        tracing_settings=None,  # Would normally be TracingSettings object
+    ):
+        test_logger = logging.getLogger("test_tracing_logger")
+        test_logger.info("Test message with tracing settings")
+
+        # Give some time for async logging to process
+        import asyncio
+
+        await asyncio.sleep(0.1)
+
+    assert "Test message with tracing settings" in caplog.text
+
+
+async def test_setup_async_loggers_context_manager_cleanup(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test that async logging context manager properly cleans up."""
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)
+
+    test_logger = logging.getLogger("test_cleanup_logger")
+
+    async with setup_async_loggers(log_format_local_dev_enabled=True):
+        # During the context, handlers should be replaced
+        test_logger.info("Message during context")
+
+        # Give some time for async logging to process
+        import asyncio
+
+        await asyncio.sleep(0.1)
+
+    # After context exit, check cleanup message
+    assert "Async logging context exiting" in caplog.text
+
+    # Note: We can't easily test handler restoration without more complex setup
+    # but we can verify the function completed without errors
+
+
+async def test_setup_async_loggers_exception_handling(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test that async logging handles exceptions gracefully."""
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)  # Set to DEBUG to capture cleanup messages
+
+    def _raise_test_exception():
+        """Helper function to raise exception for testing."""
+        exc_msg = "Test exception"
+        raise ValueError(exc_msg)
+
+    try:
+        async with setup_async_loggers(log_format_local_dev_enabled=True):
+            test_logger = logging.getLogger("test_exception_logger")
+            test_logger.info("Message before exception")
+
+            # Give some time for async logging to process
+            import asyncio
+
+            await asyncio.sleep(0.1)
+
+            # Raise an exception to test cleanup
+            _raise_test_exception()
+
+    except ValueError:
+        # Expected exception
+        pass
+
+    # Check that the message was logged and cleanup happened
+    assert "Message before exception" in caplog.text
+    assert "Async logging context exiting" in caplog.text
