@@ -1247,7 +1247,7 @@ async def test_list_group_by_collection_run_id_state_priority_precedence(
     assert collection_item.state == RunningState.FAILED
 
 
-async def test_get_with_user_id_none_across_multiple_users(
+async def test_get_latest_run_by_project(
     sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     faker: Faker,
@@ -1269,6 +1269,7 @@ async def test_get_with_user_id_none_across_multiple_users(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=CollectionRunID(faker.uuid4()),
     )
 
     # Create comp runs for the second user (this should increment iteration)
@@ -1279,6 +1280,7 @@ async def test_get_with_user_id_none_across_multiple_users(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=CollectionRunID(faker.uuid4()),
     )
 
     # Create another run for the first user (should be iteration 3)
@@ -1289,6 +1291,7 @@ async def test_get_with_user_id_none_across_multiple_users(
         metadata=run_metadata,
         use_on_demand_clusters=faker.pybool(),
         dag_adjacency_list=published_project.pipeline.dag_adjacency_list,
+        collection_run_id=CollectionRunID(faker.uuid4()),
     )
 
     # Verify iterations are correct
