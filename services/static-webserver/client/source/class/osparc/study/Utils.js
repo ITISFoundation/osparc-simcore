@@ -397,6 +397,29 @@ qx.Class.define("osparc.study.Utils", {
       return null;
     },
 
+    // used in the "projectStateUpdated" socket event
+    amIRunningTheStudy: function(content) {
+      if (
+        content &&
+        "data" in content &&
+        "locked" in content["data"] &&
+        "owner" in content["data"]["locked"] &&
+        "user_id" in content["data"]["locked"]["owner"] &&
+        content["data"]["locked"]["owner"]["user_id"] === osparc.auth.Data.getInstance().getUserId()
+      ) {
+        return (
+          content["data"]["state"] &&
+          content["data"]["state"]["value"] &&
+          [
+            "PUBLISHED",
+            "STARTED",
+            "STOPPING",
+          ].includes(content["data"]["state"]["value"])
+        );
+      }
+      return false;
+    },
+
     __getBlockedState: function(studyData) {
       if (studyData["services"] === null) {
         return "UNKNOWN_SERVICES";
