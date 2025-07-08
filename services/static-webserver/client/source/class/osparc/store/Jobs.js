@@ -111,7 +111,7 @@ qx.Class.define("osparc.store.Jobs", {
     },
 
     fetchSubJobs: function(
-      projectUuid,
+      collectionRunId,
       orderBy = {
         field: "started_at",
         direction: "desc"
@@ -119,11 +119,11 @@ qx.Class.define("osparc.store.Jobs", {
     ) {
       const params = {
         url: {
-          studyId: projectUuid,
+          collectionRunId,
           orderBy: JSON.stringify(orderBy),
         }
       };
-      return osparc.data.Resources.getInstance().getAllPages("subRunsOld", params, "getPageLatest")
+      return osparc.data.Resources.getInstance().getAllPages("subRuns", params, "getPageLatest")
         .then(subJobsData => {
           const subJobs = [];
           subJobsData.forEach(subJobData => {
@@ -147,11 +147,11 @@ qx.Class.define("osparc.store.Jobs", {
     },
 
     addSubJob: function(subJobData) {
-      let job = this.getJob(subJobData["projectUuid"]);
+      let job = this.getJob(subJobData["collectionRunId"]);
       if (!job) {
         const jobs = this.getJobs();
         job = new osparc.data.Job({
-          "projectUuid": subJobData["projectUuid"],
+          "collectionRunId": subJobData["collectionRunId"],
         });
         jobs.push(job);
       }
@@ -159,9 +159,9 @@ qx.Class.define("osparc.store.Jobs", {
       return subJob;
     },
 
-    getJob: function(projectUuid) {
+    getJob: function(collectionRunId) {
       const jobs = this.getJobs();
-      return jobs.find(job => job.getProjectUuid() === projectUuid);
+      return jobs.find(job => job.getCollectionRunId() === collectionRunId);
     },
   }
 });

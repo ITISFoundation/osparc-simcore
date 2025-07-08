@@ -56,12 +56,12 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
 
       this.__runsTable.addListener("runSelected", e => {
         const data = e.getData();
-        const project = data["rowData"];
-        const projectUuid = project["projectUuid"];
+        const collectionRunData = data["rowData"];
+        const collectionRunId = collectionRunData["collectionRunId"];
         // Hacky-hacky
         for (let i=0; i<this.__runsTable.getTableModel().getRowCount(); i++) {
           const rowData = this.__runsTable.getTableModel().getRowData(i);
-          if (rowData["projectUuid"] === projectUuid && data["rowIdx"] > i) {
+          if (rowData["collectionRunId"] === collectionRunId && data["rowIdx"] > i) {
             const msg = this.tr("Only the latest run's tasks are available");
             osparc.FlashMessenger.logAs(msg, "WARNING");
             return;
@@ -72,7 +72,7 @@ qx.Class.define("osparc.jobs.ActivityOverview", {
           tasksLayout.remove(this.__subRunsTable);
           this.__subRunsTable = null;
         }
-        const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(project["projectUuid"]);
+        const subRunsTable = this.__subRunsTable = new osparc.jobs.SubRunsTable(collectionRunData["collectionRunId"]);
         tasksLayout.add(subRunsTable, {
           flex: 1
         });

@@ -377,12 +377,12 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "subRunsOld": {
+      "subRuns": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&order_by={orderBy}"
+            url: statics.API + "/computation-collection-runs/{collectionRunId}/tasks?offset={offset}&limit={limit}&order_by={orderBy}"
           },
         }
       },

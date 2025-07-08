@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.SubRunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct: function(projectUuid) {
+  construct: function(collectionRunId) {
     this.base(arguments);
 
     const subJobsCols = osparc.jobs.SubRunsTable.COLS;
@@ -33,11 +33,11 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       this.setColumnSortable(col.column, Boolean(col.sortableMap));
     });
 
-    this.setProjectUuid(projectUuid);
+    this.setCollectionRunId(collectionRunId);
   },
 
   properties: {
-    projectUuid: {
+    collectionRunId: {
       check: "String",
       nullable: true,
     },
@@ -71,7 +71,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
 
     // overridden
     _loadRowCount() {
-      osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.getOrderBy())
+      osparc.store.Jobs.getInstance().fetchSubJobs(this.getCollectionRunId(), this.getOrderBy())
         .then(subJobs => {
           this._onRowCountLoaded(subJobs.length)
         })
@@ -87,7 +87,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = () => {
-        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.getOrderBy())
+        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getCollectionRunId(), this.getOrderBy())
           .then(subJobs => {
             const data = [];
             const subJobsCols = osparc.jobs.SubRunsTable.COLS;
@@ -111,7 +111,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
                 duration = `${String(diffHours).padStart(2, "0")}:${String(diffMinutes).padStart(2, "0")}:${String(diffSeconds).padStart(2, "0")}`;
               }
               data.push({
-                [subJobsCols.PROJECT_UUID.id]: subJob.getProjectUuid(),
+                [subJobsCols.COLLECTION_RUN_ID.id]: subJob.getCollectionRunId(),
                 [subJobsCols.NODE_ID.id]: subJob.getNodeId(),
                 [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
                 [subJobsCols.APP.id]: appName + ":" + displayVersion,
