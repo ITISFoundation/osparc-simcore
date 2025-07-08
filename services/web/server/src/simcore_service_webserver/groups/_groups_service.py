@@ -267,7 +267,7 @@ async def add_user_in_group(
 
     if new_by_user_id is not None:
         new_user = await users_service.get_user(app, new_by_user_id)
-        new_by_user_name = new_user.name
+        new_by_user_name = new_user["name"]
 
     return await _groups_repository.add_new_user_in_group(
         app,

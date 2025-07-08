@@ -208,7 +208,9 @@ async def create_function_job(  # noqa: PLR0913
 
         registered_function_job = RegisteredFunctionJobDB.model_validate(row)
 
-        user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+        user_primary_group_id = await users_service.get_user_primary_group_id(
+            app, user_id=user_id
+        )
         await set_group_permissions(
             app,
             connection=transaction,
@@ -293,7 +295,9 @@ async def create_function_job_collection(
             )  # nosec
             job_collection_entries.append(entry)
 
-        user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+        user_primary_group_id = await users_service.get_user_primary_group_id(
+            app, user_id=user_id
+        )
         await set_group_permissions(
             app,
             connection=transaction,

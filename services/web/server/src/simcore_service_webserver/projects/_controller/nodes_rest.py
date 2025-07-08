@@ -562,7 +562,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
 
     # Update groups to compare based on the type of sharing group
     if _sharing_with_group.group_type == GroupType.PRIMARY:
-        _user_id = await get_user_id_from_gid(
+        _user_id = await users_service.get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
         user_groups_ids = await list_all_user_groups_ids(

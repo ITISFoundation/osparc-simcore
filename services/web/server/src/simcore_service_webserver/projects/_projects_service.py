@@ -323,7 +323,7 @@ async def patch_project(
             "write": True,
             "delete": True,
         }
-        user: dict = await get_user(app, project_db.prj_owner)
+        user: dict = await users_service.get_user(app, project_db.prj_owner)
         _prj_owner_primary_group = f"{user['primary_gid']}"
         if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
@@ -333,7 +333,7 @@ async def patch_project(
     # 4. If patching template type
     if new_template_type := patch_project_data.get("template_type"):
         # 4.1 Check if user is a tester
-        current_user: dict = await get_user(app, user_id)
+        current_user: dict = await users_service.get_user(app, user_id)
         if UserRole(current_user["role"]) < UserRole.TESTER:
             raise InsufficientRoleForProjectTemplateTypeUpdateError
         # 4.2 Check the compatibility of the template type with the project
@@ -668,7 +668,9 @@ async def _start_dynamic_service(  # noqa: C901
         raise
 
     save_state = False
-    user_role: UserRole = await get_user_role(request.app, user_id=user_id)
+    user_role: UserRole = await users_service.get_user_role(
+        request.app, user_id=user_id
+    )
     if user_role > UserRole.GUEST:
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"

@@ -391,8 +391,10 @@ async def pay_with_payment_method(
     )
 
     # user info
-    user = await get_user_display_and_id_names(app, user_id=user_id)
-    user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
+    user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
+    user_invoice_address = await users_service.get_user_invoice_address(
+        app, user_id=user_id
+    )
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
@@ -405,8 +407,8 @@ async def pay_with_payment_method(
             wallet_id=wallet_id,
             wallet_name=user_wallet.name,
             user_id=user_id,
-            user_name=user.full_name,
-            user_email=user.email,
+            user_name=user_info.full_name,
+            user_email=user_info.email,
             comment=comment,
         )
 
@@ -421,8 +423,8 @@ async def pay_with_payment_method(
         wallet_id=wallet_id,
         wallet_name=user_wallet.name,
         user_id=user_id,
-        user_name=user.full_name,
-        user_email=user.email,
+        user_name=user_info.full_name,
+        user_email=user_info.email,
         user_address=user_invoice_address,
         stripe_price_id=product_stripe_info.stripe_price_id,
         stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
