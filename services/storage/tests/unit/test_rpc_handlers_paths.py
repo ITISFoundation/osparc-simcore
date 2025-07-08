@@ -81,7 +81,9 @@ async def _assert_compute_path_size(
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName(compute_path_size.__name__),
         job_id=async_job.job_id,
-        job_filter=AsyncJobFilter(user_id=user_id, product_name=product_name),
+        job_filter=AsyncJobFilter(
+            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+        ),
         client_timeout=datetime.timedelta(seconds=120),
     ):
         if job_composed_result.done:
@@ -115,7 +117,9 @@ async def _assert_delete_paths(
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=RPCMethodName(compute_path_size.__name__),
         job_id=async_job.job_id,
-        job_filter=AsyncJobFilter(user_id=user_id, product_name=product_name),
+        job_filter=AsyncJobFilter(
+            user_id=user_id, product_name=product_name, client_name="PYTEST_CLIENT_NAME"
+        ),
         client_timeout=datetime.timedelta(seconds=120),
     ):
         if job_composed_result.done:
