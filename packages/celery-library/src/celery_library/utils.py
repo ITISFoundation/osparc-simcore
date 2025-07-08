@@ -9,14 +9,14 @@ _APP_SERVER_KEY = "app_server"
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 
 
-def build_task_id_prefix(task_context: TaskFilter) -> str:
-    _dict = task_context.model_dump()
+def build_task_id_prefix(task_filter: TaskFilter) -> str:
+    _dict = task_filter.model_dump()
     return _TASK_ID_KEY_DELIMITATOR.join([f"{_dict[key]}" for key in sorted(_dict)])
 
 
-def build_task_id(task_context: TaskFilter, task_uuid: TaskUUID) -> TaskID:
+def build_task_id(task_filter: TaskFilter, task_uuid: TaskUUID) -> TaskID:
     return _TASK_ID_KEY_DELIMITATOR.join(
-        [build_task_id_prefix(task_context), f"{task_uuid}"]
+        [build_task_id_prefix(task_filter), f"{task_uuid}"]
     )
 
 

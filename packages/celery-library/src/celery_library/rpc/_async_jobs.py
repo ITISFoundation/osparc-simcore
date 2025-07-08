@@ -36,9 +36,10 @@ async def cancel(
 ):
     assert task_manager  # nosec
     assert job_filter  # nosec
+    task_filter = TaskFilter.from_async_job_filter(job_filter)
     try:
         await task_manager.cancel_task(
-            task_filter=TaskFilter.model_validate(job_filter.model_dump()),
+            task_filter=task_filter,
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -52,9 +53,10 @@ async def status(
     assert task_manager  # nosec
     assert job_filter  # nosec
 
+    task_filter = TaskFilter.from_async_job_filter(job_filter)
     try:
         task_status = await task_manager.get_task_status(
-            task_filter=TaskFilter.model_validate(job_filter.model_dump()),
+            task_filter=task_filter,
             task_uuid=job_id,
         )
     except CeleryError as exc:
@@ -82,7 +84,7 @@ async def result(
     assert job_id  # nosec
     assert job_filter  # nosec
 
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_filter = TaskFilter.from_async_job_filter(job_filter)
 
     try:
         _status = await task_manager.get_task_status(
@@ -129,9 +131,10 @@ async def list_jobs(
 ) -> list[AsyncJobGet]:
     _ = filter_
     assert task_manager  # nosec
+    task_filter = TaskFilter.from_async_job_filter(job_filter)
     try:
         tasks = await task_manager.list_tasks(
-            task_filter=TaskFilter.model_validate(job_filter.model_dump()),
+            task_filter=task_filter,
         )
     except CeleryError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc

@@ -3,6 +3,7 @@ from enum import StrEnum
 from typing import Annotated, Protocol, TypeAlias
 from uuid import UUID
 
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
@@ -15,6 +16,10 @@ TaskUUID: TypeAlias = UUID
 
 class TaskFilter(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    @classmethod
+    def from_async_job_filter(cls, async_job_filter: AsyncJobFilter) -> "TaskFilter":
+        cls.model_validate(async_job_filter.model_dump())
 
 
 class TaskState(StrEnum):
