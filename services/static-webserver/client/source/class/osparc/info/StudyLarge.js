@@ -103,7 +103,8 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
 
       const infoElements = this.__infoElements();
-      const infoLayout = osparc.info.StudyUtils.infoElementsToLayout(infoElements);
+      const isStudy = true;
+      const infoLayout = osparc.info.Utils.infoElementsToLayout(infoElements, isStudy);
       vBox.add(infoLayout);
 
       // Copy Id button
