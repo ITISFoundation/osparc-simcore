@@ -5,6 +5,7 @@ from functools import wraps
 from typing import Any, Final, TypeAlias
 
 import pyinstrument
+import pyinstrument.renderers
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
@@ -83,9 +84,12 @@ def with_profiled_span(
 
             finally:
                 profiler.stop()
+                renderer = pyinstrument.renderers.ConsoleRenderer(
+                    unicode=True, color=False, show_all=True
+                )
                 span.set_attribute(
                     _PROFILE_ATTRIBUTE_NAME,
-                    profiler.output_text(unicode=True, color=False),
+                    profiler.output(renderer=renderer),
                 )
 
     return wrapper
