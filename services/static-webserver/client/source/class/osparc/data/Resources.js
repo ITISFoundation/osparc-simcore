@@ -377,19 +377,6 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "runsOld": {
-        useCache: false, // handled in osparc.store.Jobs
-        endpoints: {
-          getPageLatest: {
-            method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}&filters={filters}"
-          },
-          getPageHistory: {
-            method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
-          },
-        }
-      },
       "subRunsOld": {
         useCache: false, // handled in osparc.store.Jobs
         endpoints: {
