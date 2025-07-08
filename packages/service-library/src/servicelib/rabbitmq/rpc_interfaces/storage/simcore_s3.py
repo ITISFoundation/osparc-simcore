@@ -26,7 +26,9 @@ async def copy_folders_from_project(
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=RPCMethodName("copy_folders_from_project"),
+        method_name=TypeAdapter(RPCMethodName).validate_python(
+            "copy_folders_from_project"
+        ),
         job_filter=job_filter,
         body=body,
     )
