@@ -1253,6 +1253,7 @@ async def test_get_latest_run_by_project(
     faker: Faker,
     publish_project: Callable[[], Awaitable[PublishedProject]],
     create_registered_user: Callable[..., dict[str, Any]],
+    with_product: dict[str, Any],
 ):
     """Test that get() with user_id=None retrieves the latest run regardless of user"""
     published_project = await publish_project()
