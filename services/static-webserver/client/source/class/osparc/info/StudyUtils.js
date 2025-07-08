@@ -242,7 +242,7 @@ qx.Class.define("osparc.info.StudyUtils", {
       return tagsContainer;
     },
 
-    infoElementsToLayout: function(extraInfos) {
+    infoElementsToLayout: function(infoElements) {
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const decorateAction = action => {
@@ -259,8 +259,8 @@ qx.Class.define("osparc.info.StudyUtils", {
           }, this);
       };
 
-      if ("TITLE" in extraInfos) {
-        const extraInfo = extraInfos["TITLE"];
+      if ("TITLE" in infoElements) {
+        const extraInfo = infoElements["TITLE"];
         const titleLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
         if (extraInfo.action && extraInfo.action.button) {
@@ -280,8 +280,8 @@ qx.Class.define("osparc.info.StudyUtils", {
 
       const centerLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-      if ("THUMBNAIL" in extraInfos) {
-        const extraInfo = extraInfos["THUMBNAIL"];
+      if ("THUMBNAIL" in infoElements) {
+        const extraInfo = infoElements["THUMBNAIL"];
         const thumbnailLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
 
         if (extraInfo.action && extraInfo.action.button) {
@@ -324,13 +324,13 @@ qx.Class.define("osparc.info.StudyUtils", {
       const gridLayout = new qx.ui.container.Composite(grid);
 
       Object.keys(positions).forEach(key => {
-        if (key in extraInfos) {
-          const extraInfo = extraInfos[key];
+        if (key in infoElements) {
+          const infoElement = infoElements[key];
           const gridInfo = positions[key];
 
           let col = 0;
-          if (extraInfo.label) {
-            const title = new qx.ui.basic.Label(extraInfo.label).set({
+          if (infoElement.label) {
+            const title = new qx.ui.basic.Label(infoElement.label).set({
               alignX: "right",
             });
             gridLayout.add(title, {
@@ -340,17 +340,17 @@ qx.Class.define("osparc.info.StudyUtils", {
           }
           col++;
 
-          if (extraInfo.action && extraInfo.action.button) {
-            decorateAction(extraInfo.action);
-            gridLayout.add(extraInfo.action.button, {
+          if (infoElement.action && infoElement.action.button) {
+            decorateAction(infoElement.action);
+            gridLayout.add(infoElement.action.button, {
               row: gridInfo.row,
               column: col + 1,
             });
           }
           col++;
 
-          if (extraInfo.view) {
-            gridLayout.add(extraInfo.view, {
+          if (infoElement.view) {
+            gridLayout.add(infoElement.view, {
               row: gridInfo.row,
               column: col + 2,
             });
@@ -363,17 +363,17 @@ qx.Class.define("osparc.info.StudyUtils", {
       });
       container.add(centerLayout);
 
-      if ("DESCRIPTION" in extraInfos) {
-        const extraInfo = extraInfos["DESCRIPTION"];
+      if ("DESCRIPTION" in infoElements) {
+        const infoElement = infoElements["DESCRIPTION"];
         const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
-        if (extraInfo.action && extraInfo.action.button) {
-          decorateAction(extraInfo.action);
-          descriptionLayout.add(extraInfo.action.button);
+        if (infoElement.action && infoElement.action.button) {
+          decorateAction(infoElement.action);
+          descriptionLayout.add(infoElement.action.button);
         }
 
-        if (extraInfo.view) {
-          descriptionLayout.add(extraInfo.view, {
+        if (infoElement.view) {
+          descriptionLayout.add(infoElement.view, {
             flex: 1,
           });
         }
