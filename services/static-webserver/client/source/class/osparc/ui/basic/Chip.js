@@ -26,7 +26,7 @@ qx.Class.define("osparc.ui.basic.Chip", {
       check: ["success", "warning", "error"],
       init: null,
       apply: "__applyStatusColor",
-    }
+    },
   },
 
   statics: {
@@ -59,6 +59,6 @@ qx.Class.define("osparc.ui.basic.Chip", {
           });
           break;
       }
-    }
+    },
   },
 });
