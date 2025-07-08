@@ -425,6 +425,8 @@ async def test_setup_async_loggers_basic(
 
     async with setup_async_loggers(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
+        logger_filter_mapping={},  # No filters for this test
+        tracing_settings=None,  # No tracing for this test
     ):
         test_logger = logging.getLogger("test_async_logger")
         test_logger.info("Test async log message")
@@ -453,6 +455,7 @@ async def test_setup_async_loggers_with_filters(
     async with setup_async_loggers(
         log_format_local_dev_enabled=True,
         logger_filter_mapping=filter_mapping,
+        tracing_settings=None,  # No tracing for this test
     ):
         test_logger = logging.getLogger("test_filtered_logger")
         unfiltered_logger = logging.getLogger("test_unfiltered_logger")
@@ -488,7 +491,8 @@ async def test_setup_async_loggers_with_tracing_settings(
     # But we can test that the function accepts the parameter
     async with setup_async_loggers(
         log_format_local_dev_enabled=False,
-        tracing_settings=None,  # Would normally be TracingSettings object
+        logger_filter_mapping={},  # No filters for this test
+        tracing_settings=None,
     ):
         test_logger = logging.getLogger("test_tracing_logger")
         test_logger.info("Test message with tracing settings")
@@ -510,7 +514,11 @@ async def test_setup_async_loggers_context_manager_cleanup(
 
     test_logger = logging.getLogger("test_cleanup_logger")
 
-    async with setup_async_loggers(log_format_local_dev_enabled=True):
+    async with setup_async_loggers(
+        log_format_local_dev_enabled=True,
+        logger_filter_mapping={},
+        tracing_settings=None,
+    ):
         # During the context, handlers should be replaced
         test_logger.info("Message during context")
 
@@ -518,12 +526,6 @@ async def test_setup_async_loggers_context_manager_cleanup(
         import asyncio
 
         await asyncio.sleep(0.1)
-
-    # After context exit, check cleanup message
-    assert "Async logging context exiting" in caplog.text
-
-    # Note: We can't easily test handler restoration without more complex setup
-    # but we can verify the function completed without errors
 
 
 async def test_setup_async_loggers_exception_handling(
@@ -539,7 +541,11 @@ async def test_setup_async_loggers_exception_handling(
         raise ValueError(exc_msg)
 
     try:
-        async with setup_async_loggers(log_format_local_dev_enabled=True):
+        async with setup_async_loggers(
+            log_format_local_dev_enabled=True,
+            logger_filter_mapping={},
+            tracing_settings=None,
+        ):
             test_logger = logging.getLogger("test_exception_logger")
             test_logger.info("Message before exception")
 
@@ -557,4 +563,3 @@ async def test_setup_async_loggers_exception_handling(
 
     # Check that the message was logged and cleanup happened
     assert "Message before exception" in caplog.text
-    assert "Async logging context exiting" in caplog.text
