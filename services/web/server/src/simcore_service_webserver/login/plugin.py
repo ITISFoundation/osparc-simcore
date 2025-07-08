@@ -23,7 +23,7 @@ from ..db.settings import get_plugin_settings as get_db_plugin_settings
 from ..email.plugin import setup_email
 from ..email.settings import get_plugin_settings as get_email_plugin_settings
 from ..invitations.plugin import setup_invitations
-from ..login_accounts._controller.rest import preregistration
+from ..login_accounts._controller.rest import _controler_rest
 from ..login_auth.plugin import setup_login_auth
 from ..products import products_service
 from ..products.models import ProductName
@@ -152,7 +152,7 @@ def setup_login(app: web.Application):
 
     app.router.add_routes(confirmation.routes)
     app.router.add_routes(registration.routes)
-    app.router.add_routes(preregistration.routes)
+    app.router.add_routes(_controler_rest.routes)
     app.router.add_routes(change.routes)
     app.router.add_routes(twofa.routes)
 
