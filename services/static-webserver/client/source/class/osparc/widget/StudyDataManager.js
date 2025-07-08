@@ -34,15 +34,15 @@ qx.Class.define("osparc.widget.StudyDataManager", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param studyId {String} StudyId
+    * @param studyData {Object} Study Data
     * @param nodeId {String} NodeId
     */
-  construct: function(studyId, nodeId) {
+  construct: function(studyData, nodeId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.setStudyId(studyId);
+    this.setStudyId(studyData["uuid"]);
 
     if (nodeId) {
       this.setNodeId(nodeId);
@@ -53,8 +53,8 @@ qx.Class.define("osparc.widget.StudyDataManager", {
   },
 
   statics: {
-    popUpInWindow: function(studyId, nodeId, title) {
-      const studyDataManager = new osparc.widget.StudyDataManager(studyId, nodeId);
+    popUpInWindow: function(studyData, nodeId, title) {
+      const studyDataManager = new osparc.widget.StudyDataManager(studyData, nodeId);
       if (!title) {
         title = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + qx.locale.Manager.tr(" Files");
       }
