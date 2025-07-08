@@ -9,7 +9,7 @@ from ..modules.celery.tasks import TaskQueue
 _logger = logging.getLogger(__name__)
 
 
-async def send_notification(
+async def send_notification_message(
     task_manager: TaskManager,
     *,
     message: NotificationMessage,
@@ -18,7 +18,7 @@ async def send_notification(
     for recipient in recipients:
         await task_manager.send_task(
             name=f"notifications.{recipient.type}",
-            context=TaskContext(),
+            context=TaskContext(),  # TODO: TaskFilter
             queue=TaskQueue.DEFAULT,
             message=message,
             recipient=recipient,

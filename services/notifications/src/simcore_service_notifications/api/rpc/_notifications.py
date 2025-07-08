@@ -14,6 +14,8 @@ async def send_notification_message(
     message: NotificationMessage,
     recipients: list[Recipient],
 ) -> None:
-    await notifications_service.send_notification(
-        task_manager, message=message, recipients=recipients
+    await notifications_service.send_notification_message(
+        task_manager,
+        message=message,
+        recipients=recipients,
     )
