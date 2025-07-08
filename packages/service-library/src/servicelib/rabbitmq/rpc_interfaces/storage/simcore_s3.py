@@ -45,7 +45,7 @@ async def start_export_data(
         rabbitmq_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
         method_name=TypeAdapter(RPCMethodName).validate_python("start_export_data"),
-        job_filter=job_id_data,
+        job_filter=job_filter,
         paths_to_export=paths_to_export,
     )
-    return async_job_rpc_get, job_id_data
+    return async_job_rpc_get, job_filter
