@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager, contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
+from typing import Any, Final, NotRequired, TypeAlias, TypedDict, TypeVar
 
 from settings_library.tracing import TracingSettings
 
@@ -109,7 +109,7 @@ class CustomFormatter(logging.Formatter):
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = " | ".join(
+_DEFAULT_FORMATTING: Final[str] = " | ".join(
     [
         "log_level=%(levelname)s",
         "log_timestamp=%(asctime)s",
@@ -120,10 +120,12 @@ DEFAULT_FORMATTING = " | ".join(
     ]
 )
 
-LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+_LOCAL_FORMATTING: Final[str] = (
+    "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+)
 
 # Tracing format strings
-TRACING_FORMATTING = " | ".join(
+_TRACING_FORMATTING: Final[str] = " | ".join(
     [
         "log_level=%(levelname)s",
         "log_timestamp=%(asctime)s",
@@ -138,7 +140,7 @@ TRACING_FORMATTING = " | ".join(
     ]
 )
 
-LOCAL_TRACING_FORMATTING = (
+_LOCAL_TRACING_FORMATTING: Final[str] = (
     "%(levelname)s: [%(asctime)s/%(processName)s] "
     "[log_trace_id=%(otelTraceID)s log_span_id=%(otelSpanID)s "
     "log_resource.service.name=%(otelServiceName)s log_trace_sampled=%(otelTraceSampled)s] "
@@ -157,14 +159,14 @@ def _setup_format_string(
     """Create the appropriate format string based on settings."""
     if log_format_local_dev_enabled:
         if tracing_settings is not None:
-            return LOCAL_TRACING_FORMATTING
-        return LOCAL_FORMATTING
+            return _LOCAL_TRACING_FORMATTING
+        return _LOCAL_FORMATTING
 
     if tracing_settings is not None:
         setup_log_tracing(tracing_settings=tracing_settings)
-        return TRACING_FORMATTING
+        return _TRACING_FORMATTING
 
-    return DEFAULT_FORMATTING
+    return _DEFAULT_FORMATTING
 
 
 def _set_logging_handler(
@@ -494,7 +496,7 @@ class AsyncLoggingContext:
     ) -> None:
         self.handlers = handlers or [logging.StreamHandler()]
         self.log_format_local_dev_enabled = log_format_local_dev_enabled
-        self.fmt = fmt or DEFAULT_FORMATTING
+        self.fmt = fmt or _DEFAULT_FORMATTING
         self.queue: queue.Queue | None = None
         self.listener: logging.handlers.QueueListener | None = None
         self.queue_handler: logging.handlers.QueueHandler | None = None
