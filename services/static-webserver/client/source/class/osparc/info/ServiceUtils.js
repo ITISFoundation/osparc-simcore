@@ -20,6 +20,13 @@ qx.Class.define("osparc.info.ServiceUtils", {
   type: "static",
 
   statics: {
+    RESOURCES_INFO: {
+      "limit": {
+        label: qx.locale.Manager.tr("Limit"),
+        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
+      }
+    },
+
     /**
       * @param label {String} label
       */
@@ -168,13 +175,8 @@ qx.Class.define("osparc.info.ServiceUtils", {
 
     /**
       * @param serviceData {Object} Serialized Service Object
-      * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(serviceData) {
-      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
-        alignY: "middle"
-      }));
-
       const description = new osparc.ui.markdown.Markdown();
       // display markdown link content if that's the case
       if (
@@ -197,16 +199,10 @@ qx.Class.define("osparc.info.ServiceUtils", {
       } else {
         description.setValue(this.tr("No description"));
       }
-      descriptionLayout.add(description);
+      const scrollContainer = new qx.ui.container.Scroll();
+      scrollContainer.add(description);
 
-      return descriptionLayout;
-    },
-
-    RESOURCES_INFO: {
-      "limit": {
-        label: qx.locale.Manager.tr("Limit"),
-        tooltip: qx.locale.Manager.tr("Runtime check:<br>The service can consume a maximum of 'limit' resources - if it attempts to use more resources than this limit, it will be stopped")
-      }
+      return scrollContainer;
     },
 
     createResourcesInfo: function() {
