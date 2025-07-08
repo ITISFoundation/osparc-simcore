@@ -146,7 +146,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           }
         },
         "DESCRIPTION": {
-          view: osparc.info.StudyUtils.createDescriptionMD(this.getStudy()),
+          view: osparc.info.StudyUtils.createDescription(this.getStudy()),
           action: {
             button: osparc.utils.Utils.getEditButton(this.__canIWrite()),
             callback: this.__canIWrite() ? this.__openDescriptionEditor : null,

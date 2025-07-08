@@ -80,7 +80,7 @@ qx.Class.define("osparc.info.StudyMedium", {
         paddingLeft: 14 // align it with the other titles
       });
       descriptionLayout.add(title);
-      descriptionLayout.add(osparc.info.StudyUtils.createDescriptionMD(this.getStudy()));
+      descriptionLayout.add(osparc.info.StudyUtils.createDescription(this.getStudy()));
       this._add(descriptionLayout);
     },
 

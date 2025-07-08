@@ -306,7 +306,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       });
       descriptionLayout.add(label);
 
-      const descriptionContainer = osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
+      const descriptionContainer = osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
       descriptionLayout.add(descriptionContainer);
 
       return descriptionLayout;
