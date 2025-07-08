@@ -82,6 +82,10 @@ qx.Class.define("osparc.widget.StudyDataManager", {
       switch (id) {
         case "tree-folder-view":
           control = new osparc.file.TreeFolderView();
+          control
+            .getChildControl("folder-viewer")
+            .getChildControl("selected-file-layout")
+            .setDeleteEnabled(false);
           this._add(control, {
             flex: 1
           });
