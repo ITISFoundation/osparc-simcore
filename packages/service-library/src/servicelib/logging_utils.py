@@ -149,10 +149,6 @@ LOCAL_TRACING_FORMATTING = (
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| (log_uid=%{WORD:log_uid} \| )?log_msg=%{GREEDYDATA:log_msg}
 
 
-# Default async logging queue size
-DEFAULT_ASYNC_QUEUE_SIZE = 10000
-
-
 class SafeQueueListener(logging.handlers.QueueListener):
     """
     Enhanced QueueListener with error isolation and metrics.
@@ -188,8 +184,7 @@ class AsyncLoggingManager:
     Simplified async logging manager with queue-based processing.
     """
 
-    def __init__(self, *, queue_size: int = DEFAULT_ASYNC_QUEUE_SIZE) -> None:
-        self.queue_size = queue_size
+    def __init__(self) -> None:
         self.queue: queue.Queue | None = None
         self.listener: SafeQueueListener | None = None
         self._queue_handler: logging.handlers.QueueHandler | None = None
@@ -209,8 +204,8 @@ class AsyncLoggingManager:
             return True
 
         try:
-            # Create queue with size limit to prevent memory exhaustion
-            self.queue = queue.Queue(maxsize=self.queue_size)
+            # Create unlimited queue to prevent queue.Full exceptions
+            self.queue = queue.Queue()
 
             # Use provided handlers or create default console handler
             target_handlers = handlers or [logging.StreamHandler()]
@@ -222,9 +217,7 @@ class AsyncLoggingManager:
             # Create queue handler
             self._queue_handler = logging.handlers.QueueHandler(self.queue)
 
-            _logger.info(
-                "Async logging initialized with queue size %s", self.queue_size
-            )
+            _logger.info("Async logging initialized with unlimited queue")
             return True
 
         except Exception:
@@ -282,7 +275,6 @@ def _setup_async_logging(
     loggers: list[logging.Logger],
     fmt: str,
     log_format_local_dev_enabled: bool,
-    queue_size: int = DEFAULT_ASYNC_QUEUE_SIZE,
 ) -> AsyncLoggingManager | None:
     """Setup async logging and return AsyncLoggingManager if successful."""
     # Collect existing handlers
@@ -305,7 +297,7 @@ def _setup_async_logging(
         formatted_handlers.append(handler)
 
     # Setup async logging infrastructure
-    async_manager = AsyncLoggingManager(queue_size=queue_size)
+    async_manager = AsyncLoggingManager()
     if async_manager.setup(formatted_handlers):
         _logger.info("Async logging enabled with queue-based processing")
         return async_manager
@@ -324,7 +316,6 @@ def config_all_loggers(
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
     disable_async_logging: bool = False,
-    async_queue_size: int = DEFAULT_ASYNC_QUEUE_SIZE,
 ) -> AsyncLoggingManager | None:
     """
     Applies common configuration to ALL registered loggers.
@@ -334,7 +325,6 @@ def config_all_loggers(
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
         disable_async_logging: Set to True to disable async logging (default: False)
-        async_queue_size: Queue size for async logging (default: 10000)
 
     Returns:
         AsyncLoggingManager if async logging was enabled, None otherwise
@@ -358,7 +348,6 @@ def config_all_loggers(
             loggers=loggers,
             fmt=fmt,
             log_format_local_dev_enabled=log_format_local_dev_enabled,
-            queue_size=async_queue_size,
         )
 
     # Apply handlers to loggers
