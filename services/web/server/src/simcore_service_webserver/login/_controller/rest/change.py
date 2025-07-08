@@ -19,14 +19,6 @@ from ....users import api as users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ... import _confirmation_service, _confirmation_web
-from ..._constants import (
-    MSG_CANT_SEND_MAIL,
-    MSG_CHANGE_EMAIL_REQUESTED,
-    MSG_EMAIL_SENT,
-    MSG_OFTEN_RESET_PASSWORD,
-    MSG_PASSWORD_CHANGED,
-    MSG_WRONG_PASSWORD,
-)
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import (
@@ -36,6 +28,14 @@ from ..._login_service import (
     validate_user_status,
 )
 from ..._models import InputSchema, create_password_match_validator
+from ...constants import (
+    MSG_CANT_SEND_MAIL,
+    MSG_CHANGE_EMAIL_REQUESTED,
+    MSG_EMAIL_SENT,
+    MSG_OFTEN_RESET_PASSWORD,
+    MSG_PASSWORD_CHANGED,
+    MSG_WRONG_PASSWORD,
+)
 from ...decorators import login_required
 from ...settings import LoginOptions, get_plugin_options
 

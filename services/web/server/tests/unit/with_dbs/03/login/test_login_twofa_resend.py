@@ -13,11 +13,11 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.login._constants import CODE_2FA_SMS_CODE_REQUIRED
 from simcore_service_webserver.login._controller.rest.auth import (
     CodePageParams,
     NextPage,
 )
+from simcore_service_webserver.login.constants import CODE_2FA_SMS_CODE_REQUIRED
 
 
 @pytest.fixture

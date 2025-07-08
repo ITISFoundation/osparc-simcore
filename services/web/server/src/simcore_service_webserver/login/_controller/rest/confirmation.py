@@ -34,11 +34,6 @@ from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ... import _confirmation_service, _security_service, _twofa_service
-from ..._constants import (
-    MSG_PASSWORD_CHANGE_NOT_ALLOWED,
-    MSG_PASSWORD_CHANGED,
-    MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
-)
 from ..._invitations_service import ConfirmedInvitationData
 from ..._login_repository_legacy import (
     AsyncpgStorage,
@@ -54,6 +49,11 @@ from ..._login_service import (
     notify_user_confirmation,
 )
 from ..._models import InputSchema, check_confirm_password_match
+from ...constants import (
+    MSG_PASSWORD_CHANGE_NOT_ALLOWED,
+    MSG_PASSWORD_CHANGED,
+    MSG_UNAUTHORIZED_PHONE_CONFIRMATION,
+)
 from ...settings import (
     LoginOptions,
     LoginSettingsForProduct,

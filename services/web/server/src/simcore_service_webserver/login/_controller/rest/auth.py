@@ -23,7 +23,8 @@ from ....session.access_policies import (
 from ....users import preferences_api as user_preferences_api
 from ....utils_aiohttp import NextPage
 from ... import _auth_service, _login_service, _security_service, _twofa_service
-from ..._constants import (
+from ..._models import InputSchema
+from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
     CODE_PHONE_NUMBER_REQUIRED,
@@ -37,7 +38,6 @@ from ..._constants import (
     MSG_WRONG_2FA_CODE__EXPIRED,
     MSG_WRONG_2FA_CODE__INVALID,
 )
-from ..._models import InputSchema
 from ...decorators import login_required
 from ...settings import LoginSettingsForProduct, get_plugin_settings
 from ._rest_exceptions import handle_rest_requests_exceptions

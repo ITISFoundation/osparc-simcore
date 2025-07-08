@@ -7,8 +7,8 @@ from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
 
 from ..security import security_web
-from ._constants import MSG_LOGGED_IN
 from ._login_service import flash_response
+from .constants import MSG_LOGGED_IN
 
 _logger = logging.getLogger(__name__)
 
