@@ -106,6 +106,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       const infoLayout = osparc.info.StudyUtils.infoElementsToLayout(infoElements);
       vBox.add(infoLayout);
 
+      // Copy Id button
       let text = osparc.product.Utils.getStudyAlias({firstUpperCase: true}) + " Id";
       if (this.getStudy().getTemplateType()) {
         text = osparc.product.Utils.getTemplateAlias({firstUpperCase: true}) + " Id";
@@ -119,6 +120,7 @@ qx.Class.define("osparc.info.StudyLarge", {
       copyIdButton.addListener("execute", () => osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid()));
       vBox.add(copyIdButton);
 
+      // All in a scroll container
       const scrollContainer = new qx.ui.container.Scroll();
       scrollContainer.add(vBox);
 
