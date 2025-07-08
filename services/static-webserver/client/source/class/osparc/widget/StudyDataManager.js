@@ -42,7 +42,7 @@ qx.Class.define("osparc.widget.StudyDataManager", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.setStudyId(studyData["uuid"]);
+    this.setStudyData(studyData);
 
     if (nodeId) {
       this.setNodeId(nodeId);
@@ -63,8 +63,8 @@ qx.Class.define("osparc.widget.StudyDataManager", {
   },
 
   properties: {
-    studyId: {
-      check: "String",
+    studyData: {
+      check: "Object",
       init: null,
       nullable: false
     },
@@ -85,7 +85,7 @@ qx.Class.define("osparc.widget.StudyDataManager", {
           control
             .getChildControl("folder-viewer")
             .getChildControl("selected-file-layout")
-            .setDeleteEnabled(false);
+            .setDeleteEnabled(osparc.data.model.Study.canIDelete(this.getStudyData()["accessRights"]));
           this._add(control, {
             flex: 1
           });
@@ -106,14 +106,15 @@ qx.Class.define("osparc.widget.StudyDataManager", {
     __reloadTree: function() {
       const treeFolderView = this.getChildControl("tree-folder-view");
 
+      const studyId = this.getStudyData()["uuid"];
       const foldersTree = treeFolderView.getChildControl("folder-tree");
       foldersTree.resetCache();
       if (this.getNodeId()) {
-        foldersTree.populateNodeTree(this.getStudyId(), this.getNodeId());
-        treeFolderView.requestSize(this.getStudyId(), this.getNodeId());
-      } else if (this.getStudyId()) {
-        foldersTree.populateStudyTree(this.getStudyId());
-        treeFolderView.requestSize(this.getStudyId());
+        foldersTree.populateNodeTree(studyId, this.getNodeId());
+        treeFolderView.requestSize(studyId, this.getNodeId());
+      } else if (studyId) {
+        foldersTree.populateStudyTree(studyId);
+        treeFolderView.requestSize(studyId);
       }
 
       const folderViewer = treeFolderView.getChildControl("folder-viewer");
