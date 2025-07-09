@@ -7,6 +7,7 @@ from functools import partial
 from typing import Any, Final
 
 import pytest
+import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from celery import Celery
 from celery.contrib.testing.worker import start_worker
@@ -35,11 +36,14 @@ _LIFESPAN_TIMEOUT: Final[int] = 30
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     mock_environment: EnvVarsDict,
+    postgres_db: sa.engine.Engine,  # wait for postgres service to start
+    postgres_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **mock_environment,
+            **postgres_env_vars_dict,
         },
     )
 

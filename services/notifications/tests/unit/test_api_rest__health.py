@@ -11,6 +11,7 @@ from pytest_mock import MockerFixture
 from simcore_service_notifications.api.rest._health import HealthCheckError
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
     "redis",
 ]

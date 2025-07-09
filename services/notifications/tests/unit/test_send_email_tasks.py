@@ -11,6 +11,7 @@ from servicelib.rabbitmq.rpc_interfaces.notifications.messages import (
 )
 
 pytest_simcore_core_services_selection = [
+    "postgres",
     "rabbit",
     "redis",
 ]
