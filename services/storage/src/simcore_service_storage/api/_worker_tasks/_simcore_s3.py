@@ -110,6 +110,9 @@ async def export_data_as_download_link(
     user_id: UserID,
     paths_to_export: list[PathToExport],
 ) -> AnyUrl:
+    """
+    AccessRightError: in case user can't access project
+    """
     s3_object = await export_data(
         task=task, task_id=task_id, user_id=user_id, paths_to_export=paths_to_export
     )
