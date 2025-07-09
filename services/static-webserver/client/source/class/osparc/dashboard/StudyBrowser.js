@@ -1852,13 +1852,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // resolve right away
         return new Promise(resolve => resolve());
       }
-      const params = {
-        url: {
-          studyId: studyData["uuid"],
-          workspaceId: destWorkspaceId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
+      return osparc.store.Study.moveStudyToWorkspace(studyData["uuid"], destWorkspaceId)
         .then(() => studyData["workspaceId"] = destWorkspaceId);
     },
 
@@ -1867,13 +1861,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // resolve right away
         return new Promise(resolve => resolve());
       }
-      const params = {
-        url: {
-          studyId: studyData["uuid"],
-          folderId: destFolderId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "moveToFolder", params)
+      return osparc.store.Study.moveStudyToFolder(studyData["uuid"], destFolderId)
         .then(() => studyData["folderId"] = destFolderId);
     },
 

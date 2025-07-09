@@ -61,6 +61,26 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "delete", params)
     },
 
+    moveStudyToWorkspace: function(studyId, destWorkspaceId) {
+      const params = {
+        url: {
+          studyId,
+          workspaceId: destWorkspaceId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "moveToWorkspace", params);
+    },
+
+    moveStudyToFolder: function(studyId, destFolderId) {
+      const params = {
+        url: {
+          studyId,
+          folderId: destFolderId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "moveToFolder", params);
+    },
+
     patchStudyData: function(studyData, fieldKey, value) {
       if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
         console.error(fieldKey, "has it's own PATCH path");
