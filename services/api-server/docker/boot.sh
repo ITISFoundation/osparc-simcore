@@ -44,7 +44,9 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/api-server/src/simcore_service_api_server && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${API_SERVER_REMOTE_DEBUG_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${API_SERVER_REMOTE_DEBUG_PORT} -m \
+    uvicorn \
+      --factory main:create_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \

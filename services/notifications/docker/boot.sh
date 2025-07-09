@@ -52,7 +52,9 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/notifications/src/simcore_service_notifications && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${NOTIFICATIONS_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${NOTIFICATIONS_REMOTE_DEBUGGING_PORT} -m \
+    uvicorn \
+      --factory main:create_app \
       --host 0.0.0.0 \
       --port 8000 \
       --reload \
