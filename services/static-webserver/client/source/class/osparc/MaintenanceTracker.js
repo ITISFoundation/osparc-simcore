@@ -41,7 +41,7 @@ qx.Class.define("osparc.MaintenanceTracker", {
 
   statics: {
     CHECK_INTERVAL: 15*60*1000, // Check every 15'
-    CLOSABLE_WARN_IN_ADVANCE: 48*60*60*1000, // Show Closable Ribbon Message 48h in advance
+    CLOSABLE_WARN_IN_ADVANCE: 4*24*60*60*1000, // Show Closable Ribbon Message 4 days in advance
     PERMANENT_WARN_IN_ADVANCE: 60*60*1000 // Show Permanent Ribbon Message 60' in advance
   },
 

@@ -393,12 +393,46 @@ class CompRunsRepository(BaseRepository):
 
             return cast(int, total_count), items
 
+    async def list_all_collection_run_ids_for_user_currently_running_computations(
+        self,
+        *,
+        product_name: str,
+        user_id: UserID,
+    ) -> list[CollectionRunID]:
+
+        list_query = (
+            sa.select(
+                comp_runs.c.collection_run_id,
+            )
+            .where(
+                (comp_runs.c.user_id == user_id)
+                & (
+                    comp_runs.c.metadata["product_name"].astext == product_name
+                )  # <-- NOTE: We might create a separate column for this for fast retrieval
+                & (
+                    comp_runs.c.result.in_(
+                        [
+                            RUNNING_STATE_TO_DB[item]
+                            for item in RunningState.list_running_states()
+                        ]
+                    )
+                )
+            )
+            .distinct()
+        )
+
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            return [
+                CollectionRunID(row[0]) async for row in await conn.stream(list_query)
+            ]
+
     async def list_group_by_collection_run_id(
         self,
         *,
         product_name: str,
         user_id: UserID,
-        project_ids: list[ProjectID] | None = None,
+        project_ids_or_none: list[ProjectID] | None = None,
+        collection_run_ids_or_none: list[CollectionRunID] | None = None,
         # pagination
         offset: int,
         limit: int,
@@ -424,10 +458,19 @@ class CompRunsRepository(BaseRepository):
             & (comp_runs.c.metadata["product_name"].astext == product_name)
         )
 
-        if project_ids:
+        if project_ids_or_none:
             base_select_query = base_select_query.where(
                 comp_runs.c.project_uuid.in_(
-                    [f"{project_id}" for project_id in project_ids]
+                    [f"{project_id}" for project_id in project_ids_or_none]
+                )
+            )
+        if collection_run_ids_or_none:
+            base_select_query = base_select_query.where(
+                comp_runs.c.collection_run_id.in_(
+                    [
+                        f"{collection_run_id}"
+                        for collection_run_id in collection_run_ids_or_none
+                    ]
                 )
             )
 
