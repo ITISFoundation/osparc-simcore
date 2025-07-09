@@ -3,7 +3,7 @@
 import logging
 
 from celery import Task
-from models_library.rpc.notifications.notifications import EmailChannel, Notification
+from models_library.rpc.notifications.schemas import EmailChannel, Notification
 from servicelib.celery.models import TaskID
 
 _logger = logging.getLogger(__name__)

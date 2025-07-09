@@ -5,7 +5,7 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
 from models_library.rpc.notifications.account import AccountRequestedEvent
-from models_library.rpc.notifications.notifications import (
+from models_library.rpc.notifications.schemas import (
     EmailChannel,
     SMSChannel,
 )

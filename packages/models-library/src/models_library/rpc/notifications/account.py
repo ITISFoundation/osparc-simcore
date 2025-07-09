@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import EmailStr
 
-from .notifications import Event
+from .schemas import Event
 
 
 class AccountRequestedEvent(Event):

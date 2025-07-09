@@ -1,6 +1,6 @@
 import logging
 
-from models_library.rpc.notifications.notifications import Notification
+from models_library.rpc.notifications.schemas import Notification
 from servicelib.celery.models import TaskContext
 from servicelib.celery.task_manager import TaskManager
 

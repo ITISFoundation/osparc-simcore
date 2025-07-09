@@ -6,7 +6,7 @@ from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
-from models_library.rpc.notifications.notifications import (
+from models_library.rpc.notifications.schemas import (
     EmailChannel,
     Notification,
     SMSChannel,

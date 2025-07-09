@@ -1,9 +1,7 @@
 import pytest
 from faker import Faker
-from models_library.rpc.notifications.notifications import (
-    AccountRequestedEvent,
-    Notification,
-)
+from models_library.rpc.notifications.account import AccountRequestedEvent
+from models_library.rpc.notifications.schemas import Notification
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications.messages import (
     send_notification,
@@ -38,3 +36,5 @@ async def test_account_requested(
             channel=EmailChannel(to=email),
         ),
     )
+
+    # TODO: wait for the email to be sent and check
