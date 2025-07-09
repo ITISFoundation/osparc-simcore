@@ -61,7 +61,8 @@ COPY --from=uv_build /uv /uvx /bin/
 RUN uv venv "${VIRTUAL_ENV}"
 
 # https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 
 
