@@ -49,7 +49,9 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/datcore-adapter/src/simcore_service_datcore_adapter && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${DATCORE_ADAPTER_REMOTE_DEBUG_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${DATCORE_ADAPTER_REMOTE_DEBUG_PORT} -m \
+    uvicorn \
+      --factory main:create_app \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \
