@@ -72,7 +72,7 @@ if [ "${STORAGE_WORKER_MODE}" = "true" ]; then
   fi
 else
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
-    reload_dir_packages=$(fdfind --type directory --max-depth 3 --glob '*/src/*' --exclude '*.*' --exec echo '--reload-dir {} \ ' /devel/packages)
+    reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} \ ')
 
     exec sh -c "
     cd services/storage/src/simcore_service_storage && \
