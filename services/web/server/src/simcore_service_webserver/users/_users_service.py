@@ -21,14 +21,14 @@ from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
 from ..user_preferences import _service
 from . import _users_repository
-from ._common.models import (
+from ._controller.rest._rest_schemas import PreRegisteredUserGet
+from ._models import (
     FullNameDict,
     ToUserUpdateDB,
     UserCredentialsTuple,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
 )
-from ._common.schemas import PreRegisteredUserGet
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,

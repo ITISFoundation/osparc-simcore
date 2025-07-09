@@ -27,30 +27,30 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._meta import API_VTAG
-from ..exception_handling import (
+from ...._meta import API_VTAG
+from ....exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..groups import api as groups_api
-from ..groups.exceptions import GroupNotFoundError
-from ..invitations import api as invitations_service
-from ..login.decorators import login_required
-from ..products import products_web
-from ..products.models import Product
-from ..security.decorators import permission_required
-from ..utils_aiohttp import create_json_response_from_page, envelope_json_response
-from . import _users_service
-from ._common.schemas import PreRegisteredUserGet, UsersRequestContext
-from .exceptions import (
+from ....groups import api as groups_api
+from ....groups.exceptions import GroupNotFoundError
+from ....invitations import api as invitations_service
+from ....login.decorators import login_required
+from ....products import products_web
+from ....products.models import Product
+from ....security.decorators import permission_required
+from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
+from ... import _users_service
+from ...exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,
     UserNameDuplicateError,
     UserNotFoundError,
 )
+from ._rest_schemas import PreRegisteredUserGet, UsersRequestContext
 
 _logger = logging.getLogger(__name__)
 

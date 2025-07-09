@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from models_library.users import UserID
-from simcore_service_webserver.users._notifications import (
+from simcore_service_webserver.user_notifications._notifications_models import (
     NotificationCategory,
     UserNotification,
     UserNotificationCreate,
