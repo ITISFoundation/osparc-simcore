@@ -13,7 +13,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import config_all_loggers
+from servicelib.logging_utils import setup_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
@@ -119,7 +119,7 @@ def setup_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
-    config_all_loggers(
+    setup_loggers(
         log_format_local_dev_enabled=settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DY_SIDECAR_LOG_FILTER_MAPPING,
         tracing_settings=settings.DYNAMIC_SIDECAR_TRACING,

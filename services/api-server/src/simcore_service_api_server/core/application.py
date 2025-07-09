@@ -9,7 +9,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import config_all_loggers
+from servicelib.logging_utils import setup_loggers
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -55,7 +55,7 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.log_level)
     logging.root.setLevel(settings.log_level)
-    config_all_loggers(
+    setup_loggers(
         log_format_local_dev_enabled=settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.API_SERVER_LOG_FILTER_MAPPING,
         tracing_settings=settings.API_SERVER_TRACING,

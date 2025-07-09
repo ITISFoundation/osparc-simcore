@@ -11,7 +11,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import config_all_loggers
+from servicelib.logging_utils import setup_loggers
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.entrypoints import api_router
@@ -110,7 +110,7 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
 
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
-    config_all_loggers(
+    setup_loggers(
         log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
         tracing_settings=settings.DIRECTOR_V2_TRACING,
@@ -202,7 +202,9 @@ def init_app(settings: AppSettings | None = None) -> FastAPI:
         socketio.setup(app)
         notifier.setup(app)
 
-    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED:
+    if (
+        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
+    ):
         dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
 
     if computational_backend_enabled:
