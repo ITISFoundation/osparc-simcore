@@ -46,6 +46,7 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
@@ -105,6 +106,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_data_models",
     "pytest_simcore.simcore_storage_datcore_adapter",
     "pytest_simcore.simcore_storage_service",
+    "pytest_simcore.tracing",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -189,6 +191,19 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 
 @pytest.fixture
+def enable_tracing(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    mock_otel_collector_fastapi: InMemorySpanExporter,
+):
+    monkeypatch.setenv("STORAGE_TRACING", "{}")
+    monkeypatch.setenv(
+        "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", "http://opentelemetry-collector"
+    )
+    monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", "4318")
+
+
+@pytest.fixture
 def enabled_rabbitmq(
     app_environment: EnvVarsDict, rabbit_service: RabbitSettings
 ) -> RabbitSettings:
@@ -203,6 +218,7 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def app_settings(
+    enable_tracing,
     app_environment: EnvVarsDict,
     enabled_rabbitmq: RabbitSettings,
     sqlalchemy_async_engine: AsyncEngine,
