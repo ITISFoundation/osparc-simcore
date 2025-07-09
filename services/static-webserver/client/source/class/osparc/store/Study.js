@@ -61,6 +61,29 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "delete", params)
     },
 
+    trashStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "trash", params)
+        .then(() => {
+          osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
+        })
+        .catch(err => console.error(err));
+    },
+
+    untrashStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "untrash", params)
+        .catch(err => console.error(err));
+    },
+
     moveStudyToWorkspace: function(studyId, destWorkspaceId) {
       const params = {
         url: {

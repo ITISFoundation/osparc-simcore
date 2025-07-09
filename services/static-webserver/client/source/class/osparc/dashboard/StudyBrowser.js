@@ -2116,7 +2116,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __untrashStudy: function(studyData) {
-      osparc.store.Store.getInstance().untrashStudy(studyData.uuid)
+      osparc.store.Study.untrashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully restored");
@@ -2128,7 +2128,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudy: function(studyData) {
-      osparc.store.Store.getInstance().trashStudy(studyData.uuid)
+      osparc.store.Study.trashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully deleted");
