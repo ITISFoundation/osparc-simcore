@@ -21,7 +21,7 @@ from typing import Annotated, Final
 import typer
 from aiohttp import web
 from common_library.json_serialization import json_dumps
-from servicelib.logging_utils import setup_async_loggers
+from servicelib.logging_utils import async_loggers_lifespan
 from settings_library.utils_cli import create_settings_command
 
 from .application_settings import ApplicationSettings
@@ -81,7 +81,7 @@ async def app_factory() -> web.Application:
 
     exit_stack = AsyncExitStack()
     await exit_stack.enter_async_context(
-        setup_async_loggers(
+        async_loggers_lifespan(
             log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
             logger_filter_mapping=app_settings.WEBSERVER_LOG_FILTER_MAPPING,
             tracing_settings=app_settings.WEBSERVER_TRACING,

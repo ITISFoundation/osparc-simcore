@@ -13,12 +13,12 @@ from servicelib.logging_utils import (
     LogExtra,
     LogLevelInt,
     LogMessageStr,
+    async_loggers_lifespan,
     guess_message_log_level,
     log_context,
     log_decorator,
     log_exceptions,
     set_parent_module_log_level,
-    setup_async_loggers,
 )
 from tenacity import (
     AsyncRetrying,
@@ -445,7 +445,7 @@ async def test_setup_async_loggers_basic(
     caplog.clear()
     caplog.set_level(logging.INFO)
 
-    async with setup_async_loggers(
+    async with async_loggers_lifespan(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
         logger_filter_mapping={},  # No filters for this test
         tracing_settings=None,  # No tracing for this test
@@ -468,7 +468,7 @@ async def test_setup_async_loggers_with_filters(
         "test_filtered_logger": ["filtered_message"],
     }
 
-    async with setup_async_loggers(
+    async with async_loggers_lifespan(
         log_format_local_dev_enabled=True,
         logger_filter_mapping=filter_mapping,
         tracing_settings=None,  # No tracing for this test
@@ -503,7 +503,7 @@ async def test_setup_async_loggers_with_tracing_settings(
 
     # Note: We can't easily test actual tracing without setting up OpenTelemetry
     # But we can test that the function accepts the parameter
-    async with setup_async_loggers(
+    async with async_loggers_lifespan(
         log_format_local_dev_enabled=False,
         logger_filter_mapping={},  # No filters for this test
         tracing_settings=None,
@@ -523,7 +523,7 @@ async def test_setup_async_loggers_context_manager_cleanup(
 
     test_logger = logging.getLogger("test_cleanup_logger")
 
-    async with setup_async_loggers(
+    async with async_loggers_lifespan(
         log_format_local_dev_enabled=True,
         logger_filter_mapping={},
         tracing_settings=None,
@@ -547,7 +547,7 @@ async def test_setup_async_loggers_exception_handling(
         raise ValueError(exc_msg)
 
     try:
-        async with setup_async_loggers(
+        async with async_loggers_lifespan(
             log_format_local_dev_enabled=True,
             logger_filter_mapping={},
             tracing_settings=None,
