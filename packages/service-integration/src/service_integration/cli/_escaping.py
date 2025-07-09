@@ -8,20 +8,9 @@ from ..osparc_config import OSPARC_CONFIG_DIRNAME
 
 
 def escape_dollar_brace(text: str) -> str:
-    """
-    Replaces all '$${' sequences with '$$$${' unless they are part of an
-    existing '$$$${' sequence.
-
-    Args:
-      text: The input string.
-
-    Returns:
-      The modified string. This function will NOT return None.
-    """
-    # The pattern finds '$${' that is not preceded by another '$'.
+    # the pattern finds '$${' that is not preceded by another '$'.
     pattern = r"(?<!\$)\$\${"
     replacement = "$$$${"
-
     return re.sub(pattern, replacement, text)
 
 
@@ -34,7 +23,10 @@ def legacy_escape(
         ),
     ] = Path(OSPARC_CONFIG_DIRNAME),
 ):
-    """Escapes the `$${` with `$$$${` in all .y*ml files in the osparc config directory."""
+    """
+    Replaces all '$${' sequences with '$$$${' unless they are part of an
+    existing '$$$${' sequence.
+    """
 
     if not osparc_config_dirname.exists():
         msg = "Invalid path to metadata file or folder"
