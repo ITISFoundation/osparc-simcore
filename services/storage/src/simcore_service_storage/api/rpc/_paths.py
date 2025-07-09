@@ -25,7 +25,7 @@ async def compute_path_size(
     path: Path,
 ) -> AsyncJobGet:
     task_name = remote_compute_path_size.__name__
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         task_metadata=TaskMetadata(
             name=task_name,
@@ -47,7 +47,7 @@ async def delete_paths(
     paths: set[Path],
 ) -> AsyncJobGet:
     task_name = remote_delete_paths.__name__
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         task_metadata=TaskMetadata(
             name=task_name,

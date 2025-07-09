@@ -20,7 +20,7 @@ async def copy_folders_from_project(
     body: FoldersBody,
 ) -> AsyncJobGet:
     task_name = deep_copy_files_from_project.__name__
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         task_metadata=TaskMetadata(
             name=task_name,
@@ -40,7 +40,7 @@ async def start_export_data(
     paths_to_export: list[PathToExport],
 ) -> AsyncJobGet:
     task_name = export_data.__name__
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         task_metadata=TaskMetadata(
             name=task_name,

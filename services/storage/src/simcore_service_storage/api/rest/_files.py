@@ -292,7 +292,7 @@ async def complete_upload_file(
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
         client_name=_ASYNC_JOB_CLIENT_NAME,
     )
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         TaskMetadata(
             name=remote_complete_upload_file.__name__,
@@ -350,7 +350,7 @@ async def is_completed_upload_file(
         product_name=_UNDEFINED_PRODUCT_NAME_FOR_WORKER_TASKS,  # NOTE: I would need to change the API here
         client_name=_ASYNC_JOB_CLIENT_NAME,
     )
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_status = await task_manager.get_task_status(
         task_filter=task_filter, task_uuid=TaskUUID(future_id)
     )

@@ -36,7 +36,7 @@ async def cancel(
 ):
     assert task_manager  # nosec
     assert job_filter  # nosec
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     try:
         await task_manager.cancel_task(
             task_filter=task_filter,
@@ -53,7 +53,7 @@ async def status(
     assert task_manager  # nosec
     assert job_filter  # nosec
 
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     try:
         task_status = await task_manager.get_task_status(
             task_filter=task_filter,
@@ -84,7 +84,7 @@ async def result(
     assert job_id  # nosec
     assert job_filter  # nosec
 
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
 
     try:
         _status = await task_manager.get_task_status(
@@ -131,7 +131,7 @@ async def list_jobs(
 ) -> list[AsyncJobGet]:
     _ = filter_
     assert task_manager  # nosec
-    task_filter = TaskFilter.from_async_job_filter(job_filter)
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     try:
         tasks = await task_manager.list_tasks(
             task_filter=task_filter,
