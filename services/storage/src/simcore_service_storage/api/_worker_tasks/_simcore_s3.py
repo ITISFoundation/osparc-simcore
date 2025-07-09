@@ -10,11 +10,12 @@ from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import AnyUrl, TypeAdapter
 from servicelib.celery.models import TaskID
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
+from ...constants import LinkType
 from ...dsm import get_dsm_provider
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
@@ -100,3 +101,23 @@ async def export_data(
             return await dsm.create_s3_export(
                 user_id, object_keys, progress_bar=progress_bar
             )
+
+
+async def export_data_as_download_link(
+    task: Task,
+    task_id: TaskID,
+    *,
+    user_id: UserID,
+    paths_to_export: list[PathToExport],
+) -> AnyUrl:
+    s3_object = await export_data(
+        task=task, task_id=task_id, user_id=user_id, paths_to_export=paths_to_export
+    )
+
+    dsm = get_dsm_provider(get_app_server(task.app).app).get(
+        SimcoreS3DataManager.get_location_id()
+    )
+
+    return await dsm.create_file_download_link(
+        user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
+    )
