@@ -4,13 +4,13 @@ from simcore_postgres_database.utils_user_preferences import (
     CouldNotCreateOrUpdateUserPreferenceError,
 )
 
-from ...exception_handling import (
+from ....exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ...users.exceptions import FrontendUserPreferenceIsNotDefinedError
+from ....users.exceptions import FrontendUserPreferenceIsNotDefinedError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     CouldNotCreateOrUpdateUserPreferenceError: HttpErrorInfo(
