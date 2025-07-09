@@ -26,30 +26,27 @@ qx.Class.define("osparc.NewUITracker", {
   members: {
     __checkInterval: null,
 
-    checkNewUI: function() {
-      osparc.NewRelease.isMyFrontendOld()
-        .then(newReleaseAvailable => {
-          if (newReleaseAvailable) {
-            let msg = "";
-            msg += qx.locale.Manager.tr("A new version of the application is now available.");
-            msg += "<br>";
-            msg += qx.locale.Manager.tr("Reload the page to get the latest features.");
-            // permanent message
-            osparc.FlashMessenger.logAs(msg, "INFO", 0).set({
-              maxWidth: 500
-            });
-            // stop tracker in case it was running
-            this.stopTracker();
-          }
-        })
-        .catch(() => setTimeout(() => checkNewUI(), 5*1000));
-    },
-
     startTracker: function() {
-      this.checkNewUI();
-      this.__checkInterval = setInterval(() =>{
-        this.checkNewUI();
-      }, this.self().CHECK_INTERVAL);
+      const checkNewUI = () => {
+        osparc.NewRelease.isMyFrontendOld()
+          .then(newReleaseAvailable => {
+            if (newReleaseAvailable) {
+              let msg = "";
+              msg += qx.locale.Manager.tr("A new version of the application is now available.");
+              msg += "<br>";
+              msg += qx.locale.Manager.tr("Reload the page to get the latest features.");
+              // permanent message
+              osparc.FlashMessenger.logAs(msg, "INFO", 0).set({
+                maxWidth: 500
+              });
+              // stop tracker in case it was running
+              this.stopTracker();
+            }
+          })
+          .catch(() => setTimeout(() => checkNewUI(), 5*1000));
+      };
+
+      this.__checkInterval = setInterval(() => checkNewUI(), this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {
