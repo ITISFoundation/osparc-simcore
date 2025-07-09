@@ -7,11 +7,11 @@ from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.observer import setup_observer_registry
 
-from ..user_notifications.plugin import (
+from ..user_notifications.bootstrap import (
     setup_user_notification_feature,
 )
-from ..user_preferences.plugin import setup_user_preferences_feature
-from ..user_tokens.plugin import setup_user_tokens_feature
+from ..user_preferences.bootstrap import setup_user_preferences_feature
+from ..user_tokens.bootstrap import setup_user_tokens_feature
 from ._controller.rest import users_rest
 
 _logger = logging.getLogger(__name__)
