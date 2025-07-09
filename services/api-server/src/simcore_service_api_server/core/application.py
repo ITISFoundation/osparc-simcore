@@ -53,12 +53,12 @@ def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
         settings = ApplicationSettings.create_from_envs()
     assert settings  # nosec
 
-    logging.basicConfig(level=settings.log_level)
-    logging.root.setLevel(settings.log_level)
     setup_loggers(
         log_format_local_dev_enabled=settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.API_SERVER_LOG_FILTER_MAPPING,
         tracing_settings=settings.API_SERVER_TRACING,
+        log_base_level=settings.log_level,
+        noisy_loggers=(),
     )
     _logger.debug("App settings:\n%s", settings.model_dump_json(indent=2))
 
