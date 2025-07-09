@@ -7,7 +7,7 @@ import typer
 
 from .._meta import __version__
 from ..settings import AppSettings
-from . import _compose_spec, _metadata, _run_creator, _test
+from . import _compose_spec, _escaping, _metadata, _run_creator, _test
 from ._config import config_app
 
 app = typer.Typer()
@@ -76,3 +76,4 @@ app.command("test")(_test.run_tests)
 app.command("bump-version")(_metadata.bump_version)
 app.command("get-version")(_metadata.get_version)
 app.command("run-creator")(_run_creator.run_creator)
+app.command("legacy-escape")(_escaping.legacy_escape)
