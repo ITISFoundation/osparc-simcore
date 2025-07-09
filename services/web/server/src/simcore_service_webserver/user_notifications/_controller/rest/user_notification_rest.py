@@ -33,6 +33,10 @@ from ..._models import (
 _logger = logging.getLogger(__name__)
 
 
+class NotificationPathParams(BaseModel):
+    notification_id: str
+
+
 routes = web.RouteTableDef()
 
 
@@ -88,10 +92,6 @@ async def create_user_notification(request: web.Request) -> web.Response:
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-class _NotificationPathParams(BaseModel):
-    notification_id: str
-
-
 @routes.patch(
     f"/{API_VTAG}/me/notifications/{{notification_id}}",
     name="mark_notification_as_read",
@@ -101,7 +101,7 @@ class _NotificationPathParams(BaseModel):
 async def mark_notification_as_read(request: web.Request) -> web.Response:
     redis_client = get_redis_user_notifications_client(request.app)
     req_ctx = UsersRequestContext.model_validate(request)
-    req_path_params = parse_request_path_parameters_as(_NotificationPathParams, request)
+    req_path_params = parse_request_path_parameters_as(NotificationPathParams, request)
     body = await parse_request_body_as(UserNotificationPatch, request)
 
     # NOTE: only the user's notifications can be patched

@@ -23,7 +23,7 @@ from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.user_notifications._controller.rest.user_notification_rest import (
-    _NotificationPathParams,
+    NotificationPathParams,
 )
 from simcore_service_webserver.user_notifications._models import (
     UserNotification,
@@ -110,7 +110,7 @@ async def create_user_notification(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def mark_notification_as_read(
-    _path: Annotated[_NotificationPathParams, Depends()],
+    _path: Annotated[NotificationPathParams, Depends()],
     _body: UserNotificationPatch,
 ): ...
 
