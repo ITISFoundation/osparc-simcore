@@ -1,5 +1,6 @@
 from typing import Literal
 
+from common_library.pydantic_basic_types import NotEmptyStr
 from pydantic import BaseModel, EmailStr
 
 
@@ -20,4 +21,4 @@ class AccountApprovedEvent(BaseModel):
 class AccountRejectedEvent(BaseModel):
     type: Literal["account_rejected"] = "account_rejected"
 
-    reason: str
+    reason: NotEmptyStr

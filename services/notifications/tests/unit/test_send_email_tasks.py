@@ -36,7 +36,7 @@ async def test_account_requested(
                 email=email,
             ),
             channel=EmailChannel(
-                from_addr=EmailAddress(addr_spec=""),
+                from_addr=EmailAddress(addr_spec=faker.email()),
                 to_addr=EmailAddress(
                     addr_spec=email,
                 ),

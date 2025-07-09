@@ -1,11 +1,11 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class EmailAddress(BaseModel):
     display_name: str | None = None
-    addr_spec: str
+    addr_spec: EmailStr
 
 
 class EmailChannel(BaseModel):

@@ -1,7 +1,7 @@
 from re import Pattern
 from typing import Annotated, Final, TypeAlias
 
-from pydantic import Field
+from pydantic import Field, StringConstraints
 from pydantic_core import core_schema
 
 # https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Registered_ports
@@ -77,3 +77,12 @@ class LongTruncatedStr(ConstrainedStr):
     # Analogous to ShortTruncatedStr
     strip_whitespace = True
     curtail_length = 65536  # same as github descripton
+
+
+NotEmptyStr: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        min_length=1,
+        strip_whitespace=True,
+    ),
+]
