@@ -1,6 +1,7 @@
 from typing import Annotated, Literal, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic_extra_types.phone_numbers import PhoneNumber
 
 
 class Event(BaseModel):
@@ -21,7 +22,7 @@ class EmailChannel(BaseModel):
 class SMSChannel(BaseModel):
     type: Literal["sms"] = "sms"
 
-    phone_number: str  # Consider using phone number validation library here
+    phone_number: PhoneNumber
 
 
 Channel: TypeAlias = EmailChannel | SMSChannel
