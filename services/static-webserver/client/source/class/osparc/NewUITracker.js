@@ -20,34 +20,37 @@ qx.Class.define("osparc.NewUITracker", {
   type: "singleton",
 
   statics: {
-    CHECK_INTERVAL: 60*60*1000 // Check every 60'
+    CHECK_INTERVAL: 0.5*60*1000 // Check every 30"
+    // CHECK_INTERVAL: 60*60*1000 // Check every 60'
   },
 
   members: {
     __checkInterval: null,
 
+    checkNewUI: function() {
+      osparc.NewRelease.isMyFrontendOld()
+        .then(newReleaseAvailable => {
+          if (newReleaseAvailable) {
+            let msg = "";
+            msg += qx.locale.Manager.tr("A new version of the application is now available.");
+            msg += "<br>";
+            msg += qx.locale.Manager.tr("Reload the page to get the latest features.");
+            // permanent message
+            osparc.FlashMessenger.logAs(msg, "INFO", 0).set({
+              maxWidth: 500
+            });
+            // stop tracker in case it was running
+            this.stopTracker();
+          }
+        })
+        .catch(() => setTimeout(() => checkNewUI(), 5*1000));
+    },
+
     startTracker: function() {
-      const checkNewUI = () => {
-        osparc.NewRelease.isMyFrontendOld()
-          .then(newReleaseAvailable => {
-            if (newReleaseAvailable) {
-              let msg = "";
-              msg += qx.locale.Manager.tr("A new version of the application is now available.");
-              msg += "<br>";
-              msg += qx.locale.Manager.tr("Click the Reload button to get the latest features.");
-              // permanent message
-              const flashMessage = osparc.FlashMessenger.logAs(msg, "INFO", 0).set({
-                maxWidth: 500
-              });
-              const reloadButton = osparc.utils.Utils.reloadNoCacheButton();
-              flashMessage.addWidget(reloadButton);
-              this.stopTracker();
-            }
-          })
-          .catch(() => setTimeout(() => checkNewUI(), 5*1000));
-      };
-      checkNewUI();
-      this.__checkInterval = setInterval(checkNewUI, this.self().CHECK_INTERVAL);
+      this.checkNewUI();
+      this.__checkInterval = setInterval(() =>{
+        this.checkNewUI();
+      }, this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {
