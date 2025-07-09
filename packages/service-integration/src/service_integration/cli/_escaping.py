@@ -40,10 +40,7 @@ def legacy_escape(
         msg = "Invalid path to metadata file or folder"
         raise typer.BadParameter(msg)
 
-    print(f"checking files in {osparc_config_dirname}")
-
     for file in osparc_config_dirname.rglob("*.y*ml"):
-        print(f"scanning {file=}")
         read_text = file.read_text()
         replaced_text = escape_dollar_brace(read_text)
         if read_text != replaced_text:
