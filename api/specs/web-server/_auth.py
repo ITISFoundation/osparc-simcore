@@ -15,7 +15,7 @@ from models_library.generics import Envelope
 from models_library.rest_error import EnvelopedError, Log
 from pydantic import BaseModel, Field, confloat
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.login._controller.rest.auth import (
+from simcore_service_webserver.login._controller.rest.auth_schemas import (
     LoginBody,
     LoginNextPage,
     LoginTwoFactorAuthBody,
@@ -30,7 +30,7 @@ from simcore_service_webserver.login._controller.rest.confirmation import (
     PhoneConfirmationBody,
     ResetPasswordConfirmation,
 )
-from simcore_service_webserver.login._controller.rest.registration import (
+from simcore_service_webserver.login._controller.rest.registration_schemas import (
     InvitationCheck,
     InvitationInfo,
     RegisterBody,
