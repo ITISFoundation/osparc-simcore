@@ -15,11 +15,11 @@ from simcore_postgres_database.utils_user_preferences import (
     CouldNotCreateOrUpdateUserPreferenceError,
 )
 
-from .._meta import API_VTAG
-from ..login.decorators import login_required
-from ..models import AuthenticatedRequestContext
-from ..users.exceptions import FrontendUserPreferenceIsNotDefinedError
-from . import _service
+from ..._meta import API_VTAG
+from ...login.decorators import login_required
+from ...models import AuthenticatedRequestContext
+from ...users.exceptions import FrontendUserPreferenceIsNotDefinedError
+from .. import _service
 
 routes = web.RouteTableDef()
 
