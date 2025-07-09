@@ -47,7 +47,7 @@ qx.Class.define("osparc.NewUITracker", {
       };
 
       checkNewUI();
-      this.__checkInterval = setInterval(() => checkNewUI(), this.self().CHECK_INTERVAL);
+      this.__checkInterval = setInterval(checkNewUI, this.self().CHECK_INTERVAL);
     },
 
     stopTracker: function() {
