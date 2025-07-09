@@ -16,6 +16,7 @@
 --editable ../../packages/common-library
 --editable ../../packages/models-library
 --editable ../../packages/notifications-library
+--editable ../../packages/postgres-database
 --editable ../../packages/pytest-simcore
 --editable ../../packages/service-library[fastapi]
 --editable ../../packages/settings-library
