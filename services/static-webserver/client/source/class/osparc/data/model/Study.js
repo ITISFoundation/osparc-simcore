@@ -680,13 +680,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
 
       return new Promise((resolve, reject) => {
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          },
-          data: studyChanges
-        };
-        osparc.data.Resources.fetch("studies", "patch", params)
+        osparc.store.Study.patchStudy(this.getUuid(), studyChanges)
           .then(() => {
             Object.keys(studyChanges).forEach(fieldKey => {
               const upKey = qx.lang.String.firstUp(fieldKey);
@@ -717,14 +711,9 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const fieldKeys = Object.keys(studyDiffs);
       if (fieldKeys.length) {
-        const patchData = {};
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          },
-          data: patchData
-        };
         fieldKeys.forEach(fieldKey => {
+          // OM: can this be called all together?
+          const patchData = {};
           if (fieldKey === "ui") {
             patchData[fieldKey] = this.getUi().serialize();
           } else {
@@ -732,7 +721,7 @@ qx.Class.define("osparc.data.model.Study", {
             const getter = "get" + upKey;
             patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
           }
-          promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+          promises.push(osparc.store.Study.patchStudy(this.getUuid(), patchData))
         });
       }
       return Promise.all(promises)

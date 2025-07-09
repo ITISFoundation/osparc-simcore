@@ -65,6 +65,16 @@ qx.Class.define("osparc.store.Study", {
         .catch(err => console.error(err));
     },
 
+    patchStudy: function(studyId, patchData) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patch", params);
+    },
+
     trashStudy: function(studyId) {
       const params = {
         url: {
