@@ -671,10 +671,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         const arCopy = osparc.utils.Utils.deepCloneObject(templateData["accessRights"]);
         // remove collaborator
         delete arCopy[myGid];
-        operationPromise = osparc.store.Study.patchStudyData(templateData, "accessRights", arCopy);
+        operationPromise = osparc.store.Study.getInstance().patchStudyData(templateData, "accessRights", arCopy);
       } else {
         // delete study
-        operationPromise = osparc.store.Study.deleteStudy(templateData.uuid);
+        operationPromise = osparc.store.Study.getInstance().deleteStudy(templateData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(templateData.uuid))
@@ -754,7 +754,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               };
               const cancelCB = () => {
                 this._hideLoadingPage();
-                osparc.store.Study.deleteStudy(studyId);
+                osparc.store.Study.getInstance().deleteStudy(studyId);
               };
 
               const promises = [];
@@ -783,7 +783,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   const nodeId = nodesIdsListed[idx];
                   const pricingPlanId = nodePricingUnits.getPricingPlanId();
                   const selectedUnit = nodePricingUnits.getPricingUnits().getSelectedUnit();
-                  promises.push(osparc.store.Study.updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, selectedUnit));
+                  promises.push(osparc.store.Study.getInstance().updateSelectedPricingUnit(studyId, nodeId, pricingPlanId, selectedUnit));
                 }
               });
 
@@ -806,7 +806,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             const openCB = () => this._hideLoadingPage();
             const cancelCB = () => {
               this._hideLoadingPage();
-              osparc.store.Study.deleteStudy(studyId);
+              osparc.store.Study.getInstance().deleteStudy(studyId);
             };
             const isStudyCreation = true;
             this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -831,7 +831,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
             this._hideLoadingPage();
-            osparc.store.Study.deleteStudy(studyId);
+            osparc.store.Study.getInstance().deleteStudy(studyId);
           };
           const isStudyCreation = true;
           this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);

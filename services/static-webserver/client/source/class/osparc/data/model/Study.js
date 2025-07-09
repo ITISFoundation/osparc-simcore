@@ -680,7 +680,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
 
       return new Promise((resolve, reject) => {
-        osparc.store.Study.patchStudy(this.getUuid(), studyChanges)
+        osparc.store.Study.getInstance().patchStudy(this.getUuid(), studyChanges)
           .then(() => {
             Object.keys(studyChanges).forEach(fieldKey => {
               const upKey = qx.lang.String.firstUp(fieldKey);
@@ -721,7 +721,7 @@ qx.Class.define("osparc.data.model.Study", {
             const getter = "get" + upKey;
             patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
           }
-          promises.push(osparc.store.Study.patchStudy(this.getUuid(), patchData))
+          promises.push(osparc.store.Study.getInstance().patchStudy(this.getUuid(), patchData))
         });
       }
       return Promise.all(promises)

@@ -64,7 +64,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + osparc.product.Utils.getStudyAlias());
       this.showLoadingPage();
 
-      osparc.store.Study.getOne(studyId)
+      osparc.store.Study.getInstance().getOne(studyId)
         .then(studyData => {
           if (!studyData) {
             const msg = qx.locale.Manager.tr("Project not found");

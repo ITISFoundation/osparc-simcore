@@ -16,9 +16,10 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.Study", {
-  type: "static",
+  extend: qx.core.Object,
+  type: "singleton",
 
-  statics: {
+  members: {
     __nodeResources: null,
     __nodePricingUnit: null,
 

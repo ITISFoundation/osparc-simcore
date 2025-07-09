@@ -91,7 +91,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     updateName: function(studyData, name) {
-      return osparc.store.Study.patchStudyData(studyData, "name", name)
+      return osparc.store.Study.getInstance().patchStudyData(studyData, "name", name)
         .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("Something went wrong while renaming")));
     },
 
@@ -237,7 +237,7 @@ qx.Class.define("osparc.study.StudyOptions", {
         }
       };
       Promise.all([
-        osparc.store.Study.getOne(studyId),
+        osparc.store.Study.getInstance().getOne(studyId),
         osparc.data.Resources.fetch("studies", "getWallet", params)
       ])
         .then(values => {

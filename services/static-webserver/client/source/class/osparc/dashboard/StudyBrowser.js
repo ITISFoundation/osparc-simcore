@@ -144,7 +144,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getActiveStudy: function() {
-      return osparc.store.Study.getActive(osparc.utils.Utils.getClientSessionID())
+      return osparc.store.Study.getInstance().getActive(osparc.utils.Utils.getClientSessionID())
         .then(studyData => {
           if (studyData) {
             osparc.store.Store.getInstance().setCurrentStudyId(studyData["uuid"]);
@@ -401,7 +401,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const delay = 2000;
           const studyId = study["uuid"];
           setTimeout(() => {
-            osparc.store.Study.getOne(studyId)
+            osparc.store.Study.getInstance().getOne(studyId)
               .then(studyData => {
                 this.__studyStateReceived(study["uuid"], studyData["state"]);
               });
@@ -901,7 +901,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let request = null;
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
-          request = osparc.store.Study.getPage(params, options);
+          request = osparc.store.Study.getInstance().getPage(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
@@ -909,10 +909,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
-          request = osparc.store.Study.getPageTrashed(params, options);
+          request = osparc.store.Study.getInstance().getPageTrashed(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          request = osparc.store.Study.getPageSearch(params, options);
+          request = osparc.store.Study.getInstance().getPageSearch(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
@@ -1590,7 +1590,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const openCB = () => this._hideLoadingPage();
       const cancelCB = () => {
         this._hideLoadingPage();
-        osparc.store.Study.deleteStudy(studyId);
+        osparc.store.Study.getInstance().deleteStudy(studyId);
       };
       const isStudyCreation = true;
       this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -1779,13 +1779,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateName: function(studyData, name) {
-      osparc.store.Study.patchStudyData(studyData, "name", name)
+      osparc.store.Study.getInstance().patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while renaming")));
     },
 
     __updateThumbnail: function(studyData, url) {
-      osparc.store.Study.patchStudyData(studyData, "thumbnail", url)
+      osparc.store.Study.getInstance().patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the thumbnail")));
     },
@@ -1852,7 +1852,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // resolve right away
         return new Promise(resolve => resolve());
       }
-      return osparc.store.Study.moveStudyToWorkspace(studyData["uuid"], destWorkspaceId)
+      return osparc.store.Study.getInstance().moveStudyToWorkspace(studyData["uuid"], destWorkspaceId)
         .then(() => studyData["workspaceId"] = destWorkspaceId);
     },
 
@@ -1861,7 +1861,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // resolve right away
         return new Promise(resolve => resolve());
       }
-      return osparc.store.Study.moveStudyToFolder(studyData["uuid"], destFolderId)
+      return osparc.store.Study.getInstance().moveStudyToFolder(studyData["uuid"], destFolderId)
         .then(() => studyData["folderId"] = destFolderId);
     },
 
@@ -1922,7 +1922,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __updateUIMode: function(studyData, uiMode) {
       const studyUI = osparc.utils.Utils.deepCloneObject(studyData["ui"]);
       studyUI["mode"] = uiMode;
-      return osparc.store.Study.patchStudyData(studyData, "ui", studyUI)
+      return osparc.store.Study.getInstance().patchStudyData(studyData, "ui", studyUI)
         .then(() => this._updateStudyData(studyData))
     },
 
@@ -2087,7 +2087,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           importTaskUI.setSubtitle(processingLabel);
           importingStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
-          osparc.store.Study.getOne(data["data"]["uuid"])
+          osparc.store.Study.getInstance().getOne(data["data"]["uuid"])
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while fetching the study")))
             .finally(() => {
@@ -2116,7 +2116,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __untrashStudy: function(studyData) {
-      osparc.store.Study.untrashStudy(studyData.uuid)
+      osparc.store.Study.getInstance().untrashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully restored");
@@ -2128,7 +2128,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudy: function(studyData) {
-      osparc.store.Study.trashStudy(studyData.uuid)
+      osparc.store.Study.getInstance().trashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully deleted");
@@ -2156,7 +2156,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // remove me from collaborators
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       delete arCopy[myGid];
-      return osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
+      return osparc.store.Study.getInstance().patchStudyData(studyData, "accessRights", arCopy);
     },
 
     __doDeleteStudy: function(studyData) {
@@ -2165,7 +2165,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         operationPromise = this.__removeMeFromCollaborators(studyData);
       } else {
         // delete study
-        operationPromise = osparc.store.Study.deleteStudy(studyData.uuid);
+        operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromStudyList(studyData.uuid))

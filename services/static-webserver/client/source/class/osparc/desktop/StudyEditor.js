@@ -131,7 +131,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this._showLoadingPage(this.tr("Starting") + " " + studyData.name);
 
       // Before starting a study, make sure the latest version is fetched
-      osparc.store.Study.getOne(studyData.uuid)
+      osparc.store.Study.getInstance().getOne(studyData.uuid)
         .then(latestStudyData => {
           const study = new osparc.data.model.Study(latestStudyData);
           this.setStudy(study);

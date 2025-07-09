@@ -30,7 +30,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       case "template":
       case "tutorial":
       case "hypertool": {
-        latestPromise = osparc.store.Study.getOne(resourceData["uuid"]);
+        latestPromise = osparc.store.Study.getInstance().getOne(resourceData["uuid"]);
         break;
       }
       case "function": {
@@ -227,7 +227,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       openButton.setFetching(true);
       Promise.all([
-        osparc.store.Study.getOne(this.__resourceData["uuid"]),
+        osparc.store.Study.getInstance().getOne(this.__resourceData["uuid"]),
         osparc.store.Services.getStudyServices(this.__resourceData["uuid"]),
       ])
         .then(values => {

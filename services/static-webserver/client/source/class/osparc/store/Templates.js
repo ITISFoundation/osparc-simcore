@@ -47,7 +47,7 @@ qx.Class.define("osparc.store.Templates", {
     },
 
     fetchTemplate: function(templateId) {
-      return osparc.store.Study.getOne(templateId)
+      return osparc.store.Study.getInstance().getOne(templateId)
         .catch(err => console.error(err));
     },
 

@@ -264,9 +264,9 @@ qx.Class.define("osparc.desktop.MainPage", {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
             // these operations need to be done after template creation
-            osparc.store.Study.addCollaborators(templateData, templateAccessRights);
+            osparc.store.Study.getInstance().addCollaborators(templateData, templateAccessRights);
             if (templateType) {
-              osparc.store.Study.patchTemplateType(templateData["uuid"], templateType)
+              osparc.store.Study.getInstance().patchTemplateType(templateData["uuid"], templateType)
                 .then(() => {
                   if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
                     tutorialBrowser.reloadResources(false);
@@ -336,7 +336,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             const msg = this.tr("No snapshot found");
             throw new Error(msg);
           }
-          osparc.store.Study.getOne(studyId)
+          osparc.store.Study.getInstance().getOne(studyId)
             .then(studyData => {
               if (!studyData) {
                 const msg = this.tr("Project not found");
@@ -370,7 +370,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __openIteration: function(iterationUuid) {
-      osparc.store.Study.getOne(iterationUuid)
+      osparc.store.Study.getInstance().getOne(iterationUuid)
         .then(studyData => {
           if (!studyData) {
             const msg = this.tr("Iteration not found");

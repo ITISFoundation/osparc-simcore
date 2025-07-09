@@ -247,7 +247,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         }
       };
       Promise.all([
-        osparc.store.Study.getPageTrashed(studiesParams),
+        osparc.store.Study.getInstance().getPageTrashed(studiesParams),
         osparc.data.Resources.fetch("folders", "getPageTrashed", foldersParams),
         osparc.data.Resources.fetch("workspaces", "getPageTrashed", workspacesParams),
       ])

@@ -335,7 +335,7 @@ qx.Class.define("osparc.study.CreateFunction", {
           "hidden": "Base template for function",
         }
       };
-      osparc.store.Study.updateMetadata(templateData["uuid"], metadata);
+      osparc.store.Study.getInstance().updateMetadata(templateData["uuid"], metadata);
     },
 
     __registerFunction: function(templateData, defaultInputs, exposedInputs, exposedOutputs) {
