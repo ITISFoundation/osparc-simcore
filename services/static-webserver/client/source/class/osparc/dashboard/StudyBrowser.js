@@ -2099,12 +2099,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           importTaskUI.setSubtitle(processingLabel);
           importingStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
-          const params = {
-            url: {
-              "studyId": data["data"]["uuid"]
-            }
-          };
-          osparc.data.Resources.fetch("studies", "getOne", params)
+          osparc.store.Study.getOne(data["data"]["uuid"])
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while fetching the study")))
             .finally(() => {

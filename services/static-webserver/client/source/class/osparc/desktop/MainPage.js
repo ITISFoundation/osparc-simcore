@@ -336,12 +336,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             const msg = this.tr("No snapshot found");
             throw new Error(msg);
           }
-          const params2 = {
-            url: {
-              "studyId": studyId
-            }
-          };
-          osparc.data.Resources.fetch("studies", "getOne", params2)
+          osparc.store.Study.getOne(studyId)
             .then(studyData => {
               if (!studyData) {
                 const msg = this.tr("Project not found");
@@ -375,13 +370,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __openIteration: function(iterationUuid) {
-      const params = {
-        url: {
-          "studyId": iterationUuid
-        }
-      };
-      // OM TODO. DO NOT ADD ITERATIONS TO STUDIES CACHE
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getOne(iterationUuid)
         .then(studyData => {
           if (!studyData) {
             const msg = this.tr("Iteration not found");
