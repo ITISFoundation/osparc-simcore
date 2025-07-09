@@ -218,7 +218,7 @@ def setup_loggers(
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
     log_base_level: LogLevelInt,
-    noisy_loggers: tuple[str, ...],
+    noisy_loggers: tuple[str, ...] | None,
 ) -> None:
     """
     Applies comprehensive configuration to ALL registered loggers.
@@ -234,7 +234,8 @@ def setup_loggers(
         tracing_settings: OpenTelemetry tracing configuration
     """
     _setup_base_logging_level(log_base_level)
-    _dampen_noisy_loggers(noisy_loggers)
+    if noisy_loggers is not None:
+        _dampen_noisy_loggers(noisy_loggers)
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
@@ -263,7 +264,7 @@ async def setup_async_loggers_lifespan(
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
     log_base_level: LogLevelInt,
-    noisy_loggers: tuple[str, ...],
+    noisy_loggers: tuple[str, ...] | None,
 ) -> AsyncIterator[None]:
     """
     Async context manager for non-blocking logging infrastructure.
@@ -279,7 +280,8 @@ async def setup_async_loggers_lifespan(
         tracing_settings: OpenTelemetry tracing configuration
     """
     _setup_base_logging_level(log_base_level)
-    _dampen_noisy_loggers(noisy_loggers)
+    if noisy_loggers is not None:
+        _dampen_noisy_loggers(noisy_loggers)
 
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,

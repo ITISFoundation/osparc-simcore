@@ -36,7 +36,7 @@ def _setup_logger(settings: ApplicationSettings):
         logger_filter_mapping=settings.AGENT_VOLUMES_LOG_FILTER_MAPPING,
         tracing_settings=settings.AGENT_TRACING,
         log_base_level=settings.log_level,
-        noisy_loggers=(),
+        noisy_loggers=None,
     )
 
 
