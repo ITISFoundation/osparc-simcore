@@ -153,12 +153,6 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
-deprecated==1.2.18
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-exporter-otlp-proto-grpc
-    #   opentelemetry-exporter-otlp-proto-http
-    #   opentelemetry-semantic-conventions
 dnspython==2.7.0
     # via email-validator
 email-validator==2.2.0
@@ -498,6 +492,13 @@ packaging==24.2
     #   opentelemetry-instrumentation
 pamqp==3.3.0
     # via aiormq
+phonenumbers==9.0.9
+    # via
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/notifications-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 prometheus-client==0.21.1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 prompt-toolkit==3.0.51

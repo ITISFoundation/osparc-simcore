@@ -7,6 +7,7 @@
 arrow
 jsonschema
 orjson
+phonenumbers
 pydantic[email]
 pydantic-settings
 pydantic-extra-types
