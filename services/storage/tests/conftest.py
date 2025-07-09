@@ -194,13 +194,9 @@ def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 def enable_tracing(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    mock_otel_collector_fastapi: InMemorySpanExporter,
+    setup_tracing_fastapi: InMemorySpanExporter,
 ):
     monkeypatch.setenv("STORAGE_TRACING", "{}")
-    monkeypatch.setenv(
-        "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", "http://opentelemetry-collector"
-    )
-    monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", "4318")
 
 
 @pytest.fixture
