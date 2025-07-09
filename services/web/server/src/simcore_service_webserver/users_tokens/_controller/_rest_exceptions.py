@@ -1,13 +1,13 @@
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
-from ..exception_handling import (
+from ...exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..users.exceptions import TokenNotFoundError
+from ...users.exceptions import TokenNotFoundError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     TokenNotFoundError: HttpErrorInfo(

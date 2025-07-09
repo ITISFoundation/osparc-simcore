@@ -3,11 +3,11 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ensure_single_setup
 
-from . import _controller_rest
+from ._controller import rest
 
 _logger = logging.getLogger(__name__)
 
 
 @ensure_single_setup(__name__, logger=_logger)
 def setup_users_tokens(app: web.Application):
-    app.add_routes(_controller_rest.routes)
+    app.add_routes(rest.routes)
