@@ -19,7 +19,7 @@ from ...products import products_web
 from ...redis import get_redis_user_notifications_client
 from ...security.decorators import permission_required
 from ...users import _users_service
-from ...users._controller.rest._rest_schemas import UsersRequestContext
+from ...users.schemas import UsersRequestContext
 from ...utils_aiohttp import envelope_json_response
 from .._models import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,

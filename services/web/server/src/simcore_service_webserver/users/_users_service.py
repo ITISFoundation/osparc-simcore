@@ -21,7 +21,6 @@ from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
 from ..user_preferences import _service
 from . import _users_repository
-from ._controller._rest_schemas import PreRegisteredUserGet
 from ._models import (
     FullNameDict,
     ToUserUpdateDB,
@@ -34,6 +33,7 @@ from .exceptions import (
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,
 )
+from .schemas import PreRegisteredUserGet
 
 _logger = logging.getLogger(__name__)
 

@@ -29,7 +29,7 @@ from ..security import security_service, security_web
 from ..security.decorators import permission_required
 from ..session import api as session_service
 from ..users import users_service
-from ..users._controller._rest_schemas import PreRegisteredUserGet
+from ..users.schemas import PreRegisteredUserGet
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ..web_utils import flash_response
