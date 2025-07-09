@@ -46,6 +46,7 @@ qx.Class.define("osparc.NewUITracker", {
           .catch(() => setTimeout(() => checkNewUI(), 5*1000));
       };
 
+      checkNewUI();
       this.__checkInterval = setInterval(() => checkNewUI(), this.self().CHECK_INTERVAL);
     },
 
