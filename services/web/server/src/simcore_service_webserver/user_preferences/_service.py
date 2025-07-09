@@ -21,13 +21,13 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 
 from ..db.plugin import get_database_engine_legacy
 from ..users.exceptions import FrontendUserPreferenceIsNotDefinedError
-from . import _repository
 from ._models import (
     ALL_FRONTEND_PREFERENCES,
     TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference,
     get_preference_identifier,
     get_preference_name,
 )
+from ._repository import UserPreferencesRepository
 
 _MAX_PARALLEL_DB_QUERIES: Final[NonNegativeInt] = 2
 
@@ -37,10 +37,11 @@ async def _get_frontend_user_preferences(
     user_id: UserID,
     product_name: ProductName,
 ) -> list[FrontendUserPreference]:
+    repo = UserPreferencesRepository.create_from_app(app)
+
     saved_user_preferences: list[FrontendUserPreference | None] = await logged_gather(
         *(
-            _repository.get_user_preference(
-                app,
+            repo.get_user_preference(
                 user_id=user_id,
                 product_name=product_name,
                 preference_class=preference_class,
@@ -64,8 +65,8 @@ async def get_frontend_user_preference(
     product_name: ProductName,
     preference_class: type[FrontendUserPreference],
 ) -> AnyUserPreference | None:
-    return await _repository.get_user_preference(
-        app,
+    repo = UserPreferencesRepository.create_from_app(app)
+    return await repo.get_user_preference(
         user_id=user_id,
         product_name=product_name,
         preference_class=preference_class,
@@ -127,8 +128,8 @@ async def set_frontend_user_preference(
         FrontendUserPreference.get_preference_class_from_name(preference_name),
     )
 
-    await _repository.set_user_preference(
-        app,
+    repo = UserPreferencesRepository.create_from_app(app)
+    await repo.set_user_preference(
         user_id=user_id,
         preference=TypeAdapter(preference_class).validate_python({"value": value}),  # type: ignore[arg-type] # GitHK this is suspicious
         product_name=product_name,
