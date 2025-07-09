@@ -118,6 +118,8 @@ WORKDIR /build
 FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
 # 2nd party packages
 WORKDIR /build/services/storage
@@ -144,8 +146,6 @@ ENV SC_BUILD_TARGET=production \
   SC_HEALTHCHECK_RETRY=3
 
 ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
 

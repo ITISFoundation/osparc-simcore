@@ -113,6 +113,8 @@ WORKDIR /build
 FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /build/services/agent
 
@@ -138,8 +140,6 @@ ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
 
