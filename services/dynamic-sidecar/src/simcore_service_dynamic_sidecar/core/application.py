@@ -40,7 +40,6 @@ from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
 
-_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 _NOISY_LOGGERS = (
     "aio_pika",
     "aiormq",
@@ -116,24 +115,16 @@ class AppState:
 
 
 def setup_logger(settings: ApplicationSettings):
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
-    logging.basicConfig(level=settings.log_level)
-    logging.root.setLevel(settings.log_level)
     setup_loggers(
         log_format_local_dev_enabled=settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DY_SIDECAR_LOG_FILTER_MAPPING,
         tracing_settings=settings.DYNAMIC_SIDECAR_TRACING,
+        log_base_level=settings.log_level,
+        noisy_loggers=_NOISY_LOGGERS,
     )
 
 
 def create_base_app() -> FastAPI:
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-    for name in _NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
-
     # settings
     settings = ApplicationSettings.create_from_envs()
     setup_logger(settings)
