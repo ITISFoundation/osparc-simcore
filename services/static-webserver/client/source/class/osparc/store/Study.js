@@ -75,6 +75,41 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "patch", params);
     },
 
+    patchStudyData: function(studyData, fieldKey, value) {
+      if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
+        console.error(fieldKey, "has it's own PATCH path");
+        return null;
+      }
+
+      const patchData = {};
+      patchData[fieldKey] = value;
+      return this.patchStudy(studyData["uuid"], patchData)
+        .then(() => {
+          studyData[fieldKey] = value;
+          // A bit hacky, but it's not sent back to the backend
+          studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    },
+
+    patchTemplateType: function(templateId, templateType) {
+      const patchData = {
+        "templateType": templateType,
+      };
+      return this.patchStudy(templateId, patchData)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    updateMetadata: function(studyId, metadata) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: metadata
+      };
+      osparc.data.Resources.fetch("studies", "updateMetadata", params)
+        .catch(err => console.error(err));
+    },
+
     trashStudy: function(studyId) {
       const params = {
         url: {
@@ -116,30 +151,6 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "moveToFolder", params);
-    },
-
-    patchStudyData: function(studyData, fieldKey, value) {
-      if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
-        console.error(fieldKey, "has it's own PATCH path");
-        return null;
-      }
-
-      const patchData = {};
-      patchData[fieldKey] = value;
-      return this.patchStudy(studyData["uuid"], patchData)
-        .then(() => {
-          studyData[fieldKey] = value;
-          // A bit hacky, but it's not sent back to the backend
-          studyData["lastChangeDate"] = new Date().toISOString();
-        });
-    },
-
-    patchTemplateType: function(templateId, templateType) {
-      const patchData = {
-        "templateType": templateType,
-      };
-      return this.patchStudy(templateId, patchData)
-        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     patchNodeData: function(studyData, nodeId, patchData) {

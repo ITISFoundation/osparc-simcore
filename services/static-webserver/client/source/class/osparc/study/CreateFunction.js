@@ -330,19 +330,12 @@ qx.Class.define("osparc.study.CreateFunction", {
     },
 
     __updateTemplateMetadata: function(templateData) {
-      const patchData = {
+      const metadata = {
         "custom" : {
           "hidden": "Base template for function",
         }
       };
-      const params = {
-        url: {
-          "studyId": templateData["uuid"],
-        },
-        data: patchData
-      };
-      osparc.data.Resources.fetch("studies", "updateMetadata", params)
-        .catch(err => console.error(err));
+      osparc.store.Study.updateMetadata(templateData["uuid"], metadata);
     },
 
     __registerFunction: function(templateData, defaultInputs, exposedInputs, exposedOutputs) {
