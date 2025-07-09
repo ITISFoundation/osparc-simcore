@@ -1,12 +1,14 @@
 import pytest
 from faker import Faker
-from models_library.rpc.notifications.account import AccountRequestedEvent
-from models_library.rpc.notifications.schemas import Notification
+from models_library.rpc.notifications import Notification
+from models_library.rpc.notifications.channels import EmailAddress, EmailChannel
+from models_library.rpc.notifications.events._account_events import (
+    AccountRequestedEvent,
+)
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications.messages import (
     send_notification,
 )
-from simcore_service_notifications.clients.celery import EmailChannel
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -33,7 +35,12 @@ async def test_account_requested(
                 last_name=faker.last_name(),
                 email=email,
             ),
-            channel=EmailChannel(to=email),
+            channel=EmailChannel(
+                from_addr=EmailAddress(addr_spec=""),
+                to_addr=EmailAddress(
+                    addr_spec=email,
+                ),
+            ),
         ),
     )
 

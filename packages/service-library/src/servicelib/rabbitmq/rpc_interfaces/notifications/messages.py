@@ -2,7 +2,7 @@ from typing import Final
 
 from models_library.api_schemas_notifications import NOTIFICATIONS_RPC_NAMESPACE
 from models_library.rabbitmq_basic_types import RPCMethodName
-from models_library.rpc.notifications.schemas import Notification
+from models_library.rpc.notifications import Notification
 from pydantic import NonNegativeInt, TypeAdapter
 
 from ... import RabbitMQRPCClient

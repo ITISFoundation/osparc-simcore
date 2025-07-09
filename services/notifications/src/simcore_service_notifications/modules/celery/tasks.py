@@ -4,11 +4,8 @@ from enum import StrEnum
 from celery import Celery  # type: ignore[import-untyped]
 from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
-from models_library.rpc.notifications.account import AccountRequestedEvent
-from models_library.rpc.notifications.schemas import (
-    EmailChannel,
-    SMSChannel,
-)
+from models_library.rpc.notifications.channels import EmailChannel, SMSChannel
+from models_library.rpc.notifications.events import AccountRequestedEvent
 from servicelib.logging_utils import log_context
 
 from ...modules.celery._email_tasks import EMAIL_CHANNEL_NAME, send_email_notification

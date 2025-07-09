@@ -1,4 +1,4 @@
-from models_library.rpc.notifications.schemas import Notification
+from models_library.rpc.notifications import Notification
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
