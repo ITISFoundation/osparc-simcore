@@ -20,8 +20,7 @@ qx.Class.define("osparc.NewUITracker", {
   type: "singleton",
 
   statics: {
-    CHECK_INTERVAL: 0.5*60*1000 // Check every 30"
-    // CHECK_INTERVAL: 60*60*1000 // Check every 60'
+    CHECK_INTERVAL: 60*60*1000 // Check every 60'
   },
 
   members: {
