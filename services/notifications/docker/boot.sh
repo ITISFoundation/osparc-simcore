@@ -63,7 +63,8 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  exec uvicorn simcore_service_notifications.main:the_app \
+  exec uvicorn \
+    --factory simcore_service_notifications.main:create_app \
     --host 0.0.0.0 \
     --port 8000 \
     --log-level "${SERVER_LOG_LEVEL}" \
