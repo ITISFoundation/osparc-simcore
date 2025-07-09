@@ -1,9 +1,28 @@
+import re
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
 from ..osparc_config import OSPARC_CONFIG_DIRNAME
+
+
+def escape_dollar_brace(text: str) -> str:
+    """
+    Replaces all '$${' sequences with '$$$${' unless they are part of an
+    existing '$$$${' sequence.
+
+    Args:
+      text: The input string.
+
+    Returns:
+      The modified string. This function will NOT return None.
+    """
+    # The pattern finds '$${' that is not preceded by another '$'.
+    pattern = r"(?<!\$)\$\${"
+    replacement = "$$$${"
+
+    return re.sub(pattern, replacement, text)
 
 
 def legacy_escape(
@@ -18,7 +37,7 @@ def legacy_escape(
     """Escapes the `$${` with `$$$${` in all .y*ml files in the osparc config directory."""
     for file in osparc_config_dirname.glob("*.y*ml"):
         read_text = file.read_text()
-        replaced_text = read_text.replace("$${", "$$$${")
+        replaced_text = escape_dollar_brace(read_text)
         if read_text != replaced_text:
             print(f"Escaped sequnce in {file}")
         file.write_text(replaced_text)
