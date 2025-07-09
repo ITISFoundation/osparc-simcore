@@ -281,51 +281,55 @@ async def setup_async_loggers_lifespan(
     # Create queue handler for loggers
     queue_handler = logging.handlers.QueueHandler(log_queue)
 
-    # Use root-only approach for better performance and simplicity
+    # Comprehensive approach: ensure ALL logs go through async queue
     root_logger = logging.getLogger()
-    original_root_handlers = root_logger.handlers.copy()
-
-    # Check for edge cases and warn if found
     all_loggers = _get_all_loggers()
-    edge_case_loggers = []
 
+    # Store original state for restoration
+    original_logger_state = [
+        {
+            "logger": logger,
+            "handlers": logger.handlers.copy(),
+            "propagate": logger.propagate,
+        }
+        for logger in all_loggers
+    ]
+
+    # Remove all handlers from all loggers and ensure propagation
+    loggers_modified = []
     for logger in all_loggers:
         if logger is root_logger:
             continue
 
-        # Check for loggers that might bypass root logging
-        has_handlers = bool(logger.handlers)
-        propagate_disabled = not logger.propagate
+        # Track what we're modifying for logging purposes
+        had_handlers = bool(logger.handlers)
+        had_propagate_disabled = not logger.propagate
 
-        # Filter out harmless cases: NullHandler with propagate=True is fine
-        has_meaningful_handlers = (
-            any(not isinstance(h, logging.NullHandler) for h in logger.handlers)
-            if logger.handlers
-            else False
-        )
-
-        if has_meaningful_handlers or propagate_disabled:
-            edge_case_loggers.append(
+        if had_handlers or had_propagate_disabled:
+            loggers_modified.append(
                 {
                     "name": logger.name,
-                    "has_handlers": has_handlers,
-                    "propagate": logger.propagate,
+                    "had_handlers": had_handlers,
+                    "had_propagate_disabled": had_propagate_disabled,
                     "handlers": [type(h).__name__ for h in logger.handlers],
                 }
             )
 
-    if edge_case_loggers:
-        _logger.warning(
-            "Found %d loggers that may bypass async logging: %s. "
-            "Consider reviewing logger configuration.",
-            len(edge_case_loggers),
+        # Clear handlers and ensure propagation
+        logger.handlers.clear()
+        logger.propagate = True
+
+    if loggers_modified:
+        _logger.info(
+            "Modified %d loggers for async logging: %s",
+            len(loggers_modified),
             [
-                f"{logger_info['name']}(handlers={logger_info['handlers']}, propagate={logger_info['propagate']})"
-                for logger_info in edge_case_loggers[:3]
+                f"{info['name']}(removed_handlers={info['handlers']}, enabled_propagate={info['had_propagate_disabled']})"
+                for info in loggers_modified[:3]
             ],  # Show first 3 to avoid spam
         )
 
-    # Replace only root logger handlers
+    # Set up root logger with queue handler only
     root_logger.handlers.clear()
     root_logger.addHandler(queue_handler)
 
@@ -338,10 +342,13 @@ async def setup_async_loggers_lifespan(
         yield
 
     finally:
-        # Cleanup: Restore original root logger handlers
+        # Cleanup: Restore all loggers to their original state
         try:
-            root_logger.handlers.clear()
-            root_logger.handlers.extend(original_root_handlers)
+            for state in original_logger_state:
+                logger = state["logger"]
+                logger.handlers.clear()
+                logger.handlers.extend(state["handlers"])
+                logger.propagate = state["propagate"]
 
             # Stop the queue listener
             with log_context(
