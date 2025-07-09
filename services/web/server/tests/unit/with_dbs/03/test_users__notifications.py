@@ -26,7 +26,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.redis import get_redis_user_notifications_client
-from simcore_service_webserver.user_notifications._controller.user_notification_rest import (
+from simcore_service_webserver.user_notifications._controller.rest.user_notification_rest import (
     _get_user_notifications,
 )
 from simcore_service_webserver.user_notifications._models import (

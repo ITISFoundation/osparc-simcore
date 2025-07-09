@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ensure_single_setup
 
-from ._controller import user_notification_rest
+from ._controller.rest import user_notification_rest
 
 _logger = logging.getLogger(__name__)
 

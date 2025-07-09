@@ -22,7 +22,7 @@ from models_library.api_schemas_webserver.users_preferences import PatchRequestB
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.user_notifications._controller.user_notification_rest import (
+from simcore_service_webserver.user_notifications._controller.rest.user_notification_rest import (
     _NotificationPathParams,
 )
 from simcore_service_webserver.user_notifications._models import (
