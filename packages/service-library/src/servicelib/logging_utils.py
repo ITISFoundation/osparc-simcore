@@ -171,20 +171,6 @@ def _setup_format_string(
     return _DEFAULT_FORMATTING
 
 
-def _set_logging_handler(
-    logger: logging.Logger,
-    *,
-    fmt: str,
-    log_format_local_dev_enabled: bool,
-) -> None:
-    for handler in logger.handlers:
-        handler.setFormatter(
-            CustomFormatter(
-                fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
-            )
-        )
-
-
 def _get_all_loggers() -> list[logging.Logger]:
     manager = logging.Logger.manager
     root_logger = logging.getLogger()
@@ -215,7 +201,12 @@ def setup_loggers(
     tracing_settings: TracingSettings | None,
 ) -> None:
     """
-    Applies common configuration to ALL registered loggers.
+    Applies comprehensive configuration to ALL registered loggers.
+
+    This function uses a comprehensive approach:
+    - Removes all handlers from all loggers
+    - Ensures all loggers propagate to root
+    - Sets up root logger with properly formatted handler
 
     Args:
         log_format_local_dev_enabled: Enable local development formatting
@@ -227,13 +218,17 @@ def setup_loggers(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
+    # Create a properly formatted handler for the root logger
+    root_handler = logging.StreamHandler()
+    root_handler.setFormatter(
+        CustomFormatter(fmt, log_format_local_dev_enabled=log_format_local_dev_enabled)
+    )
+
     all_loggers = _get_all_loggers()
-    for logger in all_loggers:
-        _set_logging_handler(
-            logger,
-            fmt=fmt,
-            log_format_local_dev_enabled=log_format_local_dev_enabled,
-        )
+
+    # Apply comprehensive logging setup
+    # Note: We don't store the original state here since this is a permanent setup
+    _apply_comprehensive_logging_setup(all_loggers, root_handler)
 
     # Apply filters
     _apply_logger_filters(logger_filter_mapping)
@@ -281,57 +276,11 @@ async def setup_async_loggers_lifespan(
     # Create queue handler for loggers
     queue_handler = logging.handlers.QueueHandler(log_queue)
 
-    # Comprehensive approach: ensure ALL logs go through async queue
-    root_logger = logging.getLogger()
+    # Apply comprehensive logging setup and store original state for restoration
     all_loggers = _get_all_loggers()
-
-    # Store original state for restoration
-    original_logger_state = [
-        {
-            "logger": logger,
-            "handlers": logger.handlers.copy(),
-            "propagate": logger.propagate,
-        }
-        for logger in all_loggers
-    ]
-
-    # Remove all handlers from all loggers and ensure propagation
-    loggers_modified = []
-    for logger in all_loggers:
-        if logger is root_logger:
-            continue
-
-        # Track what we're modifying for logging purposes
-        had_handlers = bool(logger.handlers)
-        had_propagate_disabled = not logger.propagate
-
-        if had_handlers or had_propagate_disabled:
-            loggers_modified.append(
-                {
-                    "name": logger.name,
-                    "had_handlers": had_handlers,
-                    "had_propagate_disabled": had_propagate_disabled,
-                    "handlers": [type(h).__name__ for h in logger.handlers],
-                }
-            )
-
-        # Clear handlers and ensure propagation
-        logger.handlers.clear()
-        logger.propagate = True
-
-    if loggers_modified:
-        _logger.info(
-            "Modified %d loggers for async logging: %s",
-            len(loggers_modified),
-            [
-                f"{info['name']}(removed_handlers={info['handlers']}, enabled_propagate={info['had_propagate_disabled']})"
-                for info in loggers_modified[:3]
-            ],  # Show first 3 to avoid spam
-        )
-
-    # Set up root logger with queue handler only
-    root_logger.handlers.clear()
-    root_logger.addHandler(queue_handler)
+    original_logger_state = _apply_comprehensive_logging_setup(
+        all_loggers, queue_handler
+    )
 
     try:
         # Apply filters if provided
@@ -344,11 +293,7 @@ async def setup_async_loggers_lifespan(
     finally:
         # Cleanup: Restore all loggers to their original state
         try:
-            for state in original_logger_state:
-                logger = state["logger"]
-                logger.handlers.clear()
-                logger.handlers.extend(state["handlers"])
-                logger.propagate = state["propagate"]
+            _restore_logger_state(original_logger_state)
 
             # Stop the queue listener
             with log_context(
@@ -606,3 +551,80 @@ def set_parent_module_log_level(
 ) -> None:
     parent_module = ".".join(current_module.split(".")[:-1])
     logging.getLogger(parent_module).setLevel(desired_log_level)
+
+
+def _store_logger_state(loggers: list[logging.Logger]) -> list[dict[str, Any]]:
+    """Store the original state of loggers for later restoration."""
+    return [
+        {
+            "logger": logger,
+            "handlers": logger.handlers.copy(),
+            "propagate": logger.propagate,
+        }
+        for logger in loggers
+    ]
+
+
+def _restore_logger_state(original_state: list[dict[str, Any]]) -> None:
+    """Restore loggers to their original state."""
+    for state in original_state:
+        logger = state["logger"]
+        logger.handlers.clear()
+        logger.handlers.extend(state["handlers"])
+        logger.propagate = state["propagate"]
+
+
+def _apply_comprehensive_logging_setup(
+    all_loggers: list[logging.Logger],
+    root_handler: logging.Handler,
+) -> list[dict[str, Any]]:
+    """
+    Apply comprehensive logging setup: clear all handlers, ensure propagation,
+    and set up root logger with the provided handler.
+
+    Returns the original logger state for restoration.
+    """
+    root_logger = logging.getLogger()
+
+    # Store original state for restoration
+    original_logger_state = _store_logger_state(all_loggers)
+
+    # Remove all handlers from all loggers and ensure propagation
+    loggers_modified = []
+    for logger in all_loggers:
+        if logger is root_logger:
+            continue
+
+        # Track what we're modifying for logging purposes
+        had_handlers = bool(logger.handlers)
+        had_propagate_disabled = not logger.propagate
+
+        if had_handlers or had_propagate_disabled:
+            loggers_modified.append(
+                {
+                    "name": logger.name,
+                    "had_handlers": had_handlers,
+                    "had_propagate_disabled": had_propagate_disabled,
+                    "handlers": [type(h).__name__ for h in logger.handlers],
+                }
+            )
+
+        # Clear handlers and ensure propagation
+        logger.handlers.clear()
+        logger.propagate = True
+
+    if loggers_modified:
+        _logger.info(
+            "Modified %d loggers for comprehensive logging: %s",
+            len(loggers_modified),
+            [
+                f"{info['name']}(removed_handlers={info['handlers']}, enabled_propagate={info['had_propagate_disabled']})"
+                for info in loggers_modified[:3]
+            ],  # Show first 3 to avoid spam
+        )
+
+    # Set up root logger with the provided handler only
+    root_logger.handlers.clear()
+    root_logger.addHandler(root_handler)
+
+    return original_logger_state
