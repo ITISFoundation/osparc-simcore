@@ -1019,7 +1019,7 @@ async def test_list_group_by_collection_run_id_with_project_filter(
     total_count, items = await repo.list_group_by_collection_run_id(
         product_name=run_metadata.get("product_name"),
         user_id=published_project_1.user["id"],
-        project_ids=[
+        project_ids_or_none=[
             published_project_1.project.uuid,
             published_project_2.project.uuid,
         ],
