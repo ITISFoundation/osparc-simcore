@@ -14,7 +14,7 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from pytest_simcore.helpers.faker_factories import random_pre_registration_details
-from simcore_service_webserver.users._controller._rest_schemas import (
+from simcore_service_webserver.users._controller.rest._rest_schemas import (
     MAX_BYTES_SIZE_EXTRAS,
     PreRegisteredUserGet,
 )
