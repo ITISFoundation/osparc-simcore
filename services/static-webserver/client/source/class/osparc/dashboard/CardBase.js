@@ -1064,7 +1064,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     openData: function() {
       const resourceData = this.getResourceData();
-      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData);
     },
 
     openBilling: function() {
