@@ -1,4 +1,5 @@
 import logging
+from typing import Final
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
@@ -94,8 +95,7 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
-_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS = (
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "aio_pika",
     "aiormq",
     "httpcore",
@@ -108,22 +108,14 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
         settings = AppSettings.create_from_envs()
     assert settings  # nosec
 
-    logging.basicConfig(level=settings.LOG_LEVEL.value)
-    logging.root.setLevel(settings.LOG_LEVEL.value)
     setup_loggers(
         log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
         tracing_settings=settings.DIRECTOR_V2_TRACING,
+        log_base_level=settings.log_level,
+        noisy_loggers=_NOISY_LOGGERS,
     )
     _logger.debug(settings.model_dump_json(indent=2))
-
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-
-    for name in _NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
 
     assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
