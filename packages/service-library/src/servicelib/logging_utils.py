@@ -194,11 +194,31 @@ def _apply_logger_filters(
         logger.addFilter(log_filter)
 
 
+def _setup_base_logging_level(log_level: LogLevelInt) -> None:
+    logging.basicConfig(level=log_level)
+    logging.root.setLevel(log_level)
+
+
+def _dampen_noisy_loggers(
+    noisy_loggers: tuple[str, ...],
+) -> None:
+    """Sets a less verbose level for noisy loggers."""
+    quiet_level: int = max(
+        min(logging.root.level + logging.CRITICAL - logging.ERROR, logging.CRITICAL),
+        logging.WARNING,
+    )
+
+    for name in noisy_loggers:
+        logging.getLogger(name).setLevel(quiet_level)
+
+
 def setup_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...],
 ) -> None:
     """
     Applies comprehensive configuration to ALL registered loggers.
@@ -213,6 +233,8 @@ def setup_loggers(
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
     """
+    _setup_base_logging_level(log_base_level)
+    _dampen_noisy_loggers(noisy_loggers)
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
@@ -240,6 +262,8 @@ async def setup_async_loggers_lifespan(
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...],
 ) -> AsyncIterator[None]:
     """
     Async context manager for non-blocking logging infrastructure.
@@ -254,6 +278,9 @@ async def setup_async_loggers_lifespan(
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
     """
+    _setup_base_logging_level(log_base_level)
+    _dampen_noisy_loggers(noisy_loggers)
+
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
