@@ -1,6 +1,5 @@
 """Main application to be deployed in for example uvicorn."""
 
-import logging
 from functools import partial
 
 from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
@@ -18,12 +17,12 @@ from ...core.settings import ApplicationSettings
 
 _settings = ApplicationSettings.create_from_envs()
 
-logging.basicConfig(level=_settings.log_level)  # NOSONAR
-logging.root.setLevel(_settings.log_level)
 setup_loggers(
     log_format_local_dev_enabled=_settings.STORAGE_LOG_FORMAT_LOCAL_DEV_ENABLED,
     logger_filter_mapping=_settings.STORAGE_LOG_FILTER_MAPPING,
     tracing_settings=_settings.STORAGE_TRACING,
+    log_base_level=_settings.log_level,
+    noisy_loggers=None,
 )
 
 
