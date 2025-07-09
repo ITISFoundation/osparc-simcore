@@ -11,9 +11,9 @@ from aiohttp import web
 from models_library.users import UserID
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import get_log_record_extra, log_context
-from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ..login import login_service
+from ..redis import get_redis_lock_manager_client_sdk
 from ..security import security_service
 from ..users import users_service
 from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
