@@ -321,6 +321,7 @@ async def list_computation_collection_runs(
     user_id: UserID,
     # filters
     filter_by_root_project_id: ProjectID | None = None,
+    filter_only_running: bool = False,
     # pagination
     offset: int,
     limit: NonNegativeInt,
@@ -345,6 +346,7 @@ async def list_computation_collection_runs(
         product_name=product_name,
         user_id=user_id,
         project_ids=child_projects_with_root,
+        filter_only_running=filter_only_running,
         offset=offset,
         limit=limit,
     )
