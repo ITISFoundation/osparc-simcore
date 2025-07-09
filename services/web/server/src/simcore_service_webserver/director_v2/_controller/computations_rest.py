@@ -212,15 +212,13 @@ async def list_computation_collection_runs(request: web.Request) -> web.Response
         )
     )
 
-    if query_params.filter_only_running is True:
-        raise NotImplementedError
-
     total, items = await _computations_service.list_computation_collection_runs(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         # filters
         filter_by_root_project_id=query_params.filter_by_root_project_id,
+        filter_only_running=query_params.filter_only_running,
         # pagination
         offset=query_params.offset,
         limit=query_params.limit,

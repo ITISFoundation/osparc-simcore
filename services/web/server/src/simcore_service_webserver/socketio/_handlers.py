@@ -4,6 +4,7 @@ SEE https://pypi.python.org/pypi/python-socketio
 SEE http://python-socketio.readthedocs.io/en/latest/
 """
 
+import contextlib
 import logging
 from typing import Any
 
@@ -14,6 +15,7 @@ from models_library.products import ProductName
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from servicelib.aiohttp.observer import emit
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.request_keys import RQT_USERID_KEY
 
@@ -162,37 +164,64 @@ async def connect(
 @register_socketio_handler
 async def disconnect(socket_id: SocketID, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected."""
-    sio = get_socket_server(app)
-    async with sio.session(socket_id) as socketio_session:
-        if user_id := socketio_session.get("user_id"):
+    async with contextlib.AsyncExitStack() as stack:
+
+        # retrieve the socket session
+        try:
+            socketio_session = await stack.enter_async_context(
+                get_socket_server(app).session(socket_id)
+            )
+
+        except KeyError as err:
+            _logger.warning(
+                **create_troubleshootting_log_kwargs(
+                    f"Socket session {socket_id} not found during disconnect, already cleaned up",
+                    error=err,
+                    error_context={"socket_id": socket_id},
+                )
+            )
+            return
+
+        # session is wel formed, we can access its data
+        try:
+
+            user_id = socketio_session["user_id"]
             client_session_id = socketio_session["client_session_id"]
             product_name = socketio_session["product_name"]
 
-            with log_context(
-                _logger,
-                logging.INFO,
-                "disconnection of %s with %s",
-                f"{user_id=}",
-                f"{client_session_id=}",
-            ):
-                with managed_resource(user_id, client_session_id, app) as user_session:
-                    await user_session.remove_socket_id()
-                # signal same user other clients if available
-                await emit(
-                    app,
-                    "SIGNAL_USER_DISCONNECTED",
-                    user_id,
-                    client_session_id,
-                    app,
-                    product_name,
+        except KeyError as err:
+            _logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    f"Socket session {socket_id} does not have user_id or client_session_id during disconnect",
+                    error=err,
+                    error_context={
+                        "socket_id": socket_id,
+                        "socketio_session": socketio_session,
+                    },
+                    tip="Check if session is corrupted",
                 )
+            )
+            return
 
-        else:
-            # this should not happen!!
-            _logger.error(
-                "Unknown client diconnected sid: %s, session %s",
-                socket_id,
-                f"{socketio_session}",
+        # Disconnecting
+        with log_context(
+            _logger,
+            logging.INFO,
+            "disconnection of %s with %s",
+            f"{user_id=}",
+            f"{client_session_id=}",
+        ):
+            with managed_resource(user_id, client_session_id, app) as user_session:
+                await user_session.remove_socket_id()
+
+            # signal same user other clients if available
+            await emit(
+                app,
+                "SIGNAL_USER_DISCONNECTED",
+                user_id,
+                client_session_id,
+                app,
+                product_name,
             )
 
 
