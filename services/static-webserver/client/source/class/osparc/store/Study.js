@@ -22,6 +22,45 @@ qx.Class.define("osparc.store.Study", {
     __nodeResources: null,
     __nodePricingUnit: null,
 
+    getPage: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPage", params, options)
+    },
+
+    getPageTrashed: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPageTrashed", params, options)
+    },
+
+    getPageSearch: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+    },
+
+    getActive: function(clientSessionID) {
+      const params = {
+        url: {
+          tabId: clientSessionID,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getActive", params)
+    },
+
+    getOne: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getOne", params)
+    },
+
+    deleteStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "delete", params)
+    },
+
     patchStudyData: function(studyData, fieldKey, value) {
       if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
         console.error(fieldKey, "has it's own PATCH path");

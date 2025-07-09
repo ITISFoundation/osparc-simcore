@@ -754,12 +754,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
               };
               const cancelCB = () => {
                 this._hideLoadingPage();
-                const params = {
-                  url: {
-                    studyId
-                  }
-                };
-                osparc.data.Resources.fetch("studies", "delete", params);
+                osparc.store.Study.deleteStudy(studyId);
               };
 
               const promises = [];
@@ -811,12 +806,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             const openCB = () => this._hideLoadingPage();
             const cancelCB = () => {
               this._hideLoadingPage();
-              const params = {
-                url: {
-                  studyId
-                }
-              };
-              osparc.data.Resources.fetch("studies", "delete", params);
+              osparc.store.Study.deleteStudy(studyId);
             };
             const isStudyCreation = true;
             this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -841,12 +831,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           const openCB = () => this._hideLoadingPage();
           const cancelCB = () => {
             this._hideLoadingPage();
-            const params = {
-              url: {
-                studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "delete", params);
+            osparc.store.Study.deleteStudy(studyId);
           };
           const isStudyCreation = true;
           this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);

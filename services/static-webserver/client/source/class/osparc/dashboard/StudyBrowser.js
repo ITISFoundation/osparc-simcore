@@ -144,12 +144,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getActiveStudy: function() {
-      const params = {
-        url: {
-          tabId: osparc.utils.Utils.getClientSessionID()
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "getActive", params)
+      return osparc.store.Study.getActive(osparc.utils.Utils.getClientSessionID())
         .then(studyData => {
           if (studyData) {
             osparc.store.Store.getInstance().setCurrentStudyId(studyData["uuid"]);
@@ -406,12 +401,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const delay = 2000;
           const studyId = study["uuid"];
           setTimeout(() => {
-            const params = {
-              url: {
-                studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getOne", params)
+            osparc.store.Study.getOne(studyId)
               .then(studyData => {
                 this.__studyStateReceived(study["uuid"], studyData["state"]);
               });
@@ -911,7 +901,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let request = null;
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
-          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
+          request = osparc.store.Study.getPage(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
@@ -919,10 +909,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
-          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+          request = osparc.store.Study.getPageTrashed(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+          request = osparc.store.Study.getPageSearch(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
@@ -1600,12 +1590,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const openCB = () => this._hideLoadingPage();
       const cancelCB = () => {
         this._hideLoadingPage();
-        const params = {
-          url: {
-            studyId
-          }
-        };
-        osparc.data.Resources.fetch("studies", "delete", params);
+        osparc.store.Study.deleteStudy(studyId);
       };
       const isStudyCreation = true;
       this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
