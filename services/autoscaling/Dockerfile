@@ -34,6 +34,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
+  fd-find \
   gosu \
   ca-certificates \
   curl \
@@ -45,6 +46,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  fd-find \
   # only the cli is needed and we remove the unnecessary stuff again
   docker-ce-cli=${DOCKER_APT_VERSION} \
   && apt-get remove -y\
@@ -97,6 +99,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  fd-find \
   build-essential
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv

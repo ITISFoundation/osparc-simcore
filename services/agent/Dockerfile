@@ -33,6 +33,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+  fd-find \
   gosu \
   curl \
   && apt-get clean -y \
@@ -85,6 +86,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  fd-find \
   build-essential
 
 # install UV https://docs.astral.sh/uv/guides/integration/docker/#installing-uv

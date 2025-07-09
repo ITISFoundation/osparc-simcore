@@ -31,6 +31,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+  fd-find \
   gosu \
   && apt-get clean -y \
   # verify that the binary works

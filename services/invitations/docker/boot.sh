@@ -48,7 +48,7 @@ SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+  reload_dir_packages=$(fdfind --type directory --max-depth 3 --glob '*/src/*' --exclude '*.*' /devel/packages --exec echo '--reload-dir {} \')
 
   exec sh -c "
     cd services/invitations/src/simcore_service_invitations && \

@@ -32,6 +32,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+  fd-find \
   curl \
   gosu \
   libmagic1 \
@@ -98,6 +99,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  fd-find \
   build-essential \
   libffi-dev
 

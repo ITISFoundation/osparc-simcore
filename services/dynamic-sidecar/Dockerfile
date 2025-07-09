@@ -48,6 +48,7 @@ RUN \
   && apt-get install -y --no-install-recommends \
   docker-ce-cli=${DOCKER_APT_VERSION} \
   docker-compose-plugin=${DOCKER_COMPOSE_APT_VERSION} \
+  fd-find \
   gosu \
   ca-certificates \
   # required by python-magic

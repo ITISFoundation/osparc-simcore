@@ -63,13 +63,11 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
     usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$EFS_USER_NAME"
 
     echo "$INFO" "Changing group properties of files around from $EFS_USER_ID to group $CONT_GROUPNAME"
-    find / -path /proc -prune -o -group "$EFS_USER_ID" -exec chgrp --no-dereference "$CONT_GROUPNAME" {} \;
-    # change user property of files already around
+    fdfind --owner ":$EFS_USER_ID" --exclude proc --exec-batch chgrp --no-dereference "$CONT_GROUPNAME"
     echo "$INFO" "Changing ownership properties of files around from $EFS_USER_ID to group $CONT_GROUPNAME"
-    find / -path /proc -prune -o -user "$EFS_USER_ID" -exec chown --no-dereference "$EFS_USER_NAME" {} \;
+    fdfind --owner "$EFS_USER_ID:" --exclude proc --exec-batch chown --no-dereference "$EFS_USER_NAME"
   fi
 fi
-
 
 # Appends docker group if socket is mounted
 DOCKER_MOUNT=/var/run/docker.sock
