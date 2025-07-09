@@ -503,25 +503,6 @@ qx.Class.define("osparc.store.Store", {
       return Boolean(this.getStudyDebt(studyId));
     },
 
-    deleteStudy: function(studyId) {
-      const params = {
-        url: {
-          studyId
-        }
-      };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "delete", params)
-          .then(() => {
-            this.remove("studies", "uuid", studyId);
-            resolve();
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
-    },
-
     reloadCreditPrice: function() {
       const store = osparc.store.Store.getInstance();
       store.setCreditPrice(null);

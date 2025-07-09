@@ -674,7 +674,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         operationPromise = osparc.store.Study.patchStudyData(templateData, "accessRights", arCopy);
       } else {
         // delete study
-        operationPromise = osparc.store.Store.getInstance().deleteStudy(templateData.uuid);
+        operationPromise = osparc.store.Study.deleteStudy(templateData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromTemplateList(templateData.uuid))

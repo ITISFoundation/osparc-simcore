@@ -2165,7 +2165,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         operationPromise = this.__removeMeFromCollaborators(studyData);
       } else {
         // delete study
-        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
+        operationPromise = osparc.store.Study.deleteStudy(studyData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromStudyList(studyData.uuid))
