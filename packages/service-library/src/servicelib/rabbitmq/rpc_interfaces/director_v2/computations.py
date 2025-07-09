@@ -126,6 +126,7 @@ async def list_computation_collection_runs_page(
     product_name: ProductName,
     user_id: UserID,
     project_ids: list[ProjectID] | None,
+    filter_only_running: bool = False,
     # pagination
     offset: int = 0,
     limit: int = 20,
@@ -138,6 +139,7 @@ async def list_computation_collection_runs_page(
         product_name=product_name,
         user_id=user_id,
         project_ids=project_ids,
+        filter_only_running=filter_only_running,
         offset=offset,
         limit=limit,
         timeout_s=_DEFAULT_TIMEOUT_S,
