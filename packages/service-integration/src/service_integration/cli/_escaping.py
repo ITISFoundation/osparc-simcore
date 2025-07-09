@@ -28,6 +28,10 @@ def legacy_escape(
     existing '$$$${' sequence.
     """
 
+    # NOTE: since https://github.com/docker/compose/releases/tag/v2.35.0
+    # docker-compose was fixed/changed to escape `${}`
+    # SEE https://github.com/docker/compose/pull/12664
+
     if not osparc_config_dirname.exists():
         msg = "Invalid path to metadata file or folder"
         raise typer.BadParameter(msg)
