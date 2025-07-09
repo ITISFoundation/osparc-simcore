@@ -67,7 +67,6 @@ class UserNotification(BaseUserNotification):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-
         schema.update(
             {
                 "examples": [  # NOSONAR
