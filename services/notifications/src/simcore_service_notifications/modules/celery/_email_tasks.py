@@ -3,7 +3,7 @@
 import logging
 from email.headerregistry import Address
 
-from celery import Task
+from celery import Task  # type: ignore[import-untyped]
 from jinja2 import StrictUndefined
 from models_library.rpc.notifications import Notification
 from models_library.rpc.notifications.channels import EmailChannel
