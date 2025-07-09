@@ -25,7 +25,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
 
   # NOTE: uv does not like this requirement file...
   cd /devel/services/dynamic-sidecar
-  uv pip --quiet sync requirements/dev.txt
+  uv pip --quiet sync --link-mode=copy requirements/dev.txt
   cd -
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
@@ -34,7 +34,7 @@ fi
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
   if command -v uv >/dev/null 2>&1; then
-    uv pip install debugpy
+    uv pip install --link-mode=copy debugpy
   else
     pip install debugpy
   fi
