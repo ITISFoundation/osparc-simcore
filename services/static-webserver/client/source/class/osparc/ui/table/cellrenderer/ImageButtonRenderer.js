@@ -18,10 +18,11 @@
 qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
   extend: osparc.ui.table.cellrenderer.ButtonRenderer,
 
-  construct: function(clickAction, iconPath) {
+  construct: function(clickAction, iconPath, shouldShowFn = null) {
     this.base(arguments, clickAction);
 
     this.__imageCache = {};
+    this.__shouldShowFn = shouldShowFn;
 
     this.setIconPath(iconPath);
   },
@@ -37,6 +38,20 @@ qx.Class.define("osparc.ui.table.cellrenderer.ImageButtonRenderer", {
 
   members: {
     __imageCache: null,
+    __shouldShowFn: null,
+
+    // overridden to play with it's visibility
+    createDataCellHtml: function(cellInfo, htmlArr) {
+      const shouldShow = this.__shouldShowFn
+        ?
+        this.__shouldShowFn(cellInfo)
+        :
+        true;
+      if (!shouldShow) {
+        return ""; // Hide button
+      }
+      return this.base(arguments, cellInfo, htmlArr);
+    },
 
     __applyIconPath: function(iconPath) {
       const resMgr = qx.util.ResourceManager.getInstance();
