@@ -82,7 +82,9 @@ def _return_data_or_raise_error(
         """
         body = resp.json()
 
-        assert "data" in body or "error" in body  # nosec
+        assert (
+            "data" in body or "error" in body
+        ), f"here is the failing {body=}, {resp.request=}"  # nosec
         data = body.get("data")
         error = body.get("error")
 
@@ -250,7 +252,6 @@ class DirectorClient:
                     # discrete resources (custom made ones) ---
                     # check if the service requires GPU support
                     if not invalid_with_msg and _validate_kind(entry, "VRAM"):
-
                         result["node_requirements"]["GPU"] = 1
                     if not invalid_with_msg and _validate_kind(entry, "MPI"):
                         result["node_requirements"]["MPI"] = 1
@@ -282,7 +283,6 @@ class DirectorClient:
             for dl, sl in _ORG_LABELS_TO_SCHEMA_LABELS.items()
             if dl in labels
         }:
-
             result.update({"service_build_details": service_build_details})
 
         return TypeAdapter(ServiceExtras).validate_python(result)
