@@ -1,6 +1,6 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Protocol, TypeAlias
+from typing import Annotated, Protocol, Self, TypeAlias
 from uuid import UUID
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
@@ -17,7 +17,7 @@ TaskUUID: TypeAlias = UUID
 class TaskFilter(BaseModel):
 
     @classmethod
-    def from_async_job_filter(cls, async_job_filter: AsyncJobFilter) -> "TaskFilter":
+    def from_async_job_filter(cls, async_job_filter: AsyncJobFilter) -> Self:
         return cls.model_validate(async_job_filter.model_dump())
 
 
