@@ -456,8 +456,6 @@ qx.Class.define("osparc.Application", {
       osparc.data.Resources.getOne("profile")
         .then(profile => {
           if (profile) {
-            osparc.NewUITracker.getInstance().checkNewUI();
-
             this.__connectWebSocket();
 
             if (osparc.auth.Data.getInstance().isGuest()) {
