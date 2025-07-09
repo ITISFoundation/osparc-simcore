@@ -19,7 +19,7 @@ from ....session.access_policies import (
     on_success_grant_session_access_to,
     session_access_required,
 )
-from ....users import preferences_api as user_preferences_api
+from ....users import users_preferences_service
 from ....web_utils import envelope_response, flash_response
 from ... import _auth_service, _login_service, _security_service, _twofa_service
 from ...constants import (
@@ -88,18 +88,18 @@ async def login(request: web.Request):
         return await _security_service.login_granted_response(request, user=user)
 
     # 2FA login process continuation
-    user_2fa_preference = await user_preferences_api.get_frontend_user_preference(
+    user_2fa_preference = await users_preferences_service.get_frontend_user_preference(
         request.app,
         user_id=user["id"],
         product_name=product.name,
-        preference_class=user_preferences_api.TwoFAFrontendUserPreference,
+        preference_class=users_preferences_service.TwoFAFrontendUserPreference,
     )
     if not user_2fa_preference:
         user_2fa_authentification_method = TwoFactorAuthentificationMethod.SMS
         preference_id = (
-            user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
+            users_preferences_service.TwoFAFrontendUserPreference().preference_identifier
         )
-        await user_preferences_api.set_frontend_user_preference(
+        await users_preferences_service.set_frontend_user_preference(
             request.app,
             user_id=user["id"],
             product_name=product.name,

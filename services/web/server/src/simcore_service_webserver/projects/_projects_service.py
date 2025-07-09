@@ -112,12 +112,11 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..storage import api as storage_service
-from ..users import users_service
+from ..users import users_preferences_service, users_service
 from ..users.exceptions import UserNotFoundError
-from ..users.preferences_api import (
+from ..users.users_preferences_service import (
     PreferredWalletIdFrontendUserPreference,
     UserDefaultWalletNotFoundError,
-    get_frontend_user_preference,
 )
 from ..users.users_service import FullNameDict
 from ..wallets import api as wallets_service
@@ -710,11 +709,13 @@ async def _start_dynamic_service(  # noqa: C901
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
-                user_default_wallet_preference = await get_frontend_user_preference(
-                    request.app,
-                    user_id=user_id,
-                    product_name=product_name,
-                    preference_class=PreferredWalletIdFrontendUserPreference,
+                user_default_wallet_preference = (
+                    await users_preferences_service.get_frontend_user_preference(
+                        request.app,
+                        user_id=user_id,
+                        product_name=product_name,
+                        preference_class=PreferredWalletIdFrontendUserPreference,
+                    )
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)

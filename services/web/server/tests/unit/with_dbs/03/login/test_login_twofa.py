@@ -38,7 +38,7 @@ from simcore_service_webserver.login.constants import (
 from simcore_service_webserver.products import products_web
 from simcore_service_webserver.products.errors import UnknownProductError
 from simcore_service_webserver.products.models import Product
-from simcore_service_webserver.users import preferences_api as user_preferences_api
+from simcore_service_webserver.users import users_preferences_service
 from twilio.base.exceptions import TwilioRestException
 
 
@@ -260,9 +260,9 @@ async def test_workflow_register_and_login_with_2fa(
     # login (via EMAIL) ---------------------------------------------------------
     # Change 2fa user preference
     _preference_id = (
-        user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
+        users_preferences_service.TwoFAFrontendUserPreference().preference_identifier
     )
-    await user_preferences_api.set_frontend_user_preference(
+    await users_preferences_service.set_frontend_user_preference(
         client.app,
         user_id=user["id"],
         product_name="osparc",
@@ -291,7 +291,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert "support" in parsed_context["support_email"]
 
     # login (2FA Disabled) ---------------------------------------------------------
-    await user_preferences_api.set_frontend_user_preference(
+    await users_preferences_service.set_frontend_user_preference(
         client.app,
         user_id=user["id"],
         product_name="osparc",
