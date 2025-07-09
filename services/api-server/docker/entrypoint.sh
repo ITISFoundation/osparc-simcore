@@ -57,9 +57,9 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
     usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$SC_USER_NAME"
 
     echo "$INFO" "Changing group properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-    fdfind --owner ":$SC_USER_ID" --exclude proc --exec-batch chgrp --no-dereference "$CONT_GROUPNAME" /
+    fdfind --owner ":$SC_USER_ID" --exclude proc --exec-batch chgrp --no-dereference "$CONT_GROUPNAME" . '/'
     echo "$INFO" "Changing ownership properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-    fdfind --owner "$SC_USER_ID:" --exclude proc --exec-batch chown --no-dereference "$SC_USER_NAME" /
+    fdfind --owner "$SC_USER_ID:" --exclude proc --exec-batch chown --no-dereference "$SC_USER_NAME" . '/'
   fi
 fi
 
