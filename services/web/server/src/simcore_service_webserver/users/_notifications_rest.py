@@ -12,7 +12,6 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 from servicelib.redis import handle_redis_returns_union_types
-from servicelib.tracing import with_profiled_span
 
 from .._meta import API_VTAG
 from ..login.decorators import login_required
@@ -124,7 +123,6 @@ async def mark_notification_as_read(request: web.Request) -> web.Response:
 
 @routes.get(f"/{API_VTAG}/me/permissions", name="list_user_permissions")
 @login_required
-@with_profiled_span
 @permission_required("user.permissions.read")
 async def list_user_permissions(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)

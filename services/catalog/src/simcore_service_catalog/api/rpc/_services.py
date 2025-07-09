@@ -26,7 +26,6 @@ from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
     CatalogForbiddenError,
     CatalogItemNotFoundError,
 )
-from servicelib.tracing import with_profiled_span
 
 from ...models.services_db import ServiceDBFilters
 from ...repository.groups import GroupsRepository
@@ -62,7 +61,6 @@ def _profile_rpc_call(coro):
 
 @router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
 @_profile_rpc_call
-@with_profiled_span
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_services_paginated(
     app: FastAPI,

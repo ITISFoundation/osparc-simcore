@@ -16,7 +16,6 @@ from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
-from servicelib.tracing import with_profiled_span
 from servicelib.utils import limited_gather
 
 from ...core.errors import ComputationalRunNotFoundError
@@ -36,7 +35,6 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=())
-@with_profiled_span
 async def list_computations_latest_iteration_page(
     app: FastAPI,
     *,
