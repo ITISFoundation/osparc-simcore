@@ -4,12 +4,9 @@
 # pylint: disable=too-many-arguments
 
 
-import logging
-
 import pytest
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.studies_dispatcher.settings import (
     StudiesDispatcherSettings,
 )
@@ -49,9 +46,6 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
             "STUDIES_GUEST_ACCOUNT_LIFETIME": "2 1:10:00",  # 2 days 1h and 10 mins
         },
     )
-
-    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
-    setup_logging(level=logging.DEBUG)
 
     plugin_settings = StudiesDispatcherSettings.create_from_envs()
     print(plugin_settings.model_dump_json(indent=1))
