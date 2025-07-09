@@ -44,5 +44,5 @@ def legacy_escape(
         read_text = file.read_text()
         replaced_text = escape_dollar_brace(read_text)
         if read_text != replaced_text:
-            print(f"Escaped sequnce in {file}")
+            print(f"Escaped sequence in {file}")
         file.write_text(replaced_text)
