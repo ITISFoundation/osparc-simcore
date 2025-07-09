@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any
+from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -26,7 +26,7 @@ from ._constants import (
     create_route_description,
 )
 
-_ASYNC_JOB_CLIENT_NAME = "API_SERVER"
+_ASYNC_JOB_CLIENT_NAME: Final[str] = "API_SERVER"
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
