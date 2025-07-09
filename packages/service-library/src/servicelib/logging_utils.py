@@ -281,16 +281,53 @@ async def setup_async_loggers_lifespan(
     # Create queue handler for loggers
     queue_handler = logging.handlers.QueueHandler(log_queue)
 
-    # Get all loggers and replace existing handlers with queue handler
+    # Use root-only approach for better performance and simplicity
+    root_logger = logging.getLogger()
+    original_root_handlers = root_logger.handlers.copy()
+
+    # Check for edge cases and warn if found
     all_loggers = _get_all_loggers()
-    original_handlers: dict[logging.Logger, list[logging.Handler]] = {}
+    edge_case_loggers = []
 
     for logger in all_loggers:
-        # Store original handlers for cleanup
-        original_handlers[logger] = logger.handlers.copy()
-        # Clear existing handlers and add only the queue handler
-        logger.handlers.clear()
-        logger.addHandler(queue_handler)
+        if logger is root_logger:
+            continue
+
+        # Check for loggers that might bypass root logging
+        has_handlers = bool(logger.handlers)
+        propagate_disabled = not logger.propagate
+
+        # Filter out harmless cases: NullHandler with propagate=True is fine
+        has_meaningful_handlers = (
+            any(not isinstance(h, logging.NullHandler) for h in logger.handlers)
+            if logger.handlers
+            else False
+        )
+
+        if has_meaningful_handlers or propagate_disabled:
+            edge_case_loggers.append(
+                {
+                    "name": logger.name,
+                    "has_handlers": has_handlers,
+                    "propagate": logger.propagate,
+                    "handlers": [type(h).__name__ for h in logger.handlers],
+                }
+            )
+
+    if edge_case_loggers:
+        _logger.warning(
+            "Found %d loggers that may bypass async logging: %s. "
+            "Consider reviewing logger configuration.",
+            len(edge_case_loggers),
+            [
+                f"{logger_info['name']}(handlers={logger_info['handlers']}, propagate={logger_info['propagate']})"
+                for logger_info in edge_case_loggers[:3]
+            ],  # Show first 3 to avoid spam
+        )
+
+    # Replace only root logger handlers
+    root_logger.handlers.clear()
+    root_logger.addHandler(queue_handler)
 
     try:
         # Apply filters if provided
@@ -301,12 +338,10 @@ async def setup_async_loggers_lifespan(
         yield
 
     finally:
-        # Cleanup: Remove queue handlers and restore original handlers
+        # Cleanup: Restore original root logger handlers
         try:
-            for logger in all_loggers:
-                # Clear queue handler and restore original handlers
-                logger.handlers.clear()
-                logger.handlers.extend(original_handlers.get(logger, []))
+            root_logger.handlers.clear()
+            root_logger.handlers.extend(original_root_handlers)
 
             # Stop the queue listener
             with log_context(
