@@ -289,7 +289,7 @@ async def setup_async_loggers_lifespan(
     )
 
     # Set up async logging infrastructure
-    log_queue = queue.Queue()
+    log_queue: queue.Queue[logging.LogRecord] = queue.Queue()
     # Create handler with proper formatting
     handler = logging.StreamHandler()
     handler.setFormatter(
