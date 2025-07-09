@@ -281,9 +281,15 @@ async def setup_async_loggers_lifespan(
     # Create queue handler for loggers
     queue_handler = logging.handlers.QueueHandler(log_queue)
 
-    # Get all loggers and add queue handler alongside existing handlers
+    # Get all loggers and replace existing handlers with queue handler
     all_loggers = _get_all_loggers()
+    original_handlers: dict[logging.Logger, list[logging.Handler]] = {}
+
     for logger in all_loggers:
+        # Store original handlers for cleanup
+        original_handlers[logger] = logger.handlers.copy()
+        # Clear existing handlers and add only the queue handler
+        logger.handlers.clear()
         logger.addHandler(queue_handler)
 
     try:
@@ -295,11 +301,12 @@ async def setup_async_loggers_lifespan(
         yield
 
     finally:
-        # Cleanup: Remove queue handlers from all loggers
+        # Cleanup: Remove queue handlers and restore original handlers
         try:
             for logger in all_loggers:
-                if queue_handler in logger.handlers:
-                    logger.removeHandler(queue_handler)
+                # Clear queue handler and restore original handlers
+                logger.handlers.clear()
+                logger.handlers.extend(original_handlers.get(logger, []))
 
             # Stop the queue listener
             with log_context(
