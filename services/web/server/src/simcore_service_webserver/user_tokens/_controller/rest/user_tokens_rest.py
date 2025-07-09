@@ -17,7 +17,7 @@ from ....login.decorators import login_required
 from ....security.decorators import permission_required
 from ....users.schemas import UsersRequestContext
 from ....utils_aiohttp import envelope_json_response
-from ... import _service
+from ... import _repository
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ routes = web.RouteTableDef()
 @permission_required("user.tokens.*")
 async def list_tokens(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    all_tokens = await _service.list_tokens(request.app, req_ctx.user_id)
+    all_tokens = await _repository.list_tokens(request.app, req_ctx.user_id)
     return envelope_json_response([MyTokenGet.from_domain_model(t) for t in all_tokens])
 
 
@@ -44,7 +44,7 @@ async def create_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     token_create = await parse_request_body_as(MyTokenCreate, request)
 
-    token = await _service.create_token(
+    token = await _repository.create_token(
         request.app, req_ctx.user_id, token_create.to_domain_model()
     )
 
@@ -59,7 +59,7 @@ async def get_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(TokenPathParams, request)
 
-    token = await _service.get_token(
+    token = await _repository.get_token(
         request.app, req_ctx.user_id, req_path_params.service
     )
 
@@ -74,6 +74,8 @@ async def delete_token(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     req_path_params = parse_request_path_parameters_as(TokenPathParams, request)
 
-    await _service.delete_token(request.app, req_ctx.user_id, req_path_params.service)
+    await _repository.delete_token(
+        request.app, req_ctx.user_id, req_path_params.service
+    )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
