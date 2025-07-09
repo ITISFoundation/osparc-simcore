@@ -1,4 +1,4 @@
-from models_library.rpc.notifications.messages import NotificationMessage
+from models_library.rpc.notifications.notifications import Notification
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RPCRouter
 
@@ -8,12 +8,12 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=())
-async def send_notification_message(
+async def send_notification(
     task_manager: TaskManager,
     *,
-    message: NotificationMessage,
+    notification: Notification,
 ) -> None:
-    await notifications_service.send_notification_message(
+    await notifications_service.send_notification(
         task_manager,
-        message=message,
+        notification=notification,
     )
