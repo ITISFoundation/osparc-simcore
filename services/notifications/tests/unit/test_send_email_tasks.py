@@ -26,7 +26,7 @@ async def test_account_requested(
     notifications_rabbitmq_rpc_client: RabbitMQRPCClient,
     faker: Faker,
 ):
-    email = faker.email()
+    user_email = faker.email()
 
     await send_notification(
         notifications_rabbitmq_rpc_client,
@@ -34,12 +34,12 @@ async def test_account_requested(
             event=AccountRequestedEvent(
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
-                email=email,
+                email=user_email,
             ),
             channel=EmailChannel(
                 from_addr=EmailAddress(addr_spec=faker.email()),
                 to_addr=EmailAddress(
-                    addr_spec=email,
+                    addr_spec=user_email,
                 ),
             ),
         ),
