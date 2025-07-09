@@ -27,6 +27,8 @@ from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
 
+LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
 
 BLACK = "\033[0;30m"
 BLUE = "\033[0;34m"
@@ -220,13 +222,11 @@ def setup_loggers(
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
     """
-    # Create format string
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
-    # Get all loggers and apply formatting
     all_loggers = _get_all_loggers()
     for logger in all_loggers:
         _set_logging_handler(
@@ -259,7 +259,6 @@ async def async_loggers_lifespan(
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
     """
-    # Create format string
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
@@ -303,9 +302,12 @@ async def async_loggers_lifespan(
                     logger.removeHandler(queue_handler)
 
             # Stop the queue listener
-            _logger.debug("Shutting down async logging listener...")
-            listener.stop()
-            _logger.debug("Async logging context cleanup complete")
+            with log_context(
+                _logger,
+                level=logging.DEBUG,
+                msg="Shutdown async logging listener",
+            ):
+                listener.stop()
 
         except Exception as exc:
             sys.stderr.write(f"Error during async logging cleanup: {exc}\n")
@@ -314,7 +316,7 @@ async def async_loggers_lifespan(
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
     logger: logging.Logger
-    level: int
+    level: LogLevelInt
     msg_prefix: str
     exc_info: bool
     stack_info: bool
@@ -323,7 +325,7 @@ class LogExceptionsKwargsDict(TypedDict, total=True):
 @contextmanager
 def log_exceptions(
     logger: logging.Logger,
-    level: int,
+    level: LogLevelInt,
     msg_prefix: str = "",
     *,
     exc_info: bool = False,
@@ -363,7 +365,7 @@ def log_exceptions(
 
 
 def _log_before_call(
-    logger_obj: logging.Logger, level: int, func: Callable, *args, **kwargs
+    logger_obj: logging.Logger, level: LogLevelInt, func: Callable, *args, **kwargs
 ) -> dict[str, str]:
     # NOTE: We should avoid logging arguments but in the meantime, we are trying to
     # avoid exposing sensitive data in the logs. For `args` is more difficult. We could eventually
@@ -401,7 +403,7 @@ def _log_before_call(
 
 def _log_after_call(
     logger_obj: logging.Logger,
-    level: int,
+    level: LogLevelInt,
     func: Callable,
     result: Any,
     extra_args: dict[str, str],
@@ -421,7 +423,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 def log_decorator(
     logger: logging.Logger | None,
-    level: int = logging.DEBUG,
+    level: LogLevelInt = logging.DEBUG,
     *,
     # NOTE: default defined by legacy: ANE defined full stack tracebacks
     # on exceptions
@@ -488,10 +490,6 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
             raise exc from exc
 
 
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
-
-
 def _un_capitalize(s: str) -> str:
     return s[:1].lower() + s[1:] if s else ""
 
@@ -554,6 +552,8 @@ def guess_message_log_level(message: str) -> LogLevelInt:
     return logging.INFO
 
 
-def set_parent_module_log_level(current_module: str, desired_log_level: int) -> None:
+def set_parent_module_log_level(
+    current_module: str, desired_log_level: LogLevelInt
+) -> None:
     parent_module = ".".join(current_module.split(".")[:-1])
     logging.getLogger(parent_module).setLevel(desired_log_level)
