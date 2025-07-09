@@ -2,6 +2,7 @@ import asyncio
 import datetime
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from typing import Final
 
 import pytest
 from common_library.async_tools import cancel_wait_task
@@ -28,6 +29,8 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
+_ASYNC_JOB_CLIENT_NAME: Final[str] = "PYTEST_CLIENT_NAME"
+
 
 @pytest.fixture
 def method_name(faker: Faker) -> RPCMethodName:
@@ -39,7 +42,7 @@ def job_filter(faker: Faker) -> AsyncJobFilter:
     return AsyncJobFilter(
         user_id=faker.pyint(min_value=1),
         product_name=faker.word(),
-        client_name="PYTEST_CLIENT_NAME",
+        client_name=_ASYNC_JOB_CLIENT_NAME,
     )
 
 
@@ -95,7 +98,7 @@ async def async_job_rpc_server(  # noqa: C901
                 result={
                     "data": task.result(),
                     "job_id": job_id,
-                    "job_id_data": job_filter,
+                    "job_filter": job_filter,
                 }
             )
 
@@ -242,7 +245,8 @@ async def test_submit_and_wait(
                 await job_composed_result.result()
     assert job_composed_result.done
     assert job_composed_result.status.progress.actual_value == 1
-    assert await job_composed_result.result() == AsyncJobResult(
+    result = await job_composed_result.result()
+    assert result == AsyncJobResult(
         result={
             "data": None,
             "job_id": job_composed_result.status.job_id,
