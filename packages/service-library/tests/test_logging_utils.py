@@ -449,6 +449,8 @@ async def test_setup_async_loggers_basic(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
         logger_filter_mapping={},  # No filters for this test
         tracing_settings=None,  # No tracing for this test
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
     ):
         test_logger = logging.getLogger("test_async_logger")
         test_logger.info("Test async log message")
@@ -472,6 +474,8 @@ async def test_setup_async_loggers_with_filters(
         log_format_local_dev_enabled=True,
         logger_filter_mapping=filter_mapping,
         tracing_settings=None,  # No tracing for this test
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
     ):
         test_logger = logging.getLogger("test_filtered_logger")
         unfiltered_logger = logging.getLogger("test_unfiltered_logger")
@@ -507,6 +511,8 @@ async def test_setup_async_loggers_with_tracing_settings(
         log_format_local_dev_enabled=False,
         logger_filter_mapping={},  # No filters for this test
         tracing_settings=None,
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
     ):
         test_logger = logging.getLogger("test_tracing_logger")
         test_logger.info("Test message with tracing settings")
@@ -527,6 +533,8 @@ async def test_setup_async_loggers_context_manager_cleanup(
         log_format_local_dev_enabled=True,
         logger_filter_mapping={},
         tracing_settings=None,
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
     ):
         # During the context, handlers should be replaced
         test_logger.info("Message during context")
@@ -551,6 +559,8 @@ async def test_setup_async_loggers_exception_handling(
             log_format_local_dev_enabled=True,
             logger_filter_mapping={},
             tracing_settings=None,
+            log_base_level=logging.INFO,  # Set base log level
+            noisy_loggers=(),  # No noisy loggers for this test
         ):
             test_logger = logging.getLogger("test_exception_logger")
             test_logger.info("Message before exception")
