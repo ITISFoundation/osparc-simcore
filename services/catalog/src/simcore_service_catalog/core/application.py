@@ -1,4 +1,5 @@
 import logging
+from typing import Final
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
@@ -12,6 +13,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.logging_utils import setup_loggers
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -27,10 +29,27 @@ from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
+    "aio_pika",
+    "aiobotocore",
+    "aiormq",
+    "botocore",
+    "httpcore",
+    "werkzeug",
+)
+
 
 def create_app() -> FastAPI:
     settings = ApplicationSettings.create_from_envs()
     _logger.debug(settings.model_dump_json(indent=2))
+
+    setup_loggers(
+        log_format_local_dev_enabled=settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=settings.CATALOG_LOG_FILTER_MAPPING,
+        tracing_settings=settings.CATALOG_TRACING,
+        log_base_level=settings.log_level,
+        noisy_loggers=_NOISY_LOGGERS,
+    )
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
