@@ -12,7 +12,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import config_all_loggers
+from servicelib.logging_utils import setup_loggers
 
 from .._meta import API_VTAG, APP_NAME, SUMMARY, VERSION
 from ..api.rest.routing import initialize_rest_api
@@ -26,7 +26,7 @@ def _initialise_logger(settings: ApplicationSettings):
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3148
     logging.basicConfig(level=settings.LOG_LEVEL.value)  # NOSONAR
     logging.root.setLevel(settings.LOG_LEVEL.value)
-    config_all_loggers(
+    setup_loggers(
         log_format_local_dev_enabled=settings.NOTIFICATIONS_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=settings.NOTIFICATIONS_VOLUMES_LOG_FILTER_MAPPING,
         tracing_settings=settings.NOTIFICATIONS_TRACING,

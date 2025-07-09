@@ -206,7 +206,7 @@ def _apply_logger_filters(
         logger.addFilter(log_filter)
 
 
-def config_all_loggers(
+def setup_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
