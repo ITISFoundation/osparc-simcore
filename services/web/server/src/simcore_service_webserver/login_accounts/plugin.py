@@ -9,5 +9,5 @@ _logger = logging.getLogger(__name__)
 
 
 @ensure_single_setup(__name__, logger=_logger)
-def setup_login_accounts(app: web.Application):
+def setup_login_account(app: web.Application):
     app.add_routes(_controller_rest.routes)
