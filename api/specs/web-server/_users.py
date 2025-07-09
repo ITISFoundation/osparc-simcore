@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.users import (
     MyProfilePatch,
     MyTokenCreate,
     MyTokenGet,
+    TokenPathParams,
     UserGet,
     UsersSearch,
 )
@@ -27,7 +28,6 @@ from simcore_service_webserver.users._notifications import (
     UserNotificationPatch,
 )
 from simcore_service_webserver.users._notifications_rest import _NotificationPathParams
-from simcore_service_webserver.users._tokens_rest import _TokenPathParams
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 
@@ -76,7 +76,7 @@ async def create_token(_body: MyTokenCreate): ...
     response_model=Envelope[MyTokenGet],
 )
 async def get_token(
-    _path: Annotated[_TokenPathParams, Depends()],
+    _path: Annotated[TokenPathParams, Depends()],
 ): ...
 
 
@@ -84,7 +84,7 @@ async def get_token(
     "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_token(_path: Annotated[_TokenPathParams, Depends()]): ...
+async def delete_token(_path: Annotated[TokenPathParams, Depends()]): ...
 
 
 @router.get(

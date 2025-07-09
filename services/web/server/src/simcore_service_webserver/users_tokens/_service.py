@@ -10,7 +10,7 @@ from sqlalchemy import and_, literal_column
 
 from ..db.models import tokens
 from ..db.plugin import get_database_engine_legacy
-from .exceptions import TokenNotFoundError
+from ..users.exceptions import TokenNotFoundError
 
 
 async def create_token(
