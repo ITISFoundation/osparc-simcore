@@ -15,6 +15,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.fields import Field
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.email import SMTPSettings
@@ -462,8 +463,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # HELPERS  --------------------------------------------------------
 
     @cached_property
-    def log_level(self) -> int:
-        level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
+    def log_level(self) -> LogLevelInt:
+        level: LogLevelInt = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
         return level
 
     def is_enabled(self, field_name: str) -> bool:
