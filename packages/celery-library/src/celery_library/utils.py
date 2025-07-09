@@ -10,8 +10,10 @@ _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 
 
 def build_task_id_prefix(task_filter: TaskFilter) -> str:
-    _dict = task_filter.model_dump()
-    return _TASK_ID_KEY_DELIMITATOR.join([f"{_dict[key]}" for key in sorted(_dict)])
+    filter_dict = task_filter.model_dump()
+    return _TASK_ID_KEY_DELIMITATOR.join(
+        [f"{filter_dict[key]}" for key in sorted(filter_dict)]
+    )
 
 
 def build_task_id(task_filter: TaskFilter, task_uuid: TaskUUID) -> TaskID:
