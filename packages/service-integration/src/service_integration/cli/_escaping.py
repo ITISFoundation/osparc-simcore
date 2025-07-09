@@ -42,7 +42,7 @@ def legacy_escape(
 
     print(f"checking files in {osparc_config_dirname}")
 
-    for file in osparc_config_dirname.glob("*.y*ml"):
+    for file in osparc_config_dirname.rglob("*.y*ml"):
         print(f"scanning {file=}")
         read_text = file.read_text()
         replaced_text = escape_dollar_brace(read_text)
