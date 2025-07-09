@@ -160,6 +160,28 @@ qx.Class.define("osparc.store.Study", {
         });
     },
 
+    addTag: function(studyId, tagId) {
+      const params = {
+        url: {
+          tagId,
+          studyId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "addTag", params)
+        .catch(err => console.error(err));
+    },
+
+    removeTag: function(studyId, tagId) {
+      const params = {
+        url: {
+          tagId,
+          studyId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "removeTag", params)
+        .catch(err => console.error(err));
+    },
+
     addCollaborators: function(studyData, newCollaborators) {
       const promises = [];
       Object.keys(newCollaborators).forEach(gid => {

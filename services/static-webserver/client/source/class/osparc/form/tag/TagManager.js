@@ -155,43 +155,17 @@ qx.Class.define("osparc.form.tag.TagManager", {
       return tagButton;
     },
 
-    __getAddTagPromise: function(tagId) {
-      const params = {
-        url: {
-          tagId,
-          studyId: this.__resourceId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "addTag", params);
-    },
-
-    __getRemoveTagPromise: function(tagId) {
-      const params = {
-        url: {
-          tagId,
-          studyId: this.__resourceId
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "removeTag", params);
-    },
-
     __saveAddTag: function(tagId, tagButton) {
-      this.__getAddTagPromise(tagId)
+      osparc.store.Study.addTag(this.__resourceId, tagId)
         .then(() => this.__selectedTags.push(tagId))
-        .catch(err => {
-          console.error(err);
-          tagButton.setValue(false);
-        })
+        .catch(() => tagButton.setValue(false))
         .finally(() => tagButton.setFetching(false));
     },
 
     __saveRemoveTag: function(tagId, tagButton) {
-      this.__getRemoveTagPromise(tagId)
+      osparc.store.Study.removeTag(this.__resourceId, tagId)
         .then(() => this.__selectedTags.remove(tagId))
-        .catch(err => {
-          console.error(err);
-          tagButton.setValue(true);
-        })
+        .catch(() => tagButton.setValue(true))
         .finally(() => tagButton.setFetching(false));
     },
 
@@ -203,14 +177,14 @@ qx.Class.define("osparc.form.tag.TagManager", {
       for (let i=0; i<this.__selectedTags.length; i++) {
         const tagId = this.__selectedTags.getItem(i);
         if (!this.__studyData["tags"].includes(tagId)) {
-          updatedStudy = await this.__getAddTagPromise(tagId)
+          updatedStudy = await osparc.store.Study.addTag(this.__resourceId, tagId)
             .then(updatedData => updatedData);
         }
       }
       for (let i=0; i<this.__studyData["tags"].length; i++) {
         const tagId = this.__studyData["tags"][i];
         if (!this.__selectedTags.includes(tagId)) {
-          updatedStudy = await this.__getRemoveTagPromise(tagId)
+          updatedStudy = await osparc.store.Study.removeTag(this.__resourceId, tagId)
             .then(updatedData => updatedData);
         }
       }
