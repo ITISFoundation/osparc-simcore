@@ -12,7 +12,7 @@ from simcore_service_webserver.user_notifications.plugin import (
 from simcore_service_webserver.user_tokens.plugin import setup_user_tokens_feature
 
 from ..user_preferences.plugin import setup_user_preferences_feature
-from ._controller import users_rest
+from ._controller.rest import users_rest
 
 _logger = logging.getLogger(__name__)
 

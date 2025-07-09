@@ -12,12 +12,12 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
 )
 
-from ..._meta import API_VTAG
-from ...login.decorators import login_required
-from ...security.decorators import permission_required
-from ...users._controller._rest_schemas import UsersRequestContext
-from ...utils_aiohttp import envelope_json_response
-from .. import _service
+from ...._meta import API_VTAG
+from ....login.decorators import login_required
+from ....security.decorators import permission_required
+from ....users._controller._rest_schemas import UsersRequestContext
+from ....utils_aiohttp import envelope_json_response
+from ... import _service
 from ._rest_exceptions import handle_rest_requests_exceptions
 
 _logger = logging.getLogger(__name__)

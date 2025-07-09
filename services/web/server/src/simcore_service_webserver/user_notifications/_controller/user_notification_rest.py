@@ -13,15 +13,15 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.redis import handle_redis_returns_union_types
 
-from .._meta import API_VTAG
-from ..login.decorators import login_required
-from ..products import products_web
-from ..redis import get_redis_user_notifications_client
-from ..security.decorators import permission_required
-from ..users import _users_service
-from ..users._controller._rest_schemas import UsersRequestContext
-from ..utils_aiohttp import envelope_json_response
-from ._models import (
+from ..._meta import API_VTAG
+from ...login.decorators import login_required
+from ...products import products_web
+from ...redis import get_redis_user_notifications_client
+from ...security.decorators import permission_required
+from ...users import _users_service
+from ...users._controller.rest._rest_schemas import UsersRequestContext
+from ...utils_aiohttp import envelope_json_response
+from .._models import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     UserNotification,

@@ -1,13 +1,13 @@
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
-from ...exception_handling import (
+from ....exception_handling import (
     ExceptionToHttpErrorMap,
     HttpErrorInfo,
     exception_handling_decorator,
     to_exceptions_handlers_map,
 )
-from ..exceptions import (
+from ...exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,

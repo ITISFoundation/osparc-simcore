@@ -26,16 +26,16 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from ..._meta import API_VTAG
-from ...groups import api as groups_api
-from ...groups.exceptions import GroupNotFoundError
-from ...invitations import api as invitations_service
-from ...login.decorators import login_required
-from ...products import products_web
-from ...products.models import Product
-from ...security.decorators import permission_required
-from ...utils_aiohttp import create_json_response_from_page, envelope_json_response
-from .. import _users_service
+from ...._meta import API_VTAG
+from ....groups import api as groups_service
+from ....groups.exceptions import GroupNotFoundError
+from ....invitations import api as invitations_service
+from ....login.decorators import login_required
+from ....products import products_web
+from ....products.models import Product
+from ....security.decorators import permission_required
+from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
+from ... import _users_service
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import PreRegisteredUserGet, UsersRequestContext
 
@@ -56,7 +56,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
     product: Product = products_web.get_current_product(request)
     req_ctx = UsersRequestContext.model_validate(request)
 
-    groups_by_type = await groups_api.list_user_groups_with_read_access(
+    groups_by_type = await groups_service.list_user_groups_with_read_access(
         request.app, user_id=req_ctx.user_id
     )
 
@@ -68,7 +68,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
     if product.group_id:
         with suppress(GroupNotFoundError):
             # Product is optional
-            my_product_group = await groups_api.get_product_group_for_user(
+            my_product_group = await groups_service.get_product_group_for_user(
                 app=request.app,
                 user_id=req_ctx.user_id,
                 product_gid=product.group_id,
