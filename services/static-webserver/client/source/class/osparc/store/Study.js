@@ -126,13 +126,7 @@ qx.Class.define("osparc.store.Study", {
 
       const patchData = {};
       patchData[fieldKey] = value;
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        },
-        data: patchData
-      };
-      return osparc.data.Resources.fetch("studies", "patch", params)
+      return this.patchStudy(studyData["uuid"], patchData)
         .then(() => {
           studyData[fieldKey] = value;
           // A bit hacky, but it's not sent back to the backend
@@ -141,15 +135,10 @@ qx.Class.define("osparc.store.Study", {
     },
 
     patchTemplateType: function(templateId, templateType) {
-      const params = {
-        url: {
-          "studyId": templateId
-        },
-        data: {
-          "templateType": templateType,
-        }
+      const patchData = {
+        "templateType": templateType,
       };
-      return osparc.data.Resources.fetch("studies", "patch", params)
+      return this.patchStudy(templateId, patchData)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
