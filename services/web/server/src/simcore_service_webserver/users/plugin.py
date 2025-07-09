@@ -6,10 +6,10 @@ from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.observer import setup_observer_registry
-from simcore_service_webserver.users_tokens.plugin import setup_users_tokens
+from simcore_service_webserver.user_tokens.plugin import setup_user_tokens
 
-from . import _notifications_rest, _preferences_rest, _users_rest
-from ._preferences_models import overwrite_user_preferences_defaults
+from ..user_preferences.plugin import setup_user_preferences
+from . import _notifications_rest, _users_rest
 
 _logger = logging.getLogger(__name__)
 
@@ -24,10 +24,9 @@ _logger = logging.getLogger(__name__)
 def setup_users(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_USERS  # nosec
     setup_observer_registry(app)
-    overwrite_user_preferences_defaults(app)
 
     app.router.add_routes(_users_rest.routes)
     app.router.add_routes(_notifications_rest.routes)
-    app.router.add_routes(_preferences_rest.routes)
 
-    setup_users_tokens(app)
+    setup_user_preferences(app)
+    setup_user_tokens(app)

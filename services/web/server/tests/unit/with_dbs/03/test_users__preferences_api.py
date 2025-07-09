@@ -24,11 +24,11 @@ from simcore_postgres_database.models.groups_extra_properties import (
     groups_extra_properties,
 )
 from simcore_postgres_database.models.users import UserStatus
-from simcore_service_webserver.users._preferences_models import (
+from simcore_service_webserver.user_preferences._models import (
     ALL_FRONTEND_PREFERENCES,
     BillingCenterUsageColumnOrderFrontendUserPreference,
 )
-from simcore_service_webserver.users._preferences_service import (
+from simcore_service_webserver.user_preferences._service import (
     _get_frontend_user_preferences,
     get_frontend_user_preferences_aggregation,
     set_frontend_user_preference,

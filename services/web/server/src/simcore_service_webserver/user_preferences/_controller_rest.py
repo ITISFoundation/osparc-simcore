@@ -18,8 +18,8 @@ from simcore_postgres_database.utils_user_preferences import (
 from .._meta import API_VTAG
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
-from . import _preferences_service
-from .exceptions import FrontendUserPreferenceIsNotDefinedError
+from ..users.exceptions import FrontendUserPreferenceIsNotDefinedError
+from . import _service
 
 routes = web.RouteTableDef()
 
@@ -50,7 +50,7 @@ async def set_frontend_preference(request: web.Request) -> web.Response:
     req_body = await parse_request_body_as(PatchRequestBody, request)
     req_path_params = parse_request_path_parameters_as(PatchPathParams, request)
 
-    await _preferences_service.set_frontend_user_preference(
+    await _service.set_frontend_user_preference(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,

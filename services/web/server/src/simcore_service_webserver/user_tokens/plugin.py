@@ -9,5 +9,5 @@ _logger = logging.getLogger(__name__)
 
 
 @ensure_single_setup(__name__, logger=_logger)
-def setup_users_tokens(app: web.Application):
+def setup_user_tokens(app: web.Application):
     app.add_routes(rest.routes)

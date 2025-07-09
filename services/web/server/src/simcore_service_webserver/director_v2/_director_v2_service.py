@@ -28,7 +28,7 @@ from ..db.plugin import get_database_engine_legacy
 from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
-from ..users import users_preferences_service as users_preferences_service
+from ..user_preferences import user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
 from ._client import DirectorV2RestClient
@@ -225,11 +225,11 @@ async def get_wallet_info(
         app, project_id=project_id
     )
     if project_wallet is None:
-        user_default_wallet_preference = await users_preferences_service.get_frontend_user_preference(
+        user_default_wallet_preference = await user_preferences_service.get_frontend_user_preference(
             app,
             user_id=user_id,
             product_name=product_name,
-            preference_class=users_preferences_service.PreferredWalletIdFrontendUserPreference,
+            preference_class=user_preferences_service.PreferredWalletIdFrontendUserPreference,
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)

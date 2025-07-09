@@ -9,7 +9,8 @@ from servicelib.aiohttp.observer import register_observer, setup_observer_regist
 
 from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
-from ..users import users_preferences_service, users_service
+from ..user_preferences import user_preferences_service
+from ..users import users_service
 from ._api import any_wallet_owned_by_user, create_wallet
 
 _WALLET_NAME_TEMPLATE = "{} Credits"
@@ -53,9 +54,9 @@ async def _auto_add_default_wallet(
             )
 
         preference_id = (
-            users_preferences_service.PreferredWalletIdFrontendUserPreference().preference_identifier
+            user_preferences_service.PreferredWalletIdFrontendUserPreference().preference_identifier
         )
-        await users_preferences_service.set_frontend_user_preference(
+        await user_preferences_service.set_frontend_user_preference(
             app,
             user_id=user_id,
             product_name=product_name,
