@@ -59,7 +59,8 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  exec uvicorn simcore_service_datcore_adapter.main:the_app \
+  exec uvicorn \
+    --factory simcore_service_datcore_adapter.main:create_app \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi
