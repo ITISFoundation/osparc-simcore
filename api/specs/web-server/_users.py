@@ -22,13 +22,13 @@ from models_library.api_schemas_webserver.users_preferences import PatchRequestB
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.user_notifications._notifications_models import (
+from simcore_service_webserver.user_notifications._controller_rest import (
+    _NotificationPathParams,
+)
+from simcore_service_webserver.user_notifications._models import (
     UserNotification,
     UserNotificationCreate,
     UserNotificationPatch,
-)
-from simcore_service_webserver.user_notifications.notifications_rest import (
-    _NotificationPathParams,
 )
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])

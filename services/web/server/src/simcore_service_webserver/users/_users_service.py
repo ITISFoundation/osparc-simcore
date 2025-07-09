@@ -21,7 +21,7 @@ from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
 from ..user_preferences import _service
 from . import _users_repository
-from ._controller.rest._rest_schemas import PreRegisteredUserGet
+from ._controller._rest_schemas import PreRegisteredUserGet
 from ._models import (
     FullNameDict,
     ToUserUpdateDB,
