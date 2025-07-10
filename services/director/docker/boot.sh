@@ -51,7 +51,9 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/director/src/simcore_service_director && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${DIRECTOR_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${DIRECTOR_REMOTE_DEBUGGING_PORT} -m \
+    uvicorn \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \
@@ -60,7 +62,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   exec uvicorn \
-    --factory simcore_service_director.main:create_app \
+    --factory simcore_service_director.main:app_factory \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi

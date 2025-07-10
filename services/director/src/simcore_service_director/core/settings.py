@@ -6,6 +6,7 @@ from typing import cast
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt, field_validator
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
@@ -145,9 +146,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return v
 
     @cached_property
-    def log_level(self) -> LogLevel:
+    def log_level(self) -> LogLevelInt:
         """override"""
-        return self.DIRECTOR_LOG_LEVEL
+        return cast(LogLevelInt, self.DIRECTOR_LOG_LEVEL)
 
 
 def get_application_settings(app: FastAPI) -> ApplicationSettings:
