@@ -70,9 +70,9 @@ def pennsieve_mock_dataset_packages(mocks_dir: Path) -> dict[str, Any]:
 def minimal_app(
     app_environment: None,
 ) -> FastAPI:
-    from simcore_service_datcore_adapter.main import the_app
+    from simcore_service_datcore_adapter.main import app_factory
 
-    return the_app
+    return app_factory()
 
 
 @pytest.fixture()
