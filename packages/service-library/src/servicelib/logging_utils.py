@@ -333,7 +333,7 @@ def setup_async_loggers_lifespan(
             ):
                 listener.stop()
 
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             sys.stderr.write(f"Error during async logging cleanup: {exc}\n")
             sys.stderr.flush()
 
