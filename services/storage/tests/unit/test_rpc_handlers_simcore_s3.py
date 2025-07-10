@@ -13,7 +13,7 @@ import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from unittest.mock import Mock
 
 import httpx
@@ -514,6 +514,7 @@ async def _request_start_export_data(
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
+    export_as: Literal["path", "download_link"],
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> dict[str, Any]:
@@ -526,6 +527,7 @@ async def _request_start_export_data(
             user_id=user_id,
             product_name=product_name,
             paths_to_export=paths_to_export,
+            export_as=export_as,
         )
 
         async for async_job_result in wait_and_get_result(
@@ -572,6 +574,10 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
     ],
     ids=str,
 )
+@pytest.mark.parametrize(
+    "export_as",
+    ["path", "download_link"],
+)
 async def test_start_export_data(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
@@ -589,6 +595,7 @@ async def test_start_export_data(
     ],
     project_params: ProjectWithFilesParams,
     task_progress_spy: Mock,
+    export_as: Literal["path", "download_link"],
 ):
     _, src_projects_list = await random_project_with_files(project_params)
 
@@ -606,6 +613,7 @@ async def test_start_export_data(
         user_id,
         product_name,
         paths_to_export=list(nodes_in_project_to_export),
+        export_as=export_as,
     )
 
     assert re.fullmatch(
@@ -618,6 +626,10 @@ async def test_start_export_data(
     assert progress_updates[-1] == 1
 
 
+@pytest.mark.parametrize(
+    "export_as",
+    ["path", "download_link"],
+)
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
@@ -626,6 +638,7 @@ async def test_start_export_data_access_error(
     user_id: UserID,
     product_name: ProductName,
     faker: Faker,
+    export_as: Literal["path", "download_link"],
 ):
     path_to_export = TypeAdapter(PathToExport).validate_python(
         f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
@@ -637,6 +650,7 @@ async def test_start_export_data_access_error(
             product_name,
             paths_to_export=[path_to_export],
             client_timeout=datetime.timedelta(seconds=60),
+            export_as=export_as,
         )
 
     assert isinstance(exc.value, JobError)
