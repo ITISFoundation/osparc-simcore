@@ -2,9 +2,11 @@ import logging
 from asyncio import Lock
 from typing import Any, ClassVar
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi import long_running_tasks
+from servicelib.fastapi.logging_lifespan import setup_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -13,7 +15,6 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import setup_loggers
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
@@ -114,34 +115,36 @@ class AppState:
         return self._shared_store.compose_spec
 
 
-def setup_logger(settings: ApplicationSettings):
-    setup_loggers(
-        log_format_local_dev_enabled=settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.DY_SIDECAR_LOG_FILTER_MAPPING,
-        tracing_settings=settings.DYNAMIC_SIDECAR_TRACING,
-        log_base_level=settings.log_level,
+def create_base_app() -> FastAPI:
+    # settings
+    app_settings = ApplicationSettings.create_from_envs()
+    logging_shutdown_event = setup_logging_shutdown_event(
+        log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
+        tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
+        log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
 
-
-def create_base_app() -> FastAPI:
-    # settings
-    settings = ApplicationSettings.create_from_envs()
-    setup_logger(settings)
-    logger.debug(settings.model_dump_json(indent=2))
+    logger.info(
+        "Application settings: %s",
+        json_dumps(app_settings, indent=2, sort_keys=True),
+    )
 
     # minimal
-    assert settings.SC_BOOT_MODE  # nosec
+    assert app_settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        debug=app_settings.SC_BOOT_MODE.is_devel_mode(),
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
+        **get_common_oas_options(
+            is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()
+        ),
     )
     override_fastapi_openapi_method(app)
-    app.state.settings = settings
+    app.state.settings = app_settings
 
     long_running_tasks.server.setup(app)
 
@@ -149,6 +152,7 @@ def create_base_app() -> FastAPI:
 
     setup_reserved_space(app)
 
+    app.add_event_handler("shutdown", logging_shutdown_event)
     return app
 
 
