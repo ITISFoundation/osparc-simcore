@@ -2,8 +2,6 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.emails import LowerCaseEmailStr
-from pydantic import SecretStr, field_validator
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
@@ -18,8 +16,16 @@ from ....security import security_service
 from ....users import api as users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
+from ....web_utils import flash_response
 from ... import _confirmation_service, _confirmation_web
-from ..._constants import (
+from ..._emails_service import get_template_path, send_email_from_template
+from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from ..._login_service import (
+    ACTIVE,
+    CHANGE_EMAIL,
+    validate_user_status,
+)
+from ...constants import (
     MSG_CANT_SEND_MAIL,
     MSG_CHANGE_EMAIL_REQUESTED,
     MSG_EMAIL_SENT,
@@ -27,26 +33,14 @@ from ..._constants import (
     MSG_PASSWORD_CHANGED,
     MSG_WRONG_PASSWORD,
 )
-from ..._emails_service import get_template_path, send_email_from_template
-from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
-from ..._login_service import (
-    ACTIVE,
-    CHANGE_EMAIL,
-    flash_response,
-    validate_user_status,
-)
-from ..._models import InputSchema, create_password_match_validator
 from ...decorators import login_required
 from ...settings import LoginOptions, get_plugin_options
+from .change_schemas import ChangeEmailBody, ChangePasswordBody, ResetPasswordBody
 
 _logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
-
-
-class ResetPasswordBody(InputSchema):
-    email: LowerCaseEmailStr
 
 
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
@@ -221,10 +215,6 @@ async def initiate_reset_password(request: web.Request):
     return flash_response(MSG_EMAIL_SENT.format(email=request_body.email), "INFO")
 
 
-class ChangeEmailBody(InputSchema):
-    email: LowerCaseEmailStr
-
-
 async def initiate_change_email(request: web.Request):
     # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     db: AsyncpgStorage = get_plugin_storage(request.app)
@@ -270,16 +260,6 @@ async def initiate_change_email(request: web.Request):
         raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
     return flash_response(MSG_CHANGE_EMAIL_REQUESTED)
-
-
-class ChangePasswordBody(InputSchema):
-    current: SecretStr
-    new: SecretStr
-    confirm: SecretStr
-
-    _password_confirm_match = field_validator("confirm")(
-        create_password_match_validator(reference_field="new")
-    )
 
 
 @routes.post(f"/{API_VTAG}/auth/change-password", name="auth_change_password")
