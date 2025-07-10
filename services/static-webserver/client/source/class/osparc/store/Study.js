@@ -185,6 +185,19 @@ qx.Class.define("osparc.store.Study", {
       return Boolean(this.getStudyDebt(studyId));
     },
 
+    payDebt: function(studyId, walletId, amount) {
+      const params = {
+        url: {
+          studyId,
+          walletId,
+        },
+        data: {
+          amount,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "payDebt", params);
+    },
+
     trashStudy: function(studyId) {
       const params = {
         url: {
