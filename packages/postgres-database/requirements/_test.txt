@@ -24,9 +24,7 @@ mypy==1.16.1
 mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
-    # via
-    #   -c requirements/_base.txt
-    #   pytest
+    # via pytest
 pathspec==0.12.1
     # via mypy
 pluggy==1.5.0
