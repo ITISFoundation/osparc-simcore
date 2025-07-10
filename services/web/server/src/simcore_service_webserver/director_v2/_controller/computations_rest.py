@@ -28,6 +28,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.tracing import with_profiled_span
 
 from ..._meta import API_VTAG as VTAG
 from ...constants import RQ_PRODUCT_KEY
@@ -202,6 +203,7 @@ async def list_computations_latest_iteration_tasks(
     name="list_computation_collection_runs",
 )
 @login_required
+@with_profiled_span
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def list_computation_collection_runs(request: web.Request) -> web.Response:

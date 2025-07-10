@@ -48,6 +48,7 @@ RUN \
   && apt-get install -y --no-install-recommends \
   docker-ce-cli=${DOCKER_APT_VERSION} \
   docker-compose-plugin=${DOCKER_COMPOSE_APT_VERSION} \
+  fd-find \
   gosu \
   ca-certificates \
   # required by python-magic
@@ -159,6 +160,9 @@ COPY --chown=root:root services/dynamic-sidecar/scripts/Makefile /root
 FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 WORKDIR /build/services/dynamic-sidecar
 
@@ -183,8 +187,6 @@ ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
 
