@@ -1,7 +1,7 @@
 # In conftest.py or test_logging_utils.py
 import logging
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from collections.abc import Iterator
+from contextlib import contextmanager
 from unittest.mock import patch
 
 import pytest
@@ -19,15 +19,15 @@ def preserve_caplog_for_async_logging(request):
     # Patch setup_async_loggers_lifespan to preserve caplog handlers
     original_setup = setup_async_loggers_lifespan
 
-    @asynccontextmanager
-    async def patched_setup_async_loggers_lifespan(**kwargs) -> AsyncIterator[None]:
+    @contextmanager
+    def patched_setup_async_loggers_lifespan(**kwargs) -> Iterator[None]:
         # Find caplog's handler in root logger
         root_logger = logging.getLogger()
         caplog_handlers = [
             h for h in root_logger.handlers if "LogCaptureHandler" in f"{type(h)}"
         ]
 
-        async with original_setup(**kwargs):
+        with original_setup(**kwargs):
             # After setup, restore caplog handlers alongside queue handler
             for handler in caplog_handlers:
                 if handler not in root_logger.handlers:

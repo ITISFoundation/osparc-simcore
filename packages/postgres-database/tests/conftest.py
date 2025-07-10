@@ -41,6 +41,7 @@ from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 pytest_plugins = [
+    "pytest_simcore.logging",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
 ]

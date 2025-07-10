@@ -98,6 +98,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.httpbin_service",
+    "pytest_simcore.logging",
     "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",

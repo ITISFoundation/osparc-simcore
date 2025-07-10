@@ -29,6 +29,7 @@ pytest_plugins = [
     "pytest_simcore.faker_payments_data",
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.logging",
     "pytest_simcore.postgres_service",
     "pytest_simcore.repository_paths",
 ]
@@ -72,7 +73,7 @@ def product_data(
     return ProductData(  # type: ignore
         product_name=product_name,
         display_name=product["display_name"],
-        vendor_display_inline=f"{vendor.get('name','')}, {vendor.get('address','')}",
+        vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
         support_email=product["support_email"],
         homepage_url=vendor.get("url"),
         ui=product_ui,

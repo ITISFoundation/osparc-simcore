@@ -17,6 +17,7 @@ from simcore_service_invitations.services.invitations import InvitationInputs
 
 pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
+    "pytest_simcore.logging",
     "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
 ]
