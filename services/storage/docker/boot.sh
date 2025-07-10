@@ -90,7 +90,7 @@ else
     exec uvicorn \
       --factory simcore_service_storage.main:app_factory \
       --host 0.0.0.0 \
-      --port ${STORAGE_PORT} \
+      --port "${STORAGE_PORT}" \
       --log-level "${SERVER_LOG_LEVEL}"
   fi
 fi
