@@ -1542,10 +1542,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
       this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
-      const params = {
-        data: minStudyData
-      };
-      osparc.study.Utils.createStudyAndPoll(params)
+      osparc.study.Utils.createStudyAndPoll(minStudyData)
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();

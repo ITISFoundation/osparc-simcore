@@ -71,10 +71,7 @@ qx.Class.define("osparc.study.Utils", {
               });
               return;
             }
-            const params = {
-              data: minStudyData
-            };
-            osparc.study.Utils.createStudyAndPoll(params)
+            osparc.study.Utils.createStudyAndPoll(minStudyData)
               .then(studyData => resolve(studyData["uuid"]))
               .catch(err => reject(err));
           })
@@ -82,15 +79,12 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    createStudyAndPoll: function(params) {
+    createStudyAndPoll: function(studyData) {
       return new Promise((resolve, reject) => {
-        const options = {
-          pollTask: true
-        };
-        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
+        const createStudyPromise = osparc.store.Study.getInstance().createStudy(studyData);
         const pollTasks = osparc.store.PollTasks.getInstance();
         const interval = 1000;
-        pollTasks.createPollingTask(fetchPromise, interval)
+        pollTasks.createPollingTask(createStudyPromise, interval)
           .then(task => {
             task.addListener("resultReceived", e => {
               const resultData = e.getData();
