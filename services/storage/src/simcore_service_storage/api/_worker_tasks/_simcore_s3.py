@@ -10,7 +10,7 @@ from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
-from pydantic import AnyUrl, TypeAdapter
+from pydantic import TypeAdapter
 from servicelib.celery.models import TaskID
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -109,7 +109,7 @@ async def export_data_as_download_link(
     *,
     user_id: UserID,
     paths_to_export: list[PathToExport],
-) -> AnyUrl:
+) -> str:
     """
     AccessRightError: in case user can't access project
     """
@@ -121,6 +121,7 @@ async def export_data_as_download_link(
         SimcoreS3DataManager.get_location_id()
     )
 
-    return await dsm.create_file_download_link(
+    download_link = await dsm.create_file_download_link(
         user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
     )
+    return f"{download_link}"
