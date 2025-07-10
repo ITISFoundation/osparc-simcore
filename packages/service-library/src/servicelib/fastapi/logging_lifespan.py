@@ -16,7 +16,7 @@ from .lifespan_utils import Lifespan
 _logger = logging.getLogger(__name__)
 
 
-def setup_logging(
+def setup_logging_lifespan(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
