@@ -72,7 +72,7 @@ async def app_factory() -> web.Application:
         "Using application factory: %s", app_settings.WEBSERVER_APP_FACTORY_NAME
     )
 
-    logging_lifespan_cleanup_event = await setup_logging(app_settings)
+    logging_lifespan_cleanup_event = setup_logging(app_settings)
 
     if app_settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY":
         app = create_application_auth()
