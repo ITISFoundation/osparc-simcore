@@ -24,6 +24,7 @@ def setup_logging_lifespan(
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Lifespan:
+    """Returns a FastAPI-compatible lifespan handler to set up async logging."""
     exit_stack = AsyncExitStack()
     exit_stack.enter_context(
         setup_async_loggers_lifespan(
@@ -52,6 +53,13 @@ def setup_logging_shutdown_event(
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Callable[[], Awaitable[None]]:
+    """retruns a fastapi-compatible shutdown event handler to be used with old style lifespan
+    handlers. This is useful for applications that do not use the new async lifespan
+    handlers introduced in fastapi 0.100.0.
+
+    Note: This function is for backwards compatibility only and will be removed in the future.
+    setup_logging_lifespan should be used instead for new style lifespan handlers.
+    """
     exit_stack = AsyncExitStack()
     exit_stack.enter_context(
         setup_async_loggers_lifespan(
