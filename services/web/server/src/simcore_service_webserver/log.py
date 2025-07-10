@@ -11,8 +11,7 @@ from aiohttp.log import access_logger
 from servicelib.logging_utils import setup_async_loggers_lifespan
 from simcore_service_webserver.application_settings import ApplicationSettings
 
-LOG_LEVEL_STEP: Final[int] = logging.CRITICAL - logging.ERROR
-NOISY_LOGGERS: Final[tuple[str, ...]] = (
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "aio_pika",
     "aiormq",
     "engineio",
@@ -36,7 +35,7 @@ def setup_logging(app_settings: ApplicationSettings) -> CleanupEvent:
     exit_stack.enter_context(
         setup_async_loggers_lifespan(
             log_base_level=app_settings.log_level,
-            noisy_loggers=NOISY_LOGGERS,
+            noisy_loggers=_NOISY_LOGGERS,
             log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
             logger_filter_mapping=app_settings.WEBSERVER_LOG_FILTER_MAPPING,
             tracing_settings=app_settings.WEBSERVER_TRACING,
