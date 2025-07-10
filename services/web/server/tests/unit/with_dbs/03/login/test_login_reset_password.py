@@ -18,17 +18,17 @@ from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from servicelib.utils_secrets import generate_password
 from simcore_service_webserver.db.models import ConfirmationAction, UserStatus
 from simcore_service_webserver.groups import api as groups_service
-from simcore_service_webserver.login._constants import (
+from simcore_service_webserver.login._login_repository_legacy import (
+    AsyncpgStorage,
+    ConfirmationTokenDict,
+)
+from simcore_service_webserver.login.constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_EMAIL_SENT,
     MSG_LOGGED_IN,
     MSG_PASSWORD_CHANGED,
     MSG_USER_BANNED,
     MSG_USER_EXPIRED,
-)
-from simcore_service_webserver.login._login_repository_legacy import (
-    AsyncpgStorage,
-    ConfirmationTokenDict,
 )
 from simcore_service_webserver.login.settings import LoginOptions
 from simcore_service_webserver.users import api as users_service

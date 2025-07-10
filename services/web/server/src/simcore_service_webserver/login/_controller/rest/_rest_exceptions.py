@@ -8,7 +8,7 @@ from ....exception_handling import (
     to_exceptions_handlers_map,
 )
 from ....users.exceptions import AlreadyPreRegisteredError
-from ..._constants import MSG_2FA_UNAVAILABLE
+from ...constants import MSG_2FA_UNAVAILABLE
 from ...errors import SendingVerificationEmailError, SendingVerificationSmsError
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {

@@ -19,13 +19,11 @@
 qx.Class.define("osparc.jobs.RunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct: function(projectUuid = null, includeChildren = false) {
+  construct: function(projectId = null) {
     this.base(arguments);
 
-    this.__includeChildren = includeChildren;
-
     this.set({
-      projectUuid,
+      projectId,
     });
 
     const jobsCols = osparc.jobs.RunsTable.COLS;
@@ -41,11 +39,11 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   properties: {
-    projectUuid: {
+    projectId: {
       check: "String",
       init: null,
       nullable: true,
-      event: "changeProjectUuid",
+      event: "changeProjectId",
       apply: "reloadData",
     },
 
@@ -80,8 +78,6 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
   },
 
   members: {
-    __includeChildren: null,
-
     // overridden
     sortByColumn(columnIndex, ascending) {
       const jobsCols = osparc.jobs.RunsTable.COLS;
@@ -100,8 +96,8 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const orderBy = this.getOrderBy();
       const resolveWResponse = true;
       let promise;
-      if (this.getProjectUuid()) {
-        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy, resolveWResponse);
+      if (this.getProjectId()) {
+        promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectId(), offset, limit, orderBy, resolveWResponse);
       } else {
         const filters = this.getFilterString() ? { text: this.getFilterString() } : null;
         promise = osparc.store.Jobs.getInstance().fetchJobsLatest(this.getRunningOnly(), offset, limit, orderBy, filters, resolveWResponse);
@@ -124,8 +120,8 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
       const getFetchPromise = (offset, limit) => {
         const orderBy = this.getOrderBy();
         let promise;
-        if (this.getProjectUuid()) {
-          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectUuid(), this.__includeChildren, offset, limit, orderBy);
+        if (this.getProjectId()) {
+          promise = osparc.store.Jobs.getInstance().fetchJobsHistory(this.getProjectId(), offset, limit, orderBy);
         } else {
           const filters = this.getFilterString() ? { text: this.getFilterString() } : null;
           promise = osparc.store.Jobs.getInstance().fetchJobsLatest(this.getRunningOnly(), offset, limit, orderBy, filters);
@@ -136,8 +132,9 @@ qx.Class.define("osparc.jobs.RunsTableModel", {
             const jobsCols = osparc.jobs.RunsTable.COLS;
             jobs.forEach(job => {
               data.push({
-                [jobsCols.PROJECT_UUID.id]: job.getProjectUuid(),
-                [jobsCols.PROJECT_NAME.id]: job.getProjectName(),
+                [jobsCols.COLLECTION_RUN_ID.id]: job.getCollectionRunId(),
+                [jobsCols.PROJECT_IDS.id]: job.getProjectIds(),
+                [jobsCols.NAME.id]: job.getName(),
                 [jobsCols.STATE.id]: osparc.data.Job.STATUS_LABELS[job.getState()] || job.getState(),
                 [jobsCols.SUBMIT.id]: job.getSubmittedAt() ? osparc.utils.Utils.formatDateAndTime(job.getSubmittedAt()) : "-",
                 [jobsCols.START.id]: job.getStartedAt() ? osparc.utils.Utils.formatDateAndTime(job.getStartedAt()) : "-",
