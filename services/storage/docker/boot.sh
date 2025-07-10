@@ -76,7 +76,9 @@ else
 
     exec sh -c "
     cd services/storage/src/simcore_service_storage && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m uvicorn main:app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${STORAGE_REMOTE_DEBUGGING_PORT} -m \
+    uvicorn \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --port ${STORAGE_PORT} \
       --reload \
@@ -85,7 +87,8 @@ else
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
   else
-    exec uvicorn simcore_service_storage.main:app \
+    exec uvicorn \
+      --factory simcore_service_storage.main:app_factory \
       --host 0.0.0.0 \
       --port ${STORAGE_PORT} \
       --log-level "${SERVER_LOG_LEVEL}"
