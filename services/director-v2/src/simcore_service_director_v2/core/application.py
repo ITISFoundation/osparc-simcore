@@ -1,8 +1,10 @@
 import logging
-from typing import Final
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
+from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -12,7 +14,6 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import setup_loggers
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY
 from ..api.entrypoints import api_router
@@ -95,27 +96,19 @@ def _set_exception_handlers(app: FastAPI):
     )
 
 
-_NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiormq",
-    "httpcore",
-    "httpx",
-)
+def create_app_lifespan(logging_lifespan: Lifespan | None = None) -> LifespanManager:
+    app_lifespan = LifespanManager()
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
+    return app_lifespan
 
 
-def create_base_app(settings: AppSettings | None = None) -> FastAPI:
+def create_base_app(
+    settings: AppSettings | None = None,
+) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
     assert settings  # nosec
-
-    setup_loggers(
-        log_format_local_dev_enabled=settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
-        tracing_settings=settings.DIRECTOR_V2_TRACING,
-        log_base_level=settings.log_level,
-        noisy_loggers=_NOISY_LOGGERS,
-    )
-    _logger.debug(settings.model_dump_json(indent=2))
 
     assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
@@ -130,13 +123,20 @@ def create_base_app(settings: AppSettings | None = None) -> FastAPI:
     app.state.settings = settings
 
     app.include_router(api_router)
+
     return app
 
 
-def init_app(settings: AppSettings | None = None) -> FastAPI:
+def init_app(  # noqa: C901, PLR0912
+    settings: AppSettings | None = None,
+) -> FastAPI:
     app = create_base_app(settings)
     if settings is None:
         settings = app.state.settings
+        _logger.info(
+            "Application settings: %s",
+            json_dumps(settings, indent=2, sort_keys=True),
+        )
     assert settings  # nosec
 
     substitutions.setup(app)
