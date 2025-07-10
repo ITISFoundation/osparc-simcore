@@ -96,14 +96,7 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     updateWallet: function(studyId, walletId) {
-      const params = {
-        url: {
-          studyId,
-          walletId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "selectWallet", params)
-        .catch(err => osparc.FlashMessenger.logError(err, qx.locale.Manager.tr("An issue occurred while selecting Credit Account")));
+      return osparc.store.Study.getInstance().selectWallet(studyId, walletId);
     },
   },
 
@@ -231,14 +224,9 @@ qx.Class.define("osparc.study.StudyOptions", {
     },
 
     __fetchStudy: function(studyId) {
-      const params = {
-        url: {
-          studyId
-        }
-      };
       Promise.all([
         osparc.store.Study.getInstance().getOne(studyId),
-        osparc.data.Resources.fetch("studies", "getWallet", params)
+        osparc.store.Study.getInstance().getWallet(studyId),
       ])
         .then(values => {
           const studyData = values[0];

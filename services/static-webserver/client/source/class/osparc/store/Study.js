@@ -172,6 +172,27 @@ qx.Class.define("osparc.store.Study", {
         });
     },
 
+    getWallet: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getWallet", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    selectWallet: function(studyId, walletId) {
+      const params = {
+        url: {
+          studyId,
+          walletId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "selectWallet", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
     addTag: function(studyId, tagId) {
       const params = {
         url: {

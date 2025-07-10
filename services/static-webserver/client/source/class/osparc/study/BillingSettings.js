@@ -119,12 +119,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
       const walletSelector = this.getChildControl("wallet-selector");
 
-      const paramsGet = {
-        url: {
-          studyId: this.__studyData["uuid"]
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getWallet", paramsGet)
+      osparc.store.Study.getInstance().getWallet(this.__studyData["uuid"])
         .then(wallet => {
           if (wallet) {
             this.__studyWalletId = wallet["walletId"];
@@ -275,13 +270,7 @@ qx.Class.define("osparc.study.BillingSettings", {
     __switchWallet: function(walletId) {
       const creditAccountBox = this.getChildControl("credit-account-box");
       creditAccountBox.setEnabled(false);
-      const paramsPut = {
-        url: {
-          studyId: this.__studyData["uuid"],
-          walletId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
+      osparc.store.Study.getInstance().selectWallet(this.__studyData["uuid"], walletId)
         .then(() => {
           this.__studyWalletId = walletId;
           const msg = this.tr("Credit Account saved");
@@ -291,7 +280,6 @@ qx.Class.define("osparc.study.BillingSettings", {
           if ("status" in err && err["status"] == 402) {
             osparc.study.Utils.extractDebtFromError(this.__studyData["uuid"], err);
           }
-          osparc.FlashMessenger.logError(err);
           this.fireEvent("closeWindow");
         })
         .finally(() => {

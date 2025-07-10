@@ -121,12 +121,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
       if (walletsEnabled) {
-        const params = {
-          url: {
-            studyId
-          }
-        };
-        osparc.data.Resources.fetch("studies", "getWallet", params)
+        osparc.store.Study.getInstance().getWallet(studyId)
           .then(wallet => {
             if (
               isStudyCreation ||
@@ -164,8 +159,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
             } else {
               openStudy();
             }
-          })
-          .catch(err => osparc.FlashMessenger.logError(err));
+          });
       } else {
         openStudy();
       }
