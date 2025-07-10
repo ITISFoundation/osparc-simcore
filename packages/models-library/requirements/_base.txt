@@ -22,6 +22,8 @@ orjson==3.10.15
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
+phonenumbers==9.0.9
+    # via -r requirements/_base.in
 pydantic==2.10.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

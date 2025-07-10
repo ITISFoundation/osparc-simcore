@@ -12,7 +12,8 @@ from servicelib.fastapi.postgres_lifespan import (
 )
 
 from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
-from ..api.rpc.routing import rpc_api_routes_lifespan
+from ..api.rpc.routes import rpc_api_routes_lifespan
+from ..clients.celery import celery_lifespan
 from ..clients.postgres import postgres_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
 from .settings import ApplicationSettings
@@ -35,7 +36,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     }
 
 
-def create_app_lifespan():
+def create_app_lifespan(settings: ApplicationSettings) -> LifespanManager:
     # WARNING: order matters
     app_lifespan = LifespanManager()
     app_lifespan.add(_settings_lifespan)
@@ -44,11 +45,15 @@ def create_app_lifespan():
     app_lifespan.add(postgres_database_lifespan)
     app_lifespan.add(postgres_lifespan)
 
-    # - rabbitmq
-    app_lifespan.add(rabbitmq_lifespan)
+    if settings.NOTIFICATIONS_CELERY and not settings.NOTIFICATIONS_WORKER_MODE:
+        # - rabbitmq
+        app_lifespan.add(rabbitmq_lifespan)
 
-    # - rpc api routes
-    app_lifespan.add(rpc_api_routes_lifespan)
+        # - celery
+        app_lifespan.add(celery_lifespan)
+
+        # - rpc api routes
+        app_lifespan.add(rpc_api_routes_lifespan)
 
     # - prometheus instrumentation
     app_lifespan.add(prometheus_instrumentation_lifespan)

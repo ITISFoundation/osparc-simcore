@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-
 from pathlib import Path
 
 import pytest
@@ -15,6 +14,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
 
