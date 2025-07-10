@@ -9,6 +9,7 @@ import common_library
 import pytest
 
 pytest_plugins = [
+    "pytest_simcore.logging",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.repository_paths",
