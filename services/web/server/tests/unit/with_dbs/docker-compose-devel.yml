@@ -38,7 +38,7 @@ services:
       - "-c"
       - "fsync=off"
   adminer:
-    image: adminer:4.8.1
+    image: adminer:5.3.0
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
