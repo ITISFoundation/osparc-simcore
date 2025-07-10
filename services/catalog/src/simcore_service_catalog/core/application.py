@@ -1,10 +1,11 @@
 import logging
-from typing import Final
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
@@ -13,7 +14,6 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import setup_loggers
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -29,27 +29,18 @@ from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
-_NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiobotocore",
-    "aiormq",
-    "botocore",
-    "httpcore",
-    "werkzeug",
-)
 
-
-def create_app(*, logging_lifespan: events.Lifespan | None = None) -> FastAPI:
-    settings = ApplicationSettings.create_from_envs()
-    _logger.debug(settings.model_dump_json(indent=2))
-
-    setup_loggers(
-        log_format_local_dev_enabled=settings.CATALOG_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.CATALOG_LOG_FILTER_MAPPING,
-        tracing_settings=settings.CATALOG_TRACING,
-        log_base_level=settings.log_level,
-        noisy_loggers=_NOISY_LOGGERS,
-    )
+def create_app(
+    *,
+    settings: ApplicationSettings | None = None,
+    logging_lifespan: Lifespan | None = None,
+) -> FastAPI:
+    if not settings:
+        settings = ApplicationSettings.create_from_envs()
+        _logger.info(
+            "Application settings: %s",
+            json_dumps(settings, indent=2, sort_keys=True),
+        )
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE

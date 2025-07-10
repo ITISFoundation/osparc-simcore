@@ -1,9 +1,9 @@
 import logging
-from collections.abc import AsyncIterator, Callable
-from typing import TypeAlias
+from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
@@ -49,9 +49,6 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
             enabled=settings.CATALOG_PROMETHEUS_INSTRUMENTATION_ENABLED
         ),
     }
-
-
-Lifespan: TypeAlias = Callable[[FastAPI], AsyncIterator[None]]
 
 
 def create_app_lifespan(logging_lifespan: Lifespan | None = None) -> LifespanManager:
