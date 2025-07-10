@@ -93,7 +93,7 @@ pytest-sugar==1.0.0
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

@@ -739,7 +739,7 @@ referencing==0.29.3
     #   jsonschema-specifications
 regex==2023.12.25
     # via dateparser
-requests==2.32.2
+requests==2.32.4
     # via
     #   httmock
     #   opentelemetry-exporter-otlp-proto-http

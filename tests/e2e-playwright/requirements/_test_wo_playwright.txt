@@ -69,7 +69,7 @@ python-dateutil==2.9.0.post0
     # via arrow
 pyyaml==6.0.2
     # via -r requirements/_test_wo_playwright.in
-requests==2.32.3
+requests==2.32.4
     # via docker
 six==1.17.0
     # via python-dateutil

@@ -628,7 +628,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker

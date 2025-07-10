@@ -12,7 +12,7 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/requirements.in
-requests==2.32.3
+requests==2.32.4
     # via docker
 tenacity==9.0.0
     # via -r requirements/requirements.in

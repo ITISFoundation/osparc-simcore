@@ -493,7 +493,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 repro-zipfile==0.4.0
     # via -r requirements/_base.in
-requests==2.32.3
+requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
 rich==14.0.0
     # via

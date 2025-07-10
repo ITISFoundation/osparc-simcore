@@ -256,7 +256,7 @@ regex==2023.12.25
     # via
     #   -c requirements/_base.txt
     #   cfn-lint
-requests==2.32.2
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker

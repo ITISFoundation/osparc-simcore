@@ -74,7 +74,7 @@ python-dotenv==1.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker

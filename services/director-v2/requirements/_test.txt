@@ -271,7 +271,7 @@ pyyaml==6.0.2
     #   bokeh
     #   dask
     #   distributed
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
