@@ -11,6 +11,7 @@ from servicelib.aiohttp.application_setup import (
 )
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
+from simcore_service_webserver.login_accounts.plugin import setup_login_account
 
 from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
@@ -28,16 +29,15 @@ from ..products.models import ProductName
 from ..products.plugin import setup_products
 from ..redis import setup_redis
 from ..rest.plugin import setup_rest
-from ._constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from ._controller.rest import (
     auth,
     change,
     confirmation,
-    preregistration,
     registration,
     twofa,
 )
 from ._login_repository_legacy import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
+from .constants import APP_LOGIN_SETTINGS_PER_PRODUCT_KEY
 from .settings import (
     APP_LOGIN_OPTIONS_KEY,
     LoginOptions,
@@ -147,10 +147,10 @@ def setup_login(app: web.Application):
 
     app.router.add_routes(auth.routes)
     setup_login_auth(app)
+    setup_login_account(app)
 
     app.router.add_routes(confirmation.routes)
     app.router.add_routes(registration.routes)
-    app.router.add_routes(preregistration.routes)
     app.router.add_routes(change.routes)
     app.router.add_routes(twofa.routes)
 
