@@ -7,7 +7,7 @@ from typing import Final
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from servicelib.logging_utils import setup_async_loggers_lifespan
+from servicelib.logging_utils import log_context, setup_async_loggers_lifespan
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.events import Lifespan
 from simcore_service_catalog.core.settings import ApplicationSettings
@@ -39,10 +39,9 @@ async def _setup_logging(app_settings: ApplicationSettings) -> Lifespan:
 
     async def _logging_lifespan(app: FastAPI) -> AsyncIterator[None]:
         assert app is not None, "app must be provided"
-        _logger.info("This is the non-blocking logger! Congratulations!")
-        yield
-        await exit_stack.aclose()
-        _logger.info("This is the blocking logger! Back to the roots!")
+        with log_context(_logger, logging.INFO, "Non-blocking logger!"):
+            yield
+            await exit_stack.aclose()
 
     return _logging_lifespan
 
