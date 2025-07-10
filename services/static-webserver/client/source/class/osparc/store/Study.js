@@ -85,6 +85,62 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "patch", params);
     },
 
+    getPage: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPage", params, options)
+    },
+
+    getPageTrashed: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPageTrashed", params, options)
+    },
+
+    getPageSearch: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+    },
+
+    getActive: function(clientSessionID) {
+      const params = {
+        url: {
+          tabId: clientSessionID,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getActive", params)
+    },
+
+    getOne: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getOne", params)
+    },
+
+    deleteStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "delete", params)
+        .then(() => {
+          osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
+        })
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
+    },
+
+    patchStudy: function(studyId, patchData) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patch", params);
+    },
+
     patchStudyData: function(studyData, fieldKey, value) {
       if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
         console.error(fieldKey, "has it's own PATCH path");
@@ -186,6 +242,22 @@ qx.Class.define("osparc.store.Study", {
     },
 
     trashStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "trash", params)
+        .then(() => {
+          osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
+        })
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
+    },
+
+    untrashStudy: function(studyId) {
       const params = {
         url: {
           studyId
