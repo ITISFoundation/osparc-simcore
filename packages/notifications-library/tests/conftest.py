@@ -29,7 +29,6 @@ pytest_plugins = [
     "pytest_simcore.faker_payments_data",
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
-    "pytest_simcore.logging",
     "pytest_simcore.postgres_service",
     "pytest_simcore.repository_paths",
 ]
