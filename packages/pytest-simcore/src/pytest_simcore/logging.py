@@ -34,14 +34,16 @@ def preserve_caplog_for_async_logging(request):
                     root_logger.addHandler(handler)
             yield
 
-    with (
-        patch(
-            "tests.test_logging_utils.setup_async_loggers_lifespan",
-            patched_setup_async_loggers_lifespan,
-        ),
-        patch(
-            "servicelib.logging_utils.setup_async_loggers_lifespan",
-            patched_setup_async_loggers_lifespan,
-        ),
+    with patch(
+        "servicelib.logging_utils.setup_async_loggers_lifespan",
+        patched_setup_async_loggers_lifespan,
     ):
-        yield
+        try:
+            with patch(
+                "tests.test_logging_utils.setup_async_loggers_lifespan",
+                patched_setup_async_loggers_lifespan,
+            ):
+                yield
+        except ModuleNotFoundError:
+            # NOTE: this is for tests running in service library
+            yield
