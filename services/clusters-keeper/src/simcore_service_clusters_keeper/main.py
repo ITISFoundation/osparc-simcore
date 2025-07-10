@@ -1,11 +1,15 @@
 """Main application to be deployed by uvicorn (or equivalent) server"""
 
+import logging
 from typing import Final
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from servicelib.logging_utils import setup_loggers
+from servicelib.fastapi.logging_lifespan import setup_logging_shutdown_event
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import ApplicationSettings
+
+_logger = logging.getLogger(__name__)
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "aiobotocore",
@@ -15,14 +19,21 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "werkzeug",
 )
 
-the_settings = ApplicationSettings.create_from_envs()
-setup_loggers(
-    log_format_local_dev_enabled=the_settings.CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED,
-    logger_filter_mapping=the_settings.CLUSTERS_KEEPER_LOG_FILTER_MAPPING,
-    tracing_settings=the_settings.CLUSTERS_KEEPER_TRACING,
-    log_base_level=the_settings.log_level,
-    noisy_loggers=_NOISY_LOGGERS,
-)
 
-# SINGLETON FastAPI app
-the_app: FastAPI = create_app(the_settings)
+def app_factory() -> FastAPI:
+    app_settings = ApplicationSettings.create_from_envs()
+    logging_shutdown_event = setup_logging_shutdown_event(
+        log_format_local_dev_enabled=app_settings.CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=app_settings.CLUSTERS_KEEPER_LOG_FILTER_MAPPING,
+        tracing_settings=app_settings.CLUSTERS_KEEPER_TRACING,
+        log_base_level=app_settings.log_level,
+        noisy_loggers=_NOISY_LOGGERS,
+    )
+
+    _logger.info(
+        "Application settings: %s",
+        json_dumps(app_settings, indent=2, sort_keys=True),
+    )
+    app = create_app(settings=app_settings)
+    app.add_event_handler("shutdown", logging_shutdown_event)
+    return app
