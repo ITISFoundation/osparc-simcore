@@ -12,8 +12,8 @@ import logging.handlers
 import queue
 import sys
 from asyncio import iscoroutinefunction
-from collections.abc import AsyncIterator, Callable, Iterator
-from contextlib import asynccontextmanager, contextmanager
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
@@ -257,15 +257,15 @@ def setup_loggers(
     _apply_logger_filters(logger_filter_mapping)
 
 
-@asynccontextmanager
-async def setup_async_loggers_lifespan(
+@contextmanager
+def setup_async_loggers_lifespan(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
-) -> AsyncIterator[None]:
+) -> Iterator[None]:
     """
     Async context manager for non-blocking logging infrastructure.
 

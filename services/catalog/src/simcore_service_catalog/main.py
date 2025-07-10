@@ -25,9 +25,9 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 )
 
 
-async def _setup_logging(app_settings: ApplicationSettings) -> Lifespan:
+def _setup_logging(app_settings: ApplicationSettings) -> Lifespan:
     exit_stack = AsyncExitStack()
-    await exit_stack.enter_async_context(
+    exit_stack.enter_context(
         setup_async_loggers_lifespan(
             log_base_level=app_settings.log_level,
             noisy_loggers=_NOISY_LOGGERS,
@@ -46,13 +46,12 @@ async def _setup_logging(app_settings: ApplicationSettings) -> Lifespan:
     return _logging_lifespan
 
 
-async def app_factory() -> FastAPI:
+def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
     _logger.info(
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
-
-    logging_lifespan = await _setup_logging(app_settings)
+    logging_lifespan = _setup_logging(app_settings)
 
     return create_app(logging_lifespan=logging_lifespan)
