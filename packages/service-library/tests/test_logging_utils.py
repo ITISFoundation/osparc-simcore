@@ -435,7 +435,7 @@ def test_set_parent_module_log_level_(caplog: pytest.LogCaptureFixture):
 
 
 @pytest.mark.parametrize("log_format_local_dev_enabled", [True, False])
-async def test_setup_async_loggers_basic(
+def test_setup_async_loggers_basic(
     caplog: pytest.LogCaptureFixture,
     log_format_local_dev_enabled: bool,
 ):
@@ -456,10 +456,9 @@ async def test_setup_async_loggers_basic(
         _assert_check_log_message(caplog, "Test async log message")
 
 
-async def test_setup_async_loggers_with_filters(
+def test_setup_async_loggers_with_filters(
     caplog: pytest.LogCaptureFixture,
 ):
-    """Test async logging setup with logger filters."""
     caplog.clear()
     caplog.set_level(logging.INFO)
 
@@ -496,7 +495,7 @@ async def test_setup_async_loggers_with_filters(
     assert "This is from unfiltered logger" in caplog.text
 
 
-async def test_setup_async_loggers_with_tracing_settings(
+def test_setup_async_loggers_with_tracing_settings(
     caplog: pytest.LogCaptureFixture,
 ):
     """Test async logging setup with tracing settings."""
@@ -518,7 +517,7 @@ async def test_setup_async_loggers_with_tracing_settings(
         _assert_check_log_message(caplog, "Test message with tracing settings")
 
 
-async def test_setup_async_loggers_context_manager_cleanup(
+def test_setup_async_loggers_context_manager_cleanup(
     caplog: pytest.LogCaptureFixture,
 ):
     """Test that async logging context manager properly cleans up."""
@@ -540,7 +539,7 @@ async def test_setup_async_loggers_context_manager_cleanup(
         _assert_check_log_message(caplog, "Message during context")
 
 
-async def test_setup_async_loggers_exception_handling(
+def test_setup_async_loggers_exception_handling(
     caplog: pytest.LogCaptureFixture,
 ):
     """Test that async logging handles exceptions gracefully."""
