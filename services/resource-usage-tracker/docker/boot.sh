@@ -54,7 +54,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
     cd services/resource-usage-tracker/src/simcore_service_resource_usage_tracker && \
     python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${RESOURCE_USAGE_TRACKER_REMOTE_DEBUGGING_PORT} -m \
     uvicorn \
-      --factory main:create_app \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \
@@ -63,7 +63,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   exec uvicorn \
-    --factory simcore_service_resource_usage_tracker.main:create_app \
+    --factory simcore_service_resource_usage_tracker.main:app_factory \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi

@@ -53,7 +53,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
     cd services/autoscaling/src/simcore_service_autoscaling && \
     python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${AUTOSCALING_REMOTE_DEBUGGING_PORT} -m \
     uvicorn \
-      --factory main:create_app \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \
@@ -62,7 +62,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   exec uvicorn \
-    --factory simcore_service_autoscaling.main:create_app \
+    --factory simcore_service_autoscaling.main:app_factory \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi

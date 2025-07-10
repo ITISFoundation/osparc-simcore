@@ -51,7 +51,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
     cd services/datcore-adapter/src/simcore_service_datcore_adapter && \
     python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${DATCORE_ADAPTER_REMOTE_DEBUG_PORT} -m \
     uvicorn \
-      --factory main:create_app \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \
@@ -60,7 +60,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   exec uvicorn \
-    --factory simcore_service_datcore_adapter.main:create_app \
+    --factory simcore_service_datcore_adapter.main:app_factory \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi
