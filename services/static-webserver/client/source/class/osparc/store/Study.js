@@ -69,6 +69,19 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
     },
 
+    createStudyFromTemplate: function(templateId, studyData, pollTask = true) {
+      const params = {
+        url: {
+          templateId,
+        },
+        data: studyData
+      };
+      const options = {
+        pollTask,
+      };
+      return osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+    },
+
     deleteStudy: function(studyId) {
       const params = {
         url: {

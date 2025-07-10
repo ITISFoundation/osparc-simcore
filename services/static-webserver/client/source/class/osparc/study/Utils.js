@@ -116,16 +116,7 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["name"] = templateData["name"];
             minStudyData["description"] = templateData["description"];
             minStudyData["thumbnail"] = templateData["thumbnail"];
-            const params = {
-              url: {
-                templateId: templateData["uuid"]
-              },
-              data: minStudyData
-            };
-            const options = {
-              pollTask: true
-            };
-            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+            const fetchPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
             const pollTasks = osparc.store.PollTasks.getInstance();
             const interval = 1000;
             pollTasks.createPollingTask(fetchPromise, interval)
