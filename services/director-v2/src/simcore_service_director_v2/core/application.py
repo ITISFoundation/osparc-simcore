@@ -1,10 +1,12 @@
 import logging
+from typing import Final
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from fastapi_lifespan_manager import LifespanManager
 from servicelib.fastapi.lifespan_utils import Lifespan
+from servicelib.fastapi.logging_lifespan import setup_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -50,6 +52,13 @@ from .events import on_shutdown, on_startup
 from .settings import AppSettings
 
 _logger = logging.getLogger(__name__)
+
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
+    "aio_pika",
+    "aiormq",
+    "httpcore",
+    "httpx",
+)
 
 
 def _set_exception_handlers(app: FastAPI):
@@ -104,25 +113,43 @@ def create_app_lifespan(logging_lifespan: Lifespan | None = None) -> LifespanMan
 
 
 def create_base_app(
-    settings: AppSettings | None = None,
+    app_settings: AppSettings | None = None,
 ) -> FastAPI:
-    if settings is None:
-        settings = AppSettings.create_from_envs()
-    assert settings  # nosec
+    if app_settings is None:
+        app_settings = AppSettings.create_from_envs()
 
-    assert settings.SC_BOOT_MODE  # nosec
+    logging_shutdown_event = setup_logging_shutdown_event(
+        log_format_local_dev_enabled=app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
+        logger_filter_mapping=app_settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
+        tracing_settings=app_settings.DIRECTOR_V2_TRACING,
+        log_base_level=app_settings.log_level,
+        noisy_loggers=_NOISY_LOGGERS,
+    )
+
+    _logger.info(
+        "Application settings: %s",
+        json_dumps(app_settings, indent=2, sort_keys=True),
+    )
+
+    assert app_settings  # nosec
+
+    assert app_settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE.is_devel_mode(),
+        debug=app_settings.SC_BOOT_MODE.is_devel_mode(),
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
+        **get_common_oas_options(
+            is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()
+        ),
     )
     override_fastapi_openapi_method(app)
-    app.state.settings = settings
+    app.state.settings = app_settings
 
     app.include_router(api_router)
+
+    app.add_event_handler("shutdown", logging_shutdown_event)
 
     return app
 
