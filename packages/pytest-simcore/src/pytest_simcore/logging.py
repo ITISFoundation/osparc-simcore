@@ -10,10 +10,10 @@ from servicelib.logging_utils import setup_async_loggers_lifespan
 
 
 @pytest.fixture(autouse=True)
-def preserve_caplog_for_async_logging(
-    request: pytest.FixtureRequest, mocker: MockerFixture
-) -> None:
-    # Patch setup_async_loggers_lifespan to preserve caplog handlers
+def preserve_caplog_for_async_logging(mocker: MockerFixture) -> None:
+    # Patch setup_async_loggers_lifespan to preserve caplog handlers,
+    # and pytest logs in general as pytest captures logs in a special way
+    # that is not compatible with the queue handler used in async logging.
     original_setup = setup_async_loggers_lifespan
 
     @contextmanager
