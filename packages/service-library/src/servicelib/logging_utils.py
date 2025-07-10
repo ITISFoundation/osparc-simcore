@@ -158,17 +158,14 @@ def _setup_format_string(
     tracing_settings: TracingSettings | None,
     log_format_local_dev_enabled: bool,
 ) -> str:
-    """Create the appropriate format string based on settings."""
     if log_format_local_dev_enabled:
-        if tracing_settings is not None:
-            return _LOCAL_TRACING_FORMATTING
-        return _LOCAL_FORMATTING
+        return (
+            _LOCAL_TRACING_FORMATTING
+            if tracing_settings is not None
+            else _LOCAL_FORMATTING
+        )
 
-    if tracing_settings is not None:
-        setup_log_tracing(tracing_settings=tracing_settings)
-        return _TRACING_FORMATTING
-
-    return _DEFAULT_FORMATTING
+    return _TRACING_FORMATTING if tracing_settings is not None else _DEFAULT_FORMATTING
 
 
 def _get_all_loggers() -> list[logging.Logger]:
@@ -236,6 +233,8 @@ def setup_loggers(
     _setup_base_logging_level(log_base_level)
     if noisy_loggers is not None:
         _dampen_noisy_loggers(noisy_loggers)
+    if tracing_settings is not None:
+        setup_log_tracing(tracing_settings=tracing_settings)
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
@@ -283,6 +282,8 @@ def setup_async_loggers_lifespan(
     if noisy_loggers is not None:
         _dampen_noisy_loggers(noisy_loggers)
 
+    if tracing_settings is not None:
+        setup_log_tracing(tracing_settings=tracing_settings)
     fmt = _setup_format_string(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
