@@ -24,7 +24,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   command -v python | sed 's/^/    /'
 
   cd services/notifications
-  uv pip --quiet sync requirements/dev.txt
+  uv pip --quiet sync --link-mode=copy requirements/dev.txt
   cd -
   echo "$INFO" "PIP :"
   uv pip list
@@ -33,7 +33,7 @@ fi
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   # NOTE: production does NOT pre-installs debugpy
   if command -v uv >/dev/null 2>&1; then
-    uv pip install debugpy
+    uv pip install --link-mode=copy debugpy
   else
     pip install debugpy
   fi
@@ -48,7 +48,7 @@ SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+  reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} ' | tr '\n' ' ')
 
   exec sh -c "
     cd services/notifications/src/simcore_service_notifications && \
@@ -56,7 +56,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --host 0.0.0.0 \
       --port 8000 \
       --reload \
-      $reload_dir_packages
+      $reload_dir_packages \
       --reload-dir . \
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
