@@ -99,11 +99,7 @@ qx.Class.define("osparc.store.Study", {
       const patchData = {
         "templateType": templateType,
       };
-      return this.patchStudy(templateId, patchData)
-        .catch(err => {
-          osparc.FlashMessenger.logError(err);
-          throw err;
-        });
+      return this.patchStudy(templateId, patchData);
     },
 
     updateMetadata: function(studyId, metadata) {
@@ -113,11 +109,7 @@ qx.Class.define("osparc.store.Study", {
         },
         data: metadata
       };
-      return osparc.data.Resources.fetch("studies", "updateMetadata", params)
-        .catch(err => {
-          console.error(err);
-          throw err;
-        });
+      return osparc.data.Resources.fetch("studies", "updateMetadata", params);
     },
 
     trashStudy: function(studyId) {

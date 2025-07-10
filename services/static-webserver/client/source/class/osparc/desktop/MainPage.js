@@ -274,7 +274,8 @@ qx.Class.define("osparc.desktop.MainPage", {
                   if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
                     appBrowser.reloadResources(false);
                   }
-                });
+                })
+                .catch(err => osparc.FlashMessenger.logError(err));
             }
           });
         })
