@@ -63,7 +63,10 @@ qx.Class.define("osparc.store.Study", {
         .then(() => {
           osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
     },
 
     patchStudy: function(studyId, patchData) {
@@ -97,7 +100,10 @@ qx.Class.define("osparc.store.Study", {
         "templateType": templateType,
       };
       return this.patchStudy(templateId, patchData)
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     updateMetadata: function(studyId, metadata) {
@@ -107,8 +113,11 @@ qx.Class.define("osparc.store.Study", {
         },
         data: metadata
       };
-      osparc.data.Resources.fetch("studies", "updateMetadata", params)
-        .catch(err => console.error(err));
+      return osparc.data.Resources.fetch("studies", "updateMetadata", params)
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
     },
 
     trashStudy: function(studyId) {
@@ -121,7 +130,10 @@ qx.Class.define("osparc.store.Study", {
         .then(() => {
           osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
     },
 
     untrashStudy: function(studyId) {
@@ -131,7 +143,10 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "untrash", params)
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
     },
 
     moveStudyToWorkspace: function(studyId, destWorkspaceId) {
@@ -179,7 +194,10 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "getWallet", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     selectWallet: function(studyId, walletId) {
@@ -190,7 +208,10 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "selectWallet", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     addTag: function(studyId, tagId) {
@@ -201,7 +222,10 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "addTag", params)
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
     },
 
     removeTag: function(studyId, tagId) {
@@ -212,7 +236,10 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "removeTag", params)
-        .catch(err => console.error(err));
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
     },
 
     addCollaborators: function(studyData, newCollaborators) {
@@ -234,7 +261,10 @@ qx.Class.define("osparc.store.Study", {
           });
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     removeCollaborator: function(studyData, gid) {
@@ -249,7 +279,10 @@ qx.Class.define("osparc.store.Study", {
           delete studyData["accessRights"][gid];
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     updateCollaborator: function(studyData, gid, newPermissions) {
@@ -265,7 +298,10 @@ qx.Class.define("osparc.store.Study", {
           studyData["accessRights"][gid] = newPermissions;
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     sendShareEmails: function(studyData, selectedEmails, newAccessRights, message) {
