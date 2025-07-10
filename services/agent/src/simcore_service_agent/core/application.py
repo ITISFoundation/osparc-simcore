@@ -1,5 +1,6 @@
 import logging
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
@@ -9,7 +10,6 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import setup_loggers
 
 from .._meta import (
     API_VTAG,
@@ -27,23 +27,16 @@ from ..services.rabbitmq import setup_rabbitmq
 from ..services.volumes_manager import setup_volume_manager
 from .settings import ApplicationSettings
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-def _setup_logger(settings: ApplicationSettings):
-    setup_loggers(
-        log_format_local_dev_enabled=settings.AGENT_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.AGENT_VOLUMES_LOG_FILTER_MAPPING,
-        tracing_settings=settings.AGENT_TRACING,
-        log_base_level=settings.log_level,
-        noisy_loggers=None,
-    )
-
-
-def create_app() -> FastAPI:
-    settings = ApplicationSettings.create_from_envs()
-    _setup_logger(settings)
-    logger.debug(settings.model_dump_json(indent=2))
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+    if settings is None:
+        settings = ApplicationSettings.create_from_envs()
+        _logger.info(
+            "Application settings: %s",
+            json_dumps(settings, indent=2, sort_keys=True),
+        )
 
     assert settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
