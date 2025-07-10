@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack
 
 from fastapi import FastAPI
@@ -37,8 +37,34 @@ def setup_logging_lifespan(
 
     async def _logging_lifespan(app: FastAPI) -> AsyncIterator[None]:
         assert app is not None, "app must be provided"
-        with log_context(_logger, logging.INFO, "Non-blocking logger!"):
-            yield
+        yield
+        with log_context(_logger, logging.INFO, "Re-enable Blocking logger"):
             await exit_stack.aclose()
 
     return _logging_lifespan
+
+
+def setup_logging_shutdown_event(
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_settings: TracingSettings | None,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...] | None,
+) -> Callable[[], Awaitable[None]]:
+    exit_stack = AsyncExitStack()
+    exit_stack.enter_context(
+        setup_async_loggers_lifespan(
+            log_base_level=log_base_level,
+            noisy_loggers=noisy_loggers,
+            log_format_local_dev_enabled=log_format_local_dev_enabled,
+            logger_filter_mapping=logger_filter_mapping,
+            tracing_settings=tracing_settings,
+        )
+    )
+
+    async def _on_shutdown_event() -> None:
+        with log_context(_logger, logging.INFO, "Re-enable Blocking logger"):
+            await exit_stack.aclose()
+
+    return _on_shutdown_event
