@@ -19,6 +19,7 @@ from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Any, Final, NotRequired, TypeAlias, TypedDict, TypeVar
 
+from common_library.json_serialization import json_dumps
 from settings_library.tracing import TracingSettings
 
 from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
@@ -647,10 +648,12 @@ def _apply_comprehensive_logging_setup(
         _logger.info(
             "Modified %d loggers for comprehensive logging: %s",
             len(loggers_modified),
-            [
-                f"{info['name']}(removed_handlers={info['handlers']}, enabled_propagate={info['had_propagate_disabled']})"
-                for info in loggers_modified[:3]
-            ],  # Show first 3 to avoid spam
+            json_dumps(
+                [
+                    f"{info['name']}(removed_handlers={info['handlers']}, enabled_propagate={info['had_propagate_disabled']})"
+                    for info in loggers_modified
+                ]
+            ),
         )
 
     # Set up root logger with the provided handler only
