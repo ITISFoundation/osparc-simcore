@@ -1,21 +1,18 @@
 # In conftest.py or test_logging_utils.py
+import contextlib
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
-from unittest.mock import patch
 
 import pytest
+from pytest_mock import MockerFixture
 from servicelib.logging_utils import setup_async_loggers_lifespan
 
 
 @pytest.fixture(autouse=True)
-def preserve_caplog_for_async_logging(request):
-    """Automatically preserve caplog handlers when both caplog and async logging are used."""
-    # Check if this test uses caplog fixture
-    if "caplog" not in request.fixturenames:
-        yield  # No caplog, no patching needed
-        return
-
+def preserve_caplog_for_async_logging(
+    request: pytest.FixtureRequest, mocker: MockerFixture
+) -> None:
     # Patch setup_async_loggers_lifespan to preserve caplog handlers
     original_setup = setup_async_loggers_lifespan
 
@@ -34,16 +31,12 @@ def preserve_caplog_for_async_logging(request):
                     root_logger.addHandler(handler)
             yield
 
-    with patch(
+    methods_to_patch = [
         "servicelib.logging_utils.setup_async_loggers_lifespan",
-        patched_setup_async_loggers_lifespan,
-    ):
-        try:
-            with patch(
-                "tests.test_logging_utils.setup_async_loggers_lifespan",
-                patched_setup_async_loggers_lifespan,
-            ):
-                yield
-        except ModuleNotFoundError:
-            # NOTE: this is for tests running in service library
-            yield
+        "servicelib.fastapi.logging_lifespan.setup_async_loggers_lifespan",
+        "tests.test_logging_utils.setup_async_loggers_lifespan",
+    ]
+    for method in methods_to_patch:
+        with contextlib.suppress(AttributeError, ModuleNotFoundError):
+            # Patch the method to use our patched version
+            mocker.patch(method, patched_setup_async_loggers_lifespan)
