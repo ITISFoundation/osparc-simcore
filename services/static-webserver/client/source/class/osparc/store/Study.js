@@ -19,9 +19,15 @@ qx.Class.define("osparc.store.Study", {
   extend: qx.core.Object,
   type: "singleton",
 
+  events: {
+    "studyStateChanged": "qx.event.type.Data",
+    "studyDebtChanged": "qx.event.type.Data",
+  },
+
   members: {
     __nodeResources: null,
     __nodePricingUnit: null,
+    __studiesInDebt: null,
 
     getPage: function(params, options) {
       return osparc.data.Resources.fetch("studies", "getPage", params, options)
@@ -110,6 +116,73 @@ qx.Class.define("osparc.store.Study", {
         data: metadata
       };
       return osparc.data.Resources.fetch("studies", "updateMetadata", params);
+    },
+
+    getStudyState: function(studyId) {
+      osparc.data.Resources.fetch("studies", "state", {
+        url: {
+          "studyId": studyId
+        }
+      })
+        .then(({state}) => {
+          this.setStudyState(studyId, state);
+        });
+    },
+
+    setStudyState: function(studyId, state) {
+      const studiesWStateCache = this.getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["state"] = state;
+      }
+
+      const currentStudy = this.getCurrentStudy();
+      if (currentStudy && currentStudy.getUuid() === studyId) {
+        currentStudy.setState(state);
+      }
+
+      this.fireDataEvent("studyStateChanged", {
+        studyId,
+        state,
+      });
+    },
+
+    setStudyDebt: function(studyId, debt) {
+      // init object if it does not exist
+      if (this.__studiesInDebt === null) {
+        this.__studiesInDebt = {};
+      }
+      if (debt) {
+        this.__studiesInDebt[studyId] = debt;
+      } else {
+        delete this.__studiesInDebt[studyId];
+      }
+
+      const studiesWStateCache = this.getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        if (debt) {
+          studiesWStateCache[idx]["debt"] = debt;
+        } else {
+          delete studiesWStateCache[idx]["debt"];
+        }
+      }
+
+      this.fireDataEvent("studyDebtChanged", {
+        studyId,
+        debt,
+      });
+    },
+
+    getStudyDebt: function(studyId) {
+      if (this.__studiesInDebt && studyId in this.__studiesInDebt) {
+        return this.__studiesInDebt[studyId];
+      }
+      return null;
+    },
+
+    isStudyInDebt: function(studyId) {
+      return Boolean(this.getStudyDebt(studyId));
     },
 
     trashStudy: function(studyId) {

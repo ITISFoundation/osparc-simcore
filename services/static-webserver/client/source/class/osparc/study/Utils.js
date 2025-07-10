@@ -368,7 +368,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isInDebt: function(studyData) {
-      return osparc.store.Store.getInstance().isStudyInDebt(studyData["uuid"]);
+      return osparc.store.Study.getInstance().isStudyInDebt(studyData["uuid"]);
     },
 
     extractDebtFromError: function(studyId, err) {
@@ -385,7 +385,7 @@ qx.Class.define("osparc.study.Utils", {
       }
       if (debt) {
         // if get here, it means that the 402 was thrown due to the debt
-        osparc.store.Store.getInstance().setStudyDebt(studyId, debt);
+        osparc.store.Study.getInstance().setStudyDebt(studyId, debt);
       }
       return debt;
     },

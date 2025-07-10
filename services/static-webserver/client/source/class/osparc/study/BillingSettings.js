@@ -259,7 +259,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
     __debtPayed: function() {
       delete this.__studyData["debt"];
-      osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
+      osparc.store.Study.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
       this.fireEvent("debtPayed");
       if (this.__debtMessage) {
         this._remove(this.__debtMessage);
