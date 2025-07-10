@@ -95,7 +95,7 @@ flask==3.1.1
     # via
     #   flask-cors
     #   moto
-flask-cors==6.0.0
+flask-cors==6.0.1
     # via moto
 frozenlist==1.6.0
     # via
