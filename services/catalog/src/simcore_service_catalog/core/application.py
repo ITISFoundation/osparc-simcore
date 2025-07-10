@@ -39,7 +39,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 )
 
 
-def create_app() -> FastAPI:
+def create_app(*, logging_lifespan: events.Lifespan | None = None) -> FastAPI:
     settings = ApplicationSettings.create_from_envs()
     _logger.debug(settings.model_dump_json(indent=2))
 
@@ -60,7 +60,7 @@ def create_app() -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=events.create_app_lifespan(),
+        lifespan=events.create_app_lifespan(logging_lifespan=logging_lifespan),
     )
     override_fastapi_openapi_method(app)
 
