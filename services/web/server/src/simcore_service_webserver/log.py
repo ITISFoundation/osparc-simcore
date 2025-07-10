@@ -31,7 +31,7 @@ _logger = logging.getLogger(__name__)
 CleanupEvent: TypeAlias = Callable[[web.Application], Awaitable[None]]
 
 
-async def setup_logging(app_settings: ApplicationSettings) -> CleanupEvent:
+def setup_logging(app_settings: ApplicationSettings) -> CleanupEvent:
     exit_stack = AsyncExitStack()
     exit_stack.enter_context(
         setup_async_loggers_lifespan(
