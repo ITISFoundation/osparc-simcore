@@ -138,7 +138,7 @@ termcolor==2.5.0
     # via pytest-sugar
 tzdata==2025.1
     # via faker
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

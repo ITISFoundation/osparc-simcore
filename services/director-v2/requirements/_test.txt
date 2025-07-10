@@ -334,7 +334,7 @@ tzdata==2025.2
     # via
     #   faker
     #   pandas
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

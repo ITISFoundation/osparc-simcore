@@ -392,7 +392,7 @@ typing-inspection==0.4.0
     # via pydantic
 tzdata==2025.2
     # via kombu
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

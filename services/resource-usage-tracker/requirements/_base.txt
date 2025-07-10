@@ -891,7 +891,7 @@ tzdata==2024.1
     # via pandas
 tzlocal==5.2
     # via dateparser
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

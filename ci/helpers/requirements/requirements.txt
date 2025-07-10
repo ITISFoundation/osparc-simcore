@@ -58,7 +58,7 @@ typing-extensions==4.14.1
     #   fastapi
     #   pydantic
     #   pydantic-core
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

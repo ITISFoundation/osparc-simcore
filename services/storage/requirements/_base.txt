@@ -1112,7 +1112,7 @@ typing-extensions==4.14.1
     #   types-aiobotocore-ssm
 tzdata==2025.2
     # via kombu
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

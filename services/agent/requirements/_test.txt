@@ -300,7 +300,7 @@ typing-extensions==4.14.1
     #   pydantic-core
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

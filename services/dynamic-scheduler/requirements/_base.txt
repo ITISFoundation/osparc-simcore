@@ -592,7 +592,7 @@ typing-extensions==4.14.1
     #   typer
 u-msgpack-python==2.8.0
     # via -r requirements/_base.in
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

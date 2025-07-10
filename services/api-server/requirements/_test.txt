@@ -387,7 +387,7 @@ typing-extensions==4.14.1
     #   types-boto3
 tzdata==2025.1
     # via faker
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
