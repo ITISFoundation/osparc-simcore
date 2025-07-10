@@ -21,7 +21,7 @@ from servicelib.logging_utils import (
     setup_async_loggers_lifespan,
 )
 from tenacity import (
-    AsyncRetrying,
+    retry,
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
@@ -30,18 +30,16 @@ from tenacity import (
 _logger = logging.getLogger(__name__)
 
 
-async def _assert_check_log_message(
+@retry(
+    wait=wait_fixed(0.01),
+    stop=stop_after_delay(2.0),
+    reraise=True,
+    retry=retry_if_exception_type(AssertionError),
+)
+def _assert_check_log_message(
     caplog: pytest.LogCaptureFixture, expected_message: str
 ) -> None:
-    """Helper to reliably check if a log message appears in caplog using tenacity."""
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.01),
-        stop=stop_after_delay(2.0),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert expected_message in caplog.text
+    assert expected_message in caplog.text
 
 
 _ALL_LOGGING_LEVELS = [
@@ -445,7 +443,7 @@ async def test_setup_async_loggers_basic(
     caplog.clear()
     caplog.set_level(logging.INFO)
 
-    async with setup_async_loggers_lifespan(
+    with setup_async_loggers_lifespan(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
         logger_filter_mapping={},  # No filters for this test
         tracing_settings=None,  # No tracing for this test
@@ -455,7 +453,7 @@ async def test_setup_async_loggers_basic(
         test_logger = logging.getLogger("test_async_logger")
         test_logger.info("Test async log message")
 
-        await _assert_check_log_message(caplog, "Test async log message")
+        _assert_check_log_message(caplog, "Test async log message")
 
 
 async def test_setup_async_loggers_with_filters(
@@ -470,7 +468,7 @@ async def test_setup_async_loggers_with_filters(
         "test_filtered_logger": ["filtered_message"],
     }
 
-    async with setup_async_loggers_lifespan(
+    with setup_async_loggers_lifespan(
         log_format_local_dev_enabled=True,
         logger_filter_mapping=filter_mapping,
         tracing_settings=None,  # No tracing for this test
@@ -487,8 +485,8 @@ async def test_setup_async_loggers_with_filters(
         test_logger.info("This is an unfiltered message")
         unfiltered_logger.info("This is from unfiltered logger")
 
-        await _assert_check_log_message(caplog, "This is an unfiltered message")
-        await _assert_check_log_message(caplog, "This is from unfiltered logger")
+        _assert_check_log_message(caplog, "This is an unfiltered message")
+        _assert_check_log_message(caplog, "This is from unfiltered logger")
 
     # Check that filtered message was not captured
     assert "This is a filtered_message" not in caplog.text
@@ -507,7 +505,7 @@ async def test_setup_async_loggers_with_tracing_settings(
 
     # Note: We can't easily test actual tracing without setting up OpenTelemetry
     # But we can test that the function accepts the parameter
-    async with setup_async_loggers_lifespan(
+    with setup_async_loggers_lifespan(
         log_format_local_dev_enabled=False,
         logger_filter_mapping={},  # No filters for this test
         tracing_settings=None,
@@ -517,7 +515,7 @@ async def test_setup_async_loggers_with_tracing_settings(
         test_logger = logging.getLogger("test_tracing_logger")
         test_logger.info("Test message with tracing settings")
 
-        await _assert_check_log_message(caplog, "Test message with tracing settings")
+        _assert_check_log_message(caplog, "Test message with tracing settings")
 
 
 async def test_setup_async_loggers_context_manager_cleanup(
@@ -529,7 +527,7 @@ async def test_setup_async_loggers_context_manager_cleanup(
 
     test_logger = logging.getLogger("test_cleanup_logger")
 
-    async with setup_async_loggers_lifespan(
+    with setup_async_loggers_lifespan(
         log_format_local_dev_enabled=True,
         logger_filter_mapping={},
         tracing_settings=None,
@@ -539,7 +537,7 @@ async def test_setup_async_loggers_context_manager_cleanup(
         # During the context, handlers should be replaced
         test_logger.info("Message during context")
 
-        await _assert_check_log_message(caplog, "Message during context")
+        _assert_check_log_message(caplog, "Message during context")
 
 
 async def test_setup_async_loggers_exception_handling(
@@ -555,7 +553,7 @@ async def test_setup_async_loggers_exception_handling(
         raise ValueError(exc_msg)
 
     try:
-        async with setup_async_loggers_lifespan(
+        with setup_async_loggers_lifespan(
             log_format_local_dev_enabled=True,
             logger_filter_mapping={},
             tracing_settings=None,
@@ -565,7 +563,7 @@ async def test_setup_async_loggers_exception_handling(
             test_logger = logging.getLogger("test_exception_logger")
             test_logger.info("Message before exception")
 
-            await _assert_check_log_message(caplog, "Message before exception")
+            _assert_check_log_message(caplog, "Message before exception")
 
             # Raise an exception to test cleanup
             _raise_test_exception()
