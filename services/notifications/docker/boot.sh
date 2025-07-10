@@ -54,7 +54,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
     cd services/notifications/src/simcore_service_notifications && \
     python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${NOTIFICATIONS_REMOTE_DEBUGGING_PORT} -m \
     uvicorn \
-      --factory main:create_app \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --port 8000 \
       --reload \
@@ -64,7 +64,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   exec uvicorn \
-    --factory simcore_service_notifications.main:create_app \
+    --factory simcore_service_notifications.main:app_factory \
     --host 0.0.0.0 \
     --port 8000 \
     --log-level "${SERVER_LOG_LEVEL}" \

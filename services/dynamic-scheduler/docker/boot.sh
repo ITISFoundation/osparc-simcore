@@ -54,7 +54,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
     cd services/dynamic-scheduler/src/simcore_service_dynamic_scheduler && \
     python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${DYNAMIC_SCHEDULER_REMOTE_DEBUGGING_PORT} -m \
     uvicorn \
-      --factory main:create_app \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \
@@ -63,7 +63,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   exec uvicorn \
-    --factory simcore_service_dynamic_scheduler.main:create_app \
+    --factory simcore_service_dynamic_scheduler.main:app_factory \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi

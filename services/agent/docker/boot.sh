@@ -53,7 +53,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
     cd services/agent/src/simcore_service_agent && \
     python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${AGENT_SERVER_REMOTE_DEBUG_PORT} -m \
     uvicorn \
-      --factory main:create_app \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --port 8000 \
       --reload \
@@ -63,7 +63,7 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   "
 else
   exec uvicorn \
-    --factory simcore_service_agent.main:create_app \
+    --factory simcore_service_agent.main:app_factory \
     --host 0.0.0.0 \
     --port 8000 \
     --log-level "${SERVER_LOG_LEVEL}" \
