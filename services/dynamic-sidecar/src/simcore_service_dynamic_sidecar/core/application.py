@@ -156,7 +156,7 @@ def create_base_app() -> FastAPI:
     return app
 
 
-def create_app():
+def create_app() -> FastAPI:
     """
     Creates the application from using the env vars as a context
     Also stores inside the state all instances of classes
