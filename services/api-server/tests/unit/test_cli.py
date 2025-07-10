@@ -34,7 +34,7 @@ def test_cli_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
 
 
 def test_main(app_environment: EnvVarsDict):
-    from simcore_service_api_server.main import the_app
+    from simcore_service_api_server.main import app_factory
 
-    assert the_app
+    the_app = app_factory()
     assert isinstance(the_app, FastAPI)

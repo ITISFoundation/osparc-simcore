@@ -9,9 +9,6 @@ from servicelib.fastapi.logging_lifespan import setup_logging_shutdown_event
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
-# SINGLETON FastAPI app
-the_app: FastAPI = init_app()
-
 _logger = logging.getLogger(__name__)
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (

@@ -30,7 +30,7 @@ define _create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
 	@source .env; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
-	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app_factory().openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
 	docker run --rm \
