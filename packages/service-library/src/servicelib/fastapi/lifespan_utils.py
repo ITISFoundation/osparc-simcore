@@ -1,12 +1,14 @@
 import contextlib
-from collections.abc import Iterator
-from typing import Final
+from collections.abc import AsyncIterator, Callable, Iterator
+from typing import Final, TypeAlias
 
 from common_library.errors_classes import OsparcErrorMixin
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 
 from ..logging_utils import log_context
+
+Lifespan: TypeAlias = Callable[[FastAPI], AsyncIterator[None]]
 
 
 class LifespanError(OsparcErrorMixin, RuntimeError): ...
