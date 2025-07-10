@@ -368,11 +368,11 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}&filters={filters}"
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}"
           },
           getPageHistory: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_by_root_project_id={projectId}"
           },
         }
       },
@@ -381,7 +381,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
+            url: statics.API + "/computation-collection-runs/{collectionRunId}/tasks?offset={offset}&limit={limit}&order_by={orderBy}"
           },
         }
       },

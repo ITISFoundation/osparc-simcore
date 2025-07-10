@@ -20,7 +20,7 @@ from pytest_simcore.helpers.webserver_login import switch_client_session_to
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.login._constants import MSG_USER_DELETED
+from simcore_service_webserver.login.constants import MSG_USER_DELETED
 from simcore_service_webserver.products.products_service import get_product
 
 
@@ -60,7 +60,7 @@ def mocked_send_email(mocker: MockerFixture) -> MagicMock:
 @pytest.fixture
 def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.login._controller.rest.preregistration.session_service.get_session",
+        "simcore_service_webserver.login_accounts._controller_rest.session_service.get_session",
         spec=True,
         return_value={"captcha": "123456"},
     )

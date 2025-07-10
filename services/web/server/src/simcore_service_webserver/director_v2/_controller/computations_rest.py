@@ -28,6 +28,7 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.tracing import with_profiled_span
 
 from ..._meta import API_VTAG as VTAG
 from ...constants import RQ_PRODUCT_KEY
@@ -202,6 +203,7 @@ async def list_computations_latest_iteration_tasks(
     name="list_computation_collection_runs",
 )
 @login_required
+@with_profiled_span
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def list_computation_collection_runs(request: web.Request) -> web.Response:
@@ -212,15 +214,13 @@ async def list_computation_collection_runs(request: web.Request) -> web.Response
         )
     )
 
-    if query_params.filter_only_running is True:
-        raise NotImplementedError
-
     total, items = await _computations_service.list_computation_collection_runs(
         request.app,
         product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         # filters
         filter_by_root_project_id=query_params.filter_by_root_project_id,
+        filter_only_running=query_params.filter_only_running,
         # pagination
         offset=query_params.offset,
         limit=query_params.limit,

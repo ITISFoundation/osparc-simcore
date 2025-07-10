@@ -5,7 +5,7 @@ from models_library.progress_bar import ProgressReport
 from ..celery.models import (
     TASK_QUEUE_DEFAULT,
     Task,
-    TaskContext,
+    TaskFilter,
     TaskID,
     TaskName,
     TaskQueue,
@@ -17,25 +17,27 @@ from ..celery.models import (
 class TaskManager(Protocol):
     async def send_task(
         self,
-        name: TaskName,
-        context: TaskContext,
+        task_name: TaskName,
+        task_filter: TaskFilter,
         *,
-        ephemeral: bool = True,
-        queue: TaskQueue = TASK_QUEUE_DEFAULT,
-        **params,
+        task_ephemeral: bool = True,
+        task_queue: TaskQueue = TASK_QUEUE_DEFAULT,
+        **task_params,
     ) -> TaskUUID: ...
 
-    async def cancel_task(self, context: TaskContext, task_uuid: TaskUUID) -> None: ...
+    async def cancel_task(
+        self, task_filter: TaskFilter, task_uuid: TaskUUID
+    ) -> None: ...
 
     async def get_task_result(
-        self, context: TaskContext, task_uuid: TaskUUID
+        self, task_filter: TaskFilter, task_uuid: TaskUUID
     ) -> Any: ...
 
     async def get_task_status(
-        self, context: TaskContext, task_uuid: TaskUUID
+        self, task_filter: TaskFilter, task_uuid: TaskUUID
     ) -> TaskStatus: ...
 
-    async def list_tasks(self, context: TaskContext) -> list[Task]: ...
+    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]: ...
 
     async def set_task_progress(
         self, task_id: TaskID, report: ProgressReport

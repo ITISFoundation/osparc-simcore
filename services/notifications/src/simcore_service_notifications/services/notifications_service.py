@@ -18,6 +18,6 @@ async def send_notification(
         # send to the specific channel worker
         name=f"notifications.{notification.channel.type}",
         context=TaskContext(),  # TODO: TaskFilter
-        queue=TaskQueue.DEFAULT,
+        task_queue=TaskQueue.DEFAULT,
         notification=notification,
     )

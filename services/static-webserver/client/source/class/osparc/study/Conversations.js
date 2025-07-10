@@ -27,7 +27,7 @@ qx.Class.define("osparc.study.Conversations", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this.__conversations = [];
+    this.__conversationsPages = [];
     this.__openConversationId = openConversationId;
 
     this.set({
@@ -126,17 +126,17 @@ qx.Class.define("osparc.study.Conversations", {
         const eventHandler = message => {
           if (message) {
             const conversationId = message["conversationId"];
-            const conversation = this.__getConversation(conversationId);
-            if (conversation) {
+            const conversationPage = this.__getConversationPage(conversationId);
+            if (conversationPage) {
               switch (eventName) {
                 case "conversation:message:created":
-                  conversation.addMessage(message);
+                  conversationPage.addMessage(message);
                   break;
                 case "conversation:message:updated":
-                  conversation.updateMessage(message);
+                  conversationPage.updateMessage(message);
                   break;
                 case "conversation:message:deleted":
-                  conversation.deleteMessage(message);
+                  conversationPage.deleteMessage(message);
                   break;
               }
             }
@@ -147,8 +147,8 @@ qx.Class.define("osparc.study.Conversations", {
       });
     },
 
-    __getConversation: function(conversationId) {
-      return this.__conversations.find(conversation => conversation.getConversationId() === conversationId);
+    __getConversationPage: function(conversationId) {
+      return this.__conversationsPages.find(conversation => conversation.getConversationId() === conversationId);
     },
 
     __applyStudyData: function(studyData) {
@@ -206,15 +206,15 @@ qx.Class.define("osparc.study.Conversations", {
     __addConversationPage: function(conversationData) {
       // ignore it if it was already there
       const conversationId = conversationData["conversationId"];
-      const conversation = this.__getConversation(conversationId);
-      if (conversation) {
+      const conversationPageFound = this.__getConversationPage(conversationId);
+      if (conversationPageFound) {
         return null;
       }
 
       const conversationPage = this.__createConversationPage(conversationData);
       this.__addToPages(conversationPage);
 
-      this.__conversations.push(conversationPage);
+      this.__conversationsPages.push(conversationPage);
 
       return conversationPage;
     },
@@ -234,10 +234,10 @@ qx.Class.define("osparc.study.Conversations", {
           enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
         });
         newConversationButton.addListener("execute", () => {
-          osparc.store.Conversations.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversations.length + 1))
+          osparc.store.Conversations.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
             .then(conversationDt => {
               this.__addConversationPage(conversationDt);
-              const newConversationPage = this.__getConversation(conversationDt["conversationId"]);
+              const newConversationPage = this.__getConversationPage(conversationDt["conversationId"]);
               if (newConversationPage) {
                 conversationsLayout.setSelection([newConversationPage]);
               }
@@ -251,11 +251,13 @@ qx.Class.define("osparc.study.Conversations", {
     },
 
     __removeConversationPage: function(conversationId, changeSelection = false) {
-      const conversation = this.__getConversation(conversationId);
-      if (conversation) {
+      const conversationPage = this.__getConversationPage(conversationId);
+      if (conversationPage) {
         const conversationsLayout = this.getChildControl("conversations-layout");
-        conversationsLayout.remove(conversation);
-        this.__conversations = this.__conversations.filter(c => c !== conversation);
+        if (conversationsLayout.indexOf(conversationPage) > -1) {
+          conversationsLayout.remove(conversationPage);
+        }
+        this.__conversationsPages = this.__conversationsPages.filter(c => c !== conversationPage);
         const conversationPages = conversationsLayout.getSelectables();
         if (conversationPages.length) {
           if (changeSelection) {
@@ -272,9 +274,9 @@ qx.Class.define("osparc.study.Conversations", {
     // it can only be renamed, not updated
     __updateConversationName: function(conversationData) {
       const conversationId = conversationData["conversationId"];
-      const conversation = this.__getConversation(conversationId);
-      if (conversation) {
-        conversation.renameConversation(conversationData["name"]);
+      const conversationPage = this.__getConversationPage(conversationId);
+      if (conversationPage) {
+        conversationPage.renameConversation(conversationData["name"]);
       }
     },
 

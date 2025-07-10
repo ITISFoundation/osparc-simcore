@@ -249,6 +249,13 @@ qx.Class.define("osparc.data.model.Study", {
       init: null,
       event: "changeTrashedBy",
     },
+
+    savePending: {
+      check: "Boolean",
+      nullable: true,
+      event: "changeSavePending",
+      init: false
+    },
     // ------ ignore for serializing ------
   },
 
@@ -259,6 +266,7 @@ qx.Class.define("osparc.data.model.Study", {
       "pipelineRunning",
       "readOnly",
       "trashedAt",
+      "savePending",
     ],
 
     IgnoreModelizationProps: [

@@ -924,7 +924,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           gap: 14,
           cursor: "pointer",
         });
-        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"], null, title));
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData, null, title));
         this.addWidgetToTabs(dataAccess);
 
         if (resourceData["resourceType"] === "study") {

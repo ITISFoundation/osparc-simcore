@@ -30,6 +30,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+  fd-find \
   gosu \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/* \
@@ -106,6 +107,9 @@ WORKDIR /build
 FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 WORKDIR /build/services/api-server
 
@@ -132,8 +136,6 @@ ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
 

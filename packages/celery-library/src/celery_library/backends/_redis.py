@@ -7,7 +7,7 @@ from models_library.progress_bar import ProgressReport
 from pydantic import ValidationError
 from servicelib.celery.models import (
     Task,
-    TaskContext,
+    TaskFilter,
     TaskID,
     TaskMetadata,
     TaskUUID,
@@ -82,10 +82,10 @@ class RedisTaskInfoStore:
             )
             return None
 
-    async def list_tasks(self, context: TaskContext) -> list[Task]:
+    async def list_tasks(self, task_filter: TaskFilter) -> list[Task]:
         search_key = (
             _CELERY_TASK_INFO_PREFIX
-            + build_task_id_prefix(context)
+            + build_task_id_prefix(task_filter)
             + _CELERY_TASK_ID_KEY_SEPARATOR
         )
         search_key_len = len(search_key)

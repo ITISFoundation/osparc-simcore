@@ -54,7 +54,6 @@ mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
     # via
-    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pathspec==0.12.1

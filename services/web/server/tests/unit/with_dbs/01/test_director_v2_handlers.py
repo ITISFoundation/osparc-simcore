@@ -389,6 +389,52 @@ async def test_list_computation_collection_runs_with_client_defined_name(
         assert data[0]["name"] == "My Collection Run"
 
 
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computation_collection_runs_with_filter_only_running(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    populated_comp_run_collection: None,
+    mock_rpc_list_computation_collection_runs_page: None,
+):
+    assert client.app
+    url = client.app.router["list_computation_collection_runs"].url_for()
+    query_parameters = {"filter_only_running": "true"}
+    url_with_query = url.with_query(**query_parameters)
+    resp = await client.get(f"{url_with_query}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunRestGet.model_validate(data[0])
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computation_collection_runs_with_filter_root_project(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    populated_comp_run_collection: None,
+    mock_rpc_list_computation_collection_runs_page: None,
+):
+    assert client.app
+    url = client.app.router["list_computation_collection_runs"].url_for()
+    query_parameters = {"filter_by_root_project_id": user_project["uuid"]}
+    url_with_query = url.with_query(**query_parameters)
+    resp = await client.get(f"{url_with_query}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunRestGet.model_validate(data[0])
+
+
 @pytest.fixture
 async def populated_project_metadata(
     client: TestClient,
@@ -412,7 +458,7 @@ async def populated_project_metadata(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_list_computation_collection_runs_and_tasks_with_different_names(
+async def test_list_computation_collection_runs_tasks_with_different_names(
     director_v2_service_mock: AioResponsesMock,
     user_project: ProjectDict,
     client: TestClient,

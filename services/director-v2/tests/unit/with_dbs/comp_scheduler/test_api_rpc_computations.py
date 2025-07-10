@@ -265,18 +265,29 @@ async def test_rpc_list_computation_collection_runs_page_and_collection_run_task
         not_default_collection_run_id,
     ]
 
-    for proj, collection_run_id in zip(projects, collection_run_id_project_list):
+    running_state_project_list = [
+        RunningState.SUCCESS,
+        RunningState.PENDING,
+        RunningState.SUCCESS,
+    ]
+
+    for proj, collection_run_id, running_state in zip(
+        projects,
+        collection_run_id_project_list,
+        running_state_project_list,
+        strict=True,
+    ):
         await create_pipeline(
             project_id=f"{proj.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         )
         await create_tasks_from_project(
-            user=user, project=proj, state=StateType.PUBLISHED, progress=None
+            user=user, project=proj, state=running_state, progress=None
         )
         run = await create_comp_run(
             user=user,
             project=proj,
-            result=RunningState.SUCCESS,
+            result=running_state,
             started=datetime.now(tz=UTC) - timedelta(minutes=120),
             ended=datetime.now(tz=UTC) - timedelta(minutes=100),
             iteration=1,
@@ -317,3 +328,16 @@ async def test_rpc_list_computation_collection_runs_page_and_collection_run_task
     assert output.total == 4
     assert len(output.items) == 4
     isinstance(output, ComputationCollectionRunTaskRpcGetPage)
+
+    # Test filtering only running collection runs
+    output = await rpc_computations.list_computation_collection_runs_page(
+        rpc_client,
+        product_name="osparc",
+        user_id=user["id"],
+        project_ids=None,
+        filter_only_running=True,  # <-- This is the tested filter
+    )
+    assert output.total == 1
+    assert len(output.items) == 1
+    assert isinstance(output, ComputationCollectionRunRpcGetPage)
+    assert len(output.items[0].project_ids) == 2
