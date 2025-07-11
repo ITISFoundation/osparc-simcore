@@ -44,7 +44,7 @@ async def start_export_data(
     task_manager: TaskManager,
     job_filter: AsyncJobFilter,
     paths_to_export: list[PathToExport],
-    export_as: Literal["path", "download_link"] = "path",
+    export_as: Literal["path", "download_link"],
 ) -> AsyncJobGet:
     if export_as == "path":
         task_name = export_data.__name__

@@ -43,7 +43,7 @@ async def start_export_data(
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
-    export_as: Literal["path", "download_link"] = "path",
+    export_as: Literal["path", "download_link"],
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     job_filter = get_async_job_filter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
