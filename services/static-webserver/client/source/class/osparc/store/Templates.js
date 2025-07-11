@@ -35,7 +35,7 @@ qx.Class.define("osparc.store.Templates", {
       const options = {
         pollTask: true
       };
-      return osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
+      return osparc.data.Resources.fetch("templates", "postToTemplate", params, options);
     },
 
     fetchTemplatesPaginated: function(params, options) {
