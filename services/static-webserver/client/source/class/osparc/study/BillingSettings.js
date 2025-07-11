@@ -238,7 +238,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
     __doTransferCredits: function() {
       const wallet = this.__getSelectedWallet();
-      osparc.store.Study.getInstance().payDebt(this.__studyData["uuid"], walletId, this.__studyData["debt"])
+      osparc.store.Study.getInstance().payDebt(this.__studyData["uuid"], wallet.getWalletId(), this.__studyData["debt"])
         .then(() => {
           // at this point we can assume that the study got unblocked
           this.__debtPayed();

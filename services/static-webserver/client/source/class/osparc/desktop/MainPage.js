@@ -309,7 +309,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
         await osparc.utils.Utils.sleep(1000);
-        osparc.store.Study().getInstance().getStudyState(studyId);
+        osparc.store.Study.getInstance().getStudyState(studyId);
       }
       this.__loadingPage.setMessages([]);
       this.__openSnapshot(studyId, snapshotId);
@@ -355,7 +355,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
         await osparc.utils.Utils.sleep(1000);
-        osparc.store.Study().getInstance().getStudyState(studyId);
+        osparc.store.Study.getInstance().getStudyState(studyId);
       }
       this.__loadingPage.setMessages([]);
       this.__openIteration(iterationUuid);
