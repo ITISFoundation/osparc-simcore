@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-dynamic-sidecar",
     "description": "Implements a sidecar service to manage user's dynamic/interactive services",
-    "version": "1.2.0"
+    "version": "1.2.1"
   },
   "servers": [
     {
