@@ -258,7 +258,7 @@ def setup_loggers(
 
 
 @contextmanager
-def setup_async_loggers_lifespan(
+def async_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
@@ -270,7 +270,7 @@ def setup_async_loggers_lifespan(
     context manager for non-blocking logging infrastructure.
 
     Usage:
-        with setup_async_loggers_lifespan(log_format_local_dev_enabled=True, logger_filter_mapping={}, tracing_settings=None):
+        with async_loggers(log_format_local_dev_enabled=True, logger_filter_mapping={}, tracing_settings=None):
             # Your async application code here
             logger.info("This is non-blocking!")
 

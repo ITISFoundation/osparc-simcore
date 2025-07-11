@@ -6,18 +6,18 @@ from contextlib import contextmanager
 
 import pytest
 from pytest_mock import MockerFixture
-from servicelib.logging_utils import setup_async_loggers_lifespan
+from servicelib.logging_utils import async_loggers
 
 
 @pytest.fixture(autouse=True)
 def preserve_caplog_for_async_logging(mocker: MockerFixture) -> None:
-    # Patch setup_async_loggers_lifespan to preserve caplog handlers,
+    # Patch async_loggers to preserve caplog handlers,
     # and pytest logs in general as pytest captures logs in a special way
     # that is not compatible with the queue handler used in async logging.
-    original_setup = setup_async_loggers_lifespan
+    original_setup = async_loggers
 
     @contextmanager
-    def patched_setup_async_loggers_lifespan(**kwargs) -> Iterator[None]:
+    def patched_async_loggers(**kwargs) -> Iterator[None]:
         # Find caplog's handler in root logger
         root_logger = logging.getLogger()
         caplog_handlers = [
@@ -32,11 +32,11 @@ def preserve_caplog_for_async_logging(mocker: MockerFixture) -> None:
             yield
 
     methods_to_patch = [
-        "servicelib.logging_utils.setup_async_loggers_lifespan",
-        "servicelib.fastapi.logging_lifespan.setup_async_loggers_lifespan",
-        "tests.test_logging_utils.setup_async_loggers_lifespan",
+        "servicelib.logging_utils.async_loggers",
+        "servicelib.fastapi.logging_lifespan.async_loggers",
+        "tests.test_logging_utils.async_loggers",
     ]
     for method in methods_to_patch:
         with contextlib.suppress(AttributeError, ModuleNotFoundError):
             # Patch the method to use our patched version
-            mocker.patch(method, patched_setup_async_loggers_lifespan)
+            mocker.patch(method, patched_async_loggers)
