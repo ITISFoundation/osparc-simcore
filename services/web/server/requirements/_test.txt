@@ -126,7 +126,7 @@ idna==3.3
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jinja2==3.1.2
+jinja2==3.1.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -269,7 +269,7 @@ referencing==0.8.11
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   types-jsonschema
-requests==2.32.2
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -342,7 +342,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   sqlalchemy2-stubs
     #   typer
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt

@@ -305,7 +305,7 @@ importlib-metadata==8.0.0
     # via opentelemetry-api
 jinja-app-loader==1.0.2
     # via -r requirements/_base.in
-jinja2==3.1.2
+jinja2==3.1.6
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -872,7 +872,7 @@ redis==5.2.1
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-requests==2.32.2
+requests==2.32.4
     # via
     #   opentelemetry-exporter-otlp-proto-http
     #   twilio
@@ -988,7 +988,7 @@ typing-extensions==4.14.1
     #   pydantic
     #   pydantic-core
     #   typer
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
