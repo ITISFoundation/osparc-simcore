@@ -379,7 +379,9 @@ opentelemetry-instrumentation-aio-pika==0.55b1
 opentelemetry-instrumentation-asgi==0.55b1
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-asyncpg==0.55b1
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-botocore==0.55b1
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 opentelemetry-instrumentation-fastapi==0.55b1
@@ -737,7 +739,7 @@ referencing==0.29.3
     #   jsonschema-specifications
 regex==2023.12.25
     # via dateparser
-requests==2.32.2
+requests==2.32.4
     # via
     #   httmock
     #   opentelemetry-exporter-otlp-proto-http
@@ -889,7 +891,7 @@ tzdata==2024.1
     # via pandas
 tzlocal==5.2
     # via dateparser
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

@@ -2,14 +2,15 @@ import asyncio
 import datetime
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from typing import Final
 
 import pytest
 from common_library.async_tools import cancel_wait_task
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
-    AsyncJobNameData,
     AsyncJobResult,
     AsyncJobStatus,
 )
@@ -28,6 +29,8 @@ pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
+_ASYNC_JOB_CLIENT_NAME: Final[str] = "PYTEST_CLIENT_NAME"
+
 
 @pytest.fixture
 def method_name(faker: Faker) -> RPCMethodName:
@@ -35,10 +38,11 @@ def method_name(faker: Faker) -> RPCMethodName:
 
 
 @pytest.fixture
-def job_id_data(faker: Faker) -> AsyncJobNameData:
-    return AsyncJobNameData(
+def job_filter(faker: Faker) -> AsyncJobFilter:
+    return AsyncJobFilter(
         user_id=faker.pyint(min_value=1),
         product_name=faker.word(),
+        client_name=_ASYNC_JOB_CLIENT_NAME,
     )
 
 
@@ -68,9 +72,9 @@ async def async_job_rpc_server(  # noqa: C901
             raise JobMissingError(job_id=f"{job_id}")
 
         async def status(
-            self, job_id: AsyncJobId, job_id_data: AsyncJobNameData
+            self, job_id: AsyncJobId, job_filter: AsyncJobFilter
         ) -> AsyncJobStatus:
-            assert job_id_data
+            assert job_filter
             task = self._get_task(job_id)
             return AsyncJobStatus(
                 job_id=job_id,
@@ -78,32 +82,30 @@ async def async_job_rpc_server(  # noqa: C901
                 done=task.done(),
             )
 
-        async def cancel(
-            self, job_id: AsyncJobId, job_id_data: AsyncJobNameData
-        ) -> None:
+        async def cancel(self, job_id: AsyncJobId, job_filter: AsyncJobFilter) -> None:
             assert job_id
-            assert job_id_data
+            assert job_filter
             task = self._get_task(job_id)
             task.cancel()
 
         async def result(
-            self, job_id: AsyncJobId, job_id_data: AsyncJobNameData
+            self, job_id: AsyncJobId, job_filter: AsyncJobFilter
         ) -> AsyncJobResult:
-            assert job_id_data
+            assert job_filter
             task = self._get_task(job_id)
             assert task.done()
             return AsyncJobResult(
                 result={
                     "data": task.result(),
                     "job_id": job_id,
-                    "job_id_data": job_id_data,
+                    "job_filter": job_filter,
                 }
             )
 
         async def list_jobs(
-            self, filter_: str, job_id_data: AsyncJobNameData
+            self, filter_: str, job_filter: AsyncJobFilter
         ) -> list[AsyncJobGet]:
-            assert job_id_data
+            assert job_filter
             assert filter_ is not None
 
             return [
@@ -114,8 +116,8 @@ async def async_job_rpc_server(  # noqa: C901
                 for t in self.tasks
             ]
 
-        async def submit(self, job_id_data: AsyncJobNameData) -> AsyncJobGet:
-            assert job_id_data
+        async def submit(self, job_filter: AsyncJobFilter) -> AsyncJobGet:
+            assert job_filter
             job_id = faker.uuid4(cast_to=None)
             self.tasks.append(asyncio.create_task(_slow_task(), name=f"{job_id}"))
             return AsyncJobGet(job_id=job_id, job_name="fake_job_name")
@@ -145,7 +147,7 @@ async def test_async_jobs_methods(
     async_job_rpc_server: RabbitMQRPCClient,
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
-    job_id_data: AsyncJobNameData,
+    job_filter: AsyncJobFilter,
     job_id: AsyncJobId,
     method: str,
 ):
@@ -157,7 +159,7 @@ async def test_async_jobs_methods(
             rpc_client,
             rpc_namespace=namespace,
             job_id=job_id,
-            job_id_data=job_id_data,
+            job_filter=job_filter,
         )
 
 
@@ -166,13 +168,13 @@ async def test_list_jobs(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobNameData,
+    job_filter: AsyncJobFilter,
 ):
     await list_jobs(
         rpc_client,
         rpc_namespace=namespace,
         filter_="",
-        job_id_data=job_id_data,
+        job_filter=job_filter,
     )
 
 
@@ -181,13 +183,13 @@ async def test_submit(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobNameData,
+    job_filter: AsyncJobFilter,
 ):
     await submit(
         rpc_client,
         rpc_namespace=namespace,
         method_name=method_name,
-        job_id_data=job_id_data,
+        job_filter=job_filter,
     )
 
 
@@ -195,14 +197,14 @@ async def test_submit_with_invalid_method_name(
     async_job_rpc_server: RabbitMQRPCClient,
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
-    job_id_data: AsyncJobNameData,
+    job_filter: AsyncJobFilter,
 ):
     with pytest.raises(RemoteMethodNotRegisteredError):
         await submit(
             rpc_client,
             rpc_namespace=namespace,
             method_name=RPCMethodName("invalid_method_name"),
-            job_id_data=job_id_data,
+            job_filter=job_filter,
         )
 
 
@@ -211,14 +213,14 @@ async def test_submit_and_wait_properly_timesout(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobNameData,
+    job_filter: AsyncJobFilter,
 ):
     with pytest.raises(TimeoutError):  # noqa: PT012
         async for _job_composed_result in submit_and_wait(
             rpc_client,
             rpc_namespace=namespace,
             method_name=method_name,
-            job_id_data=job_id_data,
+            job_filter=job_filter,
             client_timeout=datetime.timedelta(seconds=0.1),
         ):
             pass
@@ -229,13 +231,13 @@ async def test_submit_and_wait(
     rpc_client: RabbitMQRPCClient,
     namespace: RPCNamespace,
     method_name: RPCMethodName,
-    job_id_data: AsyncJobNameData,
+    job_filter: AsyncJobFilter,
 ):
     async for job_composed_result in submit_and_wait(
         rpc_client,
         rpc_namespace=namespace,
         method_name=method_name,
-        job_id_data=job_id_data,
+        job_filter=job_filter,
         client_timeout=datetime.timedelta(seconds=10),
     ):
         if not job_composed_result.done:
@@ -243,10 +245,11 @@ async def test_submit_and_wait(
                 await job_composed_result.result()
     assert job_composed_result.done
     assert job_composed_result.status.progress.actual_value == 1
-    assert await job_composed_result.result() == AsyncJobResult(
+    result = await job_composed_result.result()
+    assert result == AsyncJobResult(
         result={
             "data": None,
             "job_id": job_composed_result.status.job_id,
-            "job_id_data": job_id_data,
+            "job_filter": job_filter,
         }
     )

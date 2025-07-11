@@ -164,8 +164,8 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       }
 
       const colorPicker = this.getChildControl("color-picker");
-      marker.bind("color", colorPicker, "color");
-      colorPicker.bind("color", marker, "color");
+      marker.bind("color", colorPicker, "value");
+      colorPicker.bind("value", marker, "color");
     },
 
     addDeleteButton: function() {

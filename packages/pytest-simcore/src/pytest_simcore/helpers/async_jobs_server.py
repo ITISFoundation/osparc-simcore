@@ -3,9 +3,9 @@
 from dataclasses import dataclass
 
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
-    AsyncJobNameData,
     AsyncJobResult,
     AsyncJobStatus,
 )
@@ -28,7 +28,7 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
-        job_id_data: AsyncJobNameData,
+        job_filter: AsyncJobFilter,
     ) -> None:
         if self.exception is not None:
             raise self.exception
@@ -41,7 +41,7 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
-        job_id_data: AsyncJobNameData,
+        job_filter: AsyncJobFilter,
     ) -> AsyncJobStatus:
         if self.exception is not None:
             raise self.exception
@@ -63,7 +63,7 @@ class AsyncJobSideEffects:
         *,
         rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
-        job_id_data: AsyncJobNameData,
+        job_filter: AsyncJobFilter,
     ) -> AsyncJobResult:
         if self.exception is not None:
             raise self.exception
@@ -75,7 +75,7 @@ class AsyncJobSideEffects:
         rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
         rpc_namespace: RPCNamespace,
-        job_id_data: AsyncJobNameData,
+        job_filter: AsyncJobFilter,
         filter_: str = "",
     ) -> list[AsyncJobGet]:
         if self.exception is not None:
