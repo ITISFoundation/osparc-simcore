@@ -1,3 +1,5 @@
+from typing import Literal
+
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobFilter,
     AsyncJobGet,
@@ -41,6 +43,7 @@ async def start_export_data(
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
+    export_as: Literal["path", "download_link"] = "path",
 ) -> tuple[AsyncJobGet, AsyncJobFilter]:
     job_filter = get_async_job_filter(user_id=user_id, product_name=product_name)
     async_job_rpc_get = await submit(
@@ -49,5 +52,6 @@ async def start_export_data(
         method_name=TypeAdapter(RPCMethodName).validate_python("start_export_data"),
         job_filter=job_filter,
         paths_to_export=paths_to_export,
+        export_as=export_as,
     )
     return async_job_rpc_get, job_filter
