@@ -153,13 +153,13 @@ qx.Class.define("osparc.store.Study", {
     },
 
     setStudyState: function(studyId, state) {
-      const studiesWStateCache = this.getStudies();
+      const studiesWStateCache = osparc.store.Store.getInstance().getStudies();
       const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
       if (idx !== -1) {
         studiesWStateCache[idx]["state"] = state;
       }
 
-      const currentStudy = this.getCurrentStudy();
+      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       if (currentStudy && currentStudy.getUuid() === studyId) {
         currentStudy.setState(state);
       }
@@ -181,7 +181,7 @@ qx.Class.define("osparc.store.Study", {
         delete this.__studiesInDebt[studyId];
       }
 
-      const studiesWStateCache = this.getStudies();
+      const studiesWStateCache = osparc.store.Store.getInstance().getStudies();
       const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
       if (idx !== -1) {
         if (debt) {
