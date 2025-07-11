@@ -628,7 +628,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker
@@ -732,7 +732,7 @@ typing-extensions==4.14.1
     #   typer
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
