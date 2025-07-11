@@ -6,7 +6,7 @@ from typing import Final
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import (
-    setup_logging_lifespan,
+    logging_lifespan,
 )
 from simcore_service_dynamic_scheduler.core.application import create_app
 from simcore_service_dynamic_scheduler.core.settings import ApplicationSettings
@@ -24,7 +24,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = (
 
 def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
-    logging_lifespan = setup_logging_lifespan(
+    logging_lifespan = logging_lifespan(
         log_format_local_dev_enabled=app_settings.DYNAMIC_SCHEDULER_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DYNAMIC_SCHEDULER_LOG_FILTER_MAPPING,
         tracing_settings=app_settings.DYNAMIC_SCHEDULER_TRACING,
