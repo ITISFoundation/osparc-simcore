@@ -7,8 +7,8 @@ from settings_library.tracing import TracingSettings
 
 from ..logging_utils import (
     LogLevelInt,
+    async_loggers,
     log_context,
-    setup_async_loggers_lifespan,
 )
 from ..logging_utils_filtering import LoggerName, MessageSubstring
 from .lifespan_utils import Lifespan
@@ -27,7 +27,7 @@ def logging_lifespan(
     """Returns a FastAPI-compatible lifespan handler to set up async logging."""
     exit_stack = AsyncExitStack()
     exit_stack.enter_context(
-        setup_async_loggers_lifespan(
+        async_loggers(
             log_base_level=log_base_level,
             noisy_loggers=noisy_loggers,
             log_format_local_dev_enabled=log_format_local_dev_enabled,
@@ -62,7 +62,7 @@ def setup_logging_shutdown_event(
     """
     exit_stack = AsyncExitStack()
     exit_stack.enter_context(
-        setup_async_loggers_lifespan(
+        async_loggers(
             log_base_level=log_base_level,
             noisy_loggers=noisy_loggers,
             log_format_local_dev_enabled=log_format_local_dev_enabled,

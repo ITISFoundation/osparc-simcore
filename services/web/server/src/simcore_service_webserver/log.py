@@ -8,7 +8,7 @@ from typing import Final, TypeAlias
 from aiodebug import log_slow_callbacks  # type: ignore[import-untyped]
 from aiohttp import web
 from aiohttp.log import access_logger
-from servicelib.logging_utils import setup_async_loggers_lifespan
+from servicelib.logging_utils import async_loggers
 from simcore_service_webserver.application_settings import ApplicationSettings
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
@@ -33,7 +33,7 @@ CleanupEvent: TypeAlias = Callable[[web.Application], Awaitable[None]]
 def setup_logging(app_settings: ApplicationSettings) -> CleanupEvent:
     exit_stack = AsyncExitStack()
     exit_stack.enter_context(
-        setup_async_loggers_lifespan(
+        async_loggers(
             log_base_level=app_settings.log_level,
             noisy_loggers=_NOISY_LOGGERS,
             log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
