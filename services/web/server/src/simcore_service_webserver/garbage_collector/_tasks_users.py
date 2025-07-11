@@ -11,11 +11,11 @@ from aiohttp import web
 from models_library.users import UserID
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import get_log_record_extra, log_context
-from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ..login import login_service
+from ..redis import get_redis_lock_manager_client_sdk
 from ..security import security_service
-from ..users.api import update_expired_users
+from ..users import users_service
 from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 
 _logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ async def notify_user_logout_all_sessions(
 
 async def _update_expired_users(app: web.Application):
 
-    if updated := await update_expired_users(app):
+    if updated := await users_service.update_expired_users(app):
         # expired users might be cached in the auth. If so, any request
         # with this user-id will get thru producing unexpected side-effects
         await security_service.clean_auth_policy_cache(app)

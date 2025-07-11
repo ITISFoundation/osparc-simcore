@@ -1,17 +1,18 @@
-from ._preferences_models import (
+from ._models import (
     PreferredWalletIdFrontendUserPreference,
     TwoFAFrontendUserPreference,
 )
-from ._preferences_service import (
+from ._service import (
     get_frontend_user_preference,
+    get_frontend_user_preferences_aggregation,
     set_frontend_user_preference,
 )
-from .exceptions import UserDefaultWalletNotFoundError
 
-__all__ = (
-    "get_frontend_user_preference",
+__all__: tuple[str, ...] = (
     "PreferredWalletIdFrontendUserPreference",
     "TwoFAFrontendUserPreference",
+    "get_frontend_user_preference",
+    "get_frontend_user_preferences_aggregation",
     "set_frontend_user_preference",
-    "UserDefaultWalletNotFoundError",
 )
+# nopycln: file

@@ -19,20 +19,21 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 
 from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
-from . import _preferences_service, _users_repository
-from ._common.models import (
+from ..user_preferences import user_preferences_service
+from . import _users_repository
+from ._models import (
     FullNameDict,
     ToUserUpdateDB,
     UserCredentialsTuple,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
 )
-from ._common.schemas import PreRegisteredUserGet
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,
 )
+from .schemas import PreRegisteredUserGet
 
 _logger = logging.getLogger(__name__)
 
@@ -317,7 +318,7 @@ async def get_my_profile(
 
     try:
         preferences = (
-            await _preferences_service.get_frontend_user_preferences_aggregation(
+            await user_preferences_service.get_frontend_user_preferences_aggregation(
                 app, user_id=user_id, product_name=product_name
             )
         )

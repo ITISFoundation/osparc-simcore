@@ -43,7 +43,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
-from ._common.models import FullNameDict, ToUserUpdateDB
+from ._models import FullNameDict, ToUserUpdateDB
 from .exceptions import (
     BillingDetailsNotFoundError,
     UserNameDuplicateError,
