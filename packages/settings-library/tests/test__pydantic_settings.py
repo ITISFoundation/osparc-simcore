@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-""" Tests subtle details about pydantic models
+"""Tests subtle details about pydantic models
 
 This test suite intends to "freeze" some concepts/invariants from pydantic upon which we are going
 to build this libraries.
@@ -12,14 +12,25 @@ would still have these invariants.
 
 """
 
-from typing import Annotated
+from collections.abc import Callable
+from typing import Annotated, Any
 
 import pytest
 from common_library.basic_types import LogLevel
 from common_library.pydantic_fields_extension import is_nullable
-from pydantic import AliasChoices, Field, ValidationInfo, field_validator
+from pydantic import (
+    AliasChoices,
+    AmqpDsn,
+    BaseModel,
+    Field,
+    ImportString,
+    PostgresDsn,
+    RedisDsn,
+    ValidationInfo,
+    field_validator,
+)
 from pydantic_core import PydanticUndefined
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from settings_library.application import BaseApplicationSettings
 
@@ -198,3 +209,46 @@ def test_pydantic_serialization_user_warning(monkeypatch: pytest.MonkeyPatch):
     settings = _TestSettings.create_from_envs()
     assert settings.APP_LOGLEVEL == LogLevel.DEBUG
     assert settings.model_dump_json(indent=2)
+
+
+def test_it():
+    class SubModel(BaseModel):
+        foo: str = "bar"
+        apple: int = 1
+
+    class Settings(BaseSettings):
+        auth_key: str = Field(validation_alias="my_auth_key")
+
+        api_key: str = Field(alias="my_api_key")
+
+        redis_dsn: RedisDsn = Field(
+            "redis://user:pass@localhost:6379/1",
+            validation_alias=AliasChoices("service_redis_dsn", "redis_url"),
+        )
+        pg_dsn: PostgresDsn = "postgres://user:pass@localhost:5432/foobar"
+        amqp_dsn: AmqpDsn = "amqp://user:pass@localhost:5672/"
+
+        special_function: ImportString[Callable[[Any], Any]] = "math.cos"
+
+        # to override domains:
+        # export my_prefix_domains='["foo.com", "bar.com"]'
+        domains: set[str] = set()
+
+        # to override more_settings:
+        # export my_prefix_more_settings='{"foo": "x", "apple": 1}'
+        more_settings: SubModel = SubModel()
+
+        model_config = SettingsConfigDict(env_prefix="my_prefix_")
+
+    import math
+
+    assert Settings().model_dump() == {
+        "auth_key": "xxx",
+        "api_key": "xxx",
+        "redis_dsn": RedisDsn("redis://user:pass@localhost:6379/1"),
+        "pg_dsn": PostgresDsn("postgres://user:pass@localhost:5432/foobar"),
+        "amqp_dsn": AmqpDsn("amqp://user:pass@localhost:5672/"),
+        "special_function": math.cos,
+        "domains": set(),
+        "more_settings": {"foo": "bar", "apple": 1},
+    }

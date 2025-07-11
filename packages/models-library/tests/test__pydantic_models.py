@@ -214,7 +214,7 @@ def test_nullable_fields_from_pydantic_v1():
     assert model.model_dump(exclude_unset=True) == data
 
 
-# BELOW some tests related to depreacated `populate_by_name` in pydantic v2.11+ !!
+# BELOW some tests related to deprecated `populate_by_name` in pydantic v2.11+ !!
 #
 # https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.populate_by_name
 #
