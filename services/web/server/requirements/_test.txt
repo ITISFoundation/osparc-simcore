@@ -342,6 +342,11 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   sqlalchemy2-stubs
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 urllib3==2.5.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt

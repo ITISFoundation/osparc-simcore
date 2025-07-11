@@ -50,11 +50,11 @@ httpx!=0.28.0  # Waiting for fix in respx: https://github.com/lundberg/respx/pul
 #
 pydantic>=2.10.0    # Avoids inter-version compatibility serialization errors as: _pickle.UnpicklingError: NEWOBJ class argument must be a type, not _AnnotatedAlias
 
-# avoid downgrades of openapi-spec-validator related libraries
-referencing<=0.35.1
-
 # See issue https://github.com/ITISFoundation/osparc-simcore/issues/7300
 pydantic-settings<2.7.1
+
+# avoid downgrades of openapi-spec-validator related libraries
+referencing<=0.35.1
 
 
 #

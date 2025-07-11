@@ -475,6 +475,9 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

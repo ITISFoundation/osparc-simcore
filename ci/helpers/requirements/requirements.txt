@@ -58,6 +58,9 @@ typing-extensions==4.14.1
     #   fastapi
     #   pydantic
     #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
