@@ -70,8 +70,8 @@ qx.Class.define("osparc.data.model.Study", {
     this.setWorkbench(workbench);
     workbench.setStudy(this);
 
-    const workbenchUi = new osparc.data.model.StudyUI(studyData.ui);
-    this.setUi(workbenchUi);
+    const studyUI = new osparc.data.model.StudyUI(studyData.ui);
+    this.setUi(studyUI);
 
     this.getWorkbench().buildWorkbench();
   },
@@ -249,6 +249,13 @@ qx.Class.define("osparc.data.model.Study", {
       init: null,
       event: "changeTrashedBy",
     },
+
+    savePending: {
+      check: "Boolean",
+      nullable: true,
+      event: "changeSavePending",
+      init: false
+    },
     // ------ ignore for serializing ------
   },
 
@@ -259,6 +266,7 @@ qx.Class.define("osparc.data.model.Study", {
       "pipelineRunning",
       "readOnly",
       "trashedAt",
+      "savePending",
     ],
 
     IgnoreModelizationProps: [
@@ -672,13 +680,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
 
       return new Promise((resolve, reject) => {
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          },
-          data: studyChanges
-        };
-        osparc.data.Resources.fetch("studies", "patch", params)
+        osparc.store.Study.getInstance().patchStudy(this.getUuid(), studyChanges)
           .then(() => {
             Object.keys(studyChanges).forEach(fieldKey => {
               const upKey = qx.lang.String.firstUp(fieldKey);
@@ -709,14 +711,9 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const fieldKeys = Object.keys(studyDiffs);
       if (fieldKeys.length) {
-        const patchData = {};
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          },
-          data: patchData
-        };
         fieldKeys.forEach(fieldKey => {
+          // OM: can this be called all together?
+          const patchData = {};
           if (fieldKey === "ui") {
             patchData[fieldKey] = this.getUi().serialize();
           } else {
@@ -724,7 +721,7 @@ qx.Class.define("osparc.data.model.Study", {
             const getter = "get" + upKey;
             patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
           }
-          promises.push(osparc.data.Resources.fetch("studies", "patch", params))
+          promises.push(osparc.store.Study.getInstance().patchStudy(this.getUuid(), patchData))
         });
       }
       return Promise.all(promises)

@@ -4,6 +4,9 @@ from _common import as_query
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Page
 from models_library.api_schemas_webserver.computations import (
+    ComputationCollectionRunListQueryParams,
+    ComputationCollectionRunPathParams,
+    ComputationCollectionRunTaskListQueryParams,
     ComputationGet,
     ComputationPathParams,
     ComputationRunIterationsLatestListQueryParams,
@@ -94,4 +97,23 @@ async def list_computation_iterations(
 async def list_computations_latest_iteration_tasks(
     _query: Annotated[as_query(ComputationTaskListQueryParams), Depends()],
     _path: Annotated[ComputationTaskPathParams, Depends()],
+): ...
+
+
+@router.get(
+    "/computation-collection-runs",
+    response_model=Page[ComputationTaskRestGet],
+)
+async def list_computation_collection_runs(
+    _query: Annotated[as_query(ComputationCollectionRunListQueryParams), Depends()],
+): ...
+
+
+@router.get(
+    "/computation-collection-runs/{collection_run_id}/tasks",
+    response_model=Page[ComputationTaskRestGet],
+)
+async def list_computation_collection_run_tasks(
+    _query: Annotated[as_query(ComputationCollectionRunTaskListQueryParams), Depends()],
+    _path: Annotated[ComputationCollectionRunPathParams, Depends()],
 ): ...

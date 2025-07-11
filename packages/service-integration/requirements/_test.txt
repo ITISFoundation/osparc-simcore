@@ -58,7 +58,7 @@ types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
 types-requests==2.32.0.20250301
     # via types-docker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

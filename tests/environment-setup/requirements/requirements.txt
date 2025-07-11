@@ -52,7 +52,7 @@ pyyaml==6.0.2
     #   -r requirements/requirements.in
 termcolor==2.5.0
     # via pytest-sugar
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   pydantic
     #   pydantic-core

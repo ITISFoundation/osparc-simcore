@@ -129,8 +129,6 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
         this._populateCardMenu(card);
       });
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
-
-      this._resourcesContainer.evaluateNoResourcesFoundLabel(cards, this._resourceType);
     },
 
     __itemClicked: function(card) {

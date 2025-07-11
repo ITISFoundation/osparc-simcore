@@ -30,12 +30,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       case "template":
       case "tutorial":
       case "hypertool": {
-        const params = {
-          url: {
-            "studyId": resourceData["uuid"]
-          }
-        };
-        latestPromise = osparc.data.Resources.fetch("studies", "getOne", params);
+        latestPromise = osparc.store.Study.getInstance().getOne(resourceData["uuid"]);
         break;
       }
       case "function": {
@@ -231,13 +226,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       }
       openButton.setFetching(true);
-      const params = {
-        url: {
-          "studyId": this.__resourceData["uuid"]
-        }
-      };
       Promise.all([
-        osparc.data.Resources.fetch("studies", "getOne", params),
+        osparc.store.Study.getInstance().getOne(this.__resourceData["uuid"]),
         osparc.store.Services.getStudyServices(this.__resourceData["uuid"]),
       ])
         .then(values => {
@@ -924,7 +914,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           gap: 14,
           cursor: "pointer",
         });
-        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"], null, title));
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData, null, title));
         this.addWidgetToTabs(dataAccess);
 
         if (resourceData["resourceType"] === "study") {

@@ -80,12 +80,6 @@ charset-normalizer==3.4.1
     # via requests
 click==8.1.8
     # via typer
-deprecated==1.2.18
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-exporter-otlp-proto-grpc
-    #   opentelemetry-exporter-otlp-proto-http
-    #   opentelemetry-semantic-conventions
 dnspython==2.7.0
     # via email-validator
 email-validator==2.2.0
@@ -104,7 +98,7 @@ frozenlist==1.5.0
     # via
     #   aiohttp
     #   aiosignal
-googleapis-common-protos==1.68.0
+googleapis-common-protos==1.70.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
@@ -148,7 +142,7 @@ jsonschema==4.23.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema-specifications==2024.10.1
     # via jsonschema
-mako==1.3.9
+mako==1.3.10
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -175,7 +169,7 @@ multidict==6.1.0
     # via
     #   aiohttp
     #   yarl
-opentelemetry-api==1.30.0
+opentelemetry-api==1.34.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
@@ -188,51 +182,51 @@ opentelemetry-api==1.30.0
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp==1.30.0
+opentelemetry-exporter-otlp==1.34.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-exporter-otlp-proto-common==1.30.0
+opentelemetry-exporter-otlp-proto-common==1.34.1
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-grpc==1.30.0
+opentelemetry-exporter-otlp-proto-grpc==1.34.1
     # via opentelemetry-exporter-otlp
-opentelemetry-exporter-otlp-proto-http==1.30.0
+opentelemetry-exporter-otlp-proto-http==1.34.1
     # via opentelemetry-exporter-otlp
-opentelemetry-instrumentation==0.51b0
+opentelemetry-instrumentation==0.55b1
     # via
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
-opentelemetry-instrumentation-aio-pika==0.51b0
+opentelemetry-instrumentation-aio-pika==0.55b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-asyncpg==0.51b0
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-opentelemetry-instrumentation-logging==0.51b0
+opentelemetry-instrumentation-asyncpg==0.55b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-redis==0.51b0
+opentelemetry-instrumentation-logging==0.55b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-instrumentation-requests==0.51b0
+opentelemetry-instrumentation-redis==0.55b1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-opentelemetry-proto==1.30.0
+opentelemetry-instrumentation-requests==0.55b1
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
+opentelemetry-proto==1.34.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.30.0
+opentelemetry-sdk==1.34.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.51b0
+opentelemetry-semantic-conventions==0.55b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
-opentelemetry-util-http==0.51b0
+opentelemetry-util-http==0.55b1
     # via opentelemetry-instrumentation-requests
 orjson==3.10.15
     # via
@@ -273,7 +267,7 @@ propcache==0.3.0
     # via
     #   aiohttp
     #   yarl
-protobuf==5.29.3
+protobuf==5.29.5
     # via
     #   googleapis-common-protos
     #   opentelemetry-proto
@@ -409,7 +403,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
 rich==13.9.4
     # via
@@ -463,7 +457,7 @@ typer==0.15.2
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20241206
     # via arrow
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic
@@ -471,16 +465,17 @@ typing-extensions==4.12.2
     #   faststream
     #   flexcache
     #   flexparser
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
     #   pint
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
-    #   typing-inspection
-typing-inspection==0.4.1
-    # via pydantic
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -499,7 +494,6 @@ urllib3==2.3.0
     #   requests
 wrapt==1.17.2
     # via
-    #   deprecated
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
     #   opentelemetry-instrumentation-redis

@@ -11,6 +11,7 @@ from models_library.groups import AccessRightsDict
 from models_library.rest_filters import Filters
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
+    BaseModel,
     ConfigDict,
     EmailStr,
     Field,
@@ -300,8 +301,9 @@ class UserAccountGet(OutputSchema):
         ),
     ] = DEFAULT_FACTORY
 
-    # pre-registration
+    # pre-registration NOTE: that some users have no pre-registartion and therefore all options here can be none
     pre_registration_id: int | None
+    pre_registration_created: datetime | None
     invited_by: str | None = None
     account_request_status: AccountRequestStatus | None
     account_request_reviewed_by: UserID | None = None
@@ -331,6 +333,10 @@ class UserAccountGet(OutputSchema):
 #
 # THIRD-PARTY TOKENS
 #
+
+
+class TokenPathParams(BaseModel):
+    service: str
 
 
 class MyTokenCreate(InputSchemaWithoutCamelCase):

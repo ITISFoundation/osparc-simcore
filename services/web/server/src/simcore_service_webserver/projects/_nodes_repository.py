@@ -3,7 +3,7 @@ from models_library.projects import ProjectID
 from models_library.services_types import ServiceKey, ServiceVersion
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 
 
 async def get_project_nodes_services(
@@ -11,7 +11,7 @@ async def get_project_nodes_services(
 ) -> list[tuple[ServiceKey, ServiceVersion]]:
     repo = ProjectNodesRepo(project_uuid=project_uuid)
 
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         nodes = await repo.list(conn)
 
     # removes duplicates by preserving order

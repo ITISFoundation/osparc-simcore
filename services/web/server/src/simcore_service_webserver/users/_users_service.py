@@ -19,20 +19,21 @@ from simcore_postgres_database.utils_groups_extra_properties import (
 
 from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
-from . import _preferences_service, _users_repository
-from ._common.models import (
+from ..user_preferences import user_preferences_service
+from . import _users_repository
+from ._models import (
     FullNameDict,
     ToUserUpdateDB,
     UserCredentialsTuple,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
 )
-from ._common.schemas import PreRegisteredUserGet
 from .exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,
 )
+from .schemas import PreRegisteredUserGet
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ async def pre_register_user(
     app: web.Application,
     *,
     profile: PreRegisteredUserGet,
-    creator_user_id: UserID,
+    creator_user_id: UserID | None,
     product_name: ProductName,
 ) -> UserAccountGet:
 
@@ -317,7 +318,7 @@ async def get_my_profile(
 
     try:
         preferences = (
-            await _preferences_service.get_frontend_user_preferences_aggregation(
+            await user_preferences_service.get_frontend_user_preferences_aggregation(
                 app, user_id=user_id, product_name=product_name
             )
         )
@@ -458,6 +459,7 @@ async def search_users_accounts(
             extras=r.extras or {},
             invited_by=r.invited_by,
             pre_registration_id=r.id,
+            pre_registration_created=r.created,
             account_request_status=r.account_request_status,
             account_request_reviewed_by=r.account_request_reviewed_by,
             account_request_reviewed_at=r.account_request_reviewed_at,
@@ -476,6 +478,7 @@ async def approve_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
+    invitation_extras: dict[str, Any] | None = None,
 ) -> int:
     """Approve a user account based on their pre-registration email.
 
@@ -516,6 +519,7 @@ async def approve_user_account(
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
         new_status=AccountRequestStatus.APPROVED,
+        invitation_extras=invitation_extras,
     )
 
     return pre_registration_id

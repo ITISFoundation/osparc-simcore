@@ -508,7 +508,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
       return (
         this.getBlocked() === true || // It could be blocked by IN_USE or UNKNOWN_SERVICE
-        (this.isResourceType("study") && (studyBrowserContext === "trash")) // It could a trashed study
+        (this.isResourceType("study") && (studyBrowserContext === osparc.dashboard.StudyBrowser.CONTEXT.TRASH)) // It could a trashed study
       );
     },
 
@@ -790,13 +790,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    // pipelineState: ["NOT_STARTED", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
+    // pipelineState: ["NOT_STARTED", "PUBLISHED", "STOPPING", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
     __applyPipelineState: function(pipelineState) {
       let iconSource;
       let toolTipText;
       let borderColor;
       switch (pipelineState) {
+        case "PUBLISHED":
         case "STARTED":
+        case "STOPPING":
           iconSource = "@FontAwesome5Solid/spinner/10";
           toolTipText = this.tr("Running");
           borderColor = "info";
@@ -1062,7 +1064,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     openData: function() {
       const resourceData = this.getResourceData();
-      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData);
     },
 
     openBilling: function() {

@@ -129,26 +129,28 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
         return;
       }
 
+      const annotationTypes = osparc.workbench.Annotation.TYPES;
+
       const attrs = annotation.getAttributes();
-      if (annotation.getType() === "text") {
+      if (annotation.getType() === annotationTypes.TEXT) {
         const textField = this.getChildControl("text-field").set({
           value: attrs.text
         });
         textField.addListener("changeValue", e => annotation.setText(e.getData()));
-      } else if (annotation.getType() === "note") {
+      } else if (annotation.getType() === annotationTypes.NOTE) {
         const textArea = this.getChildControl("text-area").set({
           value: attrs.text
         });
         textArea.addListener("changeValue", e => annotation.setText(e.getData()));
       }
 
-      if (["text", "rect"].includes(annotation.getType())) {
+      if ([annotationTypes.TEXT, annotationTypes.RECT].includes(annotation.getType())) {
         const colorPicker = this.getChildControl("color-picker");
         annotation.bind("color", colorPicker, "value");
         colorPicker.bind("value", annotation, "color");
       }
 
-      if (annotation.getType() === "text") {
+      if (annotation.getType() === annotationTypes.TEXT) {
         const fontSizeField = this.getChildControl("font-size").set({
           value: attrs.fontSize
         })
@@ -162,8 +164,8 @@ qx.Class.define("osparc.editor.AnnotationEditor", {
       }
 
       const colorPicker = this.getChildControl("color-picker");
-      marker.bind("color", colorPicker, "color");
-      colorPicker.bind("color", marker, "color");
+      marker.bind("color", colorPicker, "value");
+      colorPicker.bind("value", marker, "color");
     },
 
     addDeleteButton: function() {

@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards("templates");
+      const cards = this._resourcesContainer.reloadCards(osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", () => this.__itemClicked(card), this);
@@ -116,8 +116,6 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       });
       this.__evaluateUpdateAllButton();
       osparc.filter.UIFilterController.dispatch("searchBarFilter");
-
-      this._resourcesContainer.evaluateNoResourcesFoundLabel(cards, this._resourceType);
     },
 
     __itemClicked: function(card) {
@@ -220,7 +218,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
             if (node["version"] !== latestCompatible["version"]) {
               patchData["version"] = latestCompatible["version"];
             }
-            templatePromises.push(osparc.store.Study.patchNodeData(uniqueTemplateData, nodeId, patchData));
+            templatePromises.push(osparc.store.Study.getInstance().patchNodeData(uniqueTemplateData, nodeId, patchData));
           }
         }
         Promise.all(templatePromises)

@@ -349,10 +349,15 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getPricingPlan: function(serviceKey, serviceVersion) {
-      const serviceUrl = osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
+      const serviceUrl = osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion);
+      const key = serviceUrl["key"];
+      const version = serviceUrl["version"];
       // check if the service is already cached
-      if (serviceUrl in this.__pricingPlansCached) {
-        return Promise.resolve(this.__pricingPlansCached[serviceUrl]);
+      if (
+        key in this.__pricingPlansCached &&
+        version in this.__pricingPlansCached[key]
+      ) {
+        return Promise.resolve(this.__pricingPlansCached[key][version]);
       }
 
       const plansParams = {
@@ -361,7 +366,10 @@ qx.Class.define("osparc.store.Services", {
       return osparc.data.Resources.fetch("services", "pricingPlans", plansParams)
         .then(pricingPlansData => {
           // store the fetched pricing plans in the cache
-          this.__pricingPlansCached[serviceUrl] = pricingPlansData;
+          if (!(key in this.__pricingPlansCached)) {
+            this.__pricingPlansCached[key] = {};
+          }
+          this.__pricingPlansCached[key][version] = pricingPlansData;
           return pricingPlansData;
         });
     },

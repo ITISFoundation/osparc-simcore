@@ -10,7 +10,7 @@ inputs:
   uv-version:
     description: 'UV version to use'
     required: false
-    default: '0.6.x'
+    default: '0.7.x'
 
   cache-dependency-glob:
     description: 'Glob pattern for cache dependency files'

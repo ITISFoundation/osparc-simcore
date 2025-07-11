@@ -26,6 +26,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
+  fd-find \
   iputils-ping \
   curl \
   gosu \
@@ -92,10 +93,7 @@ RUN uv venv "${VIRTUAL_ENV}"
 
 
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade  \
-  wheel \
-  setuptools
+
 
 WORKDIR /build
 
@@ -110,6 +108,9 @@ WORKDIR /build
 FROM build AS prod-only-deps
 
 ENV SC_BUILD_TARGET=prod-only-deps
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 WORKDIR /build/services/dask-sidecar
 
@@ -134,8 +135,6 @@ ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
 
 ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /home/scu
 # ensure home folder is read/writable for user scu

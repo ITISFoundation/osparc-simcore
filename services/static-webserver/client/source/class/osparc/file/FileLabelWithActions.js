@@ -65,6 +65,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       event: "changeMultiSelect",
       apply: "__changeMultiSelection",
     },
+
+    deleteEnabled: {
+      check: "Boolean",
+      init: true,
+      nullable: true,
+      apply: "__applyDeleteEnabled",
+    },
   },
 
   members: {
@@ -106,11 +113,17 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       }
     },
 
+    __applyDeleteEnabled: function(value) {
+      if (value === false) {
+        this.getChildControl("delete-button").setEnabled(false);
+      }
+    },
+
     setItemSelected: function(selectedItem) {
       if (selectedItem) {
         this.__selection = [selectedItem];
-        this.getChildControl("download-button").setEnabled(true); // folders can also be downloaded
-        this.getChildControl("delete-button").setEnabled(true); // folders can also be deleted
+        this.getChildControl("download-button").setEnabled(true);
+        this.getChildControl("delete-button").setEnabled(this.isDeleteEnabled());
         this.getChildControl("selected-label").setValue(selectedItem.getLabel());
       } else {
         this.resetSelection();
@@ -136,7 +149,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     resetSelection: function() {
       this.__selection = [];
       this.getChildControl("download-button").setEnabled(false);
-      this.getChildControl("delete-button").setEnabled(false);
+      this.getChildControl("delete-button").setEnabled(this.isDeleteEnabled());
       this.getChildControl("selected-label").resetValue();
     },
 

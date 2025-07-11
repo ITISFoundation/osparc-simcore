@@ -88,7 +88,7 @@ from sqlalchemy.sql import func
 
 from ..db.plugin import get_asyncpg_engine
 from ..groups.api import list_all_user_groups_ids
-from ..users.api import get_user_primary_group_id
+from ..users import users_service
 
 _FUNCTIONS_TABLE_COLS = get_columns_from_db_model(functions_table, RegisteredFunctionDB)
 _FUNCTION_JOBS_TABLE_COLS = get_columns_from_db_model(
@@ -148,7 +148,9 @@ async def create_function(  # noqa: PLR0913
 
         registered_function = RegisteredFunctionDB.model_validate(row)
 
-        user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+        user_primary_group_id = await users_service.get_user_primary_group_id(
+            app, user_id=user_id
+        )
         await set_group_permissions(
             app,
             connection=transaction,
@@ -206,7 +208,9 @@ async def create_function_job(  # noqa: PLR0913
 
         registered_function_job = RegisteredFunctionJobDB.model_validate(row)
 
-        user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+        user_primary_group_id = await users_service.get_user_primary_group_id(
+            app, user_id=user_id
+        )
         await set_group_permissions(
             app,
             connection=transaction,
@@ -291,7 +295,9 @@ async def create_function_job_collection(
             )  # nosec
             job_collection_entries.append(entry)
 
-        user_primary_group_id = await get_user_primary_group_id(app, user_id=user_id)
+        user_primary_group_id = await users_service.get_user_primary_group_id(
+            app, user_id=user_id
+        )
         await set_group_permissions(
             app,
             connection=transaction,

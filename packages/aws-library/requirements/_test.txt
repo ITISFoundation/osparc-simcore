@@ -76,7 +76,7 @@ flask==3.1.0
     # via
     #   flask-cors
     #   moto
-flask-cors==5.0.1
+flask-cors==6.0.1
     # via moto
 flexcache==0.3
     # via pint
@@ -84,9 +84,9 @@ flexparser==0.4
     # via pint
 graphql-core==3.2.6
     # via moto
-h11==0.14.0
+h11==0.16.0
     # via httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via
@@ -104,7 +104,7 @@ iniconfig==2.0.0
     # via pytest
 itsdangerous==2.2.0
     # via flask
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   flask
@@ -245,7 +245,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 regex==2024.11.6
     # via cfn-lint
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -265,7 +265,7 @@ s3transfer==0.11.3
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==75.8.2
+setuptools==80.9.0
     # via moto
 six==1.17.0
     # via
@@ -300,7 +300,7 @@ types-s3transfer==0.11.3
     # via
     #   types-aioboto3
     #   types-boto3
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -322,7 +322,7 @@ typing-inspection==0.4.1
     #   pydantic
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

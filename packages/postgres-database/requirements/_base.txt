@@ -4,17 +4,11 @@ annotated-types==0.7.0
     # via pydantic
 asyncpg==0.30.0
     # via sqlalchemy
-deprecated==1.2.18
-    # via
-    #   opentelemetry-api
-    #   opentelemetry-semantic-conventions
 greenlet==3.1.1
     # via sqlalchemy
 idna==3.10
     # via yarl
-importlib-metadata==8.5.0
-    # via opentelemetry-api
-mako==1.3.9
+mako==1.3.10
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -23,26 +17,11 @@ markupsafe==3.0.2
     # via mako
 multidict==6.1.0
     # via yarl
-opentelemetry-api==1.30.0
-    # via
-    #   opentelemetry-instrumentation
-    #   opentelemetry-instrumentation-asyncpg
-    #   opentelemetry-semantic-conventions
-opentelemetry-instrumentation==0.51b0
-    # via opentelemetry-instrumentation-asyncpg
-opentelemetry-instrumentation-asyncpg==0.51b0
-    # via -r requirements/_base.in
-opentelemetry-semantic-conventions==0.51b0
-    # via
-    #   opentelemetry-instrumentation
-    #   opentelemetry-instrumentation-asyncpg
 orjson==3.10.15
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/common-library/requirements/_base.in
-packaging==24.2
-    # via opentelemetry-instrumentation
 propcache==0.3.0
     # via yarl
 psycopg2-binary==2.9.10
@@ -64,20 +43,11 @@ sqlalchemy==1.4.54
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   alembic
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   alembic
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
-    #   typing-inspection
-typing-inspection==0.4.1
-    # via pydantic
-wrapt==1.17.2
-    # via
-    #   deprecated
-    #   opentelemetry-instrumentation
 yarl==1.18.3
     # via -r requirements/_base.in
-zipp==3.21.0
-    # via importlib-metadata
