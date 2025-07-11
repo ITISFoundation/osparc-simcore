@@ -71,12 +71,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
           if (iterations.length) {
             const iterationPromises = [];
             iterations.forEach(iteration => {
-              const params = {
-                url: {
-                  "studyId": iteration["workcopy_project_id"]
-                }
-              };
-              iterationPromises.push(osparc.data.Resources.fetch("studies", "getOne", params));
+              iterationPromises.push(osparc.store.Study.getInstance().getOne(iteration["workcopy_project_id"]));
             });
             Promise.all(iterationPromises)
               .then(values => {
@@ -199,12 +194,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
     },
 
     __reloadIteration: function(iterationId) {
-      const params = {
-        url: {
-          "studyId": iterationId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getInstance().getOne(iterationId)
         .then(data => {
           const studyData = this.__study.serialize();
           studyData["workbench"] = data["workbench"];

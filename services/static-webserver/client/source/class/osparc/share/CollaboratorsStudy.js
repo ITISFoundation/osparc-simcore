@@ -93,7 +93,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
       gids.forEach(gid => {
         newCollaborators[gid] = newAccessRights;
       });
-      osparc.store.Study.addCollaborators(this._serializedDataCopy, newCollaborators)
+      osparc.store.Study.getInstance().addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {
           const text = resourceAlias + this.tr(" successfully shared");
           osparc.FlashMessenger.logAs(text);
@@ -111,7 +111,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
         item.setEnabled(false);
       }
 
-      return osparc.store.Study.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
+      return osparc.store.Study.getInstance().removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
@@ -128,7 +128,7 @@ qx.Class.define("osparc.share.CollaboratorsStudy", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.store.Study.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
+      osparc.store.Study.getInstance().updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.logAs(successMsg);
