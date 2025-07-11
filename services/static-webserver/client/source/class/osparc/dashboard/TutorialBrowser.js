@@ -218,7 +218,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
             if (node["version"] !== latestCompatible["version"]) {
               patchData["version"] = latestCompatible["version"];
             }
-            templatePromises.push(osparc.store.Study.patchNodeData(uniqueTemplateData, nodeId, patchData));
+            templatePromises.push(osparc.store.Study.getInstance().patchNodeData(uniqueTemplateData, nodeId, patchData));
           }
         }
         Promise.all(templatePromises)

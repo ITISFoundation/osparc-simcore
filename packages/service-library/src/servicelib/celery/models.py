@@ -1,17 +1,19 @@
 import datetime
 from enum import StrEnum
-from typing import Annotated, Any, Protocol, TypeAlias
+from typing import Annotated, Protocol, TypeAlias
 from uuid import UUID
 
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, StringConstraints
 
-TaskContext: TypeAlias = dict[str, Any]
 TaskID: TypeAlias = str
 TaskName: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1)
 ]
 TaskUUID: TypeAlias = UUID
+
+
+class TaskFilter(BaseModel): ...
 
 
 class TaskState(StrEnum):
@@ -56,7 +58,7 @@ class TaskInfoStore(Protocol):
 
     async def get_task_progress(self, task_id: TaskID) -> ProgressReport | None: ...
 
-    async def list_tasks(self, task_context: TaskContext) -> list[Task]: ...
+    async def list_tasks(self, task_context: TaskFilter) -> list[Task]: ...
 
     async def remove_task(self, task_id: TaskID) -> None: ...
 

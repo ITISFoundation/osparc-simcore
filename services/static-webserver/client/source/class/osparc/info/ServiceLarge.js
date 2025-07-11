@@ -395,7 +395,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
       resourcesLayout.exclude();
       let promise = null;
       if (this.getNodeId()) {
-        promise = osparc.store.Study.getNodeResources(this.getStudyId(), this.getNodeId());
+        promise = osparc.store.Study.getInstance().getNodeResources(this.getStudyId(), this.getNodeId());
       } else {
         promise = osparc.store.Services.getResources(this.getService()["key"], this.getService()["version"])
       }
