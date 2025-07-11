@@ -45,7 +45,7 @@ def create_app_lifespan(settings: ApplicationSettings) -> LifespanManager:
     app_lifespan.add(postgres_database_lifespan)
     app_lifespan.add(postgres_lifespan)
 
-    if settings.NOTIFICATIONS_CELERY and not settings.NOTIFICATIONS_WORKER_MODE:
+    if not settings.NOTIFICATIONS_WORKER_MODE:
         # - rabbitmq
         app_lifespan.add(rabbitmq_lifespan)
 

@@ -38,43 +38,42 @@ def app_environment(
     mock_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,  # wait for postgres service to start
     postgres_env_vars_dict: EnvVarsDict,
+    rabbit_service: RabbitSettings,
+    redis_service: RedisSettings,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **mock_environment,
             **postgres_env_vars_dict,
+            "RABBIT_HOST": rabbit_service.RABBIT_HOST,
+            "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
+            "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
+            "RABBIT_SECURE": f"{rabbit_service.RABBIT_SECURE}",
+            "RABBIT_USER": rabbit_service.RABBIT_USER,
+            "REDIS_SECURE": redis_service.REDIS_SECURE,
+            "REDIS_HOST": redis_service.REDIS_HOST,
+            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
+            "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value(),
         },
     )
 
 
 @pytest.fixture
-def enabled_rabbitmq(
-    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
-) -> RabbitSettings:
-    return rabbit_service
-
-
-@pytest.fixture
-def enabled_redis(
-    app_environment: EnvVarsDict, redis_service: RedisSettings
-) -> RedisSettings:
-    return redis_service
-
-
-@pytest.fixture
 def app_settings(
     app_environment: EnvVarsDict,
-    enabled_rabbitmq: RabbitSettings,
-    enabled_redis: RedisSettings,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> ApplicationSettings:
+    monkeypatch.setenv("NOTIFICATIONS_WORKER_MODE", "false")
     settings = ApplicationSettings.create_from_envs()
     print(f"{settings.model_dump_json(indent=2)=}")
     return settings
 
 
 @pytest.fixture
-async def fastapi_app(app_settings: ApplicationSettings) -> AsyncIterator[FastAPI]:
+async def mock_fastapi_app(
+    mock_celery_app: None, app_settings: ApplicationSettings
+) -> AsyncIterator[FastAPI]:
     app: FastAPI = create_app(app_settings)
 
     async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
@@ -111,7 +110,6 @@ def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Cel
 async def mock_celery_worker(
     app_environment: EnvVarsDict,
     celery_app: Celery,
-    fastapi_app: FastAPI,
     monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[Any]:
     monkeypatch.setenv("NOTIFICATIONS_WORKER_MODE", "true")
@@ -121,7 +119,7 @@ async def mock_celery_worker(
         assert app_settings.NOTIFICATIONS_CELERY  # nosec
         return partial(
             on_worker_init,
-            FastAPIAppServer(app=fastapi_app),
+            FastAPIAppServer(app=create_app(app_settings)),
             app_settings.NOTIFICATIONS_CELERY,
         )(sender, **_kwargs)
 

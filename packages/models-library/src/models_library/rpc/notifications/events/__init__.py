@@ -4,6 +4,9 @@ from ._account_events import (
     AccountApprovedEvent,
     AccountRejectedEvent,
     AccountRequestedEvent,
+    ProductData,
+    ProductUIData,
+    UserData,
 )
 
 Event: TypeAlias = AccountRequestedEvent | AccountApprovedEvent | AccountRejectedEvent
@@ -14,6 +17,9 @@ __all__: tuple[str, ...] = (
     "AccountRejectedEvent",
     "AccountRequestedEvent",
     "Event",
+    "ProductData",
+    "ProductUIData",
+    "UserData",
 )
 
 # nopycln: file

@@ -4,6 +4,9 @@ from models_library.rpc.notifications import Notification
 from models_library.rpc.notifications.channels import EmailAddress, EmailChannel
 from models_library.rpc.notifications.events import (
     AccountRequestedEvent,
+    ProductData,
+    ProductUIData,
+    UserData,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.notifications import (
@@ -18,9 +21,8 @@ pytest_simcore_core_services_selection = [
 
 
 @pytest.mark.usefixtures(
-    "mock_celery_app",
     "mock_celery_worker",
-    "fastapi_app",
+    "mock_fastapi_app",
 )
 async def test_account_requested(
     notifications_rabbitmq_rpc_client: RabbitMQRPCClient,
@@ -32,9 +34,25 @@ async def test_account_requested(
         notifications_rabbitmq_rpc_client,
         notification=Notification(
             event=AccountRequestedEvent(
-                first_name=faker.first_name(),
-                last_name=faker.last_name(),
-                email=user_email,
+                user=UserData(
+                    username=faker.user_name(),
+                    first_name=faker.first_name(),
+                    last_name=faker.last_name(),
+                    email=user_email,
+                ),
+                product=ProductData(
+                    product_name=faker.company(),
+                    display_name=faker.company(),
+                    vendor_display_inline=faker.company_suffix(),
+                    support_email=faker.email(),
+                    homepage_url=faker.url(),
+                    ui=ProductUIData(
+                        project_alias=faker.word(),
+                        logo_url=faker.image_url(),
+                        strong_color=faker.color_name(),
+                    ),
+                ),
+                host=faker.url(),
             ),
             channel=EmailChannel(
                 from_addr=EmailAddress(addr_spec=faker.email()),
