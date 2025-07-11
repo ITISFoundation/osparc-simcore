@@ -36,7 +36,7 @@ from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize, HttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
@@ -517,7 +517,7 @@ async def _request_start_export_data(
     export_as: Literal["path", "download_link"],
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
-) -> dict[str, Any]:
+) -> str:
     with log_context(
         logging.INFO,
         f"Data export form {paths_to_export=}",
@@ -616,10 +616,19 @@ async def test_start_export_data(
         export_as=export_as,
     )
 
-    assert re.fullmatch(
-        rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
-        result,
-    )
+    if export_as == "path":
+        assert re.fullmatch(
+            rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
+            result,
+        )
+    elif export_as == "download_link":
+        _ = HttpUrl(result)
+        assert re.search(
+            rf"exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip",
+            result,
+        )
+    else:
+        pytest.fail(f"Unexpected export_as value: {export_as}")
 
     progress_updates = [x[0][2].actual_value for x in task_progress_spy.call_args_list]
     assert progress_updates[0] == 0
