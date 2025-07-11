@@ -120,10 +120,10 @@ class BaseCustomSettings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=True,  # All must be capitalized
         env_parse_none_str="null",
-        extra="ignore",
+        extra="ignore",  # NOTE: if "strict" then fields with multiple aliases defined in the envs will fail to validate!
         frozen=True,
         ignored_types=(cached_property,),
-        populate_by_name=True,  # deprecated in pydantic v2.11+
+        populate_by_name=True,  # NOTE: populate_by_name deprecated in pydantic v2.11+
         validate_by_alias=True,
         validate_by_name=True,
         validate_default=True,
