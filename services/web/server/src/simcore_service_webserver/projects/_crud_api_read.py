@@ -21,7 +21,7 @@ from simcore_postgres_database.webserver_models import (
 )
 
 from ..folders import _folders_repository
-from ..users.api import get_user_email_legacy
+from ..users import users_service
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
 from ._access_rights_repository import batch_get_project_access_rights
@@ -107,7 +107,7 @@ async def _legacy_convert_db_projects_to_api_projects(
         db_prj_dict = db_prj
         db_prj_dict.pop("product_name", None)
         db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj['id']}")
-        user_email = await get_user_email_legacy(app, db_prj["prj_owner"])
+        user_email = await users_service.get_user_email_legacy(app, db_prj["prj_owner"])
         api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
     return api_projects
 

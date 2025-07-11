@@ -3,7 +3,6 @@ from contextlib import suppress
 from typing import Any
 
 from aiohttp import web
-from common_library.user_messages import user_message
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.users import (
@@ -27,79 +26,20 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
-from .._meta import API_VTAG
-from ..exception_handling import (
-    ExceptionToHttpErrorMap,
-    HttpErrorInfo,
-    exception_handling_decorator,
-    to_exceptions_handlers_map,
-)
-from ..groups import api as groups_api
-from ..groups.exceptions import GroupNotFoundError
-from ..invitations import api as invitations_service
-from ..login.decorators import login_required
-from ..products import products_web
-from ..products.models import Product
-from ..security.decorators import permission_required
-from ..utils_aiohttp import create_json_response_from_page, envelope_json_response
-from . import _users_service
-from ._common.schemas import PreRegisteredUserGet, UsersRequestContext
-from .exceptions import (
-    AlreadyPreRegisteredError,
-    MissingGroupExtraPropertiesForProductError,
-    PendingPreRegistrationNotFoundError,
-    UserNameDuplicateError,
-    UserNotFoundError,
-)
+from ...._meta import API_VTAG
+from ....groups import api as groups_service
+from ....groups.exceptions import GroupNotFoundError
+from ....invitations import api as invitations_service
+from ....login.decorators import login_required
+from ....products import products_web
+from ....products.models import Product
+from ....security.decorators import permission_required
+from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
+from ... import _users_service
+from ._rest_exceptions import handle_rest_requests_exceptions
+from ._rest_schemas import PreRegisteredUserGet, UsersRequestContext
 
 _logger = logging.getLogger(__name__)
-
-
-_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
-    PendingPreRegistrationNotFoundError: HttpErrorInfo(
-        status.HTTP_400_BAD_REQUEST,
-        user_message(
-            "No pending registration request found for email {email} in {product_name}.",
-            _version=2,
-        ),
-    ),
-    UserNotFoundError: HttpErrorInfo(
-        status.HTTP_404_NOT_FOUND,
-        user_message(
-            "The requested user could not be found. "
-            "This may be because the user is not registered or has privacy settings enabled.",
-            _version=1,
-        ),
-    ),
-    UserNameDuplicateError: HttpErrorInfo(
-        status.HTTP_409_CONFLICT,
-        user_message(
-            "The username '{user_name}' is already in use. "
-            "Please try '{alternative_user_name}' instead.",
-            _version=1,
-        ),
-    ),
-    AlreadyPreRegisteredError: HttpErrorInfo(
-        status.HTTP_409_CONFLICT,
-        user_message(
-            "Found {num_found} existing account(s) for '{email}'. Unable to pre-register an existing user.",
-            _version=1,
-        ),
-    ),
-    MissingGroupExtraPropertiesForProductError: HttpErrorInfo(
-        status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message(
-            "This product is currently being configured and is not yet ready for use. "
-            "Please try again later.",
-            _version=1,
-        ),
-    ),
-}
-
-_handle_users_exceptions = exception_handling_decorator(
-    # Transforms raised service exceptions into controller-errors (i.e. http 4XX,5XX responses)
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
 
 
 routes = web.RouteTableDef()
@@ -111,12 +51,12 @@ routes = web.RouteTableDef()
 
 @routes.get(f"/{API_VTAG}/me", name="get_my_profile")
 @login_required
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def get_my_profile(request: web.Request) -> web.Response:
     product: Product = products_web.get_current_product(request)
     req_ctx = UsersRequestContext.model_validate(request)
 
-    groups_by_type = await groups_api.list_user_groups_with_read_access(
+    groups_by_type = await groups_service.list_user_groups_with_read_access(
         request.app, user_id=req_ctx.user_id
     )
 
@@ -128,7 +68,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
     if product.group_id:
         with suppress(GroupNotFoundError):
             # Product is optional
-            my_product_group = await groups_api.get_product_group_for_user(
+            my_product_group = await groups_service.get_product_group_for_user(
                 app=request.app,
                 user_id=req_ctx.user_id,
                 product_gid=product.group_id,
@@ -148,7 +88,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
 @routes.patch(f"/{API_VTAG}/me", name="update_my_profile")
 @login_required
 @permission_required("user.profile.update")
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(MyProfilePatch, request)
@@ -167,7 +107,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
 @routes.post(f"/{API_VTAG}/users:search", name="search_users")
 @login_required
 @permission_required("user.read")
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def search_users(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
@@ -196,7 +136,7 @@ _RESPONSE_MODEL_MINIMAL_POLICY["exclude_none"] = True
 @routes.get(f"/{API_VTAG}/admin/user-accounts", name="list_users_accounts")
 @login_required
 @permission_required("admin.users.read")
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def list_users_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
@@ -248,7 +188,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
 @routes.get(f"/{API_VTAG}/admin/user-accounts:search", name="search_user_accounts")
 @login_required
 @permission_required("admin.users.read")
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def search_user_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
@@ -274,7 +214,7 @@ async def search_user_accounts(request: web.Request) -> web.Response:
 )
 @login_required
 @permission_required("admin.users.write")
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def pre_register_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
@@ -294,7 +234,7 @@ async def pre_register_user_account(request: web.Request) -> web.Response:
 @routes.post(f"/{API_VTAG}/admin/user-accounts:approve", name="approve_user_account")
 @login_required
 @permission_required("admin.users.write")
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def approve_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
@@ -358,7 +298,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
 @routes.post(f"/{API_VTAG}/admin/user-accounts:reject", name="reject_user_account")
 @login_required
 @permission_required("admin.users.write")
-@_handle_users_exceptions
+@handle_rest_requests_exceptions
 async def reject_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec

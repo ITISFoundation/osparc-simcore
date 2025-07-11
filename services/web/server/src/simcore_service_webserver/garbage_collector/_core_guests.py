@@ -19,13 +19,7 @@ from ..projects._projects_service import (
 from ..projects.exceptions import ProjectDeleteError, ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
 from ..resource_manager.registry import RedisResourceRegistry
-from ..users import exceptions
-from ..users.api import (
-    delete_user_without_projects,
-    get_guest_user_ids_and_names,
-    get_user_primary_group_id,
-    get_user_role,
-)
+from ..users import exceptions, users_service
 from ..users.exceptions import UserNotFoundError
 from ._core_utils import get_new_project_owner_gid, replace_current_owner
 from .settings import GUEST_USER_RC_LOCK_FORMAT
@@ -48,7 +42,7 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
     """
     # recover user's primary_gid
     try:
-        project_owner_primary_gid = await get_user_primary_group_id(
+        project_owner_primary_gid = await users_service.get_user_primary_group_id(
             app=app, user_id=user_id
         )
     except exceptions.UserNotFoundError:
@@ -149,7 +143,7 @@ async def remove_guest_user_with_all_its_resources(
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
 
     try:
-        user_role: UserRole = await get_user_role(app, user_id=user_id)
+        user_role: UserRole = await users_service.get_user_role(app, user_id=user_id)
         if user_role > UserRole.GUEST:
             # NOTE: This acts as a protection barrier to avoid removing resources to more
             # priviledge users
@@ -165,7 +159,7 @@ async def remove_guest_user_with_all_its_resources(
             "Deleting user %s because it is a GUEST",
             f"{user_id=}",
         )
-        await delete_user_without_projects(app, user_id)
+        await users_service.delete_user_without_projects(app, user_id)
 
     except (
         DatabaseError,
@@ -205,8 +199,8 @@ async def remove_users_manually_marked_as_guests(
     }
 
     # Prevent creating this list if a guest user
-    guest_users: list[tuple[UserID, UserNameID]] = await get_guest_user_ids_and_names(
-        app
+    guest_users: list[tuple[UserID, UserNameID]] = (
+        await users_service.get_guest_user_ids_and_names(app)
     )
 
     for guest_user_id, guest_user_name in guest_users:
@@ -242,6 +236,11 @@ async def remove_users_manually_marked_as_guests(
             f"{guest_user_id=}",
             f"{guest_user_name=}",
         )
+        await remove_guest_user_with_all_its_resources(
+            app=app,
+            user_id=guest_user_id,
+        )
+
         await remove_guest_user_with_all_its_resources(
             app=app,
             user_id=guest_user_id,

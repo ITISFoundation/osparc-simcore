@@ -13,7 +13,7 @@ from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScop
 from pydantic import NonNegativeInt
 
 from ..projects._projects_service import delete_project_by_user
-from ..users.api import get_user
+from ..users.users_service import get_user
 from ..workspaces.api import check_user_workspace_access
 from ..workspaces.errors import (
     WorkspaceAccessForbiddenError,

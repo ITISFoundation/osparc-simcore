@@ -32,7 +32,7 @@ from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client
 from ..security import security_service, security_web
-from ..users.api import get_user
+from ..users import users_service
 from ..users.exceptions import UserNotFoundError
 from ._constants import MSG_GUESTS_NOT_ALLOWED
 from ._errors import GuestUsersLimitError
@@ -56,7 +56,7 @@ async def get_authorized_user(request: web.Request) -> dict:
     """
     with suppress(web.HTTPUnauthorized, UserNotFoundError):
         user_id = await security_web.check_user_authorized(request)
-        user: dict = await get_user(request.app, user_id)
+        user: dict = await users_service.get_user(request.app, user_id)
         return user
     return {}
 
@@ -126,7 +126,7 @@ async def create_temporary_guest_user(request: web.Request):
                     "expires_at": expires_at,
                 }
             )
-            user = await get_user(request.app, usr["id"])
+            user = await users_service.get_user(request.app, usr["id"])
             await auto_add_user_to_product_group(
                 request.app, user_id=user["id"], product_name=product_name
             )

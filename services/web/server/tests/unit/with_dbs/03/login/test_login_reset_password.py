@@ -31,7 +31,7 @@ from simcore_service_webserver.login.constants import (
     MSG_USER_EXPIRED,
 )
 from simcore_service_webserver.login.settings import LoginOptions
-from simcore_service_webserver.users import api as users_service
+from simcore_service_webserver.users import users_service as users_service
 from yarl import URL
 
 #

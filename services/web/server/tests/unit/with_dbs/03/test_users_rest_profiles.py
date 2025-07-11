@@ -32,7 +32,7 @@ from pytest_simcore.helpers.webserver_login import (
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.users._preferences_service import (
+from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError

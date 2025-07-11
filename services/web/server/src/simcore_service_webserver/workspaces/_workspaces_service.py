@@ -20,7 +20,7 @@ from models_library.workspaces import (
 from ..folders.service import delete_folder_with_all_content, list_folders
 from ..projects.api import delete_project_by_user, list_projects
 from ..projects.models import ProjectTypeAPI
-from ..users.api import get_user
+from ..users import users_service
 from . import _workspaces_repository as db
 from ._workspaces_service_crud_read import check_user_workspace_access
 
@@ -36,7 +36,7 @@ async def create_workspace(
     thumbnail: str | None,
     product_name: ProductName,
 ) -> UserWorkspaceWithAccessRights:
-    user = await get_user(app, user_id=user_id)
+    user = await users_service.get_user(app, user_id=user_id)
     created = await db.create_workspace(
         app,
         product_name=product_name,

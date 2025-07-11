@@ -21,7 +21,7 @@ from ..projects._projects_service import (
 )
 from ..projects.api import has_user_project_access_rights
 from ..resource_manager.registry import RedisResourceRegistry
-from ..users.api import get_user_role
+from ..users import users_service
 from ..users.exceptions import UserNotFoundError
 
 _logger = logging.getLogger(__name__)
@@ -38,17 +38,21 @@ async def _remove_service(
         save_service_state = False
     else:
         try:
-            if await get_user_role(app, user_id=service.user_id) <= UserRole.GUEST:
-                save_service_state = False
-            else:
-                save_service_state = await has_user_project_access_rights(
+            user_role: UserRole = await users_service.get_user_role(
+                app, user_id=service.user_id
+            )
+        except (UserNotFoundError, ValueError):
+            save_service_state = False
+        else:
+            save_service_state = (
+                user_role > UserRole.GUEST
+                and await has_user_project_access_rights(
                     app,
                     project_id=service.project_id,
                     user_id=service.user_id,
                     permission="write",
                 )
-        except (UserNotFoundError, ValueError):
-            save_service_state = False
+            )
 
     with log_catch(_logger, reraise=False), log_context(
         _logger,

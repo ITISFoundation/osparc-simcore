@@ -18,7 +18,7 @@ from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database import utils_users
-from simcore_service_webserver.users._common.models import ToUserUpdateDB
+from simcore_service_webserver.users._models import ToUserUpdateDB
 
 
 @pytest.fixture

@@ -12,7 +12,7 @@ from models_library.user_preferences import (
 )
 from pydantic import Field, NonNegativeInt
 
-from .settings import UsersSettings, get_plugin_settings
+from ..users.settings import UsersSettings, get_plugin_settings
 
 _MINUTE: Final[NonNegativeInt] = 60
 

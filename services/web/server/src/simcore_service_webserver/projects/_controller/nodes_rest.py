@@ -59,7 +59,7 @@ from ...groups.api import get_group_from_gid, list_all_user_groups_ids
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
-from ...users.api import get_user_id_from_gid, get_user_role
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _access_rights_service as access_rights_service
 from .. import _nodes_service, _projects_service, nodes_utils
@@ -328,7 +328,7 @@ async def stop_node(request: web.Request) -> web.Response:
         permission="write",
     )
 
-    user_role = await get_user_role(request.app, user_id=req_ctx.user_id)
+    user_role = await users_service.get_user_role(request.app, user_id=req_ctx.user_id)
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
 
@@ -562,7 +562,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
 
     # Update groups to compare based on the type of sharing group
     if _sharing_with_group.group_type == GroupType.PRIMARY:
-        _user_id = await get_user_id_from_gid(
+        _user_id = await users_service.get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
         user_groups_ids = await list_all_user_groups_ids(

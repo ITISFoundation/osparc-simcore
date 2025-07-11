@@ -156,7 +156,9 @@ async def mock_get_user_role(
     mocker: MockerFixture, user_role: UserRole
 ) -> mock.AsyncMock:
     return mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.get_user_role", autospec=True, return_value=user_role
+        f"{MODULE_GC_CORE_ORPHANS}.users_service.get_user_role",
+        autospec=True,
+        return_value=user_role,
     )
 
 

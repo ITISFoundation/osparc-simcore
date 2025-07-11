@@ -41,7 +41,7 @@ from simcore_service_webserver.projects._projects_service import (
 )
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
-from simcore_service_webserver.users.api import (
+from simcore_service_webserver.users.users_service import (
     delete_user_without_projects,
     get_user_role,
 )

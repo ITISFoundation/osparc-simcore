@@ -61,9 +61,9 @@ from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.users.api import delete_user_without_projects
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.users.plugin import setup_users
+from simcore_service_webserver.users.users_service import delete_user_without_projects
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

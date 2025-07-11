@@ -28,7 +28,7 @@ from ..db.plugin import get_database_engine_legacy
 from ..products import products_service
 from ..products.models import Product
 from ..projects import projects_wallets_service
-from ..users import preferences_api as user_preferences_service
+from ..user_preferences import user_preferences_service
 from ..users.exceptions import UserDefaultWalletNotFoundError
 from ..wallets import api as wallets_service
 from ._client import DirectorV2RestClient

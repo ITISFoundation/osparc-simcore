@@ -8,7 +8,7 @@ from models_library.users import UserID
 from models_library.wallets import UserWalletDB, WalletID
 from pydantic import BaseModel, ConfigDict
 
-from ..users import api as users_service
+from ..users import users_service
 from . import _db as wallets_db
 from . import _groups_db as wallets_groups_db
 from ._groups_db import WalletGroupGetDB

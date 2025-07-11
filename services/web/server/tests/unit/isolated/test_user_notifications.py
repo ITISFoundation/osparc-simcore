@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from models_library.users import UserID
-from simcore_service_webserver.users._notifications import (
+from simcore_service_webserver.user_notifications._models import (
     NotificationCategory,
     UserNotification,
     UserNotificationCreate,
@@ -12,9 +12,7 @@ from simcore_service_webserver.users._notifications import (
 )
 
 
-@pytest.mark.parametrize(
-    "raw_data", UserNotification.model_config["json_schema_extra"]["examples"]
-)
+@pytest.mark.parametrize("raw_data", UserNotification.model_json_schema()["examples"])
 def test_user_notification(raw_data: dict[str, Any]):
     assert UserNotification.model_validate(raw_data)
 

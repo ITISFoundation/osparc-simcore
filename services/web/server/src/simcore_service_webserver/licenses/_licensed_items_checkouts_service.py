@@ -16,7 +16,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..users.api import get_user
+from ..users import users_service
 from ..wallets.api import get_wallet_by_user
 from . import _licensed_items_repository
 from ._licensed_items_checkouts_models import (
@@ -135,7 +135,7 @@ async def checkout_licensed_item_for_wallet(
         product_name=product_name,
     )
 
-    user = await get_user(app, user_id=user_id)
+    user = await users_service.get_user(app, user_id=user_id)
 
     licensed_item_db = await _licensed_items_repository.get(
         app, licensed_item_id=licensed_item_id, product_name=product_name
