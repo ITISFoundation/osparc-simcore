@@ -8,7 +8,7 @@ from models_library.users import UserID
 from models_library.workspaces import UserWorkspaceWithAccessRights, WorkspaceID
 from pydantic import BaseModel, ConfigDict
 
-from ..users import api as users_service
+from ..users import users_service
 from . import _groups_repository as workspaces_groups_db
 from . import _workspaces_repository as workspaces_workspaces_repository
 from ._groups_repository import WorkspaceGroupGetDB
@@ -182,12 +182,14 @@ async def delete_workspace_group(
         raise WorkspaceAccessForbiddenError(
             reason=f"User does not have delete access to workspace {workspace_id}"
         )
-    if workspace.owner_primary_gid == group_id:
-        if user["primary_gid"] != workspace.owner_primary_gid:
-            # Only the owner of the workspace can delete the owner group
-            raise WorkspaceAccessForbiddenError(
-                reason=f"User does not have access to modify owner workspace group in workspace {workspace_id}"
-            )
+    if (
+        workspace.owner_primary_gid == group_id
+        and user["primary_gid"] != workspace.owner_primary_gid
+    ):
+        # Only the owner of the workspace can delete the owner group
+        raise WorkspaceAccessForbiddenError(
+            reason=f"User does not have access to modify owner workspace group in workspace {workspace_id}"
+        )
 
     await workspaces_groups_db.delete_workspace_group(
         app=app, workspace_id=workspace_id, group_id=group_id

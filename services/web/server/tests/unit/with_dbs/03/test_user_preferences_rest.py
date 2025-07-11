@@ -18,7 +18,9 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole, UserStatus
-from simcore_service_webserver.users._preferences_models import ALL_FRONTEND_PREFERENCES
+from simcore_service_webserver.user_preferences._models import (
+    ALL_FRONTEND_PREFERENCES,
+)
 
 
 @pytest.fixture
