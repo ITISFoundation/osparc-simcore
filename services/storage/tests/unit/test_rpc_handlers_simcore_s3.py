@@ -52,6 +52,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     copy_folders_from_project,
@@ -666,3 +667,28 @@ async def test_start_export_data_access_error(
     assert exc.value.exc_type == "AccessRightError"
     assert f" {user_id} " in f"{exc.value}"
     assert f" {path_to_export} " in f"{exc.value}"
+
+
+async def test_start_export_invalid_export_format(
+    initialized_app: FastAPI,
+    short_dsm_cleaner_interval: int,
+    with_storage_celery_worker: TestWorkController,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    faker: Faker,
+):
+    path_to_export = TypeAdapter(PathToExport).validate_python(
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
+    )
+    with pytest.raises(RPCServerError) as exc:
+        await _request_start_export_data(
+            storage_rabbitmq_rpc_client,
+            user_id,
+            product_name,
+            paths_to_export=[path_to_export],
+            client_timeout=datetime.timedelta(seconds=60),
+            export_as="invalid_format",  # type: ignore
+        )
+
+    assert exc.value.exc_type == "builtins.ValueError"
