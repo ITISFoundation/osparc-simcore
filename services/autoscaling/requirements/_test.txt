@@ -81,7 +81,7 @@ flask==3.1.1
     # via
     #   flask-cors
     #   moto
-flask-cors==6.0.0
+flask-cors==6.0.1
     # via moto
 graphql-core==3.2.6
     # via moto
@@ -254,7 +254,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 regex==2024.11.6
     # via cfn-lint
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -340,7 +340,7 @@ typing-inspection==0.4.0
     #   pydantic
 tzdata==2025.2
     # via faker
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

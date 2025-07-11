@@ -125,7 +125,7 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
@@ -163,7 +163,7 @@ typing-extensions==4.14.1
     #   types-aiobotocore-s3
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
