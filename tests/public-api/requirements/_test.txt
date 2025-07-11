@@ -83,7 +83,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via docker
 rpds-py==0.23.1
     # via
@@ -97,7 +97,7 @@ typing-extensions==4.14.1
     # via anyio
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

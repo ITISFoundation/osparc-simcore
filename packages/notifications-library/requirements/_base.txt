@@ -26,7 +26,7 @@ idna==3.10
     # via
     #   email-validator
     #   yarl
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
