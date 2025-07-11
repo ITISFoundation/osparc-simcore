@@ -165,10 +165,7 @@ qx.Class.define("osparc.store.Study", {
     },
 
     patchTemplateType: function(templateId, templateType) {
-      const patchData = {
-        "templateType": templateType,
-      };
-      return this.patchStudy(templateId, patchData);
+      return this.patchStudyData(templateId, "templateType", templateType);
     },
 
     updateMetadata: function(studyId, metadata) {
