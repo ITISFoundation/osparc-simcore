@@ -240,9 +240,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       const templateAccessRights = data["accessRights"];
       const templateType = data["templateType"];
 
-      const fetchPromise = osparc.store.Templates.createTemplate(studyId, copyData, hidden);
+      const pollPromise = osparc.store.Templates.createTemplate(studyId, copyData, hidden);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise)
+      pollTasks.createPollingTask(pollPromise)
         .then(task => {
           const tutorialBrowser = this.__dashboard.getTutorialBrowser();
           if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
