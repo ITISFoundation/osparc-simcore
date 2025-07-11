@@ -123,6 +123,7 @@ class BaseCustomSettings(BaseSettings):
         extra="ignore",
         frozen=True,
         ignored_types=(cached_property,),
+        populate_by_name=True,  # deprecated in pydantic v2.11+
         validate_by_alias=True,
         validate_by_name=True,
         validate_default=True,

@@ -43,6 +43,7 @@ class PostgresSettings(BaseCustomSettings):
             description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
             validation_alias=AliasChoices(
                 # This is useful when running inside a docker container, then the hostname is set each client gets a different name
+                "POSTGRES_CLIENT_NAME",
                 "HOST",
                 "HOSTNAME",
             ),
