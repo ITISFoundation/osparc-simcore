@@ -63,17 +63,17 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "getOne", params)
     },
 
-    createStudy: function(studyData, pollTask = true) {
+    createStudy: function(studyData) {
       const params = {
         data: studyData
       };
       const options = {
-        pollTask,
+        pollTask: true,
       };
       return osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
     },
 
-    createStudyFromTemplate: function(templateId, studyData, pollTask = true) {
+    createStudyFromTemplate: function(templateId, studyData) {
       const params = {
         url: {
           templateId,
@@ -81,9 +81,21 @@ qx.Class.define("osparc.store.Study", {
         data: studyData
       };
       const options = {
-        pollTask,
+        pollTask: true,
       };
       return osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+    },
+
+    duplicateStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId,
+        }
+      };
+      const options = {
+        pollTask: true
+      };
+      return osparc.data.Resources.fetch("studies", "duplicate", params, options);
     },
 
     deleteStudy: function(studyId) {

@@ -81,10 +81,10 @@ qx.Class.define("osparc.study.Utils", {
 
     createStudyAndPoll: function(studyData) {
       return new Promise((resolve, reject) => {
-        const createStudyPromise = osparc.store.Study.getInstance().createStudy(studyData);
+        const pollPromise = osparc.store.Study.getInstance().createStudy(studyData);
         const pollTasks = osparc.store.PollTasks.getInstance();
         const interval = 1000;
-        pollTasks.createPollingTask(createStudyPromise, interval)
+        pollTasks.createPollingTask(pollPromise, interval)
           .then(task => {
             task.addListener("resultReceived", e => {
               const resultData = e.getData();
@@ -116,10 +116,10 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["name"] = templateData["name"];
             minStudyData["description"] = templateData["description"];
             minStudyData["thumbnail"] = templateData["thumbnail"];
-            const fetchPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
+            const pollPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
             const pollTasks = osparc.store.PollTasks.getInstance();
             const interval = 1000;
-            pollTasks.createPollingTask(fetchPromise, interval)
+            pollTasks.createPollingTask(pollPromise, interval)
               .then(task => {
                 const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
                 const progressSequence = new osparc.widget.ProgressSequence(title).set({
@@ -176,17 +176,9 @@ qx.Class.define("osparc.study.Utils", {
       const text = qx.locale.Manager.tr("Duplicate process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        }
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
+      const pollPromise = osparc.store.Study.getInstance().duplicateStudy(studyData["uuid"]);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      return pollTasks.createPollingTask(fetchPromise)
+      return pollTasks.createPollingTask(pollPromise)
     },
 
     createTemplateTypeSB: function() {
