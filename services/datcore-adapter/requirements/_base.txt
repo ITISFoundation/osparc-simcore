@@ -108,7 +108,7 @@ fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 fastapi-pagination==0.12.31
     # via -r requirements/_base.in
-faststream==0.5.31
+faststream==0.5.45
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.4.1
     # via

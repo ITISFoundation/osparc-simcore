@@ -233,7 +233,7 @@ faker==19.6.1
     # via -r requirements/_base.in
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.31
+faststream==0.5.45
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in

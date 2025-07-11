@@ -125,7 +125,7 @@ exceptiongroup==1.3.0
     # via aio-pika
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.41
+faststream==0.5.45
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 frozenlist==1.6.0
     # via

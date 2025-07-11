@@ -162,7 +162,7 @@ fastapi-cli==0.0.7
     # via fastapi
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-faststream==0.5.31
+faststream==0.5.45
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in

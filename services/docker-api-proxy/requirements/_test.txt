@@ -96,7 +96,7 @@ fastapi==0.115.12
     #   fastapi-lifespan-manager
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/_test.in
-faststream==0.5.35
+faststream==0.5.45
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 flaky==3.8.1
     # via -r requirements/_test.in

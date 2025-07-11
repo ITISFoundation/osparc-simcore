@@ -144,7 +144,7 @@ faker==36.1.1
     # via -r requirements/_test.in
 fast-depends==2.4.12
     # via faststream
-faststream==0.5.35
+faststream==0.5.45
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in

@@ -187,7 +187,7 @@ fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 fastapi-pagination==0.12.34
     # via -r requirements/_base.in
-faststream==0.5.34
+faststream==0.5.45
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
