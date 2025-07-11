@@ -928,13 +928,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __closeStudy: function() {
-      const params = {
-        url: {
-          "studyId": this.getStudy().getUuid()
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      osparc.data.Resources.fetch("studies", "close", params)
+      osparc.store.Store.getInstance().closeStudy(this.getStudy().getUuid())
         .catch(err => console.error(err));
     },
 

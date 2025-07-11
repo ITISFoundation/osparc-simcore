@@ -77,6 +77,16 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
     },
 
+    closeStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "close", params);
+    },
+
     createStudy: function(studyData) {
       const params = {
         data: studyData
