@@ -29,6 +29,10 @@ qx.Class.define("osparc.store.Study", {
     __nodePricingUnit: null,
     __studiesInDebt: null,
 
+    invalidateStudies: function() {
+      osparc.store.Store.getInstance().invalidate("studies");
+    },
+
     getPage: function(params, options) {
       return osparc.data.Resources.fetch("studies", "getPage", params, options)
     },
