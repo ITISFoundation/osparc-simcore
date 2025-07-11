@@ -11,7 +11,8 @@
         "include": [
           "qx.*"
         ]
-      }
+      },
+      "addCreatedAt": true
     }
   ],
   "defaultTarget": "source",
