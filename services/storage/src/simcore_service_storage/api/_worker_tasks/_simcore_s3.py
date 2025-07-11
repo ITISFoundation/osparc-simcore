@@ -5,7 +5,7 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
-from models_library.api_schemas_storage.storage_schemas import FoldersBody
+from models_library.api_schemas_storage.storage_schemas import FoldersBody, LinkType
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
@@ -15,7 +15,6 @@ from servicelib.celery.models import TaskID
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
-from ...constants import LinkType
 from ...dsm import get_dsm_provider
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
