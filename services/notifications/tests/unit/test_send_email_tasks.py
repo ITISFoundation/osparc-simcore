@@ -2,11 +2,11 @@ import pytest
 from faker import Faker
 from models_library.rpc.notifications import Notification
 from models_library.rpc.notifications.channels import EmailAddress, EmailChannel
-from models_library.rpc.notifications.events._account_events import (
+from models_library.rpc.notifications.events import (
     AccountRequestedEvent,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.notifications.messages import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     send_notification,
 )
 
