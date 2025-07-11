@@ -303,17 +303,9 @@ qx.Class.define("osparc.study.CreateFunction", {
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a hidden template
-      const params = {
-        url: {
-          "study_id": this.__studyData["uuid"],
-          "copy_data": true,
-          "hidden": true,
-        },
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
+      const copyData = true;
+      const hidden = true;
+      const fetchPromise = osparc.store.Templates.createTemplate(this.__studyData["uuid"], copyData, hidden);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {

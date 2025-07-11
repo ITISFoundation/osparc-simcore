@@ -236,20 +236,11 @@ qx.Class.define("osparc.desktop.MainPage", {
       const studyId = data["studyData"].uuid;
       const studyName = data["studyData"].name;
       const copyData = data["copyData"];
+      const hidden = false;
       const templateAccessRights = data["accessRights"];
       const templateType = data["templateType"];
 
-      const params = {
-        url: {
-          "study_id": studyId,
-          "copy_data": copyData,
-          "hidden": false,
-        },
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
+      const fetchPromise = osparc.store.Templates.createTemplate(studyId, copyData, hidden);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(fetchPromise)
         .then(task => {
