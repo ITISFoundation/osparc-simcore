@@ -98,6 +98,7 @@ opentelemetry-api==1.34.1
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-aio-pika
+    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -116,10 +117,13 @@ opentelemetry-exporter-otlp-proto-http==1.34.1
 opentelemetry-instrumentation==0.55b1
     # via
     #   opentelemetry-instrumentation-aio-pika
+    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
 opentelemetry-instrumentation-aio-pika==0.55b1
+    # via -r requirements/_base.in
+opentelemetry-instrumentation-asyncpg==0.55b1
     # via -r requirements/_base.in
 opentelemetry-instrumentation-logging==0.55b1
     # via -r requirements/_base.in
@@ -140,6 +144,7 @@ opentelemetry-sdk==1.34.1
 opentelemetry-semantic-conventions==0.55b1
     # via
     #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -244,7 +249,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
 rich==14.0.0
     # via
@@ -286,7 +291,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

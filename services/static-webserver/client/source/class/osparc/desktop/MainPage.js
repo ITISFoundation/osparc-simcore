@@ -56,7 +56,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     // Some resources request before building the main stack
     osparc.MaintenanceTracker.getInstance().startTracker();
     osparc.CookieExpirationTracker.getInstance().startTracker();
-    // osparc.NewUITracker.getInstance().startTracker();
+    osparc.NewUITracker.getInstance().startTracker();
 
     const store = osparc.store.Store.getInstance();
     const preloadPromises = [];
@@ -264,9 +264,9 @@ qx.Class.define("osparc.desktop.MainPage", {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
             // these operations need to be done after template creation
-            osparc.store.Study.addCollaborators(templateData, templateAccessRights);
+            osparc.store.Study.getInstance().addCollaborators(templateData, templateAccessRights);
             if (templateType) {
-              osparc.store.Study.patchTemplateType(templateData["uuid"], templateType)
+              osparc.store.Study.getInstance().patchTemplateType(templateData["uuid"], templateType)
                 .then(() => {
                   if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
                     tutorialBrowser.reloadResources(false);
@@ -274,7 +274,8 @@ qx.Class.define("osparc.desktop.MainPage", {
                   if (appBrowser && templateType === osparc.data.model.StudyUI.HYPERTOOL_TYPE) {
                     appBrowser.reloadResources(false);
                   }
-                });
+                })
+                .catch(err => osparc.FlashMessenger.logError(err));
             }
           });
         })
@@ -336,12 +337,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             const msg = this.tr("No snapshot found");
             throw new Error(msg);
           }
-          const params2 = {
-            url: {
-              "studyId": studyId
-            }
-          };
-          osparc.data.Resources.fetch("studies", "getOne", params2)
+          osparc.store.Study.getInstance().getOne(studyId)
             .then(studyData => {
               if (!studyData) {
                 const msg = this.tr("Project not found");
@@ -375,13 +371,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __openIteration: function(iterationUuid) {
-      const params = {
-        url: {
-          "studyId": iterationUuid
-        }
-      };
-      // OM TODO. DO NOT ADD ITERATIONS TO STUDIES CACHE
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getInstance().getOne(iterationUuid)
         .then(studyData => {
           if (!studyData) {
             const msg = this.tr("Iteration not found");

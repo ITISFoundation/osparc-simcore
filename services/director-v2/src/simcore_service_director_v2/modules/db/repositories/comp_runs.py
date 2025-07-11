@@ -145,6 +145,22 @@ class CompRunsRepository(BaseRepository):
                 raise ComputationalRunNotFoundError
             return CompRunsAtDB.model_validate(row)
 
+    async def get_latest_run_by_project(
+        self,
+        project_id: ProjectID,
+    ) -> CompRunsAtDB:
+        async with pass_or_acquire_connection(self.db_engine) as conn:
+            result = await conn.execute(
+                sa.select(comp_runs)
+                .where(comp_runs.c.project_uuid == f"{project_id}")
+                .order_by(desc(comp_runs.c.run_id))
+                .limit(1)
+            )
+            row = result.one_or_none()
+            if not row:
+                raise ComputationalRunNotFoundError
+            return CompRunsAtDB.model_validate(row)
+
     async def list_(
         self,
         *,

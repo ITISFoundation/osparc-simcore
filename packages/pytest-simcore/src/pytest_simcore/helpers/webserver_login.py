@@ -5,11 +5,11 @@ from typing import Any
 
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp import status
-from simcore_service_webserver.login._constants import MSG_LOGGED_IN
 from simcore_service_webserver.login._invitations_service import create_invitation_token
 from simcore_service_webserver.login._login_repository_legacy import (
     get_plugin_storage,
 )
+from simcore_service_webserver.login.constants import MSG_LOGGED_IN
 from simcore_service_webserver.security import security_service
 from yarl import URL
 

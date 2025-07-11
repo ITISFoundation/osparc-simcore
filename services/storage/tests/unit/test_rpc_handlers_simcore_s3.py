@@ -94,7 +94,7 @@ async def _request_copy_folders(
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             method_name=copy_folders_from_project.__name__,
             job_id=async_job_get.job_id,
-            job_id_data=async_job_name,
+            job_filter=async_job_name,
             client_timeout=client_timeout,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
@@ -533,7 +533,7 @@ async def _request_start_export_data(
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             method_name=start_export_data.__name__,
             job_id=async_job_get.job_id,
-            job_id_data=async_job_name,
+            job_filter=async_job_name,
             client_timeout=client_timeout,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")

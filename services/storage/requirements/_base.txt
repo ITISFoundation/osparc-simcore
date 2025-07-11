@@ -298,7 +298,7 @@ idna==3.10
     #   yarl
 importlib-metadata==8.5.0
     # via opentelemetry-api
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -464,7 +464,10 @@ opentelemetry-instrumentation-aio-pika==0.55b1
 opentelemetry-instrumentation-asgi==0.55b1
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-asyncpg==0.55b1
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-botocore==0.55b1
     # via
     #   -r requirements/../../../packages/aws-library/requirements/_base.in
@@ -927,7 +930,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
 rich==13.9.4
     # via
@@ -1109,7 +1112,7 @@ typing-extensions==4.14.1
     #   types-aiobotocore-ssm
 tzdata==2025.2
     # via kombu
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

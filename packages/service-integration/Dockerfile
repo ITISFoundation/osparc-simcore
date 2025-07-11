@@ -50,7 +50,8 @@ ENV LANG=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1 \
   VIRTUAL_ENV=/home/scu/.venv
 # https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.

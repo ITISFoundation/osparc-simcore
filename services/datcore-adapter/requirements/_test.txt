@@ -93,7 +93,7 @@ pytest-sugar==1.0.0
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -117,7 +117,7 @@ typing-extensions==4.14.1
     #   boto3-stubs
 tzdata==2025.1
     # via faker
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

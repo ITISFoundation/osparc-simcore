@@ -1,18 +1,14 @@
-from dataclasses import asdict
 from typing import Any
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
 from models_library.products import ProductName
-from models_library.rest_error import LogMessageType
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.aiohttp import observer
-from servicelib.aiohttp.status import HTTP_200_OK
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import ConfirmationAction, UserStatus
-from ._constants import (
+from .constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_USER_BANNED,
     MSG_USER_DELETED,
@@ -109,27 +105,3 @@ async def notify_user_logout(
         client_session_id,
         app,
     )
-
-
-def flash_response(
-    message: str, level: str = "INFO", *, status: int = HTTP_200_OK
-) -> web.Response:
-    return envelope_response(
-        data=asdict(LogMessageType(message, level)),
-        status=status,
-    )
-
-
-def envelope_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
-    return web.json_response(
-        {
-            "data": data,
-            "error": None,
-        },
-        dumps=json_dumps,
-        status=status,
-    )
-
-
-def get_user_name_from_email(email: str) -> str:
-    return email.split("@")[0]
