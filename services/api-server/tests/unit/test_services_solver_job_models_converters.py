@@ -225,8 +225,10 @@ def test_create_job_from_project(faker: Faker):
 
     assert job.id == project.uuid
 
+    field_names = Job.model_fields.keys()
+
     non_propagated_fields = {
-        name for name in job.model_fields if name.endswith("url")
+        name for name in field_names if name.endswith("url")
     }.union({"name"})
     assert all(getattr(job, _) for _ in non_propagated_fields)
 

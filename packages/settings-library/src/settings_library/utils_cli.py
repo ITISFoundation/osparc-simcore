@@ -26,8 +26,9 @@ def print_as_envfile(
     **pydantic_export_options,
 ):
     exclude_unset = pydantic_export_options.get("exclude_unset", False)
+    settings_cls = settings_obj.__class__
 
-    for name, field in type(settings_obj).model_fields.items():
+    for name, field in settings_cls.model_fields.items():
         auto_default_from_env = (
             field.json_schema_extra is not None
             and field.json_schema_extra.get("auto_default_from_env", False)

@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Any, Final, get_origin
+from typing import Any, Final
 
 from common_library.pydantic_fields_extension import get_type, is_literal, is_nullable
 from pydantic import ValidationInfo, field_validator
@@ -15,9 +15,9 @@ from pydantic_settings import (
 
 _logger = logging.getLogger(__name__)
 
-_AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING: Final[
-    str
-] = "{field_name} auto_default_from_env unresolved, defaulting to None"
+_AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING: Final[str] = (
+    "{field_name} auto_default_from_env unresolved, defaulting to None"
+)
 
 
 class DefaultFromEnvFactoryError(ValueError):
@@ -119,11 +119,14 @@ class BaseCustomSettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         case_sensitive=True,  # All must be capitalized
-        extra="forbid",
-        frozen=True,
-        validate_default=True,
-        ignored_types=(cached_property,),
         env_parse_none_str="null",
+        extra="ignore",  # NOTE: if "strict" then fields with multiple aliases defined in the envs will fail to validate!
+        frozen=True,
+        ignored_types=(cached_property,),
+        populate_by_name=True,  # NOTE: populate_by_name deprecated in pydantic v2.11+
+        validate_by_alias=True,
+        validate_by_name=True,
+        validate_default=True,
     )
 
     @classmethod
@@ -133,28 +136,15 @@ class BaseCustomSettings(BaseSettings):
         for name, field in cls.model_fields.items():
             auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
-
-            # Avoids issubclass raising TypeError. SEE test_issubclass_type_error_with_pydantic_models
-            is_not_composed = (
-                get_origin(field_type) is None
-            )  # is not composed as dict[str, Any] or Generic[Base]
             is_not_literal = not is_literal(field)
 
-            if (
-                is_not_literal
-                and is_not_composed
-                and issubclass(field_type, BaseCustomSettings)
-            ):
+            if is_not_literal and issubclass(field_type, BaseCustomSettings):
                 if auto_default_from_env:
                     # Builds a default factory `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = _create_settings_from_env(name, field)
                     field.default = None
 
-            elif (
-                is_not_literal
-                and is_not_composed
-                and issubclass(field_type, BaseSettings)
-            ):
+            elif is_not_literal and issubclass(field_type, BaseSettings):
                 msg = f"{cls}.{name} of type {field_type} must inherit from BaseCustomSettings"
                 raise ValueError(msg)
 

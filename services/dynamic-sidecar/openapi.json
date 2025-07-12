@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-dynamic-sidecar",
     "description": "Implements a sidecar service to manage user's dynamic/interactive services",
-    "version": "1.2.0"
+    "version": "1.2.1"
   },
   "servers": [
     {
@@ -139,6 +139,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "additionalProperties": true,
                   "title": "Response Containers Docker Inspect V1 Containers Get"
                 }
               }
@@ -261,7 +262,8 @@
                       "type": "string"
                     },
                     {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     }
                   ],
                   "title": "Response Get Containers Name V1 Containers Name Get"
@@ -304,6 +306,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "additionalProperties": true,
                   "title": "Response Inspect Container V1 Containers  Id  Get"
                 }
               }
@@ -986,6 +989,7 @@
             "title": "Service Resources"
           },
           "service_additional_metadata": {
+            "additionalProperties": true,
             "type": "object",
             "title": "Service Additional Metadata"
           }
@@ -1230,6 +1234,7 @@
           "contentSchema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
