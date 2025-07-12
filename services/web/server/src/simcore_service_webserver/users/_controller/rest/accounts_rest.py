@@ -209,7 +209,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
                 include_products=False,
             )
             user_account = found[0]
-            assert user_account == pre_registration_id  # nosec
+            assert user_account.pre_registration_id == pre_registration_id  # nosec
             assert user_account.email == approval_data.email  # nosec
 
             # send email to user
