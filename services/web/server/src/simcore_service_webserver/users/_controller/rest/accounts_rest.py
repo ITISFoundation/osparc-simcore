@@ -202,13 +202,15 @@ async def approve_user_account(request: web.Request) -> web.Response:
             approval_data.email,
         ):
             # get pre-registration data
-            pre_registration = await _accounts_service.get_pre_registration(
+            found = await _accounts_service.search_users_accounts(
                 request.app,
-                pre_registration_id=pre_registration_id,
+                email_glob=approval_data.email,
                 product_name=req_ctx.product_name,
+                include_products=False,
             )
-            assert pre_registration  # nosec
-            assert pre_registration.pre_email == approval_data.email  # nosec
+            user_account = found[0]
+            assert user_account == pre_registration_id  # nosec
+            assert user_account.email == approval_data.email  # nosec
 
             # send email to user
             fire_and_forget_task(
@@ -217,7 +219,8 @@ async def approve_user_account(request: web.Request) -> web.Response:
                     product_name=req_ctx.product_name,
                     invitation_link=invitation_result.invitation_url,
                     user_email=approval_data.email,
-                    user_name=pre_registration.pre_first_name,
+                    first_name=user_account.first_name or "User",
+                    last_name=user_account.last_name or "",
                 ),
                 task_suffix_name=f"{__name__}.send_approval_email_to_user.{approval_data.email}",
                 fire_and_forget_tasks_collection=request.app[

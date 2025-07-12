@@ -8,6 +8,8 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import HttpUrl
+from settings_library.email import SMTPSettings
+from simcore_service_webserver.products._service import get_product
 
 from ..db.plugin import get_asyncpg_engine
 from . import _accounts_repository, _users_repository
@@ -311,7 +313,8 @@ async def send_approval_email_to_user(
     product_name: ProductName,
     invitation_link: HttpUrl,
     user_email: LowerCaseEmailStr,
-    user_name: str,
+    first_name: str,
+    last_name: str,
 ) -> None:
     """Send approval email to user with invitation link.
 
@@ -322,26 +325,86 @@ async def send_approval_email_to_user(
         user_email: Email of the user to send approval to
         user_name: Name of the user
     """
-    # TODO: Implementation needed
-    msg = "This function needs to be implemented to send approval emails"
-    raise NotImplementedError(msg)
+    from notifications_library._email import compose_email, create_email_session
+    from notifications_library._email_render import (
+        get_support_address,
+        get_user_address,
+        render_email_parts,
+    )
+    from notifications_library._models import ProductData, ProductUIData, UserData
+    from notifications_library._render import (
+        create_render_environment_from_notifications_library,
+    )
 
+    # Get product data from the app
+    product = get_product(app, product_name=product_name)
 
-async def get_pre_registration(
-    app: web.Application,
-    *,
-    pre_registration_id: int,
-    product_name: ProductName,
-) -> Any:
-    """Get pre-registration data by ID.
+    # Extract vendor information
+    vendor_display_inline = (
+        str(product.vendor.get("name"))
+        if product.vendor and product.vendor.get("name") is not None
+        else "IT'IS Foundation"
+    )
 
-    Args:
-        app: The web application instance
-        pre_registration_id: ID of the pre-registration record
-        product_name: Product name associated with the pre-registration
+    # Extract UI information
+    ui_data = ProductUIData(
+        project_alias=(
+            product.vendor.get("ui", {}).get("project_alias") or "study"
+            if product.vendor
+            else "study"
+        ),
+        logo_url=(
+            product.vendor.get("ui", {}).get("logo_url") if product.vendor else None
+        ),
+        strong_color=(
+            product.vendor.get("ui", {}).get("strong_color") if product.vendor else None
+        ),
+    )
 
-    Returns:
-        Pre-registration data
-    """
-    msg = "This function needs to be implemented to retrieve pre-registration data"
-    raise NotImplementedError(msg)
+    # Extract homepage URL
+    homepage_url = product.vendor.get("url") if product.vendor else None
+
+    product_data = ProductData(
+        product_name=product_name,
+        display_name=product.display_name,
+        vendor_display_inline=vendor_display_inline,
+        support_email=product.support_email,
+        homepage_url=homepage_url,
+        ui=ui_data,
+    )
+
+    # Create user data
+    user_data = UserData(
+        user_name=f"{first_name} {last_name}".strip(),
+        email=user_email,
+        first_name=first_name,
+        last_name=last_name,
+    )
+
+    # Prepare event data
+    event_extra_data = {
+        "host": str(invitation_link).split("?")[0],
+        "link": str(invitation_link),
+    }
+
+    # Render email parts
+    parts = render_email_parts(
+        env=create_render_environment_from_notifications_library(),
+        event_name="on_account_approved",
+        user=user_data,
+        product=product_data,
+        **event_extra_data,
+    )
+
+    # Compose email
+    msg = compose_email(
+        from_=get_support_address(product_data),
+        to=get_user_address(user_data),
+        subject=parts.subject,
+        content_text=parts.text_content,
+        content_html=parts.html_content,
+    )
+
+    # Send email
+    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+        await smtp.send_message(msg)
