@@ -210,6 +210,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
             assert pre_registration  # nosec
             assert pre_registration.pre_email == approval_data.email  # nosec
 
+            # send email to user
             fire_and_forget_task(
                 _accounts_service.send_approval_email_to_user(
                     request.app,

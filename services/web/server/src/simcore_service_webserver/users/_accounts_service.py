@@ -7,9 +7,10 @@ from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import HttpUrl
 
 from ..db.plugin import get_asyncpg_engine
-from . import _users_repository
+from . import _accounts_repository, _users_repository
 from .exceptions import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
@@ -57,7 +58,7 @@ async def pre_register_user(
         if key in details:
             details[f"pre_{key}"] = details.pop(key)
 
-    await _users_repository.create_user_pre_registration(
+    await _accounts_repository.create_user_pre_registration(
         get_asyncpg_engine(app),
         email=profile.email,
         created_by=creator_user_id,
@@ -102,7 +103,7 @@ async def list_user_accounts(
 
     # Get user data with pagination
     users_data, total_count = (
-        await _users_repository.list_merged_pre_and_registered_users(
+        await _accounts_repository.list_merged_pre_and_registered_users(
             engine,
             product_name=product_name,
             filter_any_account_request_status=filter_any_account_request_status,
@@ -158,7 +159,7 @@ async def search_users_accounts(
         # Convert glob wildcards to SQL LIKE wildcards
         return sql_like_pattern.replace("*", "%").replace("?", "_")
 
-    rows = await _users_repository.search_merged_pre_and_registered_users(
+    rows = await _accounts_repository.search_merged_pre_and_registered_users(
         get_asyncpg_engine(app),
         email_like=_glob_to_sql_like(email_glob),
         product_name=product_name,
@@ -225,7 +226,7 @@ async def approve_user_account(
     engine = get_asyncpg_engine(app)
 
     # First, find the pre-registration entry matching the email and product
-    pre_registrations, _ = await _users_repository.list_user_pre_registrations(
+    pre_registrations, _ = await _accounts_repository.list_user_pre_registrations(
         engine,
         filter_by_pre_email=pre_registration_email,
         filter_by_product_name=product_name,
@@ -242,7 +243,7 @@ async def approve_user_account(
     pre_registration_id: int = pre_registration["id"]
 
     # Update the pre-registration status to APPROVED using the reviewer's ID
-    await _users_repository.review_user_pre_registration(
+    await _accounts_repository.review_user_pre_registration(
         engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
@@ -277,7 +278,7 @@ async def reject_user_account(
     engine = get_asyncpg_engine(app)
 
     # First, find the pre-registration entry matching the email and product
-    pre_registrations, _ = await _users_repository.list_user_pre_registrations(
+    pre_registrations, _ = await _accounts_repository.list_user_pre_registrations(
         engine,
         filter_by_pre_email=pre_registration_email,
         filter_by_product_name=product_name,
@@ -294,7 +295,7 @@ async def reject_user_account(
     pre_registration_id: int = pre_registration["id"]
 
     # Update the pre-registration status to REJECTED using the reviewer's ID
-    await _users_repository.review_user_pre_registration(
+    await _accounts_repository.review_user_pre_registration(
         engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
@@ -308,7 +309,7 @@ async def send_approval_email_to_user(
     app: web.Application,
     *,
     product_name: ProductName,
-    invitation_link: str,
+    invitation_link: HttpUrl,
     user_email: LowerCaseEmailStr,
     user_name: str,
 ) -> None:
