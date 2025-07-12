@@ -16,7 +16,7 @@ from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.users import _users_repository
+from simcore_service_webserver.users import _accounts_repository
 
 
 @pytest.fixture
@@ -62,7 +62,7 @@ async def test_create_user_pre_registration(
     }
 
     # Act
-    pre_registration_id = await _users_repository.create_user_pre_registration(
+    pre_registration_id = await _accounts_repository.create_user_pre_registration(
         asyncpg_engine,
         email=test_email,
         created_by=created_by_user_id,
@@ -112,7 +112,7 @@ async def test_review_user_pre_registration(
     }
 
     # Create a pre-registration to review
-    pre_registration_id = await _users_repository.create_user_pre_registration(
+    pre_registration_id = await _accounts_repository.create_user_pre_registration(
         asyncpg_engine,
         email=test_email,
         created_by=created_by_user_id,
@@ -125,7 +125,7 @@ async def test_review_user_pre_registration(
 
     # Act - review and approve the registration
     new_status = AccountRequestStatus.APPROVED
-    await _users_repository.review_user_pre_registration(
+    await _accounts_repository.review_user_pre_registration(
         asyncpg_engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
@@ -133,7 +133,7 @@ async def test_review_user_pre_registration(
     )
 
     # Assert - Use list_user_pre_registrations to verify
-    registrations, count = await _users_repository.list_user_pre_registrations(
+    registrations, count = await _accounts_repository.list_user_pre_registrations(
         asyncpg_engine,
         filter_by_pre_email=test_email,
         filter_by_product_name=product_name,
@@ -190,7 +190,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
     }
 
     # Create a pre-registration to review
-    pre_registration_id = await _users_repository.create_user_pre_registration(
+    pre_registration_id = await _accounts_repository.create_user_pre_registration(
         asyncpg_engine,
         email=test_email,
         created_by=created_by_user_id,
@@ -215,7 +215,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
 
     # Act - review and approve the registration with invitation extras
     new_status = AccountRequestStatus.APPROVED
-    await _users_repository.review_user_pre_registration(
+    await _accounts_repository.review_user_pre_registration(
         asyncpg_engine,
         pre_registration_id=pre_registration_id,
         reviewed_by=reviewer_id,
@@ -224,7 +224,7 @@ async def test_review_user_pre_registration_with_invitation_extras(
     )
 
     # Assert - Use list_user_pre_registrations to verify
-    registrations, count = await _users_repository.list_user_pre_registrations(
+    registrations, count = await _accounts_repository.list_user_pre_registrations(
         asyncpg_engine,
         filter_by_pre_email=test_email,
         filter_by_product_name=product_name,
@@ -281,7 +281,7 @@ async def test_list_user_pre_registrations(
 
     # Create pending registrations
     for i, email in enumerate(emails[:3]):
-        pre_reg_id = await _users_repository.create_user_pre_registration(
+        pre_reg_id = await _accounts_repository.create_user_pre_registration(
             asyncpg_engine,
             email=email,
             created_by=created_by_user_id,
@@ -295,7 +295,7 @@ async def test_list_user_pre_registrations(
         pre_registration_details_db_cleanup.append(pre_reg_id)
 
     # Create and approve one registration
-    await _users_repository.review_user_pre_registration(
+    await _accounts_repository.review_user_pre_registration(
         asyncpg_engine,
         pre_registration_id=pre_reg_ids[0],
         reviewed_by=created_by_user_id,
@@ -303,7 +303,7 @@ async def test_list_user_pre_registrations(
     )
 
     # Create and reject one registration
-    await _users_repository.review_user_pre_registration(
+    await _accounts_repository.review_user_pre_registration(
         asyncpg_engine,
         pre_registration_id=pre_reg_ids[1],
         reviewed_by=created_by_user_id,
@@ -315,7 +315,7 @@ async def test_list_user_pre_registrations(
     # Act & Assert - Test different filter combinations
 
     # 1. Get all registrations (should be 3)
-    all_registrations, count = await _users_repository.list_user_pre_registrations(
+    all_registrations, count = await _accounts_repository.list_user_pre_registrations(
         asyncpg_engine,
         filter_by_product_name=product_name,
     )
@@ -323,7 +323,7 @@ async def test_list_user_pre_registrations(
     assert len(all_registrations) == 3
 
     # 2. Filter by email pattern (should match first 3 emails with "test")
-    test_registrations, count = await _users_repository.list_user_pre_registrations(
+    test_registrations, count = await _accounts_repository.list_user_pre_registrations(
         asyncpg_engine,
         filter_by_pre_email="test",
         filter_by_product_name=product_name,
@@ -333,10 +333,12 @@ async def test_list_user_pre_registrations(
     assert all("test" in reg["pre_email"] for reg in test_registrations)
 
     # 3. Filter by status - APPROVED
-    approved_registrations, count = await _users_repository.list_user_pre_registrations(
-        asyncpg_engine,
-        filter_by_account_request_status=AccountRequestStatus.APPROVED,
-        filter_by_product_name=product_name,
+    approved_registrations, count = (
+        await _accounts_repository.list_user_pre_registrations(
+            asyncpg_engine,
+            filter_by_account_request_status=AccountRequestStatus.APPROVED,
+            filter_by_product_name=product_name,
+        )
     )
     assert count == 1
     assert len(approved_registrations) == 1
@@ -347,10 +349,12 @@ async def test_list_user_pre_registrations(
     )
 
     # 4. Filter by status - REJECTED
-    rejected_registrations, count = await _users_repository.list_user_pre_registrations(
-        asyncpg_engine,
-        filter_by_account_request_status=AccountRequestStatus.REJECTED,
-        filter_by_product_name=product_name,
+    rejected_registrations, count = (
+        await _accounts_repository.list_user_pre_registrations(
+            asyncpg_engine,
+            filter_by_account_request_status=AccountRequestStatus.REJECTED,
+            filter_by_product_name=product_name,
+        )
     )
     assert count == 1
     assert len(rejected_registrations) == 1
@@ -361,10 +365,12 @@ async def test_list_user_pre_registrations(
     )
 
     # 5. Filter by status - PENDING
-    pending_registrations, count = await _users_repository.list_user_pre_registrations(
-        asyncpg_engine,
-        filter_by_account_request_status=AccountRequestStatus.PENDING,
-        filter_by_product_name=product_name,
+    pending_registrations, count = (
+        await _accounts_repository.list_user_pre_registrations(
+            asyncpg_engine,
+            filter_by_account_request_status=AccountRequestStatus.PENDING,
+            filter_by_product_name=product_name,
+        )
     )
     assert count == 1
     assert len(pending_registrations) == 1
@@ -376,7 +382,7 @@ async def test_list_user_pre_registrations(
 
     # 6. Test pagination
     paginated_registrations, count = (
-        await _users_repository.list_user_pre_registrations(
+        await _accounts_repository.list_user_pre_registrations(
             asyncpg_engine,
             filter_by_product_name=product_name,
             pagination_limit=2,
@@ -387,7 +393,7 @@ async def test_list_user_pre_registrations(
     assert len(paginated_registrations) == 2  # But only returns 2 records
 
     # Get next page
-    page2_registrations, count = await _users_repository.list_user_pre_registrations(
+    page2_registrations, count = await _accounts_repository.list_user_pre_registrations(
         asyncpg_engine,
         filter_by_product_name=product_name,
         pagination_limit=2,
@@ -425,7 +431,7 @@ async def test_create_pre_registration_with_existing_user_linking(
     existing_user_email = product_owner_user["email"]
 
     # Act - Create pre-registration with the same email as product_owner_user
-    pre_registration_id = await _users_repository.create_user_pre_registration(
+    pre_registration_id = await _accounts_repository.create_user_pre_registration(
         asyncpg_engine,
         email=existing_user_email,  # Same email as existing user
         created_by=existing_user_id,
@@ -440,7 +446,7 @@ async def test_create_pre_registration_with_existing_user_linking(
     pre_registration_details_db_cleanup.append(pre_registration_id)
 
     # Assert - Verify through list_user_pre_registrations
-    registrations, count = await _users_repository.list_user_pre_registrations(
+    registrations, count = await _accounts_repository.list_user_pre_registrations(
         asyncpg_engine,
         filter_by_pre_email=existing_user_email,
         filter_by_product_name=product_name,
@@ -502,7 +508,7 @@ async def mixed_user_data(
 
     # 1. Create a pre-registered user that is not in the users table - PENDING status
     pre_reg_email = "pre.registered.only@example.com"
-    pre_reg_id = await _users_repository.create_user_pre_registration(
+    pre_reg_id = await _accounts_repository.create_user_pre_registration(
         asyncpg_engine,
         email=pre_reg_email,
         created_by=created_by_user_id,
@@ -521,7 +527,7 @@ async def mixed_user_data(
     pre_registration_details_db_cleanup.append(pre_reg_id)
 
     # 2. Create a pre-registration for the product_owner_user (both registered and pre-registered)
-    owner_pre_reg_id = await _users_repository.create_user_pre_registration(
+    owner_pre_reg_id = await _accounts_repository.create_user_pre_registration(
         asyncpg_engine,
         email=product_owner_user["email"],
         created_by=created_by_user_id,
@@ -537,7 +543,7 @@ async def mixed_user_data(
 
     # 3. Create another pre-registered user with APPROVED status
     approved_email = "approved.user@example.com"
-    approved_reg_id = await _users_repository.create_user_pre_registration(
+    approved_reg_id = await _accounts_repository.create_user_pre_registration(
         asyncpg_engine,
         email=approved_email,
         created_by=created_by_user_id,
@@ -551,7 +557,7 @@ async def mixed_user_data(
     pre_registration_details_db_cleanup.append(approved_reg_id)
 
     # Set to APPROVED status
-    await _users_repository.review_user_pre_registration(
+    await _accounts_repository.review_user_pre_registration(
         asyncpg_engine,
         pre_registration_id=approved_reg_id,
         reviewed_by=created_by_user_id,
@@ -582,7 +588,7 @@ async def test_list_merged_users_all_users(
 
     # Act - Get all users without filtering
     users_list, total_count = (
-        await _users_repository.list_merged_pre_and_registered_users(
+        await _accounts_repository.list_merged_pre_and_registered_users(
             asyncpg_engine,
             product_name=product_name,
             filter_include_deleted=False,
@@ -618,7 +624,7 @@ async def test_list_merged_users_pre_registered_only(
     asyncpg_engine = get_asyncpg_engine(app)
 
     # Act - Get all users
-    users_list, _ = await _users_repository.list_merged_pre_and_registered_users(
+    users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
         asyncpg_engine,
         product_name=product_name,
         filter_include_deleted=False,
@@ -654,7 +660,7 @@ async def test_list_merged_users_linked_user(
     asyncpg_engine = get_asyncpg_engine(app)
 
     # Act - Get all users
-    users_list, _ = await _users_repository.list_merged_pre_and_registered_users(
+    users_list, _ = await _accounts_repository.list_merged_pre_and_registered_users(
         asyncpg_engine,
         product_name=product_name,
         filter_include_deleted=False,
@@ -705,7 +711,7 @@ async def test_list_merged_users_filter_pending(
 
     # Act - Get users with PENDING status
     pending_users, pending_count = (
-        await _users_repository.list_merged_pre_and_registered_users(
+        await _accounts_repository.list_merged_pre_and_registered_users(
             asyncpg_engine,
             product_name=product_name,
             filter_any_account_request_status=[AccountRequestStatus.PENDING],
@@ -734,7 +740,7 @@ async def test_list_merged_users_filter_approved(
 
     # Act - Get users with APPROVED status
     approved_users, approved_count = (
-        await _users_repository.list_merged_pre_and_registered_users(
+        await _accounts_repository.list_merged_pre_and_registered_users(
             asyncpg_engine,
             product_name=product_name,
             filter_any_account_request_status=[AccountRequestStatus.APPROVED],
@@ -760,7 +766,7 @@ async def test_list_merged_users_multiple_statuses(
 
     # Act - Get users with either PENDING or APPROVED status
     mixed_status_users, mixed_status_count = (
-        await _users_repository.list_merged_pre_and_registered_users(
+        await _accounts_repository.list_merged_pre_and_registered_users(
             asyncpg_engine,
             product_name=product_name,
             filter_any_account_request_status=[
@@ -791,7 +797,7 @@ async def test_list_merged_users_pagination(
 
     # Act - Get first page with limit 2
     page1_users, total_count = (
-        await _users_repository.list_merged_pre_and_registered_users(
+        await _accounts_repository.list_merged_pre_and_registered_users(
             asyncpg_engine,
             product_name=product_name,
             filter_include_deleted=False,
@@ -801,7 +807,7 @@ async def test_list_merged_users_pagination(
     )
 
     # Get second page with limit 2
-    page2_users, _ = await _users_repository.list_merged_pre_and_registered_users(
+    page2_users, _ = await _accounts_repository.list_merged_pre_and_registered_users(
         asyncpg_engine,
         product_name=product_name,
         filter_include_deleted=False,
