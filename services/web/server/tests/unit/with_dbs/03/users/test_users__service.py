@@ -15,8 +15,8 @@ from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
-from simcore_service_webserver.users import _users_service
-from simcore_service_webserver.users._users_repository import (
+from simcore_service_webserver.users import _accounts_service
+from simcore_service_webserver.users._accounts_repository import (
     create_user_pre_registration,
 )
 
@@ -82,7 +82,7 @@ async def test_search_users_as_admin_real_user(
     user_email = product_owner_user["email"]
 
     # Act
-    found_users = await _users_service.search_users_accounts(
+    found_users = await _accounts_service.search_users_accounts(
         app, email_glob=user_email, product_name=product_name, include_products=False
     )
 
@@ -111,7 +111,7 @@ async def test_search_users_as_admin_pre_registered_user(
     pre_registration_details = pre_registered_user_created["details"]
 
     # Act
-    found_users = await _users_service.search_users_accounts(
+    found_users = await _accounts_service.search_users_accounts(
         app, email_glob=pre_registered_email, product_name=product_name
     )
 
@@ -164,7 +164,7 @@ async def test_search_users_as_admin_wildcard(
         )
 
     # Act - search with wildcard for the domain
-    found_users = await _users_service.search_users_accounts(
+    found_users = await _accounts_service.search_users_accounts(
         app, email_glob=f"*{email_domain}", product_name=product_name
     )
 
