@@ -1,9 +1,10 @@
 from functools import cached_property
-from typing import Annotated
+from typing import Annotated, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.products import ProductName
 from pydantic import AliasChoices, Field, HttpUrl, SecretStr, field_validator
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -55,8 +56,8 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = DEFAULT_FACTORY
 
     @cached_property
-    def LOG_LEVEL(self):
-        return self.INVITATIONS_LOGLEVEL
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.INVITATIONS_LOGLEVEL)
 
     @field_validator("INVITATIONS_LOGLEVEL", mode="before")
     @classmethod

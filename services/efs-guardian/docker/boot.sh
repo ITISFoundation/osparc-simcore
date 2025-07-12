@@ -52,7 +52,9 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
 
   exec sh -c "
     cd services/efs-guardian/src/simcore_service_efs_guardian && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${EFS_GUARDIAN_REMOTE_DEBUGGING_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${EFS_GUARDIAN_REMOTE_DEBUGGING_PORT} -m \
+    uvicorn \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --reload \
       $reload_dir_packages \
@@ -60,7 +62,8 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  exec uvicorn simcore_service_efs_guardian.main:the_app \
+  exec uvicorn \
+    --factory simcore_service_efs_guardian.main:app_factory \
     --host 0.0.0.0 \
     --log-level "${SERVER_LOG_LEVEL}"
 fi

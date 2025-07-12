@@ -8,14 +8,18 @@ SEE also https://github.com/Delgan/loguru for a future alternative
 import asyncio
 import functools
 import logging
+import logging.handlers
+import queue
+import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, NotRequired, TypeAlias, TypedDict, TypeVar
+from typing import Any, Final, NotRequired, TypeAlias, TypedDict, TypeVar
 
+from common_library.json_serialization import json_dumps
 from settings_library.tracing import TracingSettings
 
 from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
@@ -24,6 +28,8 @@ from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
 
+LogLevelInt: TypeAlias = int
+LogMessageStr: TypeAlias = str
 
 BLACK = "\033[0;30m"
 BLUE = "\033[0;34m"
@@ -106,68 +112,75 @@ class CustomFormatter(logging.Formatter):
 
 
 # SEE https://docs.python.org/3/library/logging.html#logrecord-attributes
-DEFAULT_FORMATTING = (
-    "log_level=%(levelname)s "
-    "| log_timestamp=%(asctime)s "
-    "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
-    "| log_uid=%(log_uid)s "
-    "| log_oec=%(log_oec)s"
-    "| log_msg=%(message)s"
+_DEFAULT_FORMATTING: Final[str] = " | ".join(
+    [
+        "log_level=%(levelname)s",
+        "log_timestamp=%(asctime)s",
+        "log_source=%(name)s:%(funcName)s(%(lineno)d)",
+        "log_uid=%(log_uid)s",
+        "log_oec=%(log_oec)s",
+        "log_msg=%(message)s",
+    ]
 )
-LOCAL_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+
+_LOCAL_FORMATTING: Final[str] = (
+    "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
+)
+
+# Tracing format strings
+_TRACING_FORMATTING: Final[str] = " | ".join(
+    [
+        "log_level=%(levelname)s",
+        "log_timestamp=%(asctime)s",
+        "log_source=%(name)s:%(funcName)s(%(lineno)d)",
+        "log_uid=%(log_uid)s",
+        "log_oec=%(log_oec)s",
+        "log_trace_id=%(otelTraceID)s",
+        "log_span_id=%(otelSpanID)s",
+        "log_resource.service.name=%(otelServiceName)s",
+        "log_trace_sampled=%(otelTraceSampled)s",
+        "log_msg=%(message)s",
+    ]
+)
+
+_LOCAL_TRACING_FORMATTING: Final[str] = (
+    "%(levelname)s: [%(asctime)s/%(processName)s] "
+    "[log_trace_id=%(otelTraceID)s log_span_id=%(otelSpanID)s "
+    "log_resource.service.name=%(otelServiceName)s log_trace_sampled=%(otelTraceSampled)s] "
+    "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
+)
 
 # Graylog Grok pattern extractor:
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| (log_uid=%{WORD:log_uid} \| )?log_msg=%{GREEDYDATA:log_msg}
 
 
-def config_all_loggers(
+def _setup_format_string(
     *,
-    log_format_local_dev_enabled: bool,
-    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
     tracing_settings: TracingSettings | None,
-) -> None:
-    """
-    Applies common configuration to ALL registered loggers
-    """
-    the_manager: logging.Manager = logging.Logger.manager
-    root_logger = logging.getLogger()
-
-    loggers = [root_logger] + [
-        logging.getLogger(name) for name in the_manager.loggerDict
-    ]
-
-    fmt = DEFAULT_FORMATTING
-    if tracing_settings is not None:
-        fmt = (
-            "log_level=%(levelname)s "
-            "| log_timestamp=%(asctime)s "
-            "| log_source=%(name)s:%(funcName)s(%(lineno)d) "
-            "| log_uid=%(log_uid)s "
-            "| log_oec=%(log_oec)s"
-            "| log_trace_id=%(otelTraceID)s "
-            "| log_span_id=%(otelSpanID)s "
-            "| log_resource.service.name=%(otelServiceName)s "
-            "| log_trace_sampled=%(otelTraceSampled)s] "
-            "| log_msg=%(message)s"
-        )
-        setup_log_tracing(tracing_settings=tracing_settings)
+    log_format_local_dev_enabled: bool,
+) -> str:
     if log_format_local_dev_enabled:
-        fmt = LOCAL_FORMATTING
-        if tracing_settings is not None:
-            fmt = (
-                "%(levelname)s: [%(asctime)s/%(processName)s] "
-                "[log_trace_id=%(otelTraceID)s log_span_id=%(otelSpanID)s log_resource.service.name=%(otelServiceName)s log_trace_sampled=%(otelTraceSampled)s] "
-                "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
-            )
-
-    for logger in loggers:
-        _set_logging_handler(
-            logger, fmt=fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
+        return (
+            _LOCAL_TRACING_FORMATTING
+            if tracing_settings is not None
+            else _LOCAL_FORMATTING
         )
 
+    return _TRACING_FORMATTING if tracing_settings is not None else _DEFAULT_FORMATTING
+
+
+def _get_all_loggers() -> list[logging.Logger]:
+    manager = logging.Logger.manager
+    root_logger = logging.getLogger()
+    return [root_logger] + [logging.getLogger(name) for name in manager.loggerDict]
+
+
+def _apply_logger_filters(
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+) -> None:
+    """Apply filters to specific loggers."""
     for logger_name, filtered_routes in logger_filter_mapping.items():
         logger = logging.getLogger(logger_name)
-        # Check if the logger has any handlers or is in active use
         if not logger.hasHandlers():
             _logger.warning(
                 "Logger %s does not have any handlers. Filter will not be added.",
@@ -179,43 +192,156 @@ def config_all_loggers(
         logger.addFilter(log_filter)
 
 
-def _set_logging_handler(
-    logger: logging.Logger,
-    *,
-    fmt: str,
-    log_format_local_dev_enabled: bool,
+def _setup_base_logging_level(log_level: LogLevelInt) -> None:
+    logging.basicConfig(level=log_level)
+    logging.root.setLevel(log_level)
+
+
+def _dampen_noisy_loggers(
+    noisy_loggers: tuple[str, ...],
 ) -> None:
-    for handler in logger.handlers:
-        handler.setFormatter(
-            CustomFormatter(
-                fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
-            )
-        )
+    """Sets a less verbose level for noisy loggers."""
+    quiet_level: int = max(
+        min(logging.root.level + logging.CRITICAL - logging.ERROR, logging.CRITICAL),
+        logging.WARNING,
+    )
+
+    for name in noisy_loggers:
+        logging.getLogger(name).setLevel(quiet_level)
 
 
-def test_logger_propagation(logger: logging.Logger) -> None:
-    """log propagation and levels can sometimes be daunting to get it right.
-
-    This function uses the `logger`` passed as argument to log the same message at different levels
-
-    This should help to visually test a given configuration
-
-    USAGE:
-        from .logging_utils import test_logger_propagation
-        for n in ("aiohttp.access", "gunicorn.access"):
-            test_logger_propagation(logging.getLogger(n))
+def setup_loggers(
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_settings: TracingSettings | None,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...] | None,
+) -> None:
     """
-    msg = f"TESTING %s log using {logger=}"
-    logger.critical(msg, "critical")
-    logger.error(msg, "error")
-    logger.info(msg, "info")
-    logger.warning(msg, "warning")
-    logger.debug(msg, "debug")
+    Applies comprehensive configuration to ALL registered loggers.
+
+    This function uses a comprehensive approach:
+    - Removes all handlers from all loggers
+    - Ensures all loggers propagate to root
+    - Sets up root logger with properly formatted handler
+
+    Args:
+        log_format_local_dev_enabled: Enable local development formatting
+        logger_filter_mapping: Mapping of logger names to filtered message substrings
+        tracing_settings: OpenTelemetry tracing configuration
+    """
+    _setup_base_logging_level(log_base_level)
+    if noisy_loggers is not None:
+        _dampen_noisy_loggers(noisy_loggers)
+    if tracing_settings is not None:
+        setup_log_tracing(tracing_settings=tracing_settings)
+    fmt = _setup_format_string(
+        tracing_settings=tracing_settings,
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+    )
+
+    # Create a properly formatted handler for the root logger
+    root_handler = logging.StreamHandler()
+    root_handler.setFormatter(
+        CustomFormatter(fmt, log_format_local_dev_enabled=log_format_local_dev_enabled)
+    )
+
+    all_loggers = _get_all_loggers()
+
+    # Apply comprehensive logging setup
+    # Note: We don't store the original state here since this is a permanent setup
+    _apply_comprehensive_logging_setup(all_loggers, root_handler)
+
+    # Apply filters
+    _apply_logger_filters(logger_filter_mapping)
+
+
+@contextmanager
+def async_loggers(
+    *,
+    log_format_local_dev_enabled: bool,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+    tracing_settings: TracingSettings | None,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...] | None,
+) -> Iterator[None]:
+    """
+    context manager for non-blocking logging infrastructure.
+
+    Usage:
+        with async_loggers(log_format_local_dev_enabled=True, logger_filter_mapping={}, tracing_settings=None):
+            # Your async application code here
+            logger.info("This is non-blocking!")
+
+    Args:
+        log_format_local_dev_enabled: Enable local development formatting
+        logger_filter_mapping: Mapping of logger names to filtered message substrings
+        tracing_settings: OpenTelemetry tracing configuration
+    """
+    _setup_base_logging_level(log_base_level)
+    if noisy_loggers is not None:
+        _dampen_noisy_loggers(noisy_loggers)
+
+    if tracing_settings is not None:
+        setup_log_tracing(tracing_settings=tracing_settings)
+    fmt = _setup_format_string(
+        tracing_settings=tracing_settings,
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+    )
+
+    # Set up async logging infrastructure
+    log_queue: queue.Queue[logging.LogRecord] = queue.Queue()
+    # Create handler with proper formatting
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        CustomFormatter(fmt, log_format_local_dev_enabled=log_format_local_dev_enabled)
+    )
+
+    # Create and start the queue listener
+    listener = logging.handlers.QueueListener(
+        log_queue, handler, respect_handler_level=True
+    )
+    listener.start()
+
+    # Create queue handler for loggers
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+
+    # Apply comprehensive logging setup and store original state for restoration
+    all_loggers = _get_all_loggers()
+    original_logger_state = _apply_comprehensive_logging_setup(
+        all_loggers, queue_handler
+    )
+
+    try:
+        # Apply filters if provided
+        if logger_filter_mapping:
+            _apply_logger_filters(logger_filter_mapping)
+
+        _logger.info("Async logging context initialized with unlimited queue")
+        yield
+
+    finally:
+        # Cleanup: Restore all loggers to their original state
+        try:
+            _restore_logger_state(original_logger_state)
+
+            # Stop the queue listener
+            with log_context(
+                _logger,
+                level=logging.DEBUG,
+                msg="Shutdown async logging listener",
+            ):
+                listener.stop()
+
+        except Exception as exc:  # pylint: disable=broad-except
+            sys.stderr.write(f"Error during async logging cleanup: {exc}\n")
+            sys.stderr.flush()
 
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
     logger: logging.Logger
-    level: int
+    level: LogLevelInt
     msg_prefix: str
     exc_info: bool
     stack_info: bool
@@ -224,7 +350,7 @@ class LogExceptionsKwargsDict(TypedDict, total=True):
 @contextmanager
 def log_exceptions(
     logger: logging.Logger,
-    level: int,
+    level: LogLevelInt,
     msg_prefix: str = "",
     *,
     exc_info: bool = False,
@@ -264,7 +390,7 @@ def log_exceptions(
 
 
 def _log_before_call(
-    logger_obj: logging.Logger, level: int, func: Callable, *args, **kwargs
+    logger_obj: logging.Logger, level: LogLevelInt, func: Callable, *args, **kwargs
 ) -> dict[str, str]:
     # NOTE: We should avoid logging arguments but in the meantime, we are trying to
     # avoid exposing sensitive data in the logs. For `args` is more difficult. We could eventually
@@ -302,7 +428,7 @@ def _log_before_call(
 
 def _log_after_call(
     logger_obj: logging.Logger,
-    level: int,
+    level: LogLevelInt,
     func: Callable,
     result: Any,
     extra_args: dict[str, str],
@@ -322,7 +448,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 def log_decorator(
     logger: logging.Logger | None,
-    level: int = logging.DEBUG,
+    level: LogLevelInt = logging.DEBUG,
     *,
     # NOTE: default defined by legacy: ANE defined full stack tracebacks
     # on exceptions
@@ -339,7 +465,6 @@ def log_decorator(
     logger_obj = logger or _logger
 
     def _decorator(func_or_coro: F) -> F:
-
         _log_exc_kwargs = LogExceptionsKwargsDict(
             logger=logger_obj,
             level=level,
@@ -390,10 +515,6 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
             raise exc from exc
 
 
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
-
-
 def _un_capitalize(s: str) -> str:
     return s[:1].lower() + s[1:] if s else ""
 
@@ -420,7 +541,7 @@ def log_context(
     logger.log(level, log_msg, *args, **kwargs, stacklevel=stackelvel)
     yield
     duration = (
-        f" in {(datetime.now() - start ).total_seconds()}s"  # noqa: DTZ005
+        f" in {(datetime.now() - start).total_seconds()}s"  # noqa: DTZ005
         if log_duration
         else ""
     )
@@ -456,6 +577,87 @@ def guess_message_log_level(message: str) -> LogLevelInt:
     return logging.INFO
 
 
-def set_parent_module_log_level(current_module: str, desired_log_level: int) -> None:
+def set_parent_module_log_level(
+    current_module: str, desired_log_level: LogLevelInt
+) -> None:
     parent_module = ".".join(current_module.split(".")[:-1])
     logging.getLogger(parent_module).setLevel(desired_log_level)
+
+
+def _store_logger_state(loggers: list[logging.Logger]) -> list[dict[str, Any]]:
+    """Store the original state of loggers for later restoration."""
+    return [
+        {
+            "logger": logger,
+            "handlers": logger.handlers.copy(),
+            "propagate": logger.propagate,
+        }
+        for logger in loggers
+    ]
+
+
+def _restore_logger_state(original_state: list[dict[str, Any]]) -> None:
+    """Restore loggers to their original state."""
+    for state in original_state:
+        logger = state["logger"]
+        logger.handlers.clear()
+        logger.handlers.extend(state["handlers"])
+        logger.propagate = state["propagate"]
+
+
+def _apply_comprehensive_logging_setup(
+    all_loggers: list[logging.Logger],
+    root_handler: logging.Handler,
+) -> list[dict[str, Any]]:
+    """
+    Apply comprehensive logging setup: clear all handlers, ensure propagation,
+    and set up root logger with the provided handler.
+
+    Returns the original logger state for restoration.
+    """
+    root_logger = logging.getLogger()
+
+    # Store original state for restoration
+    original_logger_state = _store_logger_state(all_loggers)
+
+    # Remove all handlers from all loggers and ensure propagation
+    loggers_modified = []
+    for logger in all_loggers:
+        if logger is root_logger:
+            continue
+
+        # Track what we're modifying for logging purposes
+        had_handlers = bool(logger.handlers)
+        had_propagate_disabled = not logger.propagate
+
+        if had_handlers or had_propagate_disabled:
+            loggers_modified.append(
+                {
+                    "name": logger.name,
+                    "had_handlers": had_handlers,
+                    "had_propagate_disabled": had_propagate_disabled,
+                    "handlers": [type(h).__name__ for h in logger.handlers],
+                }
+            )
+
+        # Clear handlers and ensure propagation
+        logger.handlers.clear()
+        logger.propagate = True
+
+    if loggers_modified:
+        _logger.info(
+            "Modified %d loggers for comprehensive logging: %s",
+            len(loggers_modified),
+            json_dumps(
+                [
+                    f"{info['name']}(removed_handlers={info['handlers']}, enabled_propagate={info['had_propagate_disabled']})"
+                    for info in loggers_modified
+                ]
+            ),
+        )
+
+    # Set up root logger with the provided handler only
+    root_logger.handlers.clear()
+    root_logger.addHandler(root_handler)
+
+    return original_logger_state

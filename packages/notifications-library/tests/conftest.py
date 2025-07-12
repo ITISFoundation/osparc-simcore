@@ -72,7 +72,7 @@ def product_data(
     return ProductData(  # type: ignore
         product_name=product_name,
         display_name=product["display_name"],
-        vendor_display_inline=f"{vendor.get('name','')}, {vendor.get('address','')}",
+        vendor_display_inline=f"{vendor.get('name', '')}, {vendor.get('address', '')}",
         support_email=product["support_email"],
         homepage_url=vendor.get("url"),
         ui=product_ui,

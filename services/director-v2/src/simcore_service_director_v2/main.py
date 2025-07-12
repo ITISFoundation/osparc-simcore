@@ -1,7 +1,12 @@
-"""Main application to be deployed in for example uvicorn.
-"""
+"""Main application to be deployed in for example uvicorn."""
+
+import logging
+
 from fastapi import FastAPI
 from simcore_service_director_v2.core.application import init_app
 
-# SINGLETON FastAPI app
-the_app: FastAPI = init_app()
+_logger = logging.getLogger(__name__)
+
+
+def app_factory() -> FastAPI:
+    return init_app()

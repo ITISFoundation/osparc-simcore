@@ -18,6 +18,7 @@ hypothesis
 pytest
 pytest-asyncio
 pytest-cov
+pytest-mock
 pytest-runner
 pytest-sugar
 python-dotenv

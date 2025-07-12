@@ -95,5 +95,5 @@ def outputs_push():
 
 #
 # NOTE: We intentionally did NOT create a command to run the application
-# Use instead $ uvicorn simcore_service_dynamic_sidecar.main:the_app
+# Use instead $ uvicorn --factory simcore_service_dynamic_sidecar.main:app_factory
 #

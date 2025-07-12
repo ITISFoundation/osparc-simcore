@@ -55,6 +55,6 @@ def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict):
 
 
 def test_main(app_environment: EnvVarsDict):
-    from simcore_service_payments.main import the_app
+    from simcore_service_payments.main import app_factory
 
-    assert the_app
+    app_factory()
