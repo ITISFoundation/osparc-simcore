@@ -19,9 +19,19 @@ qx.Class.define("osparc.store.Study", {
   extend: qx.core.Object,
   type: "singleton",
 
+  events: {
+    "studyStateChanged": "qx.event.type.Data",
+    "studyDebtChanged": "qx.event.type.Data",
+  },
+
   members: {
     __nodeResources: null,
     __nodePricingUnit: null,
+    __studiesInDebt: null,
+
+    invalidateStudies: function() {
+      osparc.store.Store.getInstance().invalidate("studies");
+    },
 
     getPage: function(params, options) {
       return osparc.data.Resources.fetch("studies", "getPage", params, options)
@@ -51,6 +61,65 @@ qx.Class.define("osparc.store.Study", {
         }
       };
       return osparc.data.Resources.fetch("studies", "getOne", params)
+    },
+
+    openStudy: function(studyId, autoStart = true) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      if (autoStart) {
+        return osparc.data.Resources.fetch("studies", "open", params);
+      }
+      params["url"]["disableServiceAutoStart"] = true;
+      return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
+    },
+
+    closeStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "close", params);
+    },
+
+    createStudy: function(studyData) {
+      const params = {
+        data: studyData
+      };
+      const options = {
+        pollTask: true,
+      };
+      return osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
+    },
+
+    createStudyFromTemplate: function(templateId, studyData) {
+      const params = {
+        url: {
+          templateId,
+        },
+        data: studyData
+      };
+      const options = {
+        pollTask: true,
+      };
+      return osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+    },
+
+    duplicateStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId,
+        }
+      };
+      const options = {
+        pollTask: true
+      };
+      return osparc.data.Resources.fetch("studies", "duplicate", params, options);
     },
 
     deleteStudy: function(studyId) {
@@ -96,10 +165,7 @@ qx.Class.define("osparc.store.Study", {
     },
 
     patchTemplateType: function(templateId, templateType) {
-      const patchData = {
-        "templateType": templateType,
-      };
-      return this.patchStudy(templateId, patchData);
+      return this.patchStudyData(templateId, "templateType", templateType);
     },
 
     updateMetadata: function(studyId, metadata) {
@@ -110,6 +176,86 @@ qx.Class.define("osparc.store.Study", {
         data: metadata
       };
       return osparc.data.Resources.fetch("studies", "updateMetadata", params);
+    },
+
+    getStudyState: function(studyId) {
+      osparc.data.Resources.fetch("studies", "state", {
+        url: {
+          "studyId": studyId
+        }
+      })
+        .then(({state}) => {
+          this.setStudyState(studyId, state);
+        });
+    },
+
+    setStudyState: function(studyId, state) {
+      const studiesWStateCache = osparc.store.Store.getInstance().getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["state"] = state;
+      }
+
+      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+      if (currentStudy && currentStudy.getUuid() === studyId) {
+        currentStudy.setState(state);
+      }
+
+      this.fireDataEvent("studyStateChanged", {
+        studyId,
+        state,
+      });
+    },
+
+    setStudyDebt: function(studyId, debt) {
+      // init object if it does not exist
+      if (this.__studiesInDebt === null) {
+        this.__studiesInDebt = {};
+      }
+      if (debt) {
+        this.__studiesInDebt[studyId] = debt;
+      } else {
+        delete this.__studiesInDebt[studyId];
+      }
+
+      const studiesWStateCache = osparc.store.Store.getInstance().getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        if (debt) {
+          studiesWStateCache[idx]["debt"] = debt;
+        } else {
+          delete studiesWStateCache[idx]["debt"];
+        }
+      }
+
+      this.fireDataEvent("studyDebtChanged", {
+        studyId,
+        debt,
+      });
+    },
+
+    getStudyDebt: function(studyId) {
+      if (this.__studiesInDebt && studyId in this.__studiesInDebt) {
+        return this.__studiesInDebt[studyId];
+      }
+      return null;
+    },
+
+    isStudyInDebt: function(studyId) {
+      return Boolean(this.getStudyDebt(studyId));
+    },
+
+    payDebt: function(studyId, walletId, amount) {
+      const params = {
+        url: {
+          studyId,
+          walletId,
+        },
+        data: {
+          amount,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "payDebt", params);
     },
 
     trashStudy: function(studyId) {

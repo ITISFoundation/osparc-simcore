@@ -236,22 +236,13 @@ qx.Class.define("osparc.desktop.MainPage", {
       const studyId = data["studyData"].uuid;
       const studyName = data["studyData"].name;
       const copyData = data["copyData"];
+      const hidden = false;
       const templateAccessRights = data["accessRights"];
       const templateType = data["templateType"];
 
-      const params = {
-        url: {
-          "study_id": studyId,
-          "copy_data": copyData,
-          "hidden": false,
-        },
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
+      const pollPromise = osparc.store.Templates.createTemplate(studyId, copyData, hidden);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise)
+      pollTasks.createPollingTask(pollPromise)
         .then(task => {
           const tutorialBrowser = this.__dashboard.getTutorialBrowser();
           if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
@@ -318,7 +309,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
         await osparc.utils.Utils.sleep(1000);
-        store.getStudyState(studyId);
+        osparc.store.Study.getInstance().getStudyState(studyId);
       }
       this.__loadingPage.setMessages([]);
       this.__openSnapshot(studyId, snapshotId);
@@ -364,7 +355,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const currentStudy = store.getCurrentStudy();
       while (currentStudy.isLocked()) {
         await osparc.utils.Utils.sleep(1000);
-        store.getStudyState(studyId);
+        osparc.store.Study.getInstance().getStudyState(studyId);
       }
       this.__loadingPage.setMessages([]);
       this.__openIteration(iterationUuid);

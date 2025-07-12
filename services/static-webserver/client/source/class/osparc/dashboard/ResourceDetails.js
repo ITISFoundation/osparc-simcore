@@ -60,8 +60,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "function":
             // when getting the latest study data, the debt information was lost
             if (osparc.study.Utils.isInDebt(this.__resourceData)) {
-              const mainStore = osparc.store.Store.getInstance();
-              this.__resourceData["debt"] = mainStore.getStudyDebt(this.__resourceData["uuid"]);
+              const studyStore = osparc.store.Study.getInstance();
+              this.__resourceData["debt"] = studyStore.getStudyDebt(this.__resourceData["uuid"]);
             }
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {

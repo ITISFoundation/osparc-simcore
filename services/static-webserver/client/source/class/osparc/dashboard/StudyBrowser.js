@@ -742,15 +742,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__reloadStudies();
       }, this);
 
-      const store = osparc.store.Store.getInstance();
-      store.addListener("studyStateChanged", e => {
+      const studyStore = osparc.store.Study.getInstance();
+      studyStore.addListener("studyStateChanged", e => {
         const {
           studyId,
           state,
         } = e.getData();
         this.__studyStateChanged(studyId, state);
       });
-      store.addListener("studyDebtChanged", e => {
+      studyStore.addListener("studyDebtChanged", e => {
         const {
           studyId,
           debt,
@@ -924,7 +924,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     invalidateStudies: function() {
-      osparc.store.Store.getInstance().invalidate("studies");
+      osparc.store.Study.getInstance().invalidateStudies();
       this.__resetStudiesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
@@ -1506,7 +1506,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // LAYOUT //
 
     __studyStateReceived: function(studyId, state, errors) {
-      osparc.store.Store.getInstance().setStudyState(studyId, state);
+      osparc.store.Study.getInstance().setStudyState(studyId, state);
       if (errors && errors.length) {
         console.error(errors);
       }
@@ -1542,10 +1542,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
       this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
-      const params = {
-        data: minStudyData
-      };
-      osparc.study.Utils.createStudyAndPoll(params)
+      osparc.study.Utils.createStudyAndPoll(minStudyData)
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
