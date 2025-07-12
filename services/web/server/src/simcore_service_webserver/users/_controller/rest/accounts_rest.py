@@ -14,12 +14,14 @@ from models_library.api_schemas_webserver.users import (
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_query_parameters_as,
 )
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from servicelib.utils import fire_and_forget_task
 
 from ...._meta import API_VTAG
 from ....invitations import api as invitations_service
@@ -147,7 +149,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
 
     approval_data = await parse_request_body_as(UserAccountApprove, request)
 
-    invitation_extras = None
+    invitation_result = None
     if approval_data.invitation:
         with log_context(
             _logger,
@@ -178,25 +180,49 @@ async def approve_user_account(request: web.Request) -> web.Response:
             )
             assert invitation_result.guest == approval_data.email  # nosec
 
-            # Store invitation data in extras
-            invitation_extras = {
-                "invitation": invitation_result.model_dump(mode="json")
-            }
-
     # Approve the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _accounts_service.approve_user_account(
         request.app,
         pre_registration_email=approval_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
-        invitation_extras=invitation_extras,
+        invitation_extras=(
+            {"invitation": invitation_result.model_dump(mode="json")}
+            if invitation_result
+            else None
+        ),
     )
     assert pre_registration_id  # nosec
 
-    if invitation_extras:
-        _logger.debug(
-            "Sending invitation email for user %s [STILL MISSING]", approval_data.email
-        )
+    if invitation_result:
+        with log_context(
+            _logger,
+            logging.INFO,
+            "Sending invitation email to %s ...",
+            approval_data.email,
+        ):
+            # get pre-registration data
+            pre_registration = await _accounts_service.get_pre_registration(
+                request.app,
+                pre_registration_id=pre_registration_id,
+                product_name=req_ctx.product_name,
+            )
+            assert pre_registration  # nosec
+            assert pre_registration.pre_email == approval_data.email  # nosec
+
+            fire_and_forget_task(
+                _accounts_service.send_approval_email_to_user(
+                    request.app,
+                    product_name=req_ctx.product_name,
+                    invitation_link=invitation_result.invitation_url,
+                    user_email=approval_data.email,
+                    user_name=pre_registration.pre_first_name,
+                ),
+                task_suffix_name=f"{__name__}.send_approval_email_to_user.{approval_data.email}",
+                fire_and_forget_tasks_collection=request.app[
+                    APP_FIRE_AND_FORGET_TASKS_KEY
+                ],
+            )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 

@@ -302,3 +302,45 @@ async def reject_user_account(
     )
 
     return pre_registration_id
+
+
+async def send_approval_email_to_user(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    invitation_link: str,
+    user_email: LowerCaseEmailStr,
+    user_name: str,
+) -> None:
+    """Send approval email to user with invitation link.
+
+    Args:
+        app: The web application instance
+        product_name: Product name for which the user was approved
+        invitation_link: URL link for the invitation
+        user_email: Email of the user to send approval to
+        user_name: Name of the user
+    """
+    # TODO: Implementation needed
+    msg = "This function needs to be implemented to send approval emails"
+    raise NotImplementedError(msg)
+
+
+async def get_pre_registration(
+    app: web.Application,
+    *,
+    pre_registration_id: int,
+    product_name: ProductName,
+) -> Any:
+    """Get pre-registration data by ID.
+
+    Args:
+        app: The web application instance
+        pre_registration_id: ID of the pre-registration record
+        product_name: Product name associated with the pre-registration
+
+    Returns:
+        Pre-registration data
+    """
+    msg = "This function needs to be implemented to retrieve pre-registration data"
+    raise NotImplementedError(msg)
