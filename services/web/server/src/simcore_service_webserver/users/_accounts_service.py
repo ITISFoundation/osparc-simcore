@@ -307,34 +307,16 @@ async def reject_user_account(
     return pre_registration_id
 
 
-async def send_approval_email_to_user(
+def _create_product_and_user_data(
     app: web.Application,
     *,
     product_name: ProductName,
-    invitation_link: HttpUrl,
     user_email: LowerCaseEmailStr,
     first_name: str,
     last_name: str,
-) -> None:
-    """Send approval email to user with invitation link.
-
-    Args:
-        app: The web application instance
-        product_name: Product name for which the user was approved
-        invitation_link: URL link for the invitation
-        user_email: Email of the user to send approval to
-        user_name: Name of the user
-    """
-    from notifications_library._email import compose_email, create_email_session
-    from notifications_library._email_render import (
-        get_support_address,
-        get_user_address,
-        render_email_parts,
-    )
+):
+    """Create ProductData and UserData objects for email rendering."""
     from notifications_library._models import ProductData, ProductUIData, UserData
-    from notifications_library._render import (
-        create_render_environment_from_notifications_library,
-    )
 
     # Get product data from the app
     product = get_product(app, product_name=product_name)
@@ -381,6 +363,37 @@ async def send_approval_email_to_user(
         last_name=last_name,
     )
 
+    return product_data, user_data
+
+
+async def send_approval_email_to_user(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    invitation_link: HttpUrl,
+    user_email: LowerCaseEmailStr,
+    first_name: str,
+    last_name: str,
+) -> None:
+    from notifications_library._email import compose_email, create_email_session
+    from notifications_library._email_render import (
+        get_support_address,
+        get_user_address,
+        render_email_parts,
+    )
+    from notifications_library._render import (
+        create_render_environment_from_notifications_library,
+    )
+
+    # Create product and user data
+    product_data, user_data = _create_product_and_user_data(
+        app,
+        product_name=product_name,
+        user_email=user_email,
+        first_name=first_name,
+        last_name=last_name,
+    )
+
     # Prepare event data
     event_extra_data = {
         "host": str(invitation_link).split("?")[0],
@@ -391,6 +404,62 @@ async def send_approval_email_to_user(
     parts = render_email_parts(
         env=create_render_environment_from_notifications_library(),
         event_name="on_account_approved",
+        user=user_data,
+        product=product_data,
+        **event_extra_data,
+    )
+
+    # Compose email
+    msg = compose_email(
+        from_=get_support_address(product_data),
+        to=get_user_address(user_data),
+        subject=parts.subject,
+        content_text=parts.text_content,
+        content_html=parts.html_content,
+    )
+
+    # Send email
+    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+        await smtp.send_message(msg)
+
+
+async def send_rejection_email_to_user(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_email: LowerCaseEmailStr,
+    first_name: str,
+    last_name: str,
+    host: str,
+) -> None:
+    from notifications_library._email import compose_email, create_email_session
+    from notifications_library._email_render import (
+        get_support_address,
+        get_user_address,
+        render_email_parts,
+    )
+    from notifications_library._render import (
+        create_render_environment_from_notifications_library,
+    )
+
+    # Create product and user data
+    product_data, user_data = _create_product_and_user_data(
+        app,
+        product_name=product_name,
+        user_email=user_email,
+        first_name=first_name,
+        last_name=last_name,
+    )
+
+    # Prepare event data (based on test_email_events.py)
+    event_extra_data = {
+        "host": host,
+    }
+
+    # Render email parts
+    parts = render_email_parts(
+        env=create_render_environment_from_notifications_library(),
+        event_name="on_account_rejected",
         user=user_data,
         product=product_data,
         **event_extra_data,

@@ -250,4 +250,36 @@ async def reject_user_account(request: web.Request) -> web.Response:
     )
     assert pre_registration_id  # nosec
 
+    # Send rejection email to user
+    with log_context(
+        _logger,
+        logging.INFO,
+        "Sending rejection email to %s ...",
+        rejection_data.email,
+    ):
+        # get pre-registration data
+        found = await _accounts_service.search_users_accounts(
+            request.app,
+            email_glob=rejection_data.email,
+            product_name=req_ctx.product_name,
+            include_products=False,
+        )
+        user_account = found[0]
+        assert user_account.pre_registration_id == pre_registration_id  # nosec
+        assert user_account.email == rejection_data.email  # nosec
+
+        # send email to user
+        fire_and_forget_task(
+            _accounts_service.send_rejection_email_to_user(
+                request.app,
+                product_name=req_ctx.product_name,
+                user_email=rejection_data.email,
+                first_name=user_account.first_name or "User",
+                last_name=user_account.last_name or "",
+                host=request.host,
+            ),
+            task_suffix_name=f"{__name__}.send_rejection_email_to_user.{rejection_data.email}",
+            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        )
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
