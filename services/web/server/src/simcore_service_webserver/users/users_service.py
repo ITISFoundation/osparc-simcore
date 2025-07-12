@@ -1,5 +1,12 @@
 # mypy: disable-error-code=truthy-function
 
+from ._accounts_service import (
+    approve_user_account,
+    list_user_accounts,
+    pre_register_user,
+    reject_user_account,
+    search_users_accounts,
+)
 from ._models import FullNameDict
 from ._users_service import (
     delete_user_without_projects,
@@ -23,6 +30,7 @@ from ._users_service import (
 
 __all__: tuple[str, ...] = (
     "FullNameDict",
+    "approve_user_account",
     "delete_user_without_projects",
     "get_guest_user_ids_and_names",
     "get_user",
@@ -37,7 +45,11 @@ __all__: tuple[str, ...] = (
     "get_user_role",
     "get_users_in_group",
     "is_user_in_product",
+    "list_user_accounts",
+    "pre_register_user",
+    "reject_user_account",
     "search_public_users",
+    "search_users_accounts",
     "set_user_as_deleted",
     "update_expired_users",
 )
