@@ -1286,7 +1286,7 @@ services:
     networks: *storage_networks
 
   rabbit:
-    image: itisfoundation/rabbitmq:3.13.7-management
+    image: itisfoundation/rabbitmq:4.1.2-management
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:

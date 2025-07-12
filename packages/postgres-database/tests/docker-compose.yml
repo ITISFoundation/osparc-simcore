@@ -41,7 +41,7 @@ services:
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
   adminer:
-    image: adminer:4.8.1
+    image: adminer:5.3.0
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres

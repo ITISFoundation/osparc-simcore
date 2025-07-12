@@ -38,7 +38,7 @@ services:
       - "-c"
       - "fsync=off"
   adminer:
-    image: adminer:4.8.1
+    image: adminer:5.3.0
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
@@ -88,7 +88,7 @@ services:
       - "18081:8081"
 
   rabbit:
-    image: itisfoundation/rabbitmq:3.13.7-management
+    image: itisfoundation/rabbitmq:4.1.2-management
     init: true
     environment:
       - RABBITMQ_DEFAULT_USER=admin
