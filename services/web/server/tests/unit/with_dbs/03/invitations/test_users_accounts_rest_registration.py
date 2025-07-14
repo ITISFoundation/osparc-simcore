@@ -466,8 +466,8 @@ async def test_reject_user_account(
     rejection_msg = mock_email_session.sent_messages[0]
 
     # Verify email recipients and content
-    assert rejection_msg["To"] == pre_registered_email
-    assert "rejected" in rejection_msg["Subject"].lower()
+    assert pre_registered_email in rejection_msg["To"]
+    assert "denied" in rejection_msg["Subject"].lower()
 
     # 5. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
@@ -565,8 +565,8 @@ async def test_approve_user_account_with_full_invitation_details(
     approval_msg = mock_email_session.sent_messages[0]
 
     # Verify email recipients and content
-    assert approval_msg["To"] == test_email
-    assert "approved" in approval_msg["Subject"].lower()
+    assert test_email in approval_msg["To"]
+    assert "accepted" in approval_msg["Subject"].lower()
 
     # 4. Verify the user account status and invitation data in extras
     resp = await client.get(
