@@ -12,7 +12,7 @@ from ..projects import _folders_repository as projects_folders_repository
 from ..projects import _groups_repository as projects_groups_repository
 from ..projects import _projects_repository as _projects_repository
 from ..projects._access_rights_service import check_user_project_permission
-from ..users.api import get_user
+from ..users import users_service
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository
 
@@ -122,7 +122,7 @@ async def move_folder_into_workspace(
         )
 
         # 9. Remove all project permissions, leave only the user who moved the project
-        user = await get_user(app, user_id=user_id)
+        user = await users_service.get_user(app, user_id=user_id)
         for project_id in project_ids:
             await projects_groups_repository.delete_all_project_groups(
                 app, connection=conn, project_id=project_id

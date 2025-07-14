@@ -26,7 +26,7 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.redis import get_redis_user_notifications_client
-from simcore_service_webserver.users._notifications import (
+from simcore_service_webserver.user_notifications._models import (
     MAX_NOTIFICATIONS_FOR_USER_TO_KEEP,
     MAX_NOTIFICATIONS_FOR_USER_TO_SHOW,
     NotificationCategory,
@@ -34,7 +34,18 @@ from simcore_service_webserver.users._notifications import (
     UserNotificationCreate,
     get_notification_key,
 )
-from simcore_service_webserver.users._notifications_rest import _get_user_notifications
+from simcore_service_webserver.user_notifications._repository import (
+    UserNotificationsRepository,
+)
+
+
+async def _get_user_notifications(
+    redis_client,
+    user_id,
+    product_name,
+):
+    repo = UserNotificationsRepository(redis_client=redis_client)
+    return await repo.list_notifications(user_id=user_id, product_name=product_name)
 
 
 @pytest.fixture

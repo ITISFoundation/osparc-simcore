@@ -341,3 +341,82 @@ async def test_rpc_list_computation_collection_runs_page_and_collection_run_task
     assert len(output.items) == 1
     assert isinstance(output, ComputationCollectionRunRpcGetPage)
     assert len(output.items[0].project_ids) == 2
+
+
+async def test_rpc_list_computation_collection_runs_empty_ids_when_user_has_already_run_history(
+    fake_workbench_without_outputs: dict[str, Any],  # <-- Has 4 nodes
+    fake_workbench_adjacency: dict[str, Any],
+    create_registered_user: Callable[..., dict[str, Any]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_comp_run_snapshot_tasks: Callable[
+        ..., Awaitable[list[CompRunSnapshotTaskDBGet]]
+    ],
+    create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
+    rpc_client: RabbitMQRPCClient,
+    faker: Faker,
+    with_product: dict[str, Any],
+):
+    user = create_registered_user()
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
+
+    await create_pipeline(
+        project_id=f"{proj.uuid}",
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    await create_tasks_from_project(
+        user=user, project=proj, state=RunningState.SUCCESS, progress=None
+    )
+    run = await create_comp_run(
+        user=user,
+        project=proj,
+        result=RunningState.SUCCESS,
+        started=datetime.now(tz=UTC) - timedelta(minutes=120),
+        ended=datetime.now(tz=UTC) - timedelta(minutes=100),
+        iteration=1,
+        dag_adjacency_list=fake_workbench_adjacency,
+    )
+    await create_comp_run_snapshot_tasks(
+        user=user,
+        project=proj,
+        run_id=run.run_id,
+    )
+
+    output = await rpc_computations.list_computation_collection_runs_page(
+        rpc_client, product_name="osparc", user_id=user["id"], project_ids=None
+    )
+    assert output.total == 1
+    assert len(output.items) == 1
+    assert isinstance(output, ComputationCollectionRunRpcGetPage)
+
+    # Test filtering only running collection runs
+    output = await rpc_computations.list_computation_collection_runs_page(
+        rpc_client,
+        product_name="osparc",
+        user_id=user["id"],
+        project_ids=None,
+        filter_only_running=True,  # <-- This is the tested filter
+    )
+    assert output.total == 0
+    assert len(output.items) == 0
+
+
+async def test_rpc_list_computation_collection_runs_empty_ids_when_user_do_not_have_run_history(
+    create_registered_user: Callable[..., dict[str, Any]],
+    rpc_client: RabbitMQRPCClient,
+    with_product: dict[str, Any],
+):
+    user = create_registered_user()
+
+    # Test with empty collection_run_ids
+    output = await rpc_computations.list_computation_collection_runs_page(
+        rpc_client,
+        product_name="osparc",
+        user_id=user["id"],
+        project_ids=None,
+        filter_only_running=True,  # This will result in empty collection_run_ids
+    )
+    assert output.total == 0
+    assert len(output.items) == 0
+    assert isinstance(output, ComputationCollectionRunRpcGetPage)

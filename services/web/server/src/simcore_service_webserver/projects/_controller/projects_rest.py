@@ -33,7 +33,7 @@ from ...redis import get_redis_lock_manager_client_sdk
 from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ...security import security_web
 from ...security.decorators import permission_required
-from ...users.api import get_user_fullname
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _crud_api_create, _crud_api_read, _projects_service
 from .._permalink_service import update_or_pop_permalink_in_project
@@ -367,7 +367,7 @@ async def delete_project(request: web.Request):
         )
     if project_users:
         other_user_names = {
-            f"{await get_user_fullname(request.app, user_id=uid)}"
+            f"{await users_service.get_user_fullname(request.app, user_id=uid)}"
             for uid in project_users
         }
         raise web.HTTPForbidden(

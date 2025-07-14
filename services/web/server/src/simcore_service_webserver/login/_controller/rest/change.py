@@ -13,7 +13,7 @@ from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_service
-from ....users import api as users_service
+from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
