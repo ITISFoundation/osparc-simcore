@@ -692,27 +692,28 @@ def _stored_logger_states(
     original_state = _store_logger_state(loggers)
 
     try:
-        # log which loggers states were stored
-        _logger.info(
-            "Stored logger states: %s. TIP: these loggers configuration will be restored later.",
-            json_dumps(
-                [
-                    f"{state.logger.name}(handlers={len(state.handlers)}, propagate={state.propagate})"
-                    for state in original_state
-                ]
-            ),
-        )
         yield original_state
     finally:
         _restore_logger_state(original_state)
 
 
 def _store_logger_state(loggers: list[logging.Logger]) -> list[_LoggerState]:
-    return [
+    logger_states = [
         _LoggerState(logger, logger.handlers.copy(), logger.propagate)
         for logger in loggers
         if logger.handlers or not logger.propagate
     ]
+    # log which loggers states were stored
+    _logger.info(
+        "Stored logger states: %s. TIP: these loggers configuration will be restored later.",
+        json_dumps(
+            [
+                f"{state.logger.name}(handlers={len(state.handlers)}, propagate={state.propagate})"
+                for state in logger_states
+            ]
+        ),
+    )
+    return logger_states
 
 
 def _restore_logger_state(original_state: list[_LoggerState]) -> None:
