@@ -42,8 +42,11 @@ class AccountRequestedEvent(BaseAccountEvent):
     type: Literal["account_requested"] = "account_requested"
 
     host: HttpUrl
+
+    # NOTE: following are kept for backward compatibility
     product_info: dict[str, Any] = {}
     request_form: dict[str, Any] = {}
+    ipinfo: dict[str, Any] = {}
 
 
 class AccountApprovedEvent(BaseAccountEvent):
