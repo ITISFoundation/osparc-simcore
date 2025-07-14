@@ -6,7 +6,9 @@ from fastapi_pagination import Page
 from models_library.api_schemas_webserver.computations import (
     ComputationCollectionRunListQueryParams,
     ComputationCollectionRunPathParams,
+    ComputationCollectionRunRestGet,
     ComputationCollectionRunTaskListQueryParams,
+    ComputationCollectionRunTaskRestGet,
     ComputationGet,
     ComputationPathParams,
     ComputationRunIterationsLatestListQueryParams,
@@ -102,7 +104,7 @@ async def list_computations_latest_iteration_tasks(
 
 @router.get(
     "/computation-collection-runs",
-    response_model=Page[ComputationTaskRestGet],
+    response_model=Page[ComputationCollectionRunRestGet],
 )
 async def list_computation_collection_runs(
     _query: Annotated[as_query(ComputationCollectionRunListQueryParams), Depends()],
@@ -111,7 +113,7 @@ async def list_computation_collection_runs(
 
 @router.get(
     "/computation-collection-runs/{collection_run_id}/tasks",
-    response_model=Page[ComputationTaskRestGet],
+    response_model=Page[ComputationCollectionRunTaskRestGet],
 )
 async def list_computation_collection_run_tasks(
     _query: Annotated[as_query(ComputationCollectionRunTaskListQueryParams), Depends()],
