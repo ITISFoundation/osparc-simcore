@@ -46,6 +46,7 @@ def app_environment(
         {
             **mock_environment,
             **postgres_env_vars_dict,
+            "NOTIFICATIONS_TRACING": "null",
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PASSWORD": rabbit_service.RABBIT_PASSWORD.get_secret_value(),
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
