@@ -587,21 +587,14 @@ qx.Class.define("osparc.data.model.Study", {
       if ("disableServiceAutoStart" in this.getDev()) {
         return this.getDev()["disableServiceAutoStart"];
       }
-      return null;
+      return false;
     },
 
     openStudy: function() {
-      const params = {
-        url: {
-          "studyId": this.getUuid()
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      if (this.getDisableServiceAutoStart() !== null) {
-        params["url"]["disableServiceAutoStart"] = this.getDisableServiceAutoStart();
-        return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
+      if (this.getDisableServiceAutoStart()) {
+        return osparc.store.Study.getInstance().openStudy(this.getUuid(), false);
       }
-      return osparc.data.Resources.fetch("studies", "open", params);
+      return osparc.store.Study.getInstance().openStudy(this.getUuid());
     },
 
     stopStudy: function() {
