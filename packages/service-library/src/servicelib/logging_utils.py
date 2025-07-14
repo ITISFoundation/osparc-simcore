@@ -268,7 +268,34 @@ def async_loggers(
     noisy_loggers: tuple[str, ...] | None,
 ) -> Iterator[None]:
     """
-    context manager for non-blocking logging infrastructure.
+    Context manager for non-blocking logging infrastructure.
+
+    Flow Diagram:
+    ┌─────────────────┐    ┌──────────────┐    ┌─────────────────┐
+    │ Application     │    │ Queue        │    │ Background      │
+    │ Thread          │───▶│ (unlimited)  │───▶│ Listener Thread │
+    │                 │    │              │    │                 │
+    │ logger.info()   │    │ LogRecord    │    │ StreamHandler   │
+    │ logger.error()  │    │ LogRecord    │    │ ├─ Formatter    │
+    │ (non-blocking)  │    │ LogRecord    │    │ └─ Output       │
+    └─────────────────┘    └──────────────┘    └─────────────────┘
+           │                       │                       │
+           │                       │                       ▼
+           │                       │                ┌─────────────┐
+           │                       │                │ Console/    │
+           │                       │                │ Terminal    │
+           │                       │                └─────────────┘
+           │                       │
+           └───────────────────────┴─ No blocking, immediate return
+
+    The async logging setup ensures that:
+    1. All log calls return immediately (non-blocking)
+    2. Log records are queued in an unlimited queue
+    3. A background thread processes the queue and handles actual I/O
+    4. All loggers propagate to root for centralized handling
+
+    For more details on the underlying implementation, see:
+    https://docs.python.org/3/library/logging.handlers.html#queuehandler
 
     Usage:
         with async_loggers(log_format_local_dev_enabled=True, logger_filter_mapping={}, tracing_settings=None):
@@ -279,6 +306,8 @@ def async_loggers(
         log_format_local_dev_enabled: Enable local development formatting
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
+        log_base_level: Base logging level to set
+        noisy_loggers: Loggers to set to a quieter level
     """
     _setup_base_logging_level(log_base_level)
     if noisy_loggers is not None:
