@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 
 
 class EmailAddress(BaseModel):
-    display_name: str | None = None
+    display_name: str = ""
     addr_spec: EmailStr
 
 

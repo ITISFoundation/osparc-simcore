@@ -14,6 +14,7 @@ from celery.contrib.testing.worker import start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
+from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pytest_mock import MockerFixture
@@ -152,3 +153,12 @@ async def notifications_rabbitmq_rpc_client(
 @pytest.fixture
 def test_client(fastapi_app: FastAPI) -> TestClient:
     return TestClient(fastapi_app)
+
+
+@pytest.fixture
+def fake_ipinfo(faker: Faker) -> dict[str, Any]:
+    return {
+        "x-real-ip": faker.ipv4(),
+        "x-forwarded-for": faker.ipv4(),
+        "peername": faker.ipv4(),
+    }

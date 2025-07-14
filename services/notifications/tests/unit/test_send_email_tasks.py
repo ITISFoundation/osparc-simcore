@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from faker import Faker
 from models_library.rpc.notifications import Notification
@@ -28,6 +30,7 @@ pytest_simcore_core_services_selection = [
 )
 async def test_account_requested(
     notifications_rabbitmq_rpc_client: RabbitMQRPCClient,
+    fake_ipinfo: dict[str, Any],
     faker: Faker,
 ):
     user_email = faker.email()
@@ -55,6 +58,7 @@ async def test_account_requested(
                     ),
                 ),
                 host=HttpUrl(faker.url()),
+                ipinfo=fake_ipinfo,
             ),
             channel=EmailChannel(
                 from_addr=EmailAddress(addr_spec=faker.email()),
@@ -103,8 +107,11 @@ async def test_account_approved(
                 link=HttpUrl(faker.url()),
             ),
             channel=EmailChannel(
-                from_addr=EmailAddress(addr_spec=faker.email()),
+                from_addr=EmailAddress(
+                    display_name=faker.name(), addr_spec=faker.email()
+                ),
                 to_addr=EmailAddress(
+                    display_name=faker.name(),
                     addr_spec=user_email,
                 ),
             ),
