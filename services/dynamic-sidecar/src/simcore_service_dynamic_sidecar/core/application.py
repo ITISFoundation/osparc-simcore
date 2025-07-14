@@ -6,7 +6,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi import long_running_tasks
-from servicelib.fastapi.logging_lifespan import setup_logging_shutdown_event
+from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
@@ -118,7 +118,7 @@ class AppState:
 def create_base_app() -> FastAPI:
     # settings
     app_settings = ApplicationSettings.create_from_envs()
-    logging_shutdown_event = setup_logging_shutdown_event(
+    logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
         tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,

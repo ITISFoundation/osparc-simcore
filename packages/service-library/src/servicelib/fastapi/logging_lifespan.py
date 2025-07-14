@@ -45,7 +45,7 @@ def logging_lifespan(
     return _logging_lifespan
 
 
-def setup_logging_shutdown_event(
+def create_logging_shutdown_event(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
