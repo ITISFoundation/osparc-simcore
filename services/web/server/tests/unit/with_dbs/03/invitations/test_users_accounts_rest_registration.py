@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 from collections.abc import AsyncGenerator
 from http import HTTPStatus
 from typing import Any
@@ -458,7 +459,6 @@ async def test_reject_user_account(
 
     # 4. Verify rejection email was sent
     # Wait a bit for fire-and-forget task to complete
-    import asyncio
 
     await asyncio.sleep(0.1)
 
@@ -558,7 +558,6 @@ async def test_approve_user_account_with_full_invitation_details(
 
     # 3. Verify approval email was sent
     # Wait a bit for fire-and-forget task to complete
-    import asyncio
 
     await asyncio.sleep(0.1)
 
