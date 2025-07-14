@@ -10,7 +10,6 @@ import functools
 import logging
 import logging.handlers
 import queue
-import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -155,19 +154,25 @@ _LOCAL_TRACING_FORMATTING: Final[str] = (
 # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| (log_uid=%{WORD:log_uid} \| )?log_msg=%{GREEDYDATA:log_msg}
 
 
-def _setup_format_string(
+def _setup_logging_formatter(
     *,
     tracing_settings: TracingSettings | None,
     log_format_local_dev_enabled: bool,
-) -> str:
+) -> logging.Formatter:
     if log_format_local_dev_enabled:
-        return (
+        fmt = (
             _LOCAL_TRACING_FORMATTING
             if tracing_settings is not None
             else _LOCAL_FORMATTING
         )
+    else:
+        fmt = (
+            _TRACING_FORMATTING if tracing_settings is not None else _DEFAULT_FORMATTING
+        )
 
-    return _TRACING_FORMATTING if tracing_settings is not None else _DEFAULT_FORMATTING
+    return CustomFormatter(
+        fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
+    )
 
 
 def _get_all_loggers() -> list[logging.Logger]:
@@ -260,25 +265,69 @@ def setup_loggers(
         _dampen_noisy_loggers(noisy_loggers)
     if tracing_settings is not None:
         setup_log_tracing(tracing_settings=tracing_settings)
-    fmt = _setup_format_string(
+    formatter = _setup_logging_formatter(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
     # Create a properly formatted handler for the root logger
-    root_handler = logging.StreamHandler()
-    root_handler.setFormatter(
-        CustomFormatter(fmt, log_format_local_dev_enabled=log_format_local_dev_enabled)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    _store_logger_state(_get_all_loggers())
+    _clean_all_handlers()
+    _set_root_handler(stream_handler)
+
+    if logger_filter_mapping:
+        _apply_logger_filters(logger_filter_mapping)
+
+
+@contextmanager
+def _queued_logging_handler(
+    log_formatter: logging.Formatter,
+) -> Iterator[logging.Handler]:
+    log_queue: queue.Queue[logging.LogRecord] = queue.Queue()
+    # Create handler with proper formatting
+    handler = logging.StreamHandler()
+    handler.setFormatter(log_formatter)
+
+    # Create and start the queue listener
+    listener = logging.handlers.QueueListener(
+        log_queue, handler, respect_handler_level=True
     )
+    listener.start()
 
+    queue_handler = logging.handlers.QueueHandler(log_queue)
+
+    yield queue_handler
+
+    # cleanup
+    with log_context(
+        _logger,
+        level=logging.DEBUG,
+        msg="Shutdown async logging listener",
+    ):
+        listener.stop()
+
+
+def _clean_all_handlers() -> None:
+    """
+    Cleans all handlers from all loggers.
+    This is useful for resetting the logging configuration.
+    """
+    root_logger = logging.getLogger()
     all_loggers = _get_all_loggers()
+    for logger in all_loggers:
+        if logger is root_logger:
+            continue
+        logger.handlers.clear()
+        logger.propagate = True  # Ensure propagation is enabled
 
-    # Apply comprehensive logging setup
-    # Note: We don't store the original state here since this is a permanent setup
-    _apply_comprehensive_logging_setup(all_loggers, root_handler)
 
-    # Apply filters
-    _apply_logger_filters(logger_filter_mapping)
+def _set_root_handler(handler: logging.Handler) -> None:
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()  # Clear existing handlers
+    root_logger.addHandler(handler)  # Add the new handler
 
 
 @contextmanager
@@ -338,56 +387,23 @@ def async_loggers(
 
     if tracing_settings is not None:
         setup_log_tracing(tracing_settings=tracing_settings)
-    fmt = _setup_format_string(
+    formatter = _setup_logging_formatter(
         tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
-    # Set up async logging infrastructure
-    log_queue: queue.Queue[logging.LogRecord] = queue.Queue()
-    # Create handler with proper formatting
-    handler = logging.StreamHandler()
-    handler.setFormatter(
-        CustomFormatter(fmt, log_format_local_dev_enabled=log_format_local_dev_enabled)
-    )
+    with (
+        _queued_logging_handler(formatter) as queue_handler,
+        _stored_logger_states(_get_all_loggers()),
+    ):
+        _clean_all_handlers()
+        _set_root_handler(queue_handler)
 
-    # Create and start the queue listener
-    listener = logging.handlers.QueueListener(
-        log_queue, handler, respect_handler_level=True
-    )
-    listener.start()
-
-    # Create queue handler for loggers
-    queue_handler = logging.handlers.QueueHandler(log_queue)
-
-    # Apply comprehensive logging setup and store original state for restoration
-    all_loggers = _get_all_loggers()
-    original_logger_state = _apply_comprehensive_logging_setup(
-        all_loggers, queue_handler
-    )
-
-    try:
         if logger_filter_mapping:
             _apply_logger_filters(logger_filter_mapping)
 
         with log_context(_logger, logging.INFO, "Asynchronous logging"):
             yield
-
-    finally:
-        try:
-            _restore_logger_state(original_logger_state)
-
-            # Stop the queue listener
-            with log_context(
-                _logger,
-                level=logging.DEBUG,
-                msg="Shutdown async logging listener",
-            ):
-                listener.stop()
-
-        except Exception as exc:  # pylint: disable=broad-except
-            sys.stderr.write(f"Error during async logging cleanup: {exc}\n")
-            sys.stderr.flush()
 
 
 class LogExceptionsKwargsDict(TypedDict, total=True):
@@ -642,10 +658,37 @@ class _LoggerState:
     propagate: bool
 
 
+@contextmanager
+def _stored_logger_states(
+    loggers: list[logging.Logger],
+) -> Iterator[list[_LoggerState]]:
+    """
+    Context manager to store and restore the state of loggers.
+    It captures the current handlers and propagation state of each logger.
+    """
+    original_state = _store_logger_state(loggers)
+
+    try:
+        # log which loggers states were stored
+        _logger.info(
+            "Stored logger states: %s. TIP: these loggers configuration will be restored later.",
+            json_dumps(
+                [
+                    f"{state.logger.name}(handlers={len(state.handlers)}, propagate={state.propagate})"
+                    for state in original_state
+                ]
+            ),
+        )
+        yield original_state
+    finally:
+        _restore_logger_state(original_state)
+
+
 def _store_logger_state(loggers: list[logging.Logger]) -> list[_LoggerState]:
     return [
         _LoggerState(logger, logger.handlers.copy(), logger.propagate)
         for logger in loggers
+        if logger.handlers or not logger.propagate
     ]
 
 
