@@ -9398,6 +9398,7 @@ components:
         state:
           $ref: '#/components/schemas/RunningState'
         info:
+          additionalProperties: true
           type: object
           title: Info
         submittedAt:
@@ -9446,6 +9447,7 @@ components:
           type: number
           title: Progress
         image:
+          additionalProperties: true
           type: object
           title: Image
         startedAt:
@@ -9463,6 +9465,8 @@ components:
         logDownloadLink:
           anyOf:
           - type: string
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Logdownloadlink
         osparcCredits:

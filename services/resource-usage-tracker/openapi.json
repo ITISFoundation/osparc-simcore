@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-resource-usage-tracker web API",
     "description": "Service that collects and stores computational resources usage used in osparc-simcore",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "paths": {
     "/": {

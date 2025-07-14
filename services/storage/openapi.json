@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore_service_storage",
     "description": "Service that manages osparc storage backend",
-    "version": "0.7.0"
+    "version": "0.7.1"
   },
   "paths": {
     "/v0/": {

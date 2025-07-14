@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-catalog",
     "description": "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
-    "version": "0.8.1"
+    "version": "0.8.2"
   },
   "paths": {
     "/": {
