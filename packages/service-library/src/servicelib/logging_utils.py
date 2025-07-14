@@ -184,7 +184,6 @@ def _get_all_loggers() -> list[logging.Logger]:
 def _apply_logger_filters(
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
 ) -> None:
-    """Apply filters to specific loggers."""
     for logger_name, filtered_routes in logger_filter_mapping.items():
         logger = logging.getLogger(logger_name)
         if not logger.hasHandlers():
