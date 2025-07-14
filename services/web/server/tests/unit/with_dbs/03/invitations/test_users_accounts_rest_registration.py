@@ -79,7 +79,7 @@ def mock_email_session(mocker: MockerFixture) -> AsyncMock:
     mock_session.__aexit__ = AsyncMock(return_value=None)
 
     # Use mocker to patch the create_email_session function
-    mocker.patch.object(
+    mocker.patch(
         "simcore_service_webserver.users._accounts_service.create_email_session",
         return_value=mock_session,
     )
