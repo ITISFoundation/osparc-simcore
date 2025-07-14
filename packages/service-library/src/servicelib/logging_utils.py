@@ -222,15 +222,38 @@ def setup_loggers(
     """
     Applies comprehensive configuration to ALL registered loggers.
 
+    Flow Diagram (Synchronous Logging):
+    ┌─────────────────┐                    ┌─────────────────┐
+    │ Application     │                    │ Root Logger     │
+    │ Thread          │───────────────────▶│ StreamHandler   │
+    │                 │                    │ ├─ Formatter    │
+    │ logger.info()   │                    │ └─ Output       │
+    │ logger.error()  │                    │                 │
+    │ (blocking I/O)  │                    │                 │
+    └─────────────────┘                    └─────────────────┘
+           │                                       │
+           │                                       ▼
+           │                                ┌─────────────┐
+           │                                │ Console/    │
+           │                                │ Terminal    │
+           │                                └─────────────┘
+           │
+           └─ Blocks until I/O completes
+
     This function uses a comprehensive approach:
     - Removes all handlers from all loggers
     - Ensures all loggers propagate to root
     - Sets up root logger with properly formatted handler
+    - All logging calls are synchronous and may block on I/O
+
+    For async/non-blocking logging, use `async_loggers` context manager instead.
 
     Args:
         log_format_local_dev_enabled: Enable local development formatting
         logger_filter_mapping: Mapping of logger names to filtered message substrings
         tracing_settings: OpenTelemetry tracing configuration
+        log_base_level: Base logging level to set
+        noisy_loggers: Loggers to set to a quieter level
     """
     _setup_base_logging_level(log_base_level)
     if noisy_loggers is not None:
