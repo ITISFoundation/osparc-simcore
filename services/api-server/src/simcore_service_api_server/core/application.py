@@ -48,7 +48,7 @@ def _label_title_and_version(settings: ApplicationSettings, title: str, version:
     return title, version
 
 
-def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
         _logger.info(

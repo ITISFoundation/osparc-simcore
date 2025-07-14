@@ -36,7 +36,7 @@ from servicelib.common_headers import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.application import create_app
 from simcore_service_director_v2.core.settings import AppSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -197,7 +197,7 @@ async def director_v2_client(
 
     settings = AppSettings.create_from_envs()
 
-    app = init_app(settings)
+    app = create_app(settings)
 
     async with TestClient(app) as client:
         yield client

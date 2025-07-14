@@ -6,7 +6,7 @@ from typing import Final
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import setup_logging_shutdown_event
-from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
@@ -33,6 +33,6 @@ def app_factory() -> FastAPI:
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
-    app = init_app(settings=app_settings)
+    app = create_app(settings=app_settings)
     app.add_event_handler("shutdown", logging_shutdown_event)
     return app

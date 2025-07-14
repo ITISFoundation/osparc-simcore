@@ -154,7 +154,7 @@ def create_base_app(
     return app
 
 
-def init_app(  # noqa: C901, PLR0912
+def create_app(  # noqa: C901, PLR0912
     settings: AppSettings | None = None,
 ) -> FastAPI:
     app = create_base_app(settings)

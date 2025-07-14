@@ -32,7 +32,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
-from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.application import create_app
 from simcore_service_director_v2.core.settings import AppSettings
 from starlette.testclient import ASGI3App, TestClient
 
@@ -202,7 +202,7 @@ def mock_env(
 @pytest.fixture()
 async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
-    app = init_app(settings)
+    app = create_app(settings)
     print("Application settings\n", settings.model_dump_json(indent=2))
     async with LifespanManager(app):
         yield app
@@ -213,7 +213,7 @@ async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     settings = AppSettings.create_from_envs()
-    app = init_app(settings)
+    app = create_app(settings)
     # NOTE: we cannot use the initialized_app fixture here as the TestClient also creates it
     print("Application settings\n", settings.model_dump_json(indent=2))
     with TestClient(app, raise_server_exceptions=True) as test_client:
