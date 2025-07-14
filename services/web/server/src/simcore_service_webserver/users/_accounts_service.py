@@ -7,6 +7,7 @@ from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
 from models_library.users import UserID
+from notifications_library._email import create_email_session
 from pydantic import HttpUrl
 from settings_library.email import SMTPSettings
 from simcore_service_webserver.products._service import get_product
@@ -375,7 +376,7 @@ async def send_approval_email_to_user(
     first_name: str,
     last_name: str,
 ) -> None:
-    from notifications_library._email import compose_email, create_email_session
+    from notifications_library._email import compose_email
     from notifications_library._email_render import (
         get_support_address,
         get_user_address,
@@ -432,7 +433,7 @@ async def send_rejection_email_to_user(
     last_name: str,
     host: str,
 ) -> None:
-    from notifications_library._email import compose_email, create_email_session
+    from notifications_library._email import compose_email
     from notifications_library._email_render import (
         get_support_address,
         get_user_address,
