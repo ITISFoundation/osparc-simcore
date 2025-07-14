@@ -14,6 +14,7 @@ import sys
 from asyncio import iscoroutinefunction
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
@@ -584,31 +585,32 @@ def set_parent_module_log_level(
     logging.getLogger(parent_module).setLevel(desired_log_level)
 
 
-def _store_logger_state(loggers: list[logging.Logger]) -> list[dict[str, Any]]:
-    """Store the original state of loggers for later restoration."""
+@dataclass(frozen=True)
+class _LoggerState:
+    logger: logging.Logger
+    handlers: list[logging.Handler]
+    propagate: bool
+
+
+def _store_logger_state(loggers: list[logging.Logger]) -> list[_LoggerState]:
     return [
-        {
-            "logger": logger,
-            "handlers": logger.handlers.copy(),
-            "propagate": logger.propagate,
-        }
+        _LoggerState(logger, logger.handlers.copy(), logger.propagate)
         for logger in loggers
     ]
 
 
-def _restore_logger_state(original_state: list[dict[str, Any]]) -> None:
-    """Restore loggers to their original state."""
+def _restore_logger_state(original_state: list[_LoggerState]) -> None:
     for state in original_state:
-        logger = state["logger"]
+        logger = state.logger
         logger.handlers.clear()
-        logger.handlers.extend(state["handlers"])
-        logger.propagate = state["propagate"]
+        logger.handlers.extend(state.handlers)
+        logger.propagate = state.propagate
 
 
 def _apply_comprehensive_logging_setup(
     all_loggers: list[logging.Logger],
     root_handler: logging.Handler,
-) -> list[dict[str, Any]]:
+) -> list[_LoggerState]:
     """
     Apply comprehensive logging setup: clear all handlers, ensure propagation,
     and set up root logger with the provided handler.
@@ -644,6 +646,10 @@ def _apply_comprehensive_logging_setup(
         logger.handlers.clear()
         logger.propagate = True
 
+    # Set up root logger with the provided handler only
+    root_logger.handlers.clear()
+    root_logger.addHandler(root_handler)
+
     if loggers_modified:
         _logger.info(
             "Modified %d loggers for comprehensive logging: %s",
@@ -655,9 +661,5 @@ def _apply_comprehensive_logging_setup(
                 ]
             ),
         )
-
-    # Set up root logger with the provided handler only
-    root_logger.handlers.clear()
-    root_logger.addHandler(root_handler)
 
     return original_logger_state
