@@ -216,6 +216,44 @@ def _dampen_noisy_loggers(
         logging.getLogger(name).setLevel(quiet_level)
 
 
+def _configure_common_logging_settings(
+    *,
+    log_format_local_dev_enabled: bool,
+    tracing_settings: TracingSettings | None,
+    log_base_level: LogLevelInt,
+    noisy_loggers: tuple[str, ...] | None,
+) -> logging.Formatter:
+    """
+    Common configuration logic shared by both sync and async logging setups.
+
+    Returns the configured formatter to be used with the appropriate handler.
+    """
+    _setup_base_logging_level(log_base_level)
+    if noisy_loggers is not None:
+        _dampen_noisy_loggers(noisy_loggers)
+    if tracing_settings is not None:
+        setup_log_tracing(tracing_settings=tracing_settings)
+
+    return _setup_logging_formatter(
+        tracing_settings=tracing_settings,
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+    )
+
+
+def _apply_logging_configuration(
+    handler: logging.Handler,
+    logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
+) -> None:
+    """
+    Apply the logging configuration with the given handler.
+    """
+    _clean_all_handlers()
+    _set_root_handler(handler)
+
+    if logger_filter_mapping:
+        _apply_logger_filters(logger_filter_mapping)
+
+
 def setup_loggers(
     *,
     log_format_local_dev_enabled: bool,
@@ -260,14 +298,11 @@ def setup_loggers(
         log_base_level: Base logging level to set
         noisy_loggers: Loggers to set to a quieter level
     """
-    _setup_base_logging_level(log_base_level)
-    if noisy_loggers is not None:
-        _dampen_noisy_loggers(noisy_loggers)
-    if tracing_settings is not None:
-        setup_log_tracing(tracing_settings=tracing_settings)
-    formatter = _setup_logging_formatter(
-        tracing_settings=tracing_settings,
+    formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
+        tracing_settings=tracing_settings,
+        log_base_level=log_base_level,
+        noisy_loggers=noisy_loggers,
     )
 
     # Create a properly formatted handler for the root logger
@@ -275,11 +310,7 @@ def setup_loggers(
     stream_handler.setFormatter(formatter)
 
     _store_logger_state(_get_all_loggers())
-    _clean_all_handlers()
-    _set_root_handler(stream_handler)
-
-    if logger_filter_mapping:
-        _apply_logger_filters(logger_filter_mapping)
+    _apply_logging_configuration(stream_handler, logger_filter_mapping)
 
 
 @contextmanager
@@ -381,26 +412,18 @@ def async_loggers(
         log_base_level: Base logging level to set
         noisy_loggers: Loggers to set to a quieter level
     """
-    _setup_base_logging_level(log_base_level)
-    if noisy_loggers is not None:
-        _dampen_noisy_loggers(noisy_loggers)
-
-    if tracing_settings is not None:
-        setup_log_tracing(tracing_settings=tracing_settings)
-    formatter = _setup_logging_formatter(
-        tracing_settings=tracing_settings,
+    formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
+        tracing_settings=tracing_settings,
+        log_base_level=log_base_level,
+        noisy_loggers=noisy_loggers,
     )
 
     with (
         _queued_logging_handler(formatter) as queue_handler,
         _stored_logger_states(_get_all_loggers()),
     ):
-        _clean_all_handlers()
-        _set_root_handler(queue_handler)
-
-        if logger_filter_mapping:
-            _apply_logger_filters(logger_filter_mapping)
+        _apply_logging_configuration(queue_handler, logger_filter_mapping)
 
         with log_context(_logger, logging.INFO, "Asynchronous logging"):
             yield
