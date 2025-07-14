@@ -6,9 +6,11 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 from collections.abc import AsyncGenerator
 from http import HTTPStatus
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 import simcore_service_webserver.login._auth_service
@@ -23,6 +25,7 @@ from models_library.api_schemas_webserver.users import (
 )
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
+from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.faker_factories import (
@@ -53,6 +56,35 @@ def app_environment(
             "WEBSERVER_DB_LISTENER": "0",
         },
     )
+
+
+@pytest.fixture
+def mock_email_session(mocker: MockerFixture) -> AsyncMock:
+    """Mock the email session and capture sent messages"""
+    # Create a mock email session
+    mock_session = AsyncMock()
+
+    # List to store sent messages
+    sent_messages = []
+
+    async def mock_send_message(msg):
+        """Mock send_message method to capture messages"""
+        sent_messages.append(msg)
+
+    mock_session.send_message = mock_send_message
+    mock_session.sent_messages = sent_messages
+
+    # Mock the context manager behavior
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=None)
+
+    # Use mocker to patch the create_email_session function
+    mocker.patch(
+        "simcore_service_webserver.users._accounts_service.create_email_session",
+        return_value=mock_session,
+    )
+
+    return mock_session
 
 
 @pytest.mark.parametrize(
@@ -388,6 +420,7 @@ async def test_reject_user_account(
     faker: Faker,
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
+    mock_email_session: AsyncMock,
 ):
     assert client.app
 
@@ -424,7 +457,19 @@ async def test_reject_user_account(
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # 4. Verify the user is no longer in PENDING status
+    # 4. Verify rejection email was sent
+    # Wait a bit for fire-and-forget task to complete
+
+    await asyncio.sleep(0.1)
+
+    assert len(mock_email_session.sent_messages) == 1
+    rejection_msg = mock_email_session.sent_messages[0]
+
+    # Verify email recipients and content
+    assert pre_registered_email in rejection_msg["To"]
+    assert "denied" in rejection_msg["Subject"].lower()
+
+    # 5. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
     resp = await client.get(
         f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
@@ -433,7 +478,7 @@ async def test_reject_user_account(
     pending_emails = [user["email"] for user in pending_data]
     assert pre_registered_email not in pending_emails
 
-    # 5. Verify the user is now in REJECTED status
+    # 6. Verify the user is now in REJECTED status
     # First get user details to check status
     resp = await client.get(
         "/v0/admin/user-accounts:search",
@@ -449,7 +494,7 @@ async def test_reject_user_account(
     assert user_data["accountRequestReviewedBy"] == logged_user["id"]
     assert user_data["accountRequestReviewedAt"] is not None
 
-    # 6. Verify that a rejected user cannot be approved
+    # 7. Verify that a rejected user cannot be approved
     url = client.app.router["approve_user_account"].url_for()
     resp = await client.post(
         f"{url}",
@@ -474,6 +519,7 @@ async def test_approve_user_account_with_full_invitation_details(
     product_name: ProductName,
     pre_registration_details_db_cleanup: None,
     mock_invitations_service_http_api: AioResponsesMock,
+    mock_email_session: AsyncMock,
 ):
     """Test approving user account with complete invitation details (trial days + credits)"""
     assert client.app
@@ -510,7 +556,19 @@ async def test_approve_user_account_with_full_invitation_details(
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # 3. Verify the user account status and invitation data in extras
+    # 3. Verify approval email was sent
+    # Wait a bit for fire-and-forget task to complete
+
+    await asyncio.sleep(0.1)
+
+    assert len(mock_email_session.sent_messages) == 1
+    approval_msg = mock_email_session.sent_messages[0]
+
+    # Verify email recipients and content
+    assert test_email in approval_msg["To"]
+    assert "accepted" in approval_msg["Subject"].lower()
+
+    # 4. Verify the user account status and invitation data in extras
     resp = await client.get(
         "/v0/admin/user-accounts:search",
         params={"email": test_email},
@@ -524,7 +582,7 @@ async def test_approve_user_account_with_full_invitation_details(
     assert user_data["accountRequestReviewedBy"] == logged_user["id"]
     assert user_data["accountRequestReviewedAt"] is not None
 
-    # 4. Verify invitation data is stored in extras
+    # 5. Verify invitation data is stored in extras
     assert "invitation" in user_data["extras"]
     invitation_data = user_data["extras"]["invitation"]
     assert invitation_data["guest"] == test_email
