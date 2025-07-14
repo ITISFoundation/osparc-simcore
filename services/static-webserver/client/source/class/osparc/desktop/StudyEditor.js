@@ -628,7 +628,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
-          osparc.store.Store.getInstance().getStudyState(pipelineId);
+          osparc.store.Study.getInstance().getStudyState(pipelineId);
         }, 60000);
         const socket = osparc.wrapper.WebSocket.getInstance();
         socket.getSocket().once("projectStateUpdated", ({ "project_uuid": projectUuid }) => {
@@ -928,13 +928,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __closeStudy: function() {
-      const params = {
-        url: {
-          "studyId": this.getStudy().getUuid()
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      osparc.data.Resources.fetch("studies", "close", params)
+      osparc.store.Study.getInstance().closeStudy(this.getStudy().getUuid())
         .catch(err => console.error(err));
     },
 

@@ -149,10 +149,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}&type=user"
           },
-          postToTemplate: {
-            method: "POST",
-            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}&hidden={hidden}"
-          },
           open: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
@@ -619,6 +615,10 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearchFilteredSorted: {
             method: "GET",
             url: statics.API + "/projects:search?type=template&offset={offset}&limit={limit}&order_by={orderBy}&template_type={templateType}&text={text}"
+          },
+          postToTemplate: {
+            method: "POST",
+            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}&hidden={hidden}"
           },
         }
       },
