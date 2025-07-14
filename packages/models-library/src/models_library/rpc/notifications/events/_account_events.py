@@ -1,8 +1,8 @@
-from typing import Literal
+from typing import Any, Literal
 
 from common_library.pydantic_basic_types import NotEmptyStr
 from models_library.products import ProductName
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, HttpUrl
 
 
 class UserData(BaseModel):
@@ -33,19 +33,26 @@ class ProductData(BaseModel):
     ui: ProductUIData
 
 
-class AccountRequestedEvent(BaseModel):
-    type: Literal["account_requested"] = "account_requested"
-
+class BaseAccountEvent(BaseModel):
     user: UserData
     product: ProductData
-    host: str
 
 
-class AccountApprovedEvent(BaseModel):
+class AccountRequestedEvent(BaseAccountEvent):
+    type: Literal["account_requested"] = "account_requested"
+
+    host: HttpUrl
+    product_info: dict[str, Any] = {}
+    request_form: dict[str, Any] = {}
+
+
+class AccountApprovedEvent(BaseAccountEvent):
     type: Literal["account_approved"] = "account_approved"
 
+    link: HttpUrl
 
-class AccountRejectedEvent(BaseModel):
+
+class AccountRejectedEvent(BaseAccountEvent):
     type: Literal["account_rejected"] = "account_rejected"
 
     reason: NotEmptyStr
