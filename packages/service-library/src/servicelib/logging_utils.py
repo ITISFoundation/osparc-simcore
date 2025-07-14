@@ -367,15 +367,13 @@ def async_loggers(
     )
 
     try:
-        # Apply filters if provided
         if logger_filter_mapping:
             _apply_logger_filters(logger_filter_mapping)
 
-        _logger.info("Async logging context initialized with unlimited queue")
-        yield
+        with log_context(_logger, logging.INFO, "Asynchronous logging"):
+            yield
 
     finally:
-        # Cleanup: Restore all loggers to their original state
         try:
             _restore_logger_state(original_logger_state)
 
