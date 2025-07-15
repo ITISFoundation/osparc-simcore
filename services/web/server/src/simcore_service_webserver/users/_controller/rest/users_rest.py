@@ -38,7 +38,9 @@ _logger = logging.getLogger(__name__)
 _PHONE_REGISTRATION_KEY = "phone_registration"
 _PHONE_PENDING_KEY = "phone_pending"
 _PHONE_CODE_KEY = "phone_code"
-_PHONE_CODE_VALUE_FAKE = "123456"
+_PHONE_CODE_VALUE_FAKE = (
+    "123456"  # NOTE: temporary fake while developing phone registration feature
+)
 
 routes = web.RouteTableDef()
 

@@ -36,6 +36,9 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
+from simcore_service_webserver.users._controller.rest.users_rest import (
+    _PHONE_CODE_VALUE_FAKE,
+)
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -50,6 +53,7 @@ def app_environment(
         {
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             "WEBSERVER_DB_LISTENER": "0",
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",  # NOTE: still under development
         },
     )
 
@@ -626,7 +630,7 @@ async def test_phone_registration_basic_workflow(
     resp = await client.post(
         f"{url}",
         json={
-            "code": "123456",
+            "code": _PHONE_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -682,7 +686,7 @@ async def test_phone_registration_workflow(
     resp = await client.post(
         f"{url}",
         json={
-            "code": "123456",
+            "code": _PHONE_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -735,7 +739,7 @@ async def test_phone_registration_with_resend(
     resp = await client.post(
         f"{url}",
         json={
-            "code": "123456",
+            "code": _PHONE_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -775,7 +779,7 @@ async def test_phone_registration_change_existing_phone(
     resp = await client.post(
         f"{url}",
         json={
-            "code": "123456",
+            "code": _PHONE_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -795,36 +799,7 @@ async def test_phone_registration_change_existing_phone(
     resp = await client.post(
         f"{url}",
         json={
-            "code": "123456",
-        },
-    )
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
-    # GET updated profile
-    url = client.app.router["get_my_profile"].url_for()
-    resp = await client.get(f"{url}")
-    data, _ = await assert_status(resp, status.HTTP_200_OK)
-
-    updated_profile = MyProfileRestGet.model_validate(data)
-
-    # Verify phone was updated to new phone
-    assert updated_profile.phone == new_phone
-    assert updated_profile.phone != first_phone
-    new_phone = faker.phone_number()
-    url = client.app.router["register_my_phone_init"].url_for()
-    resp = await client.post(
-        f"{url}",
-        json={
-            "phone": new_phone,
-        },
-    )
-    await assert_status(resp, status.HTTP_202_ACCEPTED)
-
-    url = client.app.router["register_my_phone_confirm"].url_for()
-    resp = await client.post(
-        f"{url}",
-        json={
-            "code": "123456",
+            "code": _PHONE_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
