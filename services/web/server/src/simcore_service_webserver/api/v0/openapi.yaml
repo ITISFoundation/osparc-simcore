@@ -1217,10 +1217,16 @@ paths:
         required: true
       responses:
         '202':
-          description: Successful Response
+          description: Phone registration initiated
           content:
             application/json:
               schema: {}
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
+        '422':
+          description: Invalid phone number format
   /v0/me/phone:resend:
     post:
       tags:
@@ -1230,10 +1236,16 @@ paths:
       operationId: my_phone_resend
       responses:
         '202':
-          description: Successful Response
+          description: Phone code resent
           content:
             application/json:
               schema: {}
+        '400':
+          description: No pending phone registration found
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
   /v0/me/phone:confirm:
     post:
       tags:
@@ -1249,7 +1261,15 @@ paths:
         required: true
       responses:
         '204':
-          description: Successful Response
+          description: Phone registration confirmed
+        '400':
+          description: No pending registration or invalid code
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
+        '422':
+          description: Invalid confirmation code format
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
