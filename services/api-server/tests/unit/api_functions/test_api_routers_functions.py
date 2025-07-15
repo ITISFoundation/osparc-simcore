@@ -16,10 +16,13 @@ import pytest
 import respx
 from faker import Faker
 from httpx import AsyncClient
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
     ProjectFunction,
     ProjectFunctionJob,
+    RegisteredFunction,
+    RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
@@ -883,10 +886,10 @@ async def test_map_function_parent_info(
     assert response.status_code == expected_status_code
 
 
-async def test_export_logs(
+async def test_export_logs_project_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_project_function: RegisteredFunction,
     mock_registered_project_function_job: RegisteredFunctionJob,
     mocked_directorv2_rpc_api: dict[str, MockType],
     mocked_storage_rpc_api: dict[str, MockType],
@@ -906,3 +909,30 @@ async def test_export_logs(
     )
 
     assert response.status_code == status.HTTP_200_OK
+    TaskGet.model_validate(response.json())
+
+
+async def test_export_logs_solver_function_job(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_solver_function: RegisteredFunction,
+    mock_registered_solver_function_job: RegisteredFunctionJob,
+    mocked_directorv2_rpc_api: dict[str, MockType],
+    mocked_storage_rpc_api: dict[str, MockType],
+    auth: httpx.BasicAuth,
+    user_id: UserID,
+):
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_solver_function
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function_job", mock_registered_solver_function_job
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/function_jobs/{mock_registered_solver_function_job.uid}/log",
+        auth=auth,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    TaskGet.model_validate(response.json())

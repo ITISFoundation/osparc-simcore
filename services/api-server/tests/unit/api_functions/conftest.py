@@ -29,6 +29,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     RegisteredFunctionJobCollection,
     RegisteredSolverFunction,
+    RegisteredSolverFunctionJob,
     SolverFunctionJob,
 )
 from models_library.functions_errors import FunctionIDNotFoundError
@@ -203,7 +204,7 @@ def mock_solver_function_job(
 def mock_registered_solver_function_job(
     mock_solver_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
-    return RegisteredProjectFunctionJob(
+    return RegisteredSolverFunctionJob(
         **{
             **mock_solver_function_job.dict(),
             "uid": str(uuid4()),
