@@ -81,11 +81,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           layout = this.getChildControl("footer");
           layout.add(control, osparc.dashboard.GridButtonBase.FPOS.HITS);
           break;
-        case "avatar-group":
-          control = new osparc.ui.basic.AvatarGroup(24, "left", 150);
-          layout = this.getChildControl("main-layout");
-          layout.add(control, osparc.dashboard.GridButtonBase.POS.AVATAR_GROUP);
+        case "avatar-group": {
+          const maxWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.PADDING * 2;
+          control = new osparc.ui.basic.AvatarGroup(24, "left", maxWidth).set({
+            paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
+          });
+          this.getChildControl("main-layout").add(control, osparc.dashboard.GridButtonBase.POS.AVATAR_GROUP);
           break;
+        }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
             anonymous: true,
@@ -93,8 +96,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             paddingRight: osparc.dashboard.GridButtonBase.PADDING,
             paddingBottom: osparc.dashboard.GridButtonBase.PADDING / 2
           });
-          layout = this.getChildControl("main-layout");
-          layout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+          this.getChildControl("main-layout").add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack();

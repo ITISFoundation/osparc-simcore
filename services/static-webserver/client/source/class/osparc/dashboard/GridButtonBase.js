@@ -43,8 +43,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
   statics: {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
-    PADDING: 10,
-    TITLE_PADDING: 6,
+    PADDING: 8,
     SPACING_IN: 5,
     SPACING: 15,
     THUMBNAIL_SIZE: 50,
@@ -52,13 +51,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       TITLE: {
         row: 0,
         column: 0,
-        rowSpan: 1,
         colSpan: 4
       },
       THUMBNAIL: {
         row: 2,
         column: 0,
-        rowSpan: 1,
         colSpan: 4
       },
       AVATAR_GROUP: {
@@ -72,7 +69,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       FOOTER: {
         row: 5,
         column: 0,
-        rowSpan: 1,
         colSpan: 4
       }
     },
