@@ -20,6 +20,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic.config import JsonDict
+from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -161,7 +162,7 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
-    phone: str | None = None
+    phone: Annotated[str, PhoneNumberValidator()] | None = None
 
     privacy: MyProfilePrivacyPatch | None = None
 
@@ -171,7 +172,7 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
             {
                 "examples": [
                     {"first_name": "Pedro", "last_name": "Crespo"},
-                    {"phone": "+34 123 456 789"},
+                    {"phone": "+41 44 245 96 96"},
                 ]
             }
         )
