@@ -3,7 +3,6 @@ from typing import Literal, TypedDict
 
 from aiohttp_session import Session
 from models_library.users import UserID
-from servicelib.aiohttp import status
 
 from .exceptions import (
     PhoneRegistrationCodeInvalidError,

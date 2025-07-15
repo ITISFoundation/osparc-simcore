@@ -879,7 +879,7 @@ async def test_phone_confirm_with_wrong_code(
     resp = await client.post(
         f"{url}",
         json={
-            "code": "wrong_code",
+            "code": "wrongcode1234",
         },
     )
     await assert_status(resp, status.HTTP_400_BAD_REQUEST)

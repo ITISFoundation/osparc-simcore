@@ -408,4 +408,3 @@ class MyPermissionGet(OutputSchema):
 
 class MyFunctionPermissionsGet(OutputSchema):
     write_functions: bool
-    write_functions: bool
