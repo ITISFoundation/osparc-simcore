@@ -12,7 +12,7 @@ from ..user_notifications.bootstrap import (
 )
 from ..user_preferences.bootstrap import setup_user_preferences_feature
 from ..user_tokens.bootstrap import setup_user_tokens_feature
-from ._controller.rest import users_rest
+from ._controller.rest import accounts_rest, users_rest
 
 _logger = logging.getLogger(__name__)
 
@@ -29,6 +29,7 @@ def setup_users(app: web.Application):
     setup_observer_registry(app)
 
     app.router.add_routes(users_rest.routes)
+    app.router.add_routes(accounts_rest.routes)
 
     setup_user_notification_feature(app)
     setup_user_preferences_feature(app)

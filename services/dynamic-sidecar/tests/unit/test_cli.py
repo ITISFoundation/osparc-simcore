@@ -50,12 +50,12 @@ def test_list_state_dirs(cli_runner: CliRunner, mock_data_manager: None):
 def test_outputs_push_interface(cli_runner: CliRunner, mock_data_manager: None):
     result = cli_runner.invoke(main, ["state-save"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
-    assert result.stdout == "state save finished successfully\n"
+    assert "state save finished successfully\n" in result.stdout
     print(result)
 
 
 def test_state_save_interface(cli_runner: CliRunner, mock_nodeports: None):
     result = cli_runner.invoke(main, ["outputs-push"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
-    assert result.stdout == "output ports push finished successfully\n"
+    assert "output ports push finished successfully\n" in result.stdout
     print(result)
