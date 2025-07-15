@@ -22,8 +22,8 @@ from ..user_preferences import user_preferences_service
 from . import _users_repository
 from ._models import (
     FullNameDict,
-    ToUserUpdateDB,
     UserCredentialsTuple,
+    UserDBAdapter,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
 )
@@ -282,5 +282,5 @@ async def update_my_profile(
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,
-        update=ToUserUpdateDB.from_api(update),
+        updated_values=UserDBAdapter.from_schema(update).to_db(),
     )

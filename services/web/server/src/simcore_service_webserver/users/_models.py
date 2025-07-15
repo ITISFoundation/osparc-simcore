@@ -43,9 +43,9 @@ def flatten_dict(d: dict, parent_key="", sep="_"):
     return dict(items)
 
 
-class ToUserUpdateDB(BaseModel):
+class UserDBAdapter(BaseModel):
     """
-    Maps ProfileUpdate api-model into UserUpdate db-model
+    Maps ProfileUpdate api schema into UserUpdate db-model
     """
 
     # NOTE: field names are UserDB columns
@@ -54,6 +54,7 @@ class ToUserUpdateDB(BaseModel):
     name: Annotated[str | None, Field(alias="user_name")] = None
     first_name: str | None = None
     last_name: str | None = None
+    phone: str | None = None
 
     privacy_hide_username: bool | None = None
     privacy_hide_fullname: bool | None = None
@@ -62,7 +63,7 @@ class ToUserUpdateDB(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     @classmethod
-    def from_api(cls, profile_update) -> Self:
+    def from_schema(cls, profile_update) -> Self:
         # The mapping of embed fields to flatten keys is done here
         return cls.model_validate(
             flatten_dict(profile_update.model_dump(exclude_unset=True, by_alias=False))

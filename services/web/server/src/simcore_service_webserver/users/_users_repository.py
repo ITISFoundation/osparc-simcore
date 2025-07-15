@@ -38,7 +38,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from ..db.plugin import get_asyncpg_engine
-from ._models import FullNameDict, ToUserUpdateDB
+from ._models import FullNameDict
 from .exceptions import (
     BillingDetailsNotFoundError,
     UserNameDuplicateError,
@@ -471,16 +471,16 @@ async def update_user_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: ToUserUpdateDB,
+    updated_values: dict[str, Any],
 ) -> None:
     """
     Raises:
         UserNotFoundError
         UserNameAlreadyExistsError
     """
-    user_id = _parse_as_user(user_id)
+    if updated_values:
+        user_id = _parse_as_user(user_id)
 
-    if updated_values := update.to_db():
         try:
             async with transaction_context(engine=get_asyncpg_engine(app)) as conn:
                 await conn.execute(
