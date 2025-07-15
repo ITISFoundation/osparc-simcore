@@ -19,29 +19,21 @@
 qx.Class.define("osparc.ui.basic.AvatarGroup", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(size = 30, orientation = "right", maxWidth = 150) {
     this.base(arguments);
 
     this.set({
       decorator: null,
       padding: 0,
       backgroundColor: null,
+      width: maxWidth,
+      maxWidth: maxWidth,
     });
     this._setLayout(new qx.ui.layout.Canvas());
 
-    this.__avatarSize = 30;
-    this.__maxVisible = 5;
-    this.__users = [
-      { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
-      { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
-      { name: "Charlie", avatar: "https://i.pravatar.cc/150?img=3" },
-      { name: "Dana", avatar: "https://i.pravatar.cc/150?img=4" },
-      { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
-      { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
-    ];
-    this.__avatars = [];
-
-    this.__buildAvatars();
+    this.__avatarSize = size;
+    this.__orientation = orientation;
+    this.__maxVisible = Math.floor(maxWidth/size) - 1; // Reserve space for the extra avatar
 
     // Hover state handling
     this.addListener("mouseover", () => this.__expand(true), this);
@@ -54,7 +46,15 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __users: null,
     __avatars: null,
 
+    setUsers: function(users) {
+      this.__users = users;
+      this.__buildAvatars();
+    },
+
     __buildAvatars() {
+      this._removeAll();
+      this.__avatars = [];
+
       const usersToShow = this.__users.slice(0, this.__maxVisible);
       const totalAvatars = [...usersToShow];
       if (this.__users.length > this.__maxVisible) {
@@ -73,7 +73,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
             width: this.__avatarSize,
             height: this.__avatarSize,
             textAlign: "center",
-            backgroundColor: "#ddd",
+            backgroundColor: "green",
             font: "bold",
             toolTipText: `${user.name.replace("+", "")} more`
           });
@@ -99,7 +99,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
           borderRadius: "50%",
           border: "1px solid gray",
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-          transition: "left 0.2s ease",
+          transition: "left 0.1s ease, right 0.1s ease",
           position: "absolute"
         });
 
@@ -114,8 +114,10 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __expand: function(expand = true) {
       const overlap = Math.floor(this.__avatarSize * (expand ? 0.1 : 0.7));
       this.__avatars.forEach((avatar, index) => {
-        const left = index * (this.__avatarSize - overlap);
-        avatar.setLayoutProperties({ left });
+        const shift = index * (this.__avatarSize - overlap);
+        avatar.setLayoutProperties({
+          [this.__orientation]: shift
+        });
         avatar.setZIndex(index);
       });
     },
