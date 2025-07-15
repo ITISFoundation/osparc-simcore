@@ -155,7 +155,7 @@ def mock_registered_solver_function(
 
 
 @pytest.fixture
-def mock_function_job(
+def mock_project_function_job(
     mock_registered_project_function: RegisteredFunction,
 ) -> FunctionJob:
     mock_function_job = {
@@ -172,11 +172,11 @@ def mock_function_job(
 
 @pytest.fixture
 def mock_registered_project_function_job(
-    mock_function_job: FunctionJob,
+    mock_project_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     return RegisteredProjectFunctionJob(
         **{
-            **mock_function_job.dict(),
+            **mock_project_function_job.dict(),
             "uid": str(uuid4()),
             "created_at": datetime.datetime.now(datetime.UTC),
         }

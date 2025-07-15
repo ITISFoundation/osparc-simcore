@@ -320,7 +320,7 @@ async def test_delete_function(
 async def test_register_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_function_job: ProjectFunctionJob,
+    mock_project_function_job: ProjectFunctionJob,
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
@@ -332,7 +332,7 @@ async def test_register_function_job(
 
     response = await client.post(
         f"{API_VTAG}/function_jobs",
-        json=mock_function_job.model_dump(mode="json"),
+        json=mock_project_function_job.model_dump(mode="json"),
         auth=auth,
     )
 
