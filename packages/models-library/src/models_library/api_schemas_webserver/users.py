@@ -208,6 +208,28 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
 
 
 #
+# PHONE REGISTRATION
+#
+
+
+class MyPhoneRegister(InputSchema):
+    phone: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1),
+        Field(description="Phone number to register"),
+    ]
+    force: bool = False
+
+
+class MyPhoneConfirm(InputSchema):
+    code: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, pattern=r"^[A-Za-z0-9]+$"),
+        Field(description="Alphanumeric confirmation code"),
+    ]
+
+
+#
 # USER
 #
 

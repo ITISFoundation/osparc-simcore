@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyFunctionPermissionsGet,
     MyPermissionGet,
+    MyPhoneConfirm,
+    MyPhoneRegister,
     MyProfileRestGet,
     MyProfileRestPatch,
     MyTokenCreate,
@@ -46,6 +48,20 @@ async def get_my_profile(): ...
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def update_my_profile(_body: MyProfileRestPatch): ...
+
+
+@router.post(
+    "/me/phone:register",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def register_my_phone_init(_body: MyPhoneRegister): ...
+
+
+@router.post(
+    "/me/phone:confirm",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def register_my_phone_confirm(_body: MyPhoneConfirm): ...
 
 
 @router.patch(
