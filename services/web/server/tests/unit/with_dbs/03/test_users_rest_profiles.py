@@ -20,7 +20,7 @@ from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_webserver.groups import GroupUserGet
 from models_library.api_schemas_webserver.users import (
-    MyProfileGet,
+    MyProfileRestGet,
     UserGet,
 )
 from psycopg2 import OperationalError
@@ -383,7 +383,7 @@ async def test_get_profile(
     data, error = await assert_status(resp, status.HTTP_200_OK)
 
     assert not error
-    profile = MyProfileGet.model_validate(data)
+    profile = MyProfileRestGet.model_validate(data)
 
     assert profile.login == logged_user["email"]
     assert profile.first_name == logged_user.get("first_name", None)
@@ -465,7 +465,7 @@ async def test_profile_workflow(
     url = client.app.router["get_my_profile"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    my_profile = MyProfileGet.model_validate(data)
+    my_profile = MyProfileRestGet.model_validate(data)
 
     url = client.app.router["update_my_profile"].url_for()
     resp = await client.patch(
@@ -481,7 +481,7 @@ async def test_profile_workflow(
     url = client.app.router["get_my_profile"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    updated_profile = MyProfileGet.model_validate(data)
+    updated_profile = MyProfileRestGet.model_validate(data)
 
     assert updated_profile.first_name != my_profile.first_name
     assert updated_profile.last_name == my_profile.last_name
@@ -607,7 +607,7 @@ async def test_get_and_update_phone_in_profile(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    initial_profile = MyProfileGet.model_validate(data)
+    initial_profile = MyProfileRestGet.model_validate(data)
     initial_phone = initial_profile.phone
 
     # UPDATE phone number
@@ -626,7 +626,7 @@ async def test_get_and_update_phone_in_profile(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    updated_profile = MyProfileGet.model_validate(data)
+    updated_profile = MyProfileRestGet.model_validate(data)
 
     # Verify phone was updated
     assert updated_profile.phone == new_phone
@@ -653,5 +653,5 @@ async def test_get_and_update_phone_in_profile(
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    cleared_profile = MyProfileGet.model_validate(data)
+    cleared_profile = MyProfileRestGet.model_validate(data)
     assert cleared_profile.phone is None

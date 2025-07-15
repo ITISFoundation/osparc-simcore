@@ -3,8 +3,8 @@ from contextlib import suppress
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
-    MyProfileGet,
     MyProfilePatch,
+    MyProfileRestGet,
     UserGet,
     UsersSearch,
 )
@@ -64,7 +64,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
-    profile = MyProfileGet.from_domain_model(
+    profile = MyProfileRestGet.from_domain_model(
         my_profile, groups_by_type, my_product_group, preferences
     )
 

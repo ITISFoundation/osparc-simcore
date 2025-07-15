@@ -10,9 +10,9 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.users import (
-    MyProfileGet,
     MyProfilePatch,
     MyProfilePrivacyGet,
+    MyProfileRestGet,
 )
 from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -22,11 +22,11 @@ from simcore_service_webserver.users._models import UserDBAdapter
 
 
 @pytest.fixture
-def fake_profile_get(faker: Faker) -> MyProfileGet:
+def fake_profile_get(faker: Faker) -> MyProfileRestGet:
     fake_profile: dict[str, Any] = faker.simple_profile()
     first, last = fake_profile["name"].rsplit(maxsplit=1)
 
-    return MyProfileGet(
+    return MyProfileRestGet(
         id=faker.pyint(),
         first_name=first,
         last_name=last,
@@ -40,7 +40,7 @@ def fake_profile_get(faker: Faker) -> MyProfileGet:
     )
 
 
-def test_profile_get_expiration_date(fake_profile_get: MyProfileGet):
+def test_profile_get_expiration_date(fake_profile_get: MyProfileRestGet):
     fake_expiration = datetime.now(UTC)
 
     profile = fake_profile_get.model_copy(
@@ -53,7 +53,7 @@ def test_profile_get_expiration_date(fake_profile_get: MyProfileGet):
     assert body["expirationDate"] == fake_expiration.date().isoformat()
 
 
-def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileGet):
+def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileRestGet):
 
     profile = fake_profile_get.model_copy()
 
@@ -62,7 +62,7 @@ def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileGet):
 
     assert (
         "gravatar_id" not in data
-    ), f"{dict(MyProfileGet.model_fields)['gravatar_id'].deprecated=}"
+    ), f"{dict(MyProfileRestGet.model_fields)['gravatar_id'].deprecated=}"
     assert data["id"] == profile.id
     assert data["first_name"] == profile.first_name
     assert data["last_name"] == profile.last_name
@@ -116,7 +116,7 @@ def test_parsing_output_of_get_user_profile():
         },
     }
 
-    profile = MyProfileGet.model_validate(result_from_db_query_and_composition)
+    profile = MyProfileRestGet.model_validate(result_from_db_query_and_composition)
     assert "password" not in profile.model_dump(exclude_unset=True)
 
 

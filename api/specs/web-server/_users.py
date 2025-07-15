@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyFunctionPermissionsGet,
     MyPermissionGet,
-    MyProfileGet,
     MyProfilePatch,
+    MyProfileRestGet,
     MyTokenCreate,
     MyTokenGet,
     TokenPathParams,
@@ -36,7 +36,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 
 @router.get(
     "/me",
-    response_model=Envelope[MyProfileGet],
+    response_model=Envelope[MyProfileRestGet],
 )
 async def get_my_profile(): ...
 

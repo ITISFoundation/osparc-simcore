@@ -20,7 +20,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic.config import JsonDict
-from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -63,7 +62,7 @@ class MyProfilePrivacyPatch(InputSchema):
     hide_email: bool | None = None
 
 
-class MyProfileGet(OutputSchemaWithoutCamelCase):
+class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[
         IDStr, Field(description="Unique username identifier", alias="userName")
@@ -162,20 +161,13 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
-    phone: Annotated[str, PhoneNumberValidator()] | None = None
+    # NOTE: phone is updated via a dedicated endpoint!
 
     privacy: MyProfilePrivacyPatch | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        schema.update(
-            {
-                "examples": [
-                    {"first_name": "Pedro", "last_name": "Crespo"},
-                    {"phone": "+41 44 245 96 96"},
-                ]
-            }
-        )
+        schema.update({"examples": [{"first_name": "Pedro", "last_name": "Crespo"}]})
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 

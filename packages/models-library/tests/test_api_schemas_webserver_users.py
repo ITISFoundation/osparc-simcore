@@ -8,21 +8,21 @@ from copy import deepcopy
 import pytest
 from common_library.users_enums import UserRole
 from models_library.api_schemas_webserver.users import (
-    MyProfileGet,
     MyProfilePatch,
+    MyProfileRestGet,
 )
 from pydantic import ValidationError
 
 
 @pytest.mark.parametrize("user_role", [u.name for u in UserRole])
 def test_profile_get_role(user_role: str):
-    for example in MyProfileGet.model_json_schema()["examples"]:
+    for example in MyProfileRestGet.model_json_schema()["examples"]:
         data = deepcopy(example)
         data["role"] = user_role
-        m1 = MyProfileGet(**data)
+        m1 = MyProfileRestGet(**data)
 
         data["role"] = UserRole(user_role)
-        m2 = MyProfileGet(**data)
+        m2 = MyProfileRestGet(**data)
         assert m1 == m2
 
 
