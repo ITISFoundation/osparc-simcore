@@ -814,3 +814,237 @@ async def test_phone_registration_change_existing_phone(
     # Verify phone was updated to new phone
     assert updated_profile.phone == new_phone
     assert updated_profile.phone != first_phone
+
+
+#
+# PHONE REGISTRATION FAILURE TESTS
+#
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_resend_without_pending_registration(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    assert client.app
+
+    # Try to resend code without any pending registration
+    url = client.app.router["my_phone_resend"].url_for()
+    resp = await client.post(f"{url}")
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_confirm_without_pending_registration(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    assert client.app
+
+    # Try to confirm code without any pending registration
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": _PHONE_CODE_VALUE_FAKE,
+        },
+    )
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_confirm_with_wrong_code(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+):
+    assert client.app
+
+    # STEP 1: REGISTER phone number
+    new_phone = faker.phone_number()
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    # STEP 2: Try to confirm with wrong code
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "wrong_code",
+        },
+    )
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_confirm_with_invalid_code_format(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+):
+    assert client.app
+
+    # STEP 1: REGISTER phone number
+    new_phone = faker.phone_number()
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    # STEP 2: Try to confirm with invalid code format (contains special characters)
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "123-456",  # Invalid format according to pattern
+        },
+    )
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_register_with_empty_phone(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    assert client.app
+
+    # Try to register with empty phone number
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": "",  # Empty phone number
+        },
+    )
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    # Try to register with whitespace-only phone number
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": "   ",  # Whitespace only
+        },
+    )
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_confirm_with_empty_code(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+):
+    assert client.app
+
+    # STEP 1: REGISTER phone number
+    new_phone = faker.phone_number()
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    # STEP 2: Try to confirm with empty code
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "",  # Empty code
+        },
+    )
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+    ],
+)
+async def test_phone_register_access_rights(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    expected: HTTPStatus,
+    faker: Faker,
+):
+    assert client.app
+
+    # Try to register phone with insufficient permissions
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": faker.phone_number(),
+        },
+    )
+    await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+    ],
+)
+async def test_phone_resend_access_rights(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    expected: HTTPStatus,
+):
+    assert client.app
+
+    # Try to resend code with insufficient permissions
+    url = client.app.router["my_phone_resend"].url_for()
+    resp = await client.post(f"{url}")
+    await assert_status(resp, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+    ],
+)
+async def test_phone_confirm_access_rights(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    expected: HTTPStatus,
+):
+    assert client.app
+
+    # Try to confirm code with insufficient permissions
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": _PHONE_CODE_VALUE_FAKE,
+        },
+    )
+    await assert_status(resp, expected)
