@@ -48,6 +48,7 @@ from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
+from pytest_simcore.helpers.director_v2_rpc_server import DirectorV2SideEffects
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
@@ -606,6 +607,49 @@ def mocked_catalog_rpc_api(
                 method_name,
                 autospec=True,
                 side_effect=getattr(catalog_rpc_side_effects, method_name),
+            )
+
+    return mocks
+
+
+@pytest.fixture
+def directorv2_rpc_side_effects(request) -> Any:
+    if "param" in dir(request) and request.param is not None:
+        return request.param
+    return DirectorV2SideEffects()
+
+
+@pytest.fixture
+def mocked_directorv2_rpc_api(
+    mocked_app_dependencies: None,
+    mocker: MockerFixture,
+    directorv2_rpc_side_effects: Any,
+) -> dict[str, MockType]:
+    """
+    Mocks the director-v2's simcore service RPC API for testing purposes.
+    """
+    from servicelib.rabbitmq.rpc_interfaces.director_v2 import (
+        computations_tasks as directorv2_rpc,  # keep import here
+    )
+
+    mocks = {}
+
+    # Get all callable methods from the side effects class that are not built-ins
+    side_effect_methods = [
+        method_name
+        for method_name in dir(directorv2_rpc_side_effects)
+        if not method_name.startswith("_")
+        and callable(getattr(directorv2_rpc_side_effects, method_name))
+    ]
+
+    # Create mocks for each method in directorv2_rpc that has a corresponding side effect
+    for method_name in side_effect_methods:
+        if hasattr(directorv2_rpc, method_name):
+            mocks[method_name] = mocker.patch.object(
+                directorv2_rpc,
+                method_name,
+                autospec=True,
+                side_effect=getattr(directorv2_rpc_side_effects, method_name),
             )
 
     return mocks
