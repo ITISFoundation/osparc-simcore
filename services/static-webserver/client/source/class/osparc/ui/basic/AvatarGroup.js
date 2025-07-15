@@ -44,8 +44,8 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     this.__buildAvatars();
 
     // Hover state handling
-    this.addListener("mouseover", this.__expand, this);
-    this.addListener("mouseout", this.__collapse, this);
+    this.addListener("mouseover", () => this.__expand(true), this);
+    this.addListener("mouseout", () => this.__expand(false), this);
   },
 
   members: {
@@ -107,25 +107,16 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         this._add(avatar);
       });
 
-      this.__collapse();
+      this.__expand(false);
     },
 
 
-    __expand() {
-      const spacing = 8;
-      this.__avatars.forEach((avatar, index) => {
-        const left = index * (this.__avatarSize + spacing);
-        avatar.setLayoutProperties({ left });
-        avatar.setZIndex(this.__avatars.length - index); // reverse stacking
-      });
-    },
-
-    __collapse() {
-      const overlap = Math.floor(this.__avatarSize * 0.8);
+    __expand: function(expand = true) {
+      const overlap = Math.floor(this.__avatarSize * (expand ? 0.1 : 0.7));
       this.__avatars.forEach((avatar, index) => {
         const left = index * (this.__avatarSize - overlap);
         avatar.setLayoutProperties({ left });
-        avatar.setZIndex(index); // natural stacking
+        avatar.setZIndex(index);
       });
     },
   },
