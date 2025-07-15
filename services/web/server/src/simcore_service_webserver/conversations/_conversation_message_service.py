@@ -17,7 +17,7 @@ from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
 # Import or define SocketMessageDict
-from ..users.api import get_user_primary_group_id
+from ..users import users_service
 from . import _conversation_message_repository
 from ._conversation_service import _get_recipients
 from ._socketio import (
@@ -39,7 +39,7 @@ async def create_message(
     content: str,
     type_: ConversationMessageType,
 ) -> ConversationMessageGetDB:
-    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     created_message = await _conversation_message_repository.create(
         app,
@@ -110,7 +110,7 @@ async def delete_message(
         message_id=message_id,
     )
 
-    _user_group_id = await get_user_primary_group_id(app, user_id=user_id)
+    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     await notify_conversation_message_deleted(
         app,

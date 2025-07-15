@@ -12,7 +12,7 @@ This document provides guidelines and best practices for using GitHub Copilot in
 
 ## 🛠️Coding Instructions for Python in This Repository
 
-Follow these rules strictly when generating Python code:
+Follow these rules **strictly** when generating Python code:
 
 ### 1. Python Version
 
@@ -43,7 +43,7 @@ Ensure compatibility with the following library versions:
 * Use `f-string` formatting for all string interpolation except for logging message strings.
 * Use **relative imports** within the same package/module.
 * Place **all imports at the top** of the file.
-* Add comments **only when the code is not self-explanatory**.
+* Document functions when the code is not self-explanatory or if asked explicitly.
 
 
 ### 6. **JSON Serialization**
