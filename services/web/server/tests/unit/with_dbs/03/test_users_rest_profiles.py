@@ -610,13 +610,23 @@ async def test_get_and_update_phone_in_profile(
     initial_profile = MyProfileRestGet.model_validate(data)
     initial_phone = initial_profile.phone
 
-    # UPDATE phone number
+    # REGISTER phone number
     new_phone = faker.phone_number()
-    url = client.app.router["update_my_profile"].url_for()
-    resp = await client.patch(
+    url = client.app.router["register_my_phone_init"].url_for()
+    resp = await client.post(
         f"{url}",
         json={
             "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    # CONFIRM phone registration
+    url = client.app.router["register_my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "123456",
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -638,12 +648,23 @@ async def test_get_and_update_phone_in_profile(
     assert updated_profile.login == initial_profile.login
     assert updated_profile.user_name == initial_profile.user_name
 
-    # UPDATE phone to None (clear it)
-    url = client.app.router["update_my_profile"].url_for()
-    resp = await client.patch(
+    # REGISTER phone to None (clear it) using force=True
+    url = client.app.router["register_my_phone_init"].url_for()
+    resp = await client.post(
         f"{url}",
         json={
-            "phone": None,
+            "phone": "",
+            "force": True,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    # CONFIRM phone clearing
+    url = client.app.router["register_my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "123456",
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
