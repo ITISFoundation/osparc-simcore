@@ -205,6 +205,7 @@ async def mock_rpc_server(
             InvoiceDataGet.model_config["json_schema_extra"]["examples"][0]
         )
 
+    # TODO: namespace looks wrong shuld be payments?
     await rpc_server.register_router(router, namespace=WEBSERVER_RPC_NAMESPACE)
 
     return rpc_server

@@ -117,7 +117,7 @@ async def rabbitmq_rpc_client(
     created_clients = []
 
     async def _creator(client_name: str, *, heartbeat: int = 60) -> RabbitMQRPCClient:
-        client = await RabbitMQRPCClient.create(
+        client = RabbitMQRPCClient.create(
             client_name=f"pytest_{client_name}",
             settings=rabbit_service,
             heartbeat=heartbeat,

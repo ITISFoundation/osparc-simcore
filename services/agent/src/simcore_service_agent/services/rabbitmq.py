@@ -12,7 +12,7 @@ def setup_rabbitmq(app: FastAPI) -> None:
     async def _on_startup() -> None:
         await wait_till_rabbitmq_responsive(settings.dsn)
 
-        app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
+        app.state.rabbitmq_rpc_server = RabbitMQRPCClient.create(
             client_name="dynamic_scheduler_rpc_server", settings=settings
         )
 

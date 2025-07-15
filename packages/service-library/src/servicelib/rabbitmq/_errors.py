@@ -14,6 +14,10 @@ class RPCNotInitializedError(BaseRPCError):
 
 
 class RemoteMethodNotRegisteredError(BaseRPCError):
+    # TODO: this is an issue since some services relied on this error
+    # faststream does not expose such an error
+    # the only thing that happens is a timeout, which can be very long, but it's the only way to figure out if remote is not ther
+    # TODO: check if any arguments help with this, but I doubt they do
     code = f"{_ERROR_PREFIX}.remote_not_registered"  # type: ignore[assignment]
     msg_template = (
         "Could not find a remote method named: '{method_name}'. "

@@ -26,4 +26,9 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
         for router in ROUTERS:
             await rpc_server.register_router(router, rpc_namespace, app)
 
+        await rpc_server.start()
+
     app.add_event_handler("startup", startup)
+
+
+# TODO: figure out how to merge the inerfaces, since now the RPC servicer registration needs to be done before starting the servcer and this one

@@ -51,6 +51,7 @@ async def get_or_create_on_demand_cluster(
         )
     except RemoteMethodNotRegisteredError as exc:
         # no clusters-keeper, that is not going to work!
+        # TODO: ask SAN here if we can change it somehow. also depeding on the timeout that could also work
         raise ClustersKeeperNotAvailableError from exc
     except RPCServerError as exc:
         raise ClustersKeeperNotAvailableError from exc

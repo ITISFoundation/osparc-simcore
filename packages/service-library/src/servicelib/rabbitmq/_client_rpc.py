@@ -1,69 +1,92 @@
-import asyncio
 import functools
+import inspect
 import logging
-from collections.abc import AsyncIterator, Callable
+import pickle
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
-import aio_pika
+from aio_pika import IncomingMessage
+from faststream import BaseMiddleware
+from faststream.rabbit import RabbitBroker, RabbitMessage
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import PositiveInt
 from settings_library.rabbit import RabbitSettings
 
-from ..logging_utils import log_context
 from ._client_base import RabbitMQClientBase
 from ._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from ._errors import RemoteMethodNotRegisteredError, RPCNotInitializedError
 from ._models import RPCNamespacedMethodName
 from ._rpc_router import RPCRouter
-from ._utils import get_rabbitmq_client_unique_name
 
 _logger = logging.getLogger(__name__)
 
 
+def _to_bytes(obj: Any) -> bytes:
+    return pickle.dumps(obj)
+
+
+def _from_bytes(encoded_str: bytes) -> Any:
+    return pickle.loads(encoded_str)  # noqa: S301
+
+
+async def _decoding_parser(
+    msg: IncomingMessage,
+    original_parser: Callable[[IncomingMessage], Awaitable[RabbitMessage]],
+) -> RabbitMessage:
+    parsed_message = await original_parser(msg)
+    parsed_message.body = _from_bytes(parsed_message.body)
+    return parsed_message
+
+
+class EncodingMiddleware(BaseMiddleware):
+    async def on_publish(
+        self,
+        msg: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        _ = args, kwargs
+
+        _logger.debug("MDLR: publish msg=%r", msg)
+        return _to_bytes(msg)
+
+
 @dataclass
 class RabbitMQRPCClient(RabbitMQClientBase):
-    _connection: aio_pika.abc.AbstractConnection | None = None
-    _channel: aio_pika.abc.AbstractChannel | None = None
-    _rpc: aio_pika.patterns.RPC | None = None
+    _broker: RabbitBroker | None = None
 
     @classmethod
-    async def create(
-        cls, *, client_name: str, settings: RabbitSettings, **kwargs
+    def create(
+        cls,
+        *,
+        client_name: str,
+        settings: RabbitSettings,
+        **kwargs,
     ) -> "RabbitMQRPCClient":
         client = cls(client_name=client_name, settings=settings, **kwargs)
-        await client._rpc_initialize()
+        client._rpc_initialize()
         return client
 
-    async def _rpc_initialize(self) -> None:
-        # NOTE: to show the connection name in the rabbitMQ UI see there
-        # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
-        #
-        connection_name = f"{get_rabbitmq_client_unique_name(self.client_name)}.rpc"
-        url = f"{self.settings.dsn}?name={connection_name}"
-        self._connection = await aio_pika.connect_robust(
-            url,
-            client_properties={"connection_name": connection_name},
+    def _rpc_initialize(self) -> None:
+        self._broker: RabbitBroker = RabbitBroker(
+            self.settings.dsn,
+            log_level=logging.DEBUG,
+            # NOTE
+            parser=_decoding_parser,
+            middlewares=[EncodingMiddleware],
         )
-        self._channel = await self._connection.channel()
 
-        self._rpc = aio_pika.patterns.RPC(self._channel)
-        await self._rpc.initialize()
+    async def start(self) -> None:
+        # TODO: register echo handler ? might help with detecting missing remote side
+
+        # start after all halnder have registered the routes
+        await self._broker.start()
 
     async def close(self) -> None:
-        with log_context(
-            _logger,
-            logging.INFO,
-            msg=f"{self.client_name} closing connection to RabbitMQ",
-        ):
-            # rpc is not always initialized
-            if self._rpc is not None:
-                await self._rpc.close()
-            if self._channel is not None:
-                await self._channel.close()
-            if self._connection is not None:
-                await self._connection.close()
+        if self._broker is not None:
+            await self._broker.close()
 
     async def request(
         self,
@@ -71,7 +94,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         method_name: RPCMethodName,
         *,
         timeout_s: PositiveInt | None = RPC_REQUEST_DEFAULT_TIMEOUT_S,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         """
         Call a remote registered `handler` by providing it's `namespace`, `method_name`
@@ -84,26 +107,30 @@ class RabbitMQRPCClient(RabbitMQClientBase):
             `namespaced_method_name`
         """
 
-        if not self._rpc:
+        if self._broker is None:
             raise RPCNotInitializedError
 
         namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
             namespace, method_name
         )
+
+        # quick check to se eif remote handler replies
+        dummy_namesapce = RPCNamespacedMethodName.from_namespace_and_method(
+            namespace, ""
+        )
         try:
-            queue_expiration_timeout = timeout_s
-            awaitable = self._rpc.call(
-                namespaced_method_name,
-                expiration=queue_expiration_timeout,
-                kwargs=kwargs,
+            await self._broker.request({}, queue=dummy_namesapce)
+        except TimeoutError as e:
+            raise RemoteMethodNotRegisteredError(
+                method_name=dummy_namesapce,
+                incoming_message="",
+            ) from e
+
+        try:
+            message = await self._broker.request(
+                kwargs, queue=namespaced_method_name, timeout=timeout_s
             )
-            return await asyncio.wait_for(awaitable, timeout=timeout_s)
-        except aio_pika.MessageProcessError as e:
-            if e.args[0] == "Message has been returned":
-                raise RemoteMethodNotRegisteredError(
-                    method_name=namespaced_method_name, incoming_message=e.args[1]
-                ) from e
-            raise
+            return _from_bytes(message.body)
         except ModuleNotFoundError as err:
             # SEE https://github.com/ITISFoundation/osparc-simcore/blob/b1aee64ae207a6ed3e965ff7869c74a312109de7/services/catalog/src/simcore_service_catalog/api/rpc/_services.py#L41-L46
             err.msg += (
@@ -127,14 +154,33 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         left to the caller to do so.
         """
 
-        if self._rpc is None:
+        if self._broker is None:
             raise RPCNotInitializedError
 
-        await self._rpc.register(
-            RPCNamespacedMethodName.from_namespace_and_method(namespace, method_name),
-            handler,
-            auto_delete=True,
+        namespaced_method_name = RPCNamespacedMethodName.from_namespace_and_method(
+            namespace, method_name
         )
+
+        async def _warpped_handler(*args, **kwargs) -> bytes:
+            result = handler(*args, **kwargs)
+            if inspect.iscoroutinefunction(handler):
+                await result
+            return _to_bytes(result)
+
+        self._broker.subscriber(namespaced_method_name)(_warpped_handler)
+        # always subscribe an empty handler to the namespce (used for fast querying to figure out if any method is registerd)
+
+        def _empty_handler(*args, **kwargs) -> None:
+            """
+            This is a dummy handler that does nothing.
+            It is used to register the namespace so that we can query it later
+            to see if any method is registered.
+            """
+            _ = args, kwargs
+
+        self._broker.subscriber(
+            RPCNamespacedMethodName.from_namespace_and_method(namespace, "")
+        )(_empty_handler)
 
     async def register_router(
         self,
@@ -153,12 +199,14 @@ class RabbitMQRPCClient(RabbitMQClientBase):
     async def unregister_handler(self, handler: Callable[..., Any]) -> None:
         """Unbind a locally added `handler`"""
 
-        if self._rpc is None:
+        if self._broker is None:
             raise RPCNotInitializedError
 
-        await self._rpc.unregister(handler)
+        _logger.debug("nothing to unsubscribe, feature not supported")
+        # await self._rpc.unregister(handler)
 
 
+# TODO: below needs to change, since we register and unregister handlers during tests and cannot after they are initialized
 @asynccontextmanager
 async def rabbitmq_rpc_client_context(
     rpc_client_name: str, settings: RabbitSettings, **kwargs
@@ -166,10 +214,19 @@ async def rabbitmq_rpc_client_context(
     """
     Adapter to create and close a RabbitMQRPCClient using an async context manager.
     """
-    rpc_client = await RabbitMQRPCClient.create(
+    rpc_client = RabbitMQRPCClient.create(
         client_name=rpc_client_name, settings=settings, **kwargs
     )
     try:
         yield rpc_client
+    finally:
+        await rpc_client.close()
+
+
+@asynccontextmanager
+async def rpc_server_lfespan(rpc_client: RabbitMQRPCClient) -> AsyncIterator[None]:
+    try:
+        await rpc_client.start()
+        yield None
     finally:
         await rpc_client.close()

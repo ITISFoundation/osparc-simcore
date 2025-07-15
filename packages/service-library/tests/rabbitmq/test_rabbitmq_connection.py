@@ -26,7 +26,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-async def test_rabbit_client_lose_connection(
+async def test_rabbit_client_close_connection(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
