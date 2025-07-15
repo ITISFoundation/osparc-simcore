@@ -457,7 +457,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     blocked: {
-      check: [true, "UNKNOWN_SERVICES", "IN_USE", "IN_DEBT", false],
+      // check: [true, "UNKNOWN_SERVICES", "IN_USE", "IN_DEBT", false],
+      check: [true, "UNKNOWN_SERVICES", "IN_DEBT", false], // "IN_USE" is not a block anymore, it is just a status
       init: false,
       nullable: false,
       apply: "__applyBlocked"
@@ -772,9 +773,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if ("locked" in state && "value" in state["locked"]) {
         lockInUse = state["locked"]["value"];
       }
-      this.setBlocked(lockInUse ? "IN_USE" : false);
-      if (lockInUse) {
-        this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+        if (lockInUse && "locked" in state && "status" in state["locked"] && "OPENED" === state["locked"]["status"]) {
+          this.__showWhoIsIn(state["locked"]["owner"]);
+        }
+      } else {
+        this.setBlocked(lockInUse ? "IN_USE" : false);
+        if (lockInUse) {
+          this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+        }
       }
 
       const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
@@ -853,6 +860,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipText
       });
     },
+
+    __showWhoIsIn: function(whoIsIn) {
+      this.set({
+        toolTipText: String(whoIsIn["user_id"])
+      });
+    },
+
 
     __showBlockedCardFromStatus: function(reason, moreInfo) {
       switch (reason) {
