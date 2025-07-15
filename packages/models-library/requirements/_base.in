@@ -7,6 +7,7 @@
 arrow
 jsonschema
 orjson
-pydantic[email]
-pydantic-settings
+phonenumbers
 pydantic-extra-types
+pydantic-settings
+pydantic[email]
