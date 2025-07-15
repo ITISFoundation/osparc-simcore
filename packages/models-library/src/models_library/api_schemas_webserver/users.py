@@ -70,6 +70,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
+    phone: str | None = None
 
     role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
     groups: MyGroupsGet | None = None
@@ -141,6 +142,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
                     "last_name",
                     "email",
                     "role",
+                    "phone",
                     "privacy",
                     "expiration_date",
                 },
@@ -159,17 +161,22 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
+    phone: str | None = None
 
     privacy: MyProfilePrivacyPatch | None = None
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "first_name": "Pedro",
-                "last_name": "Crespo",
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {"first_name": "Pedro", "last_name": "Crespo"},
+                    {"phone": "+34 123 456 789"},
+                ]
             }
-        }
-    )
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     @field_validator("user_name")
     @classmethod
