@@ -1,4 +1,3 @@
-import logging
 from functools import partial
 
 from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
@@ -8,7 +7,7 @@ from celery_library.signals import (
     on_worker_shutdown,
 )
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
-from servicelib.logging_utils import config_all_loggers
+from servicelib.logging_utils import setup_loggers
 
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
@@ -16,12 +15,12 @@ from .tasks import setup_worker_tasks
 
 _settings = ApplicationSettings.create_from_envs()
 
-logging.basicConfig(level=_settings.log_level)  # NOSONAR
-logging.root.setLevel(_settings.log_level)
-config_all_loggers(
+setup_loggers(
     log_format_local_dev_enabled=_settings.NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED,
     logger_filter_mapping=_settings.NOTIFICATIONS_LOG_FILTER_MAPPING,
     tracing_settings=_settings.NOTIFICATIONS_TRACING,
+    log_base_level=_settings.log_level,
+    noisy_loggers=None,
 )
 
 
