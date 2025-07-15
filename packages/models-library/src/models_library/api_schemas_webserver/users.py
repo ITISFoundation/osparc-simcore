@@ -218,7 +218,6 @@ class MyPhoneRegister(InputSchema):
         StringConstraints(strip_whitespace=True, min_length=1),
         Field(description="Phone number to register"),
     ]
-    force: bool = False
 
 
 class MyPhoneConfirm(InputSchema):
@@ -408,4 +407,5 @@ class MyPermissionGet(OutputSchema):
 
 
 class MyFunctionPermissionsGet(OutputSchema):
+    write_functions: bool
     write_functions: bool

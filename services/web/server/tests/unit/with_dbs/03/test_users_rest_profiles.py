@@ -594,7 +594,7 @@ async def test_get_profile_with_failing_db_connection(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_get_and_update_phone_in_profile(
+async def test_phone_registration_basic_workflow(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
@@ -612,7 +612,7 @@ async def test_get_and_update_phone_in_profile(
 
     # REGISTER phone number
     new_phone = faker.phone_number()
-    url = client.app.router["register_my_phone_init"].url_for()
+    url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -622,7 +622,7 @@ async def test_get_and_update_phone_in_profile(
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
     # CONFIRM phone registration
-    url = client.app.router["register_my_phone_confirm"].url_for()
+    url = client.app.router["my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -648,18 +648,178 @@ async def test_get_and_update_phone_in_profile(
     assert updated_profile.login == initial_profile.login
     assert updated_profile.user_name == initial_profile.user_name
 
-    # REGISTER phone to None (clear it) using force=True
-    url = client.app.router["register_my_phone_init"].url_for()
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_registration_workflow(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+):
+    assert client.app
+
+    # GET initial profile
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    initial_profile = MyProfileRestGet.model_validate(data)
+    initial_phone = initial_profile.phone
+
+    # STEP 1: REGISTER phone number
+    new_phone = faker.phone_number()
+    url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
         json={
-            "phone": "",
-            "force": True,
+            "phone": new_phone,
         },
     )
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
-    # CONFIRM phone clearing
+    # STEP 2: CONFIRM phone registration
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "123456",
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # GET updated profile
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    updated_profile = MyProfileRestGet.model_validate(data)
+
+    # Verify phone was updated
+    assert updated_profile.phone == new_phone
+    assert updated_profile.phone != initial_phone
+
+    # Verify other fields remained unchanged
+    assert updated_profile.first_name == initial_profile.first_name
+    assert updated_profile.last_name == initial_profile.last_name
+    assert updated_profile.login == initial_profile.login
+    assert updated_profile.user_name == initial_profile.user_name
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_registration_with_resend(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+):
+    assert client.app
+
+    # STEP 1: REGISTER phone number
+    new_phone = faker.phone_number()
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    # STEP 2: RESEND code (optional step)
+    url = client.app.router["my_phone_resend"].url_for()
+    resp = await client.post(f"{url}")
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    # STEP 3: CONFIRM phone registration
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "123456",
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # GET updated profile
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    updated_profile = MyProfileRestGet.model_validate(data)
+
+    # Verify phone was updated
+    assert updated_profile.phone == new_phone
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_phone_registration_change_existing_phone(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+    faker: Faker,
+):
+    assert client.app
+
+    # Set initial phone
+    first_phone = faker.phone_number()
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": first_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "123456",
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Change to new phone
+    new_phone = faker.phone_number()
+    url = client.app.router["my_phone_register"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
+    url = client.app.router["my_phone_confirm"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "code": "123456",
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # GET updated profile
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    updated_profile = MyProfileRestGet.model_validate(data)
+
+    # Verify phone was updated to new phone
+    assert updated_profile.phone == new_phone
+    assert updated_profile.phone != first_phone
+    new_phone = faker.phone_number()
+    url = client.app.router["register_my_phone_init"].url_for()
+    resp = await client.post(
+        f"{url}",
+        json={
+            "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_202_ACCEPTED)
+
     url = client.app.router["register_my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
@@ -669,10 +829,13 @@ async def test_get_and_update_phone_in_profile(
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    # GET profile after clearing phone
+    # GET updated profile
     url = client.app.router["get_my_profile"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
-    cleared_profile = MyProfileRestGet.model_validate(data)
-    assert cleared_profile.phone is None
+    updated_profile = MyProfileRestGet.model_validate(data)
+
+    # Verify phone was updated to new phone
+    assert updated_profile.phone == new_phone
+    assert updated_profile.phone != first_phone

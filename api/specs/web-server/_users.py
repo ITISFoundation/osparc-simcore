@@ -52,16 +52,26 @@ async def update_my_profile(_body: MyProfileRestPatch): ...
 
 @router.post(
     "/me/phone:register",
+    description="Starts the phone registration process",
     status_code=status.HTTP_202_ACCEPTED,
 )
-async def register_my_phone_init(_body: MyPhoneRegister): ...
+async def my_phone_register(_body: MyPhoneRegister): ...
+
+
+@router.post(
+    "/me/phone:resend",
+    description="Resends the phone registration code",
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def my_phone_resend(): ...
 
 
 @router.post(
     "/me/phone:confirm",
+    description="Confirms the phone registration",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def register_my_phone_confirm(_body: MyPhoneConfirm): ...
+async def my_phone_confirm(_body: MyPhoneConfirm): ...
 
 
 @router.patch(
