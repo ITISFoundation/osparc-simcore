@@ -29,5 +29,6 @@ class StorageService:
             user_id=self._user_id,
             product_name=self._product_name,
             paths_to_export=paths_to_export,
+            export_as="download_link",
         )
         return async_job_get
