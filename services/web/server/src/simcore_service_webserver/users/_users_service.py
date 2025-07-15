@@ -285,3 +285,23 @@ async def update_my_profile(
         user_id=user_id,
         updated_values=UserModelAdapter.from_rest_schema_model(update).to_db_values(),
     )
+
+
+async def update_user_phone(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    phone: str,
+) -> None:
+    """Update user's phone number after successful verification
+
+    Args:
+        app: Web application instance
+        user_id: ID of the user whose phone to update
+        phone: Verified phone number to set
+    """
+    await _users_repository.update_user_profile(
+        app,
+        user_id=user_id,
+        updated_values={"phone": phone},
+    )

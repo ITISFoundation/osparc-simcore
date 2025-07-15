@@ -2,6 +2,7 @@ import logging
 from contextlib import suppress
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.users import (
     MyPhoneConfirm,
     MyPhoneRegister,
@@ -25,6 +26,7 @@ from ....login.decorators import login_required
 from ....products import products_web
 from ....products.models import Product
 from ....security.decorators import permission_required
+from ....session.api import get_session
 from ....utils_aiohttp import envelope_json_response
 from ... import _users_service
 from ._rest_exceptions import handle_rest_requests_exceptions
@@ -32,6 +34,11 @@ from ._rest_schemas import UsersRequestContext
 
 _logger = logging.getLogger(__name__)
 
+# Phone registration session keys
+_PHONE_REGISTRATION_KEY = "phone_registration"
+_PHONE_PENDING_KEY = "phone_pending"
+_PHONE_CODE_KEY = "phone_code"
+_PHONE_CODE_VALUE_FAKE = "123456"
 
 routes = web.RouteTableDef()
 
@@ -104,9 +111,21 @@ async def my_phone_register(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     phone_register = await parse_request_body_as(MyPhoneRegister, request)
 
-    # NOTE: Implementation will be added in next PR
-    msg = "Phone registration not yet implemented"
-    raise NotImplementedError(msg)
+    session = await get_session(request)
+
+    # Store phone registration state in session
+    session[_PHONE_REGISTRATION_KEY] = {
+        "user_id": req_ctx.user_id,
+        "phone": phone_register.phone,
+        "status": "pending_confirmation",
+    }
+
+    # NOTE: In real implementation, generate and send SMS code here
+    # For testing, we'll use a fixed code
+    session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
+    session[_PHONE_PENDING_KEY] = True
+
+    return web.json_response(status=status.HTTP_202_ACCEPTED)
 
 
 @routes.post(f"/{API_VTAG}/me/phone:resend", name="my_phone_resend")
@@ -116,10 +135,25 @@ async def my_phone_register(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def my_phone_resend(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
+    session = await get_session(request)
 
-    # NOTE: Implementation will be added in next PR
-    msg = "Phone code resend not yet implemented"
-    raise NotImplementedError(msg)
+    # Check if there's a pending phone registration
+    if not session.get(_PHONE_PENDING_KEY):
+        raise web.HTTPBadRequest(
+            text=user_message("No pending phone registration found"),
+        )
+
+    phone_registration = session.get(_PHONE_REGISTRATION_KEY)
+    if not phone_registration or phone_registration["user_id"] != req_ctx.user_id:
+        raise web.HTTPBadRequest(
+            text=user_message("Invalid phone registration session")
+        )
+
+    # NOTE: In real implementation, regenerate and resend SMS code here
+    # For testing, we'll use the same fixed code
+    session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
+
+    return web.json_response(status=status.HTTP_202_ACCEPTED)
 
 
 @routes.post(f"/{API_VTAG}/me/phone:confirm", name="my_phone_confirm")
@@ -130,10 +164,40 @@ async def my_phone_resend(request: web.Request) -> web.Response:
 async def my_phone_confirm(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     phone_confirm = await parse_request_body_as(MyPhoneConfirm, request)
+    session = await get_session(request)
 
-    # NOTE: Implementation will be added in next PR
-    msg = "Phone confirmation not yet implemented"
-    raise NotImplementedError(msg)
+    # Check if there's a pending phone registration
+    if not session.get(_PHONE_PENDING_KEY):
+        raise web.HTTPBadRequest(
+            text=user_message("No pending phone registration found"),
+        )
+
+    phone_registration = session.get(_PHONE_REGISTRATION_KEY)
+    if not phone_registration or phone_registration["user_id"] != req_ctx.user_id:
+        raise web.HTTPBadRequest(
+            text=user_message("Invalid phone registration session"),
+        )
+
+    # Verify the confirmation code
+    expected_code = session.get(_PHONE_CODE_KEY)
+    if not expected_code or phone_confirm.code != expected_code:
+        raise web.HTTPBadRequest(
+            text=user_message("Invalid confirmation code"),
+        )
+
+    # Update user's phone number in the database
+    await _users_service.update_user_phone(
+        request.app,
+        user_id=req_ctx.user_id,
+        phone=phone_registration["phone"],
+    )
+
+    # Clear session data
+    session.pop(_PHONE_REGISTRATION_KEY, None)
+    session.pop(_PHONE_PENDING_KEY, None)
+    session.pop(_PHONE_CODE_KEY, None)
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #
