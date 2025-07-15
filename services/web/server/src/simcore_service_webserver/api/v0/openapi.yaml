@@ -1208,7 +1208,7 @@ paths:
       - users
       summary: My Phone Register
       description: Starts the phone registration process
-      operationId: my_profile_phone_register
+      operationId: my_phone_register
       requestBody:
         content:
           application/json:
@@ -1227,7 +1227,7 @@ paths:
       - users
       summary: My Phone Resend
       description: Resends the phone registration code
-      operationId: my_profile_phone_resend
+      operationId: my_phone_resend
       responses:
         '202':
           description: Successful Response
@@ -1240,7 +1240,7 @@ paths:
       - users
       summary: My Phone Confirm
       description: Confirms the phone registration
-      operationId: my_profile_phone_confirm
+      operationId: my_phone_confirm
       requestBody:
         content:
           application/json:

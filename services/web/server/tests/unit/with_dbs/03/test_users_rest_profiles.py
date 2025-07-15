@@ -612,7 +612,7 @@ async def test_phone_registration_basic_workflow(
 
     # REGISTER phone number
     new_phone = faker.phone_number()
-    url = client.app.router["my_profile_phone_register"].url_for()
+    url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -622,7 +622,7 @@ async def test_phone_registration_basic_workflow(
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
     # CONFIRM phone registration
-    url = client.app.router["my_profile_phone_confirm"].url_for()
+    url = client.app.router["my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -668,7 +668,7 @@ async def test_phone_registration_workflow(
 
     # STEP 1: REGISTER phone number
     new_phone = faker.phone_number()
-    url = client.app.router["my_profile_phone_register"].url_for()
+    url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -678,7 +678,7 @@ async def test_phone_registration_workflow(
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
     # STEP 2: CONFIRM phone registration
-    url = client.app.router["my_profile_phone_confirm"].url_for()
+    url = client.app.router["my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -716,7 +716,7 @@ async def test_phone_registration_with_resend(
 
     # STEP 1: REGISTER phone number
     new_phone = faker.phone_number()
-    url = client.app.router["my_profile_phone_register"].url_for()
+    url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -726,12 +726,12 @@ async def test_phone_registration_with_resend(
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
     # STEP 2: RESEND code (optional step)
-    url = client.app.router["my_profile_phone_resend"].url_for()
+    url = client.app.router["my_phone_resend"].url_for()
     resp = await client.post(f"{url}")
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
     # STEP 3: CONFIRM phone registration
-    url = client.app.router["my_profile_phone_confirm"].url_for()
+    url = client.app.router["my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -762,7 +762,7 @@ async def test_phone_registration_change_existing_phone(
 
     # Set initial phone
     first_phone = faker.phone_number()
-    url = client.app.router["my_profile_phone_register"].url_for()
+    url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -771,7 +771,7 @@ async def test_phone_registration_change_existing_phone(
     )
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
-    url = client.app.router["my_profile_phone_confirm"].url_for()
+    url = client.app.router["my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -782,7 +782,7 @@ async def test_phone_registration_change_existing_phone(
 
     # Change to new phone
     new_phone = faker.phone_number()
-    url = client.app.router["my_profile_phone_register"].url_for()
+    url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -791,7 +791,7 @@ async def test_phone_registration_change_existing_phone(
     )
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
-    url = client.app.router["my_profile_phone_confirm"].url_for()
+    url = client.app.router["my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
         json={
@@ -820,7 +820,7 @@ async def test_phone_registration_change_existing_phone(
     )
     await assert_status(resp, status.HTTP_202_ACCEPTED)
 
-    url = client.app.router["register_my_profile_phone_confirm"].url_for()
+    url = client.app.router["register_my_phone_confirm"].url_for()
     resp = await client.post(
         f"{url}",
         json={
