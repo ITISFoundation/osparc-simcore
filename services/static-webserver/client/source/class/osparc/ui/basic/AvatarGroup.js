@@ -36,8 +36,19 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     this.__maxVisible = Math.floor(maxWidth/size) - 1; // Reserve space for the extra avatar
 
     // Hover state handling
-    this.addListener("mouseover", () => this.__expand(true), this);
-    this.addListener("mouseout", () => this.__expand(false), this);
+    this.addListener("pointerover", () => {
+      if (this.__collapseTimeout) {
+        clearTimeout(this.__collapseTimeout);
+        this.__collapseTimeout = null;
+      }
+      this.__expand(true);
+    }, this);
+
+    this.addListener("pointerout", () => {
+      this.__collapseTimeout = setTimeout(() => {
+        this.__expand(false);
+      }, 200); // short delay to avoid tooltip flicker collapse
+    }, this);
   },
 
   members: {
@@ -45,6 +56,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __maxVisible: null,
     __users: null,
     __avatars: null,
+    __collapseTimeout: null,
 
     setUsers: function(users) {
       this.__users = users;
@@ -68,12 +80,15 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         let avatar;
 
         if (user.isExtra) {
+          const bgColor = qx.theme.manager.Color.getInstance().resolve("text");
+          const textColor = qx.theme.manager.Color.getInstance().resolve("contrasted-text-dark");
           avatar = new qx.ui.basic.Label(user.name);
           avatar.set({
             width: this.__avatarSize,
             height: this.__avatarSize,
             textAlign: "center",
-            backgroundColor: "green",
+            backgroundColor: bgColor,
+            textColor: textColor,
             font: "bold",
             toolTipText: `${user.name.replace("+", "")} more`
           });
@@ -95,9 +110,10 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
           });
         }
 
+        const haloColor = qx.theme.manager.Color.getInstance().resolve("text");
         avatar.getContentElement().setStyles({
           borderRadius: "50%",
-          border: "1px solid gray",
+          border: "1px solid " + haloColor,
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
           transition: "left 0.1s ease, right 0.1s ease",
           position: "absolute"
