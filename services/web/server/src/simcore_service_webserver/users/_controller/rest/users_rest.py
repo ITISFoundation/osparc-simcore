@@ -3,6 +3,8 @@ from contextlib import suppress
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
+    MyPhoneConfirm,
+    MyPhoneRegister,
     MyProfileRestGet,
     MyProfileRestPatch,
     UserGet,
@@ -11,6 +13,9 @@ from models_library.api_schemas_webserver.users import (
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+)
+from simcore_service_webserver.application_settings_utils import (
+    requires_dev_feature_enabled,
 )
 
 from ...._meta import API_VTAG
@@ -83,6 +88,52 @@ async def update_my_profile(request: web.Request) -> web.Response:
         request.app, user_id=req_ctx.user_id, update=profile_update
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+#
+# PHONE REGISTRATION: /me/phone:*
+#
+
+
+@routes.post(f"/{API_VTAG}/me/phone:register", name="my_phone_register")
+@login_required
+@permission_required("user.profile.update")
+@requires_dev_feature_enabled
+@handle_rest_requests_exceptions
+async def my_phone_register(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    phone_register = await parse_request_body_as(MyPhoneRegister, request)
+
+    # NOTE: Implementation will be added in next PR
+    msg = "Phone registration not yet implemented"
+    raise NotImplementedError(msg)
+
+
+@routes.post(f"/{API_VTAG}/me/phone:resend", name="my_phone_resend")
+@login_required
+@permission_required("user.profile.update")
+@requires_dev_feature_enabled
+@handle_rest_requests_exceptions
+async def my_phone_resend(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+
+    # NOTE: Implementation will be added in next PR
+    msg = "Phone code resend not yet implemented"
+    raise NotImplementedError(msg)
+
+
+@routes.post(f"/{API_VTAG}/me/phone:confirm", name="my_phone_confirm")
+@login_required
+@permission_required("user.profile.update")
+@requires_dev_feature_enabled
+@handle_rest_requests_exceptions
+async def my_phone_confirm(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    phone_confirm = await parse_request_body_as(MyPhoneConfirm, request)
+
+    # NOTE: Implementation will be added in next PR
+    msg = "Phone confirmation not yet implemented"
+    raise NotImplementedError(msg)
 
 
 #
