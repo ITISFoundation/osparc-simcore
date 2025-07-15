@@ -41,70 +41,68 @@ from ._rest_schemas import UsersRequestContext
 
 _logger = logging.getLogger(__name__)
 
-# Phone registration session keys
-_PHONE_REGISTRATION_KEY = "phone_registration"
-_PHONE_PENDING_KEY = "phone_pending"
-_PHONE_CODE_KEY = "phone_code"
-_PHONE_CODE_VALUE_FAKE = (
-    "123456"  # NOTE: temporary fake while developing phone registration feature
+# Registration session keys
+_REGISTRATION_KEY = "registration"
+_REGISTRATION_PENDING_KEY = "registration_pending"
+_REGISTRATION_CODE_KEY = "registration_code"
+_REGISTRATION_CODE_VALUE_FAKE = (
+    "123456"  # NOTE: temporary fake while developing registration feature
 )
 
 
-class PhoneRegistrationData(TypedDict):
-    """Phone registration session data structure."""
+class RegistrationData(TypedDict):
+    """Registration session data structure."""
 
     user_id: UserID
-    phone: str
+    data: str
     status: Literal["pending_confirmation"]
 
 
-class PhoneRegistrationSessionManager:
+class RegistrationSessionManager:
     def __init__(self, session: Session, user_id: UserID, product_name: str):
         self._session = session
         self._user_id = user_id
         self._product_name = product_name
 
-    def start_registration(self, phone: str) -> None:
-        phone_data: PhoneRegistrationData = {
+    def start_registration(self, data: str, code: str) -> None:
+        registration_data: RegistrationData = {
             "user_id": self._user_id,
-            "phone": phone,
+            "data": data,
             "status": "pending_confirmation",
         }
-        self._session[_PHONE_REGISTRATION_KEY] = phone_data
-        self._session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
-        self._session[_PHONE_PENDING_KEY] = True
+        self._session[_REGISTRATION_KEY] = registration_data
+        self._session[_REGISTRATION_CODE_KEY] = code
+        self._session[_REGISTRATION_PENDING_KEY] = True
 
-    def validate_pending_registration(self) -> PhoneRegistrationData:
-        if not self._session.get(_PHONE_PENDING_KEY):
+    def validate_pending_registration(self) -> RegistrationData:
+        if not self._session.get(_REGISTRATION_PENDING_KEY):
             raise PhoneRegistrationPendingNotFoundError(
                 user_id=self._user_id, product_name=self._product_name
             )
 
-        phone_registration: PhoneRegistrationData | None = self._session.get(
-            _PHONE_REGISTRATION_KEY
-        )
-        if not phone_registration or phone_registration["user_id"] != self._user_id:
+        registration: RegistrationData | None = self._session.get(_REGISTRATION_KEY)
+        if not registration or registration["user_id"] != self._user_id:
             raise PhoneRegistrationSessionInvalidError(
                 user_id=self._user_id, product_name=self._product_name
             )
 
-        return phone_registration
+        return registration
 
-    def regenerate_code(self) -> None:
+    def regenerate_code(self, new_code: str) -> None:
         self.validate_pending_registration()
-        self._session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
+        self._session[_REGISTRATION_CODE_KEY] = new_code
 
     def validate_confirmation_code(self, provided_code: str) -> None:
-        expected_code = self._session.get(_PHONE_CODE_KEY)
+        expected_code = self._session.get(_REGISTRATION_CODE_KEY)
         if not expected_code or provided_code != expected_code:
             raise PhoneRegistrationCodeInvalidError(
                 user_id=self._user_id, product_name=self._product_name
             )
 
     def clear_session(self) -> None:
-        self._session.pop(_PHONE_REGISTRATION_KEY, None)
-        self._session.pop(_PHONE_PENDING_KEY, None)
-        self._session.pop(_PHONE_CODE_KEY, None)
+        self._session.pop(_REGISTRATION_KEY, None)
+        self._session.pop(_REGISTRATION_PENDING_KEY, None)
+        self._session.pop(_REGISTRATION_CODE_KEY, None)
 
 
 routes = web.RouteTableDef()
@@ -179,10 +177,12 @@ async def my_phone_register(request: web.Request) -> web.Response:
     phone_register = await parse_request_body_as(MyPhoneRegister, request)
 
     session = await get_session(request)
-    phone_session_manager = PhoneRegistrationSessionManager(
+    registration_session_manager = RegistrationSessionManager(
         session, req_ctx.user_id, req_ctx.product_name
     )
-    phone_session_manager.start_registration(phone_register.phone)
+    registration_session_manager.start_registration(
+        phone_register.phone, code=_REGISTRATION_CODE_VALUE_FAKE
+    )
 
     return web.json_response(status=status.HTTP_202_ACCEPTED)
 
@@ -196,10 +196,10 @@ async def my_phone_resend(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
 
     session = await get_session(request)
-    phone_session_manager = PhoneRegistrationSessionManager(
+    registration_session_manager = RegistrationSessionManager(
         session, req_ctx.user_id, req_ctx.product_name
     )
-    phone_session_manager.regenerate_code()
+    registration_session_manager.regenerate_code(new_code=_REGISTRATION_CODE_VALUE_FAKE)
 
     return web.json_response(status=status.HTTP_202_ACCEPTED)
 
@@ -214,20 +214,20 @@ async def my_phone_confirm(request: web.Request) -> web.Response:
     phone_confirm = await parse_request_body_as(MyPhoneConfirm, request)
 
     session = await get_session(request)
-    phone_session_manager = PhoneRegistrationSessionManager(
+    registration_session_manager = RegistrationSessionManager(
         session, req_ctx.user_id, req_ctx.product_name
     )
 
-    phone_registration = phone_session_manager.validate_pending_registration()
-    phone_session_manager.validate_confirmation_code(phone_confirm.code)
+    registration = registration_session_manager.validate_pending_registration()
+    registration_session_manager.validate_confirmation_code(phone_confirm.code)
 
     await _users_service.update_user_phone(
         request.app,
         user_id=req_ctx.user_id,
-        phone=phone_registration["phone"],
+        phone=registration["data"],
     )
 
-    phone_session_manager.clear_session()
+    registration_session_manager.clear_session()
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
