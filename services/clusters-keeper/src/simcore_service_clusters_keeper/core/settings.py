@@ -23,6 +23,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic_settings import SettingsConfigDict
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -454,8 +455,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     ]
 
     @cached_property
-    def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
-        return self.CLUSTERS_KEEPER_LOGLEVEL
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.CLUSTERS_KEEPER_LOGLEVEL)
 
     @field_validator("CLUSTERS_KEEPER_LOGLEVEL", mode="before")
     @classmethod

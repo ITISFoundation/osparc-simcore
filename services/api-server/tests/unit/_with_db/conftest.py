@@ -34,7 +34,7 @@ from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import users
 from simcore_service_api_server.clients.postgres import get_engine
-from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import PostgresSettings
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -187,7 +187,7 @@ def app(app_environment: EnvVarsDict, migrated_db: None) -> FastAPI:
     - it uses default environ as pg
     - db is started and initialized
     """
-    return init_app()
+    return create_app()
 
 
 @pytest.fixture

@@ -6,6 +6,7 @@ from common_library.basic_types import DEFAULT_FACTORY
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, VersionTag
 from pydantic import AliasChoices, ByteSize, Field, TypeAdapter, field_validator
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.efs import AwsEfsSettings
@@ -116,8 +117,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     @cached_property
-    def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
-        return self.EFS_GUARDIAN_LOGLEVEL
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.EFS_GUARDIAN_LOGLEVEL)
 
     @field_validator("EFS_GUARDIAN_LOGLEVEL", mode="before")
     @classmethod

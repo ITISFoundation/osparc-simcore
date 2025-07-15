@@ -13,7 +13,7 @@ import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from unittest.mock import Mock
 
 import httpx
@@ -30,6 +30,7 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FoldersBody,
+    PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
@@ -52,6 +53,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
     copy_folders_from_project,
@@ -514,9 +516,10 @@ async def _request_start_export_data(
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
+    export_as: Literal["path", "download_link"],
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
-) -> dict[str, Any]:
+) -> str:
     with log_context(
         logging.INFO,
         f"Data export form {paths_to_export=}",
@@ -526,6 +529,7 @@ async def _request_start_export_data(
             user_id=user_id,
             product_name=product_name,
             paths_to_export=paths_to_export,
+            export_as=export_as,
         )
 
         async for async_job_result in wait_and_get_result(
@@ -572,6 +576,10 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
     ],
     ids=str,
 )
+@pytest.mark.parametrize(
+    "export_as",
+    ["path", "download_link"],
+)
 async def test_start_export_data(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
@@ -589,6 +597,7 @@ async def test_start_export_data(
     ],
     project_params: ProjectWithFilesParams,
     task_progress_spy: Mock,
+    export_as: Literal["path", "download_link"],
 ):
     _, src_projects_list = await random_project_with_files(project_params)
 
@@ -606,18 +615,32 @@ async def test_start_export_data(
         user_id,
         product_name,
         paths_to_export=list(nodes_in_project_to_export),
+        export_as=export_as,
     )
 
-    assert re.fullmatch(
-        rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
-        result,
-    )
+    if export_as == "path":
+        assert re.fullmatch(
+            rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
+            result,
+        )
+    elif export_as == "download_link":
+        link = PresignedLink.model_validate(result).link
+        assert re.search(
+            rf"exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip",
+            f"{link}",
+        )
+    else:
+        pytest.fail(f"Unexpected export_as value: {export_as}")
 
     progress_updates = [x[0][2].actual_value for x in task_progress_spy.call_args_list]
     assert progress_updates[0] == 0
     assert progress_updates[-1] == 1
 
 
+@pytest.mark.parametrize(
+    "export_as",
+    ["path", "download_link"],
+)
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
@@ -626,6 +649,7 @@ async def test_start_export_data_access_error(
     user_id: UserID,
     product_name: ProductName,
     faker: Faker,
+    export_as: Literal["path", "download_link"],
 ):
     path_to_export = TypeAdapter(PathToExport).validate_python(
         f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
@@ -637,9 +661,35 @@ async def test_start_export_data_access_error(
             product_name,
             paths_to_export=[path_to_export],
             client_timeout=datetime.timedelta(seconds=60),
+            export_as=export_as,
         )
 
     assert isinstance(exc.value, JobError)
     assert exc.value.exc_type == "AccessRightError"
     assert f" {user_id} " in f"{exc.value}"
     assert f" {path_to_export} " in f"{exc.value}"
+
+
+async def test_start_export_invalid_export_format(
+    initialized_app: FastAPI,
+    short_dsm_cleaner_interval: int,
+    with_storage_celery_worker: TestWorkController,
+    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    user_id: UserID,
+    product_name: ProductName,
+    faker: Faker,
+):
+    path_to_export = TypeAdapter(PathToExport).validate_python(
+        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
+    )
+    with pytest.raises(RPCServerError) as exc:
+        await _request_start_export_data(
+            storage_rabbitmq_rpc_client,
+            user_id,
+            product_name,
+            paths_to_export=[path_to_export],
+            client_timeout=datetime.timedelta(seconds=60),
+            export_as="invalid_format",  # type: ignore
+        )
+
+    assert exc.value.exc_type == "builtins.ValueError"

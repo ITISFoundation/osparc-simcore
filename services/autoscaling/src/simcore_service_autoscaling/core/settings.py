@@ -17,6 +17,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic_settings import SettingsConfigDict
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
@@ -34,8 +35,7 @@ from .._meta import API_VERSION, API_VTAG, APP_NAME
 AUTOSCALING_ENV_PREFIX: Final[str] = "AUTOSCALING_"
 
 
-class AutoscalingSSMSettings(SSMSettings):
-    ...
+class AutoscalingSSMSettings(SSMSettings): ...
 
 
 class AutoscalingEC2Settings(EC2Settings):
@@ -361,8 +361,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = False
 
     @cached_property
-    def LOG_LEVEL(self):  # noqa: N802
-        return self.AUTOSCALING_LOGLEVEL
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.AUTOSCALING_LOGLEVEL)
 
     @field_validator("AUTOSCALING_LOGLEVEL", mode="before")
     @classmethod

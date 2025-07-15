@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi_lifespan_manager import LifespanManager, State
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
@@ -36,9 +37,13 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     }
 
 
-def create_app_lifespan(settings: ApplicationSettings) -> LifespanManager:
+def create_app_lifespan(
+    settings: ApplicationSettings, logging_lifespan: Lifespan | None = None
+) -> LifespanManager[FastAPI]:
     # WARNING: order matters
     app_lifespan = LifespanManager()
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
     app_lifespan.add(_settings_lifespan)
 
     # - postgres
