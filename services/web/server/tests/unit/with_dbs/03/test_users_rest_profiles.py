@@ -17,6 +17,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole
+from faker import Faker
 from models_library.api_schemas_webserver.groups import GroupUserGet
 from models_library.api_schemas_webserver.users import (
     MyProfileGet,
@@ -597,6 +598,7 @@ async def test_get_and_update_phone_in_profile(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
+    faker: Faker,
 ):
     assert client.app
 
@@ -609,7 +611,7 @@ async def test_get_and_update_phone_in_profile(
     initial_phone = initial_profile.phone
 
     # UPDATE phone number
-    new_phone = "+34 123 456 789"
+    new_phone = faker.phone_number()
     url = client.app.router["update_my_profile"].url_for()
     resp = await client.patch(
         f"{url}",
