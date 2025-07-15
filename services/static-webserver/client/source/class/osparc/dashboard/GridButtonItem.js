@@ -246,7 +246,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       label.setVisibility(value ? "visible" : "excluded");
 
       // remove this, testing purposes
-      if (this.getResourceType() === "study") {
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() && this.getResourceType() === "study") {
         const avatarGroup = this.getChildControl("avatar-group");
         const allUsers = [
           { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
