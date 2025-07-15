@@ -769,18 +769,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      let lockInUse = false;
+      let projectInUse = false;
       if ("locked" in state && "value" in state["locked"]) {
-        lockInUse = state["locked"]["value"];
+        projectInUse = state["locked"]["value"];
       }
+
       if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
-        if (lockInUse && "OPENED" === state["locked"]["status"]) {
+        if (projectInUse && "OPENED" === state["locked"]["status"]) {
           this.__showWhoIsIn(state["locked"]["owner"]);
         }
       } else {
-        this.setBlocked(lockInUse ? "IN_USE" : false);
-
-        if (lockInUse) {
+        this.setBlocked(projectInUse ? "IN_USE" : false);
+        if (projectInUse) {
           this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
         }
       }
