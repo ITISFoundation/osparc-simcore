@@ -19,6 +19,7 @@ echo "$INFO" "Workdir : $(pwd)"
 echo "$INFO" "User : $(id scu)"
 echo "$INFO" "python : $(command -v python)"
 echo "$INFO" "pip : $(command -v pip)"
+echo "$INFO" "UV : $(command -v uv)"
 
 #
 # DEVELOPMENT MODE

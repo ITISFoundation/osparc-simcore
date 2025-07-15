@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     initialize_prometheus_instrumentation,
 )
@@ -13,7 +14,10 @@ from . import events
 from .settings import ApplicationSettings
 
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(
+    settings: ApplicationSettings | None = None,
+    logging_lifespan: Lifespan | None = None,
+) -> FastAPI:
     app_settings = settings or ApplicationSettings.create_from_envs()
 
     app = FastAPI(
@@ -25,7 +29,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
             "/doc" if app_settings.DYNAMIC_SCHEDULER_SWAGGER_API_DOC_ENABLED else None
         ),
         redoc_url=None,
-        lifespan=events.create_app_lifespan(settings=app_settings),
+        lifespan=events.create_app_lifespan(
+            settings=app_settings, logging_lifespan=logging_lifespan
+        ),
     )
     override_fastapi_openapi_method(app)
 
