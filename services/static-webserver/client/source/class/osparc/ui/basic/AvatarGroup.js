@@ -35,20 +35,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     this.__orientation = orientation;
     this.__maxVisible = Math.floor(maxWidth/size) - 1; // Reserve space for the extra avatar
 
-    // Hover state handling
-    this.addListener("pointerover", () => {
-      if (this.__collapseTimeout) {
-        clearTimeout(this.__collapseTimeout);
-        this.__collapseTimeout = null;
-      }
-      this.__expand(true);
-    }, this);
-
-    this.addListener("pointerout", () => {
-      this.__collapseTimeout = setTimeout(() => {
-        this.__expand(false);
-      }, 200); // short delay to avoid tooltip flicker collapse
-    }, this);
+    document.addEventListener("pointermove", this.__onGlobalPointerMove.bind(this));
   },
 
   members: {
@@ -57,6 +44,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __users: null,
     __avatars: null,
     __collapseTimeout: null,
+    __isPointerInside: false,
 
     setUsers: function(users) {
       this.__users = users;
@@ -123,7 +111,6 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
       this.__expand(false);
     },
 
-
     __expand: function(expand = true) {
       const overlap = Math.floor(this.__avatarSize * (expand ? 0.1 : 0.7));
       this.__avatars.forEach((avatar, index) => {
@@ -134,5 +121,44 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         avatar.setZIndex(index);
       });
     },
+
+    __onGlobalPointerMove(e) {
+      const domEl = this.getContentElement().getDomElement();
+      if (!domEl) {
+        return;
+      }
+
+      const rect = domEl.getBoundingClientRect();
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+      if (inside) {
+        if (!this.__isPointerInside) {
+          this.__isPointerInside = true;
+          if (this.__collapseTimeout) {
+            clearTimeout(this.__collapseTimeout);
+            this.__collapseTimeout = null;
+          }
+          this.__expand(true);
+        }
+      } else {
+        if (this.__isPointerInside) {
+          this.__isPointerInside = false;
+          if (this.__collapseTimeout) {
+            clearTimeout(this.__collapseTimeout);
+          }
+          this.__collapseTimeout = setTimeout(() => {
+            this.__expand(false);
+          }, 200);
+        }
+      }
+    }
+  },
+
+  destruct: function() {
+    document.removeEventListener("pointermove", this.__onGlobalPointerMove.bind(this));
   },
 });
