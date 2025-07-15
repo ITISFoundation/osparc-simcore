@@ -57,6 +57,10 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return this.__isPluginDisabled(this.LICENSES);
     },
 
+    isSimultaneousAccessEnabled: function() {
+      return true;
+    },
+
     __isPluginDisabled: function(key) {
       const statics = osparc.store.Store.getInstance().get("statics");
       if (statics) {
