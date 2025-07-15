@@ -11,6 +11,9 @@ from ...exceptions import (
     AlreadyPreRegisteredError,
     MissingGroupExtraPropertiesForProductError,
     PendingPreRegistrationNotFoundError,
+    PhoneRegistrationCodeInvalidError,
+    PhoneRegistrationPendingNotFoundError,
+    PhoneRegistrationSessionInvalidError,
     UserNameDuplicateError,
     UserNotFoundError,
 )
@@ -51,6 +54,27 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         user_message(
             "This product is currently being configured and is not yet ready for use. "
             "Please try again later.",
+            _version=1,
+        ),
+    ),
+    PhoneRegistrationPendingNotFoundError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "No pending phone registration found",
+            _version=1,
+        ),
+    ),
+    PhoneRegistrationSessionInvalidError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "Invalid phone registration session",
+            _version=1,
+        ),
+    ),
+    PhoneRegistrationCodeInvalidError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "Invalid confirmation code",
             _version=1,
         ),
     ),

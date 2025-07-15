@@ -1,8 +1,8 @@
 import logging
 from contextlib import suppress
+from typing import Literal, TypedDict
 
 from aiohttp import web
-from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.users import (
     MyPhoneConfirm,
     MyPhoneRegister,
@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.users import (
     UserGet,
     UsersSearch,
 )
+from models_library.users import UserID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -29,6 +30,11 @@ from ....security.decorators import permission_required
 from ....session.api import get_session
 from ....utils_aiohttp import envelope_json_response
 from ... import _users_service
+from ...exceptions import (
+    PhoneRegistrationCodeInvalidError,
+    PhoneRegistrationPendingNotFoundError,
+    PhoneRegistrationSessionInvalidError,
+)
 from ._rest_exceptions import handle_rest_requests_exceptions
 from ._rest_schemas import UsersRequestContext
 
@@ -41,6 +47,15 @@ _PHONE_CODE_KEY = "phone_code"
 _PHONE_CODE_VALUE_FAKE = (
     "123456"  # NOTE: temporary fake while developing phone registration feature
 )
+
+
+class PhoneRegistrationData(TypedDict):
+    """Phone registration session data structure."""
+
+    user_id: UserID
+    phone: str
+    status: Literal["pending_confirmation"]
+
 
 routes = web.RouteTableDef()
 
@@ -116,11 +131,12 @@ async def my_phone_register(request: web.Request) -> web.Response:
     session = await get_session(request)
 
     # Store phone registration state in session
-    session[_PHONE_REGISTRATION_KEY] = {
+    phone_data: PhoneRegistrationData = {
         "user_id": req_ctx.user_id,
         "phone": phone_register.phone,
         "status": "pending_confirmation",
     }
+    session[_PHONE_REGISTRATION_KEY] = phone_data
 
     # NOTE: In real implementation, generate and send SMS code here
     # For testing, we'll use a fixed code
@@ -141,14 +157,14 @@ async def my_phone_resend(request: web.Request) -> web.Response:
 
     # Check if there's a pending phone registration
     if not session.get(_PHONE_PENDING_KEY):
-        raise web.HTTPBadRequest(
-            text=user_message("No pending phone registration found"),
-        )
+        raise PhoneRegistrationPendingNotFoundError()
 
-    phone_registration = session.get(_PHONE_REGISTRATION_KEY)
+    phone_registration: PhoneRegistrationData | None = session.get(
+        _PHONE_REGISTRATION_KEY
+    )
     if not phone_registration or phone_registration["user_id"] != req_ctx.user_id:
-        raise web.HTTPBadRequest(
-            text=user_message("Invalid phone registration session")
+        raise PhoneRegistrationSessionInvalidError(
+            user_id=req_ctx.user_id, product_name=req_ctx.product_name
         )
 
     # NOTE: In real implementation, regenerate and resend SMS code here
@@ -170,21 +186,23 @@ async def my_phone_confirm(request: web.Request) -> web.Response:
 
     # Check if there's a pending phone registration
     if not session.get(_PHONE_PENDING_KEY):
-        raise web.HTTPBadRequest(
-            text=user_message("No pending phone registration found"),
+        raise PhoneRegistrationPendingNotFoundError(
+            user_id=req_ctx.user_id, product_name=req_ctx.product_name
         )
 
-    phone_registration = session.get(_PHONE_REGISTRATION_KEY)
+    phone_registration: PhoneRegistrationData | None = session.get(
+        _PHONE_REGISTRATION_KEY
+    )
     if not phone_registration or phone_registration["user_id"] != req_ctx.user_id:
-        raise web.HTTPBadRequest(
-            text=user_message("Invalid phone registration session"),
+        raise PhoneRegistrationSessionInvalidError(
+            user_id=req_ctx.user_id, product_name=req_ctx.product_name
         )
 
     # Verify the confirmation code
     expected_code = session.get(_PHONE_CODE_KEY)
     if not expected_code or phone_confirm.code != expected_code:
-        raise web.HTTPBadRequest(
-            text=user_message("Invalid confirmation code"),
+        raise PhoneRegistrationCodeInvalidError(
+            user_id=req_ctx.user_id, product_name=req_ctx.product_name
         )
 
     # Update user's phone number in the database
