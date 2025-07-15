@@ -886,6 +886,8 @@ async def test_export_logs(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function: RegisteredProjectFunction,
     mock_registered_function_job: RegisteredFunctionJob,
+    mocked_directorv2_rpc_api: dict[str, MockType],
+    mocked_storage_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     user_id: UserID,
 ):
@@ -897,6 +899,8 @@ async def test_export_logs(
     )
 
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/logs",
+        f"{API_VTAG}/function_jobs/{mock_registered_function_job.uid}/log",
         auth=auth,
     )
+
+    assert response.status_code == status.HTTP_200_OK

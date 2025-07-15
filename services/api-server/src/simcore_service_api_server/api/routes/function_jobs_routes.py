@@ -303,7 +303,7 @@ async def function_job_outputs(
 
 
 @function_job_router.post(
-    "/{function_job_id:uuid}/logs",
+    "/{function_job_id:uuid}/log",
     response_model=TaskGet,
     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
 )

@@ -6,7 +6,7 @@ from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
+from servicelib.rabbitmq.rpc_interfaces.storage import simcore_s3 as storage_rpc
 
 from ..exceptions.service_errors_utils import service_exception_mapper
 
@@ -24,7 +24,7 @@ class StorageService:
         self,
         paths_to_export: list[PathToExport],
     ) -> AsyncJobGet:
-        async_job_get, _ = await start_export_data(
+        async_job_get, _ = await storage_rpc.start_export_data(
             self._rpc_client,
             user_id=self._user_id,
             product_name=self._product_name,
