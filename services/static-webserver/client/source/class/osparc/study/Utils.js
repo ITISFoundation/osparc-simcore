@@ -407,11 +407,14 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
-        return "IN_USE";
-      }
       if (this.isInDebt(studyData)) {
         return "IN_DEBT";
+      }
+      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
+        if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+          return false;
+        }
+        return "IN_USE";
       }
       return false;
     },
