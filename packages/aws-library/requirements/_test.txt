@@ -176,13 +176,13 @@ py-partiql-parser==0.6.1
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
     #   fastapi
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -315,6 +315,11 @@ typing-extensions==4.14.1
     #   types-aioboto3
     #   types-aiobotocore
     #   types-boto3
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 tzdata==2025.1
     # via faker
 urllib3==2.5.0
