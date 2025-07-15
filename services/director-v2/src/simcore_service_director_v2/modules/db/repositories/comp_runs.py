@@ -458,13 +458,13 @@ class CompRunsRepository(BaseRepository):
             & (comp_runs.c.metadata["product_name"].astext == product_name)
         )
 
-        if project_ids_or_none:
+        if project_ids_or_none is not None:
             base_select_query = base_select_query.where(
                 comp_runs.c.project_uuid.in_(
                     [f"{project_id}" for project_id in project_ids_or_none]
                 )
             )
-        if collection_run_ids_or_none:
+        if collection_run_ids_or_none is not None:
             base_select_query = base_select_query.where(
                 comp_runs.c.collection_run_id.in_(
                     [

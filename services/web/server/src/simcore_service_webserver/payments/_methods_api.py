@@ -20,7 +20,7 @@ from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.payments_methods import InitPromptAckFlowState
 from yarl import URL
 
-from ..users.api import get_user_display_and_id_names
+from ..users import users_service
 from ..wallets.api import get_wallet_by_user
 from . import _rpc
 from ._autorecharge_db import get_wallet_autorecharge
@@ -278,7 +278,7 @@ async def init_creation_of_wallet_payment_method(
     )
     assert user_wallet.wallet_id == wallet_id  # nosec
 
-    user = await get_user_display_and_id_names(app, user_id=user_id)
+    user = await users_service.get_user_display_and_id_names(app, user_id=user_id)
     return await _rpc.init_creation_of_payment_method(
         app,
         wallet_id=wallet_id,

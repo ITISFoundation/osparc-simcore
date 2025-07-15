@@ -686,7 +686,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
 rich==14.0.0
     # via
@@ -814,7 +814,7 @@ typing-extensions==4.14.1
     #   typing-inspection
 typing-inspection==0.4.0
     # via pydantic
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

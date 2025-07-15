@@ -1,5 +1,4 @@
-""" Implements `tags` plugin **service layer**
-"""
+"""Implements `tags` plugin **service layer**"""
 
 from aiohttp import web
 from common_library.groups_dicts import AccessRightsDict
@@ -12,7 +11,7 @@ from simcore_postgres_database.utils_tags import TagAccessRightsDict, TagsRepo
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..products import products_service
-from ..users.api import get_user_role
+from ..users import users_service
 from .errors import (
     InsufficientTagShareAccessError,
     ShareTagWithEveryoneNotAllowedError,
@@ -94,7 +93,9 @@ async def _validate_tag_sharing_permissions(
         )
 
     if _is_product_group(app, group_id=group_id):
-        user_role: UserRole = await get_user_role(app, user_id=caller_user_id)
+        user_role: UserRole = await users_service.get_user_role(
+            app, user_id=caller_user_id
+        )
         if user_role < UserRole.TESTER:
             raise ShareTagWithProductGroupNotAllowedError(
                 user_id=caller_user_id,

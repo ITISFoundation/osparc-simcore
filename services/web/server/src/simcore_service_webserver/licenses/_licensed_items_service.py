@@ -31,7 +31,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..resource_usage.service import get_pricing_plan, get_pricing_plan_unit
-from ..users.api import get_user
+from ..users import users_service
 from ..wallets.api import get_wallet_with_available_credits_by_user_and_wallet
 from ..wallets.errors import WalletNotEnoughCreditsError
 from . import _licensed_items_repository
@@ -137,7 +137,7 @@ async def purchase_licensed_item(
             reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
         )
 
-    user = await get_user(app, user_id=user_id)
+    user = await users_service.get_user(app, user_id=user_id)
 
     _data = LicensedItemsPurchasesCreate(
         product_name=product_name,

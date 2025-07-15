@@ -30,12 +30,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       case "template":
       case "tutorial":
       case "hypertool": {
-        const params = {
-          url: {
-            "studyId": resourceData["uuid"]
-          }
-        };
-        latestPromise = osparc.data.Resources.fetch("studies", "getOne", params);
+        latestPromise = osparc.store.Study.getInstance().getOne(resourceData["uuid"]);
         break;
       }
       case "function": {
@@ -65,8 +60,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "function":
             // when getting the latest study data, the debt information was lost
             if (osparc.study.Utils.isInDebt(this.__resourceData)) {
-              const mainStore = osparc.store.Store.getInstance();
-              this.__resourceData["debt"] = mainStore.getStudyDebt(this.__resourceData["uuid"]);
+              const studyStore = osparc.store.Study.getInstance();
+              this.__resourceData["debt"] = studyStore.getStudyDebt(this.__resourceData["uuid"]);
             }
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
@@ -231,13 +226,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       }
       openButton.setFetching(true);
-      const params = {
-        url: {
-          "studyId": this.__resourceData["uuid"]
-        }
-      };
       Promise.all([
-        osparc.data.Resources.fetch("studies", "getOne", params),
+        osparc.store.Study.getInstance().getOne(this.__resourceData["uuid"]),
         osparc.store.Services.getStudyServices(this.__resourceData["uuid"]),
       ])
         .then(values => {

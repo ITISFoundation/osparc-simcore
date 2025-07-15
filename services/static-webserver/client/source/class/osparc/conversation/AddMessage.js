@@ -193,7 +193,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             const newCollaborators = {
               [userGid]: osparc.data.Roles.STUDY["write"].accessRights
             };
-            osparc.store.Study.addCollaborators(this.__studyData, newCollaborators)
+            osparc.store.Study.getInstance().addCollaborators(this.__studyData, newCollaborators)
               .then(() => {
                 this.__addNotify(userGid);
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()

@@ -813,7 +813,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
 rich==13.9.4
     # via
@@ -962,7 +962,7 @@ typing-inspection==0.4.0
     # via pydantic
 tzdata==2025.2
     # via kombu
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
