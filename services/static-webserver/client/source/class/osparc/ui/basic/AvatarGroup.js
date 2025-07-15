@@ -76,6 +76,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
           transition: "margin 0.3s ease",
         });
 
+        avatar.setZIndex(index);
         this.__avatars.push(avatar);
         this._add(avatar);
       });
@@ -93,23 +94,29 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         });
 
         label.getContentElement().setStyles({
-          lineHeight: this.__avatarSize + "px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          fontWeight: "bold",
+          fontSize: "0.8em",
           borderRadius: "50%",
           border: "1px solid gray",
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
           marginLeft: overlapPx,
-          transition: "margin 0.3s ease",
+          transition: "margin 0.3s ease"
         });
 
+        label.setZIndex(usersToShow.length);
         this.__avatars.push(label);
         this._add(label);
       }
     },
 
     __expand() {
-      this.__avatars.forEach(avatar => {
+      const count = this.__avatars.length;
+      this.__avatars.forEach((avatar, index) => {
         avatar.getContentElement().setStyle("marginLeft", "8px");
-        avatar.setZIndex(10);
+        avatar.setZIndex(count - index);
       });
     },
 
