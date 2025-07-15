@@ -30,13 +30,14 @@ from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FoldersBody,
+    PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.basic_types import SHA256Str
 from models_library.products import ProductName
 from models_library.projects_nodes_io import NodeID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
-from pydantic import ByteSize, HttpUrl, TypeAdapter
+from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
@@ -623,10 +624,10 @@ async def test_start_export_data(
             result,
         )
     elif export_as == "download_link":
-        _ = HttpUrl(result)
+        link = PresignedLink.model_validate(result).link
         assert re.search(
             rf"exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip",
-            result,
+            f"{link}",
         )
     else:
         pytest.fail(f"Unexpected export_as value: {export_as}")

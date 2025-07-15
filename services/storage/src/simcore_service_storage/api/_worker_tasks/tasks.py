@@ -7,6 +7,7 @@ from models_library.api_schemas_storage.export_data_async_jobs import AccessRigh
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
     FoldersBody,
+    PresignedLink,
 )
 from servicelib.logging_utils import log_context
 
@@ -24,7 +25,9 @@ _logger = logging.getLogger(__name__)
 
 def setup_worker_tasks(app: Celery) -> None:
     register_celery_types()
-    register_pydantic_types(FileUploadCompletionBody, FileMetaData, FoldersBody)
+    register_pydantic_types(
+        FileUploadCompletionBody, FileMetaData, FoldersBody, PresignedLink
+    )
 
     with log_context(_logger, logging.INFO, msg="worker task registration"):
         register_task(app, export_data, dont_autoretry_for=(AccessRightError,))

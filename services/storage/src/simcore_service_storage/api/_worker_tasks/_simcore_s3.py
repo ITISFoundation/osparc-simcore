@@ -5,7 +5,11 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
-from models_library.api_schemas_storage.storage_schemas import FoldersBody, LinkType
+from models_library.api_schemas_storage.storage_schemas import (
+    FoldersBody,
+    LinkType,
+    PresignedLink,
+)
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
@@ -108,7 +112,7 @@ async def export_data_as_download_link(
     *,
     user_id: UserID,
     paths_to_export: list[PathToExport],
-) -> str:
+) -> PresignedLink:
     """
     AccessRightError: in case user can't access project
     """
@@ -123,4 +127,4 @@ async def export_data_as_download_link(
     download_link = await dsm.create_file_download_link(
         user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
     )
-    return f"{download_link}"
+    return PresignedLink(link=download_link)
