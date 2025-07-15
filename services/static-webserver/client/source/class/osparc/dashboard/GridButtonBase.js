@@ -61,12 +61,16 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         rowSpan: 1,
         colSpan: 4
       },
-      TAGS: {
+      AVATAR_GROUP: {
         row: 3,
         column: 0
       },
-      FOOTER: {
+      TAGS: {
         row: 4,
+        column: 0
+      },
+      FOOTER: {
+        row: 5,
         column: 0,
         rowSpan: 1,
         colSpan: 4
