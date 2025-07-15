@@ -18,6 +18,6 @@ def run():
     """Runs application"""
     typer.secho("Sorry, this entrypoint is intentionally disabled. Use instead")
     typer.secho(
-        "$ uvicorn simcore_service_api_server.main:the_app",
+        "$ uvicorn --factory simcore_service_api_server.main:app_factory",
         fg=typer.colors.BLUE,
     )

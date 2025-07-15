@@ -22,7 +22,7 @@ from models_library.clusters import (
 )
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.application import create_app
 from simcore_service_director_v2.core.errors import (
     ConfigurationError,
     DaskClientAcquisisitonError,
@@ -54,7 +54,7 @@ def test_dask_clients_pool_missing_raises_configuration_error(
 ):
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     settings = AppSettings.create_from_envs()
-    app = init_app(settings)
+    app = create_app(settings)
 
     with TestClient(app, raise_server_exceptions=True):  # noqa: SIM117
         with pytest.raises(ConfigurationError):
@@ -70,7 +70,7 @@ def test_dask_clients_pool_properly_setup_and_deleted(
     )
     mocked_dask_clients_pool.create.return_value = mocked_dask_clients_pool
     settings = AppSettings.create_from_envs()
-    app = init_app(settings)
+    app = create_app(settings)
 
     with TestClient(app, raise_server_exceptions=True):
         mocked_dask_clients_pool.create.assert_called_once()

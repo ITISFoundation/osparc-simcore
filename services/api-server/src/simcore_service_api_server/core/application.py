@@ -1,5 +1,6 @@
 import logging
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from fastapi_pagination import add_pagination
 from models_library.basic_types import BootModeEnum
@@ -9,7 +10,6 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
-from servicelib.logging_utils import config_all_loggers
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -48,19 +48,14 @@ def _label_title_and_version(settings: ApplicationSettings, title: str, version:
     return title, version
 
 
-def init_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
+        _logger.info(
+            "Application settings: %s",
+            json_dumps(settings, indent=2, sort_keys=True),
+        )
     assert settings  # nosec
-
-    logging.basicConfig(level=settings.log_level)
-    logging.root.setLevel(settings.log_level)
-    config_all_loggers(
-        log_format_local_dev_enabled=settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=settings.API_SERVER_LOG_FILTER_MAPPING,
-        tracing_settings=settings.API_SERVER_TRACING,
-    )
-    _logger.debug("App settings:\n%s", settings.model_dump_json(indent=2))
 
     # Labeling
     title = "osparc.io public API"
