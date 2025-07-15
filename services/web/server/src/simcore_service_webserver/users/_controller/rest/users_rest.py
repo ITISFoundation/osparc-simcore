@@ -95,12 +95,12 @@ async def update_my_profile(request: web.Request) -> web.Response:
 #
 
 
-@routes.post(f"/{API_VTAG}/me/phone:register", name="my_phone_register")
+@routes.post(f"/{API_VTAG}/me/phone:register", name="my_profile_phone_register")
 @login_required
 @permission_required("user.profile.update")
 @requires_dev_feature_enabled
 @handle_rest_requests_exceptions
-async def my_phone_register(request: web.Request) -> web.Response:
+async def my_profile_phone_register(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     phone_register = await parse_request_body_as(MyPhoneRegister, request)
 
@@ -109,12 +109,12 @@ async def my_phone_register(request: web.Request) -> web.Response:
     raise NotImplementedError(msg)
 
 
-@routes.post(f"/{API_VTAG}/me/phone:resend", name="my_phone_resend")
+@routes.post(f"/{API_VTAG}/me/phone:resend", name="my_profile_phone_resend")
 @login_required
 @permission_required("user.profile.update")
 @requires_dev_feature_enabled
 @handle_rest_requests_exceptions
-async def my_phone_resend(request: web.Request) -> web.Response:
+async def my_profile_phone_resend(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
 
     # NOTE: Implementation will be added in next PR
@@ -122,12 +122,12 @@ async def my_phone_resend(request: web.Request) -> web.Response:
     raise NotImplementedError(msg)
 
 
-@routes.post(f"/{API_VTAG}/me/phone:confirm", name="my_phone_confirm")
+@routes.post(f"/{API_VTAG}/me/phone:confirm", name="my_profile_phone_confirm")
 @login_required
 @permission_required("user.profile.update")
 @requires_dev_feature_enabled
 @handle_rest_requests_exceptions
-async def my_phone_confirm(request: web.Request) -> web.Response:
+async def my_profile_phone_confirm(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     phone_confirm = await parse_request_body_as(MyPhoneConfirm, request)
 
