@@ -4,6 +4,7 @@ from typing import Final
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
+from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
@@ -22,7 +23,11 @@ from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings
 
 _LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS: Final[tuple[str]] = ("werkzeug",)
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
+    "httpcore",
+    "httpx",
+    "werkzeug",
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -69,6 +74,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         initialize_fastapi_app_tracing(app)
 
     # ERROR HANDLERS
+    set_app_default_http_error_handlers(app)
 
     # EVENTS
     async def _on_startup() -> None:

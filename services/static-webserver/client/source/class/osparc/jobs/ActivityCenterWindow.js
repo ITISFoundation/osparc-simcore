@@ -59,8 +59,8 @@ qx.Class.define("osparc.jobs.ActivityCenterWindow", {
 
       runsBrowser.addListener("runSelected", e => {
         const data = e.getData();
-        const project = data["rowData"];
-        subRunsBrowser.setProject(project);
+        const collectionRunData = data["rowData"];
+        subRunsBrowser.setCollectionRun(collectionRunData);
         this.getChildControl("title").setValue(this.tr("Tasks"));
         stack.setSelection([subRunsBrowser]);
       });

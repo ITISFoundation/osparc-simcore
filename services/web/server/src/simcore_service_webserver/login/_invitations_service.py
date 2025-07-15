@@ -41,15 +41,15 @@ from ..invitations.errors import (
 )
 from ..products.models import Product
 from . import _confirmation_service
-from ._constants import (
-    MSG_EMAIL_ALREADY_REGISTERED,
-    MSG_INVITATIONS_CONTACT_SUFFIX,
-    MSG_USER_DISABLED,
-)
 from ._login_repository_legacy import (
     AsyncpgStorage,
     BaseConfirmationTokenDict,
     ConfirmationTokenDict,
+)
+from .constants import (
+    MSG_EMAIL_ALREADY_REGISTERED,
+    MSG_INVITATIONS_CONTACT_SUFFIX,
+    MSG_USER_DISABLED,
 )
 from .settings import LoginOptions
 

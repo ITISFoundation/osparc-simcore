@@ -32,6 +32,7 @@ from dask_task_models_library.container_tasks.io import TaskOutputData
 from dask_task_models_library.container_tasks.protocol import TaskOwner
 from faker import Faker
 from fastapi.applications import FastAPI
+from models_library.computations import CollectionRunID
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -164,6 +165,7 @@ async def _assert_start_pipeline(
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    collection_run_id: CollectionRunID,
 ) -> tuple[CompRunsAtDB, list[CompTaskAtDB]]:
     exp_published_tasks = deepcopy(published_project.tasks)
     assert published_project.project.prj_owner
@@ -173,6 +175,7 @@ async def _assert_start_pipeline(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=collection_run_id,
     )
 
     # check the database is correctly updated, the run is published
@@ -472,6 +475,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
+    fake_collection_run_id: CollectionRunID,
 ):
     with_disabled_auto_scheduling.assert_called_once()
     _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
@@ -485,6 +489,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         published_project=published_project,
         run_metadata=run_metadata,
         computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
     )
     with_disabled_scheduler_publisher.assert_called()
 
@@ -965,6 +970,7 @@ async def with_started_project(
     instrumentation_rabbit_client_parser: mock.AsyncMock,
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ) -> RunningProject:
     with_disabled_auto_scheduling.assert_called_once()
@@ -978,6 +984,7 @@ async def with_started_project(
         published_project=published_project,
         run_metadata=run_metadata,
         computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
     )
     with_disabled_scheduler_publisher.assert_called_once()
 
@@ -1211,6 +1218,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     sqlalchemy_async_engine: AsyncEngine,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
     with_product: dict[str, Any],
 ):
     """A pipeline which comp_tasks are missing should not be scheduled.
@@ -1234,6 +1242,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
         project_id=sleepers_project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
     with_disabled_scheduler_publisher.assert_called_once()
     # we shall have a a new comp_runs row with the new pipeline job
@@ -1286,6 +1295,7 @@ async def test_task_progress_triggers(
     mocked_clean_task_output_and_log_files_if_invalid: mock.Mock,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
 ):
     _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     _run_in_db, expected_published_tasks = await _assert_start_pipeline(
@@ -1294,6 +1304,7 @@ async def test_task_progress_triggers(
         published_project=published_project,
         run_metadata=run_metadata,
         computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
     )
 
     # -------------------------------------------------------------------------------
@@ -1361,6 +1372,7 @@ async def test_handling_of_disconnected_scheduler_dask(
     backend_error: ComputationalSchedulerError,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
@@ -1377,6 +1389,7 @@ async def test_handling_of_disconnected_scheduler_dask(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
     await _assert_message_received(
         computational_pipeline_rabbit_client_parser,
@@ -1805,6 +1818,7 @@ async def test_running_pipeline_triggers_heartbeat(
     resource_tracking_rabbit_client_parser: mock.AsyncMock,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
 ):
     _with_mock_send_computation_tasks(published_project.tasks, mocked_dask_client)
     run_in_db, expected_published_tasks = await _assert_start_pipeline(
@@ -1813,6 +1827,7 @@ async def test_running_pipeline_triggers_heartbeat(
         published_project=published_project,
         run_metadata=run_metadata,
         computational_pipeline_rabbit_client_parser=computational_pipeline_rabbit_client_parser,
+        collection_run_id=fake_collection_run_id,
     )
     # -------------------------------------------------------------------------------
     # 1. first run will move comp_tasks to PENDING so the dask-worker can take them
@@ -1922,6 +1937,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     mocked_get_or_create_cluster: mock.Mock,
     faker: Faker,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
 ):
     mocked_get_or_create_cluster.side_effect = (
         ComputationalBackendOnDemandNotReadyError(
@@ -1936,6 +1952,7 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=True,
+        collection_run_id=fake_collection_run_id,
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first
@@ -2042,6 +2059,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
     mocked_get_or_create_cluster: mock.Mock,
     get_or_create_exception: Exception,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
 ):
     # needs to change: https://github.com/ITISFoundation/osparc-simcore/issues/6817
 
@@ -2054,6 +2072,7 @@ async def test_pipeline_with_on_demand_cluster_with_no_clusters_keeper_fails(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=True,
+        collection_run_id=fake_collection_run_id,
     )
 
     # we ask to use an on-demand cluster, therefore the tasks are published first
@@ -2155,6 +2174,7 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
     published_project: PublishedProject,
     run_metadata: RunMetadataDict,
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
+    fake_collection_run_id: CollectionRunID,
 ):
     # Ensure we start with an empty database
     await assert_comp_runs_empty(sqlalchemy_async_engine)
@@ -2167,6 +2187,7 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
 
     # Verify first run was created and published
@@ -2195,6 +2216,7 @@ async def test_run_new_pipeline_called_twice_prevents_duplicate_runs(
         project_id=published_project.project.uuid,
         run_metadata=run_metadata,
         use_on_demand_clusters=False,
+        collection_run_id=fake_collection_run_id,
     )
 
     # Verify still only one run exists with same run_id

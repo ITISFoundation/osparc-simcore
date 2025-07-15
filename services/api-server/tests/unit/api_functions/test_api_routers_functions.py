@@ -879,3 +879,17 @@ async def test_map_function_parent_info(
     if expected_status_code == status.HTTP_200_OK:
         assert side_effect_checks["headers_checked"] == True
     assert response.status_code == expected_status_code
+
+
+async def test_export_logs(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_function_job: RegisteredFunctionJob,
+    auth: httpx.BasicAuth,
+    user_id: UserID,
+):
+    response = await client.post(
+        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/export_logs",
+        auth=auth,
+    )

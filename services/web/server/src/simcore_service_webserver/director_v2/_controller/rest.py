@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from aiohttp import web
@@ -25,10 +27,14 @@ from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...products import products_web
+from ...projects.projects_metadata_service import (
+    get_project_custom_metadata_or_empty_dict,
+)
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
-from .. import _director_v2_service
+from .. import _comp_runs_collections_service, _director_v2_service
 from .._client import DirectorV2RestClient
+from .._comp_runs_collections_models import CompRunCollectionDBGet
 from .._director_v2_abc_service import get_project_run_policy
 from ._rest_exceptions import handle_rest_requests_exceptions
 
@@ -72,6 +78,46 @@ async def start_computation(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
     )
 
+    # Get Project custom metadata information
+    # inject the collection_id to the options
+    custom_metadata = await get_project_custom_metadata_or_empty_dict(
+        request.app, project_uuid=path_params.project_id
+    )
+    group_id_or_none = custom_metadata.get("group_id")
+
+    comp_run_collection: CompRunCollectionDBGet | None = None
+    if group_id_or_none:
+        comp_run_collection = await _comp_runs_collections_service.get_comp_run_collection_or_none_by_client_generated_id(
+            request.app, client_or_system_generated_id=str(group_id_or_none)
+        )
+    if comp_run_collection is not None:
+        created_at: datetime = comp_run_collection.created
+        now = datetime.now(UTC)
+        if now - created_at > timedelta(minutes=5):
+            raise web.HTTPBadRequest(
+                reason=(
+                    "This client generated collection is not new, "
+                    "it was created more than 5 minutes ago. "
+                    "Therefore, the client is probably wrongly generating it."
+                )
+            )
+    is_generated_by_system = False
+    if group_id_or_none in {None, "", "00000000-0000-0000-0000-000000000000"}:
+        is_generated_by_system = True
+        client_or_system_generated_id = (
+            f"system-generated/{path_params.project_id}/{uuid.uuid4()}"
+        )
+    else:
+        client_or_system_generated_id = f"{group_id_or_none}"
+    group_name = custom_metadata.get("group_name", "No Group Name")
+
+    collection_run_id = await _comp_runs_collections_service.upsert_comp_run_collection(
+        request.app,
+        client_or_system_generated_id=client_or_system_generated_id,
+        client_or_system_generated_display_name=str(group_name),
+        is_generated_by_system=is_generated_by_system,
+    )
+
     options = {
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable
@@ -79,6 +125,7 @@ async def start_computation(request: web.Request) -> web.Response:
         "simcore_user_agent": simcore_user_agent,
         "use_on_demand_clusters": group_properties.use_on_demand_clusters,
         "wallet_info": wallet_info,
+        "collection_run_id": collection_run_id,
     }
 
     run_policy = get_project_run_policy(request.app)

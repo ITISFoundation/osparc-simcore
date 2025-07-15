@@ -19,10 +19,10 @@
 qx.Class.define("osparc.jobs.SubRunsTable", {
   extend: qx.ui.table.Table,
 
-  construct: function(projectUuid) {
+  construct: function(collectionRunId) {
     this.base(arguments);
 
-    const model = new osparc.jobs.SubRunsTableModel(projectUuid);
+    const model = new osparc.jobs.SubRunsTableModel(collectionRunId);
     this.setTableModel(model);
 
     this.set({
@@ -32,7 +32,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
     });
 
     const columnModel = this.getTableColumnModel();
-    columnModel.setColumnVisible(this.self().COLS.PROJECT_UUID.column, false);
+    columnModel.setColumnVisible(this.self().COLS.COLLECTION_RUN_ID.column, false);
     columnModel.setColumnVisible(this.self().COLS.NODE_ID.column, false);
 
     Object.values(this.self().COLS).forEach(col => columnModel.setColumnWidth(col.column, col.width));
@@ -50,10 +50,10 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
 
   statics: {
     COLS: {
-      PROJECT_UUID: {
-        id: "projectUuid",
+      COLLECTION_RUN_ID: {
+        id: "collectionRunId",
         column: 0,
-        label: qx.locale.Manager.tr("Project Id"),
+        label: qx.locale.Manager.tr("Collection Run Id"),
         width: 200
       },
       NODE_ID: {
@@ -62,10 +62,10 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
         label: qx.locale.Manager.tr("Node Id"),
         width: 200
       },
-      NODE_NAME: {
-        id: "nodeName",
+      NAME: {
+        id: "name",
         column: 2,
-        label: qx.locale.Manager.tr("Node"),
+        label: qx.locale.Manager.tr("Name"),
         width: 100
       },
       APP: {
@@ -152,7 +152,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
       const rowData = this.getTableModel().getRowData(row);
       switch (action) {
         case "info": {
-          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["collectionRunId"]);
           if (!job) {
             return;
           }
@@ -162,11 +162,11 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           }
           const jobInfo = new osparc.jobs.Info(subJob.getImage());
           const win = osparc.jobs.Info.popUpInWindow(jobInfo);
-          win.setCaption(rowData["nodeName"]);
+          win.setCaption(rowData["name"]);
           break;
         }
         case "logs": {
-          const job = osparc.store.Jobs.getInstance().getJob(rowData["projectUuid"]);
+          const job = osparc.store.Jobs.getInstance().getJob(rowData["collectionRunId"]);
           if (!job) {
             return;
           }
@@ -176,7 +176,7 @@ qx.Class.define("osparc.jobs.SubRunsTable", {
           }
           const logDownloadLink = subJob.getLogDownloadLink()
           if (logDownloadLink) {
-            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["nodeName"] + ".zip");
+            osparc.utils.Utils.downloadLink(logDownloadLink, "GET", rowData["name"] + ".zip");
           } else {
             osparc.FlashMessenger.logAs(this.tr("No logs available"), "WARNING");
           }

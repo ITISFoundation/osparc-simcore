@@ -3,8 +3,8 @@ from operator import itemgetter
 from typing import Final
 
 from aws_library.ec2 import AWS_TAG_VALUE_MAX_LENGTH, AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2._models import EC2InstanceBootSpecific
 from common_library.json_serialization import json_dumps
-from fastapi import FastAPI
 from models_library.docker import DockerGenericTag
 from pydantic import TypeAdapter
 
@@ -15,30 +15,25 @@ from ..constants import (
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
     PRE_PULLED_IMAGES_RE,
 )
-from ..modules.auto_scaling_mode_base import BaseAutoscaling
+from ..core.settings import ApplicationSettings
+from . import utils_docker
 
 _NAME_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
-def get_activated_buffer_ec2_tags(
-    app: FastAPI, auto_scaling_mode: BaseAutoscaling
-) -> EC2Tags:
-    return auto_scaling_mode.get_ec2_tags(app) | ACTIVATED_BUFFER_MACHINE_EC2_TAGS
+def get_activated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
+    return base_ec2_tags | ACTIVATED_BUFFER_MACHINE_EC2_TAGS
 
 
-def get_deactivated_buffer_ec2_tags(
-    app: FastAPI, auto_scaling_mode: BaseAutoscaling
-) -> EC2Tags:
-    base_ec2_tags = (
-        auto_scaling_mode.get_ec2_tags(app) | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
+def get_deactivated_warm_buffer_ec2_tags(base_ec2_tags: EC2Tags) -> EC2Tags:
+    new_base_ec2_tags = base_ec2_tags | DEACTIVATED_BUFFER_MACHINE_EC2_TAGS
+    new_base_ec2_tags[_NAME_EC2_TAG_KEY] = TypeAdapter(AWSTagValue).validate_python(
+        f"{new_base_ec2_tags[_NAME_EC2_TAG_KEY]}-buffer"
     )
-    base_ec2_tags[_NAME_EC2_TAG_KEY] = AWSTagValue(
-        f"{base_ec2_tags[_NAME_EC2_TAG_KEY]}-buffer"
-    )
-    return base_ec2_tags
+    return new_base_ec2_tags
 
 
-def is_buffer_machine(tags: EC2Tags) -> bool:
+def is_warm_buffer_machine(tags: EC2Tags) -> bool:
     return bool(BUFFER_MACHINE_TAG_KEY in tags)
 
 
@@ -93,3 +88,22 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     if assembled_json:
         return TypeAdapter(list[DockerGenericTag]).validate_json(assembled_json)
     return []
+
+
+def ec2_warm_buffer_startup_script(
+    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
+) -> str:
+    startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
+    if ec2_boot_specific.pre_pull_images:
+        assert app_settings.AUTOSCALING_REGISTRY  # nosec
+        startup_commands.extend(
+            (
+                utils_docker.get_docker_login_on_start_bash_command(
+                    app_settings.AUTOSCALING_REGISTRY
+                ),
+                utils_docker.write_compose_file_command(
+                    ec2_boot_specific.pre_pull_images
+                ),
+            )
+        )
+    return " && ".join(startup_commands)

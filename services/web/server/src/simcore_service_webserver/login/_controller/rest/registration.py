@@ -1,19 +1,9 @@
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
-from models_library.emails import LowerCaseEmailStr
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    PositiveInt,
-    SecretStr,
-    field_validator,
-)
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
@@ -30,17 +20,15 @@ from ....session.access_policies import (
     session_access_required,
 )
 from ....utils import MINUTE
-from ....utils_aiohttp import NextPage, envelope_json_response
+from ....utils_aiohttp import envelope_json_response
 from ....utils_rate_limiting import global_rate_limit_route
-from ... import _auth_service, _confirmation_web, _security_service, _twofa_service
-from ..._constants import (
-    CODE_2FA_SMS_CODE_REQUIRED,
-    MAX_2FA_CODE_RESEND,
-    MAX_2FA_CODE_TRIALS,
-    MSG_2FA_CODE_SENT,
-    MSG_CANT_SEND_MAIL,
-    MSG_UNAUTHORIZED_REGISTER_PHONE,
-    MSG_WEAK_PASSWORD,
+from ....web_utils import envelope_response, flash_response
+from ... import (
+    _auth_service,
+    _confirmation_web,
+    _registration_service,
+    _security_service,
+    _twofa_service,
 )
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._invitations_service import (
@@ -55,33 +43,34 @@ from ..._login_repository_legacy import (
     get_plugin_storage,
 )
 from ..._login_service import (
-    envelope_response,
-    flash_response,
-    get_user_name_from_email,
     notify_user_confirmation,
 )
-from ..._models import InputSchema, check_confirm_password_match
+from ...constants import (
+    CODE_2FA_SMS_CODE_REQUIRED,
+    MAX_2FA_CODE_RESEND,
+    MAX_2FA_CODE_TRIALS,
+    MSG_2FA_CODE_SENT,
+    MSG_CANT_SEND_MAIL,
+    MSG_UNAUTHORIZED_REGISTER_PHONE,
+    MSG_WEAK_PASSWORD,
+)
 from ...settings import (
     LoginOptions,
     LoginSettingsForProduct,
     get_plugin_options,
     get_plugin_settings,
 )
+from .registration_schemas import (
+    InvitationCheck,
+    InvitationInfo,
+    RegisterBody,
+    RegisterPhoneBody,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 routes = RouteTableDef()
-
-
-class InvitationCheck(InputSchema):
-    invitation: str = Field(..., description="Invitation code")
-
-
-class InvitationInfo(InputSchema):
-    email: LowerCaseEmailStr | None = Field(
-        None, description="Email associated to invitation or None"
-    )
 
 
 @routes.post(
@@ -116,27 +105,6 @@ async def check_registration_invitation(request: web.Request):
         request.app, invitation_code=check.invitation
     )
     return envelope_json_response(InvitationInfo(email=email))
-
-
-class RegisterBody(InputSchema):
-    email: LowerCaseEmailStr
-    password: SecretStr
-    confirm: SecretStr | None = Field(None, description="Password confirmation")
-    invitation: str | None = Field(None, description="Invitation code")
-
-    _password_confirm_match = field_validator("confirm")(check_confirm_password_match)
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                {
-                    "email": "foo@mymail.com",
-                    "password": "my secret",  # NOSONAR
-                    "confirm": "my secret",  # optional
-                    "invitation": "33c451d4-17b7-4e65-9880-694559b8ffc2",  # optional only active
-                }
-            ]
-        }
-    )
 
 
 @routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
@@ -331,23 +299,6 @@ async def register(request: web.Request):
     return await _security_service.login_granted_response(request=request, user=user)
 
 
-class RegisterPhoneBody(InputSchema):
-    email: LowerCaseEmailStr
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
-
-
-class _PageParams(BaseModel):
-    expiration_2fa: PositiveInt | None = None
-
-
-class RegisterPhoneNextPage(NextPage[_PageParams]):
-    logger: str = Field("user", deprecated=True)
-    level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
-    message: str
-
-
 @routes.post(f"/{API_VTAG}/auth/verify-phone-number", name="auth_register_phone")
 @session_access_required(
     name="auth_register_phone",
@@ -398,7 +349,9 @@ async def register_phone(request: web.Request):
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=get_user_name_from_email(registration.email),
+            first_name=_registration_service.get_user_name_from_email(
+                registration.email
+            ),
         )
 
         return envelope_response(

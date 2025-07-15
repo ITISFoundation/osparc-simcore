@@ -169,7 +169,7 @@ qx.Class.define("osparc.editor.AnnotationNoteCreator", {
               [userGid]: osparc.data.Roles.STUDY["write"].accessRights
             };
             const currentStudyData = osparc.store.Store.getInstance().getCurrentStudy().serialize();
-            osparc.store.Study.addCollaborators(currentStudyData, newCollaborators)
+            osparc.store.Study.getInstance().addCollaborators(currentStudyData, newCollaborators)
               .then(() => {
                 this.__setRecipientGid(userGid);
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
