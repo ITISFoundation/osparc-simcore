@@ -440,6 +440,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 users.c.last_name,
                 users.c.email,
                 users.c.role,
+                users.c.phone,
                 sa.func.json_build_object(
                     "hide_username",
                     users.c.privacy_hide_username,
@@ -457,7 +458,7 @@ async def get_my_profile(app: web.Application, *, user_id: UserID) -> MyProfile:
                 ).label("expiration_date"),
             ).where(users.c.id == user_id)
         )
-        row = await result.first()
+        row = await result.one_or_none()
         if not row:
             raise UserNotFoundError(user_id=user_id)
 
