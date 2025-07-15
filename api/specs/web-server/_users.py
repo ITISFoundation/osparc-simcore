@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyFunctionPermissionsGet,
     MyPermissionGet,
-    MyProfilePatch,
     MyProfileRestGet,
+    MyProfileRestPatch,
     MyTokenCreate,
     MyTokenGet,
     TokenPathParams,
@@ -45,7 +45,7 @@ async def get_my_profile(): ...
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_my_profile(_body: MyProfilePatch): ...
+async def update_my_profile(_body: MyProfileRestPatch): ...
 
 
 @router.patch(

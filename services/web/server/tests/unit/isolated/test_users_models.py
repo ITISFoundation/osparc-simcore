@@ -10,9 +10,9 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.users import (
-    MyProfilePatch,
     MyProfilePrivacyGet,
     MyProfileRestGet,
+    MyProfileRestPatch,
 )
 from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -122,7 +122,7 @@ def test_parsing_output_of_get_user_profile():
 
 def test_mapping_update_models_from_rest_to_db():
 
-    profile_update = MyProfilePatch.model_validate(
+    profile_update = MyProfileRestPatch.model_validate(
         # request payload
         {
             "first_name": "foo",
@@ -132,10 +132,10 @@ def test_mapping_update_models_from_rest_to_db():
     )
 
     # to db
-    profile_update_db = UserModelAdapter.from_schema(profile_update)
+    profile_update_db = UserModelAdapter.from_rest_schema_model(profile_update)
 
     # expected
-    assert profile_update_db.to_db() == {
+    assert profile_update_db.to_db_values() == {
         "first_name": "foo",
         "name": "foo1234",
         "privacy_hide_fullname": False,
@@ -146,7 +146,7 @@ def test_mapping_update_models_from_rest_to_db():
 def test_utils_user_generates_valid_myprofile_patch():
     username = utils_users._generate_username_from_email("xi@email.com")  # noqa: SLF001
 
-    MyProfilePatch.model_validate({"userName": username})
-    MyProfilePatch.model_validate(
+    MyProfileRestPatch.model_validate({"userName": username})
+    MyProfileRestPatch.model_validate(
         {"userName": utils_users.generate_alternative_username(username)}
     )

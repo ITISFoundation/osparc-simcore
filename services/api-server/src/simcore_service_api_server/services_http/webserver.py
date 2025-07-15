@@ -30,10 +30,10 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectInputUpdate,
 )
 from models_library.api_schemas_webserver.resource_usage import PricingPlanGet
-from models_library.api_schemas_webserver.users import (
-    MyProfilePatch as WebProfileUpdate,
-)
 from models_library.api_schemas_webserver.users import MyProfileRestGet as WebProfileGet
+from models_library.api_schemas_webserver.users import (
+    MyProfileRestPatch as WebProfileUpdate,
+)
 from models_library.api_schemas_webserver.wallets import WalletGet
 from models_library.generics import Envelope
 from models_library.products import ProductName

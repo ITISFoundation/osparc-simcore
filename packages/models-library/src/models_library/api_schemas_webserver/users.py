@@ -157,7 +157,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         )
 
 
-class MyProfilePatch(InputSchemaWithoutCamelCase):
+class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None

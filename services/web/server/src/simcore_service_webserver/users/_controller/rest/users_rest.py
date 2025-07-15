@@ -3,8 +3,8 @@ from contextlib import suppress
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
-    MyProfilePatch,
     MyProfileRestGet,
+    MyProfileRestPatch,
     UserGet,
     UsersSearch,
 )
@@ -77,7 +77,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    profile_update = await parse_request_body_as(MyProfilePatch, request)
+    profile_update = await parse_request_body_as(MyProfileRestPatch, request)
 
     await _users_service.update_my_profile(
         request.app, user_id=req_ctx.user_id, update=profile_update

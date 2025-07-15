@@ -3,7 +3,7 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyProfilePatch
+from models_library.api_schemas_webserver.users import MyProfileRestPatch
 from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
@@ -277,11 +277,11 @@ async def update_my_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: MyProfilePatch,
+    update: MyProfileRestPatch,
 ) -> None:
 
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,
-        updated_values=UserModelAdapter.from_schema(update).to_db(),
+        updated_values=UserModelAdapter.from_rest_schema_model(update).to_db_values(),
     )
