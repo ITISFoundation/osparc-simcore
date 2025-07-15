@@ -889,7 +889,14 @@ async def test_export_logs(
     auth: httpx.BasicAuth,
     user_id: UserID,
 ):
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function_job", mock_registered_function_job
+    )
+
     response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/export_logs",
+        f"{API_VTAG}/functions/{mock_registered_project_function.uid}/logs",
         auth=auth,
     )
