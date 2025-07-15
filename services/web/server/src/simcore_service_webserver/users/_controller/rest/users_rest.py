@@ -58,6 +58,55 @@ class PhoneRegistrationData(TypedDict):
     status: Literal["pending_confirmation"]
 
 
+class PhoneRegistrationSessionManager:
+    def __init__(self, session: Session, user_id: UserID, product_name: str):
+        self._session = session
+        self._user_id = user_id
+        self._product_name = product_name
+
+    def start_registration(self, phone: str) -> None:
+        phone_data: PhoneRegistrationData = {
+            "user_id": self._user_id,
+            "phone": phone,
+            "status": "pending_confirmation",
+        }
+        self._session[_PHONE_REGISTRATION_KEY] = phone_data
+        self._session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
+        self._session[_PHONE_PENDING_KEY] = True
+
+    def validate_pending_registration(self) -> PhoneRegistrationData:
+        if not self._session.get(_PHONE_PENDING_KEY):
+            raise PhoneRegistrationPendingNotFoundError(
+                user_id=self._user_id, product_name=self._product_name
+            )
+
+        phone_registration: PhoneRegistrationData | None = self._session.get(
+            _PHONE_REGISTRATION_KEY
+        )
+        if not phone_registration or phone_registration["user_id"] != self._user_id:
+            raise PhoneRegistrationSessionInvalidError(
+                user_id=self._user_id, product_name=self._product_name
+            )
+
+        return phone_registration
+
+    def regenerate_code(self) -> None:
+        self.validate_pending_registration()
+        self._session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
+
+    def validate_confirmation_code(self, provided_code: str) -> None:
+        expected_code = self._session.get(_PHONE_CODE_KEY)
+        if not expected_code or provided_code != expected_code:
+            raise PhoneRegistrationCodeInvalidError(
+                user_id=self._user_id, product_name=self._product_name
+            )
+
+    def clear_session(self) -> None:
+        self._session.pop(_PHONE_REGISTRATION_KEY, None)
+        self._session.pop(_PHONE_PENDING_KEY, None)
+        self._session.pop(_PHONE_CODE_KEY, None)
+
+
 routes = web.RouteTableDef()
 
 #
@@ -130,52 +179,12 @@ async def my_phone_register(request: web.Request) -> web.Response:
     phone_register = await parse_request_body_as(MyPhoneRegister, request)
 
     session = await get_session(request)
-
-    # Store phone registration state in session
-    phone_data: PhoneRegistrationData = {
-        "user_id": req_ctx.user_id,
-        "phone": phone_register.phone,
-        "status": "pending_confirmation",
-    }
-    session[_PHONE_REGISTRATION_KEY] = phone_data
-
-    # NOTE: In real implementation, generate and send SMS code here
-    # For testing, we'll use a fixed code
-    session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
-    session[_PHONE_PENDING_KEY] = True
+    phone_session_manager = PhoneRegistrationSessionManager(
+        session, req_ctx.user_id, req_ctx.product_name
+    )
+    phone_session_manager.start_registration(phone_register.phone)
 
     return web.json_response(status=status.HTTP_202_ACCEPTED)
-
-
-def _validate_pending_phone_registration(
-    session: Session, user_id: UserID, product_name: str
-) -> PhoneRegistrationData:
-    # Check if there's a pending phone registration
-    if not session.get(_PHONE_PENDING_KEY):
-        raise PhoneRegistrationPendingNotFoundError(
-            user_id=user_id, product_name=product_name
-        )
-
-    # Validate session belongs to current user
-    phone_registration: PhoneRegistrationData | None = session.get(
-        _PHONE_REGISTRATION_KEY
-    )
-    if not phone_registration or phone_registration["user_id"] != user_id:
-        raise PhoneRegistrationSessionInvalidError(
-            user_id=user_id, product_name=product_name
-        )
-
-    return phone_registration
-
-
-def _validate_confirmation_code(
-    session: Session, provided_code: str, *, user_id: UserID, product_name: str
-) -> None:
-    expected_code = session.get(_PHONE_CODE_KEY)
-    if not expected_code or provided_code != expected_code:
-        raise PhoneRegistrationCodeInvalidError(
-            user_id=user_id, product_name=product_name
-        )
 
 
 @routes.post(f"/{API_VTAG}/me/phone:resend", name="my_phone_resend")
@@ -185,13 +194,12 @@ def _validate_confirmation_code(
 @handle_rest_requests_exceptions
 async def my_phone_resend(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
+
     session = await get_session(request)
-
-    _validate_pending_phone_registration(session, req_ctx.user_id, req_ctx.product_name)
-
-    # NOTE: In real implementation, regenerate and resend SMS code here
-    # For testing, we'll use the same fixed code
-    session[_PHONE_CODE_KEY] = _PHONE_CODE_VALUE_FAKE
+    phone_session_manager = PhoneRegistrationSessionManager(
+        session, req_ctx.user_id, req_ctx.product_name
+    )
+    phone_session_manager.regenerate_code()
 
     return web.json_response(status=status.HTTP_202_ACCEPTED)
 
@@ -204,30 +212,22 @@ async def my_phone_resend(request: web.Request) -> web.Response:
 async def my_phone_confirm(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     phone_confirm = await parse_request_body_as(MyPhoneConfirm, request)
-    session = await get_session(request)
 
-    phone_registration = _validate_pending_phone_registration(
+    session = await get_session(request)
+    phone_session_manager = PhoneRegistrationSessionManager(
         session, req_ctx.user_id, req_ctx.product_name
     )
 
-    _validate_confirmation_code(
-        session,
-        phone_confirm.code,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-    )
+    phone_registration = phone_session_manager.validate_pending_registration()
+    phone_session_manager.validate_confirmation_code(phone_confirm.code)
 
-    # Update user's phone number in the database
     await _users_service.update_user_phone(
         request.app,
         user_id=req_ctx.user_id,
         phone=phone_registration["phone"],
     )
 
-    # Clear phone registration session data
-    session.pop(_PHONE_REGISTRATION_KEY, None)
-    session.pop(_PHONE_PENDING_KEY, None)
-    session.pop(_PHONE_CODE_KEY, None)
+    phone_session_manager.clear_session()
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -255,5 +255,4 @@ async def search_users(request: web.Request) -> web.Response:
         limit=search_params.limit,
     )
 
-    return envelope_json_response([UserGet.from_domain_model(user) for user in found])
     return envelope_json_response([UserGet.from_domain_model(user) for user in found])
