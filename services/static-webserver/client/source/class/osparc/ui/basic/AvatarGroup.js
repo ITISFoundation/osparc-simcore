@@ -19,7 +19,7 @@
 qx.Class.define("osparc.ui.basic.AvatarGroup", {
   extend: qx.ui.core.Widget,
 
-  construct: function(size = 30, orientation = "right", maxWidth = 150) {
+  construct: function(size = 30, orientation = "left", maxWidth = 150) {
     this.base(arguments);
 
     this.set({
@@ -80,16 +80,13 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         let avatar;
 
         if (user.isExtra) {
-          const bgColor = qx.theme.manager.Color.getInstance().resolve("text");
-          const textColor = qx.theme.manager.Color.getInstance().resolve("contrasted-text-dark");
           avatar = new qx.ui.basic.Label(user.name);
           avatar.set({
             width: this.__avatarSize,
             height: this.__avatarSize,
             textAlign: "center",
-            backgroundColor: bgColor,
-            textColor: textColor,
-            font: "bold",
+            backgroundColor: "text",
+            textColor: "text-complementary",
             toolTipText: `${user.name.replace("+", "")} more`
           });
 
