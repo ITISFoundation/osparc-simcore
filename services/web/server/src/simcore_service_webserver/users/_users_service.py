@@ -24,9 +24,9 @@ from . import _users_repository
 from ._models import (
     FullNameDict,
     UserCredentialsTuple,
-    UserDBAdapter,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
+    UserModelAdapter,
 )
 from .exceptions import (
     MissingGroupExtraPropertiesForProductError,
@@ -283,5 +283,5 @@ async def update_my_profile(
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,
-        updated_values=UserDBAdapter.from_schema(update).to_db(),
+        updated_values=UserModelAdapter.from_schema(update).to_db(),
     )

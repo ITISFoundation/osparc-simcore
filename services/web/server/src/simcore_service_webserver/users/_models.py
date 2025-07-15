@@ -43,7 +43,7 @@ def flatten_dict(d: dict, parent_key="", sep="_"):
     return dict(items)
 
 
-class UserDBAdapter(BaseModel):
+class UserModelAdapter(BaseModel):
     """
     Maps ProfileUpdate api schema into UserUpdate db-model
     """
