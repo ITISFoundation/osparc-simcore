@@ -67,7 +67,7 @@ class RegistrationSessionManager:
     def start_registration(self, data: str, code: str) -> None:
         registration_data: RegistrationData = {
             "user_id": self._user_id,
-            "data": data,
+            "data": data,  # keep data
             "status": "pending_confirmation",
         }
         self._session[_REGISTRATION_KEY] = registration_data
