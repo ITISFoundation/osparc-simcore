@@ -94,7 +94,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             anonymous: true,
             paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
             paddingRight: osparc.dashboard.GridButtonBase.PADDING,
-            paddingBottom: osparc.dashboard.GridButtonBase.PADDING / 2
           });
           this.getChildControl("main-layout").add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
