@@ -411,9 +411,6 @@ qx.Class.define("osparc.study.Utils", {
         return "IN_DEBT";
       }
       if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
-        if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
-          return false;
-        }
         return "IN_USE";
       }
       return false;
@@ -421,6 +418,9 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeOpened: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+        return ["IN_USE", false].includes(blocked);
+      }
       return [false].includes(blocked);
     },
 
@@ -446,6 +446,9 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowPreview: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+        return ["IN_USE", false].includes(blocked);
+      }
       return [false].includes(blocked);
     },
 
