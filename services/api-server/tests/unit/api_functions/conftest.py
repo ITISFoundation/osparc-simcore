@@ -171,7 +171,7 @@ def mock_function_job(
 
 
 @pytest.fixture
-def mock_registered_function_job(
+def mock_registered_project_function_job(
     mock_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     return RegisteredProjectFunctionJob(
@@ -185,15 +185,17 @@ def mock_registered_function_job(
 
 @pytest.fixture
 def mock_function_job_collection(
-    mock_registered_function_job: RegisteredFunctionJob,
+    mock_registered_project_function_job: RegisteredFunctionJob,
 ) -> FunctionJobCollection:
     mock_function_job_collection = {
         "title": "Test Function Job Collection",
         "description": "A test function job collection",
-        "function_uid": mock_registered_function_job.function_uid,
+        "function_uid": mock_registered_project_function_job.function_uid,
         "function_class": FunctionClass.PROJECT,
         "project_id": str(uuid4()),
-        "function_job_ids": [mock_registered_function_job.uid for _ in range(5)],
+        "function_job_ids": [
+            mock_registered_project_function_job.uid for _ in range(5)
+        ],
     }
     return FunctionJobCollection(**mock_function_job_collection)
 
