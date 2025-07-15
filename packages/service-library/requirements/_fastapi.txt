@@ -94,9 +94,9 @@ packaging==24.2
     # via opentelemetry-instrumentation
 prometheus-client==0.21.1
     # via -r requirements/_fastapi.in
-pydantic==2.10.6
+pydantic==2.11.7
     # via fastapi
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
 pygments==2.19.1
     # via rich
@@ -130,6 +130,9 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   rich-toolkit
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 uvicorn==0.34.2
     # via
     #   fastapi

@@ -62,7 +62,9 @@ def model_classes_factory() -> Callable:
                 str | None,
                 Field(
                     validation_alias=AliasChoices(
-                        "HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"
+                        "POSTGRES_CLIENT_NAME",
+                        "HOST",
+                        "HOSTNAME",
                     ),
                 ),
             ] = None
