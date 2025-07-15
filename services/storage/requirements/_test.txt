@@ -126,7 +126,7 @@ flask==3.1.0
     # via
     #   flask-cors
     #   moto
-flask-cors==5.0.1
+flask-cors==6.0.1
     # via moto
 frozenlist==1.5.0
     # via
@@ -165,7 +165,7 @@ iniconfig==2.0.0
     # via pytest
 itsdangerous==2.2.0
     # via flask
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -349,7 +349,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 regex==2024.11.6
     # via cfn-lint
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -423,7 +423,7 @@ tzdata==2025.2
     #   faker
     #   kombu
     #   pandas
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

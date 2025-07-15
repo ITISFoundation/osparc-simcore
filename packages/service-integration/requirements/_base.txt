@@ -42,7 +42,7 @@ idna==3.10
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -134,7 +134,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via
     #   cookiecutter
     #   docker
@@ -162,7 +162,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

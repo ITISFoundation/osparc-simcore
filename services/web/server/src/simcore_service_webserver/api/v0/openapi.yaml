@@ -2820,7 +2820,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
+                $ref: '#/components/schemas/Page_ComputationCollectionRunRestGet_'
   /v0/computation-collection-runs/{collection_run_id}/tasks:
     get:
       tags:
@@ -2856,7 +2856,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page_ComputationTaskRestGet_'
+                $ref: '#/components/schemas/Page_ComputationCollectionRunTaskRestGet_'
   /v0/projects/{project_id}:xport:
     post:
       tags:
@@ -9357,6 +9357,108 @@ components:
       required:
       - version
       title: CompatibleService
+    ComputationCollectionRunRestGet:
+      properties:
+        collectionRunId:
+          type: string
+          format: uuid
+          title: Collectionrunid
+        projectIds:
+          items:
+            type: string
+          type: array
+          title: Projectids
+        state:
+          $ref: '#/components/schemas/RunningState'
+        info:
+          type: object
+          title: Info
+        submittedAt:
+          type: string
+          format: date-time
+          title: Submittedat
+        startedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Startedat
+        endedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Endedat
+        name:
+          type: string
+          title: Name
+      type: object
+      required:
+      - collectionRunId
+      - projectIds
+      - state
+      - info
+      - submittedAt
+      - startedAt
+      - endedAt
+      - name
+      title: ComputationCollectionRunRestGet
+    ComputationCollectionRunTaskRestGet:
+      properties:
+        projectUuid:
+          type: string
+          format: uuid
+          title: Projectuuid
+        nodeId:
+          type: string
+          format: uuid
+          title: Nodeid
+        state:
+          $ref: '#/components/schemas/RunningState'
+        progress:
+          type: number
+          title: Progress
+        image:
+          type: object
+          title: Image
+        startedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Startedat
+        endedAt:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Endedat
+        logDownloadLink:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Logdownloadlink
+        osparcCredits:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Osparccredits
+        name:
+          type: string
+          title: Name
+      type: object
+      required:
+      - projectUuid
+      - nodeId
+      - state
+      - progress
+      - image
+      - startedAt
+      - endedAt
+      - logDownloadLink
+      - osparcCredits
+      - name
+      title: ComputationCollectionRunTaskRestGet
     ComputationGet:
       properties:
         id:
@@ -13762,6 +13864,82 @@ components:
       - _links
       - data
       title: Page[CatalogLatestServiceGet]
+    Page_ComputationCollectionRunRestGet_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ComputationCollectionRunRestGet'
+          type: array
+          title: Items
+        total:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Total
+        page:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Page
+        size:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Size
+        pages:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Pages
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - size
+      title: Page[ComputationCollectionRunRestGet]
+    Page_ComputationCollectionRunTaskRestGet_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ComputationCollectionRunTaskRestGet'
+          type: array
+          title: Items
+        total:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Total
+        page:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Page
+        size:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Size
+        pages:
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
+          title: Pages
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - size
+      title: Page[ComputationCollectionRunTaskRestGet]
     Page_ComputationRunRestGet_:
       properties:
         items:

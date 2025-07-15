@@ -158,7 +158,7 @@ referencing==0.35.1
     #   -c requirements/_base.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -195,7 +195,7 @@ typing-extensions==4.14.1
     #   sqlalchemy2-stubs
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
