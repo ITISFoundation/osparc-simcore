@@ -29,6 +29,7 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     RegisteredFunctionJobCollection,
     RegisteredSolverFunction,
+    SolverFunctionJob,
 )
 from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.projects import ProjectID
@@ -177,6 +178,34 @@ def mock_registered_project_function_job(
     return RegisteredProjectFunctionJob(
         **{
             **mock_project_function_job.dict(),
+            "uid": str(uuid4()),
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
+    )
+
+
+@pytest.fixture
+def mock_solver_function_job(
+    mock_registered_solver_function: RegisteredFunction,
+) -> FunctionJob:
+    return SolverFunctionJob(
+        title="Test Function Job",
+        description="A test function job",
+        function_uid=mock_registered_solver_function.uid,
+        inputs={"key": "value"},
+        outputs=None,
+        function_class=FunctionClass.SOLVER,
+        solver_job_id=ProjectID(f"{uuid4()}"),
+    )
+
+
+@pytest.fixture
+def mock_registered_solver_function_job(
+    mock_solver_function_job: FunctionJob,
+) -> RegisteredFunctionJob:
+    return RegisteredProjectFunctionJob(
+        **{
+            **mock_solver_function_job.dict(),
             "uid": str(uuid4()),
             "created_at": datetime.datetime.now(datetime.UTC),
         }
