@@ -27,7 +27,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
       padding: 0,
       backgroundColor: null,
     });
-    this._setLayout(new qx.ui.layout.HBox());
+    this._setLayout(new qx.ui.layout.Canvas());
 
     this.__avatarSize = 30;
     this.__maxVisible = 5;
@@ -55,77 +55,77 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __avatars: null,
 
     __buildAvatars() {
-      const overlap = Math.floor(this.__avatarSize * 0.5); // 50% overlap
-      const overlapPx = `-${overlap}px`;
       const usersToShow = this.__users.slice(0, this.__maxVisible);
-
-      usersToShow.forEach((user, index) => {
-        const avatar = new qx.ui.basic.Image(user.avatar);
-        avatar.set({
-          width: this.__avatarSize,
-          height: this.__avatarSize,
-          scale: true,
-          toolTipText: user.name,
+      const totalAvatars = [...usersToShow];
+      if (this.__users.length > this.__maxVisible) {
+        totalAvatars.push({
+          name: `+${this.__users.length - this.__maxVisible}`,
+          isExtra: true
         });
+      }
+
+      totalAvatars.forEach(user => {
+        let avatar;
+
+        if (user.isExtra) {
+          avatar = new qx.ui.basic.Label(user.name);
+          avatar.set({
+            width: this.__avatarSize,
+            height: this.__avatarSize,
+            textAlign: "center",
+            backgroundColor: "#ddd",
+            font: "bold",
+            toolTipText: `${user.name.replace("+", "")} more`
+          });
+
+          avatar.getContentElement().setStyles({
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontWeight: "bold",
+            fontSize: "0.8em"
+          });
+        } else {
+          avatar = new qx.ui.basic.Image(user.avatar);
+          avatar.set({
+            width: this.__avatarSize,
+            height: this.__avatarSize,
+            scale: true,
+            toolTipText: user.name
+          });
+        }
 
         avatar.getContentElement().setStyles({
           borderRadius: "50%",
           border: "1px solid gray",
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-          marginLeft: index === 0 ? "0px" : overlapPx,
-          transition: "margin 0.3s ease",
+          transition: "left 0.2s ease",
+          position: "absolute"
         });
 
-        avatar.setZIndex(index);
         this.__avatars.push(avatar);
         this._add(avatar);
       });
 
-      if (this.__users.length > this.__maxVisible) {
-        const remaining = this.__users.length - this.__maxVisible;
-        const label = new qx.ui.basic.Label("+" + remaining);
-        label.set({
-          width: this.__avatarSize,
-          height: this.__avatarSize,
-          textAlign: "center",
-          backgroundColor: "#ddd",
-          font: "bold",
-          toolTipText: `${remaining} more`,
-        });
-
-        label.getContentElement().setStyles({
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          fontWeight: "bold",
-          fontSize: "0.8em",
-          borderRadius: "50%",
-          border: "1px solid gray",
-          boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-          marginLeft: overlapPx,
-          transition: "margin 0.3s ease"
-        });
-
-        label.setZIndex(usersToShow.length);
-        this.__avatars.push(label);
-        this._add(label);
-      }
+      this.__collapse();
     },
 
+
     __expand() {
-      const count = this.__avatars.length;
+      const spacing = 8;
       this.__avatars.forEach((avatar, index) => {
-        avatar.getContentElement().setStyle("marginLeft", "8px");
-        avatar.setZIndex(count - index);
+        const left = index * (this.__avatarSize + spacing);
+        avatar.setLayoutProperties({ left });
+        avatar.setZIndex(this.__avatars.length - index); // reverse stacking
       });
     },
 
     __collapse() {
-      const overlap = Math.floor(this.__avatarSize * 0.5);
+      const overlap = Math.floor(this.__avatarSize * 0.8);
       this.__avatars.forEach((avatar, index) => {
-        const margin = index === 0 ? "0px" : `-${overlap}px`;
-        avatar.getContentElement().setStyle("marginLeft", margin);
-        avatar.setZIndex(index);
+        const left = index * (this.__avatarSize - overlap);
+        avatar.setLayoutProperties({ left });
+        avatar.setZIndex(index); // natural stacking
       });
     },
   },
