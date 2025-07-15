@@ -22,6 +22,8 @@ from simcore_service_api_server._service_solvers import SolverService
 from simcore_service_api_server._service_studies import StudyService
 from simcore_service_api_server.services_http.webserver import AuthSession
 from simcore_service_api_server.services_rpc.catalog import CatalogService
+from simcore_service_api_server.services_rpc.director_v2 import DirectorV2Service
+from simcore_service_api_server.services_rpc.storage import StorageService
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 
@@ -72,6 +74,24 @@ def wb_api_rpc_client(
 
 
 @pytest.fixture
+def director_v2_rpc_client(
+    mocked_rpc_client: MockType,
+) -> DirectorV2Service:
+    return DirectorV2Service(_rpc_client=mocked_rpc_client)
+
+
+@pytest.fixture
+def storage_rpc_client(
+    mocked_rpc_client: MockType,
+    user_id: UserID,
+    product_name: ProductName,
+) -> StorageService:
+    return StorageService(
+        _rpc_client=mocked_rpc_client, _user_id=user_id, _product_name=product_name
+    )
+
+
+@pytest.fixture
 def auth_session(
     mocker: MockerFixture,
     # mocked_webserver_rest_api_base: MockRouter, app: FastAPI
@@ -91,6 +111,8 @@ def auth_session(
 @pytest.fixture
 def job_service(
     auth_session: AuthSession,
+    director_v2_rpc_client: DirectorV2Service,
+    storage_rpc_client: StorageService,
     wb_api_rpc_client: WbApiRpcClient,
     product_name: ProductName,
     user_id: UserID,
@@ -98,6 +120,8 @@ def job_service(
     return JobService(
         _web_rest_client=auth_session,
         _web_rpc_client=wb_api_rpc_client,
+        _storage_rpc_client=storage_rpc_client,
+        _directorv2_rpc_client=director_v2_rpc_client,
         user_id=user_id,
         product_name=product_name,
     )
