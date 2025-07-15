@@ -18,7 +18,7 @@ from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database import utils_users
-from simcore_service_webserver.users._models import ToUserUpdateDB
+from simcore_service_webserver.users._models import UserDBAdapter
 
 
 @pytest.fixture
@@ -132,7 +132,7 @@ def test_mapping_update_models_from_rest_to_db():
     )
 
     # to db
-    profile_update_db = ToUserUpdateDB.from_api(profile_update)
+    profile_update_db = UserDBAdapter.from_schema(profile_update)
 
     # expected
     assert profile_update_db.to_db() == {

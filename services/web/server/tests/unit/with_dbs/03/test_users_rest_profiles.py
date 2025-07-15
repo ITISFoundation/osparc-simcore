@@ -590,3 +590,66 @@ async def test_get_profile_with_failing_db_connection(
         data, error = await assert_status(resp, expected)
         assert not data
         assert error["message"] == "Authentication service is temporary unavailable"
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_get_and_update_phone_in_profile(
+    user_role: UserRole,
+    logged_user: UserInfoDict,
+    client: TestClient,
+):
+    assert client.app
+
+    # GET initial profile
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    initial_profile = MyProfileGet.model_validate(data)
+    initial_phone = initial_profile.phone
+
+    # UPDATE phone number
+    new_phone = "+34 123 456 789"
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "phone": new_phone,
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # GET updated profile
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    updated_profile = MyProfileGet.model_validate(data)
+
+    # Verify phone was updated
+    assert updated_profile.phone == new_phone
+    assert updated_profile.phone != initial_phone
+
+    # Verify other fields remained unchanged
+    assert updated_profile.first_name == initial_profile.first_name
+    assert updated_profile.last_name == initial_profile.last_name
+    assert updated_profile.login == initial_profile.login
+    assert updated_profile.user_name == initial_profile.user_name
+
+    # UPDATE phone to None (clear it)
+    url = client.app.router["update_my_profile"].url_for()
+    resp = await client.patch(
+        f"{url}",
+        json={
+            "phone": None,
+        },
+    )
+    await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # GET profile after clearing phone
+    url = client.app.router["get_my_profile"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+
+    cleared_profile = MyProfileGet.model_validate(data)
+    assert cleared_profile.phone is None
