@@ -60,21 +60,21 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     PhoneRegistrationPendingNotFoundError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
         user_message(
-            "No pending phone registration found",
+            "No pending phone registration found. Please start the phone registration process first.",
             _version=1,
         ),
     ),
     PhoneRegistrationSessionInvalidError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
         user_message(
-            "Invalid phone registration session",
+            "Your phone registration session is invalid or has expired. Please start the phone registration process again.",
             _version=1,
         ),
     ),
     PhoneRegistrationCodeInvalidError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
         user_message(
-            "Invalid confirmation code",
+            "The confirmation code you entered is incorrect. Please check and try again.",
             _version=1,
         ),
     ),
