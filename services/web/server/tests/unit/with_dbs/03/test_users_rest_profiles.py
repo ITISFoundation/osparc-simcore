@@ -37,7 +37,7 @@ from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
 from simcore_service_webserver.users._controller.rest.users_rest import (
-    _PHONE_CODE_VALUE_FAKE,
+    _REGISTRATION_CODE_VALUE_FAKE,
 )
 from sqlalchemy.exc import OperationalError as SQLAlchemyOperationalError
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -630,7 +630,7 @@ async def test_phone_registration_basic_workflow(
     resp = await client.post(
         f"{url}",
         json={
-            "code": _PHONE_CODE_VALUE_FAKE,
+            "code": _REGISTRATION_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -686,7 +686,7 @@ async def test_phone_registration_workflow(
     resp = await client.post(
         f"{url}",
         json={
-            "code": _PHONE_CODE_VALUE_FAKE,
+            "code": _REGISTRATION_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -739,7 +739,7 @@ async def test_phone_registration_with_resend(
     resp = await client.post(
         f"{url}",
         json={
-            "code": _PHONE_CODE_VALUE_FAKE,
+            "code": _REGISTRATION_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -779,7 +779,7 @@ async def test_phone_registration_change_existing_phone(
     resp = await client.post(
         f"{url}",
         json={
-            "code": _PHONE_CODE_VALUE_FAKE,
+            "code": _REGISTRATION_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -799,7 +799,7 @@ async def test_phone_registration_change_existing_phone(
     resp = await client.post(
         f"{url}",
         json={
-            "code": _PHONE_CODE_VALUE_FAKE,
+            "code": _REGISTRATION_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
@@ -848,7 +848,7 @@ async def test_phone_confirm_without_pending_registration(
     resp = await client.post(
         f"{url}",
         json={
-            "code": _PHONE_CODE_VALUE_FAKE,
+            "code": _REGISTRATION_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, status.HTTP_400_BAD_REQUEST)
@@ -1044,7 +1044,7 @@ async def test_phone_confirm_access_rights(
     resp = await client.post(
         f"{url}",
         json={
-            "code": _PHONE_CODE_VALUE_FAKE,
+            "code": _REGISTRATION_CODE_VALUE_FAKE,
         },
     )
     await assert_status(resp, expected)
