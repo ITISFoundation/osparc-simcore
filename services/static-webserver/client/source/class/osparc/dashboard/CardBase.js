@@ -770,20 +770,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyState: function(state) {
       let lockInUse = false;
-      if (
-        !osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() &&
-        "locked" in state && "value" in state["locked"]
-      ) {
+      if ("locked" in state && "value" in state["locked"]) {
         lockInUse = state["locked"]["value"];
       }
-      this.setBlocked(lockInUse ? "IN_USE" : false);
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+        if (lockInUse && "OPENED" === state["locked"]["status"]) {
+          this.__showWhoIsIn(state["locked"]["owner"]);
+        }
+      } else {
+        this.setBlocked(lockInUse ? "IN_USE" : false);
 
-      if (lockInUse) {
-        if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
-          if ("locked" in state && "status" in state["locked"] && "OPENED" === state["locked"]["status"]) {
-            this.__showWhoIsIn(state["locked"]["owner"]);
-          }
-        } else {
+        if (lockInUse) {
           this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
         }
       }
