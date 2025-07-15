@@ -22,8 +22,15 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
   construct: function() {
     this.base(arguments);
 
+    this.set({
+      decorator: null,
+      padding: 0,
+      backgroundColor: null,
+    });
     this._setLayout(new qx.ui.layout.HBox());
 
+    this.__avatarSize = 30;
+    this.__maxVisible = 5;
     this.__users = [
       { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
       { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
@@ -32,7 +39,6 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
       { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
       { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
     ];
-    this.__maxVisible = 5;
     this.__avatars = [];
 
     this.__buildAvatars();
@@ -43,28 +49,30 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
   },
 
   members: {
-    __avatars: null,
-    __users: null,
+    __avatarSize: null,
     __maxVisible: null,
+    __users: null,
+    __avatars: null,
 
     __buildAvatars() {
+      const overlap = Math.floor(this.__avatarSize * 0.5); // 50% overlap
+      const overlapPx = `-${overlap}px`;
       const usersToShow = this.__users.slice(0, this.__maxVisible);
 
       usersToShow.forEach((user, index) => {
         const avatar = new qx.ui.basic.Image(user.avatar);
         avatar.set({
-          width: 40,
-          height: 40,
+          width: this.__avatarSize,
+          height: this.__avatarSize,
           scale: true,
-          decorator: "main", // You can use or define a circle decorator
           toolTipText: user.name,
         });
 
         avatar.getContentElement().setStyles({
           borderRadius: "50%",
-          border: "2px solid white",
+          border: "1px solid gray",
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-          marginLeft: index === 0 ? "0px" : "-12px",
+          marginLeft: index === 0 ? "0px" : overlapPx,
           transition: "margin 0.3s ease",
         });
 
@@ -76,22 +84,21 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
         const remaining = this.__users.length - this.__maxVisible;
         const label = new qx.ui.basic.Label("+" + remaining);
         label.set({
-          width: 40,
-          height: 40,
+          width: this.__avatarSize,
+          height: this.__avatarSize,
           textAlign: "center",
           backgroundColor: "#ddd",
           font: "bold",
-          allowGrowX: false,
-          allowGrowY: false,
           toolTipText: `${remaining} more`,
         });
 
         label.getContentElement().setStyles({
-          lineHeight: "40px",
+          lineHeight: this.__avatarSize + "px",
           borderRadius: "50%",
-          border: "2px solid white",
+          border: "1px solid gray",
           boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
-          marginLeft: "-12px"
+          marginLeft: overlapPx,
+          transition: "margin 0.3s ease",
         });
 
         this.__avatars.push(label);
@@ -102,13 +109,15 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __expand() {
       this.__avatars.forEach(avatar => {
         avatar.getContentElement().setStyle("marginLeft", "8px");
-        avatar.setZIndex(1);
+        avatar.setZIndex(10);
       });
     },
 
     __collapse() {
+      const overlap = Math.floor(this.__avatarSize * 0.5);
       this.__avatars.forEach((avatar, index) => {
-        avatar.getContentElement().setStyle("marginLeft", index === 0 ? "0px" : "-12px");
+        const margin = index === 0 ? "0px" : `-${overlap}px`;
+        avatar.getContentElement().setStyle("marginLeft", margin);
         avatar.setZIndex(index);
       });
     },
