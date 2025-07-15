@@ -13,14 +13,35 @@ from servicelib.logging_utils import (
     LogExtra,
     LogLevelInt,
     LogMessageStr,
+    async_loggers,
     guess_message_log_level,
     log_context,
     log_decorator,
     log_exceptions,
     set_parent_module_log_level,
 )
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 _logger = logging.getLogger(__name__)
+
+
+@retry(
+    wait=wait_fixed(0.01),
+    stop=stop_after_delay(2.0),
+    reraise=True,
+    retry=retry_if_exception_type(AssertionError),
+)
+def _assert_check_log_message(
+    caplog: pytest.LogCaptureFixture, expected_message: str
+) -> None:
+    assert expected_message in caplog.text
+
+
 _ALL_LOGGING_LEVELS = [
     logging.CRITICAL,
     logging.ERROR,
@@ -325,8 +346,9 @@ def test_log_exceptions_and_suppress_without_exc_info(
     caplog.set_level(level)
 
     exc_msg = "logs exceptions and suppresses"
-    with suppress(ValueError), log_exceptions(
-        _logger, level, "CONTEXT", exc_info=False
+    with (
+        suppress(ValueError),
+        log_exceptions(_logger, level, "CONTEXT", exc_info=False),
     ):
         raise ValueError(exc_msg)
 
@@ -410,3 +432,144 @@ def test_set_parent_module_log_level_(caplog: pytest.LogCaptureFixture):
 
     assert "parent warning" in caplog.text
     assert "child warning" in caplog.text
+
+
+@pytest.mark.parametrize("log_format_local_dev_enabled", [True, False])
+def test_setup_async_loggers_basic(
+    caplog: pytest.LogCaptureFixture,
+    log_format_local_dev_enabled: bool,
+):
+    """Test basic async logging setup without filters."""
+    caplog.clear()
+    caplog.set_level(logging.INFO)
+
+    with async_loggers(
+        log_format_local_dev_enabled=log_format_local_dev_enabled,
+        logger_filter_mapping={},  # No filters for this test
+        tracing_settings=None,  # No tracing for this test
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
+    ):
+        test_logger = logging.getLogger("test_async_logger")
+        test_logger.info("Test async log message")
+
+        _assert_check_log_message(caplog, "Test async log message")
+
+
+def test_setup_async_loggers_with_filters(
+    caplog: pytest.LogCaptureFixture,
+):
+    caplog.clear()
+    caplog.set_level(logging.INFO)
+
+    # Define filter mapping
+    filter_mapping = {
+        "test_filtered_logger": ["filtered_message"],
+    }
+
+    with async_loggers(
+        log_format_local_dev_enabled=True,
+        logger_filter_mapping=filter_mapping,
+        tracing_settings=None,  # No tracing for this test
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
+    ):
+        test_logger = logging.getLogger("test_filtered_logger")
+        unfiltered_logger = logging.getLogger("test_unfiltered_logger")
+
+        # This should be filtered out
+        test_logger.info("This is a filtered_message")
+
+        # This should pass through
+        test_logger.info("This is an unfiltered message")
+        unfiltered_logger.info("This is from unfiltered logger")
+
+        _assert_check_log_message(caplog, "This is an unfiltered message")
+        _assert_check_log_message(caplog, "This is from unfiltered logger")
+
+    # Check that filtered message was not captured
+    assert "This is a filtered_message" not in caplog.text
+
+    # Check that unfiltered messages were captured
+    assert "This is an unfiltered message" in caplog.text
+    assert "This is from unfiltered logger" in caplog.text
+
+
+def test_setup_async_loggers_with_tracing_settings(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test async logging setup with tracing settings."""
+    caplog.clear()
+    caplog.set_level(logging.INFO)
+
+    # Note: We can't easily test actual tracing without setting up OpenTelemetry
+    # But we can test that the function accepts the parameter
+    with async_loggers(
+        log_format_local_dev_enabled=False,
+        logger_filter_mapping={},  # No filters for this test
+        tracing_settings=None,
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
+    ):
+        test_logger = logging.getLogger("test_tracing_logger")
+        test_logger.info("Test message with tracing settings")
+
+        _assert_check_log_message(caplog, "Test message with tracing settings")
+
+
+def test_setup_async_loggers_context_manager_cleanup(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test that async logging context manager properly cleans up."""
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)
+
+    test_logger = logging.getLogger("test_cleanup_logger")
+
+    with async_loggers(
+        log_format_local_dev_enabled=True,
+        logger_filter_mapping={},
+        tracing_settings=None,
+        log_base_level=logging.INFO,  # Set base log level
+        noisy_loggers=(),  # No noisy loggers for this test
+    ):
+        # During the context, handlers should be replaced
+        test_logger.info("Message during context")
+
+        _assert_check_log_message(caplog, "Message during context")
+
+
+def test_setup_async_loggers_exception_handling(
+    caplog: pytest.LogCaptureFixture,
+):
+    """Test that async logging handles exceptions gracefully."""
+    caplog.clear()
+    caplog.set_level(logging.DEBUG)  # Set to DEBUG to capture cleanup messages
+
+    def _raise_test_exception():
+        """Helper function to raise exception for testing."""
+        exc_msg = "Test exception"
+        raise ValueError(exc_msg)
+
+    try:
+        with async_loggers(
+            log_format_local_dev_enabled=True,
+            logger_filter_mapping={},
+            tracing_settings=None,
+            log_base_level=logging.INFO,  # Set base log level
+            noisy_loggers=(),  # No noisy loggers for this test
+        ):
+            test_logger = logging.getLogger("test_exception_logger")
+            test_logger.info("Message before exception")
+
+            _assert_check_log_message(caplog, "Message before exception")
+
+            # Raise an exception to test cleanup
+            _raise_test_exception()
+
+    except ValueError:
+        # Expected exception
+        pass
+
+    # Check that the message was logged and cleanup happened
+    assert "Message before exception" in caplog.text

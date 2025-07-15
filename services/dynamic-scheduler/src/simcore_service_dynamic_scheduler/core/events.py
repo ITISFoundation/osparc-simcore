@@ -6,6 +6,7 @@ from servicelib.fastapi.docker import (
     create_remote_docker_client_input_state,
     remote_docker_client_lifespan,
 )
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     create_prometheus_instrumentationmain_input_state,
     prometheus_instrumentation_lifespan,
@@ -51,8 +52,12 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
     }
 
 
-def create_app_lifespan(settings: ApplicationSettings) -> LifespanManager:
+def create_app_lifespan(
+    settings: ApplicationSettings, logging_lifespan: Lifespan | None
+) -> LifespanManager:
     app_lifespan = LifespanManager()
+    if logging_lifespan:
+        app_lifespan.add(logging_lifespan)
     app_lifespan.add(_settings_lifespan)
 
     if settings.DYNAMIC_SCHEDULER_TRACING:

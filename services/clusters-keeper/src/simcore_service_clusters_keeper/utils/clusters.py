@@ -96,7 +96,7 @@ def _prepare_environment_variables(
         f"DASK_WORKER_SATURATION={app_settings.CLUSTERS_KEEPER_DASK_WORKER_SATURATION}",
         f"DOCKER_IMAGE_TAG={app_settings.CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}",
         f"EC2_INSTANCES_NAME_PREFIX={cluster_machines_name_prefix}",
-        f"LOG_LEVEL={app_settings.LOG_LEVEL}",
+        f"LOG_LEVEL={app_settings.log_level}",
         f"WORKERS_EC2_INSTANCES_ALLOWED_TYPES={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_ALLOWED_TYPES)}",
         f"WORKERS_EC2_INSTANCES_CUSTOM_TAGS={_convert_to_env_dict(app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_CUSTOM_TAGS | additional_custom_tags)}",
         f"WORKERS_EC2_INSTANCES_KEY_NAME={app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME}",
