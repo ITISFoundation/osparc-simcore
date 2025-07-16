@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, Field
+from servicelib.rabbitmq._errors import RPCInterfaceError
 
 
 class Error(BaseModel):
@@ -18,7 +18,7 @@ class ErrorEnveloped(BaseModel):
     error: ErrorType
 
 
-class BaseRpcError(OsparcErrorMixin, Exception):
+class BaseRpcError(RPCInterfaceError):
     pass
 
 
