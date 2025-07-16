@@ -13023,11 +13023,15 @@ components:
       title: MarkerUI
     MyFunctionPermissionsGet:
       properties:
+        readFunctions:
+          type: boolean
+          title: Readfunctions
         writeFunctions:
           type: boolean
           title: Writefunctions
       type: object
       required:
+      - readFunctions
       - writeFunctions
       title: MyFunctionPermissionsGet
     MyGroupsGet:
