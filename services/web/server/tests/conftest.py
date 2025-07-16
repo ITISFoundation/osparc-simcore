@@ -157,10 +157,11 @@ async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
 
 @pytest.fixture
 def user_phone(faker: Faker) -> PhoneNumberStr:
-    phone = faker.phone_number()
+    phone = faker.random_element(["+41763456789", "+19104630364", "+13013044567"])
     tail = f"{faker.pyint(100, 999)}"
-    valid_phone = phone[: -len(tail)] + tail  # ensure phone is 10 digits long
-    return TypeAdapter(PhoneNumberStr).validate_python(valid_phone)
+    valid_phone = phone[: -len(tail)] + tail  # ensure phone keeps its length
+    assert TypeAdapter(PhoneNumberStr).validate_python(valid_phone) == valid_phone
+    return valid_phone
 
 
 @pytest.fixture

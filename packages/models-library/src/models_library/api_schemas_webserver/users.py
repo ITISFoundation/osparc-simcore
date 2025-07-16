@@ -213,7 +213,7 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
 #
 
 
-PhoneNumberStr: TypeAlias = Annotated[str, PhoneNumberValidator()]
+PhoneNumberStr: TypeAlias = Annotated[str, PhoneNumberValidator(number_format="E164")]
 
 
 class MyPhoneRegister(InputSchema):
