@@ -310,6 +310,18 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
+    showFunctions: function() {
+      if (osparc.utils.DisabledPlugins.isFunctionsDisabled()) {
+        return false;
+      }
+
+      return [
+        "osparc",
+        "s4l",
+        "s4lacad",
+      ].includes(osparc.product.Utils.getProductName());
+    },
+
     showQuality: function() {
       return this.isProduct("osparc");
     },

@@ -68,6 +68,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           if (osparc.product.Utils.showPublicProjects()) {
             this._add(this.__createPublicProjects());
           }
+          if (osparc.product.Utils.showFunctions()) {
+            this._add(this.__createFunctions());
+          }
           this._add(this.__createTrashBin());
           this._add(filtersSpacer);
           const scrollView = new qx.ui.container.Scroll();
