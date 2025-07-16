@@ -1,6 +1,5 @@
-""" Current version of the simcore_service_webserver application and its API
+"""Current version of the simcore_service_webserver application and its API"""
 
-"""
 from typing import Final
 
 from models_library.basic_types import VersionStr
@@ -19,7 +18,7 @@ SUMMARY: Final[str] = info.get_summary()
 
 
 # legacy consts
-APP_NAME: str = __name__.split(".")[0]
+APP_NAME: str = PROJECT_NAME
 api_version_prefix: str = API_VTAG
 
 
