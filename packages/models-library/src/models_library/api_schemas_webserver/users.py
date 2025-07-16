@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Self, TypeAlias
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -20,6 +20,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic.config import JsonDict
+from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -212,10 +213,12 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
 #
 
 
+PhoneNumberStr: TypeAlias = Annotated[str, PhoneNumberValidator()]
+
+
 class MyPhoneRegister(InputSchema):
     phone: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, min_length=1),
+        PhoneNumberStr,
         Field(description="Phone number to register"),
     ]
 
