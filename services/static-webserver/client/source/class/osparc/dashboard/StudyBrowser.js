@@ -944,6 +944,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    invalidateFunctions: function() {
+      osparc.store.Functions.invalidateFunctions();
+      this.__resetStudiesList();
+      if (this._resourcesContainer.getFlatList()) {
+        this._resourcesContainer.getFlatList().nextRequest = null;
+      }
+    },
+
     __addNewPlusButton: function() {
       const newPlusButton = new osparc.dashboard.NewPlusButton();
       this._leftFilters.add(newPlusButton);
@@ -1280,7 +1288,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._searchBarFilter.setEnabled(false);
           this._toolbar.exclude();
           this._loadingResourcesBtn.setFetching(false);
-          // OM: implement this
           this.invalidateFunctions();
           this.__reloadStudies();
           break;

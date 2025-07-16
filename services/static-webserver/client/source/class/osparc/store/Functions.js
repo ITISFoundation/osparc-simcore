@@ -115,5 +115,12 @@ qx.Class.define("osparc.store.Functions", {
       }
       return null;
     },
+
+    invalidateFunctions: function() {
+      this.__functions = null;
+      if (this.__functionsPromiseCached) {
+        this.__functionsPromiseCached = null;
+      }
+    },
   }
 });
