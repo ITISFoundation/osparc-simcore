@@ -166,6 +166,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __addToolbarButtons: function(page) {
       const resourceData = this.__resourceData;
 
+      if (this.__resourceData["resourceType"] === "function") {
+        return; // no toolbar buttons for functions
+      }
+
       const toolbar = this.self().createToolbar();
       page.addToHeader(toolbar);
 
@@ -386,7 +390,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       } else if (this.__resourceData["resourceType"] === "function") {
         this.__addInfoPage();
-        this.__addPreviewPage();
+        // this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
       }
@@ -462,6 +466,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             const updatedData = e.getData();
             this.__fireUpdateEvent(resourceData, updatedData);
           });
+        } else if (osparc.utils.Resources.isFunction(resourceData)) {
+          infoCard = new osparc.info.FunctionLarge(resourceModel);
+          infoCard.addListener("updateFunction", e => {
+            const updatedData = e.getData();
+            this.__fireUpdateEvent(resourceData, updatedData);
+          });
+          infoCard.addListener("openTags", () => this.openTags());
         } else {
           infoCard = new osparc.info.StudyLarge(resourceModel, false);
           infoCard.addListener("updateStudy", e => {
