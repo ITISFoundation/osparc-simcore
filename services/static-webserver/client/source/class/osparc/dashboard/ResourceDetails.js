@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "template":
           case "tutorial":
           case "hypertool":
-          case "function":
             // when getting the latest study data, the debt information was lost
             if (osparc.study.Utils.isInDebt(this.__resourceData)) {
               const studyStore = osparc.store.Study.getInstance();
@@ -71,6 +70,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
                 this.__addPages();
               })
             break;
+          case "function": {
+            this.__resourceModel = new osparc.data.model.Function(latestResourceData);
+            this.__resourceModel["resourceType"] = resourceData["resourceType"];
+            this.__addPages();
+            break;
+          }
           case "service": {
             this.__resourceModel = new osparc.data.model.Service(latestResourceData);
             this.__resourceModel["resourceType"] = resourceData["resourceType"];
@@ -372,6 +377,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       if (this.__resourceData["resourceType"] === "function") {
         // for now, we only want the preview page
+        // OM: careful here, the one coming from the MMUX services is marked as "function"
+        this.__addInfoPage();
         this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
