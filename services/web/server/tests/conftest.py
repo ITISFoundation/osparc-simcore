@@ -6,7 +6,6 @@
 import contextlib
 import json
 import logging
-import random
 import sys
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
@@ -20,9 +19,11 @@ from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.users import PhoneNumberStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -155,8 +156,16 @@ async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
 
 
 @pytest.fixture
+def user_phone(faker: Faker) -> PhoneNumberStr:
+    phone = faker.phone_number()
+    tail = f"{faker.pyint(100, 999)}"
+    valid_phone = phone[: -len(tail)] + tail  # ensure phone is 10 digits long
+    return TypeAdapter(PhoneNumberStr).validate_python(valid_phone)
+
+
+@pytest.fixture
 async def logged_user(
-    client: TestClient, user_role: UserRole, faker: Faker
+    client: TestClient, user_role: UserRole, faker: Faker, user_phone: PhoneNumberStr
 ) -> AsyncIterator[UserInfoDict]:
     """adds a user in db and logs in with client
 
@@ -168,8 +177,7 @@ async def logged_user(
             "role": user_role.name,
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
-            "phone": faker.phone_number()
-            + f"{random.randint(1000, 9999)}",  # noqa: S311
+            "phone": user_phone,
         },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:
