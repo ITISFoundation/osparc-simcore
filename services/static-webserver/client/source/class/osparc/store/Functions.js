@@ -150,12 +150,56 @@ qx.Class.define("osparc.store.Functions", {
           "functionClass": "PROJECT",
           "name": "Potential Function II",
           "description": "Function description",
-          "inputSchema": {"schema_class": "application/schema+json", "schema_content": {"type": "object", "required": ["X"], "properties": {"X": {"type": "number"}}}},
-          "outputSchema": {"schema_class": "application/schema+json", "schema_content": {"type": "object", "required": ["Out 1", "Out_2"], "properties": {"Out 1": {"type": "number"}, "Out_2": {"type": "number"}}}},
-          "defaultInputs": {"X": 2, "Y": 1},
+          "inputSchema": {
+            "schema_class": "application/schema+json",
+            "schema_content": {
+              "type": "object",
+              "required": [
+                "X"
+              ],
+              "properties": {
+                "X": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "outputSchema": {
+            "schema_class": "application/schema+json",
+            "schema_content": {
+              "type": "object",
+              "required": [
+                "Out 1",
+                "Out_2"
+              ],
+              "properties": {
+                "Out 1": {
+                  "type": "number"
+                },
+                "Out_2": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "defaultInputs": {
+            "X": 2,
+            "Y": 1
+          },
           "creationDate": "2025-05-16T12:22:31.063Z",
           "lastChangeDate": "2025-05-16T12:22:33.804Z",
-          "accessRights": {"3": {"read": true, "write": true, "delete": true}, "5": {"read": true, "write": false, "delete": false}},
+          "accessRights": {
+            "3": {
+              "read": true,
+              "write": true,
+              "delete": true
+            },
+            "5": {
+              "read": true,
+              "write": false,
+              "delete": false
+            }
+          },
           "thumbnail": "https://img.freepik.com/premium-vector/image-icon-design-vector-template_1309674-940.jpg",
           "workbench": {"50a50309-1dfc-5ad5-b2d9-c11697641f0b": {"key": "simcore/services/comp/itis/sleeper", "version": "2.2.0", "label": "sleeper", "inputs": {"input_2": 2, "input_3": false, "input_4": 0, "input_5": 0}, "inputsRequired": [], "inputNodes": ["2e348481-5042-5148-9196-590574747297", "69873032-770a-536b-adb6-0e6ea01720a4"]}, "2e348481-5042-5148-9196-590574747297": {"key": "simcore/services/frontend/parameter/number", "version": "1.0.0", "label": "X", "inputs": {}, "inputsRequired": [], "inputNodes": [], "outputs": {"out_1": 1}, "runHash": null}, "70e1de1a-a8b0-59e3-b19e-ea20f78765ce": {"key": "simcore/services/frontend/iterator-consumer/probe/number", "version": "1.0.0", "label": "Out 1", "inputs": {"in_1": 0}, "inputsRequired": [], "inputNodes": ["50a50309-1dfc-5ad5-b2d9-c11697641f0b"]}, "69873032-770a-536b-adb6-0e6ea01720a4": {"key": "simcore/services/frontend/parameter/number", "version": "1.0.0", "label": "Y", "inputs": {}, "inputsRequired": [], "inputNodes": [], "outputs": {"out_1": 1}, "runHash": null}, "24f856c3-408c-5ab4-ad01-e99630a355fe": {"key": "simcore/services/frontend/iterator-consumer/probe/number", "version": "1.0.0", "label": "Out_2", "inputs": {"in_1": 0}, "inputsRequired": [], "inputNodes": ["50a50309-1dfc-5ad5-b2d9-c11697641f0b"]}},
           "ui": {"24f856c3-408c-5ab4-ad01-e99630a355fe": {"position": {"x": 540, "y": 240}}, "2e348481-5042-5148-9196-590574747297": {"position": {"x": 120, "y": 140}}, "50a50309-1dfc-5ad5-b2d9-c11697641f0b": {"position": {"x": 300, "y": 180}}, "69873032-770a-536b-adb6-0e6ea01720a4": {"position": {"x": 120, "y": 240}}, "70e1de1a-a8b0-59e3-b19e-ea20f78765ce": {"position": {"x": 540, "y": 140}}},
