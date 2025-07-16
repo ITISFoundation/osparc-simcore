@@ -1,56 +1,30 @@
-import logging
-from asyncio import AbstractEventLoop
-
+from celery_library.common import create_app, create_task_manager
+from celery_library.task_manager import CeleryTaskManager
+from celery_library.types import register_celery_types, register_pydantic_types
 from fastapi import FastAPI
-from servicelib.redis._client import RedisClientSDK
-from settings_library.redis import RedisDatabase
+from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadCompletionBody,
+    FoldersBody,
+)
+from settings_library.celery import CelerySettings
 
-from ..._meta import APP_NAME
-from ...core.settings import get_application_settings
-from ._celery_types import register_celery_types
-from ._common import create_app
-from .backends._redis import RedisTaskInfoStore
-from .client import CeleryTaskClient
-
-_logger = logging.getLogger(__name__)
+from ...models import FileMetaData
 
 
-def setup_celery_client(app: FastAPI) -> None:
+def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
     async def on_startup() -> None:
-        application_settings = get_application_settings(app)
-        celery_settings = application_settings.STORAGE_CELERY
-        assert celery_settings  # nosec
-        celery_app = create_app(celery_settings)
-        redis_client_sdk = RedisClientSDK(
-            celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
-                RedisDatabase.CELERY_TASKS
-            ),
-            client_name=f"{APP_NAME}.celery_tasks",
-        )
-
-        app.state.celery_client = CeleryTaskClient(
-            celery_app,
-            celery_settings,
-            RedisTaskInfoStore(redis_client_sdk),
+        app.state.task_manager = await create_task_manager(
+            create_app(celery_settings), celery_settings
         )
 
         register_celery_types()
+        register_pydantic_types(FileUploadCompletionBody, FileMetaData, FoldersBody)
 
     app.add_event_handler("startup", on_startup)
 
 
-def get_celery_client(app: FastAPI) -> CeleryTaskClient:
-    assert hasattr(app.state, "celery_client")  # nosec
-    celery_client = app.state.celery_client
-    assert isinstance(celery_client, CeleryTaskClient)
-    return celery_client
-
-
-def get_event_loop(app: FastAPI) -> AbstractEventLoop:
-    event_loop = app.state.event_loop
-    assert isinstance(event_loop, AbstractEventLoop)
-    return event_loop
-
-
-def set_event_loop(app: FastAPI, event_loop: AbstractEventLoop) -> None:
-    app.state.event_loop = event_loop
+def get_task_manager_from_app(app: FastAPI) -> CeleryTaskManager:
+    assert hasattr(app.state, "task_manager")  # nosec
+    task_manager = app.state.task_manager
+    assert isinstance(task_manager, CeleryTaskManager)  # nosec
+    return task_manager

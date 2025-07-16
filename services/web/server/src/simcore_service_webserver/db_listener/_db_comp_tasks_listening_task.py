@@ -22,7 +22,7 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ..projects import _projects_service, exceptions
 from ..projects.nodes_utils import update_node_outputs
 from ._models import CompTaskNotificationPayload
@@ -126,7 +126,7 @@ async def _handle_db_notification(
 
 async def _listen(app: web.Application) -> NoReturn:
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    db_engine = get_database_engine(app)
+    db_engine = get_database_engine_legacy(app)
     async with db_engine.acquire() as conn:
         assert conn.connection  # nosec
         await conn.execute(listen_query)

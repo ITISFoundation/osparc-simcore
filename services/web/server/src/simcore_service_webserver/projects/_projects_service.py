@@ -112,13 +112,13 @@ from ..socketio.messages import (
     send_message_to_user,
 )
 from ..storage import api as storage_service
-from ..users.api import FullNameDict, get_user, get_user_fullname, get_user_role
-from ..users.exceptions import UserNotFoundError
-from ..users.preferences_api import (
+from ..user_preferences import user_preferences_service
+from ..user_preferences.user_preferences_service import (
     PreferredWalletIdFrontendUserPreference,
-    UserDefaultWalletNotFoundError,
-    get_frontend_user_preference,
 )
+from ..users import users_service
+from ..users.exceptions import UserDefaultWalletNotFoundError, UserNotFoundError
+from ..users.users_service import FullNameDict
 from ..wallets import api as wallets_service
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
@@ -322,7 +322,7 @@ async def patch_project(
             "write": True,
             "delete": True,
         }
-        user: dict = await get_user(app, project_db.prj_owner)
+        user: dict = await users_service.get_user(app, project_db.prj_owner)
         _prj_owner_primary_group = f"{user['primary_gid']}"
         if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
@@ -332,7 +332,7 @@ async def patch_project(
     # 4. If patching template type
     if new_template_type := patch_project_data.get("template_type"):
         # 4.1 Check if user is a tester
-        current_user: dict = await get_user(app, user_id)
+        current_user: dict = await users_service.get_user(app, user_id)
         if UserRole(current_user["role"]) < UserRole.TESTER:
             raise InsufficientRoleForProjectTemplateTypeUpdateError
         # 4.2 Check the compatibility of the template type with the project
@@ -667,7 +667,9 @@ async def _start_dynamic_service(  # noqa: C901
         raise
 
     save_state = False
-    user_role: UserRole = await get_user_role(request.app, user_id=user_id)
+    user_role: UserRole = await users_service.get_user_role(
+        request.app, user_id=user_id
+    )
     if user_role > UserRole.GUEST:
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
@@ -707,11 +709,13 @@ async def _start_dynamic_service(  # noqa: C901
                 request.app, project_id=project_uuid
             )
             if project_wallet is None:
-                user_default_wallet_preference = await get_frontend_user_preference(
-                    request.app,
-                    user_id=user_id,
-                    product_name=product_name,
-                    preference_class=PreferredWalletIdFrontendUserPreference,
+                user_default_wallet_preference = (
+                    await user_preferences_service.get_frontend_user_preference(
+                        request.app,
+                        user_id=user_id,
+                        product_name=product_name,
+                        preference_class=PreferredWalletIdFrontendUserPreference,
+                    )
                 )
                 if user_default_wallet_preference is None:
                     raise UserDefaultWalletNotFoundError(uid=user_id)
@@ -1405,7 +1409,8 @@ async def try_open_project_for_user(
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
             owner=Owner(
-                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+                user_id=user_id,
+                **await users_service.get_user_fullname(app, user_id=user_id),
             ),
             notification_cb=None,
         )
@@ -1582,7 +1587,7 @@ async def _get_project_lock_state(
         f"{set_user_ids=}",
     )
     usernames: list[FullNameDict] = [
-        await get_user_fullname(app, user_id=uid) for uid in set_user_ids
+        await users_service.get_user_fullname(app, user_id=uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
     if set_user_ids.issubset({user_id}) and not await _user_has_another_client_open(
@@ -1889,13 +1894,13 @@ async def remove_project_dynamic_services(
         user_id,
     )
 
-    user_name_data: FullNameDict = user_name or await get_user_fullname(
+    user_name_data: FullNameDict = user_name or await users_service.get_user_fullname(
         app, user_id=user_id
     )
 
     user_role: UserRole | None = None
     try:
-        user_role = await get_user_role(app, user_id=user_id)
+        user_role = await users_service.get_user_role(app, user_id=user_id)
     except UserNotFoundError:
         user_role = None
 
@@ -1961,7 +1966,6 @@ async def notify_project_state_update(
             app,
             user_id=notify_only_user,
             message=message,
-            ignore_queue=True,
         )
     else:
         rooms_to_notify: Generator[GroupID, None, None] = (

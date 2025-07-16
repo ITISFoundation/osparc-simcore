@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import arrow
 from aiohttp import web
+from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.wallets import (
     PaymentID,
     PaymentMethodID,
@@ -23,10 +24,10 @@ from simcore_postgres_database.models.payments_transactions import (
 from simcore_postgres_database.utils_payments import insert_init_payment_transaction
 from yarl import URL
 
-from ..db.plugin import get_database_engine
+from ..db.plugin import get_database_engine_legacy
 from ..products import products_service
 from ..resource_usage.service import add_credits_to_wallet
-from ..users.api import get_user_display_and_id_names, get_user_invoice_address
+from ..users import users_service
 from ..wallets.api import get_wallet_by_user, get_wallet_with_permissions_by_user
 from ..wallets.errors import WalletAccessForbiddenError
 from . import _onetime_db, _rpc
@@ -36,7 +37,11 @@ from .settings import PaymentsSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-MSG_WALLET_NO_ACCESS_ERROR = "User {user_id} does not have necessary permissions to do a payment into wallet {wallet_id}"
+MSG_WALLET_NO_ACCESS_ERROR = user_message(
+    "You do not have the necessary permissions to make payments to wallet {wallet_id}.",
+    _version=1,
+)
+
 _FAKE_PAYMENT_TRANSACTION_ID_PREFIX = "fpt"
 
 
@@ -76,7 +81,6 @@ async def _fake_init_payment(
     user_email,
     comment,
 ):
-    # (1) Init payment
     payment_id = f"{_FAKE_PAYMENT_TRANSACTION_ID_PREFIX}_{uuid4()}"
     # get_form_payment_url
     settings: PaymentsSettings = get_plugin_settings(app)
@@ -86,7 +90,7 @@ async def _fake_init_payment(
         .with_query(id=payment_id)
     )
     # (2) Annotate INIT transaction
-    async with get_database_engine(app).acquire() as conn:
+    async with get_database_engine_legacy(app).acquire() as conn:
         await insert_init_payment_transaction(
             conn,
             payment_id=payment_id,
@@ -292,8 +296,10 @@ async def init_creation_of_wallet_payment(
     assert user_wallet.wallet_id == wallet_id  # nosec
 
     # user info
-    user = await get_user_display_and_id_names(app, user_id=user_id)
-    user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
+    user = await users_service.get_user_display_and_id_names(app, user_id=user_id)
+    user_invoice_address = await users_service.get_user_invoice_address(
+        app, user_id=user_id
+    )
 
     # stripe info
     product_stripe_info = await products_service.get_product_stripe_info(
@@ -385,8 +391,10 @@ async def pay_with_payment_method(
     )
 
     # user info
-    user = await get_user_display_and_id_names(app, user_id=user_id)
-    user_invoice_address = await get_user_invoice_address(app, user_id=user_id)
+    user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
+    user_invoice_address = await users_service.get_user_invoice_address(
+        app, user_id=user_id
+    )
 
     settings: PaymentsSettings = get_plugin_settings(app)
     if settings.PAYMENTS_FAKE_COMPLETION:
@@ -399,8 +407,8 @@ async def pay_with_payment_method(
             wallet_id=wallet_id,
             wallet_name=user_wallet.name,
             user_id=user_id,
-            user_name=user.full_name,
-            user_email=user.email,
+            user_name=user_info.full_name,
+            user_email=user_info.email,
             comment=comment,
         )
 
@@ -415,8 +423,8 @@ async def pay_with_payment_method(
         wallet_id=wallet_id,
         wallet_name=user_wallet.name,
         user_id=user_id,
-        user_name=user.full_name,
-        user_email=user.email,
+        user_name=user_info.full_name,
+        user_email=user_info.email,
         user_address=user_invoice_address,
         stripe_price_id=product_stripe_info.stripe_price_id,
         stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,

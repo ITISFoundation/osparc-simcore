@@ -8,6 +8,7 @@ from models_library.conversations import (
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
+    ConversationName,
     ConversationPatchDB,
     ConversationType,
 )
@@ -42,7 +43,7 @@ async def create_project_conversation(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.create_conversation(
         app,
@@ -87,17 +88,18 @@ async def update_project_conversation(
     project_uuid: ProjectID,
     conversation_id: ConversationID,
     # attributes
-    name: str,
+    name: ConversationName,
 ) -> ConversationGetDB:
     await check_user_project_permission(
         app,
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.update_conversation(
         app,
+        project_id=project_uuid,
         conversation_id=conversation_id,
         updates=ConversationPatchDB(name=name),
     )
@@ -116,10 +118,14 @@ async def delete_project_conversation(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     await conversations_service.delete_conversation(
-        app, conversation_id=conversation_id
+        app,
+        product_name=product_name,
+        project_id=project_uuid,
+        user_id=user_id,
+        conversation_id=conversation_id,
     )
 
 
@@ -164,11 +170,12 @@ async def create_project_conversation_message(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.create_message(
         app,
         user_id=user_id,
+        project_id=project_uuid,
         conversation_id=conversation_id,
         content=content,
         type_=message_type,
@@ -217,10 +224,11 @@ async def update_project_conversation_message(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     return await conversations_service.update_message(
         app,
+        project_id=project_uuid,
         conversation_id=conversation_id,
         message_id=message_id,
         updates=ConversationMessagePatchDB(content=content),
@@ -241,10 +249,14 @@ async def delete_project_conversation_message(
         product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
-        permission="read",
+        permission="write",
     )
     await conversations_service.delete_message(
-        app, conversation_id=conversation_id, message_id=message_id
+        app,
+        user_id=user_id,
+        project_id=project_uuid,
+        conversation_id=conversation_id,
+        message_id=message_id,
     )
 
 

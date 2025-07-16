@@ -12,7 +12,7 @@ from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import BaseModel, EmailStr, TypeAdapter
 
-from ..users import api as users_service
+from ..users import users_service
 from . import _groups_repository
 from ._access_rights_service import check_user_project_permission
 from ._groups_models import ProjectGroupGetDB

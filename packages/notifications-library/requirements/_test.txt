@@ -48,17 +48,20 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
     # via
-    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
+pathspec==0.12.1
+    # via mypy
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
 propcache==0.3.0
@@ -66,7 +69,11 @@ propcache==0.3.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -75,15 +82,15 @@ pytest==8.3.5
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -97,7 +104,7 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-requests==2.32.3
+requests==2.32.4
     # via docker
 sqlalchemy==1.4.54
     # via
@@ -112,14 +119,14 @@ termcolor==2.5.0
     # via pytest-sugar
 types-aiofiles==24.1.0.20241221
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   mypy
     #   sqlalchemy2-stubs
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

@@ -81,32 +81,40 @@ multidict==6.1.0
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-mypy==1.15.0
+mypy==1.16.1
     # via sqlalchemy
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
+pathspec==0.12.1
+    # via mypy
 pluggy==1.5.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 propcache==0.3.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-pytest==8.3.5
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.0.0
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 python-dateutil==2.9.0.post0
     # via
@@ -117,7 +125,7 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
@@ -147,7 +155,7 @@ types-psutil==7.0.0.20250218
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   mypy
@@ -155,7 +163,7 @@ typing-extensions==4.12.2
     #   types-aiobotocore-s3
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

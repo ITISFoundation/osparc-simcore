@@ -2,7 +2,7 @@
 
 # Define arguments in the global scope
 ARG PYTHON_VERSION="3.11.9"
-ARG UV_VERSION="0.6"
+ARG UV_VERSION="0.7"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base-arm64
@@ -60,12 +60,13 @@ COPY --from=uv_build /uv /uvx /bin/
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
+# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade  \
-  wheel \
-  setuptools
+
+
 
 WORKDIR /build/packages/postgres-database
 
@@ -82,8 +83,6 @@ RUN \
 FROM base AS production
 
 ENV PYTHONOPTIMIZE=TRUE
-# https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
 
 # testing defaults
 ENV POSTGRES_USER=scu \

@@ -21,7 +21,7 @@ from models_library.rpc.webserver.projects import (
 from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
 from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (

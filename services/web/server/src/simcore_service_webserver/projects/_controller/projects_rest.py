@@ -33,7 +33,7 @@ from ...redis import get_redis_lock_manager_client_sdk
 from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ...security import security_web
 from ...security.decorators import permission_required
-from ...users.api import get_user_fullname
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _crud_api_create, _crud_api_read, _projects_service
 from .._permalink_service import update_or_pop_permalink_in_project
@@ -187,6 +187,8 @@ async def list_projects_full_search(request: web.Request):
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         trashed=query_params.filters.trashed,
+        filter_by_project_type=query_params.project_type,
+        filter_by_template_type=query_params.template_type,
         search_by_multi_columns=query_params.text,
         search_by_project_name=query_params.filters.search_by_project_name,
         offset=query_params.offset,
@@ -360,16 +362,16 @@ async def delete_project(request: web.Request):
     # that project is still in use
     if req_ctx.user_id in project_users:
         raise web.HTTPForbidden(
-            reason="Project is still open in another tab/browser."
+            text="Project is still open in another tab/browser."
             "It cannot be deleted until it is closed."
         )
     if project_users:
         other_user_names = {
-            f"{await get_user_fullname(request.app, user_id=uid)}"
+            f"{await users_service.get_user_fullname(request.app, user_id=uid)}"
             for uid in project_users
         }
         raise web.HTTPForbidden(
-            reason=f"Project is open by {other_user_names}. "
+            text=f"Project is open by {other_user_names}. "
             "It cannot be deleted until the project is closed."
         )
 
@@ -379,7 +381,7 @@ async def delete_project(request: web.Request):
         project_uuid=path_params.project_id,
     ):
         raise web.HTTPConflict(
-            reason=f"Project {path_params.project_id} is locked: {project_locked_state=}"
+            text=f"Project {path_params.project_id} is locked: {project_locked_state=}"
         )
 
     await _projects_service.submit_delete_project_task(

@@ -19,7 +19,7 @@
 qx.Class.define("osparc.jobs.SubRunsTableModel", {
   extend: qx.ui.table.model.Remote,
 
-  construct: function(projectUuid) {
+  construct: function(collectionRunId) {
     this.base(arguments);
 
     const subJobsCols = osparc.jobs.SubRunsTable.COLS;
@@ -33,11 +33,11 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       this.setColumnSortable(col.column, Boolean(col.sortableMap));
     });
 
-    this.setProjectUuid(projectUuid);
+    this.setCollectionRunId(collectionRunId);
   },
 
   properties: {
-    projectUuid: {
+    collectionRunId: {
       check: "String",
       nullable: true,
     },
@@ -57,10 +57,6 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
     },
   },
 
-  statics: {
-    SERVER_MAX_LIMIT: 49,
-  },
-
   members: {
     // overridden
     sortByColumn(columnIndex, ascending) {
@@ -75,7 +71,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
 
     // overridden
     _loadRowCount() {
-      osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.getOrderBy())
+      osparc.store.Jobs.getInstance().fetchSubJobs(this.getCollectionRunId(), this.getOrderBy())
         .then(subJobs => {
           this._onRowCountLoaded(subJobs.length)
         })
@@ -91,7 +87,7 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       const lastRow = Math.min(qxLastRow, this._rowCount - 1);
       // Returns a request promise with given offset and limit
       const getFetchPromise = () => {
-        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getProjectUuid(), this.getOrderBy())
+        return osparc.store.Jobs.getInstance().fetchSubJobs(this.getCollectionRunId(), this.getOrderBy())
           .then(subJobs => {
             const data = [];
             const subJobsCols = osparc.jobs.SubRunsTable.COLS;
@@ -115,9 +111,9 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
                 duration = `${String(diffHours).padStart(2, "0")}:${String(diffMinutes).padStart(2, "0")}:${String(diffSeconds).padStart(2, "0")}`;
               }
               data.push({
-                [subJobsCols.PROJECT_UUID.id]: subJob.getProjectUuid(),
+                [subJobsCols.COLLECTION_RUN_ID.id]: subJob.getCollectionRunId(),
                 [subJobsCols.NODE_ID.id]: subJob.getNodeId(),
-                [subJobsCols.NODE_NAME.id]: subJob.getNodeName(),
+                [subJobsCols.NAME.id]: subJob.getName(),
                 [subJobsCols.APP.id]: appName + ":" + displayVersion,
                 [subJobsCols.STATE.id]: osparc.data.Job.STATUS_LABELS[subJob.getState()] || subJob.getState(),
                 [subJobsCols.PROGRESS.id]: subJob.getProgress() * 100 + "%",
@@ -132,12 +128,13 @@ qx.Class.define("osparc.jobs.SubRunsTableModel", {
       };
 
       // Divides the model row request into several server requests to comply with the number of rows server limit
+      const serverMaxLimit = osparc.store.Jobs.SERVER_MAX_LIMIT;
       const reqLimit = lastRow - firstRow + 1; // Number of requested rows
-      const nRequests = Math.ceil(reqLimit / this.self().SERVER_MAX_LIMIT);
+      const nRequests = Math.ceil(reqLimit / serverMaxLimit);
       if (nRequests > 1) {
         const requests = [];
-        for (let i=firstRow; i <= lastRow; i += this.self().SERVER_MAX_LIMIT) {
-          requests.push(getFetchPromise(i, i > lastRow - this.self().SERVER_MAX_LIMIT + 1 ? reqLimit % this.self().SERVER_MAX_LIMIT : this.self().SERVER_MAX_LIMIT))
+        for (let i=firstRow; i <= lastRow; i += serverMaxLimit) {
+          requests.push(getFetchPromise(i, i > lastRow - serverMaxLimit + 1 ? reqLimit % serverMaxLimit : serverMaxLimit))
         }
         Promise.all(requests)
           .then(responses => this._onRowDataLoaded(responses.flat()))

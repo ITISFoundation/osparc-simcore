@@ -124,7 +124,7 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
 def faker_dynamic_service_get() -> Callable[[], DynamicServiceGet]:
     def _() -> DynamicServiceGet:
         return DynamicServiceGet.model_validate(
-            DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
+            DynamicServiceGet.model_json_schema()["examples"][1]
         )
 
     return _
@@ -156,7 +156,9 @@ async def mock_get_user_role(
     mocker: MockerFixture, user_role: UserRole
 ) -> mock.AsyncMock:
     return mocker.patch(
-        f"{MODULE_GC_CORE_ORPHANS}.get_user_role", autospec=True, return_value=user_role
+        f"{MODULE_GC_CORE_ORPHANS}.users_service.get_user_role",
+        autospec=True,
+        return_value=user_role,
     )
 
 

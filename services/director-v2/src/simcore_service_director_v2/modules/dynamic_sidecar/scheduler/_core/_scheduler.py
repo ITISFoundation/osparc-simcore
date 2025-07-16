@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Final
 
 import arrow
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceCreate,
@@ -41,7 +42,6 @@ from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
-from servicelib.async_utils import cancel_wait_task
 from servicelib.background_task import create_periodic_task
 from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive

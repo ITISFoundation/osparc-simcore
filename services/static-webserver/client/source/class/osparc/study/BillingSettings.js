@@ -33,6 +33,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
   events: {
     "debtPayed": "qx.event.type.Event",
+    "closeWindow": "qx.event.type.Event",
   },
 
   members: {
@@ -118,12 +119,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
       const walletSelector = this.getChildControl("wallet-selector");
 
-      const paramsGet = {
-        url: {
-          studyId: this.__studyData["uuid"]
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getWallet", paramsGet)
+      osparc.store.Study.getInstance().getWallet(this.__studyData["uuid"])
         .then(wallet => {
           if (wallet) {
             this.__studyWalletId = wallet["walletId"];
@@ -242,16 +238,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
     __doTransferCredits: function() {
       const wallet = this.__getSelectedWallet();
-      const params = {
-        url: {
-          studyId: this.__studyData["uuid"],
-          walletId: wallet.getWalletId(),
-        },
-        data: {
-          amount: this.__studyData["debt"],
-        }
-      };
-      osparc.data.Resources.fetch("studies", "payDebt", params)
+      osparc.store.Study.getInstance().payDebt(this.__studyData["uuid"], wallet.getWalletId(), this.__studyData["debt"])
         .then(() => {
           // at this point we can assume that the study got unblocked
           this.__debtPayed();
@@ -263,7 +250,7 @@ qx.Class.define("osparc.study.BillingSettings", {
 
     __debtPayed: function() {
       delete this.__studyData["debt"];
-      osparc.store.Store.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
+      osparc.store.Study.getInstance().setStudyDebt(this.__studyData["uuid"], 0);
       this.fireEvent("debtPayed");
       if (this.__debtMessage) {
         this._remove(this.__debtMessage);
@@ -274,19 +261,18 @@ qx.Class.define("osparc.study.BillingSettings", {
     __switchWallet: function(walletId) {
       const creditAccountBox = this.getChildControl("credit-account-box");
       creditAccountBox.setEnabled(false);
-      const paramsPut = {
-        url: {
-          studyId: this.__studyData["uuid"],
-          walletId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "selectWallet", paramsPut)
+      osparc.store.Study.getInstance().selectWallet(this.__studyData["uuid"], walletId)
         .then(() => {
           this.__studyWalletId = walletId;
           const msg = this.tr("Credit Account saved");
           osparc.FlashMessenger.logAs(msg, "INFO");
         })
-        .catch(err => osparc.FlashMessenger.logError(err))
+        .catch(err => {
+          if ("status" in err && err["status"] == 402) {
+            osparc.study.Utils.extractDebtFromError(this.__studyData["uuid"], err);
+          }
+          this.fireEvent("closeWindow");
+        })
         .finally(() => {
           creditAccountBox.setEnabled(true);
         });

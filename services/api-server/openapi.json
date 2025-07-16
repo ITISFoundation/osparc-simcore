@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.9.0"
+    "version": "0.9.2"
   },
   "paths": {
     "/v0/meta": {
@@ -5669,7 +5669,8 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     {
                       "type": "null"
@@ -7529,7 +7530,8 @@
               "schema": {
                 "anyOf": [
                   {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                   },
                   {
                     "type": "null"
@@ -7649,7 +7651,8 @@
               "schema": {
                 "anyOf": [
                   {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                   },
                   {
                     "type": "null"
@@ -7783,7 +7786,8 @@
                 "items": {
                   "anyOf": [
                     {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": true
                     },
                     {
                       "type": "null"
@@ -7977,6 +7981,18 @@
             "items": {},
             "type": "array",
             "title": "Errors"
+          },
+          "support_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "OEC:([a-fA-F0-9]{12})-(\\d{13,14})"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Id"
           }
         },
         "type": "object",
@@ -8237,6 +8253,7 @@
       "JSONFunctionInputSchema": {
         "properties": {
           "schema_content": {
+            "additionalProperties": true,
             "type": "object",
             "title": "JSON Schema",
             "description": "JSON Schema",
@@ -8255,6 +8272,7 @@
       "JSONFunctionOutputSchema": {
         "properties": {
           "schema_content": {
+            "additionalProperties": true,
             "type": "object",
             "title": "JSON Schema",
             "description": "JSON Schema",
@@ -9982,6 +10000,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10025,6 +10044,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10036,6 +10056,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10114,6 +10135,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10156,6 +10178,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10167,6 +10190,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10278,6 +10302,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10333,6 +10358,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10344,6 +10370,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10434,6 +10461,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10488,6 +10516,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10499,6 +10528,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10583,6 +10613,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10644,6 +10675,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10655,6 +10687,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10700,18 +10733,18 @@
         "type": "string",
         "enum": [
           "UNKNOWN",
-          "PUBLISHED",
           "NOT_STARTED",
+          "PUBLISHED",
           "PENDING",
+          "WAITING_FOR_CLUSTER",
           "WAITING_FOR_RESOURCES",
           "STARTED",
           "SUCCESS",
           "FAILED",
-          "ABORTED",
-          "WAITING_FOR_CLUSTER"
+          "ABORTED"
         ],
         "title": "RunningState",
-        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state"
+        "description": "State of execution of a project's computational workflow\n\nSEE StateType for task state\n\n# Computational backend states explained:\n- UNKNOWN - The backend doesn't know about the task anymore, it has disappeared from the system or it was never created (eg. when we are asking for the task)\n- NOT_STARTED - Default state when the task is created\n- PUBLISHED - The task has been submitted to the computational backend (click on \"Run\" button in the UI)\n- PENDING - Task has been transferred to the Dask scheduler and is waiting for a worker to pick it up (director-v2 --> Dask scheduler)\n   - But! it is also transition state (ex. PENDING -> WAITING_FOR_CLUSTER -> PENDING -> WAITING_FOR_RESOURCES -> PENDING -> STARTED)\n- WAITING_FOR_CLUSTER - No cluster (Dask scheduler) is available to run the task; waiting for one to become available\n- WAITING_FOR_RESOURCES - No worker (Dask worker) is available to run the task; waiting for one to become available\n- STARTED - A worker has picked up the task and is executing it\n- SUCCESS - Task finished successfully\n- FAILED - Task finished with an error\n- ABORTED - Task was aborted before completion"
       },
       "ServicePricingPlanGetLegacy": {
         "properties": {
@@ -10895,6 +10928,7 @@
           "default_inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10944,6 +10978,7 @@
           "inputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10955,6 +10990,7 @@
           "outputs": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11003,6 +11039,7 @@
           "content_schema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11086,6 +11123,7 @@
           "content_schema": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -11249,7 +11287,6 @@
           },
           "workspace_path": {
             "type": "string",
-            "pattern": "^workspace/.*",
             "format": "path",
             "title": "Workspace Path",
             "description": "The file's relative path within the job's workspace directory. E.g. 'workspace/myfile.txt'"

@@ -1,10 +1,7 @@
 import logging
-from typing import Literal
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
-from models_library.emails import LowerCaseEmailStr
-from pydantic import Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -12,19 +9,19 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import session_access_required
+from ....web_utils import envelope_response
 from ... import _twofa_service
-from ..._constants import (
+from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
     MSG_2FA_CODE_SENT,
     MSG_EMAIL_SENT,
     MSG_UNKNOWN_EMAIL,
 )
-from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
-from ..._login_service import envelope_response
-from ..._models import InputSchema
-from ...errors import handle_login_exceptions
 from ...settings import LoginSettingsForProduct, get_plugin_settings
+from ._rest_exceptions import handle_rest_requests_exceptions
+from .twofa_schemas import Resend2faBody
 
 _logger = logging.getLogger(__name__)
 
@@ -32,17 +29,12 @@ _logger = logging.getLogger(__name__)
 routes = RouteTableDef()
 
 
-class Resend2faBody(InputSchema):
-    email: LowerCaseEmailStr = Field(..., description="User email (identifier)")
-    via: Literal["SMS", "Email"] = "SMS"
-
-
 @routes.post("/v0/auth/two_factor:resend", name="auth_resend_2fa_code")
 @session_access_required(
     name="auth_resend_2fa_code",
     one_time_access=False,
 )
-@handle_login_exceptions
+@handle_rest_requests_exceptions
 async def resend_2fa_code(request: web.Request):
     """Resends 2FA code via SMS/Email"""
     product: Product = products_web.get_current_product(request)
@@ -55,12 +47,12 @@ async def resend_2fa_code(request: web.Request):
     user = await db.get_user({"email": resend_2fa_.email})
     if not user:
         raise web.HTTPUnauthorized(
-            reason=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
+            text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
-            reason="2FA login is not available",
+            text="2FA login is not available",
             content_type=MIMETYPE_APPLICATION_JSON,
         )
 

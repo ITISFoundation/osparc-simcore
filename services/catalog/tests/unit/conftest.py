@@ -15,18 +15,19 @@ import httpx
 import pytest
 import respx
 import simcore_service_catalog
-import simcore_service_catalog.core.application
 import simcore_service_catalog.core.events
-import simcore_service_catalog.repository
-import simcore_service_catalog.repository.events
 import yaml
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from models_library.api_schemas_directorv2.services import ServiceExtras
+from models_library.api_schemas_directorv2.services import (
+    NodeRequirements,
+    ServiceBuildDetails,
+    ServiceExtras,
+)
 from packaging.version import Version
-from pydantic import EmailStr, TypeAdapter
+from pydantic import EmailStr
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -35,6 +36,7 @@ from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
@@ -42,6 +44,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.logging",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -177,7 +180,6 @@ def client(
     assert spy_app.on_shutdown.call_count == 0
 
     with TestClient(app_under_test) as cli:
-
         assert spy_app.on_startup.call_count == 1
         assert spy_app.on_shutdown.call_count == 0
 
@@ -390,7 +392,6 @@ def mocked_director_rest_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         # HEATHCHECK
         assert openapi["paths"].get("/")
         respx_mock.head("/", name="healthcheck").respond(
@@ -410,8 +411,10 @@ def mocked_director_rest_api_base(
 
 @pytest.fixture
 def get_mocked_service_labels() -> Callable[[str, str], dict]:
-    def _(service_key: str, service_version: str) -> dict:
-        return {
+    def _(
+        service_key: str, service_version: str, *, include_org_labels: bool = True
+    ) -> dict:
+        base_labels = {
             "io.simcore.authors": '{"authors": [{"name": "John Smith", "email": "john@acme.com", "affiliation": "ACME\'IS Foundation"}]}',
             "io.simcore.contact": '{"contact": "john@acme.com"}',
             "io.simcore.description": '{"description": "Autonomous Nervous System Network model"}',
@@ -426,21 +429,35 @@ def get_mocked_service_labels() -> Callable[[str, str], dict]:
                 "xxxxx", service_version
             ),
             "maintainer": "johnsmith",
-            "org.label-schema.build-date": "2023-04-17T08:04:15Z",
-            "org.label-schema.schema-version": "1.0",
-            "org.label-schema.vcs-ref": "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
-            "org.label-schema.vcs-url": "https://github.com/ITISFoundation/jupyter-math.git",
             "simcore.service.restart-policy": "no-restart",
             "simcore.service.settings": '[{"name": "Resources", "type": "Resources", "value": {"Limits": {"NanoCPUs": 1000000000, "MemoryBytes": 4194304}, "Reservations": {"NanoCPUs": 4000000000, "MemoryBytes": 2147483648}}}]',
         }
+
+        if include_org_labels:
+            base_labels.update(
+                {
+                    "org.label-schema.build-date": "2023-04-17T08:04:15Z",
+                    "org.label-schema.schema-version": "1.0",
+                    "org.label-schema.vcs-ref": "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
+                    "org.label-schema.vcs-url": "https://github.com/ITISFoundation/jupyter-math.git",
+                }
+            )
+
+        return base_labels
 
     return _
 
 
 @pytest.fixture
 def mock_service_extras() -> ServiceExtras:
-    return TypeAdapter(ServiceExtras).validate_python(
-        ServiceExtras.model_json_schema()["examples"][0]
+    return ServiceExtras(
+        node_requirements=NodeRequirements(CPU=1.0, GPU=None, RAM=4194304, VRAM=None),
+        service_build_details=ServiceBuildDetails(
+            build_date="2023-04-17T08:04:15Z",
+            vcs_ref="4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792",
+            vcs_url="https://github.com/ITISFoundation/jupyter-math.git",
+        ),
+        container_spec=None,
     )
 
 

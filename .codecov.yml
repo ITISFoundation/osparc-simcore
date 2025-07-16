@@ -25,12 +25,12 @@ component_management:
         branches:
           - "!master"
   individual_components:
-    - component_id: api
-      paths:
-        - api/**
     - component_id: pkg_aws_library
       paths:
         - packages/aws-library/**
+    - component_id: pkg_celery_library
+      paths:
+        - packages/celery-library/**
     - component_id: pkg_dask_task_models_library
       paths:
         - packages/dask-task-models-library/**
@@ -130,6 +130,7 @@ comment:
 
 
 ignore:
+  - "api/tests"
   - "test_*.py"
   - "**/generated_models/*.py"
   - "**/generated_code/*.py"

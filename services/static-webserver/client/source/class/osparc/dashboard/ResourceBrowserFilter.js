@@ -35,7 +35,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
 
   events: {
     "templatesContext": "qx.event.type.Event",
-    "publicContext": "qx.event.type.Event",
+    "publicTemplatesContext": "qx.event.type.Event",
     "trashContext": "qx.event.type.Event",
     "changeTab": "qx.event.type.Data",
     "trashStudyRequested": "qx.event.type.Data",
@@ -100,9 +100,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
       this.__workspacesAndFoldersTree.contextChanged(context);
 
-      this.__templatesButton.setValue(context === "templates");
-      this.__publicProjectsButton.setValue(context === "public");
-      this.__trashButton.setValue(context === "trash");
+      this.__templatesButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
+      this.__publicProjectsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES);
+      this.__trashButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TRASH);
     },
 
     /* WORKSPACES AND FOLDERS */
@@ -158,7 +158,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       publicProjectsButton.addListener("changeValue", e => {
         const templatesEnabled = e.getData();
         if (templatesEnabled) {
-          this.fireEvent("publicContext");
+          this.fireEvent("publicTemplatesContext");
         }
       });
       return publicProjectsButton;
@@ -247,7 +247,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         }
       };
       Promise.all([
-        osparc.data.Resources.fetch("studies", "getPageTrashed", studiesParams),
+        osparc.store.Study.getInstance().getPageTrashed(studiesParams),
         osparc.data.Resources.fetch("folders", "getPageTrashed", foldersParams),
         osparc.data.Resources.fetch("workspaces", "getPageTrashed", workspacesParams),
       ])

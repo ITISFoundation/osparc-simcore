@@ -21,6 +21,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   construct: function(resourceData) {
     this.base(arguments);
 
+    this.__widgets = [];
     this.__resourceData = resourceData;
 
     let latestPromise = null;
@@ -29,12 +30,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       case "template":
       case "tutorial":
       case "hypertool": {
-        const params = {
-          url: {
-            "studyId": resourceData["uuid"]
-          }
-        };
-        latestPromise = osparc.data.Resources.fetch("studies", "getOne", params);
+        latestPromise = osparc.store.Study.getInstance().getOne(resourceData["uuid"]);
+        break;
+      }
+      case "function": {
+        latestPromise = osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
         break;
       }
       case "service": {
@@ -57,6 +57,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "template":
           case "tutorial":
           case "hypertool":
+          case "function":
+            // when getting the latest study data, the debt information was lost
+            if (osparc.study.Utils.isInDebt(this.__resourceData)) {
+              const studyStore = osparc.store.Study.getInstance();
+              this.__resourceData["debt"] = studyStore.getStudyDebt(this.__resourceData["uuid"]);
+            }
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
@@ -89,6 +95,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
+    "closeWindow": "qx.event.type.Event",
   },
 
 
@@ -96,18 +103,22 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     WIDTH: 830,
     HEIGHT: 700,
 
-    popUpInWindow: function(resourceDetails) {
-      // eslint-disable-next-line no-underscore-dangle
-      const title = resourceDetails.__resourceData.name;
-      const win = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
+    popUpInWindow: function(resourceData) {
+      const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
+      const title = resourceData.name;
+      const window = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
         layout: new qx.ui.layout.Grow(),
+        ...osparc.ui.window.TabbedWindow.DEFAULT_PROPS,
       });
-      win.set(osparc.ui.window.TabbedWindow.DEFAULT_PROPS);
-      win.set({
-        width: this.WIDTH,
-        height: this.HEIGHT,
+      resourceDetails.addListener("closeWindow", () => window.close());
+      window.addListener("close", () => {
+        // trigger children's destroy functions
+        resourceDetails.destroy();
       });
-      return win;
+      return {
+        resourceDetails,
+        window,
+      };
     },
 
     createToolbar: function() {
@@ -133,8 +144,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
   members: {
     __resourceData: null,
     __resourceModel: null,
+    __widgets: null,
     __infoPage: null,
     __servicesUpdatePage: null,
+    __conversationsPage: null,
     __permissionsPage: null,
     __tagsPage: null,
     __billingSettings: null,
@@ -213,13 +226,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       }
       openButton.setFetching(true);
-      const params = {
-        url: {
-          "studyId": this.__resourceData["uuid"]
-        }
-      };
       Promise.all([
-        osparc.data.Resources.fetch("studies", "getOne", params),
+        osparc.store.Study.getInstance().getOne(this.__resourceData["uuid"]),
         osparc.store.Services.getStudyServices(this.__resourceData["uuid"]),
       ])
         .then(values => {
@@ -283,6 +291,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     openUpdateServices: function() {
       this._openPage(this.__servicesUpdatePage);
+    },
+
+    openConversations: function() {
+      this._openPage(this.__conversationsPage);
     },
 
     openAccessRights: function() {
@@ -358,34 +370,31 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       // removeAll
       osparc.utils.Utils.removeAllChildren(tabsView);
 
-      // add Open service button
-      [
-        this.__getInfoPage,
-        this.__getBillingPage,
-        this.__getServicesUpdatePage,
-        this.__getServicesBootOptionsPage,
-        this.__getConversationsPage,
-        this.__getPermissionsPage,
-        this.__getPublishPage,
-        this.__getCreateTemplatePage,
-        this.__getCreateFunctionsPage,
-        this.__getTagsPage,
-        this.__getQualityPage,
-        this.__getClassifiersPage,
-        this.__getPreviewPage
-      ].forEach(pageCallee => {
-        if (pageCallee) {
-          const page = pageCallee.call(this);
-          if (page) {
-            tabsView.add(page);
-          }
-        }
-      });
+      if (this.__resourceData["resourceType"] === "function") {
+        // for now, we only want the preview page
+        this.__addPreviewPage();
+        this.fireEvent("pagesAdded");
+        return;
+      }
+
+      this.__addInfoPage();
+      this.__addBillingPage();
+      this.__addServicesUpdatePage();
+      this.__addServicesBootOptionsPage();
+      this.__addConversationsPage();
+      this.__addPermissionsPage();
+      this.__addPublishPage();
+      this.__addCreateTemplatePage();
+      this.__addCreateFunctionsPage();
+      this.__addTagsPage();
+      this.__addQualityPage();
+      this.__addClassifiersPage();
+      this.__addPreviewPage();
 
       if (osparc.product.Utils.showComputationalActivity()) {
-        this.__getActivityOverviewPopUp();
+        this.__addActivityOverviewPopUp();
       }
-      this.__getProjectFilesPopUp();
+      this.__addProjectFilesPopUp();
 
       if (selectedTabId) {
         const pageFound = tabsView.getChildren().find(page => page.tabId === selectedTabId);
@@ -417,7 +426,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
     },
 
-    __getInfoPage: function() {
+    __addPage: function(page) {
+      const tabsView = this.getChildControl("tabs-view");
+      tabsView.add(page);
+    },
+
+    __addInfoPage: function() {
       const id = "Information";
       const title = this.tr("Overview");
       const iconSrc = "@FontAwesome5Solid/info/22";
@@ -446,15 +460,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         infoCard.addListener("openClassifiers", () => this.openClassifiers());
         infoCard.addListener("openQuality", () => this.openQuality());
         page.addToContent(infoCard);
+        this.__widgets.push(infoCard);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getBillingPage: function() {
+    __addBillingPage: function() {
       if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
-        return null;
+        return;
       }
 
       const resourceData = this.__resourceData;
@@ -479,12 +494,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             const enabled = osparc.study.Utils.canBeOpened(resourceData);
             page.openButton.setEnabled(enabled);
           })
+          billingSettings.addListener("closeWindow", () => {
+            this.fireEvent("closeWindow");
+          }, this);
           const billingScroll = new qx.ui.container.Scroll(billingSettings);
           page.addToContent(billingScroll);
+          this.__widgets.push(billingSettings);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        this.__addPage(page);
       } else if (osparc.utils.Resources.isService(resourceData)) {
         const id = "Tiers";
         const title = this.tr("Tiers");
@@ -496,15 +515,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           const pricingUnitsList = new osparc.service.PricingUnitsList(resourceData);
           const pricingUnitsListScroll = new qx.ui.container.Scroll(pricingUnitsList);
           page.addToContent(pricingUnitsListScroll);
+          this.__widgets.push(pricingUnitsList);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        this.__addPage(page);
       }
-      return null;
     },
 
-    __getPreviewPage: function() {
+    __addPreviewPage: function() {
       const resourceData = this.__resourceData;
       if (
         osparc.utils.Resources.isService(resourceData) ||
@@ -512,7 +531,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         ["app", "guided", "standalone"].includes(osparc.study.Utils.getUiMode(resourceData))
       ) {
         // there is no pipelining or don't show it
-        return null;
+        return;
       }
 
       const id = "Pipeline";
@@ -529,34 +548,36 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const resourceModel = this.__resourceModel;
         const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
+        this.__widgets.push(preview);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getConversationsPage: function() {
+    __addConversationsPage: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
+        return;
       }
 
       const id = "Conversations";
       const title = this.tr("Conversations");
       const iconSrc = "@FontAwesome5Solid/comments/22";
-      const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
+      const page = this.__conversationsPage = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addToolbarButtons(page);
 
       const lazyLoadContent = () => {
         const conversations = new osparc.study.Conversations(resourceData);
         page.addToContent(conversations);
+        this.__widgets.push(conversations);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getPermissionsPage: function() {
+    __addPermissionsPage: function() {
       const id = "Permissions";
       const title = this.tr("Sharing");
       const iconSrc = "@FontAwesome5Solid/share-alt/22";
@@ -587,19 +608,20 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           }, this);
         }
         page.addToContent(collaboratorsView);
+        this.__widgets.push(collaboratorsView);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getClassifiersPage: function() {
+    __addClassifiersPage: function() {
       if (!osparc.product.Utils.showClassifiers()) {
-        return null;
+        return;
       }
       const id = "Classifiers";
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
-        return null;
+        return;
       }
       const title = this.tr("Classifiers");
       const iconSrc = "@FontAwesome5Solid/search/22";
@@ -622,15 +644,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           classifiers = new osparc.metadata.ClassifiersViewer(resourceData);
         }
         page.addToContent(classifiers);
+        this.__widgets.push(classifiers);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getQualityPage: function() {
+    __addQualityPage: function() {
       if (!osparc.product.Utils.showQuality()) {
-        return null;
+        return;
       }
 
       const resourceData = this.__resourceData;
@@ -651,21 +674,21 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             this.__fireUpdateEvent(updatedData);
           });
           page.addToContent(qualityEditor);
+          this.__widgets.push(qualityEditor);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        this.__addPage(page);
       }
-      return null;
     },
 
-    __getTagsPage: function() {
+    __addTagsPage: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
+        return;
       }
       if (!osparc.data.model.Study.canIWrite(resourceData["accessRights"])) {
-        return null;
+        return;
       }
 
       const id = "Tags";
@@ -682,16 +705,17 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           this.__fireUpdateEvent(resourceData, updatedData);
         }, this);
         page.addToContent(tagManager);
+        this.__widgets.push(tagManager);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getServicesUpdatePage: function() {
+    __addServicesUpdatePage: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
-        return null;
+        return;
       }
 
       const id = "ServicesUpdate";
@@ -711,19 +735,20 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           this.__fireUpdateEvent(resourceData, updatedData);
         });
         page.addToContent(servicesUpdate);
+        this.__widgets.push(servicesUpdate);
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getServicesBootOptionsPage: function() {
+    __addServicesBootOptionsPage: function() {
       const resourceData = this.__resourceData;
       if (
         osparc.utils.Resources.isService(resourceData) ||
         !osparc.data.Permissions.getInstance().canDo("study.node.bootOptions.read")
       ) {
-        return null;
+        return;
       }
 
       const id = "ServicesBootOptions";
@@ -743,6 +768,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           this.__fireUpdateEvent(resourceData, updatedData);
         });
         page.addToContent(servicesBootOpts);
+        this.__widgets.push(servicesBootOpts);
 
         if (
           osparc.utils.Resources.isStudy(resourceData) ||
@@ -764,15 +790,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
-      return page;
+      this.__addPage(page);
     },
 
-    __getPublishPage: function() {
+    __addPublishPage: function() {
       if (
         !osparc.utils.Resources.isStudy(this.__resourceData) ||
         !osparc.product.Utils.showPublicProjects()
       ) {
-        return null;
+        return;
       }
 
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
@@ -798,20 +824,20 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           toolbar.add(publishTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
+          this.__widgets.push(saveAsTemplate);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        this.__addPage(page);
       }
-      return null;
     },
 
-    __getCreateTemplatePage: function() {
+    __addCreateTemplatePage: function() {
       if (
         !osparc.utils.Resources.isStudy(this.__resourceData) ||
         !osparc.product.Utils.showTemplates()
       ) {
-        return null;
+        return;
       }
 
       const canIWrite = osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
@@ -837,25 +863,25 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           toolbar.add(createTemplateButton);
           page.addToHeader(toolbar);
           page.addToContent(saveAsTemplate);
+          this.__widgets.push(saveAsTemplate);
         }
         page.addListenerOnce("appear", lazyLoadContent, this);
 
-        return page;
+        this.__addPage(page);
       }
-      return null;
     },
 
-    __getCreateFunctionsPage: function() {
+    __addCreateFunctionsPage: function() {
       if (!osparc.data.Permissions.getInstance().checkFunctionPermissions("writeFunctions")) {
-        return null;
+        return;
       }
 
       if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
-        return null;
+        return;
       }
 
-      if (!osparc.study.Utils.canCreateFunction(this.__resourceData["workbench"])) {
-        return null;
+      if (!osparc.study.Utils.isPotentialFunction(this.__resourceData["workbench"])) {
+        return;
       }
 
       const id = "CreateFunction";
@@ -869,10 +895,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       toolbar.add(createFunctionButton);
       page.addToHeader(toolbar);
       page.addToContent(createFunction);
-      return page;
+      this.__widgets.push(createFunction);
+
+      this.__addPage(page);
     },
 
-    __getProjectFilesPopUp: function() {
+    __addProjectFilesPopUp: function() {
       const resourceData = this.__resourceData;
       if (!osparc.utils.Resources.isService(resourceData)) {
         const title = osparc.product.Utils.resourceTypeToAlias(resourceData["resourceType"], {firstUpperCase: true}) + this.tr(" Files");
@@ -886,7 +914,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           gap: 14,
           cursor: "pointer",
         });
-        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"], null, title));
+        dataAccess.addListener("tap", () => osparc.widget.StudyDataManager.popUpInWindow(resourceData, null, title));
         this.addWidgetToTabs(dataAccess);
 
         if (resourceData["resourceType"] === "study") {
@@ -896,7 +924,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       }
     },
 
-    __getActivityOverviewPopUp: function() {
+    __addActivityOverviewPopUp: function() {
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isStudy(resourceData)) {
         const title = this.tr("Activity Overview...");
@@ -913,6 +941,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         dataAccess.addListener("tap", () => osparc.jobs.ActivityOverview.popUpInWindow(resourceData));
         this.addWidgetToTabs(dataAccess);
       }
+    },
+
+    // overridden
+    destroy: function() {
+      this.__widgets.forEach(w => w.destroy());
+      this.base(arguments);
     },
   }
 });

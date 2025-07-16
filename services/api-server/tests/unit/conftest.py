@@ -5,12 +5,14 @@
 # pylint: disable=broad-exception-caught
 
 import json
+import re
 import subprocess
 from collections.abc import AsyncIterator, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
+from urllib.parse import urlparse, urlunparse
 
 import aiohttp.test_utils
 import httpx
@@ -21,13 +23,19 @@ from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI, status
 from fastapi.encoders import jsonable_encoder
-from httpx import ASGITransport
+from httpx import ASGITransport, Request, Response
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskProgress,
     TaskStatus,
 )
-from models_library.api_schemas_storage.storage_schemas import HealthCheck
+from models_library.api_schemas_storage.storage_schemas import (
+    FileUploadCompleteFutureResponse,
+    FileUploadCompleteResponse,
+    FileUploadCompleteState,
+    FileUploadSchema,
+    HealthCheck,
+)
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.app_diagnostics import AppStatusCheck
 from models_library.generics import Envelope
@@ -46,7 +54,7 @@ from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
-from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.repository.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
@@ -123,7 +131,7 @@ def app(
 
         patch_lrt_response_urls()
 
-    return init_app()
+    return create_app()
 
 
 MAX_TIME_FOR_APP_TO_STARTUP = 10
@@ -422,6 +430,77 @@ def mocked_storage_rest_api_base(
             ).model_dump(mode="json"),
         )
 
+        assert (
+            openapi["paths"]["/v0/locations/{location_id}/files/{file_id}"]["put"][
+                "operationId"
+            ]
+            == "upload_file_v0_locations__location_id__files__file_id__put"
+        )
+        respx_mock.put(
+            re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"),
+            name="upload_file_v0_locations__location_id__files__file_id__put",
+        ).respond(
+            status.HTTP_200_OK,
+            json=Envelope[FileUploadSchema](
+                data=FileUploadSchema.model_json_schema()["examples"][0]
+            ).model_dump(mode="json"),
+        )
+
+        # Add mocks for completion and abort endpoints
+        def generate_future_link(request: Request, **kwargs):
+            parsed_url = urlparse(f"{request.url}")
+            stripped_url = urlunparse(
+                (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
+            )
+
+            payload = FileUploadCompleteResponse.model_validate(
+                {
+                    "links": {
+                        "state": stripped_url
+                        + ":complete/futures/"
+                        + str(faker.uuid4())
+                    },
+                },
+            )
+            return Response(
+                status_code=status.HTTP_200_OK,
+                json=jsonable_encoder(
+                    Envelope[FileUploadCompleteResponse](data=payload)
+                ),
+            )
+
+        respx_mock.post(
+            re.compile(
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete(?:\?.*)?$"
+            ),
+            name="complete_upload_file_v0_locations__location_id__files__file_id__complete_post",
+        ).side_effect = generate_future_link
+
+        respx_mock.post(
+            re.compile(
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+"
+            )
+        ).respond(
+            status_code=status.HTTP_200_OK,
+            json=jsonable_encoder(
+                Envelope[FileUploadCompleteFutureResponse](
+                    data=FileUploadCompleteFutureResponse(
+                        state=FileUploadCompleteState.OK,
+                        e_tag="07d1c1a4-b073-4be7-b022-f405d90e99aa",
+                    )
+                )
+            ),
+        )
+
+        respx_mock.post(
+            re.compile(
+                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+:abort(?:\?.*)?$"
+            ),
+            name="abort_upload_file_v0_locations__location_id__files__file_id__abort_post",
+        ).respond(
+            status.HTTP_204_NO_CONTENT,
+        )
+
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
         if not services_mocks_enabled:
             respx_mock.stop()
@@ -717,7 +796,7 @@ def patch_webserver_long_running_project_tasks(
 
 @pytest.fixture
 def mock_webserver_patch_project(
-    app: FastAPI, faker: Faker, services_mocks_enabled: bool
+    app: FastAPI, services_mocks_enabled: bool
 ) -> Callable[[MockRouter], MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
@@ -731,6 +810,30 @@ def mock_webserver_patch_project(
                 path__regex=r"/projects/(?P<project_id>[\w-]+)$",
                 name="project_patch",
             ).mock(side_effect=_patch_project)
+        return webserver_mock_router
+
+    return _mock
+
+
+@pytest.fixture
+def mock_webserver_get_project(
+    app: FastAPI, services_mocks_enabled: bool
+) -> Callable[[MockRouter], MockRouter]:
+    settings: ApplicationSettings = app.state.settings
+    assert settings.API_SERVER_WEBSERVER is not None
+
+    def _mock(webserver_mock_router: MockRouter) -> MockRouter:
+        def _get_project(request: httpx.Request, *args, **kwargs):
+            result = Envelope[ProjectGet].model_validate(
+                {"data": ProjectGet.model_json_schema()["examples"][0]}
+            )
+            return httpx.Response(status.HTTP_200_OK, json=result.model_dump())
+
+        if services_mocks_enabled:
+            webserver_mock_router.get(
+                path__regex=r"/projects/(?P<project_id>[\w-]+)$",
+                name="project_get",
+            ).mock(side_effect=_get_project)
         return webserver_mock_router
 
     return _mock

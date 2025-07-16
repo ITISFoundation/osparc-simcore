@@ -34,21 +34,23 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
       this._resourcesInitialized = true;
 
+      this._showLoadingPage(this.tr("Loading Tutorials..."));
       osparc.store.Templates.getTutorials()
         .then(() => {
           this._resourcesList = [];
           this.getChildControl("resources-layout");
           this.reloadResources();
           this.__attachEventHandlers();
-          this._hideLoadingPage();
         });
     },
 
     reloadResources: function(useCache = true) {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        this.__reloadTutorials(useCache);
+        this.__reloadTutorials(useCache)
+          .finally(() => this._hideLoadingPage());
       } else {
         this.__setResourcesToList([]);
+        this._hideLoadingPage();
       }
     },
 
@@ -65,8 +67,6 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     },
 
     __tutorialStateReceived: function(templateId, state, errors) {
-      osparc.store.Templates.getTutorials()
-      // OM follow here
       const idx = this._resourcesList.findIndex(study => study["uuid"] === templateId);
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;
@@ -83,9 +83,9 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     __reloadTutorials: function(useCache) {
       this.__tasksToCards();
 
-        osparc.store.Templates.getTutorials(useCache)
-          .then(tutorials => this.__setResourcesToList(tutorials))
-          .catch(() => this.__setResourcesToList([]));
+      return osparc.store.Templates.getTutorials(useCache)
+        .then(tutorials => this.__setResourcesToList(tutorials))
+        .catch(() => this.__setResourcesToList([]));
     },
 
     _updateTutorialData: function(templateData) {
@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       }
 
       this._resourcesContainer.setResourcesToList(this._resourcesList);
-      const cards = this._resourcesContainer.reloadCards("templates");
+      const cards = this._resourcesContainer.reloadCards(osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
         card.addListener("tap", () => this.__itemClicked(card), this);
@@ -218,7 +218,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
             if (node["version"] !== latestCompatible["version"]) {
               patchData["version"] = latestCompatible["version"];
             }
-            templatePromises.push(osparc.store.Study.patchNodeData(uniqueTemplateData, nodeId, patchData));
+            templatePromises.push(osparc.store.Study.getInstance().patchNodeData(uniqueTemplateData, nodeId, patchData));
           }
         }
         Promise.all(templatePromises)

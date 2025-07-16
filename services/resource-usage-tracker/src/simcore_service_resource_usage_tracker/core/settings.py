@@ -1,8 +1,10 @@
 import datetime
 from functools import cached_property
+from typing import cast
 
 from models_library.basic_types import BootModeEnum
 from pydantic import AliasChoices, Field, PositiveInt, field_validator
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BuildTargetEnum, LogLevel, VersionTag
@@ -76,8 +78,8 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     @cached_property
-    def LOG_LEVEL(self) -> LogLevel:  # noqa: N802
-        return self.RESOURCE_USAGE_TRACKER_LOGLEVEL
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.RESOURCE_USAGE_TRACKER_LOGLEVEL)
 
     @field_validator("RESOURCE_USAGE_TRACKER_LOGLEVEL", mode="before")
     @classmethod

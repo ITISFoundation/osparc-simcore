@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     openNodeDataManager: function(node) {
-      const win = osparc.widget.StudyDataManager.popUpInWindow(node.getStudy().getUuid(), node.getNodeId(), node.getLabel());
+      const win = osparc.widget.StudyDataManager.popUpInWindow(node.getStudy().serialize(), node.getNodeId(), node.getLabel());
       const closeBtn = win.getChildControl("close-button");
       osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     }
@@ -873,25 +873,34 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __getAnnotationsSection: function() {
       const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      annotationsSection.add(new qx.ui.basic.Label(this.tr("Annotations")).set({
+      annotationsSection.add(new qx.ui.basic.Label(this.tr("Add to Workbench")).set({
         font: "text-14"
       }));
 
-      const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5));
       annotationsSection.add(annotationsButtons);
 
       const buttonsHeight = 28;
+
+      const addConversationBtn = new qx.ui.form.Button().set({
+        label: this.tr("Conversation"),
+        icon: "@FontAwesome5Solid/comment/14",
+        height: buttonsHeight
+      });
+      addConversationBtn.addListener("execute", () => this.__workbenchUI.startConversation(), this);
+      annotationsButtons.add(addConversationBtn);
+
       const addNoteBtn = new qx.ui.form.Button().set({
         label: this.tr("Note"),
-        icon: "@FontAwesome5Solid/plus/14",
+        icon: "@FontAwesome5Solid/sticky-note/14",
         height: buttonsHeight
       });
       addNoteBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsNote(), this);
       annotationsButtons.add(addNoteBtn);
 
       const addRectBtn = new qx.ui.form.Button().set({
-        label: this.tr("Rectangle"),
-        icon: "@FontAwesome5Solid/plus/14",
+        label: this.tr("Box"),
+        icon: "@FontAwesome5Regular/square/14",
         height: buttonsHeight
       });
       addRectBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsRect(), this);
@@ -899,7 +908,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const addTextBtn = new qx.ui.form.Button().set({
         label: this.tr("Text"),
-        icon: "@FontAwesome5Solid/plus/14",
+        icon: "@FontAwesome5Solid/font/14",
         height: buttonsHeight
       });
       addTextBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsText(), this);

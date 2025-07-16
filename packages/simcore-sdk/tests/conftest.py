@@ -23,10 +23,12 @@ sys.path.append(str(current_dir / "helpers"))
 pytest_plugins = [
     "pytest_simcore.aws_s3_service",
     "pytest_simcore.aws_server",
+    "pytest_simcore.db_entries_mocks",
     "pytest_simcore.disk_usage_monitoring",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.file_extra",
+    "pytest_simcore.logging",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
@@ -66,8 +68,7 @@ def empty_configuration_file() -> Path:
 @pytest.fixture
 def node_ports_config(
     postgres_host_config: PostgresTestConfig, minio_s3_settings_envs: EnvVarsDict
-) -> None:
-    ...
+) -> None: ...
 
 
 @pytest.fixture

@@ -11,9 +11,9 @@ certifi==2025.1.31
     #   osparc-client
 click==8.1.8
     # via typer
-h11==0.14.0
+h11==0.16.0
     # via httpcore
-httpcore==1.0.7
+httpcore==1.0.9
     # via httpx
 httpx==0.28.1
     # via
@@ -41,7 +41,7 @@ osparc-client==0.8.3
     # via osparc
 packaging==24.2
     # via osparc
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -50,9 +50,9 @@ pydantic==2.10.6
     #   osparc
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.2
+pydantic-extra-types==2.10.5
     # via -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
 pydantic-settings==2.7.0
     # via
@@ -60,7 +60,7 @@ pydantic-settings==2.7.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   osparc
-pygments==2.19.1
+pygments==2.19.2
     # via rich
 python-dateutil==2.9.0.post0
     # via osparc-client
@@ -84,14 +84,17 @@ tqdm==4.67.1
     # via osparc
 typer==0.15.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   anyio
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
     #   typer
-urllib3==2.3.0
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt

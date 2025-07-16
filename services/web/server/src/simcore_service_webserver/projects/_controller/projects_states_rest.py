@@ -26,7 +26,7 @@ from ...notifications import project_logs
 from ...products import products_web
 from ...products.models import Product
 from ...security.decorators import permission_required
-from ...users import api
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
 from ..exceptions import ProjectStartsTooManyDynamicNodesError
@@ -69,7 +69,7 @@ async def open_project(request: web.Request) -> web.Response:
         project_type: ProjectType = await _projects_service.get_project_type(
             request.app, path_params.project_id
         )
-        user_role: UserRole = await api.get_user_role(
+        user_role: UserRole = await users_service.get_user_role(
             request.app, user_id=req_ctx.user_id
         )
         if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
@@ -154,7 +154,7 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
         raise web.HTTPServiceUnavailable(
-            reason="Unexpected error while starting services."
+            text="Unexpected error while starting services."
         ) from exc
 
 

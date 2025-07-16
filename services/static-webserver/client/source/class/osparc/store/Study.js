@@ -16,11 +16,137 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.Study", {
-  type: "static",
+  extend: qx.core.Object,
+  type: "singleton",
 
-  statics: {
+  events: {
+    "studyStateChanged": "qx.event.type.Data",
+    "studyDebtChanged": "qx.event.type.Data",
+  },
+
+  members: {
     __nodeResources: null,
     __nodePricingUnit: null,
+    __studiesInDebt: null,
+
+    invalidateStudies: function() {
+      osparc.store.Store.getInstance().invalidate("studies");
+    },
+
+    getPage: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPage", params, options)
+    },
+
+    getPageTrashed: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPageTrashed", params, options)
+    },
+
+    getPageSearch: function(params, options) {
+      return osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+    },
+
+    getActive: function(clientSessionID) {
+      const params = {
+        url: {
+          tabId: clientSessionID,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getActive", params)
+    },
+
+    getOne: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getOne", params)
+    },
+
+    openStudy: function(studyId, autoStart = true) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      if (autoStart) {
+        return osparc.data.Resources.fetch("studies", "open", params);
+      }
+      params["url"]["disableServiceAutoStart"] = true;
+      return osparc.data.Resources.fetch("studies", "openDisableAutoStart", params);
+    },
+
+    closeStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "close", params);
+    },
+
+    createStudy: function(studyData) {
+      const params = {
+        data: studyData
+      };
+      const options = {
+        pollTask: true,
+      };
+      return osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
+    },
+
+    createStudyFromTemplate: function(templateId, studyData) {
+      const params = {
+        url: {
+          templateId,
+        },
+        data: studyData
+      };
+      const options = {
+        pollTask: true,
+      };
+      return osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+    },
+
+    duplicateStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId,
+        }
+      };
+      const options = {
+        pollTask: true
+      };
+      return osparc.data.Resources.fetch("studies", "duplicate", params, options);
+    },
+
+    deleteStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "delete", params)
+        .then(() => {
+          osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
+        })
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
+    },
+
+    patchStudy: function(studyId, patchData) {
+      const params = {
+        url: {
+          studyId,
+        },
+        data: patchData
+      };
+      return osparc.data.Resources.fetch("studies", "patch", params);
+    },
 
     patchStudyData: function(studyData, fieldKey, value) {
       if (osparc.data.model.Study.OwnPatch.includes(fieldKey)) {
@@ -30,13 +156,7 @@ qx.Class.define("osparc.store.Study", {
 
       const patchData = {};
       patchData[fieldKey] = value;
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        },
-        data: patchData
-      };
-      return osparc.data.Resources.fetch("studies", "patch", params)
+      return this.patchStudy(studyData["uuid"], patchData)
         .then(() => {
           studyData[fieldKey] = value;
           // A bit hacky, but it's not sent back to the backend
@@ -45,16 +165,146 @@ qx.Class.define("osparc.store.Study", {
     },
 
     patchTemplateType: function(templateId, templateType) {
+      return this.patchStudyData(templateId, "templateType", templateType);
+    },
+
+    updateMetadata: function(studyId, metadata) {
       const params = {
         url: {
-          "studyId": templateId
+          studyId,
+        },
+        data: metadata
+      };
+      return osparc.data.Resources.fetch("studies", "updateMetadata", params);
+    },
+
+    getStudyState: function(studyId) {
+      osparc.data.Resources.fetch("studies", "state", {
+        url: {
+          "studyId": studyId
+        }
+      })
+        .then(({state}) => {
+          this.setStudyState(studyId, state);
+        });
+    },
+
+    setStudyState: function(studyId, state) {
+      const studiesWStateCache = osparc.store.Store.getInstance().getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        studiesWStateCache[idx]["state"] = state;
+      }
+
+      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+      if (currentStudy && currentStudy.getUuid() === studyId) {
+        currentStudy.setState(state);
+      }
+
+      this.fireDataEvent("studyStateChanged", {
+        studyId,
+        state,
+      });
+    },
+
+    setStudyDebt: function(studyId, debt) {
+      // init object if it does not exist
+      if (this.__studiesInDebt === null) {
+        this.__studiesInDebt = {};
+      }
+      if (debt) {
+        this.__studiesInDebt[studyId] = debt;
+      } else {
+        delete this.__studiesInDebt[studyId];
+      }
+
+      const studiesWStateCache = osparc.store.Store.getInstance().getStudies();
+      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
+      if (idx !== -1) {
+        if (debt) {
+          studiesWStateCache[idx]["debt"] = debt;
+        } else {
+          delete studiesWStateCache[idx]["debt"];
+        }
+      }
+
+      this.fireDataEvent("studyDebtChanged", {
+        studyId,
+        debt,
+      });
+    },
+
+    getStudyDebt: function(studyId) {
+      if (this.__studiesInDebt && studyId in this.__studiesInDebt) {
+        return this.__studiesInDebt[studyId];
+      }
+      return null;
+    },
+
+    isStudyInDebt: function(studyId) {
+      return Boolean(this.getStudyDebt(studyId));
+    },
+
+    payDebt: function(studyId, walletId, amount) {
+      const params = {
+        url: {
+          studyId,
+          walletId,
         },
         data: {
-          "templateType": templateType,
+          amount,
         }
       };
-      return osparc.data.Resources.fetch("studies", "patch", params)
-        .catch(err => osparc.FlashMessenger.logError(err));
+      return osparc.data.Resources.fetch("studies", "payDebt", params);
+    },
+
+    trashStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "trash", params)
+        .then(() => {
+          osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
+        })
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
+    },
+
+    untrashStudy: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "untrash", params)
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
+    },
+
+    moveStudyToWorkspace: function(studyId, destWorkspaceId) {
+      const params = {
+        url: {
+          studyId,
+          workspaceId: destWorkspaceId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "moveToWorkspace", params);
+    },
+
+    moveStudyToFolder: function(studyId, destFolderId) {
+      const params = {
+        url: {
+          studyId,
+          folderId: destFolderId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "moveToFolder", params);
     },
 
     patchNodeData: function(studyData, nodeId, patchData) {
@@ -72,6 +322,61 @@ qx.Class.define("osparc.store.Study", {
           });
           // A bit hacky, but it's not sent back to the backend
           studyData["lastChangeDate"] = new Date().toISOString();
+        });
+    },
+
+    getWallet: function(studyId) {
+      const params = {
+        url: {
+          studyId
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "getWallet", params)
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
+    },
+
+    selectWallet: function(studyId, walletId) {
+      const params = {
+        url: {
+          studyId,
+          walletId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "selectWallet", params)
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
+    },
+
+    addTag: function(studyId, tagId) {
+      const params = {
+        url: {
+          tagId,
+          studyId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "addTag", params)
+        .catch(err => {
+          console.error(err);
+          throw err;
+        });
+    },
+
+    removeTag: function(studyId, tagId) {
+      const params = {
+        url: {
+          tagId,
+          studyId,
+        }
+      };
+      return osparc.data.Resources.fetch("studies", "removeTag", params)
+        .catch(err => {
+          console.error(err);
+          throw err;
         });
     },
 
@@ -94,7 +399,10 @@ qx.Class.define("osparc.store.Study", {
           });
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     removeCollaborator: function(studyData, gid) {
@@ -109,7 +417,10 @@ qx.Class.define("osparc.store.Study", {
           delete studyData["accessRights"][gid];
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     updateCollaborator: function(studyData, gid, newPermissions) {
@@ -125,7 +436,10 @@ qx.Class.define("osparc.store.Study", {
           studyData["accessRights"][gid] = newPermissions;
           studyData["lastChangeDate"] = new Date().toISOString();
         })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
     },
 
     sendShareEmails: function(studyData, selectedEmails, newAccessRights, message) {

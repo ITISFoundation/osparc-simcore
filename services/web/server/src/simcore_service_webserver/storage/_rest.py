@@ -139,7 +139,7 @@ async def _forward_request_to_storage(
         match resp.status:
             case status.HTTP_422_UNPROCESSABLE_ENTITY:
                 raise web.HTTPUnprocessableEntity(
-                    reason=await resp.text(), content_type=resp.content_type
+                    text=await resp.text(), content_type=resp.content_type
                 )
             case status.HTTP_404_NOT_FOUND:
                 raise web.HTTPNotFound(text=await resp.text())
@@ -497,6 +497,7 @@ async def export_data(request: web.Request) -> web.Response:
         user_id=_req_ctx.user_id,
         product_name=_req_ctx.product_name,
         paths_to_export=export_data_post.paths,
+        export_as="path",
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(

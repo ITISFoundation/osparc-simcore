@@ -49,9 +49,9 @@ from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
@@ -72,7 +72,7 @@ from simcore_postgres_database.utils_products import (
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
-from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.db.plugin import get_database_engine_legacy
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
 from simcore_service_webserver.statics._constants import (
@@ -205,7 +205,7 @@ def mocked_send_email(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-@pytest_asyncio.fixture(loop_scope="function")
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def web_server(
     app_environment: EnvVarsDict,
     postgres_db: sa.engine.Engine,
@@ -262,7 +262,7 @@ def osparc_product_api_base_url() -> str:
 @pytest.fixture
 async def default_product_name(client: TestClient) -> ProductName:
     assert client.app
-    async with get_database_engine(client.app).acquire() as conn:
+    async with get_database_engine_legacy(client.app).acquire() as conn:
         return await get_default_product_name(conn)
 
 

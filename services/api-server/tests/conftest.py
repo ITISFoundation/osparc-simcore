@@ -16,6 +16,7 @@ from simcore_service_api_server.models.schemas.jobs import JobID
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
@@ -24,6 +25,7 @@ pytest_plugins = [
     "pytest_simcore.faker_users_data",
     "pytest_simcore.httpbin_service",
     "pytest_simcore.httpx_calls_capture",
+    "pytest_simcore.logging",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",

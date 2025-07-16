@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
+import contextlib
 import json
 import logging
 import random
@@ -26,7 +26,8 @@ from models_library.projects_state import ProjectState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.webserver_login import LoggedUser, NewUser, UserInfoDict
+from pytest_simcore.helpers.webserver_login import LoggedUser
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from servicelib.aiohttp import status
 from servicelib.common_headers import (
@@ -64,6 +65,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 # imports the fixtures for the integration tests
 pytest_plugins = [
     "aiohttp.pytest_plugin",
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
@@ -72,6 +74,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.hypothesis_type_strategies",
+    "pytest_simcore.logging",
     "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -86,6 +89,13 @@ pytest_plugins = [
     "pytest_simcore.simcore_webserver_groups_fixtures",
     "pytest_simcore.socketio_client",
 ]
+
+
+@pytest.fixture
+async def exit_stack() -> AsyncIterator[contextlib.AsyncExitStack]:
+    """Provides an AsyncExitStack that gets cleaned up after each test"""
+    async with contextlib.AsyncExitStack() as stack:
+        yield stack
 
 
 @pytest.fixture(scope="session")
@@ -479,11 +489,3 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
         "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
         autospec=True,
     )
-
-
-@pytest.fixture
-async def loop(
-    event_loop: asyncio.AbstractEventLoop,
-) -> asyncio.AbstractEventLoop:
-    """Override the event loop inside pytest-aiohttp with the one from pytest-asyncio."""
-    return event_loop

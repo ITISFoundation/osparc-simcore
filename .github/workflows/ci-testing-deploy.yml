@@ -47,6 +47,7 @@ jobs:
     # Set job outputs to values from filter step
     outputs:
       aws-library: ${{ steps.filter.outputs.aws-library }}
+      celery-library: ${{ steps.filter.outputs.celery-library }}
       dask-task-models-library: ${{ steps.filter.outputs.dask-task-models-library }}
       models-library: ${{ steps.filter.outputs.models-library }}
       common-library: ${{ steps.filter.outputs.common-library }}
@@ -94,6 +95,12 @@ jobs:
               - 'services/docker-compose*'
               - 'scripts/mypy/*'
               - 'mypy.ini'
+            celery-library:
+              - 'packages/celery-library/**'
+              - 'packages/pytest-simcore/**'
+              - 'services/docker-compose*'
+              - 'scripts/mypy/*'
+              - 'mypy.ini'
             dask-task-models-library:
               - 'packages/dask-task-models-library/**'
               - 'packages/pytest-simcore/**'
@@ -131,6 +138,7 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/service-integration/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             service-library:
               - 'packages/pytest-simcore/**'
               - 'packages/service-library/**'
@@ -141,9 +149,11 @@ jobs:
               - 'packages/pytest-simcore/**'
               - 'packages/settings-library/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             simcore-sdk:
               - 'packages/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             agent:
               - 'packages/**'
               - 'services/agent/**'
@@ -158,6 +168,7 @@ jobs:
               - 'mypy.ini'
             api:
               - 'api/**'
+              - 'mypy.ini'
             api-server:
               - 'packages/**'
               - 'services/api-server/**'
@@ -228,6 +239,7 @@ jobs:
               - 'packages/**'
               - 'services/migration/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             payments:
                 - 'packages/**'
                 - 'services/payments/**'
@@ -243,6 +255,7 @@ jobs:
             docker-api-proxy:
                 - 'packages/**'
                 - 'services/docker-api-proxy/**'
+                - 'mypy.ini'
             resource-usage-tracker:
               - 'packages/**'
               - 'services/resource-usage-tracker/**'
@@ -262,12 +275,15 @@ jobs:
               - 'packages/**'
               - 'services/web/**'
               - 'services/docker-compose*'
+              - 'mypy.ini'
             anything:
               - 'packages/**'
               - 'services/**'
               - 'tests/**'
+              - 'mypy.ini'
             anything-py:
               - '**/*.py'
+              - 'mypy.ini'
             anything-js:
               - '**/*.js'
   build-test-images:
@@ -296,36 +312,22 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/webserver.bash typecheck
       - name: test isolated
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_isolated
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -344,30 +346,18 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -386,30 +376,18 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
         run: ./ci/github/unit-testing/webserver.bash test_with_db 03
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -421,6 +399,454 @@ jobs:
       if: ${{ needs.changes.outputs.webserver == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
       timeout-minutes: 25 # if this timeout gets too small, then split the tests
       name: "[unit] webserver 04"
+      runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          python: ["3.11"]
+          os: [ubuntu-24.04]
+        fail-fast: false
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+        - name: Setup environment
+          uses: ./.github/actions/setup-simcore-env
+          with:
+            python-version: ${{ matrix.python }}
+            cache-dependency-glob: "**/web/server/requirements/ci.txt"
+        - name: install webserver
+          run: ./ci/github/unit-testing/webserver.bash install
+        - name: test
+          run: ./ci/github/unit-testing/webserver.bash test_with_db 04
+        - uses: codecov/codecov-action@v5
+          env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          with:
+            flags: unittests #optional
+
+
+  unit-test-storage:
+    needs: changes
+    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    name: "[unit] storage"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/storage/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/storage.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/storage.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/storage.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-agent:
+    needs: changes
+    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] agent"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/agent/requirements/ci.txt"
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: install
+        run: ./ci/github/unit-testing/agent.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/agent.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/agent.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+  unit-test-notifications:
+    needs: changes
+    if: ${{ needs.changes.outputs.notifications == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] notifications"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/notifications/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/notifications.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/notifications.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/notifications.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+  unit-test-api:
+    needs: changes
+    if: ${{ needs.changes.outputs.api == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] api"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/api/requirements/ci.txt"
+      - name: install api
+        run: ./ci/github/unit-testing/api.bash install
+      - name: test
+        run: ./ci/github/unit-testing/api.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-api-server:
+    needs: changes
+    if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] api-server"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/api-server/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/api-server.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/api-server.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/api-server.bash test
+      - name: OAS backwards compatibility check
+        run: ./ci/github/unit-testing/api-server.bash openapi-diff
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-autoscaling:
+    needs: changes
+    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] autoscaling"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/autoscaling.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/autoscaling.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/autoscaling.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-catalog:
+    needs: changes
+    if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] catalog"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/catalog/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/catalog.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/catalog.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/catalog.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/catalog/test_failures
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-clusters-keeper:
+    needs: changes
+    if: ${{ needs.changes.outputs.clusters-keeper == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] clusters-keeper"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
+      - name: install
+        run: |
+          make devenv
+          source .venv/bin/activate && \
+          pushd services/clusters-keeper && \
+          make install-ci
+      - name: typecheck
+        run: |
+          source .venv/bin/activate && \
+          uv pip install mypy && \
+          pushd services/clusters-keeper && \
+          make mypy
+      - name: test
+        run: |
+          source .venv/bin/activate && \
+          pushd services/clusters-keeper && \
+          make test-ci-unit
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-datcore-adapter:
+    needs: changes
+    if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] datcore-adapter"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/datcore-adapter.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/datcore-adapter.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/datcore-adapter/test_failures
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-director:
+    needs: changes
+    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] director"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/director/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/director.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/director.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/director.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director/test_failures
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-director-v2:
+    needs: changes
+    if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] director-v2"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/director-v2.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/director-v2.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/director-v2.bash test
+      - name: upload failed tests logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/director-v2/test_failures
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+
+  unit-test-aws-library:
+    needs: changes
+    if: ${{ needs.changes.outputs.aws-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    name: "[unit] aws-library"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: ["3.11"]
+        os: [ubuntu-24.04]
+      fail-fast: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
+        with:
+          python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/aws-library/requirements/ci.txt"
+      - name: install
+        run: ./ci/github/unit-testing/aws-library.bash install
+      - name: typecheck
+        run: ./ci/github/unit-testing/aws-library.bash typecheck
+      - name: test
+        run: ./ci/github/unit-testing/aws-library.bash test
+      - uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          flags: unittests #optional
+
+  unit-test-celery-library:
+      needs: changes
+      if: ${{ needs.changes.outputs.celery-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
+      timeout-minutes: 18 # if this timeout gets too small, then split the tests
+      name: "[unit] celery-library"
       runs-on: ${{ matrix.os }}
       strategy:
         matrix:
@@ -443,598 +869,20 @@ jobs:
           with:
             version: "0.6.x"
             enable-cache: false
-            cache-dependency-glob: "**/web/server/requirements/ci.txt"
+            cache-dependency-glob: "**/celery-library/requirements/ci.txt"
         - name: show system version
           run: ./ci/helpers/show_system_versions.bash
-        - name: install webserver
-          run: ./ci/github/unit-testing/webserver.bash install
+        - name: install
+          run: ./ci/github/unit-testing/celery-library.bash install
+        - name: typecheck
+          run: ./ci/github/unit-testing/celery-library.bash typecheck
         - name: test
-          run: ./ci/github/unit-testing/webserver.bash test_with_db 04
+          run: ./ci/github/unit-testing/celery-library.bash test
         - uses: codecov/codecov-action@v5
           env:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           with:
             flags: unittests #optional
-        - name: Upload test results to Codecov
-          if: ${{ !cancelled() }}
-          uses: codecov/test-results-action@v1
-          with:
-            token: ${{ secrets.CODECOV_TOKEN }}
-
-  unit-test-storage:
-    needs: changes
-    if: ${{ needs.changes.outputs.storage == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
-    name: "[unit] storage"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/storage/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/storage.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/storage.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/storage.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-agent:
-    needs: changes
-    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] agent"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/agent/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/agent.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/agent.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/agent.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-  unit-test-notifications:
-    needs: changes
-    if: ${{ needs.changes.outputs.notifications == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] notifications"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/notifications/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/notifications.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/notifications.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/notifications.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-  unit-test-api:
-    needs: changes
-    if: ${{ needs.changes.outputs.api == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] api"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/api/tests/requirements.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install api
-        run: ./ci/github/unit-testing/api.bash install
-      - name: test
-        run: ./ci/github/unit-testing/api.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-api-server:
-    needs: changes
-    if: ${{ needs.changes.outputs.api-server == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] api-server"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/api-server/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/api-server.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/api-server.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/api-server.bash test
-      - name: OAS backwards compatibility check
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/api-server.bash openapi-diff
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-autoscaling:
-    needs: changes
-    if: ${{ needs.changes.outputs.autoscaling == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 22 # temporary: mypy takes a huge amount of time to run here, maybe we should cache it
-    name: "[unit] autoscaling"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/autoscaling/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/autoscaling.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/autoscaling.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/autoscaling.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-catalog:
-    needs: changes
-    if: ${{ needs.changes.outputs.catalog == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] catalog"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/catalog/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/catalog.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/catalog.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/catalog.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/catalog/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-clusters-keeper:
-    needs: changes
-    if: ${{ needs.changes.outputs.clusters-keeper == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] clusters-keeper"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/clusters-keeper/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: |
-          make devenv
-          source .venv/bin/activate && \
-          pushd services/clusters-keeper && \
-          make install-ci
-      - name: typecheck
-        run: |
-          source .venv/bin/activate && \
-          uv pip install mypy && \
-          pushd services/clusters-keeper && \
-          make mypy
-      - name: test
-        if: ${{ !cancelled() }}
-        run: |
-          source .venv/bin/activate && \
-          pushd services/clusters-keeper && \
-          make test-ci-unit
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-datcore-adapter:
-    needs: changes
-    if: ${{ needs.changes.outputs.datcore-adapter == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] datcore-adapter"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/datcore-adapter/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/datcore-adapter.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/datcore-adapter.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/datcore-adapter.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/datcore-adapter/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-director:
-    needs: changes
-    if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] director"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/director/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/director.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/director.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/director.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-director-v2:
-    needs: changes
-    if: ${{ needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] director-v2"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/director-v2.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/director-v2.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/director-v2.bash test
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/director-v2/test_failures
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
-
-  unit-test-aws-library:
-    needs: changes
-    if: ${{ needs.changes.outputs.aws-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
-    name: "[unit] aws-library"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/aws-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - name: install
-        run: ./ci/github/unit-testing/aws-library.bash install
-      - name: typecheck
-        run: ./ci/github/unit-testing/aws-library.bash typecheck
-      - name: test
-        if: ${{ !cancelled() }}
-        run: ./ci/github/unit-testing/aws-library.bash test
-      - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: unittests #optional
-
 
   unit-test-dask-task-models-library:
     needs: changes
@@ -1048,33 +896,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dask-task-models-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-task-models-library.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dask-task-models-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-task-models-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1093,33 +928,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dask-sidecar/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dask-sidecar.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dask-sidecar.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dask-sidecar.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1138,33 +960,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/payments/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/payments.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/payments.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/payments.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1183,33 +992,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dynamic-scheduler/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-scheduler.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-scheduler.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-scheduler.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1228,24 +1024,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/resource-usage-tracker/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -1258,13 +1043,11 @@ jobs:
           pushd services/resource-usage-tracker && \
           make mypy
       - name: test
-        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/resource-usage-tracker && \
           make test-ci-unit
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1283,33 +1066,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/dynamic-sidecar.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1328,24 +1098,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/efs-guardian/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: |
           make devenv
@@ -1359,13 +1118,11 @@ jobs:
           pushd services/efs-guardian && \
           make mypy
       - name: test
-        if: ${{ !cancelled() }}
         run: |
           source .venv/bin/activate && \
           pushd services/efs-guardian && \
           make test-ci-unit
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1384,24 +1141,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/ci/helpers/requirements.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          cache-dependency-glob: "**/pylint/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/python-linting.bash install
       - name: test
@@ -1419,33 +1165,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/postgres-database/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/postgres-database.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/postgres-database.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/postgres-database.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1464,33 +1197,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          cache-dependency-glob: "**/invitations/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/invitations.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/invitations.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/invitations.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1509,33 +1229,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/service-integration/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/service-integration.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/service-integration.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-integration.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1554,33 +1261,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/service-library/requirements/ci*.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          cache-dependency-glob: "**/service-library/requirements/ci.txt"
       - name: install
         run: ./ci/github/unit-testing/service-library.bash install_all
       - name: typecheck
         run: ./ci/github/unit-testing/service-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/service-library.bash test_all
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1599,33 +1293,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/settings-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/settings-library.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/settings-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/settings-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1644,24 +1325,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/models-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/models-library.bash install
       - name: typecheck
@@ -1669,7 +1339,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/models-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1688,24 +1357,13 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/common-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/common-library.bash install
       - name: typecheck
@@ -1713,7 +1371,6 @@ jobs:
       - name: test
         run: ./ci/github/unit-testing/common-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1731,33 +1388,20 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/notifications-library/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/unit-testing/notifications-library.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/notifications-library.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/notifications-library.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1776,35 +1420,22 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
       - name: install
         run: ./ci/github/unit-testing/simcore-sdk.bash install
       - name: typecheck
         run: ./ci/github/unit-testing/simcore-sdk.bash typecheck
       - name: test
-        if: ${{ !cancelled() }}
         run: ./ci/github/unit-testing/simcore-sdk.bash test
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1824,6 +1455,7 @@ jobs:
         unit-test-clusters-keeper,
         unit-test-dask-sidecar,
         unit-test-aws-library,
+        unit-test-celery-library,
         unit-test-dask-task-models-library,
         unit-test-datcore-adapter,
         unit-test-director-v2,
@@ -1851,14 +1483,13 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: a previous unit-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      - name: a previous unit-test job failed or was cancelled
+        if: ${{ contains(join(needs.*.result, ','), 'failure') || contains(join(needs.*.result, ','), 'cancelled') }}
         run: |
-          echo "::error title=ERROR::one of the unit-tests failed!"
-          echo "${{ join(needs.*.result, ',') }}"
+          echo "::error title=ERROR::one of the unit-tests failed or was cancelled!"
           exit 1
       - name: all the previous unit-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') }}
         run: echo "::notice All good!"
 
   integration-test-webserver-01:
@@ -1874,35 +1505,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -1913,11 +1524,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -1936,37 +1543,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
@@ -1977,11 +1562,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/webserver.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2000,37 +1581,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -2041,11 +1600,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2066,44 +1621,21 @@ jobs:
       # NOTE: DIRECTOR_DEFAULT_MAX_* used for integration-tests that include `director` service
       DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
-      DIRECTOR_TRACING: null
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup rclone docker volume plugin
-        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
+      - name: setup rclone docker volume plugin
+        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
+          artifact-name-pattern: 'backend'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/integration-testing/director-v2.bash install
       - name: test
@@ -2114,11 +1646,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/director-v2.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2137,39 +1665,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
+          artifact-name-pattern: 'backend'
       - name: install rclone
         run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/dynamic-sidecar/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/integration-testing/dynamic-sidecar.bash install
       - name: test
@@ -2180,11 +1686,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/dynamic-sidecar/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/dynamic-sidecar.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2204,37 +1706,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/docker-api-proxy/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/docker-api-proxy.bash install
       - name: test
@@ -2245,11 +1725,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./services/docker-api-proxy/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/docker-api-proxy.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2268,37 +1744,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: install rclone
-        run: sudo ./ci/github/helpers/install_rclone.bash
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/simcore-sdk/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: install rclone
+        run: sudo ./ci/github/helpers/install_rclone.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: 'backend'
       - name: install
         run: ./ci/github/integration-testing/simcore-sdk.bash install
       - name: test
@@ -2309,11 +1765,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/integration-testing/simcore-sdk.bash clean_up
       - uses: codecov/codecov-action@v5
-        if: ${{ !cancelled() }}
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
@@ -2334,13 +1786,13 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: a previous integration-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      - name: a previous integration-test job failed or was cancelled
+        if: ${{ contains(join(needs.*.result, ','), 'failure') || contains(join(needs.*.result, ','), 'cancelled') }}
         run: |
-          echo "::error title=ERROR::one of the integration-tests failed!"
+          echo "::error title=ERROR::one of the integration-tests failed or was cancelled!"
           exit 1
       - name: all the previous integration-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') }}
         run: echo "::notice All good!"
 
   system-test-public-api:
@@ -2356,37 +1808,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/public-api/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: '*'
       - name: install
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -2399,9 +1829,6 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
     needs: [changes, build-test-images]
@@ -2416,37 +1843,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
-        with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/swarm-deploy/requirements/ci.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
+        with:
+          artifact-name-pattern: '*'
       - name: install
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
@@ -2464,9 +1869,7 @@ jobs:
         with:
           name: ${{ github.job }}_docker_logs
           path: ./test_failures
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/swarm-deploy.bash clean_up
+
 
   system-test-e2e:
     needs: [changes, build-test-images]
@@ -2482,71 +1885,42 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
+          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
       - uses: actions/setup-node@v4.1.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
           cache-dependency-path: "tests/e2e/package-lock.json"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
-          cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
+          artifact-name-pattern: '*'
       - name: setup
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
       - name: dump docker logs
         id: docker_logs_dump
-        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload screenshots
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_logs
           path: tests/e2e/logs
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-e2e-playwright:
     needs: [changes, build-test-images]
@@ -2564,34 +1938,17 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-      - name: expose github runtime for buildx
-        uses: crazy-max/ghaction-github-runtime@v3
-      - name: download docker images
-        uses: actions/download-artifact@v4
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-          path: /${{ runner.temp }}/build
-      - name: load docker images
-        run: make load-images local-src=/${{ runner.temp }}/build
+          artifact-name-pattern: '*'
       - name: prepare devenv
         run: make devenv
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: setup
         run: |
           ./ci/github/system-testing/e2e-playwright.bash install
@@ -2600,16 +1957,13 @@ jobs:
           ./ci/github/system-testing/e2e-playwright.bash test
       - name: dump docker logs
         id: docker_logs_dump
-        if: ${{ !cancelled() }}
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_tracing
@@ -2626,30 +1980,15 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container
-      - name: setup python environment
-        uses: actions/setup-python@v5
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
           python-version: ${{ matrix.python }}
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
           cache-dependency-glob: "**/environment-setup/requirements/ci.txt"
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
       - name: install
         run: ./ci/github/system-testing/environment-setup.bash install
       - name: test
         run: ./ci/github/system-testing/environment-setup.bash test
-      - name: cleanup
-        if: ${{ !cancelled() }}
-        run: ./ci/github/system-testing/environment-setup.bash clean_up
 
   system-tests:
     # NOTE: this is a github required status check!
@@ -2664,13 +2003,13 @@ jobs:
       ]
     runs-on: ubuntu-latest
     steps:
-      - name: a previous system-test job failed
-        if: ${{ contains(join(needs.*.result, ','), 'failure') }}
+      - name: a previous system-test job failed or was cancelled
+        if: ${{ contains(join(needs.*.result, ','), 'failure') || contains(join(needs.*.result, ','), 'cancelled') }}
         run: |
-          echo "::error title=ERROR::one of the system-tests failed!"
+          echo "::error title=ERROR::one of the system-tests failed or was cancelled!"
           exit 1
       - name: all the previous system-tests were run successfully or skipped
-        if: ${{ !contains(join(needs.*.result, ','), 'failure') }}
+        if: ${{ !contains(join(needs.*.result, ','), 'failure') && !contains(join(needs.*.result, ','), 'cancelled') }}
         run: echo "::notice All good!"
 
   deploy:
@@ -2690,30 +2029,16 @@ jobs:
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-      - name: setup docker buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Setup SimCore environment
+        uses: ./.github/actions/setup-simcore-env
         with:
-          driver: docker-container
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.6.x"
-          enable-cache: false
+          python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e-playwright/requirements/ci.txt"
-      # FIXME: Workaround for https://github.com/actions/download-artifact/issues/249
-      - name: download docker images with retry
-        uses: Wandalen/wretry.action@master
+          show-system-versions: false
+      - name: Download and load Docker images
+        uses: ./.github/actions/download-load-docker-images
         with:
-          action: actions/download-artifact@v4
-          with: |
-            pattern: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-*
-            path: /${{ runner.temp }}/build
-          attempt_limit: 5
-          attempt_delay: 1000
-      - name: load docker images
-        run: |
-          make load-images local-src=/${{ runner.temp }}/build
+          artifact-name-pattern: '*'
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - if: github.ref == 'refs/heads/master'

@@ -24,7 +24,21 @@ qx.Class.define("osparc.store.Templates", {
     __hypertools: null,
     __hypertoolsPromiseCached: null,
 
-    __fetchTemplatesPaginated: function(params, options) {
+    createTemplate: function(studyId, copyData = true, hidden = false) {
+      const params = {
+        url: {
+          "study_id": studyId,
+          "copy_data": copyData,
+          hidden,
+        },
+      };
+      const options = {
+        pollTask: true
+      };
+      return osparc.data.Resources.fetch("templates", "postToTemplate", params, options);
+    },
+
+    fetchTemplatesPaginated: function(params, options) {
       params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
       return osparc.data.Resources.fetch("templates", "getPageFilteredSorted", params, options)
         .then(response => {
@@ -35,21 +49,19 @@ qx.Class.define("osparc.store.Templates", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    fetchTemplatesNonPublicPaginated: function(params, options) {
-      return this.__fetchTemplatesPaginated(params, options);
-    },
-
-    fetchTemplatesPublicPaginated: function(params, options) {
-      return this.__fetchTemplatesPaginated(params, options);
+    searchTemplatesPaginated: function(params, options) {
+      params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
+      return osparc.data.Resources.fetch("templates", "getPageSearchFilteredSorted", params, options)
+        .then(response => {
+          const templates = response["data"];
+          templates.forEach(template => template["resourceType"] = "template");
+          return response;
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     fetchTemplate: function(templateId) {
-      const params = {
-        url: {
-          "studyId": templateId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "getOne", params)
+      return osparc.store.Study.getInstance().getOne(templateId)
         .catch(err => console.error(err));
     },
 

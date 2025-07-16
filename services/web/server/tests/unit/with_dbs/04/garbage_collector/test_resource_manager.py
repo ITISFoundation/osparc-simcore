@@ -28,9 +28,9 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
 from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis.asyncio import Redis
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
@@ -61,9 +61,9 @@ from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
-from simcore_service_webserver.users.api import delete_user_without_projects
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.users.plugin import setup_users
+from simcore_service_webserver.users.users_service import delete_user_without_projects
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay

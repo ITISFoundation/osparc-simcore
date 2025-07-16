@@ -38,7 +38,7 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users.api import get_user_fullname
+from ..users import users_service
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_repository, _projects_service
@@ -93,7 +93,7 @@ async def _prepare_project_copy(
         )
         if project_data_size >= max_bytes:
             raise web.HTTPUnprocessableEntity(
-                reason=f"Source project data size is {project_data_size.human_readable()}."
+                text=f"Source project data size is {project_data_size.human_readable()}."
                 f"This is larger than the maximum {max_bytes.human_readable()} allowed for copying."
                 "TIP: Please reduce the study size or contact application support."
             )
@@ -204,7 +204,8 @@ async def _copy_files_from_source_project(
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,
             owner=Owner(
-                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+                user_id=user_id,
+                **await users_service.get_user_fullname(app, user_id=user_id),
             ),
             notification_cb=_projects_service.create_user_notification_cb(
                 user_id, ProjectID(f"{source_project['uuid']}"), app
@@ -264,7 +265,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     simcore_user_agent: str,
     parent_project_uuid: ProjectID | None,
     parent_node_id: NodeID | None,
-) -> None:
+) -> web.HTTPCreated:
     """Implements TaskProtocol for 'create_projects' handler
 
     Arguments:
@@ -279,7 +280,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         predefined_project -- project in request body
 
     Raises:
-        web.HTTPCreated: succeeded
         web.HTTPBadRequest:
         web.HTTPNotFound:
         web.HTTPUnauthorized:
@@ -482,7 +482,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             **RESPONSE_MODEL_POLICY
         )
 
-        raise web.HTTPCreated(
+        return web.HTTPCreated(
             text=json_dumps({"data": data}),
             content_type=MIMETYPE_APPLICATION_JSON,
         )

@@ -35,10 +35,12 @@ from simcore_service_dynamic_sidecar.core.reserved_space import (
 logger = logging.getLogger(__name__)
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.logging",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",

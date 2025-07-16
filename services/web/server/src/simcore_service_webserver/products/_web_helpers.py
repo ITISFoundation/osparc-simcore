@@ -24,8 +24,7 @@ def get_product_name(request: web.Request) -> str:
     try:
         product_name: str = request[RQ_PRODUCT_KEY]
     except KeyError as exc:
-        error = UnknownProductError()
-        error.add_note("TIP: Check products middleware")
+        error = UnknownProductError(tip="Check products middleware")
         raise error from exc
     return product_name
 

@@ -1,6 +1,6 @@
 import logging
 from functools import cached_property
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, Literal
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
@@ -15,6 +15,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.fields import Field
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.email import SMTPSettings
@@ -94,6 +95,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         str | None,
         Field(None, description="Stack name defined upon deploy (see main Makefile)"),
     ]
+
+    WEBSERVER_APP_FACTORY_NAME: Annotated[
+        Literal["WEBSERVER_FULL_APP_FACTORY", "WEBSERVER_AUTHZ_APP_FACTORY"],
+        Field(
+            description="Application factory to be lauched by the gunicorn server",
+        ),
+    ] = "WEBSERVER_FULL_APP_FACTORY"
 
     WEBSERVER_DEV_FEATURES_ENABLED: Annotated[
         bool,
@@ -455,8 +463,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # HELPERS  --------------------------------------------------------
 
     @cached_property
-    def log_level(self) -> int:
-        level: int = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
+    def log_level(self) -> LogLevelInt:
+        level: LogLevelInt = getattr(logging, self.WEBSERVER_LOGLEVEL.upper())
         return level
 
     def is_enabled(self, field_name: str) -> bool:

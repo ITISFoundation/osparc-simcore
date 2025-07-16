@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Annotated
 
 from pydantic import Field, SecretStr
 
@@ -7,12 +8,12 @@ from .basic_types import PortInt
 
 
 class DockerApiProxysettings(BaseCustomSettings):
-    DOCKER_API_PROXY_HOST: str = Field(
-        description="hostname of the docker-api-proxy service"
-    )
-    DOCKER_API_PROXY_PORT: PortInt = Field(
-        8888, description="port of the docker-api-proxy service"
-    )
+    DOCKER_API_PROXY_HOST: Annotated[
+        str, Field(description="hostname of the docker-api-proxy service")
+    ]
+    DOCKER_API_PROXY_PORT: Annotated[
+        PortInt, Field(description="port of the docker-api-proxy service")
+    ] = 8888
     DOCKER_API_PROXY_SECURE: bool = False
 
     DOCKER_API_PROXY_USER: str

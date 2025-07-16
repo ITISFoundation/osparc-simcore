@@ -114,99 +114,33 @@ qx.Class.define("osparc.notification.NotificationUI", {
     },
 
     __applyNotification: function(notification) {
-      let resourceId = null;
-      if (notification.getResourceId()) {
-        resourceId = notification.getResourceId();
-      } else if (notification.getActionablePath()) {
-        // extract it from the actionable path
-        const actionablePath = notification.getActionablePath();
-        resourceId = actionablePath.split("/")[1];
-      }
-      const userFromId = notification.getUserFromId();
-
       const icon = this.getChildControl("icon");
-      const titleLabel = this.getChildControl("title");
-      titleLabel.setValue(notification.getTitle());
-      const descriptionLabel = this.getChildControl("text");
-      descriptionLabel.setValue(notification.getText());
-
       switch (notification.getCategory()) {
         case "NEW_ORGANIZATION":
           icon.setSource("@FontAwesome5Solid/users/14");
-          if (resourceId) {
-            const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
-            if (org) {
-              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'")
-            } else {
-              this.setEnabled(false);
-            }
-          }
           break;
         case "STUDY_SHARED":
           icon.setSource("@FontAwesome5Solid/file/14");
-          if (resourceId) {
-            const params = {
-              url: {
-                "studyId": resourceId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getOne", params)
-              .then(study => {
-                const studyAlias = osparc.product.Utils.getStudyAlias({
-                  firstUpperCase: true
-                });
-                titleLabel.setValue(`${studyAlias} '${study["name"]}'`);
-              })
-              .catch(() => this.setEnabled(false));
-          }
-          if (userFromId) {
-            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
-            if (user) {
-              descriptionLabel.setValue("was shared by " + user.getLabel());
-            }
-          }
           break;
         case "TEMPLATE_SHARED":
           icon.setSource("@FontAwesome5Solid/copy/14");
-          if (resourceId) {
-            osparc.store.Templates.fetchTemplate(resourceId)
-              .then(templateData => {
-                if (templateData) {
-                  titleLabel.setValue(templateData["name"]);
-                }
-              })
-              .catch(() => this.setEnabled(false));
-          }
-          if (userFromId) {
-            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
-            if (user) {
-              descriptionLabel.setValue("was shared by " + user.getLabel());
-            }
-          }
+          break;
+        case "CONVERSATION_NOTIFICATION":
+          icon.setSource("@FontAwesome5Solid/bell/14");
           break;
         case "ANNOTATION_NOTE":
           icon.setSource("@FontAwesome5Solid/file/14");
-          if (resourceId) {
-            const params = {
-              url: {
-                "studyId": resourceId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getOne", params)
-              .then(study => titleLabel.setValue(`Note added in '${study["name"]}'`))
-              .catch(() => this.setEnabled(false));
-          }
-          if (userFromId) {
-            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
-            if (user) {
-              descriptionLabel.setValue("was added by " + user.getLabel());
-            }
-          }
           break;
         case "WALLET_SHARED":
           icon.setSource("@MaterialIcons/account_balance_wallet/14");
           break;
       }
+
+      const titleLabel = this.getChildControl("title");
+      titleLabel.setValue(notification.getTitle());
+
+      const descriptionLabel = this.getChildControl("text");
+      descriptionLabel.setValue(notification.getText());
 
       const date = this.getChildControl("date");
       notification.bind("date", date, "value", {
@@ -226,6 +160,102 @@ qx.Class.define("osparc.notification.NotificationUI", {
       this.addListener("mouseover", () => highlight(true));
       this.addListener("mouseout", () => highlight(false));
       highlight(false);
+
+      // this will trigger calls to the backend, so only make them if necessary
+      this.addListenerOnce("appear", () => this.__enrichTexts());
+    },
+
+    __enrichTexts: function() {
+      const notification = this.getNotification();
+
+      let resourceId = null;
+      if (notification.getResourceId()) {
+        resourceId = notification.getResourceId();
+      } else if (notification.getActionablePath()) {
+        // extract it from the actionable path
+        const actionablePath = notification.getActionablePath();
+        resourceId = actionablePath.split("/")[1];
+      }
+
+      const userFromId = notification.getUserFromId();
+      const titleLabel = this.getChildControl("title");
+      const descriptionLabel = this.getChildControl("text");
+
+      switch (notification.getCategory()) {
+        case "NEW_ORGANIZATION":
+          if (resourceId) {
+            const org = osparc.store.Groups.getInstance().getOrganization(resourceId);
+            if (org) {
+              descriptionLabel.setValue("You're now member of '" + org.getLabel() + "'");
+            } else {
+              this.setEnabled(false);
+            }
+          }
+          break;
+        case "STUDY_SHARED":
+          if (resourceId) {
+            osparc.store.Study.getInstance().getOne(resourceId)
+              .then(study => {
+                const studyAlias = osparc.product.Utils.getStudyAlias({
+                  firstUpperCase: true
+                });
+                titleLabel.setValue(`${studyAlias} '${study["name"]}'`);
+              })
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
+            if (user) {
+              descriptionLabel.setValue("was shared by " + user.getLabel());
+            }
+          }
+          break;
+        case "TEMPLATE_SHARED":
+          if (resourceId) {
+            osparc.store.Templates.fetchTemplate(resourceId)
+              .then(templateData => {
+                if (templateData) {
+                  titleLabel.setValue(templateData["name"]);
+                }
+              })
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
+            if (user) {
+              descriptionLabel.setValue("was shared by " + user.getLabel());
+            }
+          }
+          break;
+        case "CONVERSATION_NOTIFICATION":
+          if (resourceId) {
+            osparc.store.Study.getInstance().getOne(resourceId)
+              .then(study => titleLabel.setValue(`You were notified in '${study["name"]}'`))
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
+            if (user) {
+              descriptionLabel.setValue(user.getLabel() + " wants you to check the conversation");
+            }
+          }
+          break;
+        case "ANNOTATION_NOTE":
+          if (resourceId) {
+            osparc.store.Study.getInstance().getOne(resourceId)
+              .then(study => titleLabel.setValue(`Note added in '${study["name"]}'`))
+              .catch(() => this.setEnabled(false));
+          }
+          if (userFromId) {
+            const user = osparc.store.Groups.getInstance().getUserByUserId(userFromId);
+            if (user) {
+              descriptionLabel.setValue("was added by " + user.getLabel());
+            }
+          }
+          break;
+        case "WALLET_SHARED":
+          break;
+      }
     },
 
     __notificationTapped: function() {
@@ -250,6 +280,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "TEMPLATE_SHARED":
         case "STUDY_SHARED":
+        case "CONVERSATION_NOTIFICATION":
         case "ANNOTATION_NOTE":
           this.__openStudyDetails(resourceId, notification);
           break;
@@ -276,24 +307,25 @@ qx.Class.define("osparc.notification.NotificationUI", {
     },
 
     __openStudyDetails: function(studyId, notification) {
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getInstance().getOne(studyId)
         .then(studyData => {
           if (studyData) {
             const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
             studyDataCopy["resourceType"] = notification.getCategory() === "TEMPLATE_SHARED" ? "template" : "study";
-            const resourceDetails = new osparc.dashboard.ResourceDetails(studyDataCopy);
-            const win = osparc.dashboard.ResourceDetails.popUpInWindow(resourceDetails);
+            const {
+              resourceDetails,
+              window,
+            } = osparc.dashboard.ResourceDetails.popUpInWindow(studyDataCopy);
+
             resourceDetails.addListener("openStudy", () => {
               if (notification.getCategory() === "STUDY_SHARED") {
-                const openCB = () => win.close();
+                const openCB = () => window.close();
                 osparc.dashboard.ResourceBrowserBase.startStudyById(studyId, openCB);
               }
             });
+            if (notification.getCategory() === "CONVERSATION_NOTIFICATION") {
+              resourceDetails.addListener("pagesAdded", () => resourceDetails.openConversations());
+            }
           }
         })
         .catch(err => {

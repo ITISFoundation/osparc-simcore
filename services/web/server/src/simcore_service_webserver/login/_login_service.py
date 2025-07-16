@@ -1,19 +1,14 @@
-from dataclasses import asdict
 from typing import Any
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
 from models_library.products import ProductName
-from models_library.rest_error import LogMessageType
 from models_library.users import UserID
 from pydantic import PositiveInt
 from servicelib.aiohttp import observer
-from servicelib.aiohttp.status import HTTP_200_OK
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserRole
 
 from ..db.models import ConfirmationAction, UserStatus
-from ._constants import (
+from .constants import (
     MSG_ACTIVATION_REQUIRED,
     MSG_USER_BANNED,
     MSG_USER_DELETED,
@@ -56,26 +51,22 @@ def validate_user_status(*, user: dict, support_email: str):
 
     if user_status == DELETED:
         raise web.HTTPUnauthorized(
-            reason=MSG_USER_DELETED.format(support_email=support_email),
-            content_type=MIMETYPE_APPLICATION_JSON,
+            text=MSG_USER_DELETED.format(support_email=support_email),
         )  # 401
 
     if user_status == BANNED or user["role"] == ANONYMOUS:
         raise web.HTTPUnauthorized(
-            reason=MSG_USER_BANNED.format(support_email=support_email),
-            content_type=MIMETYPE_APPLICATION_JSON,
+            text=MSG_USER_BANNED.format(support_email=support_email),
         )  # 401
 
     if user_status == EXPIRED:
         raise web.HTTPUnauthorized(
-            reason=MSG_USER_EXPIRED.format(support_email=support_email),
-            content_type=MIMETYPE_APPLICATION_JSON,
+            text=MSG_USER_EXPIRED.format(support_email=support_email),
         )  # 401
 
     if user_status == CONFIRMATION_PENDING:
         raise web.HTTPUnauthorized(
-            reason=MSG_ACTIVATION_REQUIRED,
-            content_type=MIMETYPE_APPLICATION_JSON,
+            text=MSG_ACTIVATION_REQUIRED,
         )  # 401
 
     assert user_status == ACTIVE  # nosec
@@ -114,27 +105,3 @@ async def notify_user_logout(
         client_session_id,
         app,
     )
-
-
-def flash_response(
-    message: str, level: str = "INFO", *, status: int = HTTP_200_OK
-) -> web.Response:
-    return envelope_response(
-        data=asdict(LogMessageType(message, level)),
-        status=status,
-    )
-
-
-def envelope_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
-    return web.json_response(
-        {
-            "data": data,
-            "error": None,
-        },
-        dumps=json_dumps,
-        status=status,
-    )
-
-
-def get_user_name_from_email(email: str) -> str:
-    return email.split("@")[0]

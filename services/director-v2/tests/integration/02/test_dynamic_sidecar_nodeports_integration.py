@@ -28,6 +28,7 @@ from helpers.shared_comp_utils import (
 )
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
+from models_library.products import ProductName
 from models_library.projects import (
     Node,
     NodesDict,
@@ -164,6 +165,7 @@ async def minimal_configuration(
     ensure_swarm_and_networks: None,
     minio_s3_settings_envs: EnvVarsDict,
     current_user: dict[str, Any],
+    with_product: dict[str, Any],
     osparc_product_name: str,
 ) -> AsyncIterator[None]:
     await wait_for_catalog_service(current_user["id"], osparc_product_name)
@@ -260,14 +262,45 @@ def current_user(create_registered_user: Callable) -> dict[str, Any]:
 @pytest.fixture
 async def current_study(
     current_user: dict[str, Any],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     fake_dy_workbench: dict[str, Any],
+    sleeper_service: dict,
+    dy_static_file_server_dynamic_sidecar_service: dict,
+    dy_static_file_server_dynamic_sidecar_compose_spec_service: dict,
     async_client: httpx.AsyncClient,
     osparc_product_name: str,
     osparc_product_api_base_url: str,
     create_pipeline: Callable[..., Awaitable[ComputationGet]],
+    grant_service_access_rights: Callable[..., dict[str, Any]],
 ) -> ProjectAtDB:
-    project_at_db = await project(current_user, workbench=fake_dy_workbench)
+    # 1. grant current_user execution access to services in this study
+    grant_service_access_rights(
+        group_id=current_user["primary_gid"],
+        service_key=sleeper_service["schema"]["key"],
+        service_version=sleeper_service["schema"]["version"],
+        product_name=osparc_product_name,
+    )
+    grant_service_access_rights(
+        group_id=current_user["primary_gid"],
+        service_key=dy_static_file_server_dynamic_sidecar_service["schema"]["key"],
+        service_version=dy_static_file_server_dynamic_sidecar_service["schema"][
+            "version"
+        ],
+        product_name=osparc_product_name,
+    )
+    grant_service_access_rights(
+        group_id=current_user["primary_gid"],
+        service_key=dy_static_file_server_dynamic_sidecar_compose_spec_service[
+            "schema"
+        ]["key"],
+        service_version=dy_static_file_server_dynamic_sidecar_compose_spec_service[
+            "schema"
+        ]["version"],
+        product_name=osparc_product_name,
+    )
+
+    # create project for this user
+    project_at_db = await create_project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(
@@ -884,6 +917,13 @@ async def _assert_retrieve_completed(
                 assert (
                     _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
                 ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
+
+
+def product_name(osparc_product_name: ProductName) -> ProductName:
+    """
+    override the product name to be used in these tests
+    """
+    return osparc_product_name
 
 
 @pytest.mark.flaky(max_runs=3)

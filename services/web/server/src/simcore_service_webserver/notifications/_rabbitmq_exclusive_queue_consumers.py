@@ -7,6 +7,7 @@ from typing import Final
 from aiohttp import web
 from models_library.groups import GroupID
 from models_library.rabbitmq_messages import (
+    ComputationalPipelineStatusMessage,
     EventRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessageNode,
@@ -93,8 +94,22 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
             app,
             rabbit_message.user_id,
             message=message,
-            ignore_queue=True,
         )
+    return True
+
+
+async def _computational_pipeline_status_message_parser(
+    app: web.Application, data: bytes
+) -> bool:
+    rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
+    project = await _projects_service.get_project_for_user(
+        app,
+        f"{rabbit_message.project_id}",
+        rabbit_message.user_id,
+        include_state=True,
+    )
+    await _projects_service.notify_project_state_update(app, project)
+
     return True
 
 
@@ -107,7 +122,6 @@ async def _log_message_parser(app: web.Application, data: bytes) -> bool:
             event_type=SOCKET_IO_LOG_EVENT,
             data=rabbit_message.model_dump(exclude={"user_id", "channel_name"}),
         ),
-        ignore_queue=True,
     )
     return True
 
@@ -124,7 +138,6 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
                 "node_id": f"{rabbit_message.node_id}",
             },
         ),
-        ignore_queue=True,
     )
     return True
 
@@ -174,13 +187,19 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
         _osparc_credits_message_parser,
         {"topics": []},
     ),
+    SubcribeArgumentsTuple(
+        ComputationalPipelineStatusMessage.get_channel_name(),
+        _computational_pipeline_status_message_parser,
+        {"topics": []},
+    ),
 )
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:
-    with log_context(
-        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
-    ), log_catch(_logger, reraise=False):
+    with (
+        log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"),
+        log_catch(_logger, reraise=False),
+    ):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(

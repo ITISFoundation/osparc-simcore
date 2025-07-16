@@ -1,5 +1,6 @@
 import logging
 
+from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 
 from ...exception_handling import (
@@ -31,44 +32,57 @@ _logger = logging.getLogger(__name__)
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     FolderNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Folder was not found",
+        user_message("The requested folder could not be found.", _version=1),
     ),
     WorkspaceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Workspace was not found",
+        user_message("The requested workspace could not be found.", _version=1),
     ),
     FolderAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Does not have access to this folder",
+        user_message("You do not have permission to access this folder.", _version=1),
     ),
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Does not have access to this workspace",
+        user_message(
+            "You do not have permission to access this workspace.", _version=1
+        ),
     ),
     WorkspaceFolderInconsistencyError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "This folder does not exist in this workspace",
+        user_message(
+            "This folder is not available in the selected workspace.", _version=1
+        ),
     ),
     FolderValueNotPermittedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Provided folder value is not permitted: {reason}",
+        user_message("The folder operation cannot be completed: {reason}", _version=1),
     ),
     FoldersValueError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "Invalid folder value set: {reason}",
+        user_message("The folder configuration is invalid: {reason}", _version=1),
     ),
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        "Access Denied: You do not have permission to move the project with UUID: {project_uuid}. Tip: Copy and paste the UUID into the search bar to locate the project.",
+        user_message(
+            "You do not have permission to move the project with UUID: {project_uuid}. To locate this project, copy and paste the UUID into the search bar.",
+            _version=1,
+        ),
     ),
     # Trashing
     ProjectRunningConflictError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        "One or more studies in this folder are in use and cannot be trashed. Please stop all services first and try again",
+        user_message(
+            "Cannot move folder to trash because it contains projects that are currently running. Please stop all running services first and try again.",
+            _version=2,
+        ),
     ),
     ProjectStoppingError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        "Something went wrong while stopping running services in studies within this folder before trashing. Aborting trash.",
+        user_message(
+            "Something went wrong while stopping running services in projects within this folder before trashing. Aborting trash.",
+            _version=2,
+        ),
     ),
 }
 

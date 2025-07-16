@@ -60,7 +60,7 @@ from ...groups.api import get_group_from_gid, list_all_user_groups_ids
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
 from ...security.decorators import permission_required
-from ...users.api import get_user_id_from_gid, get_user_role
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _access_rights_service as access_rights_service
 from .. import _nodes_service, _projects_service, nodes_utils
@@ -105,7 +105,7 @@ async def create_node(request: web.Request) -> web.Response:
         req_ctx.product_name,
     ):
         raise web.HTTPNotAcceptable(
-            reason=f"Service {body.service_key}:{body.service_version} is deprecated"
+            text=f"Service {body.service_key}:{body.service_version} is deprecated"
         )
 
     # ensure the project exists
@@ -156,7 +156,7 @@ async def get_node(request: web.Request) -> web.Response:
     ):
         project_node = project["workbench"][f"{path_params.node_id}"]
         raise web.HTTPNotAcceptable(
-            reason=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
+            text=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
         )
 
     service_data: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet = (
@@ -333,7 +333,7 @@ async def stop_node(request: web.Request) -> web.Response:
         permission="write",
     )
 
-    user_role = await get_user_role(request.app, user_id=req_ctx.user_id)
+    user_role = await users_service.get_user_role(request.app, user_id=req_ctx.user_id)
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
 
@@ -452,13 +452,11 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         return envelope_json_response(new_node_resources)
     except ProjectNodeResourcesInvalidError as exc:
         raise web.HTTPUnprocessableEntity(  # 422
-            reason=f"{exc}",
             text=f"{exc}",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from exc
     except ProjectNodeResourcesInsufficientRightsError as exc:
         raise web.HTTPForbidden(
-            reason=f"{exc}",
             text=f"{exc}",
             content_type=MIMETYPE_APPLICATION_JSON,
         ) from exc
@@ -569,7 +567,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
 
     # Update groups to compare based on the type of sharing group
     if _sharing_with_group.group_type == GroupType.PRIMARY:
-        _user_id = await get_user_id_from_gid(
+        _user_id = await users_service.get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
         user_groups_ids = await list_all_user_groups_ids(

@@ -33,7 +33,7 @@ qx.Class.define("osparc.study.CreateFunction", {
   },
 
   statics: {
-    createFunctionData: function(projectData, name, description, exposedInputs, exposedOutputs) {
+    createFunctionData: function(projectData, name, description, defaultInputs = {}, exposedInputs = {}, exposedOutputs = {}) {
       const functionData = {
         "projectId": projectData["uuid"],
         "title": name,
@@ -60,18 +60,19 @@ qx.Class.define("osparc.study.CreateFunction", {
 
       const parameters = osparc.study.Utils.extractFunctionableParameters(projectData["workbench"]);
       parameters.forEach(parameter => {
-        const parameterLabel = parameter["label"];
-        if (exposedInputs[parameterLabel]) {
+        const parameterKey = parameter["label"];
+        if (exposedInputs[parameterKey]) {
           const parameterMetadata = osparc.store.Services.getMetadata(parameter["key"], parameter["version"]);
           if (parameterMetadata) {
             const type = osparc.service.Utils.getParameterType(parameterMetadata);
-            functionData["inputSchema"]["schema_content"]["properties"][parameterLabel] = {
+            functionData["inputSchema"]["schema_content"]["properties"][parameterKey] = {
               "type": type,
             };
-            functionData["inputSchema"]["schema_content"]["required"].push(parameterLabel);
+            functionData["inputSchema"]["schema_content"]["required"].push(parameterKey);
           }
-        } else {
-          functionData["defaultInputs"][parameterLabel] = osparc.service.Utils.getParameterValue(parameter);
+        }
+        if (parameterKey in defaultInputs) {
+          functionData["defaultInputs"][parameterKey] = defaultInputs[parameterKey];
         }
       });
 
@@ -120,11 +121,12 @@ qx.Class.define("osparc.study.CreateFunction", {
       form.add(description, this.tr("Description"), null, "description");
 
 
+      const defaultInputs = {};
       const exposedInputs = {};
       const exposedOutputs = {};
 
       // INPUTS
-      const inGrid = new qx.ui.layout.Grid(10, 6);
+      const inGrid = new qx.ui.layout.Grid(12, 6);
       const inputsLayout = new qx.ui.container.Composite(inGrid).set({
         allowGrowX: false,
         alignX: "left",
@@ -163,7 +165,8 @@ qx.Class.define("osparc.study.CreateFunction", {
 
       const parameters = osparc.study.Utils.extractFunctionableParameters(this.__studyData["workbench"]);
       parameters.forEach(parameter => {
-        const parameterLabel = new qx.ui.basic.Label(parameter["label"]);
+        const parameterKey = parameter["label"];
+        const parameterLabel = new qx.ui.basic.Label(parameterKey);
         inputsLayout.add(parameterLabel, {
           row,
           column,
@@ -185,11 +188,28 @@ qx.Class.define("osparc.study.CreateFunction", {
           row,
           column,
         });
-        exposedInputs[parameter["label"]] = true;
-        parameterExposed.addListener("changeValue", e => exposedInputs[parameter["label"]] = e.getData());
+        exposedInputs[parameterKey] = true;
+        parameterExposed.addListener("changeValue", e => exposedInputs[parameterKey] = e.getData());
         column++;
 
-        const parameterDefaultValue = new qx.ui.basic.Label(String(osparc.service.Utils.getParameterValue(parameter)));
+        const paramValue = osparc.service.Utils.getParameterValue(parameter);
+        defaultInputs[parameterKey] = paramValue;
+        let parameterDefaultValue = null;
+        if (parameterMetadata && osparc.service.Utils.getParameterType(parameterMetadata) === "number") {
+          parameterDefaultValue = new qx.ui.form.TextField(String(paramValue));
+          parameterDefaultValue.addListener("changeValue", e => {
+            const newValue = e.getData();
+            const oldValue = e.getOldData();
+            if (newValue === oldValue) {
+              return;
+            }
+            const curatedValue = (!isNaN(parseFloat(newValue))) ? parseFloat(newValue) : parseFloat(oldValue);
+            defaultInputs[parameterKey] = curatedValue;
+            parameterDefaultValue.setValue(String(curatedValue));
+          });
+        } else {
+          parameterDefaultValue = new qx.ui.basic.Label(String(paramValue));
+        }
         inputsLayout.add(parameterDefaultValue, {
           row,
           column,
@@ -274,33 +294,25 @@ qx.Class.define("osparc.study.CreateFunction", {
       });
       createFunctionBtn.addListener("execute", () => {
         if (this.__form.validate()) {
-          this.__createFunction(exposedInputs, exposedOutputs);
+          this.__createFunction(defaultInputs, exposedInputs, exposedOutputs);
         }
       }, this);
     },
 
-    __createFunction: function(exposedInputs, exposedOutputs) {
+    __createFunction: function(defaultInputs, exposedInputs, exposedOutputs) {
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a hidden template
-      const params = {
-        url: {
-          "study_id": this.__studyData["uuid"],
-          "copy_data": true,
-          "hidden": true,
-        },
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
+      const copyData = true;
+      const hidden = true;
+      const pollPromise = osparc.store.Templates.createTemplate(this.__studyData["uuid"], copyData, hidden);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise)
+      pollTasks.createPollingTask(pollPromise)
         .then(task => {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
             this.__updateTemplateMetadata(templateData);
-            this.__registerFunction(templateData, exposedInputs, exposedOutputs);
+            this.__registerFunction(templateData, defaultInputs, exposedInputs, exposedOutputs);
           });
         })
         .catch(err => {
@@ -310,26 +322,20 @@ qx.Class.define("osparc.study.CreateFunction", {
     },
 
     __updateTemplateMetadata: function(templateData) {
-      const patchData = {
+      const metadata = {
         "custom" : {
           "hidden": "Base template for function",
         }
       };
-      const params = {
-        url: {
-          "studyId": templateData["uuid"],
-        },
-        data: patchData
-      };
-      osparc.data.Resources.fetch("studies", "updateMetadata", params)
+      osparc.store.Study.getInstance().updateMetadata(templateData["uuid"], metadata)
         .catch(err => console.error(err));
     },
 
-    __registerFunction: function(templateData, exposedInputs, exposedOutputs) {
+    __registerFunction: function(templateData, defaultInputs, exposedInputs, exposedOutputs) {
       const nameField = this.__form.getItem("name");
       const descriptionField = this.__form.getItem("description");
 
-      const functionData = this.self().createFunctionData(templateData, nameField.getValue(), descriptionField.getValue(), exposedInputs, exposedOutputs);
+      const functionData = this.self().createFunctionData(templateData, nameField.getValue(), descriptionField.getValue(), defaultInputs, exposedInputs, exposedOutputs);
       const params = {
         data: functionData,
       };

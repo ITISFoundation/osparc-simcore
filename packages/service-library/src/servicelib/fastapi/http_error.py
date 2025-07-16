@@ -11,7 +11,7 @@ from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from ..logging_errors import create_troubleshotting_log_kwargs
+from ..logging_errors import create_troubleshootting_log_kwargs
 from ..status_codes_utils import is_5xx_server_error
 
 validation_error_response_definition["properties"] = {
@@ -23,7 +23,7 @@ validation_error_response_definition["properties"] = {
 }
 
 
-TException = TypeVar("TException")
+TException = TypeVar("TException", bound=BaseException)
 
 _logger = logging.getLogger(__name__)
 
@@ -48,24 +48,35 @@ def make_http_error_handler_for_exception(
             "errors": error_extractor(exc) if error_extractor else [f"{exc}"]
         }
 
-        if is_5xx_server_error(status_code):
-            _logger.exception(
-                create_troubleshotting_log_kwargs(
-                    "Unexpected error happened in the Resource Usage Tracker. Please contact support.",
-                    error=exc,
-                    error_context={
-                        "request": request,
-                        "request.method": f"{request.method}",
-                    },
-                )
-            )
-
-        return JSONResponse(
+        response = JSONResponse(
             content=jsonable_encoder(
                 {"error": error_content} if envelope_error else error_content
             ),
             status_code=status_code,
         )
+
+        if is_5xx_server_error(status_code):
+            _logger.exception(
+                create_troubleshootting_log_kwargs(
+                    f"A 5XX server error happened in current service. Responding with {error_content} and {status_code} status code",
+                    error=exc,
+                    error_context={
+                        "request": request,
+                        "request.client_host": (
+                            request.client.host if request.client else "unknown"
+                        ),
+                        "request.method": request.method,
+                        "request.url_path": request.url.path,
+                        "request.query_params": dict(request.query_params),
+                        "request.headers": dict(request.headers),
+                        "response": response,
+                        "response.error_content": error_content,
+                        "response.status_code": status_code,
+                    },
+                )
+            )
+
+        return response
 
     return _http_error_handler
 

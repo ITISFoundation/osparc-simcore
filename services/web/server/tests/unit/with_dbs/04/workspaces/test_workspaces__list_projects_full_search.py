@@ -12,10 +12,13 @@ from http import HTTPStatus
 import pytest
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_login import UserInfoDict
 from pytest_simcore.helpers.webserver_projects import create_project
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects import (
+    _projects_repository as projects_service_repository,
+)
 from simcore_service_webserver.projects.models import ProjectDict
 
 _SEARCH_NAME_1 = "Quantum Solutions"
@@ -215,3 +218,217 @@ async def test__list_projects_full_search_with_query_parameters(
     # data, _ = await assert_status(resp, status.HTTP_200_OK)
     # assert len(data) == 1
     # assert data[0]["uuid"] == project["uuid"]
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test__list_projects_full_search_with_type_filter(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    workspaces_clean_db: None,
+):
+    """Test the list_projects_full_search endpoint with type query parameter."""
+    assert client.app
+
+    # Create a regular user project
+    user_project_data = deepcopy(fake_project)
+    user_project_data["name"] = "User Project Test"
+    user_project_created = await create_project(
+        client.app,
+        user_project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+    )
+
+    # Create a template project
+    template_project_data = deepcopy(fake_project)
+    template_project_data["name"] = "Template Project Test"
+    template_project_created = await create_project(
+        client.app,
+        template_project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+        as_template=True,
+    )
+
+    base_url = client.app.router["list_projects_full_search"].url_for()
+
+    # Test: Filter by type="user"
+    url = base_url.with_query({"text": "Project Test", "type": "user"})
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    user_project_uuids = [p["uuid"] for p in data]
+    assert user_project_created["uuid"] in user_project_uuids
+    assert template_project_created["uuid"] not in user_project_uuids
+
+    # Test: Filter by type="template"
+    url = base_url.with_query({"text": "Project Test", "type": "template"})
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    template_project_uuids = [p["uuid"] for p in data]
+    assert user_project_created["uuid"] not in template_project_uuids
+    assert template_project_created["uuid"] in template_project_uuids
+
+    # Test: Filter by type="all"
+    url = base_url.with_query({"text": "Project Test", "type": "all"})
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    all_project_uuids = [p["uuid"] for p in data]
+    assert user_project_created["uuid"] in all_project_uuids
+    assert template_project_created["uuid"] in all_project_uuids
+
+    # Test: Default behavior (no type parameter)
+    url = base_url.with_query({"text": "Project Test"})
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    default_project_uuids = [p["uuid"] for p in data]
+    assert user_project_created["uuid"] in default_project_uuids
+    assert template_project_created["uuid"] in default_project_uuids
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test__list_projects_full_search_with_template_type_hypertool_and_tutorial(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    workspaces_clean_db: None,
+):
+    """Test the list_projects_full_search endpoint with template_type hypertool and tutorial."""
+    assert client.app
+
+    # Create a hypertool template project
+    hypertool_project_data = deepcopy(fake_project)
+    hypertool_project_data["name"] = "Hypertool Project Test"
+    hypertool_project_created = await create_project(
+        client.app,
+        hypertool_project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+        as_template=True,
+    )
+    # Patch the hypertool project to set template_type to "HYPERTOOL"
+    await projects_service_repository.patch_project(
+        client.app,
+        project_uuid=hypertool_project_created["uuid"],
+        new_partial_project_data={"template_type": "HYPERTOOL"},
+    )
+    # Create a tutorial template project
+    tutorial_project_data = deepcopy(fake_project)
+    tutorial_project_data["name"] = "Tutorial Project Test"
+    tutorial_project_created = await create_project(
+        client.app,
+        tutorial_project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+        as_template=True,
+    )
+    # Patch the tutorial project to set template_type to "TUTORIAL"
+    await projects_service_repository.patch_project(
+        client.app,
+        project_uuid=tutorial_project_created["uuid"],
+        new_partial_project_data={"template_type": "TUTORIAL"},
+    )
+
+    base_url = client.app.router["list_projects_full_search"].url_for()
+
+    # Test: Filter by template_type="hypertool"
+    url = base_url.with_query(
+        {"text": "Project Test", "type": "template", "template_type": "HYPERTOOL"}
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    hypertool_uuids = [p["uuid"] for p in data]
+    assert hypertool_project_created["uuid"] in hypertool_uuids
+    assert tutorial_project_created["uuid"] not in hypertool_uuids
+
+    # Test: Filter by template_type="tutorial"
+    url = base_url.with_query(
+        {"text": "Project Test", "type": "template", "template_type": "TUTORIAL"}
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    tutorial_uuids = [p["uuid"] for p in data]
+    assert hypertool_project_created["uuid"] not in tutorial_uuids
+    assert tutorial_project_created["uuid"] in tutorial_uuids
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test__list_projects_full_search_with_template_type_regular_and_none(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    fake_project: ProjectDict,
+    workspaces_clean_db: None,
+):
+    """Test the list_projects_full_search endpoint with template_type template and None."""
+    assert client.app
+
+    # Create a regular user project
+    user_project_data = deepcopy(fake_project)
+    user_project_data["name"] = "User Project Test"
+    user_project_created = await create_project(
+        client.app,
+        user_project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+    )
+
+    # Create a regular template project
+    template_project_data = deepcopy(fake_project)
+    template_project_data["name"] = "Template Project Test"
+    template_project_created = await create_project(
+        client.app,
+        template_project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+        as_template=True,
+    )
+
+    # Create a hypertool template project for comparison
+    hypertool_project_data = deepcopy(fake_project)
+    hypertool_project_data["name"] = "Hypertool Project Test"
+    hypertool_project_created = await create_project(
+        client.app,
+        hypertool_project_data,
+        user_id=logged_user["id"],
+        product_name="osparc",
+        as_template=True,
+    )
+    # Patch the tutorial project to set template_type to "TUTORIAL"
+    await projects_service_repository.patch_project(
+        client.app,
+        project_uuid=hypertool_project_created["uuid"],
+        new_partial_project_data={"template_type": "HYPERTOOL"},
+    )
+
+    base_url = client.app.router["list_projects_full_search"].url_for()
+
+    # Test: Filter by template_type="template" --> Default type is "all"
+    url = base_url.with_query({"text": "Project Test", "template_type": "TEMPLATE"})
+    resp = await client.get(f"{url}")
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+    # Test: Filter by type= template_type="null"
+    url = base_url.with_query(
+        {"text": "Project Test", "type": "all", "template_type": "null"}
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    none_template_uuids = [p["uuid"] for p in data]
+    # NOTE: type "all" takes precedence over template_type "null" (practically is not used)
+    assert user_project_created["uuid"] in none_template_uuids
+    assert template_project_created["uuid"] in none_template_uuids
+    assert hypertool_project_created["uuid"] in none_template_uuids
+
+    # Test: Filter by type="user" & template_type="None"
+    url = base_url.with_query(
+        {"text": "Project Test", "type": "user", "template_type": "None"}
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(resp, status.HTTP_200_OK)
+    none_template_uuids = [p["uuid"] for p in data]
+    assert user_project_created["uuid"] in none_template_uuids
+    assert template_project_created["uuid"] not in none_template_uuids
+    assert hypertool_project_created["uuid"] not in none_template_uuids

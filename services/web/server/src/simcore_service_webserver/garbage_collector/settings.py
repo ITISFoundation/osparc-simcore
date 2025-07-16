@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from aiohttp import web
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
@@ -13,20 +15,28 @@ _HOUR = 60 * _MINUTE
 
 
 class GarbageCollectorSettings(BaseCustomSettings):
-    GARBAGE_COLLECTOR_INTERVAL_S: PositiveInt = Field(
-        30 * _SEC,
-        description="Waiting time between consecutive runs of the garbage-colector",
+    GARBAGE_COLLECTOR_INTERVAL_S: Annotated[
+        PositiveInt,
+        Field(
+            description="Waiting time between consecutive runs of the garbage-colector"
+        ),
+    ] = (
+        30 * _SEC
     )
 
-    GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S: PositiveInt = Field(
-        1 * _HOUR,
-        description="Time period between checks of expiration dates for trial users",
+    GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S: Annotated[
+        PositiveInt,
+        Field(
+            description="Time period between checks of expiration dates for trial users"
+        ),
+    ] = (
+        1 * _HOUR
     )
 
-    GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S: PositiveInt = Field(
-        _HOUR,
-        description="Wait time between periodic pruning of expired API keys",
-    )
+    GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S: Annotated[
+        PositiveInt,
+        Field(description="Wait time between periodic pruning of expired API keys"),
+    ] = _HOUR
 
 
 def get_plugin_settings(app: web.Application) -> GarbageCollectorSettings:

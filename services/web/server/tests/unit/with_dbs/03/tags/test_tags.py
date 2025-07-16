@@ -24,12 +24,12 @@ from models_library.projects_state import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.postgres_tags import create_tag, delete_tag
-from pytest_simcore.helpers.webserver_login import NewUser, UserInfoDict
 from pytest_simcore.helpers.webserver_projects import assert_get_same_project
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.tags import tags
 from simcore_service_webserver.db.models import UserRole
-from simcore_service_webserver.db.plugin import get_database_engine
+from simcore_service_webserver.db.plugin import get_database_engine_legacy
 from simcore_service_webserver.products._service import get_product
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -121,7 +121,7 @@ async def test_tags_to_studies(
 @pytest.fixture
 async def everybody_tag_id(client: TestClient) -> AsyncIterator[int]:
     assert client.app
-    engine = get_database_engine(client.app)
+    engine = get_database_engine_legacy(client.app)
     assert engine
 
     async with engine.acquire() as conn:

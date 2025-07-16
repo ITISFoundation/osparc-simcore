@@ -6,6 +6,7 @@
 
 
 --requirement ../../../packages/aws-library/requirements/_base.in
+--requirement ../../../packages/celery-library/requirements/_base.in
 --requirement ../../../packages/common-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in
@@ -19,12 +20,13 @@ aiofiles # i/o
 asgi_lifespan
 asyncpg # database
 celery[redis]
+fastapi-pagination
+httpx
 opentelemetry-instrumentation-celery
 opentelemetry-instrumentation-botocore
-packaging
-fastapi-pagination
 orjson
-pydantic[dotenv]
+packaging
+pydantic
 tenacity
 typer
 types-aiobotocore[s3] # s3 storage

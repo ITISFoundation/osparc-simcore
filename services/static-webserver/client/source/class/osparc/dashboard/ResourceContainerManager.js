@@ -31,6 +31,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     this.__foldersList = [];
     this.__resourcesList = [];
     this.__groupedContainersList = [];
+    this.__resourceType = resourceType || "study";
 
     if (resourceType === "study") {
       const workspacesContainer = this.__workspacesContainer = new osparc.dashboard.CardContainer();
@@ -41,6 +42,13 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       this.__foldersContainer.exclude();
       this._add(foldersContainer);
     }
+
+    const noResourcesFound = this.__noResourcesFound = new qx.ui.basic.Label("No resources found").set({
+      visibility: "excluded",
+      font: "text-14"
+    });
+    noResourcesFound.exclude();
+    this._add(noResourcesFound);
 
     const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();
     this._add(nonGroupedContainer);
@@ -130,6 +138,57 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     __workspacesContainer: null,
     __nonGroupedContainer: null,
     __groupedContainers: null,
+    __resourceType: null,
+    __noResourcesFound: null,
+    __noResourcesFoundTimer: null,
+
+    __evaluateNoResourcesFoundLabel: function() {
+      let text = null;
+      switch (this.__resourceType) {
+        case "study": {
+          const studyBrowserContext = osparc.store.Store.getInstance().getStudyBrowserContext();
+          switch (studyBrowserContext) {
+            case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
+            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+            case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
+              text = this.tr("No Projects found");
+              break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
+            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+              text = this.tr("No Templates found");
+              break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
+            case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+              text = this.tr("No Public Projects found");
+              break;
+          }
+          break;
+        }
+        case "template":
+          text = this.tr("No Tutorials found");
+          break;
+        case "service":
+          text = this.tr("No Apps found");
+          break;
+        default:
+          text = this.tr("No Resources found");
+          break;
+      }
+
+      this.__noResourcesFound.exclude();
+      if (this.__noResourcesFoundTimer) {
+        clearTimeout(this.__noResourcesFoundTimer);
+      }
+      if (text && this.__resourcesList.length === 0) {
+        // delay it a bit to avoid the initial flickering
+        this.__noResourcesFoundTimer = setTimeout(() => {
+          this.__noResourcesFound.set({
+            value: text,
+            visibility: "visible",
+          });
+        }, 2000);
+      }
+    },
 
     addNonResourceCard: function(card) {
       if (osparc.dashboard.CardContainer.isValidCard(card)) {
@@ -271,6 +330,8 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     setResourcesToList: function(resourcesList) {
       this.__resourcesList = resourcesList;
+
+      this.__evaluateNoResourcesFoundLabel();
     },
 
     __cleanAll: function() {

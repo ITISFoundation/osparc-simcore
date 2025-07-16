@@ -2,10 +2,11 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet
 from servicelib import status_codes_utils
 from servicelib.aiohttp import status
-from servicelib.logging_errors import create_troubleshotting_log_kwargs
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ...constants import MSG_TRY_AGAIN_OR_SUPPORT
 from ...exception_handling import (
@@ -43,16 +44,17 @@ async def _handler_director_service_error_as_503_or_4xx(
     if status_codes_utils.is_5xx_server_error(exception.status):
         # NOTE: All directorv2 5XX are mapped to 503
         status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        user_msg = (
+        user_msg = user_message(
             # Most likely the director service is down or misconfigured so the user is asked to try again later.
-            "This service is temporarily unavailable. The incident was logged and will be investigated. "
-            + MSG_TRY_AGAIN_OR_SUPPORT
+            "This service is temporarily unavailable. The incident has been logged and will be investigated. "
+            + MSG_TRY_AGAIN_OR_SUPPORT,
+            _version=1,
         )
 
         # Log for further investigation
         oec = create_error_code(exception)
         _logger.exception(
-            **create_troubleshotting_log_kwargs(
+            **create_troubleshootting_log_kwargs(
                 user_msg,
                 error=exception,
                 error_code=oec,
@@ -85,11 +87,17 @@ _exceptions_handlers_map[DirectorV2ServiceError] = (
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        "Default wallet not found but necessary for computations",
+        user_message(
+            "A default wallet is required for running computations but could not be found.",
+            _version=1,
+        ),
     ),
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
-        "Wallet does not have enough credits for computations. {reason}",
+        user_message(
+            "Your wallet does not have sufficient credits to run this computation. {reason}",
+            _version=1,
+        ),
     ),
 }
 

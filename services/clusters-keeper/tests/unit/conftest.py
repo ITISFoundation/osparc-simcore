@@ -39,6 +39,7 @@ from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.aws_ec2_service",
     "pytest_simcore.aws_server",
     "pytest_simcore.docker",
@@ -47,6 +48,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.logging",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",

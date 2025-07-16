@@ -42,6 +42,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
       }
       this._resourcesInitialized = true;
 
+      this._showLoadingPage(this.tr("Loading Apps..."));
       this._resourcesList = [];
       Promise.all([
         osparc.store.Services.getServicesLatest(),
@@ -63,19 +64,21 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
 
           this.getChildControl("resources-layout");
           this.reloadResources();
-          this._hideLoadingPage();
         });
     },
 
     reloadResources: function(useCache = true) {
-      this.__loadServices();
-      this.__loadHypertools(useCache);
+      Promise.all([
+        this.__loadServices(),
+        this.__loadHypertools(useCache),
+      ])
+        .finally(() => this._hideLoadingPage());
     },
 
     __loadServices: function() {
       const excludeFrontend = true;
       const excludeDeprecated = true
-      osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
+      return osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
         .then(servicesList => {
           servicesList.forEach(service => service["resourceType"] = "service");
           this._resourcesList.push(...servicesList.filter(service => service !== null));
@@ -84,7 +87,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
     },
 
     __loadHypertools: function(useCache = true) {
-      osparc.store.Templates.getHypertools(useCache)
+      return osparc.store.Templates.getHypertools(useCache)
         .then(hypertoolsList => {
           hypertoolsList.forEach(hypertool => hypertool["resourceType"] = "hypertool");
           this._resourcesList.push(...hypertoolsList.filter(hypertool => hypertool !== null));

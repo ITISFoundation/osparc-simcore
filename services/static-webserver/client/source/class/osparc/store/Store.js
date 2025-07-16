@@ -79,10 +79,12 @@ qx.Class.define("osparc.store.Store", {
       check: [
         "studiesAndFolders",
         "workspaces",
-        "search",
         "templates",
-        "public",
+        "publicTemplates",
         "trash",
+        "searchProjects",
+        "searchTemplates",
+        "searchPublicTemplates",
       ],
       init: "studiesAndFolders",
       nullable: false,
@@ -247,11 +249,6 @@ qx.Class.define("osparc.store.Store", {
     },
   },
 
-  events: {
-    "studyStateChanged": "qx.event.type.Data",
-    "studyDebtChanged": "qx.event.type.Data",
-  },
-
   members: {
     // fetch resources that do not require log in
     preloadCalls: async function() {
@@ -387,10 +384,18 @@ qx.Class.define("osparc.store.Store", {
       const preferenceWalletId = preferenceSettings.getPreferredWalletId();
       if (
         (preferenceWalletId === null || osparc.desktop.credits.Utils.getWallet(preferenceWalletId) === null) &&
-        wallets.length === 1
+        wallets.length
       ) {
-        // If there is only one wallet available, make it default
-        preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
+        // If there is no default wallet set in preferences or the default wallet is not available anymore:
+        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+        const myWallet = wallets.find(wallet => wallet.getOwner() === myGroupId);
+        if (myWallet) {
+          // select the personal wallet if it exists
+          preferenceSettings.requestChangePreferredWalletId(myWallet.getWalletId());
+        } else {
+          // otherwise select the first wallet available
+          preferenceSettings.requestChangePreferredWalletId(wallets[0].getWalletId());
+        }
       } else if (preferenceWalletId) {
         const walletFound = wallets.find(wallet => wallet.getWalletId() === preferenceWalletId);
         if (walletFound) {
@@ -422,108 +427,6 @@ qx.Class.define("osparc.store.Store", {
         return favouriteWallet;
       }
       return null;
-    },
-
-    getStudyState: function(studyId) {
-      osparc.data.Resources.fetch("studies", "state", {
-        url: {
-          "studyId": studyId
-        }
-      })
-        .then(({state}) => {
-          this.setStudyState(studyId, state);
-        });
-    },
-
-    setStudyState: function(studyId, state) {
-      const studiesWStateCache = this.getStudies();
-      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
-      if (idx !== -1) {
-        studiesWStateCache[idx]["state"] = state;
-      }
-
-      const currentStudy = this.getCurrentStudy();
-      if (currentStudy && currentStudy.getUuid() === studyId) {
-        currentStudy.setState(state);
-      }
-
-      this.fireDataEvent("studyStateChanged", {
-        studyId,
-        state,
-      });
-    },
-
-    setStudyDebt: function(studyId, debt) {
-      const studiesWStateCache = this.getStudies();
-      const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
-      if (idx !== -1) {
-        if (debt) {
-          studiesWStateCache[idx]["debt"] = debt;
-        } else {
-          delete studiesWStateCache[idx]["debt"];
-        }
-      }
-
-      this.fireDataEvent("studyDebtChanged", {
-        studyId,
-        debt,
-      });
-    },
-
-    trashStudy: function(studyId) {
-      const params = {
-        url: {
-          studyId
-        }
-      };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "trash", params)
-          .then(() => {
-            this.remove("studies", "uuid", studyId);
-            resolve();
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
-    },
-
-    untrashStudy: function(studyId) {
-      const params = {
-        url: {
-          studyId
-        }
-      };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "untrash", params)
-          .then(() => {
-            resolve();
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
-    },
-
-    deleteStudy: function(studyId) {
-      const params = {
-        url: {
-          studyId
-        }
-      };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "delete", params)
-          .then(() => {
-            this.remove("studies", "uuid", studyId);
-            resolve();
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
     },
 
     reloadCreditPrice: function() {

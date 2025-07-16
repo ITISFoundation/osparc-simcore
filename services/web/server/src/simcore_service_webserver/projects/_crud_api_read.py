@@ -10,24 +10,24 @@ from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
-from models_library.projects import ProjectID, ProjectTemplateType
+from models_library.projects import ProjectTemplateType, ProjectType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
-from simcore_postgres_database.models.projects import ProjectType
 from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
-from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from ..folders import _folders_repository
+from ..users import users_service
 from ..workspaces.api import check_user_workspace_access
 from . import _projects_service
 from ._access_rights_repository import batch_get_project_access_rights
 from ._projects_repository import batch_get_trashed_by_primary_gid
 from ._projects_repository_legacy import ProjectDBAPI
+from ._projects_repository_legacy_utils import convert_to_schema_names
 from .models import ProjectDict, ProjectTypeAPI
 
 
@@ -53,7 +53,6 @@ async def _aggregate_data_to_projects_from_other_sources(
     app: web.Application,
     *,
     db_projects: list[ProjectDict],
-    db_project_types: list[ProjectTypeDB],
     user_id: UserID,
 ) -> list[ProjectDict]:
     """
@@ -61,7 +60,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     """
     # updating `project.trashed_by_primary_gid`
     trashed_by_primary_gid_values = await batch_get_trashed_by_primary_gid(
-        app, projects_uuids=[ProjectID(p["uuid"]) for p in db_projects]
+        app, projects_uuids=[p["uuid"] for p in db_projects]
     )
 
     _batch_update("trashed_by_primary_gid", trashed_by_primary_gid_values, db_projects)
@@ -70,7 +69,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     project_to_access_rights = await batch_get_project_access_rights(
         app=app,
         projects_uuids_with_workspace_id=[
-            (ProjectID(p["uuid"]), p["workspaceId"]) for p in db_projects
+            (p["uuid"], p["workspaceId"]) for p in db_projects
         ],
     )
 
@@ -79,10 +78,10 @@ async def _aggregate_data_to_projects_from_other_sources(
         _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=prj,
-            is_template=prj_type == ProjectTypeDB.TEMPLATE,
+            is_template=prj["type"] == ProjectType.TEMPLATE.value,
             app=app,
         )
-        for prj, prj_type in zip(db_projects, db_project_types, strict=False)
+        for prj in db_projects
     ]
 
     updated_projects: list[ProjectDict] = await _paralell_update(
@@ -90,9 +89,27 @@ async def _aggregate_data_to_projects_from_other_sources(
     )
 
     for project in updated_projects:
-        project["accessRights"] = project_to_access_rights[project["uuid"]]
+        project["accessRights"] = project_to_access_rights[f"{project['uuid']}"]
 
     return updated_projects
+
+
+async def _legacy_convert_db_projects_to_api_projects(
+    app: web.Application,
+    db,
+    db_projects: list[dict[str, Any]],
+) -> list[dict]:
+    """
+    Converts db schema projects to API schema (legacy postprocessing).
+    """
+    api_projects: list[dict] = []
+    for db_prj in db_projects:
+        db_prj_dict = db_prj
+        db_prj_dict.pop("product_name", None)
+        db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj['id']}")
+        user_email = await users_service.get_user_email_legacy(app, db_prj["prj_owner"])
+        api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
+    return api_projects
 
 
 async def list_projects(  # pylint: disable=too-many-arguments
@@ -140,7 +157,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
             workspace_id=workspace_id,
         )
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
+    db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=(
@@ -172,20 +189,26 @@ async def list_projects(  # pylint: disable=too-many-arguments
         order_by=order_by,
     )
 
-    projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=db_projects, db_project_types=db_project_types, user_id=user_id
+    api_projects = await _legacy_convert_db_projects_to_api_projects(
+        app, db, db_projects
     )
 
-    return projects, total_number_projects
+    final_projects = await _aggregate_data_to_projects_from_other_sources(
+        app, db_projects=api_projects, user_id=user_id
+    )
+
+    return final_projects, total_number_projects
 
 
-async def list_projects_full_depth(
+async def list_projects_full_depth(  # pylint: disable=too-many-arguments
     app: web.Application,
     *,
     user_id: UserID,
     product_name: str,
     # attrs filter
     trashed: bool | None,
+    filter_by_project_type: ProjectTypeAPI,
+    filter_by_template_type: ProjectTemplateType | None,
     # pagination
     offset: NonNegativeInt,
     limit: int,
@@ -196,13 +219,20 @@ async def list_projects_full_depth(
 ) -> tuple[list[ProjectDict], int]:
     db = ProjectDBAPI.get_from_app_context(app)
 
-    db_projects, db_project_types, total_number_projects = await db.list_projects_dicts(
+    db_projects, total_number_projects = await db.list_projects_dicts(
         product_name=product_name,
         user_id=user_id,
         workspace_query=WorkspaceQuery(workspace_scope=WorkspaceScope.ALL),
         folder_query=FolderQuery(folder_scope=FolderScope.ALL),
         filter_trashed=trashed,
-        filter_by_project_type=ProjectType.STANDARD,
+        filter_by_project_type=ProjectTypeAPI.to_project_type_db(
+            filter_by_project_type
+        ),
+        filter_by_template_type=(
+            ProjectTemplateTypeDB(filter_by_template_type)
+            if filter_by_template_type
+            else None
+        ),
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,
@@ -210,8 +240,12 @@ async def list_projects_full_depth(
         order_by=order_by,
     )
 
-    projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=db_projects, db_project_types=db_project_types, user_id=user_id
+    api_projects = await _legacy_convert_db_projects_to_api_projects(
+        app, db, db_projects
     )
 
-    return projects, total_number_projects
+    final_projects = await _aggregate_data_to_projects_from_other_sources(
+        app, db_projects=api_projects, user_id=user_id
+    )
+
+    return final_projects, total_number_projects
