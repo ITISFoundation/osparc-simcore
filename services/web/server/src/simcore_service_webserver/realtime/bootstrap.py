@@ -13,4 +13,6 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_realtime_collaboration(app: web.Application):
-    assert app["settings"].WEBSERVER_REALTIME_COLLABORATION  # nosec
+    from .settings import get_plugin_settings
+
+    assert get_plugin_settings(app), "setup_settings not called?"
