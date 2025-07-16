@@ -326,6 +326,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: [
         "study",
         "template",
+        "function",
         "tutorial",
         "hypertool",
         "service",
@@ -527,6 +528,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
+        case "function":
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
+          break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
@@ -555,26 +561,31 @@ qx.Class.define("osparc.dashboard.CardBase", {
         workbench
       });
 
-      if ([
-        "study",
-        "template",
-        "tutorial",
-        "hypertool"
-      ].includes(resourceData["resourceType"])) {
-        osparc.store.Services.getStudyServices(resourceData.uuid)
-          .then(resp => {
-            const services = resp["services"];
-            resourceData["services"] = services;
-            this.setServices(services);
-          })
-          .catch(err => {
-            resourceData["services"] = null;
-            this.setServices(null);
-            console.error(err);
-          });
+      switch (resourceData["resourceType"]) {
+        case "study":
+        case "template":
+        case "tutorial":
+        case "hypertool": {
+          osparc.store.Services.getStudyServices(resourceData.uuid)
+            .then(resp => {
+              const services = resp["services"];
+              resourceData["services"] = services;
+              this.setServices(services);
+            })
+            .catch(err => {
+              resourceData["services"] = null;
+              this.setServices(null);
+              console.error(err);
+            });
 
-        osparc.study.Utils.guessIcon(resourceData)
-          .then(iconSource => this.setIcon(iconSource));
+          osparc.study.Utils.guessIcon(resourceData)
+            .then(iconSource => this.setIcon(iconSource));
+
+          break;
+        }
+        case "function":
+          this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          break;
       }
     },
 
