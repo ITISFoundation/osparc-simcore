@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
-from servicelib.rabbitmq import RPCInterfaceError
 
 
 class Error(BaseModel):
@@ -16,11 +15,3 @@ class ErrorType(BaseModel):
 
 class ErrorEnveloped(BaseModel):
     error: ErrorType
-
-
-class BaseRpcError(RPCInterfaceError):
-    pass
-
-
-class ComputationalTaskMissingError(BaseRpcError):
-    msg_template = "Computational run not found for project {project_id}"

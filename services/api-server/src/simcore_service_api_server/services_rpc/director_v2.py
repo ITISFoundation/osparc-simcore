@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from functools import partial
 
-from models_library.api_schemas_directorv2.errors import ComputationalTaskMissingError
 from models_library.projects import ProjectID
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.director_v2 import computations_tasks
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    ComputationalTaskMissingError,
+)
 
 from ..exceptions.backend_errors import JobNotFoundError
 from ..exceptions.service_errors_utils import service_exception_mapper

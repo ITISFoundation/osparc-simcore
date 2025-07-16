@@ -2,9 +2,11 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.computations import TaskLogFileIdGet
-from models_library.api_schemas_directorv2.errors import ComputationalTaskMissingError
 from models_library.projects import ProjectID
 from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
+    ComputationalTaskMissingError,
+)
 from simcore_sdk.node_ports_common import data_items_utils
 
 from ...core.errors import PipelineNotFoundError
