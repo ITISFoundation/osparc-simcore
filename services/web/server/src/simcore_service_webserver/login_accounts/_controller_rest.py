@@ -29,7 +29,7 @@ from ..security import security_service, security_web
 from ..security.decorators import permission_required
 from ..session import api as session_service
 from ..users import users_service
-from ..users.schemas import PreRegisteredUserGet
+from ..users.schemas import UserAccountRestPreRegister
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ..web_utils import flash_response
@@ -91,7 +91,7 @@ async def request_product_account(request: web.Request):
     # create pre-regiatration or raise if already exists
     await _service.create_pre_registration(
         request.app,
-        profile=PreRegisteredUserGet.model_validate(body.form),
+        profile=UserAccountRestPreRegister.model_validate(body.form),
         product_name=product.name,
     )
 

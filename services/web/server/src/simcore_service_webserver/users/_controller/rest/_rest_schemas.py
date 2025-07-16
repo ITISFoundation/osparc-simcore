@@ -25,7 +25,7 @@ class UsersRequestContext(AuthenticatedRequestContext): ...
 MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
 
 
-class PreRegisteredUserGet(InputSchema):
+class UserAccountRestPreRegister(InputSchema):
     # NOTE: validators need pycountry!
 
     first_name: str
@@ -105,7 +105,7 @@ class PreRegisteredUserGet(InputSchema):
         return v
 
 
-assert set(PreRegisteredUserGet.model_fields).issubset(  # nosec
+assert set(UserAccountRestPreRegister.model_fields).issubset(  # nosec
     # asserts field names are in sync
     UserAccountGet.model_fields
 )
