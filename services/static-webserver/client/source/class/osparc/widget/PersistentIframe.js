@@ -332,12 +332,21 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           }
           case "openFunction": {
             // this is the MetaModeling service trying to show function/template information
-            if (data["message"] && data["message"]["functionId"]) {
-              const templateId = data["message"]["functionId"];
-              const functionData = {
-                "uuid": templateId,
+            let functionData = null;
+            if (data["message"] && data["message"]["uuid"]) {
+              // new version, the uuid is from the function
+              functionData = {
+                "uuid": data["message"]["uuid"],
+                "resourceType": "function",
+              };
+            } else if (data["message"] && data["message"]["functionId"]) {
+              // old version, the uuid is from the template
+              functionData = {
+                "uuid": data["message"]["functionId"],
                 "resourceType": "functionedTemplate",
               };
+            }
+            if (functionData) {
               const {
                 resourceDetails,
                 window,
