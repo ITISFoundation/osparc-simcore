@@ -40,7 +40,7 @@ def test_meta_module_implementation():
     "package_name, app_name, is_valid_app_name, is_correct_app_name",
     [
         ("simcore-service-library", "simcore-service-library", True, True),
-        ("simcore-service-lib", "simcore-service-library", True, True),
+        ("simcore-service-lib", "simcore-service-library", True, False),
         ("simcore_service_library", "simcore_service_library", False, True),
     ],
 )
