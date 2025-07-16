@@ -144,12 +144,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getActiveStudy: function() {
-      const params = {
-        url: {
-          tabId: osparc.utils.Utils.getClientSessionID()
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "getActive", params)
+      return osparc.store.Study.getInstance().getActive(osparc.utils.Utils.getClientSessionID())
         .then(studyData => {
           if (studyData) {
             osparc.store.Store.getInstance().setCurrentStudyId(studyData["uuid"]);
@@ -406,12 +401,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const delay = 2000;
           const studyId = study["uuid"];
           setTimeout(() => {
-            const params = {
-              url: {
-                studyId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getOne", params)
+            osparc.store.Study.getInstance().getOne(studyId)
               .then(studyData => {
                 this.__studyStateReceived(study["uuid"], studyData["state"]);
               });
@@ -752,15 +742,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__reloadStudies();
       }, this);
 
-      const store = osparc.store.Store.getInstance();
-      store.addListener("studyStateChanged", e => {
+      const studyStore = osparc.store.Study.getInstance();
+      studyStore.addListener("studyStateChanged", e => {
         const {
           studyId,
           state,
         } = e.getData();
         this.__studyStateChanged(studyId, state);
       });
-      store.addListener("studyDebtChanged", e => {
+      studyStore.addListener("studyDebtChanged", e => {
         const {
           studyId,
           debt,
@@ -911,7 +901,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let request = null;
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
-          request = osparc.data.Resources.fetch("studies", "getPage", params, options);
+          request = osparc.store.Study.getInstance().getPage(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
@@ -919,10 +909,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.store.Templates.fetchTemplatesPaginated(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
-          request = osparc.data.Resources.fetch("studies", "getPageTrashed", params, options);
+          request = osparc.store.Study.getInstance().getPageTrashed(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          request = osparc.data.Resources.fetch("studies", "getPageSearch", params, options);
+          request = osparc.store.Study.getInstance().getPageSearch(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
@@ -934,7 +924,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     invalidateStudies: function() {
-      osparc.store.Store.getInstance().invalidate("studies");
+      osparc.store.Study.getInstance().invalidateStudies();
       this.__resetStudiesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
@@ -1516,7 +1506,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // LAYOUT //
 
     __studyStateReceived: function(studyId, state, errors) {
-      osparc.store.Store.getInstance().setStudyState(studyId, state);
+      osparc.store.Study.getInstance().setStudyState(studyId, state);
       if (errors && errors.length) {
         console.error(errors);
       }
@@ -1552,10 +1542,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       minStudyData["workspaceId"] = this.getCurrentWorkspaceId();
       minStudyData["folderId"] = this.getCurrentFolderId();
       this._showLoadingPage(this.tr("Creating ") + (minStudyData.name || osparc.product.Utils.getStudyAlias()));
-      const params = {
-        data: minStudyData
-      };
-      osparc.study.Utils.createStudyAndPoll(params)
+      osparc.study.Utils.createStudyAndPoll(minStudyData)
         .then(studyData => this.__startStudyAfterCreating(studyData["uuid"]))
         .catch(err => {
           this._hideLoadingPage();
@@ -1600,12 +1587,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const openCB = () => this._hideLoadingPage();
       const cancelCB = () => {
         this._hideLoadingPage();
-        const params = {
-          url: {
-            studyId
-          }
-        };
-        osparc.data.Resources.fetch("studies", "delete", params);
+        osparc.store.Study.getInstance().deleteStudy(studyId);
       };
       const isStudyCreation = true;
       this._startStudyById(studyId, openCB, cancelCB, isStudyCreation);
@@ -1794,13 +1776,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __updateName: function(studyData, name) {
-      osparc.store.Study.patchStudyData(studyData, "name", name)
+      osparc.store.Study.getInstance().patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while renaming")));
     },
 
     __updateThumbnail: function(studyData, url) {
-      osparc.store.Study.patchStudyData(studyData, "thumbnail", url)
+      osparc.store.Study.getInstance().patchStudyData(studyData, "thumbnail", url)
         .then(() => this._updateStudyData(studyData))
         .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while updating the thumbnail")));
     },
@@ -1867,13 +1849,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // resolve right away
         return new Promise(resolve => resolve());
       }
-      const params = {
-        url: {
-          studyId: studyData["uuid"],
-          workspaceId: destWorkspaceId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "moveToWorkspace", params)
+      return osparc.store.Study.getInstance().moveStudyToWorkspace(studyData["uuid"], destWorkspaceId)
         .then(() => studyData["workspaceId"] = destWorkspaceId);
     },
 
@@ -1882,13 +1858,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // resolve right away
         return new Promise(resolve => resolve());
       }
-      const params = {
-        url: {
-          studyId: studyData["uuid"],
-          folderId: destFolderId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "moveToFolder", params)
+      return osparc.store.Study.getInstance().moveStudyToFolder(studyData["uuid"], destFolderId)
         .then(() => studyData["folderId"] = destFolderId);
     },
 
@@ -1949,7 +1919,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __updateUIMode: function(studyData, uiMode) {
       const studyUI = osparc.utils.Utils.deepCloneObject(studyData["ui"]);
       studyUI["mode"] = uiMode;
-      return osparc.store.Study.patchStudyData(studyData, "ui", studyUI)
+      return osparc.store.Study.getInstance().patchStudyData(studyData, "ui", studyUI)
         .then(() => this._updateStudyData(studyData))
     },
 
@@ -2114,12 +2084,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           importTaskUI.setSubtitle(processingLabel);
           importingStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
-          const params = {
-            url: {
-              "studyId": data["data"]["uuid"]
-            }
-          };
-          osparc.data.Resources.fetch("studies", "getOne", params)
+          osparc.store.Study.getInstance().getOne(data["data"]["uuid"])
             .then(studyData => this._updateStudyData(studyData))
             .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while fetching the study")))
             .finally(() => {
@@ -2148,7 +2113,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __untrashStudy: function(studyData) {
-      osparc.store.Store.getInstance().untrashStudy(studyData.uuid)
+      osparc.store.Study.getInstance().untrashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully restored");
@@ -2160,7 +2125,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudy: function(studyData) {
-      osparc.store.Store.getInstance().trashStudy(studyData.uuid)
+      osparc.store.Study.getInstance().trashStudy(studyData.uuid)
         .then(() => {
           this.__removeFromStudyList(studyData.uuid);
           const msg = this.tr("Successfully deleted");
@@ -2188,7 +2153,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // remove me from collaborators
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       delete arCopy[myGid];
-      return osparc.store.Study.patchStudyData(studyData, "accessRights", arCopy);
+      return osparc.store.Study.getInstance().patchStudyData(studyData, "accessRights", arCopy);
     },
 
     __doDeleteStudy: function(studyData) {
@@ -2197,7 +2162,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         operationPromise = this.__removeMeFromCollaborators(studyData);
       } else {
         // delete study
-        operationPromise = osparc.store.Store.getInstance().deleteStudy(studyData.uuid);
+        operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
       }
       operationPromise
         .then(() => this.__removeFromStudyList(studyData.uuid))

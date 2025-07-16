@@ -25,13 +25,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const params = {
-      url: {
-        studyId
-      },
-      data: osparc.utils.Utils.getClientSessionID()
-    };
-    osparc.data.Resources.fetch("studies", "open", params)
+    osparc.store.Study.getInstance().openStudy(studyId)
       .then(studyData => {
         // create study
         const study = new osparc.data.model.Study(studyData);

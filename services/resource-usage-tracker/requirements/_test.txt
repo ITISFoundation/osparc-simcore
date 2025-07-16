@@ -77,7 +77,7 @@ flask==3.1.0
     # via
     #   flask-cors
     #   moto
-flask-cors==5.0.1
+flask-cors==6.0.1
     # via moto
 graphql-core==3.2.6
     # via moto
@@ -189,12 +189,12 @@ py-partiql-parser==0.6.1
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.10.2
+pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -256,7 +256,7 @@ regex==2023.12.25
     # via
     #   -c requirements/_base.txt
     #   cfn-lint
-requests==2.32.2
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -320,11 +320,16 @@ typing-extensions==4.14.1
     #   pydantic
     #   pydantic-core
     #   sqlalchemy2-stubs
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
 tzdata==2024.1
     # via
     #   -c requirements/_base.txt
     #   faker
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

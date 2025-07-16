@@ -71,10 +71,7 @@ qx.Class.define("osparc.study.Utils", {
               });
               return;
             }
-            const params = {
-              data: minStudyData
-            };
-            osparc.study.Utils.createStudyAndPoll(params)
+            osparc.study.Utils.createStudyAndPoll(minStudyData)
               .then(studyData => resolve(studyData["uuid"]))
               .catch(err => reject(err));
           })
@@ -82,15 +79,12 @@ qx.Class.define("osparc.study.Utils", {
       });
     },
 
-    createStudyAndPoll: function(params) {
+    createStudyAndPoll: function(studyData) {
       return new Promise((resolve, reject) => {
-        const options = {
-          pollTask: true
-        };
-        const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudy", params, options);
+        const pollPromise = osparc.store.Study.getInstance().createStudy(studyData);
         const pollTasks = osparc.store.PollTasks.getInstance();
         const interval = 1000;
-        pollTasks.createPollingTask(fetchPromise, interval)
+        pollTasks.createPollingTask(pollPromise, interval)
           .then(task => {
             task.addListener("resultReceived", e => {
               const resultData = e.getData();
@@ -122,19 +116,10 @@ qx.Class.define("osparc.study.Utils", {
             minStudyData["name"] = templateData["name"];
             minStudyData["description"] = templateData["description"];
             minStudyData["thumbnail"] = templateData["thumbnail"];
-            const params = {
-              url: {
-                templateId: templateData["uuid"]
-              },
-              data: minStudyData
-            };
-            const options = {
-              pollTask: true
-            };
-            const fetchPromise = osparc.data.Resources.fetch("studies", "postNewStudyFromTemplate", params, options);
+            const pollPromise = osparc.store.Study.getInstance().createStudyFromTemplate(templateData["uuid"], minStudyData);
             const pollTasks = osparc.store.PollTasks.getInstance();
             const interval = 1000;
-            pollTasks.createPollingTask(fetchPromise, interval)
+            pollTasks.createPollingTask(pollPromise, interval)
               .then(task => {
                 const title = qx.locale.Manager.tr("CREATING ") + osparc.product.Utils.getStudyAlias({allUpperCase: true}) + " ...";
                 const progressSequence = new osparc.widget.ProgressSequence(title).set({
@@ -191,17 +176,9 @@ qx.Class.define("osparc.study.Utils", {
       const text = qx.locale.Manager.tr("Duplicate process started and added to the background tasks");
       osparc.FlashMessenger.logAs(text, "INFO");
 
-      const params = {
-        url: {
-          "studyId": studyData["uuid"]
-        }
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "duplicate", params, options);
+      const pollPromise = osparc.store.Study.getInstance().duplicateStudy(studyData["uuid"]);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      return pollTasks.createPollingTask(fetchPromise)
+      return pollTasks.createPollingTask(pollPromise)
     },
 
     createTemplateTypeSB: function() {
@@ -368,7 +345,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     isInDebt: function(studyData) {
-      return osparc.store.Store.getInstance().isStudyInDebt(studyData["uuid"]);
+      return osparc.store.Study.getInstance().isStudyInDebt(studyData["uuid"]);
     },
 
     extractDebtFromError: function(studyId, err) {
@@ -385,7 +362,7 @@ qx.Class.define("osparc.study.Utils", {
       }
       if (debt) {
         // if get here, it means that the 402 was thrown due to the debt
-        osparc.store.Store.getInstance().setStudyDebt(studyId, debt);
+        osparc.store.Study.getInstance().setStudyDebt(studyId, debt);
       }
       return debt;
     },
@@ -395,6 +372,29 @@ qx.Class.define("osparc.study.Utils", {
         return studyData["ui"]["mode"];
       }
       return null;
+    },
+
+    // used in the "projectStateUpdated" socket event
+    amIRunningTheStudy: function(content) {
+      if (
+        content &&
+        "data" in content &&
+        "locked" in content["data"] &&
+        "owner" in content["data"]["locked"] &&
+        "user_id" in content["data"]["locked"]["owner"] &&
+        content["data"]["locked"]["owner"]["user_id"] === osparc.auth.Data.getInstance().getUserId()
+      ) {
+        return (
+          content["data"]["state"] &&
+          content["data"]["state"]["value"] &&
+          [
+            "PUBLISHED",
+            "STARTED",
+            "STOPPING",
+          ].includes(content["data"]["state"]["value"])
+        );
+      }
+      return false;
     },
 
     __getBlockedState: function(studyData) {

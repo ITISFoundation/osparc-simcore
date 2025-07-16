@@ -21,9 +21,7 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
             description="Secret key to encrypt cookies. "
             'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
             min_length=44,
-            validation_alias=AliasChoices(
-                "SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"
-            ),
+            validation_alias=AliasChoices("WEBSERVER_SESSION_SECRET_KEY"),
         ),
     ]
 

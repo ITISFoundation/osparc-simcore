@@ -35,6 +35,7 @@ from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ..core.settings import ApplicationSettings
+from ..models import AssociatedInstance
 from ..modules.docker import AutoscalingDocker
 
 logger = logging.getLogger(__name__)
@@ -278,24 +279,32 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
         return Resources(
             cpus=max(
                 (
-                    task.spec.resources.reservations
-                    and task.spec.resources.reservations.nano_cp_us
+                    (
+                        task.spec.resources.reservations
+                        and task.spec.resources.reservations.nano_cp_us
+                    )
                     or 0
                 ),
                 (
-                    task.spec.resources.limits
-                    and task.spec.resources.limits.nano_cp_us
+                    (
+                        task.spec.resources.limits
+                        and task.spec.resources.limits.nano_cp_us
+                    )
                     or 0
                 ),
             )
             / _NANO_CPU,
             ram=TypeAdapter(ByteSize).validate_python(
                 max(
-                    task.spec.resources.reservations
-                    and task.spec.resources.reservations.memory_bytes
+                    (
+                        task.spec.resources.reservations
+                        and task.spec.resources.reservations.memory_bytes
+                    )
                     or 0,
-                    task.spec.resources.limits
-                    and task.spec.resources.limits.memory_bytes
+                    (
+                        task.spec.resources.limits
+                        and task.spec.resources.limits.memory_bytes
+                    )
                     or 0,
                 )
             ),
@@ -382,7 +391,7 @@ async def compute_cluster_used_resources(
     list_of_used_resources = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter({k: 0 for k in list(Resources.model_fields)})
+    counter = collections.Counter(dict.fromkeys(list(Resources.model_fields), 0))
     for result in list_of_used_resources:
         counter.update(result.model_dump())
 
@@ -570,14 +579,14 @@ def get_new_node_docker_tags(
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     return (
-        {
-            tag_key: "true"
-            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-        }
-        | {
-            tag_key: "true"
-            for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS
-        }
+        dict.fromkeys(
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
+            "true",
+        )
+        | dict.fromkeys(
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+            "true",
+        )
         | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
     )
 
@@ -599,6 +608,10 @@ def is_node_osparc_ready(node: Node) -> bool:
         and _OSPARC_SERVICE_READY_LABEL_KEY in node.spec.labels
         and node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] == "true"
     )
+
+
+def is_instance_drained(instance: AssociatedInstance) -> bool:
+    return not is_node_osparc_ready(instance.node)
 
 
 async def set_node_osparc_ready(
@@ -702,3 +715,8 @@ async def attach_node(
         tags=new_tags,
         available=app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS,  # NOTE: full drain sometimes impede on performance
     )
+
+
+def is_node_ready(node: Node) -> bool:
+    assert node.status  # nosec
+    return bool(node.status.state is NodeState.ready)

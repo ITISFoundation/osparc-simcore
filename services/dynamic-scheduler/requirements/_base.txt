@@ -269,7 +269,7 @@ opentelemetry-instrumentation-aio-pika==0.55b1
 opentelemetry-instrumentation-asgi==0.55b1
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-asyncpg==0.55b1
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-fastapi==0.55b1
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.55b1
@@ -356,7 +356,7 @@ psycopg2-binary==2.9.10
     # via sqlalchemy
 pycryptodome==3.21.0
     # via stream-zip
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -389,9 +389,9 @@ pydantic==2.10.6
     #   fastapi
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.2
+pydantic-extra-types==2.10.5
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -497,7 +497,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+requests==2.32.4
     # via
     #   nicegui
     #   opentelemetry-exporter-otlp-proto-http
@@ -590,9 +590,12 @@ typing-extensions==4.14.1
     #   pydantic-extra-types
     #   rich-toolkit
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 u-msgpack-python==2.8.0
     # via -r requirements/_base.in
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

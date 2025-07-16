@@ -22,27 +22,33 @@ qx.Class.define("osparc.data.Job", {
     this.base(arguments);
 
     this.set({
-      projectUuid: jobData["projectUuid"],
-      projectName: jobData["rootProjectName"] || "",
+      collectionRunId: jobData["collectionRunId"],
+      projectIds: jobData["projectIds"],
+      name: jobData["name"] || "",
       state: jobData["state"] || "UNKNOWN",
       submittedAt: jobData["submittedAt"] ? new Date(jobData["submittedAt"]) : null,
       startedAt: jobData["startedAt"] ? new Date(jobData["startedAt"]) : null,
       endedAt: jobData["endedAt"] ? new Date(jobData["endedAt"]) : null,
       info: jobData["info"] || null,
-      customMetadata: jobData["projectCustomMetadata"] || null,
     });
 
     this.__subJobs = [];
   },
 
   properties: {
-    projectUuid: {
+    collectionRunId: {
       check: "String",
       nullable: false,
       init: null,
     },
 
-    projectName: {
+    projectIds: {
+      check: "Array",
+      nullable: false,
+      init: null,
+    },
+
+    name: {
       check: "String",
       nullable: false,
       init: null,
@@ -77,12 +83,6 @@ qx.Class.define("osparc.data.Job", {
       nullable: true,
       init: null,
     },
-
-    customMetadata: {
-      check: "Object",
-      nullable: true,
-      init: null,
-    },
   },
 
   statics: {
@@ -104,14 +104,14 @@ qx.Class.define("osparc.data.Job", {
   members: {
     __subJobs: null,
 
-    addSubJob: function(subJobData) {
+    addSubJob: function(collectionRunId, subJobData) {
       const subJobFound = this.__subJobs.find(subJb => subJb.getNodeId() === subJobData["nodeId"]);
       if (subJobFound) {
         subJobFound.updateSubJob(subJobData);
         return subJobFound;
       }
 
-      const subJob = new osparc.data.SubJob(subJobData);
+      const subJob = new osparc.data.SubJob(collectionRunId, subJobData);
       this.__subJobs.push(subJob);
       return subJob;
     },

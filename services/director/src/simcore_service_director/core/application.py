@@ -1,9 +1,9 @@
 import logging
-from typing import Final
 
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.client_session import setup_client_session
+from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
@@ -21,22 +21,10 @@ from ..instrumentation import setup as setup_instrumentation
 from ..registry_proxy import setup as setup_registry
 from .settings import ApplicationSettings
 
-_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS: Final[tuple[str]] = ("werkzeug",)
-
 _logger = logging.getLogger(__name__)
 
 
 def create_app(settings: ApplicationSettings) -> FastAPI:
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-    for name in _NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
-
-    _logger.info("app settings: %s", settings.model_dump_json(indent=1))
-
     app = FastAPI(
         debug=settings.DIRECTOR_DEBUG,
         title=APP_NAME,
@@ -69,6 +57,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         initialize_fastapi_app_tracing(app)
 
     # ERROR HANDLERS
+    set_app_default_http_error_handlers(app)
 
     # EVENTS
     async def _on_startup() -> None:

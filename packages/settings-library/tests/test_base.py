@@ -335,28 +335,34 @@ def test_how_settings_parse_null_environs(monkeypatch: pytest.MonkeyPatch):
     }
 
 
-def test_issubclass_type_error_with_pydantic_models():
-    # There is a problem
-    #
-    # TypeError: issubclass() arg 1 must be a class
-    #
-    # SEE https://github.com/pydantic/pydantic/issues/545
-    #
-    # >> issubclass(dict, BaseSettings)
-    # False
-    # >> issubclass(dict[str, str], BaseSettings)
-    # Traceback (most recent call last):
-    # File "<string>", line 1, in <module>
-    # File "/home/crespo/.pyenv/versions/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
-    #     return _abc_subclasscheck(cls, subclass)
-    # TypeError: issubclass() arg 1 must be a class
-    #
+def test_fixed_issubclass_type_error_with_pydantic_models():
 
     assert not issubclass(dict, BaseSettings)
-
-    # NOTE: this should be fixed by pydantic at some point. When this happens, this test will fail
-    with pytest.raises(TypeError):
-        issubclass(dict[str, str], BaseSettings)
+    assert not issubclass(
+        # FIXED with
+        #
+        # pydantic                 2.11.7
+        # pydantic_core            2.33.2
+        # pydantic-extra-types     2.10.5
+        # pydantic-settings        2.7.0
+        #
+        #
+        # TypeError: issubclass() arg 1 must be a class
+        #
+        # SEE https://github.com/pydantic/pydantic/issues/545
+        #
+        # >> issubclass(dict, BaseSettings)
+        # False
+        # >> issubclass(dict[str, str], BaseSettings)
+        # Traceback (most recent call last):
+        # File "<string>", line 1, in <module>
+        # File "/home/crespo/.pyenv/versions/3.10.13/lib/python3.10/abc.py", line 123, in __subclasscheck__
+        #     return _abc_subclasscheck(cls, subclass)
+        # TypeError: issubclass() arg 1 must be a class
+        #
+        dict[str, str],
+        BaseSettings,
+    )
 
     # here reproduces the problem with our settings that ANE and PC had
     class SettingsClassThatFailed(BaseCustomSettings):

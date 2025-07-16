@@ -53,7 +53,7 @@ def upgrade():
         unique=False,
     )
     op.add_column(
-        "comp_runs", sa.Column("collection_run_id", sa.String(), nullable=False)
+        "comp_runs", sa.Column("collection_run_id", sa.String(), nullable=True)
     )
     op.create_unique_constraint(
         "comp_runs_project_collection_run_id_unique_constraint",

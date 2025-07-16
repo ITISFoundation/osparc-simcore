@@ -54,7 +54,6 @@ mypy-extensions==1.1.0
     # via mypy
 packaging==24.2
     # via
-    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pathspec==0.12.1
@@ -105,7 +104,7 @@ pyyaml==6.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-requests==2.32.3
+requests==2.32.4
     # via docker
 sqlalchemy==1.4.54
     # via
@@ -127,7 +126,7 @@ typing-extensions==4.14.1
     #   sqlalchemy2-stubs
 tzdata==2025.1
     # via faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   docker

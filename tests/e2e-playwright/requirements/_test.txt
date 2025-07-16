@@ -51,7 +51,7 @@ iniconfig==2.0.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest-html
@@ -70,9 +70,9 @@ pluggy==1.5.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pytest
-pydantic==2.10.6
+pydantic==2.11.7
     # via -r requirements/_test_wo_playwright.txt
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   pydantic
@@ -115,7 +115,7 @@ python-slugify==8.0.4
     # via pytest-playwright
 pyyaml==6.0.2
     # via -r requirements/_test_wo_playwright.txt
-requests==2.32.3
+requests==2.32.4
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   docker
@@ -147,11 +147,16 @@ typing-extensions==4.14.1
     #   pydantic
     #   pydantic-core
     #   pyee
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -r requirements/_test_wo_playwright.txt
+    #   pydantic
 tzdata==2025.1
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   faker
-urllib3==2.3.0
+urllib3==2.5.0
     # via
     #   -r requirements/_test_wo_playwright.txt
     #   docker
