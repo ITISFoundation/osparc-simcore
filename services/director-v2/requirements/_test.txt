@@ -271,7 +271,7 @@ pyyaml==6.0.2
     #   bokeh
     #   dask
     #   distributed
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   async-asgi-testclient
@@ -322,7 +322,7 @@ types-psycopg2==2.9.21.20250516
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20250516
     # via -r requirements/_test.in
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
@@ -334,7 +334,7 @@ tzdata==2025.2
     # via
     #   faker
     #   pandas
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

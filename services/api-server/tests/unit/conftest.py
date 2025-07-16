@@ -54,7 +54,7 @@ from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
-from simcore_service_api_server.core.application import init_app
+from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 from simcore_service_api_server.repository.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
@@ -131,7 +131,7 @@ def app(
 
         patch_lrt_response_urls()
 
-    return init_app()
+    return create_app()
 
 
 MAX_TIME_FOR_APP_TO_STARTUP = 10

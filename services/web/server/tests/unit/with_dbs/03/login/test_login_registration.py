@@ -20,13 +20,13 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login._confirmation_web import _url_for_confirmation
-from simcore_service_webserver.login._constants import (
+from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
+from simcore_service_webserver.login.constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
     MSG_LOGGED_IN,
     MSG_PASSWORD_MISMATCH,
     MSG_WEAK_PASSWORD,
 )
-from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettingsForProduct,

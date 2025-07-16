@@ -1,6 +1,6 @@
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.13
+aiohttp==3.12.14
     # via
     #   -c ../../requirements/constraints.txt
     #   -r requirements.in
@@ -11,7 +11,7 @@ attrs==25.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2025.6.15
+certifi==2025.7.9
     # via
     #   -c ../../requirements/constraints.txt
     #   requests
@@ -119,7 +119,7 @@ six==1.17.0
     # via rfc3339-validator
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
     #   aiosignal
     #   openapi-core

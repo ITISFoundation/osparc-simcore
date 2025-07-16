@@ -194,12 +194,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "STUDY_SHARED":
           if (resourceId) {
-            const params = {
-              url: {
-                "studyId": resourceId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getOne", params)
+            osparc.store.Study.getInstance().getOne(resourceId)
               .then(study => {
                 const studyAlias = osparc.product.Utils.getStudyAlias({
                   firstUpperCase: true
@@ -234,12 +229,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "CONVERSATION_NOTIFICATION":
           if (resourceId) {
-            const params = {
-              url: {
-                "studyId": resourceId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getOne", params)
+            osparc.store.Study.getInstance().getOne(resourceId)
               .then(study => titleLabel.setValue(`You were notified in '${study["name"]}'`))
               .catch(() => this.setEnabled(false));
           }
@@ -252,12 +242,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
           break;
         case "ANNOTATION_NOTE":
           if (resourceId) {
-            const params = {
-              url: {
-                "studyId": resourceId
-              }
-            };
-            osparc.data.Resources.fetch("studies", "getOne", params)
+            osparc.store.Study.getInstance().getOne(resourceId)
               .then(study => titleLabel.setValue(`Note added in '${study["name"]}'`))
               .catch(() => this.setEnabled(false));
           }
@@ -322,12 +307,7 @@ qx.Class.define("osparc.notification.NotificationUI", {
     },
 
     __openStudyDetails: function(studyId, notification) {
-      const params = {
-        url: {
-          "studyId": studyId
-        }
-      };
-      osparc.data.Resources.fetch("studies", "getOne", params)
+      osparc.store.Study.getInstance().getOne(studyId)
         .then(studyData => {
           if (studyData) {
             const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);

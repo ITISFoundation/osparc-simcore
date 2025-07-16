@@ -358,7 +358,9 @@ opentelemetry-instrumentation-aio-pika==0.55b1
 opentelemetry-instrumentation-asgi==0.55b1
     # via opentelemetry-instrumentation-fastapi
 opentelemetry-instrumentation-asyncpg==0.55b1
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-botocore==0.55b1
     # via -r requirements/../../../packages/aws-library/requirements/_base.in
 opentelemetry-instrumentation-fastapi==0.55b1
@@ -818,7 +820,7 @@ types-awscrt==0.27.4
     # via botocore-stubs
 types-python-dateutil==2.9.0.20250516
     # via arrow
-typing-extensions==4.14.0
+typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic

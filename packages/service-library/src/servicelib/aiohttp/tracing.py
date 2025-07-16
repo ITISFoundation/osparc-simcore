@@ -38,6 +38,13 @@ try:
 except ImportError:
     HAS_AIOPG = False
 try:
+    from opentelemetry.instrumentation.asyncpg import AsyncPGInstrumentor
+
+    HAS_ASYNCPG = True
+except ImportError:
+    HAS_ASYNCPG = False
+
+try:
     from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
     HAS_REQUESTS = True
@@ -130,6 +137,13 @@ def _startup(
             msg="Attempting to add aio-pg opentelemetry autoinstrumentation...",
         ):
             AiopgInstrumentor().instrument()
+    if HAS_ASYNCPG:
+        with log_context(
+            _logger,
+            logging.INFO,
+            msg="Attempting to add asyncpg opentelemetry autoinstrumentation...",
+        ):
+            AsyncPGInstrumentor().instrument()
     if HAS_BOTOCORE:
         with log_context(
             _logger,
@@ -180,6 +194,11 @@ def _shutdown() -> None:
             AiopgInstrumentor().uninstrument()
         except Exception:  # pylint:disable=broad-exception-caught
             _logger.exception("Failed to uninstrument AiopgInstrumentor")
+    if HAS_ASYNCPG:
+        try:
+            AsyncPGInstrumentor().uninstrument()
+        except Exception:  # pylint:disable=broad-exception-caught
+            _logger.exception("Failed to uninstrument AsyncPGInstrumentor")
     if HAS_BOTOCORE:
         try:
             BotocoreInstrumentor().uninstrument()

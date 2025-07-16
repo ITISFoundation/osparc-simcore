@@ -2,22 +2,23 @@ from typing import Final
 
 from celery import Celery  # type: ignore[import-untyped]
 from servicelib.celery.app_server import BaseAppServer
-from servicelib.celery.models import TaskContext, TaskID, TaskUUID
+from servicelib.celery.models import TaskFilter, TaskID, TaskUUID
 
 _APP_SERVER_KEY = "app_server"
 
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 
 
-def build_task_id_prefix(task_context: TaskContext) -> str:
+def build_task_id_prefix(task_filter: TaskFilter) -> str:
+    filter_dict = task_filter.model_dump()
     return _TASK_ID_KEY_DELIMITATOR.join(
-        [f"{task_context[key]}" for key in sorted(task_context)]
+        [f"{filter_dict[key]}" for key in sorted(filter_dict)]
     )
 
 
-def build_task_id(task_context: TaskContext, task_uuid: TaskUUID) -> TaskID:
+def build_task_id(task_filter: TaskFilter, task_uuid: TaskUUID) -> TaskID:
     return _TASK_ID_KEY_DELIMITATOR.join(
-        [build_task_id_prefix(task_context), f"{task_uuid}"]
+        [build_task_id_prefix(task_filter), f"{task_uuid}"]
     )
 
 

@@ -37,7 +37,7 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users.api import get_user_fullname
+from ..users import users_service
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_repository, _projects_service
@@ -203,7 +203,8 @@ async def _copy_files_from_source_project(
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,
             owner=Owner(
-                user_id=user_id, **await get_user_fullname(app, user_id=user_id)
+                user_id=user_id,
+                **await users_service.get_user_fullname(app, user_id=user_id),
             ),
             notification_cb=_projects_service.create_user_notification_cb(
                 user_id, ProjectID(f"{source_project['uuid']}"), app

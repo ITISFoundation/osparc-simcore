@@ -21,11 +21,6 @@ from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
-from simcore_service_webserver.login._constants import (
-    CODE_2FA_SMS_CODE_REQUIRED,
-    MSG_2FA_UNAVAILABLE,
-    MSG_LOGGED_IN,
-)
 from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login._twofa_service import (
     _do_create_2fa_code,
@@ -35,10 +30,15 @@ from simcore_service_webserver.login._twofa_service import (
     get_redis_validation_code_client,
     send_email_code,
 )
+from simcore_service_webserver.login.constants import (
+    CODE_2FA_SMS_CODE_REQUIRED,
+    MSG_2FA_UNAVAILABLE,
+    MSG_LOGGED_IN,
+)
 from simcore_service_webserver.products import products_web
 from simcore_service_webserver.products.errors import UnknownProductError
 from simcore_service_webserver.products.models import Product
-from simcore_service_webserver.users import preferences_api as user_preferences_api
+from simcore_service_webserver.user_preferences import user_preferences_service
 from twilio.base.exceptions import TwilioRestException
 
 
@@ -260,9 +260,9 @@ async def test_workflow_register_and_login_with_2fa(
     # login (via EMAIL) ---------------------------------------------------------
     # Change 2fa user preference
     _preference_id = (
-        user_preferences_api.TwoFAFrontendUserPreference().preference_identifier
+        user_preferences_service.TwoFAFrontendUserPreference().preference_identifier
     )
-    await user_preferences_api.set_frontend_user_preference(
+    await user_preferences_service.set_frontend_user_preference(
         client.app,
         user_id=user["id"],
         product_name="osparc",
@@ -291,7 +291,7 @@ async def test_workflow_register_and_login_with_2fa(
     assert "support" in parsed_context["support_email"]
 
     # login (2FA Disabled) ---------------------------------------------------------
-    await user_preferences_api.set_frontend_user_preference(
+    await user_preferences_service.set_frontend_user_preference(
         client.app,
         user_id=user["id"],
         product_name="osparc",

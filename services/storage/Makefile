@@ -12,7 +12,7 @@ openapi.json: .env
 	@set -o allexport; \
 	source $<; \
 	set +o allexport; \
-	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app.openapi(), indent=2) )" > $@
+	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app_factory().openapi(), indent=2) )" > $@
 
 	# validates OAS file: $@
 	$(call validate_openapi_specs,$@)

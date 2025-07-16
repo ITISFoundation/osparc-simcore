@@ -58,10 +58,13 @@ pytest==8.4.1
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
+    #   pytest-mock
     #   pytest-sugar
 pytest-asyncio==1.0.0
     # via -r requirements/_test.in
 pytest-cov==6.2.1
+    # via -r requirements/_test.in
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -79,7 +82,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 termcolor==2.5.0
     # via pytest-sugar
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio

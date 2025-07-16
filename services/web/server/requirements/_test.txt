@@ -126,7 +126,7 @@ idna==3.3
     #   yarl
 iniconfig==2.0.0
     # via pytest
-jinja2==3.1.2
+jinja2==3.1.6
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -139,7 +139,7 @@ jsonschema==3.2.0
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-mako==1.2.2
+mako==1.3.10
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -191,13 +191,13 @@ propcache==0.3.1
     #   yarl
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pydantic==2.10.2
+pydantic==2.11.7
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   fastapi
     #   fastapi-pagination
-pydantic-core==2.27.1
+pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
@@ -269,7 +269,7 @@ referencing==0.8.11
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   types-jsonschema
-requests==2.32.2
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -279,7 +279,7 @@ rich==13.4.2
     # via
     #   -c requirements/_base.txt
     #   typer
-setuptools==69.1.1
+setuptools==80.9.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -331,7 +331,7 @@ types-passlib==1.7.7.20241221
     # via -r requirements/_test.in
 types-pyyaml==6.0.12.20241230
     # via -r requirements/_test.in
-typing-extensions==4.12.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs
@@ -342,7 +342,12 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   sqlalchemy2-stubs
     #   typer
-urllib3==2.2.3
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via
+    #   -c requirements/_base.txt
+    #   pydantic
+urllib3==2.5.0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt

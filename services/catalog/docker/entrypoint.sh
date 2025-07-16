@@ -20,6 +20,7 @@ echo "$INFO" "Workdir : $(pwd)"
 echo "$INFO" "User : $(id scu)"
 echo "$INFO" "python : $(command -v python)"
 echo "$INFO" "pip : $(command -v pip)"
+echo "$INFO" "UV : $(command -v uv)"
 
 USERNAME=scu
 GROUPNAME=scu
@@ -56,10 +57,9 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
     usermod --uid "$HOST_USERID" --gid "$HOST_GROUPID" "$SC_USER_NAME"
 
     echo "$INFO" "Changing group properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-    find / -path /proc -prune -o -group "$SC_USER_ID" -exec chgrp --no-dereference "$CONT_GROUPNAME" {} \;
-    # change user property of files already around
+    fdfind --owner ":$SC_USER_ID" --exclude proc --exec-batch chgrp --no-dereference "$CONT_GROUPNAME" . '/'
     echo "$INFO" "Changing ownership properties of files around from $SC_USER_ID to group $CONT_GROUPNAME"
-    find / -path /proc -prune -o -user "$SC_USER_ID" -exec chown --no-dereference "$SC_USER_NAME" {} \;
+    fdfind --owner "$SC_USER_ID:" --exclude proc --exec-batch chown --no-dereference "$SC_USER_NAME" . '/'
   fi
 fi
 

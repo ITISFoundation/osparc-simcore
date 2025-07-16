@@ -296,7 +296,6 @@ qx.Class.define("osparc.info.MergedLarge", {
     },
 
     __createDescription: function() {
-      const maxHeight = 400;
       const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
       }));
@@ -306,7 +305,8 @@ qx.Class.define("osparc.info.MergedLarge", {
       });
       descriptionLayout.add(label);
 
-      const descriptionContainer = osparc.info.StudyUtils.createDescriptionMD(this.getStudy(), maxHeight);
+      const maxHeight = 400;
+      const descriptionContainer = osparc.info.StudyUtils.createDescription(this.getStudy(), maxHeight);
       descriptionLayout.add(descriptionContainer);
 
       return descriptionLayout;
@@ -317,7 +317,7 @@ qx.Class.define("osparc.info.MergedLarge", {
       resourcesLayout.exclude();
       let promise = null;
       if (this.getNode().getNodeId()) {
-        promise = osparc.store.Study.getNodeResources(this.getStudy().getUuid(), this.getNode().getNodeId());
+        promise = osparc.store.Study.getInstance().getNodeResources(this.getStudy().getUuid(), this.getNode().getNodeId());
       } else {
         promise = osparc.store.Services.getResources(this.getNode().getKey(), this.getNode().getVersion())
       }

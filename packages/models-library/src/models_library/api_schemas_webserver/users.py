@@ -11,6 +11,7 @@ from models_library.groups import AccessRightsDict
 from models_library.rest_filters import Filters
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
+    BaseModel,
     ConfigDict,
     EmailStr,
     Field,
@@ -332,6 +333,10 @@ class UserAccountGet(OutputSchema):
 #
 # THIRD-PARTY TOKENS
 #
+
+
+class TokenPathParams(BaseModel):
+    service: str
 
 
 class MyTokenCreate(InputSchemaWithoutCamelCase):
