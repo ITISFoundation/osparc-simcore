@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated, Literal
 
+from models_library.api_schemas_webserver.users import PhoneNumberStr
 from models_library.emails import LowerCaseEmailStr
 from pydantic import (
     BaseModel,
@@ -54,7 +55,8 @@ class RegisterBody(InputSchema):
 class RegisterPhoneBody(InputSchema):
     email: LowerCaseEmailStr
     phone: Annotated[
-        str, Field(description="Phone number E.164, needed on the deployments with 2FA")
+        PhoneNumberStr,
+        Field(description="Phone number E.164, needed on the deployments with 2FA"),
     ]
 
 
