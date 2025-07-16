@@ -161,6 +161,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
               text = this.tr("No Public Projects found");
               break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+              text = this.tr("No Functions found");
+              break;
           }
           break;
         }

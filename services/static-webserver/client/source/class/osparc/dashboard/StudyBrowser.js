@@ -53,6 +53,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       WORKSPACES: "workspaces",
       TEMPLATES: "templates",
       PUBLIC_TEMPLATES: "publicTemplates",
+      FUNCTIONS: "functions",
       TRASH: "trash",
       SEARCH_PROJECTS: "searchProjects",
       SEARCH_TEMPLATES: "searchTemplates",
@@ -67,6 +68,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         "workspaces",
         "templates",
         "publicTemplates",
+        "functions",
         "trash",
         "searchProjects",
         "searchTemplates",
@@ -1141,6 +1143,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourceFilter.addListener("templatesContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES));
       this._resourceFilter.addListener("publicTemplatesContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES));
+      this._resourceFilter.addListener("functionsContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS));
       this._resourceFilter.addListener("trashContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.TRASH));
 
       this._searchBarFilter.addListener("filterChanged", e => {
