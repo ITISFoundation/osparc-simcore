@@ -94,7 +94,7 @@ async def request_product_account(request: web.Request):
 
     with handle_validation_as_http_error(
         error_msg_template=user_message(
-            "Found an error in the request form: '{failed}'"
+            "The form contains invalid information: '{failed}'", _version=1
         ),
         resource_name=request.rel_url.path,
     ):
