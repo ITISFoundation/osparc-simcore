@@ -11,7 +11,7 @@ from typing import Annotated, Any, Final
 
 import pycountry
 from models_library.api_schemas_webserver._base import InputSchema
-from models_library.api_schemas_webserver.users import UserAccountGet
+from models_library.api_schemas_webserver.users import PhoneNumberStr, UserAccountGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -37,7 +37,8 @@ class PreRegisteredUserGet(InputSchema):
     institution: str | None = Field(
         default=None, description="company, university, ..."
     )
-    phone: str | None
+    phone: PhoneNumberStr | None
+
     # billing details
     address: str
     city: str
