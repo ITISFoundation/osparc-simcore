@@ -108,21 +108,6 @@ qx.Class.define("osparc.store.Functions", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    fetchFunction: function(functionId) {
-      return osparc.store.Study.getInstance().getOne(functionId)
-        .catch(err => console.error(err));
-    },
-
-    getFunction: function(functionId) {
-      if (this.__functions) {
-        const func = this.__functions.find(t => t["functionId"] === functionId);
-        if (func) {
-          return new osparc.data.model.Function(func);
-        }
-      }
-      return null;
-    },
-
     invalidateFunctions: function() {
       this.__functions = null;
       if (this.__functionsPromiseCached) {
