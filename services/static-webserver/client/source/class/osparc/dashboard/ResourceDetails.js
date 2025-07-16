@@ -33,9 +33,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         latestPromise = osparc.store.Study.getInstance().getOne(resourceData["uuid"]);
         break;
       }
-      case "functionedTemplate":
+      case "functionedTemplate": {
         latestPromise = osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
         break;
+      }
       case "function":
         latestPromise = osparc.store.Functions.fetchFunction(resourceData["uuid"]);
         break;
