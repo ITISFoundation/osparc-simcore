@@ -10,6 +10,7 @@ from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     AliasChoices,
     AnyHttpUrl,
+    PositiveInt,
     TypeAdapter,
     field_validator,
     model_validator,
@@ -55,9 +56,18 @@ _logger = logging.getLogger(__name__)
 
 
 # NOTE: to mark a plugin as a DEV-FEATURE annotated it with
-#    `Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})`
+#    `Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})`
 # This will force it to be disabled when WEBSERVER_DEV_FEATURES_ENABLED=False
 _X_FEATURE_UNDER_DEVELOPMENT: Final[str] = "x-dev-feature"
+
+
+class RealTimeCollaborationSettings(BaseApplicationSettings):
+    RTC_MAX_NUMBER_OF_USERS: Annotated[
+        PositiveInt,
+        Field(
+            description="Maximum number of users allowed in a real-time collaboration session",
+        ),
+    ]
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
@@ -275,6 +285,17 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_PROJECTS: Annotated[
         ProjectsSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
+
+    WEBSERVER_REALTIME_COLLABORATION: Annotated[
+        RealTimeCollaborationSettings | None,
+        Field(
+            description="Enables real-time collaboration features",
+            json_schema_extra={
+                "auto_default_from_env": True,
+                _X_FEATURE_UNDER_DEVELOPMENT: True,
+            },
+        ),
     ]
 
     WEBSERVER_REDIS: Annotated[
