@@ -1560,7 +1560,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreRegisteredUserGet'
+              $ref: '#/components/schemas/UserAccountRestPreRegister'
         required: true
       responses:
         '200':
@@ -13113,7 +13113,7 @@ components:
       properties:
         phone:
           type: string
-          minLength: 1
+          format: phone
           title: Phone
           description: Phone number to register
       type: object
@@ -14653,62 +14653,6 @@ components:
       - x
       - y
       title: Position
-    PreRegisteredUserGet:
-      properties:
-        firstName:
-          type: string
-          title: Firstname
-        lastName:
-          type: string
-          title: Lastname
-        email:
-          type: string
-          format: email
-          title: Email
-        institution:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Institution
-          description: company, university, ...
-        phone:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Phone
-        address:
-          type: string
-          title: Address
-        city:
-          type: string
-          title: City
-        state:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: State
-        postalCode:
-          type: string
-          title: Postalcode
-        country:
-          type: string
-          title: Country
-        extras:
-          additionalProperties: true
-          type: object
-          title: Extras
-          description: Keeps extra information provided in the request form.
-      type: object
-      required:
-      - firstName
-      - lastName
-      - email
-      - phone
-      - address
-      - city
-      - postalCode
-      - country
-      title: PreRegisteredUserGet
     Preference:
       properties:
         defaultValue:
@@ -15935,6 +15879,7 @@ components:
           title: Email
         phone:
           type: string
+          format: phone
           title: Phone
           description: Phone number E.164, needed on the deployments with 2FA
       additionalProperties: false
@@ -17728,6 +17673,63 @@ components:
       required:
       - email
       title: UserAccountReject
+    UserAccountRestPreRegister:
+      properties:
+        firstName:
+          type: string
+          title: Firstname
+        lastName:
+          type: string
+          title: Lastname
+        email:
+          type: string
+          format: email
+          title: Email
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+          description: company, university, ...
+        phone:
+          anyOf:
+          - type: string
+            format: phone
+          - type: 'null'
+          title: Phone
+        address:
+          type: string
+          title: Address
+        city:
+          type: string
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+        postalCode:
+          type: string
+          title: Postalcode
+        country:
+          type: string
+          title: Country
+        extras:
+          additionalProperties: true
+          type: object
+          title: Extras
+          description: Keeps extra information provided in the request form.
+      type: object
+      required:
+      - firstName
+      - lastName
+      - email
+      - phone
+      - address
+      - city
+      - postalCode
+      - country
+      title: UserAccountRestPreRegister
     UserGet:
       properties:
         userId:
