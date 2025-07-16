@@ -60,6 +60,7 @@ def test_app_name(
         info = PackageInfo(package_name=package_name)
         if is_correct_app_name:
             assert info.app_name == app_name
+            assert info.prometheus_friendly_app_name == app_name.replace("-", "_")
     else:
         with pytest.raises(ValueError):
             _ = PackageInfo(package_name=package_name)

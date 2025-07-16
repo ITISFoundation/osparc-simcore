@@ -51,6 +51,13 @@ class PackageInfo:
         return self._distribution.metadata["Name"]
 
     @property
+    def prometheus_friendly_app_name(self) -> str:
+        """
+        Returns a version of the app name which is compatible with Prometheus metrics naming conventions (no dashes).
+        """
+        return self.app_name.replace("-", "_")
+
+    @property
     def version(self) -> Version:
         return Version(self._distribution.version)
 

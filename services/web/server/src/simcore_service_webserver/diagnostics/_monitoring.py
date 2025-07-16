@@ -55,7 +55,7 @@ def setup_monitoring(app: web.Application):
     )
 
     monitor_services.add_instrumentation(
-        app, get_collector_registry(app), _meta.APP_NAME
+        app, get_collector_registry(app), _meta.PROMETHEUS_FRIENDLY_APP_NAME
     )
 
     # on-the fly stats
