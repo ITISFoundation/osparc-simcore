@@ -18,7 +18,7 @@ SUMMARY: Final[str] = info.get_summary()
 
 
 # legacy consts
-APP_NAME: str = PROJECT_NAME
+APP_NAME: Final[str] = info.app_name
 api_version_prefix: str = API_VTAG
 
 
