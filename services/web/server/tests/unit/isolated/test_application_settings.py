@@ -65,6 +65,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
     # special alias
     assert statics["stackName"] == "master-simcore"
     assert statics["pluginsDisabled"] == [
+        "WEBSERVER_REALTIME_COLLABORATION",
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
     ]
@@ -78,6 +79,7 @@ def test_settings_to_client_statics_plugins(
         "WEBSERVER_SCICRUNCH",
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
+        "WEBSERVER_REALTIME_COLLABORATION",
     }
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
@@ -85,9 +87,15 @@ def test_settings_to_client_statics_plugins(
     monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
     disable_plugins.add("WEBSERVER_FOLDERS")
 
+    monkeypatch.setenv(
+        "WEBSERVER_REALTIME_COLLABORATION", '{"RTC_MAX_NUMBER_OF_USERS":3}'
+    )
+    disable_plugins.remove("WEBSERVER_REALTIME_COLLABORATION")
+
     settings = ApplicationSettings.create_from_envs()
     statics = settings.to_client_statics()
 
+    # -------------
     print("STATICS:\n", json_dumps(statics, indent=1))
 
     assert settings.WEBSERVER_LOGIN
@@ -106,6 +114,13 @@ def test_settings_to_client_statics_plugins(
     assert (
         statics["webserverSession"].get("SESSION_COOKIE_MAX_AGE")
         == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
+    )
+
+    assert "WEBSERVER_REALTIME_COLLABORATION" in statics["pluginsDisabled"]
+    assert settings.WEBSERVER_REALTIME_COLLABORATION
+    assert (
+        statics["webserverRealtimeCollaboration"]["RTC_MAX_NUMBER_OF_USERS"]
+        == settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
     )
 
     assert statics["vcsReleaseTag"]

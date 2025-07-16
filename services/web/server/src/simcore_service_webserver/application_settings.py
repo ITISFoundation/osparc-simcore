@@ -503,6 +503,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "WEBSERVER_LICENSES",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
+            "WEBSERVER_REALTIME_COLLABORATION",
         }
         return [_ for _ in advertised_plugins if not self.is_enabled(_)] + [
             # NOTE: Permanently retired in https://github.com/ITISFoundation/osparc-simcore/pull/7182
@@ -578,6 +579,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 },
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
+                },
+                "WEBSERVER_REALTIME_COLLABORATION": {
+                    "RTC_MAX_NUMBER_OF_USERS",
                 },
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
                 "WEBSERVER_TRASH": {
