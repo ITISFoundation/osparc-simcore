@@ -45,6 +45,13 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
           });
           break;
+        case "avatar-group":
+          control = new osparc.ui.basic.AvatarGroup(24, "left", 100);
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.AVATAR_GROUP
+          });
+          break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignY: "middle"
@@ -236,8 +243,27 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       const label = this.getChildControl("owner");
       const user = this.__createOwner(value);
       label.setValue(user);
+
+      // remove this, testing purposes
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() && this.getResourceType() === "study") {
+        const avatarGroup = this.getChildControl("avatar-group");
+        const allUsers = [
+          { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
+          { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
+          { name: "Charlie", avatar: "https://i.pravatar.cc/150?img=3" },
+          { name: "Dana", avatar: "https://i.pravatar.cc/150?img=4" },
+          { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
+          { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
+        ];
+        // Random number of users between 1 and 6
+        const randomCount = Math.floor(Math.random() * 6) + 1;
+        // Shuffle the array and take the first randomCount users
+        const shuffled = allUsers.sort(() => 0.5 - Math.random());
+        const randomUsers = shuffled.slice(0, randomCount);
+        avatarGroup.setUsers(randomUsers);
+      }
+
       this.__makeItemResponsive(label);
-      return;
     },
 
     _applyAccessRights: function(value) {
