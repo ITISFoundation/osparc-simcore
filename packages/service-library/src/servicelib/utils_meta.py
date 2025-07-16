@@ -1,7 +1,6 @@
-"""  Utilities to implement _meta.py
+"""Utilities to implement _meta.py"""
 
-"""
-
+import re
 from importlib.metadata import distribution
 
 from models_library.basic_types import VersionStr
@@ -29,9 +28,22 @@ class PackageInfo:
         package_name: as defined in 'setup.name'
         """
         self._distribution = distribution(package_name)
+        # property checks
+        if re.match(r"^[a-z]+(-[a-z]+)*$", self.app_name) is None:
+            raise ValueError(
+                f"Invalid package name {self.app_name}. "
+                "It must be all lowercase and words separated by dashes ('-')."
+            )
 
     @property
     def project_name(self) -> str:
+        return self._distribution.metadata["Name"]
+
+    @property
+    def app_name(self) -> str:
+        """
+        Returns the application name as a lowercase string with words separated by dashes ('-').
+        """
         return self._distribution.metadata["Name"]
 
     @property
