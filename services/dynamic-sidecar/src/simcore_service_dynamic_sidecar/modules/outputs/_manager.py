@@ -148,6 +148,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         task_name = f"outputs_manager_port_keys-{'_'.join(port_keys)}"
         self._task_uploading = create_task(_upload_ports(), name=task_name)
 
+        # used to retain task to avoid early garabage collection
+        cleanup_task: Task | None = None
+
         def _remove_downloads(future: Future) -> None:
             # pylint: disable=protected-access
             if future._exception is not None:
@@ -171,7 +174,8 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 except Exception as e:  # pylint: disable=broad-except
                     self._last_upload_error_tracker[port_key] = e
 
-            create_task(self._port_key_tracker.remove_all_uploading())
+            nonlocal cleanup_task
+            cleanup_task = create_task(self._port_key_tracker.remove_all_uploading())
 
         self._task_uploading.add_done_callback(_remove_downloads)
 
