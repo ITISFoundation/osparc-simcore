@@ -59,6 +59,21 @@ qx.Class.define("osparc.info.FunctionLarge", {
       const infoLayout = osparc.info.Utils.infoElementsToLayout(infoElements, isStudy);
       vBox.add(infoLayout);
 
+      // inputs, default inputs and outputs
+      const info = {
+        "Inputs": this.getFunction().getInputSchema()["schema_content"],
+        "Default Inputs": this.getFunction().getDefaultInputs(),
+        "Outputs": this.getFunction().getOutputSchema()["schema_content"],
+      };
+      const divId = "function-info-viewer";
+      const htmlEmbed = osparc.wrapper.JsonFormatter.getInstance().createContainer(divId);
+      vBox.add(htmlEmbed, {
+        flex: 1
+      });
+      vBox.addListener("appear", () => {
+        osparc.wrapper.JsonFormatter.getInstance().setJson(info, divId);
+      });
+
       // Copy Id button
       const text = "Function Id";
       const copyIdButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
