@@ -65,7 +65,6 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
     # special alias
     assert statics["stackName"] == "master-simcore"
     assert statics["pluginsDisabled"] == [
-        "WEBSERVER_REALTIME_COLLABORATION",
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
     ]
@@ -74,13 +73,14 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 def test_settings_to_client_statics_plugins(
     mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
+    monkeypatch.delenv("WEBSERVER_REALTIME_COLLABORATION", raising=False)
+
     # explicitly disable these plugins
     disable_plugins = {
         "WEBSERVER_EXPORTER",
         "WEBSERVER_SCICRUNCH",
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
-        "WEBSERVER_REALTIME_COLLABORATION",
     }
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
@@ -89,11 +89,10 @@ def test_settings_to_client_statics_plugins(
     monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
     disable_plugins.add("WEBSERVER_FOLDERS")
 
-    # set WEBSERVER_REALTIME_COLLABORATION (NOTE: WEBSERVER_DEV_FEATURES_ENABLED=True) )
+    # set WEBSERVER_REALTIME_COLLABORATION (NOTE: for now WEBSERVER_DEV_FEATURES_ENABLED=True) )
     monkeypatch.setenv(
         "WEBSERVER_REALTIME_COLLABORATION", '{"RTC_MAX_NUMBER_OF_USERS":3}'
     )
-    disable_plugins.remove("WEBSERVER_REALTIME_COLLABORATION")
 
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_DEV_FEATURES_ENABLED
