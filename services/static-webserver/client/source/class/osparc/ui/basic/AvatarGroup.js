@@ -35,7 +35,9 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     this.__orientation = orientation;
     this.__maxVisible = Math.floor(maxWidth/size) - 1; // Reserve space for the extra avatar
 
-    document.addEventListener("pointermove", this.__onGlobalPointerMove.bind(this));
+    this.__isPointerInside = false;
+    this.__onGlobalPointerMove = this.__onGlobalPointerMove.bind(this);
+    document.addEventListener("pointermove", this.__onGlobalPointerMove);
   },
 
   members: {
@@ -44,7 +46,8 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __users: null,
     __avatars: null,
     __collapseTimeout: null,
-    __isPointerInside: false,
+    __isPointerInside: null,
+    __onGlobalPointerMove: null,
 
     setUsers: function(users) {
       this.__users = users;
@@ -159,6 +162,6 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
   },
 
   destruct: function() {
-    document.removeEventListener("pointermove", this.__onGlobalPointerMove.bind(this));
+    document.removeEventListener("pointermove", this.__onGlobalPointerMove);
   },
 });
