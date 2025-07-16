@@ -46,7 +46,9 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           break;
         case "avatar-group":
-          control = new osparc.ui.basic.AvatarGroup(24, "left", 100);
+          control = new osparc.ui.basic.AvatarGroup(24, "right", 100).set({
+            paddingTop: 4, // to align it in the middle
+          });
           this._add(control, {
             row: 0,
             column: osparc.dashboard.ListButtonBase.POS.AVATAR_GROUP
