@@ -336,7 +336,7 @@ qx.Class.define("osparc.widget.PersistentIframe", {
               const templateId = data["message"]["functionId"];
               const functionData = {
                 "uuid": templateId,
-                "resourceType": "function",
+                "resourceType": "functionedTemplate",
               };
               const {
                 resourceDetails,
