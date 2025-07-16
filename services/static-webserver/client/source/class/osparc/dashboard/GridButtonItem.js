@@ -89,17 +89,16 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         case "avatar-group": {
           const maxWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.PADDING * 2;
           control = new osparc.ui.basic.AvatarGroup(24, "left", maxWidth);
-          this.getChildControl("body").addAt(control, this.self().BODY_POS.AVATAR_GROUP, {
-            flex: 1,
-          });
+          this.getChildControl("body").addAt(control, this.self().BODY_POS.AVATAR_GROUP);
           break;
         }
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4)).set({
             anonymous: true,
-            alignY: "bottom",
           });
-          this.getChildControl("body").addAt(control, this.self().BODY_POS.TAGS);
+          this.getChildControl("body").addAt(control, this.self().BODY_POS.TAGS, {
+            flex: 1,
+          });
           break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack();
