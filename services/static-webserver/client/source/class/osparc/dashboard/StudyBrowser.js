@@ -1658,11 +1658,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _populateCardMenu: function(card) {
       const studyData = card.getResourceData();
-      if (studyData["resourceType"] === "template") {
-        // The Study Browser can also list templates
-        this._populateTemplateCardMenu(card);
-      } else {
-        this.__populateStudyCardMenu(card);
+      switch (studyData["resourceType"]) {
+        case "study":
+          this.__populateStudyCardMenu(card);
+          break;
+        case "template":
+          this._populateTemplateCardMenu(card);
+          break;
+        case "function":
+          card.getChildControl("menu-selection-stack").exclude();
+          break;
       }
     },
 
