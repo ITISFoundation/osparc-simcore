@@ -16,10 +16,10 @@ from pydantic import (
     model_validator,
 )
 from pydantic.fields import Field
-from pydantic_settings import BaseSettings
 from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
@@ -62,7 +62,7 @@ _logger = logging.getLogger(__name__)
 _X_FEATURE_UNDER_DEVELOPMENT: Final[str] = "x-dev-feature"
 
 
-class RealTimeCollaborationSettings(BaseSettings):
+class RealTimeCollaborationSettings(BaseCustomSettings):
     RTC_MAX_NUMBER_OF_USERS: Annotated[
         PositiveInt,
         Field(
