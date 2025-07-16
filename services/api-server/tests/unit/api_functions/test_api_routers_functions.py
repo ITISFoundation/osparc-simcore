@@ -17,8 +17,10 @@ import respx
 from faker import Faker
 from httpx import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
-from models_library.api_schemas_webserver.functions import (
+from models_library.functions import (
     FunctionJobCollection,
+    FunctionUserAccessRights,
+    FunctionUserApiAccessRights,
     ProjectFunction,
     ProjectFunctionJob,
     RegisteredFunction,
@@ -26,11 +28,6 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
-)
-from models_library.functions import (
-    FunctionUserAccessRights,
-    FunctionUserApiAccessRights,
-    RegisteredFunctionJob,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
