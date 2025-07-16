@@ -58,7 +58,7 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     isSimultaneousAccessEnabled: function() {
-      return true;
+      return false;
     },
 
     __isPluginDisabled: function(key) {
