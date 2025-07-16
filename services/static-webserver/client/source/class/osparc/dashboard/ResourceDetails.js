@@ -60,6 +60,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "template":
           case "tutorial":
           case "hypertool":
+          case "functionedTemplate":
             // when getting the latest study data, the debt information was lost
             if (osparc.study.Utils.isInDebt(this.__resourceData)) {
               const studyStore = osparc.store.Study.getInstance();
@@ -378,9 +379,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       // removeAll
       osparc.utils.Utils.removeAllChildren(tabsView);
 
-      if (this.__resourceData["resourceType"] === "function") {
+      if (this.__resourceData["resourceType"] === "functionedTemplate") {
         // for now, we only want the preview page
-        // OM: careful here, the one coming from the MMUX services is marked as "function"
+        this.__addPreviewPage();
+        this.fireEvent("pagesAdded");
+        return;
+      } else if (this.__resourceData["resourceType"] === "function") {
         this.__addInfoPage();
         this.__addPreviewPage();
         this.fireEvent("pagesAdded");
