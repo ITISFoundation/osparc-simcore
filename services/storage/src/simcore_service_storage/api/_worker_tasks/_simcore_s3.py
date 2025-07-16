@@ -5,7 +5,11 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
-from models_library.api_schemas_storage.storage_schemas import FoldersBody
+from models_library.api_schemas_storage.storage_schemas import (
+    FoldersBody,
+    LinkType,
+    PresignedLink,
+)
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
@@ -100,3 +104,27 @@ async def export_data(
             return await dsm.create_s3_export(
                 user_id, object_keys, progress_bar=progress_bar
             )
+
+
+async def export_data_as_download_link(
+    task: Task,
+    task_id: TaskID,
+    *,
+    user_id: UserID,
+    paths_to_export: list[PathToExport],
+) -> PresignedLink:
+    """
+    AccessRightError: in case user can't access project
+    """
+    s3_object = await export_data(
+        task=task, task_id=task_id, user_id=user_id, paths_to_export=paths_to_export
+    )
+
+    dsm = get_dsm_provider(get_app_server(task.app).app).get(
+        SimcoreS3DataManager.get_location_id()
+    )
+
+    download_link = await dsm.create_file_download_link(
+        user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
+    )
+    return PresignedLink(link=download_link)

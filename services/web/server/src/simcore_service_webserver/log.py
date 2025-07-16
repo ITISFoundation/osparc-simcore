@@ -1,14 +1,17 @@
 """Configuration and utilities for service logging"""
 
 import logging
+from collections.abc import Awaitable, Callable
+from contextlib import AsyncExitStack
+from typing import Final, TypeAlias
 
 from aiodebug import log_slow_callbacks  # type: ignore[import-untyped]
+from aiohttp import web
 from aiohttp.log import access_logger
-from servicelib.logging_utils import config_all_loggers
-from settings_library.tracing import TracingSettings
+from servicelib.logging_utils import async_loggers
+from simcore_service_webserver.application_settings import ApplicationSettings
 
-LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-NOISY_LOGGERS = (
+_NOISY_LOGGERS: Final[tuple[str, ...]] = (
     "aio_pika",
     "aiormq",
     "engineio",
@@ -22,24 +25,21 @@ NOISY_LOGGERS = (
     "sqlalchemy",
 )
 
+_logger = logging.getLogger(__name__)
 
-def setup_logging(
-    *,
-    level: str | int,
-    slow_duration: float | None = None,
-    log_format_local_dev_enabled: bool,
-    logger_filter_mapping: dict,
-    tracing_settings: TracingSettings | None,
-):
-    # service log level
-    logging.basicConfig(level=level)
+CleanupEvent: TypeAlias = Callable[[web.Application], Awaitable[None]]
 
-    # root
-    logging.root.setLevel(level)
-    config_all_loggers(
-        log_format_local_dev_enabled=log_format_local_dev_enabled,
-        logger_filter_mapping=logger_filter_mapping,
-        tracing_settings=tracing_settings,
+
+def setup_logging(app_settings: ApplicationSettings) -> CleanupEvent:
+    exit_stack = AsyncExitStack()
+    exit_stack.enter_context(
+        async_loggers(
+            log_base_level=app_settings.log_level,
+            noisy_loggers=_NOISY_LOGGERS,
+            log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
+            logger_filter_mapping=app_settings.WEBSERVER_LOG_FILTER_MAPPING,
+            tracing_settings=app_settings.WEBSERVER_TRACING,
+        )
     )
 
     # Enforces same log-level to aiohttp & gunicorn access loggers
@@ -50,17 +50,16 @@ def setup_logging(
     # they are not applied globally but only upon setup_logging ...
     #
     gunicorn_access_log = logging.getLogger("gunicorn.access")
-    access_logger.setLevel(level)
-    gunicorn_access_log.setLevel(level)
+    access_logger.setLevel(app_settings.log_level)
+    gunicorn_access_log.setLevel(app_settings.log_level)
 
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-
-    for name in NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
-
-    if slow_duration:
+    if app_settings.AIODEBUG_SLOW_DURATION_SECS:
         # NOTE: Every task blocking > AIODEBUG_SLOW_DURATION_SECS secs is considered slow and logged as warning
-        log_slow_callbacks.enable(abs(slow_duration))
+        log_slow_callbacks.enable(abs(app_settings.AIODEBUG_SLOW_DURATION_SECS))
+
+    async def _cleanup_event(app: web.Application) -> None:
+        assert app  # nosec
+        _logger.info("Cleaning up application resources")
+        await exit_stack.aclose()
+
+    return _cleanup_event
