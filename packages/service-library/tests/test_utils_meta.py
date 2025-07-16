@@ -53,7 +53,7 @@ def test_app_name(
 ):
 
     def mock_distribution(name):
-        return mocker.Mock(metadata={"Name": app_name, "Version": "1.0.0"})
+        return mocker.Mock(metadata={"Name": name, "Version": "1.0.0"})
 
     mocker.patch("servicelib.utils_meta.distribution", side_effect=mock_distribution)
     if is_valid_app_name:
