@@ -331,7 +331,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
             case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS: {
               const functions = resp["data"];
-              functions.forEach(func => func["resourceType"] = "func");
+              functions.forEach(func => func["resourceType"] = "function");
               this.__addResourcesToList(functions);
               break;
             }
