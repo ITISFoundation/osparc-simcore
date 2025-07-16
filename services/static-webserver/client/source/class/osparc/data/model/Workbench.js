@@ -68,6 +68,13 @@ qx.Class.define("osparc.data.model.Workbench", {
       event: "changeStudy"
     },
 
+    function: {
+      check: "osparc.data.model.Function",
+      init: null,
+      nullable: true,
+      event: "changeFunction"
+    },
+
     deserialized: {
       check: "Boolean",
       init: false,
