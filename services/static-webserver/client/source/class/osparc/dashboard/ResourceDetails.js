@@ -29,16 +29,20 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       case "study":
       case "template":
       case "tutorial":
-      case "hypertool":
-      case "functionedTemplate":
+      case "hypertool": {
         latestPromise = osparc.store.Study.getInstance().getOne(resourceData["uuid"]);
+        break;
+      }
+      case "functionedTemplate":
+        latestPromise = osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
         break;
       case "function":
         latestPromise = osparc.store.Functions.fetchFunction(resourceData["uuid"]);
         break;
-      case "service":
+      case "service": {
         latestPromise = osparc.store.Services.getService(resourceData["key"], resourceData["version"]);
         break;
+      }
     }
 
     latestPromise
