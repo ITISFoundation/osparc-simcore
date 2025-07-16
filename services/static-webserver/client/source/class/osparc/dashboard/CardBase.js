@@ -874,7 +874,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __showWhoIsIn: function(whoIsIn) {
       let users = [];
       if (whoIsIn) {
-        // remove this, testing purposes
+        // replace this once the backend returns a list of group__ids
         const allUsers = [
           { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
           { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
