@@ -24,6 +24,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
   construct: function() {
     this.base(arguments);
 
+    if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      // "IN_USE" is not a blocker anymore
+      const inUseIdx = qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.indexOf("IN_USE");
+      if (inUseIdx > -1) {
+        qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.splice(inUseIdx, 1);
+      }
+    }
+
     [
       "pointerover",
       "focus"
@@ -457,8 +465,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     blocked: {
-      // check: [true, "UNKNOWN_SERVICES", "IN_USE", "IN_DEBT", false],
-      check: [true, "UNKNOWN_SERVICES", "IN_DEBT", false], // "IN_USE" is not a block anymore, it is just a status
+      check: [true, "UNKNOWN_SERVICES", "IN_USE", "IN_DEBT", false],
       init: false,
       nullable: false,
       apply: "__applyBlocked"
