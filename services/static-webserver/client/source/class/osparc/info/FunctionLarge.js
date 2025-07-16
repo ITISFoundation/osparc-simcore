@@ -106,11 +106,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
         "ACCESS_RIGHTS": {
           label: this.tr("Access"),
           view: osparc.info.StudyUtils.createAccessRights(this.getFunction()),
-          action: {
-            button: osparc.utils.Utils.getLinkButton(canIWrite),
-            callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
-            ctx: this
-          }
+          action: null
         },
         "CREATED": {
           label: this.tr("Created"),

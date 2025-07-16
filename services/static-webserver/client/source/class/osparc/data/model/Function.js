@@ -139,17 +139,14 @@ qx.Class.define("osparc.data.model.Function", {
   statics: {
     canIWrite: function(accessRights) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const orgIDs = groupsStore.getOrganizationIds();
-      orgIDs.push(groupsStore.getMyGroupId());
-      if (orgIDs.length) {
-        let canWrite = false;
-        for (let i=0; i<gIds.length && !canWrite; i++) {
-          const gid = gIds[i];
-          canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
-        }
-        return canWrite;
+      const gIds = groupsStore.getOrganizationIds();
+      gIds.push(groupsStore.getMyGroupId());
+      let canWrite = false;
+      for (let i=0; i<gIds.length && !canWrite; i++) {
+        const gid = gIds[i];
+        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
       }
-      return false;
+      return canWrite;
     },
   }
 });
