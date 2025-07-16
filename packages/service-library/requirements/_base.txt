@@ -166,6 +166,8 @@ packaging==24.2
     # via opentelemetry-instrumentation
 pamqp==3.3.0
     # via aiormq
+phonenumbers==9.0.9
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
 propcache==0.3.0
     # via
     #   aiohttp

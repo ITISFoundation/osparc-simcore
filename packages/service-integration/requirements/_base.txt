@@ -77,6 +77,8 @@ orjson==3.10.15
     #   -r requirements/../../../packages/models-library/requirements/_base.in
 packaging==24.2
     # via pytest
+phonenumbers==9.0.9
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
 pluggy==1.5.0
     # via pytest
 propcache==0.3.0

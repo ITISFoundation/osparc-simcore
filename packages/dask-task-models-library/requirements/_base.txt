@@ -74,6 +74,8 @@ packaging==25.0
     #   distributed
 partd==1.4.2
     # via dask
+phonenumbers==9.0.9
+    # via -r requirements/../../../packages/models-library/requirements/_base.in
 psutil==7.0.0
     # via distributed
 pydantic==2.11.7

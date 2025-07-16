@@ -484,6 +484,12 @@ pamqp==3.3.0
     # via aiormq
 pandas==2.2.1
     # via prometheus-api-client
+phonenumbers==9.0.9
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 pillow==10.2.0
     # via matplotlib
 prometheus-api-client==0.5.5
