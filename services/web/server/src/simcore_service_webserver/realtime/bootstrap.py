@@ -12,5 +12,5 @@ _logger = logging.getLogger(__name__)
     settings_name="WEBSERVER_REALTIME_COLLABORATION",
     logger=_logger,
 )
-def setup_realtime_feature(app: web.Application):
+def setup_realtime_collaboration(app: web.Application):
     assert app["settings"].WEBSERVER_REALTIME_COLLABORATION  # nosec

@@ -7,6 +7,7 @@ from typing import Any
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.realtime.bootstrap import setup_realtime_collaboration
 
 from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
 from .activity.plugin import setup_activity
@@ -160,6 +161,7 @@ def create_application() -> web.Application:
     setup_publications(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
+    setup_realtime_collaboration(app)
 
     # NOTE: *last* events
     app.on_startup.append(_welcome_banner)
