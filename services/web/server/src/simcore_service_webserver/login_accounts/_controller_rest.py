@@ -2,13 +2,17 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
     UnregisterCheck,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
-from servicelib.aiohttp.requests_validation import parse_request_body_as
+from servicelib.aiohttp.requests_validation import (
+    handle_validation_as_http_error,
+    parse_request_body_as,
+)
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task
 
@@ -88,10 +92,17 @@ async def request_product_account(request: web.Request):
         raise web.HTTPUnprocessableEntity(text=MSG_WRONG_CAPTCHA__INVALID)
     session.pop(CAPTCHA_SESSION_KEY, None)
 
-    # create pre-regiatration or raise if already exists
+    with handle_validation_as_http_error(
+        error_msg_template=user_message(
+            "Found an error in the request form: '{failed}'"
+        ),
+        resource_name=request.rel_url.path,
+    ):
+        profile = UserAccountRestPreRegister.model_validate(body.form)
+
     await _service.create_pre_registration(
         request.app,
-        profile=UserAccountRestPreRegister.model_validate(body.form),
+        profile=profile,
         product_name=product.name,
     )
 
