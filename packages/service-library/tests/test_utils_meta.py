@@ -52,10 +52,10 @@ def test_app_name(
     is_correct_app_name: bool,
 ):
 
-    mocker.patch(
-        "servicelib.utils_meta.distribution",
-        return_value=mocker.Mock(metadata={"Name": app_name, "Version": "1.0.0"}),
-    )
+    def mock_distribution(name):
+        return mocker.Mock(metadata={"Name": app_name, "Version": "1.0.0"})
+
+    mocker.patch("servicelib.utils_meta.distribution", side_effect=mock_distribution)
     if is_valid_app_name:
         info = PackageInfo(package_name=package_name)
         if is_correct_app_name:
