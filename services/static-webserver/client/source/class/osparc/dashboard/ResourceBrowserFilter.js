@@ -175,7 +175,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Functions"),
-        icon: "@MaterialIcons/functions/18",
+        icon: "@MaterialIcons/functions/20",
         paddingLeft: 10, // align it with the context
       });
       osparc.utils.Utils.setIdToWidget(functionsButton, "functionsFilterItem");
