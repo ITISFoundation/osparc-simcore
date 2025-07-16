@@ -329,6 +329,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this.__addResourcesToList(filteredTemplates);
               break;
             }
+            case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS: {
+              const functions = resp["data"];
+              functions.forEach(func => func["resourceType"] = "func");
+              this.__addResourcesToList(functions);
+              break;
+            }
           }
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
@@ -860,6 +866,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "public";
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+          break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
           requestParams.type = "user";
           break;
@@ -921,6 +929,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // The distinction is done in the frontend
           request = osparc.store.Templates.searchTemplatesPaginated(params, options);
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+          // OM: implement this
+          request = osparc.store.Functions.fetchFunctionsPaginated(params, options);
       }
       return request;
     },
@@ -1159,11 +1170,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
               searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES;
               break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+              searchContext = null;
+              break;
             default:
               searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
               break;
           }
-          this._changeContext(searchContext);
+          if (searchContext) {
+            this._changeContext(searchContext);
+          }
         } else {
           let backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
           switch (this.getCurrentContext()) {
@@ -1209,6 +1225,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesList = [];
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
+      this._searchBarFilter.setEnabled(true);
 
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
@@ -1255,6 +1272,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
+          this.__reloadStudies();
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+          this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
+          this._searchBarFilter.setEnabled(false);
+          this._toolbar.exclude();
+          this._loadingResourcesBtn.setFetching(false);
+          // OM: implement this
+          this.invalidateFunctions();
           this.__reloadStudies();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
