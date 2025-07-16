@@ -16,6 +16,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.fields import Field
+from pydantic_settings import BaseSettings
 from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
@@ -61,7 +62,7 @@ _logger = logging.getLogger(__name__)
 _X_FEATURE_UNDER_DEVELOPMENT: Final[str] = "x-dev-feature"
 
 
-class RealTimeCollaborationSettings(BaseApplicationSettings):
+class RealTimeCollaborationSettings(BaseSettings):
     RTC_MAX_NUMBER_OF_USERS: Annotated[
         PositiveInt,
         Field(
