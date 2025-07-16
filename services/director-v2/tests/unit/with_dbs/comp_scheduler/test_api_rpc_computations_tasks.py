@@ -28,19 +28,20 @@ async def test_get_computation_task_log_file_ids(
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     create_registered_user: Callable[..., dict[str, Any]],
-    project: Callable[..., Awaitable[ProjectAtDB]],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
-    create_tasks: Callable[..., Awaitable[list[CompTaskAtDB]]],
+    create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
     rpc_client: RabbitMQRPCClient,
+    with_product: dict[str, Any],
 ):
     user = create_registered_user()
-    proj = await project(user, workbench=fake_workbench_without_outputs)
+    proj = await create_project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
         project_id=f"{proj.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
     )
-    comp_tasks = await create_tasks(
+    comp_tasks = await create_tasks_from_project(
         user=user, project=proj, state=StateType.PUBLISHED, progress=None
     )
     comp_runs = await create_comp_run(
