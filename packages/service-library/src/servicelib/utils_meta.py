@@ -7,6 +7,10 @@ from models_library.basic_types import VersionStr
 from packaging.version import Version
 from pydantic import TypeAdapter
 
+_APP_NAME_PATTERN = re.compile(
+    r"^[a-z]+(-[a-z]+)*$"
+)  # matches lowercase string with words separated by dashes (no whitespace)
+
 
 class PackageInfo:
     """Thin wrapper around pgk_resources.Distribution to access package distribution metadata
@@ -29,7 +33,7 @@ class PackageInfo:
         """
         self._distribution = distribution(package_name)
         # property checks
-        if re.match(r"^[a-z]+(-[a-z]+)*$", self.app_name) is None:
+        if re.match(_APP_NAME_PATTERN, self.app_name) is None:
             raise ValueError(
                 f"Invalid package name {self.app_name}. "
                 "It must be all lowercase and words separated by dashes ('-')."
