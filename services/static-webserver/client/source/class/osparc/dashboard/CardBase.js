@@ -895,7 +895,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-
     __showBlockedCardFromStatus: function(reason, moreInfo) {
       switch (reason) {
         case "IN_USE":
