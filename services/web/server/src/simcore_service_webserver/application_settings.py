@@ -10,7 +10,6 @@ from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     AliasChoices,
     AnyHttpUrl,
-    PositiveInt,
     TypeAdapter,
     field_validator,
     model_validator,
@@ -19,7 +18,6 @@ from pydantic.fields import Field
 from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
-from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
@@ -42,6 +40,7 @@ from .licenses.settings import LicensesSettings
 from .login.settings import LoginSettings
 from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings
+from .realtime.settings import RealTimeCollaborationSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .resource_usage.settings import ResourceUsageTrackerSettings
 from .rest.settings import RestSettings
@@ -60,15 +59,6 @@ _logger = logging.getLogger(__name__)
 #    `Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})`
 # This will force it to be disabled when WEBSERVER_DEV_FEATURES_ENABLED=False
 _X_FEATURE_UNDER_DEVELOPMENT: Final[str] = "x-dev-feature"
-
-
-class RealTimeCollaborationSettings(BaseCustomSettings):
-    RTC_MAX_NUMBER_OF_USERS: Annotated[
-        PositiveInt,
-        Field(
-            description="Maximum number of users allowed in a real-time collaboration session",
-        ),
-    ]
 
 
 class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
