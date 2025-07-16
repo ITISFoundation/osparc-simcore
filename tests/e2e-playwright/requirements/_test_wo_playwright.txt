@@ -43,9 +43,9 @@ packaging==24.2
     #   pytest-sugar
 pluggy==1.5.0
     # via pytest
-pydantic==2.10.6
+pydantic==2.11.7
     # via -r requirements/_test_wo_playwright.in
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
 pygments==2.19.2
     # via pytest
@@ -86,6 +86,9 @@ typing-extensions==4.14.1
     #   anyio
     #   pydantic
     #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic
 tzdata==2025.1
     # via faker
 urllib3==2.5.0

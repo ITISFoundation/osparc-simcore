@@ -1,6 +1,6 @@
 from decimal import Decimal
 from functools import cached_property
-from typing import Annotated
+from typing import Annotated, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import NonNegativeDecimal
@@ -14,6 +14,7 @@ from pydantic import (
     TypeAdapter,
     field_validator,
 )
+from servicelib.logging_utils import LogLevelInt
 from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.basic_types import LogLevel, VersionTag
@@ -66,8 +67,8 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = DEFAULT_FACTORY
 
     @cached_property
-    def LOG_LEVEL(self):  # noqa: N802
-        return self.PAYMENTS_LOGLEVEL
+    def log_level(self) -> LogLevelInt:
+        return cast(LogLevelInt, self.PAYMENTS_LOGLEVEL)
 
     @field_validator("PAYMENTS_LOGLEVEL", mode="before")
     @classmethod

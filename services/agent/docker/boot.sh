@@ -51,7 +51,9 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} ' | tr '\n' ' ')
   exec sh -c "
     cd services/agent/src/simcore_service_agent && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${AGENT_SERVER_REMOTE_DEBUG_PORT} -m uvicorn main:the_app \
+    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${AGENT_SERVER_REMOTE_DEBUG_PORT} -m \
+    uvicorn \
+      --factory main:app_factory \
       --host 0.0.0.0 \
       --port 8000 \
       --reload \
@@ -60,7 +62,8 @@ if [ "${SC_BOOT_MODE}" = "debug" ]; then
       --log-level \"${SERVER_LOG_LEVEL}\"
   "
 else
-  exec uvicorn simcore_service_agent.main:the_app \
+  exec uvicorn \
+    --factory simcore_service_agent.main:app_factory \
     --host 0.0.0.0 \
     --port 8000 \
     --log-level "${SERVER_LOG_LEVEL}" \

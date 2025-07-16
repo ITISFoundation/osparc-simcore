@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore_service_storage",
     "description": "Service that manages osparc storage backend",
-    "version": "0.7.0"
+    "version": "0.7.1"
   },
   "paths": {
     "/v0/": {
@@ -1374,6 +1374,7 @@
             "description": "Application's version"
           },
           "services": {
+            "additionalProperties": true,
             "type": "object",
             "title": "Services",
             "description": "Other backend services connected from this service",
@@ -1382,6 +1383,7 @@
           "sessions": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -1812,6 +1814,7 @@
           "data": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -2511,7 +2514,6 @@
             "title": "S3 Secret Key"
           }
         },
-        "additionalProperties": false,
         "type": "object",
         "required": [
           "S3_ACCESS_KEY",

@@ -1,9 +1,11 @@
 import logging
 
+from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from models_library.basic_types import BootModeEnum
 from servicelib.fastapi import timing_middleware
+from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.monitoring import (
     setup_prometheus_instrumentation,
 )
@@ -27,27 +29,18 @@ from .settings import ApplicationSettings
 
 _logger = logging.getLogger(__name__)
 
-_LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
-_NOISY_LOGGERS = (
-    "aio_pika",
-    "aiobotocore",
-    "aiormq",
-    "botocore",
-    "httpcore",
-    "werkzeug",
-)
 
-
-def create_app() -> FastAPI:
-    # keep mostly quiet noisy loggers
-    quiet_level: int = max(
-        min(logging.root.level + _LOG_LEVEL_STEP, logging.CRITICAL), logging.WARNING
-    )
-    for name in _NOISY_LOGGERS:
-        logging.getLogger(name).setLevel(quiet_level)
-
-    settings = ApplicationSettings.create_from_envs()
-    _logger.debug(settings.model_dump_json(indent=2))
+def create_app(
+    *,
+    settings: ApplicationSettings | None = None,
+    logging_lifespan: Lifespan | None = None,
+) -> FastAPI:
+    if not settings:
+        settings = ApplicationSettings.create_from_envs()
+        _logger.info(
+            "Application settings: %s",
+            json_dumps(settings, indent=2, sort_keys=True),
+        )
 
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
@@ -58,7 +51,7 @@ def create_app() -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
-        lifespan=events.create_app_lifespan(),
+        lifespan=events.create_app_lifespan(logging_lifespan=logging_lifespan),
     )
     override_fastapi_openapi_method(app)
 

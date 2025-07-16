@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-""" Tests subtle details about pydantic models
+"""Tests subtle details about pydantic models
 
 This test suite intends to "freeze" some concepts/invariants from pydantic upon which we are going
 to build this libraries.
@@ -17,7 +17,12 @@ from typing import Annotated
 import pytest
 from common_library.basic_types import LogLevel
 from common_library.pydantic_fields_extension import is_nullable
-from pydantic import AliasChoices, Field, ValidationInfo, field_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    ValidationInfo,
+    field_validator,
+)
 from pydantic_core import PydanticUndefined
 from pydantic_settings import BaseSettings
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict

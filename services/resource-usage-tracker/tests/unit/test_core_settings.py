@@ -24,7 +24,7 @@ def test_valid_cli_application_settings(app_environment: EnvVarsDict):
     assert settings.RESOURCE_USAGE_TRACKER_POSTGRES
     assert settings.RESOURCE_USAGE_TRACKER_REDIS
     assert settings.RESOURCE_USAGE_TRACKER_RABBITMQ
-    assert settings.LOG_LEVEL
+    assert settings.RESOURCE_USAGE_TRACKER_LOGLEVEL
 
 
 def test_valid_web_application_settings(app_environment: EnvVarsDict):
@@ -34,4 +34,4 @@ def test_valid_web_application_settings(app_environment: EnvVarsDict):
     assert settings.RESOURCE_USAGE_TRACKER_POSTGRES
     assert settings.RESOURCE_USAGE_TRACKER_REDIS
     assert settings.RESOURCE_USAGE_TRACKER_RABBITMQ
-    assert settings.LOG_LEVEL
+    assert settings.RESOURCE_USAGE_TRACKER_LOGLEVEL
