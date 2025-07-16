@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
-from servicelib.rabbitmq._errors import RPCInterfaceError
+from servicelib.rabbitmq import RPCInterfaceError
 
 
 class Error(BaseModel):
