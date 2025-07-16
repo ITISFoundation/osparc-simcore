@@ -92,14 +92,19 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           this.getChildControl("body").addAt(control, this.self().BODY_POS.AVATAR_GROUP);
           break;
         }
-        case "tags":
+        case "tags": {
+          const wrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          // Add spacer to push tags to bottom
+          wrapper.add(new qx.ui.core.Spacer(), {flex: 1});
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4)).set({
             anonymous: true,
           });
-          this.getChildControl("body").addAt(control, this.self().BODY_POS.TAGS, {
+          wrapper.add(control);
+          this.getChildControl("body").addAt(wrapper, this.self().BODY_POS.TAGS, {
             flex: 1,
           });
           break;
+        }
         case "menu-selection-stack":
           control = new qx.ui.container.Stack();
           control.set({

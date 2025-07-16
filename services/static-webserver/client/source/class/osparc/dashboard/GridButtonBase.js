@@ -166,7 +166,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
         case "body":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
             padding: this.self().PADDING,
-            alignY: "bottom",
           });
           break;
         case "footer": {
