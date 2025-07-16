@@ -125,5 +125,8 @@ async def list_user_functions_permissions(request: web.Request) -> web.Response:
     assert function_permissions.user_id == req_ctx.user_id  # nosec
 
     return envelope_json_response(
-        MyFunctionPermissionsGet(write_functions=function_permissions.write_functions)
+        MyFunctionPermissionsGet(
+            read_functions=function_permissions.read_functions,
+            write_functions=function_permissions.write_functions,
+        )
     )

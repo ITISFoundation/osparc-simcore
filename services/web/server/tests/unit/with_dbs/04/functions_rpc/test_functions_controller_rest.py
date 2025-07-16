@@ -115,13 +115,26 @@ async def test_register_get_delete_function(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-@pytest.mark.parametrize("expected_write_functions", [True, False])
+@pytest.mark.parametrize(
+    "expected_read_functions,expected_write_functions",
+    [
+        (True, True),
+        (True, False),
+        (False, True),  # Weird, but allowed for testing purposes
+        (False, False),
+    ],
+)
 async def test_list_user_functions_permissions(
     client: TestClient,
     logged_user: UserInfoDict,
+    expected_read_functions: bool,
     expected_write_functions: bool,
     logged_user_function_api_access_rights: dict[str, Any],
 ):
+    assert (
+        logged_user_function_api_access_rights["read_functions"]
+        == expected_read_functions
+    )
     assert (
         logged_user_function_api_access_rights["write_functions"]
         == expected_write_functions
@@ -133,4 +146,5 @@ async def test_list_user_functions_permissions(
 
     assert not error
     function_permissions = MyFunctionPermissionsGet.model_validate(data)
+    assert function_permissions.read_functions == expected_read_functions
     assert function_permissions.write_functions == expected_write_functions
