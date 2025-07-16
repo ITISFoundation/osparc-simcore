@@ -109,6 +109,27 @@ qx.Class.define("osparc.store.Functions", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    fetchFunction: function(functionId) {
+      const isBackendReady = false;
+      if (!isBackendReady) {
+        return new Promise(resolve => {
+          const response = this.__dummyResponse();
+          resolve(response["data"][0]);
+        });
+      }
+      const params = {
+        url: {
+          "functionId": functionId
+        }
+      };
+      return osparc.data.Resources.fetch("functions", "getOne", params, options)
+        .then(func => {
+          func["resourceType"] = "function";
+          return func;
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
     invalidateFunctions: function() {
       this.__functions = null;
       if (this.__functionsPromiseCached) {
