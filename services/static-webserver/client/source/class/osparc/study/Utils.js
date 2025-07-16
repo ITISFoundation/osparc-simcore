@@ -407,11 +407,11 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (this.isInDebt(studyData)) {
-        return "IN_DEBT";
-      }
       if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
         return "IN_USE";
+      }
+      if (this.isInDebt(studyData)) {
+        return "IN_DEBT";
       }
       return false;
     },
