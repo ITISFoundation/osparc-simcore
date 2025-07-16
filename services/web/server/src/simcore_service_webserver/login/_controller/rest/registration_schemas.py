@@ -65,6 +65,6 @@ class _PageParams(BaseModel):
 
 
 class RegisterPhoneNextPage(NextPage[_PageParams]):
-    logger: str = Field("user", deprecated=True)
+    logger: Annotated[str, Field(deprecated=True)] = "user"
     level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
     message: str
