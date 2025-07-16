@@ -34,7 +34,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   },
 
   statics: {
-    MENU_BTN_DIMENSIONS: 24
+    MENU_BTN_DIMENSIONS: 24,
+
+    BODY_POS: {
+      AVATAR_GROUP: 0,
+      TAGS: 1,
+    },
   },
 
   members: {
@@ -86,16 +91,18 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           control = new osparc.ui.basic.AvatarGroup(24, "left", maxWidth).set({
             paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
           });
-          this.getChildControl("main-layout").add(control, osparc.dashboard.GridButtonBase.POS.AVATAR_GROUP);
+          this.getChildControl("body").addAt(control, this.self().BODY_POS.AVATAR_GROUP, {
+            flex: 1,
+          });
           break;
         }
         case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4)).set({
             anonymous: true,
             paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
             paddingRight: osparc.dashboard.GridButtonBase.PADDING,
           });
-          this.getChildControl("main-layout").add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+          this.getChildControl("body").addAt(control, this.self().BODY_POS.TAGS);
           break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack();
