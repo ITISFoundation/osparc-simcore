@@ -286,7 +286,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.setVisibility(tags.length ? "visible" : "excluded");
         tagsContainer.removeAll();
-        for (let i=0; i<=tags.length && i<maxTags; i++) {
+        for (let i=0; i<tags.length && i<maxTags; i++) {
           const tag = tags[i];
           const tagUI = new osparc.ui.basic.Tag(tag, "searchBarFilter");
           tagUI.set({
