@@ -46,8 +46,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
 
   members: {
     __canIWrite: function() {
-      // return osparc.data.model.Function.canIWrite(this.getFunction().getAccessRights());
-      return true;
+      return osparc.data.model.Function.canIWrite(this.getFunction().getAccessRights());
     },
 
     _rebuildLayout: function() {
@@ -104,13 +103,6 @@ qx.Class.define("osparc.info.FunctionLarge", {
             ctx: this
           }
         },
-        /*
-        "AUTHOR": {
-          label: this.tr("Author"),
-          view: osparc.info.StudyUtils.createOwner(this.getFunction()),
-          action: null
-        },
-        */
         "ACCESS_RIGHTS": {
           label: this.tr("Access"),
           view: osparc.info.StudyUtils.createAccessRights(this.getFunction()),
