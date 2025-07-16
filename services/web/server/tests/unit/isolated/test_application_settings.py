@@ -74,6 +74,7 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 def test_settings_to_client_statics_plugins(
     mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
+    # explicitly disable these plugins
     disable_plugins = {
         "WEBSERVER_EXPORTER",
         "WEBSERVER_SCICRUNCH",
@@ -84,18 +85,22 @@ def test_settings_to_client_statics_plugins(
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
 
+    # explicitly disable WEBSERVER_FOLDERS
     monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
     disable_plugins.add("WEBSERVER_FOLDERS")
 
+    # set WEBSERVER_REALTIME_COLLABORATION (NOTE: WEBSERVER_DEV_FEATURES_ENABLED=True) )
     monkeypatch.setenv(
         "WEBSERVER_REALTIME_COLLABORATION", '{"RTC_MAX_NUMBER_OF_USERS":3}'
     )
     disable_plugins.remove("WEBSERVER_REALTIME_COLLABORATION")
 
     settings = ApplicationSettings.create_from_envs()
-    statics = settings.to_client_statics()
+    assert settings.WEBSERVER_DEV_FEATURES_ENABLED
 
     # -------------
+
+    statics = settings.to_client_statics()
     print("STATICS:\n", json_dumps(statics, indent=1))
 
     assert settings.WEBSERVER_LOGIN
@@ -116,16 +121,18 @@ def test_settings_to_client_statics_plugins(
         == settings.WEBSERVER_SESSION.SESSION_COOKIE_MAX_AGE
     )
 
-    assert "WEBSERVER_REALTIME_COLLABORATION" in statics["pluginsDisabled"]
+    assert statics["vcsReleaseTag"]
+    assert TypeAdapter(HttpUrl).validate_python(statics["vcsReleaseUrl"])
+
+    # check WEBSERVER_REALTIME_COLLABORATION enabled
+    assert "WEBSERVER_REALTIME_COLLABORATION" not in statics["pluginsDisabled"]
     assert settings.WEBSERVER_REALTIME_COLLABORATION
     assert (
         statics["webserverRealtimeCollaboration"]["RTC_MAX_NUMBER_OF_USERS"]
         == settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
     )
 
-    assert statics["vcsReleaseTag"]
-    assert TypeAdapter(HttpUrl).validate_python(statics["vcsReleaseUrl"])
-
+    # check disabled plugins
     assert set(statics["pluginsDisabled"]) == (disable_plugins)
 
 
