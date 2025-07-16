@@ -1,5 +1,6 @@
 from typing import Annotated, Any, NamedTuple, Self, TypedDict
 
+from models_library.api_schemas_webserver.users import MyProfileRestPatch
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -43,9 +44,9 @@ def flatten_dict(d: dict, parent_key="", sep="_"):
     return dict(items)
 
 
-class ToUserUpdateDB(BaseModel):
+class UserModelAdapter(BaseModel):
     """
-    Maps ProfileUpdate api-model into UserUpdate db-model
+    Maps ProfileUpdate api schema into UserUpdate db-model
     """
 
     # NOTE: field names are UserDB columns
@@ -62,13 +63,13 @@ class ToUserUpdateDB(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     @classmethod
-    def from_api(cls, profile_update) -> Self:
+    def from_rest_schema_model(cls, profile_update: MyProfileRestPatch) -> Self:
         # The mapping of embed fields to flatten keys is done here
         return cls.model_validate(
             flatten_dict(profile_update.model_dump(exclude_unset=True, by_alias=False))
         )
 
-    def to_db(self) -> dict[str, Any]:
+    def to_db_values(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
 
 

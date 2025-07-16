@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.71.1
+  version: 0.72.0
 servers:
 - url: ''
   description: webserver
@@ -1187,7 +1187,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_MyProfileGet_'
+                $ref: '#/components/schemas/Envelope_MyProfileRestGet_'
     patch:
       tags:
       - users
@@ -1197,11 +1197,79 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MyProfilePatch'
+              $ref: '#/components/schemas/MyProfileRestPatch'
         required: true
       responses:
         '204':
           description: Successful Response
+  /v0/me/phone:register:
+    post:
+      tags:
+      - users
+      summary: My Phone Register
+      description: Starts the phone registration process
+      operationId: my_phone_register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyPhoneRegister'
+        required: true
+      responses:
+        '202':
+          description: Phone registration initiated
+          content:
+            application/json:
+              schema: {}
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
+        '422':
+          description: Invalid phone number format
+  /v0/me/phone:resend:
+    post:
+      tags:
+      - users
+      summary: My Phone Resend
+      description: Resends the phone registration code
+      operationId: my_phone_resend
+      responses:
+        '202':
+          description: Phone code resent
+          content:
+            application/json:
+              schema: {}
+        '400':
+          description: No pending phone registration found
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
+  /v0/me/phone:confirm:
+    post:
+      tags:
+      - users
+      summary: My Phone Confirm
+      description: Confirms the phone registration
+      operationId: my_phone_confirm
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyPhoneConfirm'
+        required: true
+      responses:
+        '204':
+          description: Phone registration confirmed
+        '400':
+          description: No pending registration or invalid code
+        '401':
+          description: Authentication required
+        '403':
+          description: Insufficient permissions
+        '422':
+          description: Invalid confirmation code format
   /v0/me/preferences/{preference_id}:
     patch:
       tags:
@@ -10515,11 +10583,11 @@ components:
           title: Error
       type: object
       title: Envelope[MyGroupsGet]
-    Envelope_MyProfileGet_:
+    Envelope_MyProfileRestGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/MyProfileGet'
+          - $ref: '#/components/schemas/MyProfileRestGet'
           - type: 'null'
         error:
           anyOf:
@@ -10527,7 +10595,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[MyProfileGet]
+      title: Envelope[MyProfileRestGet]
     Envelope_MyTokenGet_:
       properties:
         data:
@@ -13030,7 +13098,65 @@ components:
       - name
       - allowed
       title: MyPermissionGet
-    MyProfileGet:
+    MyPhoneConfirm:
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Za-z0-9]+$
+          title: Code
+          description: Alphanumeric confirmation code
+      type: object
+      required:
+      - code
+      title: MyPhoneConfirm
+    MyPhoneRegister:
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          title: Phone
+          description: Phone number to register
+      type: object
+      required:
+      - phone
+      title: MyPhoneRegister
+    MyProfilePrivacyGet:
+      properties:
+        hideUsername:
+          type: boolean
+          title: Hideusername
+        hideFullname:
+          type: boolean
+          title: Hidefullname
+        hideEmail:
+          type: boolean
+          title: Hideemail
+      type: object
+      required:
+      - hideUsername
+      - hideFullname
+      - hideEmail
+      title: MyProfilePrivacyGet
+    MyProfilePrivacyPatch:
+      properties:
+        hideUsername:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hideusername
+        hideFullname:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hidefullname
+        hideEmail:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hideemail
+      type: object
+      title: MyProfilePrivacyPatch
+    MyProfileRestGet:
       properties:
         id:
           type: integer
@@ -13059,6 +13185,11 @@ components:
           type: string
           format: email
           title: Login
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
         role:
           type: string
           enum:
@@ -13102,8 +13233,8 @@ components:
       - role
       - privacy
       - preferences
-      title: MyProfileGet
-    MyProfilePatch:
+      title: MyProfileRestGet
+    MyProfileRestPatch:
       properties:
         first_name:
           anyOf:
@@ -13129,46 +13260,7 @@ components:
           - $ref: '#/components/schemas/MyProfilePrivacyPatch'
           - type: 'null'
       type: object
-      title: MyProfilePatch
-      example:
-        first_name: Pedro
-        last_name: Crespo
-    MyProfilePrivacyGet:
-      properties:
-        hideUsername:
-          type: boolean
-          title: Hideusername
-        hideFullname:
-          type: boolean
-          title: Hidefullname
-        hideEmail:
-          type: boolean
-          title: Hideemail
-      type: object
-      required:
-      - hideUsername
-      - hideFullname
-      - hideEmail
-      title: MyProfilePrivacyGet
-    MyProfilePrivacyPatch:
-      properties:
-        hideUsername:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Hideusername
-        hideFullname:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Hidefullname
-        hideEmail:
-          anyOf:
-          - type: boolean
-          - type: 'null'
-          title: Hideemail
-      type: object
-      title: MyProfilePrivacyPatch
+      title: MyProfileRestPatch
     MyTokenCreate:
       properties:
         service:
