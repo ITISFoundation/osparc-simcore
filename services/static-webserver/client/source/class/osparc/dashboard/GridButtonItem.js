@@ -88,9 +88,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           break;
         case "avatar-group": {
           const maxWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.PADDING * 2;
-          control = new osparc.ui.basic.AvatarGroup(24, "left", maxWidth).set({
-            paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
-          });
+          control = new osparc.ui.basic.AvatarGroup(24, "left", maxWidth);
           this.getChildControl("body").addAt(control, this.self().BODY_POS.AVATAR_GROUP, {
             flex: 1,
           });
@@ -99,8 +97,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4)).set({
             anonymous: true,
-            paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
-            paddingRight: osparc.dashboard.GridButtonBase.PADDING,
+            alignY: "bottom",
           });
           this.getChildControl("body").addAt(control, this.self().BODY_POS.TAGS);
           break;

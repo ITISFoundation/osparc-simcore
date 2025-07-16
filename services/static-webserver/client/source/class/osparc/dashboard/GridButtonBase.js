@@ -43,8 +43,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
   statics: {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
-    PADDING: 8,
-    SPACING_IN: 5,
+    PADDING: 6,
     SPACING: 15,
     THUMBNAIL_SIZE: 50,
     POS: {
@@ -120,7 +119,6 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       switch (id) {
         case "main-layout": {
           const grid = new qx.ui.layout.Grid();
-          grid.setSpacing(this.self().SPACING_IN);
           grid.setRowFlex(this.self().POS.BODY.row, 1);
           grid.setColumnFlex(0, 1);
 
@@ -166,7 +164,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         }
         case "body":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
+            padding: this.self().PADDING,
+            alignY: "bottom",
+          });
           break;
         case "footer": {
           const fGrid = new qx.ui.layout.Grid();
@@ -174,7 +175,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           fGrid.setColumnFlex(this.self().FPOS.MODIFIED.row, 1);
           control = new qx.ui.container.Composite().set({
             backgroundColor: "background-card-overlay",
-            padding: this.self().PADDING - 2,
+            padding: this.self().PADDING,
             maxWidth: this.self().ITEM_WIDTH,
             maxHeight: this.self().ITEM_HEIGHT
           });
