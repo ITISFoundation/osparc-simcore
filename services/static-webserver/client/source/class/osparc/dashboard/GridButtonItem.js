@@ -251,25 +251,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       const user = this.__createOwner(value);
       label.setValue(user);
       label.setVisibility(value ? "visible" : "excluded");
-
-      // remove this, testing purposes
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() && this.getResourceType() === "study") {
-        const avatarGroup = this.getChildControl("avatar-group");
-        const allUsers = [
-          { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
-          { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
-          { name: "Charlie", avatar: "https://i.pravatar.cc/150?img=3" },
-          { name: "Dana", avatar: "https://i.pravatar.cc/150?img=4" },
-          { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
-          { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
-        ];
-        // Random number of users between 1 and 6
-        const randomCount = Math.floor(Math.random() * 6) + 1;
-        // Shuffle the array and take the first randomCount users
-        const shuffled = allUsers.sort(() => 0.5 - Math.random());
-        const randomUsers = shuffled.slice(0, randomCount);
-        avatarGroup.setUsers(randomUsers);
-      }
     },
 
     _applyAccessRights: function(value) {

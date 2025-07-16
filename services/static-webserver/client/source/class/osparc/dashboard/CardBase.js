@@ -775,8 +775,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
-        if (projectInUse && "OPENED" === state["locked"]["status"]) {
+        if (projectInUse && state["locked"]["status"] === "OPENED") {
           this.__showWhoIsIn(state["locked"]["owner"]);
+        } else {
+          this.__showWhoIsIn(null);
         }
       } else {
         this.setBlocked(projectInUse ? "IN_USE" : false);
@@ -863,9 +865,27 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __showWhoIsIn: function(whoIsIn) {
-      this.set({
-        toolTipText: String(whoIsIn["user_id"])
-      });
+      let users = [];
+      if (whoIsIn) {
+        // remove this, testing purposes
+        const allUsers = [
+          { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
+          { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
+          { name: "Charlie", avatar: "https://i.pravatar.cc/150?img=3" },
+          { name: "Dana", avatar: "https://i.pravatar.cc/150?img=4" },
+          { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
+          { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
+        ];
+        // Random number of users between 1 and 6
+        const randomCount = Math.floor(Math.random() * 6) + 1;
+        // Shuffle the array and take the first randomCount users
+        const shuffled = allUsers.sort(() => 0.5 - Math.random());
+        users = shuffled.slice(0, randomCount);
+      }
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() && this.getResourceType() === "study") {
+        const avatarGroup = this.getChildControl("avatar-group");
+        avatarGroup.setUsers(users);
+      }
     },
 
 
