@@ -8,8 +8,8 @@ from packaging.version import Version
 from pydantic import TypeAdapter
 
 _APP_NAME_PATTERN = re.compile(
-    r"^[a-z]+(-[a-z]+)*$"
-)  # matches lowercase string with words separated by dashes (no whitespace)
+    r"^[a-z0-9]+(-[a-z0-9]+)*$"
+)  # matches lowercase string with words and non-negative integers separated by dashes (no whitespace)
 
 
 class PackageInfo:
