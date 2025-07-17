@@ -132,8 +132,7 @@ class ProjectShareState(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra=_update_json_schema_extra,
+        extra="forbid", json_schema_extra=_update_json_schema_extra
     )
 
     @model_validator(mode="after")
