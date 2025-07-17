@@ -1,10 +1,21 @@
 from collections.abc import Generator
 from typing import Final
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationInfo, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationInfo,
+    field_validator,
+)
 
 from .basic_types import PortInt
-from .osparc_variable_identifier import OsparcVariableIdentifier, raise_if_unresolved
+from .osparc_variable_identifier import (
+    OsparcVariableIdentifier,
+    raise_if_unresolved,
+)
+from .utils.types import get_types_from_annotated_union
 
 # Cloudflare DNS server address
 DEFAULT_DNS_SERVER_ADDRESS: Final[str] = "1.1.1.1"  # NOSONAR
@@ -20,13 +31,15 @@ class _PortRange(BaseModel):
     @field_validator("upper")
     @classmethod
     def lower_less_than_upper(cls, v, info: ValidationInfo) -> PortInt:
-        if isinstance(v, OsparcVariableIdentifier):
+        if isinstance(v, get_types_from_annotated_union(OsparcVariableIdentifier)):
             return v  # type: ignore # bypass validation if unresolved
 
         upper = v
         lower: PortInt | OsparcVariableIdentifier | None = info.data.get("lower")
 
-        if lower and isinstance(lower, OsparcVariableIdentifier):
+        if lower and isinstance(
+            lower, get_types_from_annotated_union(OsparcVariableIdentifier)
+        ):
             return v  # type: ignore # bypass validation if unresolved
 
         if lower is None or lower >= upper:

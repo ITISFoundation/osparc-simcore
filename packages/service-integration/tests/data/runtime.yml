@@ -11,10 +11,6 @@ settings:
     type: string
     value:
       - node.platform.os == linux
-  # # https://docs.docker.com/compose/compose-file/compose-file-v3/#environment
-  # - name: environment
-  #   type: string
-  #     -
 paths-mapping:
   inputs_path: "/config/workspace/inputs"
   outputs_path: "/config/workspace/outputs"

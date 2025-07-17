@@ -7,6 +7,7 @@ from models_library.basic_types import ConstrainedStr
 from pydantic import BaseModel, Discriminator, PositiveInt, Tag
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
+from .utils.types import get_types_from_annotated_union
 
 T = TypeVar("T")
 
@@ -89,7 +90,7 @@ def raise_if_unresolved(var: OsparcVariableIdentifier | T) -> T:
     Raises:
         TypeError: if the the OsparcVariableIdentifier was unresolved
     """
-    if isinstance(var, OsparcVariableIdentifier):
+    if isinstance(var, get_types_from_annotated_union(OsparcVariableIdentifier)):
         raise UnresolvedOsparcVariableIdentifierError(value=var)
     return var
 
@@ -116,7 +117,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
     ```
     """
 
-    if isinstance(obj, OsparcVariableIdentifier):
+    if isinstance(obj, get_types_from_annotated_union(OsparcVariableIdentifier)):
         if obj.name in osparc_variables:
             return deepcopy(osparc_variables[obj.name])  # type: ignore
         if obj.default_value is not None:
@@ -154,7 +155,7 @@ def raise_if_unresolved_osparc_variable_identifier_found(obj: Any) -> None:
         UnresolvedOsparcVariableIdentifierError: if not all instances of
         `OsparcVariableIdentifier` were replaced
     """
-    if isinstance(obj, OsparcVariableIdentifier):
+    if isinstance(obj, get_types_from_annotated_union(OsparcVariableIdentifier)):
         raise_if_unresolved(obj)
     elif isinstance(obj, dict):
         for key, value in obj.items():
