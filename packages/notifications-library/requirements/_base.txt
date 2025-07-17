@@ -77,8 +77,6 @@ orjson==3.10.15
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/_base.in
-phonenumbers==9.0.9
-    # via -r requirements/../../../packages/models-library/requirements/_base.in
 propcache==0.3.0
     # via yarl
 psycopg2-binary==2.9.10

@@ -488,12 +488,6 @@ pamqp==3.3.0
     # via aiormq
 parse==1.20.2
     # via -r requirements/_base.in
-phonenumbers==9.0.9
-    # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 pint==0.24.4
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==4.3.6
