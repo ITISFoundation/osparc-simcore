@@ -39,22 +39,19 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 )
 
 
-def validate_user_status(*, user: dict, support_email: str):
+def validate_user_status(*, user_status: str, user_role: str, support_email: str):
     """
 
     Raises:
         web.HTTPUnauthorized
     """
-    assert "role" in user  # nosec
-
-    user_status: str = user["status"]
 
     if user_status == DELETED:
         raise web.HTTPUnauthorized(
             text=MSG_USER_DELETED.format(support_email=support_email),
         )  # 401
 
-    if user_status == BANNED or user["role"] == ANONYMOUS:
+    if user_status == BANNED or user_role == ANONYMOUS:
         raise web.HTTPUnauthorized(
             text=MSG_USER_BANNED.format(support_email=support_email),
         )  # 401

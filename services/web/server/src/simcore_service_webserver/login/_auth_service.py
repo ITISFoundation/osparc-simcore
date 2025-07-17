@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, TypedDict
 
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -12,14 +12,40 @@ from ..groups import api as groups_service
 from ..products.models import Product
 from ..security import security_service
 from . import _login_service
-from ._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from .constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
 
 
-async def get_user_by_email(app: web.Application, *, email: str) -> dict[str, Any]:
-    db: AsyncpgStorage = get_plugin_storage(app)
-    user = await db.get_user({"email": email})
-    return dict(user) if user else {}
+class UserInfoDict(TypedDict):
+    id: int
+    name: str
+    email: str
+    role: str
+    status: str
+    first_name: str | None
+    last_name: str | None
+    phone: str | None
+
+
+async def get_user_by_email_or_none(
+    app: web.Application, *, email: str
+) -> UserInfoDict | None:
+
+    asyncpg_engine = get_asyncpg_engine(app)
+    repo = UsersRepo(asyncpg_engine)
+    user_row = await repo.get_user_by_email_or_none(email=email.lower())
+    if user_row is None:
+        return None
+
+    return UserInfoDict(
+        id=user_row.id,
+        name=user_row.name,
+        email=user_row.email,
+        role=user_row.role.value,
+        status=user_row.status.value,
+        first_name=user_row.first_name,
+        last_name=user_row.last_name,
+        phone=user_row.phone,
+    )
 
 
 async def create_user(
@@ -42,25 +68,38 @@ async def create_user(
             expires_at=expires_at,
         )
         await repo.link_and_update_user_from_pre_registration(
-            conn, new_user_id=user.id, new_user_email=user.email
+            conn,
+            new_user_id=user.id,
+            new_user_email=user.email,
+            # FIXME: must fit product_name!!
         )
     return dict(user._mapping)  # pylint: disable=protected-access # noqa: SLF001
 
 
-async def check_authorized_user_credentials_or_raise(
-    user: dict[str, Any],
-    password: str,
-    product: Product,
-) -> dict:
-
+def check_not_null_user(user: UserInfoDict | None) -> UserInfoDict:
     if not user:
         raise web.HTTPUnauthorized(
             text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
+    return user
 
-    _login_service.validate_user_status(user=user, support_email=product.support_email)
 
-    if not security_service.check_password(password, user["password_hash"]):
+async def check_authorized_user_credentials_or_raise(
+    user: UserInfoDict | None,
+    password: str,
+    password_hash: str,
+    product: Product,
+) -> UserInfoDict:
+
+    user = check_not_null_user(user)
+
+    _login_service.validate_user_status(
+        user_status=user["status"],
+        user_role=user["role"],
+        support_email=product.support_email,
+    )
+
+    if not security_service.check_password(password, password_hash):
         raise web.HTTPUnauthorized(
             text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
         )
@@ -70,18 +109,17 @@ async def check_authorized_user_credentials_or_raise(
 async def check_authorized_user_in_product_or_raise(
     app: web.Application,
     *,
-    user: dict,
+    user_email: str,
     product: Product,
 ) -> None:
     """Checks whether user is registered in this product"""
-    email = user.get("email", "").lower()
     product_group_id = product.group_id
     assert product_group_id is not None  # nosec
 
     if (
         product_group_id is not None
         and not await groups_service.is_user_by_email_in_group(
-            app, user_email=email, group_id=product_group_id
+            app, user_email=user_email, group_id=product_group_id
         )
     ):
         raise web.HTTPUnauthorized(
