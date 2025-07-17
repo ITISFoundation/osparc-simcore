@@ -72,12 +72,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
                 this.__resourceModel["resourceType"] = resourceData["resourceType"];
                 this.__resourceData["services"] = resourceData["services"];
                 this.__addPages();
-              })
+              });
             break;
           case "function": {
-            this.__resourceModel = new osparc.data.model.Function(latestResourceData);
-            this.__resourceModel["resourceType"] = resourceData["resourceType"];
-            this.__addPages();
+            osparc.store.Services.getStudyServicesMetadata(latestResourceData)
+              .finally(() => {
+                this.__resourceModel = new osparc.data.model.Function(latestResourceData);
+                this.__resourceModel["resourceType"] = resourceData["resourceType"];
+                this.__resourceData["services"] = resourceData["services"];
+                this.__addPages();
+              });
             break;
           }
           case "service": {
