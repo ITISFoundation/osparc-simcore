@@ -84,7 +84,7 @@ async def get_function(request: web.Request) -> web.Response:
 
 
 @routes.patch(
-    "/{VTAG}/functions/{function_id}",
+    f"/{VTAG}/functions/{{function_id}}",
     name="update_function",
 )
 @login_required
