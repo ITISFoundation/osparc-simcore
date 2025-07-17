@@ -8,7 +8,13 @@ from typing import Any, Final
 
 import arrow
 from faststream.exceptions import NackMessage, RejectMessage
-from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange, RabbitRouter
+from faststream.rabbit import (
+    ExchangeType,
+    RabbitBroker,
+    RabbitExchange,
+    RabbitQueue,
+    RabbitRouter,
+)
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.redis import RedisClientSDK
@@ -149,10 +155,14 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         self._global_resources_prefix = f"{calling_module_name}"
 
         self.common_exchange = RabbitExchange(
-            f"{self._global_resources_prefix}_common", type=ExchangeType.DIRECT
+            f"{self._global_resources_prefix}_common",
+            durable=True,
+            type=ExchangeType.DIRECT,
         )
         self.cancellation_exchange = RabbitExchange(
-            f"{self._global_resources_prefix}_cancellation", type=ExchangeType.FANOUT
+            f"{self._global_resources_prefix}_cancellation",
+            durable=True,
+            type=ExchangeType.FANOUT,
         )
 
     def patch_based_deferred_handlers(self) -> None:
@@ -243,8 +253,10 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
                         subclass.is_present.original_is_present  # type: ignore
                     )
 
-    def _get_global_queue_name(self, queue_name: _FastStreamRabbitQueue) -> str:
-        return f"{self._global_resources_prefix}_{queue_name}"
+    def _get_global_queue(self, queue_name: _FastStreamRabbitQueue) -> RabbitQueue:
+        return RabbitQueue(
+            f"{self._global_resources_prefix}_{queue_name}", durable=True
+        )
 
     def __get_subclass(
         self, class_unique_reference: ClassUniqueReference
@@ -259,7 +271,7 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     ) -> None:
         await self.broker.publish(
             task_uid,
-            queue=self._get_global_queue_name(queue),
+            queue=self._get_global_queue(queue),
             exchange=(
                 self.cancellation_exchange
                 if queue == _FastStreamRabbitQueue.MANUALLY_CANCELLED
@@ -569,47 +581,43 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         # pylint:disable=unexpected-keyword-arg
         # pylint:disable=no-value-for-parameter
         self._fs_handle_scheduled = self.router.subscriber(
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.SCHEDULED),
+            queue=self._get_global_queue(_FastStreamRabbitQueue.SCHEDULED),
             exchange=self.common_exchange,
             retry=True,
         )(self._fs_handle_scheduled)
 
         self._fs_handle_submit_task = self.router.subscriber(
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.SUBMIT_TASK),
+            queue=self._get_global_queue(_FastStreamRabbitQueue.SUBMIT_TASK),
             exchange=self.common_exchange,
             retry=True,
         )(self._fs_handle_submit_task)
 
         self._fs_handle_worker = self.router.subscriber(
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.WORKER),
+            queue=self._get_global_queue(_FastStreamRabbitQueue.WORKER),
             exchange=self.common_exchange,
             retry=True,
         )(self._fs_handle_worker)
 
         self._fs_handle_error_result = self.router.subscriber(
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.ERROR_RESULT),
+            queue=self._get_global_queue(_FastStreamRabbitQueue.ERROR_RESULT),
             exchange=self.common_exchange,
             retry=True,
         )(self._fs_handle_error_result)
 
         self._fs_handle_finished_with_error = self.router.subscriber(
-            queue=self._get_global_queue_name(
-                _FastStreamRabbitQueue.FINISHED_WITH_ERROR
-            ),
+            queue=self._get_global_queue(_FastStreamRabbitQueue.FINISHED_WITH_ERROR),
             exchange=self.common_exchange,
             retry=True,
         )(self._fs_handle_finished_with_error)
 
         self._fs_handle_deferred_result = self.router.subscriber(
-            queue=self._get_global_queue_name(_FastStreamRabbitQueue.DEFERRED_RESULT),
+            queue=self._get_global_queue(_FastStreamRabbitQueue.DEFERRED_RESULT),
             exchange=self.common_exchange,
             retry=True,
         )(self._fs_handle_deferred_result)
 
         self._fs_handle_manually_cancelled = self.router.subscriber(
-            queue=self._get_global_queue_name(
-                _FastStreamRabbitQueue.MANUALLY_CANCELLED
-            ),
+            queue=self._get_global_queue(_FastStreamRabbitQueue.MANUALLY_CANCELLED),
             exchange=self.cancellation_exchange,
             retry=True,
         )(self._fs_handle_manually_cancelled)
