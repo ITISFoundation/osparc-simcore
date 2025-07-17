@@ -1,24 +1,20 @@
+import os
 from copy import deepcopy
-from typing import Any, TypeVar
+from typing import Annotated, Any, Final, TypeVar
 
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.basic_types import ConstrainedStr
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Discriminator, PositiveInt, Tag
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 
 T = TypeVar("T")
 
 
-class OsparcVariableIdentifier(ConstrainedStr):
+class _BaseOsparcVariableIdentifier(ConstrainedStr):
     # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
     # NOTE: When dealing with str types, to avoid unexpected behavior, the following
     # order is suggested `OsparcVariableIdentifier | str`
-    # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
-    pattern = (
-        rf"^\${{1,2}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$"
-    )
 
     def _get_without_template_markers(self) -> str:
         # $VAR
@@ -41,6 +37,40 @@ class OsparcVariableIdentifier(ConstrainedStr):
     def default_value(self) -> str | None:
         parts = self._get_without_template_markers().split(":-")
         return parts[1] if len(parts) > 1 else None
+
+    @staticmethod
+    def get_pattern(max_dollars: PositiveInt) -> str:
+        # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
+        return rf"^\${{1,{max_dollars}}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$"
+
+
+class PlatformOsparcVariableIdentifier(_BaseOsparcVariableIdentifier):
+    pattern = _BaseOsparcVariableIdentifier.get_pattern(max_dollars=2)
+
+
+class OoilOsparcVariableIdentifier(_BaseOsparcVariableIdentifier):
+    pattern = _BaseOsparcVariableIdentifier.get_pattern(max_dollars=4)
+
+
+_PLATFORM: Final[str] = "platform"
+_OOIL_VERSION: Final[str] = "ooil-version"
+
+
+def _get_discriminator_value(v: Any) -> str:
+    _ = v
+    if os.environ.get("ENABLE_OOIL_OSPARC_VARIABLE_IDENTIFIER", None):
+        return _OOIL_VERSION
+
+    return _PLATFORM
+
+
+OsparcVariableIdentifier = Annotated[
+    (
+        Annotated[PlatformOsparcVariableIdentifier, Tag(_PLATFORM)]
+        | Annotated[OoilOsparcVariableIdentifier, Tag(_OOIL_VERSION)]
+    ),
+    Discriminator(_get_discriminator_value),
+]
 
 
 class UnresolvedOsparcVariableIdentifierError(OsparcErrorMixin, TypeError):
