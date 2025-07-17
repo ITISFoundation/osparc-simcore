@@ -3,13 +3,14 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyProfilePatch
+from models_library.api_schemas_webserver.users import MyProfileRestPatch
+from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupID
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName
-from models_library.users import UserBillingDetails, UserID, UserPermission
+from models_library.users import MyProfile, UserBillingDetails, UserID, UserPermission
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_groups_extra_properties import (
@@ -22,10 +23,10 @@ from ..user_preferences import user_preferences_service
 from . import _users_repository
 from ._models import (
     FullNameDict,
-    ToUserUpdateDB,
     UserCredentialsTuple,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
+    UserModelAdapter,
 )
 from .exceptions import (
     MissingGroupExtraPropertiesForProductError,
@@ -249,7 +250,7 @@ async def update_expired_users(app: web.Application) -> list[UserID]:
 
 async def get_my_profile(
     app: web.Application, *, user_id: UserID, product_name: ProductName
-):
+) -> tuple[MyProfile, AggregatedPreferences]:
     """Caller and target user is the same. Privacy settings do not apply here
 
     :raises UserNotFoundError:
@@ -276,11 +277,31 @@ async def update_my_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: MyProfilePatch,
+    update: MyProfileRestPatch,
 ) -> None:
 
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,
-        update=ToUserUpdateDB.from_api(update),
+        updated_values=UserModelAdapter.from_rest_schema_model(update).to_db_values(),
+    )
+
+
+async def update_user_phone(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    phone: str,
+) -> None:
+    """Update user's phone number after successful verification
+
+    Args:
+        app: Web application instance
+        user_id: ID of the user whose phone to update
+        phone: Verified phone number to set
+    """
+    await _users_repository.update_user_profile(
+        app,
+        user_id=user_id,
+        updated_values={"phone": phone},
     )
