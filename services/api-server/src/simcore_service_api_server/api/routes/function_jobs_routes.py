@@ -306,8 +306,14 @@ async def function_job_outputs(
     "/{function_job_id:uuid}/log",
     response_model=TaskGet,
     responses={**_COMMON_FUNCTION_JOB_ERROR_RESPONSES},
+    description=create_route_description(
+        base="Get function job logs task",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
+        ],
+    ),
 )
-async def start_function_job_logs(
+async def get_function_job_logs_task(
     function_job_id: FunctionJobID,
     app: Annotated[FastAPI, Depends(get_app)],
     job_service: Annotated[JobService, Depends(get_job_service)],
