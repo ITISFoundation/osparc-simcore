@@ -1619,7 +1619,7 @@ async def _get_project_share_state(
 
     return ProjectShareState(
         status=ProjectStatus.OPENED,
-        locked=app_settings.WEBSERVER_REALTIME_COLLABORATION is None,
+        locked=bool(app_settings.WEBSERVER_REALTIME_COLLABORATION is None),
         current_user_groupids=await limited_gather(
             *[
                 users_service.get_user_primary_group_id(app, user_id=uid)

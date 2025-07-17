@@ -146,11 +146,17 @@ class ProjectShareState(BaseModel):
 
     @model_validator(mode="after")
     def check_model_valid(self) -> Self:
-        self.locked = self.status in [
-            ProjectStatus.CLONING,
-            ProjectStatus.EXPORTING,
-            ProjectStatus.MAINTAINING,
-        ]
+        if (
+            self.status
+            in [
+                ProjectStatus.CLONING,
+                ProjectStatus.EXPORTING,
+                ProjectStatus.MAINTAINING,
+            ]
+            and not self.locked
+        ):
+            msg = f"Project is {self.status=}, but it is not locked"
+            raise ValueError(msg)
         if self.locked and not self.current_user_groupids:
             msg = "If the project is locked, the current_users list must contain at least the lock owner"
             raise ValueError(msg)
