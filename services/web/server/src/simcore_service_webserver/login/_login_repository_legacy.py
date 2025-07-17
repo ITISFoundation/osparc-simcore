@@ -142,14 +142,14 @@ class AsyncpgStorage:
     #
 
     async def delete_confirmation_and_user(
-        self, user: dict[str, Any], confirmation: ConfirmationTokenDict
+        self, user_id: int, confirmation: ConfirmationTokenDict
     ):
         async with self.pool.acquire() as conn, conn.transaction():
             await _login_repository_legacy_sql.delete(
                 conn, self.confirm_tbl, {"code": confirmation["code"]}
             )
             await _login_repository_legacy_sql.delete(
-                conn, self.user_tbl, {"id": user["id"]}
+                conn, self.user_tbl, {"id": user_id}
             )
 
     async def delete_confirmation_and_update_user(

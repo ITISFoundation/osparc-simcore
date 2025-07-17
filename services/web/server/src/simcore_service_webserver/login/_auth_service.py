@@ -85,9 +85,10 @@ def check_not_null_user(user: UserInfoDict | None) -> UserInfoDict:
 
 
 async def check_authorized_user_credentials_or_raise(
+    app: web.Application,
     user: UserInfoDict | None,
+    *,
     password: str,
-    password_hash: str,
     product: Product,
 ) -> UserInfoDict:
 
@@ -98,6 +99,9 @@ async def check_authorized_user_credentials_or_raise(
         user_role=user["role"],
         support_email=product.support_email,
     )
+
+    repo = UsersRepo(get_asyncpg_engine(app))
+    password_hash = await repo.get_password_hash(user_id=user["id"])
 
     if not security_service.check_password(password, password_hash):
         raise web.HTTPUnauthorized(

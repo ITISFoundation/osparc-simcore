@@ -10,10 +10,8 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
-from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
-from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_web
@@ -81,11 +79,10 @@ async def login(request: web.Request):
 
     user = _auth_service.check_not_null_user(user)
 
-    repo = UsersRepo(get_asyncpg_engine(request.app))
     user = await _auth_service.check_authorized_user_credentials_or_raise(
+        request.app,
         user,
         password=login_data.password.get_secret_value(),
-        password_hash=await repo.get_password_hash(user_id=user["id"]),
         product=product,
     )
     await _auth_service.check_authorized_user_in_product_or_raise(

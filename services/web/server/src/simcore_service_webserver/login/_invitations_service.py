@@ -146,7 +146,7 @@ async def check_other_registrations(
                         await db.delete_user(user=dict(user))
                     else:
                         await db.delete_confirmation_and_user(
-                            user=dict(user), confirmation=_confirmation
+                            user_id=user["id"], confirmation=_confirmation
                         )
 
                     _logger.warning(

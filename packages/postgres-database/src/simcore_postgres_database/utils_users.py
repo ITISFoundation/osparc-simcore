@@ -272,6 +272,14 @@ class UsersRepo:
             )
             return result.one_or_none()
 
+    async def update_user_phone(
+        self, connection: AsyncConnection | None = None, *, user_id: int, phone: str
+    ) -> None:
+        async with transaction_context(self._engine, connection) as conn:
+            await conn.execute(
+                users.update().where(users.c.id == user_id).values(phone=phone)
+            )
+
     async def is_email_used(
         self, connection: AsyncConnection | None = None, *, email: str
     ) -> bool:
