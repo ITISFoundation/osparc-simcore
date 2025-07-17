@@ -35,7 +35,12 @@ from ..projects import (
     ProjectType,
 )
 from ..projects_access import AccessRights, GroupIDStr
-from ..projects_state import ProjectState, ProjectStatus
+from ..projects_state import (
+    ProjectShareCurrentUserGroupIDs,
+    ProjectShareLocked,
+    ProjectShareStatus,
+    ProjectStateRunningState,
+)
 from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -106,20 +111,14 @@ class ProjectCopyOverride(InputSchema):
 
 
 class ProjectShareStateOutputSchema(OutputSchema):
-    status: Annotated[ProjectStatus, Field(description="The status of the project")]
-    locked: Annotated[bool, Field(description="True if the project is locked")]
-    current_user_groupids: Annotated[
-        list[GroupID],
-        Field(
-            description="Current users in the project (if the project is locked, the list contains only the lock owner)"
-        ),
-    ]
+    status: ProjectShareStatus
+    locked: ProjectShareLocked
+    current_user_groupids: ProjectShareCurrentUserGroupIDs
 
 
-class ProjectStateOutputSchema(ProjectState, OutputSchema):
-    share_state: Annotated[
-        ProjectShareStateOutputSchema, Field(description="The project lock state")
-    ]
+class ProjectStateOutputSchema(OutputSchema):
+    share_state: ProjectShareStateOutputSchema
+    state: ProjectStateRunningState
 
 
 class ProjectGet(OutputSchema):
