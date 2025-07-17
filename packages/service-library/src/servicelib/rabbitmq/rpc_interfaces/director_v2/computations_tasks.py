@@ -1,5 +1,6 @@
 # pylint: disable=too-many-arguments
 import logging
+from typing import Final
 
 from models_library.api_schemas_directorv2 import (
     DIRECTOR_V2_RPC_NAMESPACE,
@@ -17,6 +18,10 @@ _logger = logging.getLogger(__name__)
 
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
 
+_GET_COMPUTATION_TASK_LOG_FILE_IDS: Final[RPCMethodName] = (
+    _RPC_METHOD_NAME_ADAPTER.validate_python("get_computation_task_log_file_ids")
+)
+
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def get_computation_task_log_file_ids(
@@ -28,7 +33,7 @@ async def get_computation_task_log_file_ids(
     """
     result = await rabbitmq_rpc_client.request(
         DIRECTOR_V2_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python("get_computation_task_log_file_ids"),
+        _GET_COMPUTATION_TASK_LOG_FILE_IDS,
         project_id=project_id,
     )
     assert isinstance(result, list)  # nosec
