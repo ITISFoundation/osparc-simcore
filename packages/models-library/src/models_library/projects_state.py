@@ -3,8 +3,9 @@ Models both project and node states
 """
 
 from enum import Enum, unique
-from typing import Annotated
+from typing import Annotated, Self
 
+from models_library.groups import GroupID
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -13,6 +14,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.config import JsonDict
 
 from .projects_access import Owner
 
@@ -77,7 +79,71 @@ class ProjectStatus(str, Enum):
     EXPORTING = "EXPORTING"
     OPENING = "OPENING"
     OPENED = "OPENED"
-    MAINTAINING = "MAINTAINING"
+    MAINTAINING = "MAINTAINING"  # used for maintenance tasks, like removing EFS data
+
+
+class ProjectShareState(BaseModel):
+    status: Annotated[ProjectStatus, Field(description="The status of the project")]
+    locked: Annotated[bool, Field(description="True if the project is locked")]
+    current_users: Annotated[
+        list[GroupID],
+        Field(
+            description="Current users in the project (if the project is locked, the list contains only the lock owner)"
+        ),
+    ]
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "status": ProjectStatus.CLOSED,
+                        "locked": False,
+                        "current_users": [],
+                    },
+                    {
+                        "status": ProjectStatus.OPENING,
+                        "locked": False,
+                        "current_users": [
+                            "7",
+                            "15",
+                            "666",
+                        ],
+                    },
+                    {
+                        "status": ProjectStatus.OPENED,
+                        "locked": False,
+                        "current_users": [
+                            "7",
+                            "15",
+                            "666",
+                        ],
+                    },
+                    {
+                        "status": ProjectStatus.CLONING,
+                        "locked": True,
+                        "current_users": [
+                            "666",
+                        ],
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra=_update_json_schema_extra,
+    )
+
+    @model_validator(mode="after")
+    def ensure_locked_state(self) -> Self:
+        self.locked = self.status in [
+            ProjectStatus.CLONING,
+            ProjectStatus.EXPORTING,
+            ProjectStatus.MAINTAINING,
+        ]
+        return self
 
 
 class ProjectLocked(BaseModel):
