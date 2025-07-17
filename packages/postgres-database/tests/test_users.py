@@ -143,7 +143,8 @@ async def test_new_user(
         "status": UserStatus.ACTIVE,
         "expires_at": datetime.utcnow(),
     }
-    new_user = await UsersRepo.new_user(asyncpg_engine, **data)
+    repo = UsersRepo(asyncpg_engine)
+    new_user = await repo.new_user(**data)
 
     assert new_user.email == data["email"]
     assert new_user.status == data["status"]
@@ -153,7 +154,7 @@ async def test_new_user(
     assert _generate_username_from_email(other_email) == new_user.name
     other_data = {**data, "email": other_email}
 
-    other_user = await UsersRepo.new_user(asyncpg_engine, **other_data)
+    other_user = await repo.new_user(**other_data)
     assert other_user.email != new_user.email
     assert other_user.name != new_user.name
 

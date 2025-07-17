@@ -55,10 +55,11 @@ def generate_alternative_username(username: str) -> str:
 
 
 class UsersRepo:
+    def __init__(self, engine: AsyncEngine):
+        self._engine = engine
 
-    @staticmethod
     async def new_user(
-        engine: AsyncEngine,
+        self,
         connection: AsyncConnection | None = None,
         *,
         email: str,
@@ -78,14 +79,14 @@ class UsersRepo:
         user_id = None
         while user_id is None:
             try:
-                async with transaction_context(engine, connection) as conn:
+                async with transaction_context(self._engine, connection) as conn:
                     user_id = await conn.scalar(
                         users.insert().values(**data).returning(users.c.id)
                     )
             except IntegrityError:
                 data["name"] = generate_alternative_username(data["name"])
 
-        async with pass_or_acquire_connection(engine, connection) as conn:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
                 sa.select(
                     users.c.id,
@@ -97,9 +98,9 @@ class UsersRepo:
             )
             return result.one()
 
-    @staticmethod
     async def link_and_update_user_from_pre_registration(
-        connection: AsyncConnection,
+        self,
+        connection: AsyncConnection | None = None,
         *,
         new_user_id: int,
         new_user_email: str,
@@ -113,48 +114,51 @@ class UsersRepo:
         assert new_user_email  # nosec
         assert new_user_id > 0  # nosec
 
-        # link both tables first
-        result = await connection.execute(
-            users_pre_registration_details.update()
-            .where(users_pre_registration_details.c.pre_email == new_user_email)
-            .values(user_id=new_user_id)
-        )
-
-        if update_user:
-            # COPIES some pre-registration details to the users table
-            pre_columns = (
-                users_pre_registration_details.c.pre_first_name,
-                users_pre_registration_details.c.pre_last_name,
-                # NOTE: pre_phone is not copied since it has to be validated. Otherwise, if
-                # phone is wrong, currently user won't be able to login!
+        async with transaction_context(self._engine, connection) as conn:
+            # link both tables first
+            result = await conn.execute(
+                users_pre_registration_details.update()
+                .where(users_pre_registration_details.c.pre_email == new_user_email)
+                .values(user_id=new_user_id)
             )
 
-            assert {c.name for c in pre_columns} == {  # nosec
-                c.name
-                for c in users_pre_registration_details.columns
-                if c
-                not in (
-                    users_pre_registration_details.c.pre_email,
-                    users_pre_registration_details.c.pre_phone,
+            if update_user:
+                # COPIES some pre-registration details to the users table
+                pre_columns = (
+                    users_pre_registration_details.c.pre_first_name,
+                    users_pre_registration_details.c.pre_last_name,
+                    # NOTE: pre_phone is not copied since it has to be validated. Otherwise, if
+                    # phone is wrong, currently user won't be able to login!
                 )
-                and c.name.startswith("pre_")
-            }, "Different pre-cols detected. This code might need an update update"
 
-            result = await connection.execute(
-                sa.select(*pre_columns).where(
-                    users_pre_registration_details.c.pre_email == new_user_email
-                )
-            )
-            if pre_registration_details_data := result.first():
-                # NOTE: could have many products! which to use?
-                await connection.execute(
-                    users.update()
-                    .where(users.c.id == new_user_id)
-                    .values(
-                        first_name=pre_registration_details_data.pre_first_name,  # type: ignore[union-attr]
-                        last_name=pre_registration_details_data.pre_last_name,  # type: ignore[union-attr]
+                assert {c.name for c in pre_columns} == {  # nosec
+                    c.name
+                    for c in users_pre_registration_details.columns
+                    if c
+                    not in (
+                        users_pre_registration_details.c.pre_email,
+                        users_pre_registration_details.c.pre_phone,
+                    )
+                    and c.name.startswith("pre_")
+                }, "Different pre-cols detected. This code might need an update update"
+
+                result = await conn.execute(
+                    sa.select(*pre_columns).where(
+                        users_pre_registration_details.c.pre_email
+                        == new_user_email
+                        # FIXME: product_name!
                     )
                 )
+                if pre_registration_details_data := result.first():
+                    # NOTE: could have many products! which to use?
+                    await conn.execute(
+                        users.update()
+                        .where(users.c.id == new_user_id)
+                        .values(
+                            first_name=pre_registration_details_data.pre_first_name,  # type: ignore[union-attr]
+                            last_name=pre_registration_details_data.pre_last_name,  # type: ignore[union-attr]
+                        )
+                    )
 
     @staticmethod
     def get_billing_details_query(user_id: int):
