@@ -275,6 +275,15 @@ async def batch_get_project_name(
     return [name if name else "Unknown" for name in get_project_names]
 
 
+async def batch_get_projects(
+    app: web.Application, project_uuids: list[ProjectID]
+) -> list[Project]:
+    return await _projects_repository.batch_get_projects(
+        app=app,
+        project_uuids=project_uuids,
+    )
+
+
 #
 # UPDATE project -----------------------------------------------------
 #
