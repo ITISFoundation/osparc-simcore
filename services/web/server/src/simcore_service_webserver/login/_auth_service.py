@@ -32,16 +32,16 @@ async def create_user(
 ) -> dict[str, Any]:
 
     asyncpg_engine = get_asyncpg_engine(app)
+    repo = UsersRepo(asyncpg_engine)
     async with transaction_context(asyncpg_engine) as conn:
-        user = await UsersRepo.new_user(
-            asyncpg_engine,
+        user = await repo.new_user(
             conn,
             email=email,
             password_hash=security_service.encrypt_password(password),
             status=status_upon_creation,
             expires_at=expires_at,
         )
-        await UsersRepo.link_and_update_user_from_pre_registration(
+        await repo.link_and_update_user_from_pre_registration(
             conn, new_user_id=user.id, new_user_email=user.email
         )
     return dict(user._mapping)  # pylint: disable=protected-access # noqa: SLF001

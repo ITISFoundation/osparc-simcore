@@ -41,7 +41,7 @@ async def user(
 
 
 async def test_users_repo_get(asyncpg_engine: AsyncEngine, user: dict[str, Any]):
-    repo = UsersRepo()
+    repo = UsersRepo(asyncpg_engine)
 
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         assert await repo.get_email(connection, user_id=user["id"]) == user["email"]
