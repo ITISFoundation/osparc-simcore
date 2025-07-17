@@ -6,6 +6,7 @@
 
 
 import pytest
+from faker import Faker
 from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.faker_factories import random_phone_number
 from simcore_service_webserver.users._controller.rest._rest_schemas import (
@@ -13,16 +14,19 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
     PhoneNumberStr,
 )
 
+multiple_format_valid_phone_numbers = [
+    "+41763456789",
+    "+19104630364",
+    "+1 301-304-4567",
+] + [
+    # tests hand-made random_phone_number
+    # WARNING: keed constant since pytest-xdist will run this test in parallel
+    random_phone_number(Faker(seed=42))
+    for _ in range(6)
+]
 
-@pytest.mark.parametrize(
-    "phone",
-    ["+41763456789", "+19104630364", "+1 301-304-4567"]
-    + [
-        # tests hand-made random_phone_number
-        random_phone_number()
-        for _ in range(6)
-    ],
-)
+
+@pytest.mark.parametrize("phone", multiple_format_valid_phone_numbers)
 def test_valid_phone_numbers(phone: str):
     # This test is used to tune options of PhoneNumberValidator
     assert MyPhoneRegister.model_validate({"phone": phone}).phone == TypeAdapter(
