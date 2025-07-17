@@ -35,7 +35,7 @@ router = APIRouter()
 # HELPERS -------------------------------------------------------------------
 
 
-async def analyze_pipeline(
+async def validate_pipeline(
     project_id: ProjectID,
     comp_pipelines_repo: CompPipelinesRepository,
     comp_tasks_repo: CompTasksRepository,
@@ -82,7 +82,7 @@ async def get_all_tasks_log_files(
     Each log is only available when the corresponding task is done
     """
     # gets computation task ids
-    info = await analyze_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
+    info = await validate_pipeline(project_id, comp_pipelines_repo, comp_tasks_repo)
     iter_task_ids = (t.node_id for t in info.filtered_tasks)
 
     tasks_logs_files: list[TaskLogFileGet] = await logged_gather(

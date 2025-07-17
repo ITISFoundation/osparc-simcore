@@ -83,7 +83,7 @@ from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
-from .computations_tasks import analyze_pipeline
+from .computations_tasks import validate_pipeline
 
 _PIPELINE_ABORT_TIMEOUT_S: Final[timedelta] = timedelta(seconds=30)
 
@@ -453,7 +453,7 @@ async def get_computation(
     # check that project actually exists
     await project_repo.get_project(project_id)
 
-    pipeline_dag, all_tasks, _filtered_tasks = await analyze_pipeline(
+    pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
         project_id, comp_pipelines_repo, comp_tasks_repo
     )
 
