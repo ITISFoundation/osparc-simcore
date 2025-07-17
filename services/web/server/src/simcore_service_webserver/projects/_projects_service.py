@@ -1497,10 +1497,10 @@ async def try_close_project_for_user(
             return
 
         # remove the project from our list of opened ones
-        log.debug(
-            "removing project [%s] from user [%s] resources", project_uuid, user_id
-        )
-        await user_session.remove(key=PROJECT_ID_KEY)
+        with log_context(
+            log, logging.DEBUG, f"removing {user_id=} session for {project_uuid=}"
+        ):
+            await user_session.remove(key=PROJECT_ID_KEY)
 
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)
@@ -1513,12 +1513,6 @@ async def try_close_project_for_user(
             ),
             task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
             fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
-        )
-    else:
-        log.error(
-            "project [%s] is used by other users: [%s]. This should not be possible",
-            project_uuid,
-            {user_session.user_id for user_session in all_user_sessions_with_project},
         )
 
 
