@@ -12,6 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy import Column
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
+from sqlalchemy.sql import Select
 
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
@@ -55,6 +56,18 @@ def generate_alternative_username(username: str) -> str:
 class UsersRepo:
     def __init__(self, engine: AsyncEngine):
         self._engine = engine
+
+    async def _get_scalar_or_raise(
+        self,
+        query: Select,
+        connection: AsyncConnection | None = None,
+    ) -> Any:
+        """Execute a scalar query and raise UserNotFoundInRepoError if no value found."""
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            value = await conn.scalar(query)
+            if value is not None:
+                return value
+            raise UserNotFoundInRepoError
 
     async def new_user(
         self,
@@ -191,45 +204,34 @@ class UsersRepo:
     async def get_role(
         self, connection: AsyncConnection | None = None, *, user_id: int
     ) -> UserRole:
-        async with pass_or_acquire_connection(self._engine, connection) as conn:
-
-            value: UserRole | None = await conn.scalar(
-                sa.select(users.c.role).where(users.c.id == user_id)
-            )
-            if value:
-                assert isinstance(value, UserRole)  # nosec
-                return UserRole(value)
-
-            raise UserNotFoundInRepoError
+        value = await self._get_scalar_or_raise(
+            sa.select(users.c.role).where(users.c.id == user_id),
+            connection=connection,
+        )
+        assert isinstance(value, UserRole)  # nosec
+        return UserRole(value)
 
     async def get_email(
         self, connection: AsyncConnection | None = None, *, user_id: int
     ) -> str:
-        async with pass_or_acquire_connection(self._engine, connection) as conn:
-
-            value: str | None = await conn.scalar(
-                sa.select(users.c.email).where(users.c.id == user_id)
-            )
-            if value:
-                assert isinstance(value, str)  # nosec
-                return value
-
-            raise UserNotFoundInRepoError
+        value = await self._get_scalar_or_raise(
+            sa.select(users.c.email).where(users.c.id == user_id),
+            connection=connection,
+        )
+        assert isinstance(value, str)  # nosec
+        return value
 
     async def get_active_user_email(
         self, connection: AsyncConnection | None = None, *, user_id: int
     ) -> str:
-        async with pass_or_acquire_connection(self._engine, connection) as conn:
-            value: str | None = await conn.scalar(
-                sa.select(users.c.email).where(
-                    (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
-                )
-            )
-            if value is not None:
-                assert isinstance(value, str)  # nosec
-                return value
-
-            raise UserNotFoundInRepoError
+        value = await self._get_scalar_or_raise(
+            sa.select(users.c.email).where(
+                (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
+            ),
+            connection=connection,
+        )
+        assert isinstance(value, str)  # nosec
+        return value
 
     async def is_email_used(
         self, connection: AsyncConnection | None = None, *, email: str
