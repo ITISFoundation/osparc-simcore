@@ -11,7 +11,6 @@ from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....products.models import Product
-from ....security import security_service
 from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
@@ -268,10 +267,9 @@ async def initiate_change_email(request: web.Request):
 @login_required
 async def change_password(request: web.Request):
 
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     passwords = await parse_request_body_as(ChangePasswordBody, request)
-
-    user = await _auth_service.get_user_or_none(request.app, user_id=user["id"])
+    user_id = request[RQT_USERID_KEY]
+    user = await _auth_service.get_user_or_none(request.app, user_id=user_id)
 
     await _auth_service.check_authorized_user_credentials_or_raise(
         request.app,
@@ -280,13 +278,11 @@ async def change_password(request: web.Request):
         product=products_web.get_current_product(request),
     )
 
-    await db.update_user(
-        dict(user),
-        {
-            "password_hash": security_service.encrypt_password(
-                passwords.new.get_secret_value()
-            )
-        },
+    await _auth_service.update_user_password(
+        request.app,
+        user_id=user_id,
+        current_password=passwords.current.get_secret_value(),
+        new_password=passwords.new.get_secret_value(),
     )
 
     return flash_response(MSG_PASSWORD_CHANGED)
