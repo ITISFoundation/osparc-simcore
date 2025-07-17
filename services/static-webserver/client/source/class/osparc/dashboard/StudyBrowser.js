@@ -1648,6 +1648,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.base(arguments, templateData);
     },
 
+    _updateFunctionData: function(functionData) {
+      functionData["resourceType"] = "function";
+
+      const index = this._resourcesList.findIndex(study => study["uuid"] === studyData["uuid"]);
+      if (index === -1) {
+        // add it in first position, most likely it's a new study
+        this._resourcesList.unshift(functionData);
+      } else {
+        this._resourcesList[index] = functionData;
+      }
+      // it will render the studies in the right order
+      this._reloadCards();
+    },
+
     __removeFromStudyList: function(studyId) {
       const idx = this._resourcesList.findIndex(study => study["uuid"] === studyId);
       if (idx > -1) {

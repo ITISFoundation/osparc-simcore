@@ -75,6 +75,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               });
             break;
           case "function": {
+            // use function's underlying template info to fetch services metadata
+            // osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Function(latestResourceData);
@@ -105,6 +107,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTutorial": "qx.event.type.Data",
+    "updateFunction": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -440,6 +443,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         case "tutorial":
           this.fireDataEvent("updateTutorial", updatedData);
           break;
+        case "function":
+          this.fireDataEvent("updateFunction", updatedData);
+          break;
         case "hypertool":
           this.fireDataEvent("updateHypertool", updatedData);
           break;
@@ -477,7 +483,6 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
             const updatedData = e.getData();
             this.__fireUpdateEvent(resourceData, updatedData);
           });
-          infoCard.addListener("openTags", () => this.openTags());
         } else {
           infoCard = new osparc.info.StudyLarge(resourceModel, false);
           infoCard.addListener("updateStudy", e => {
