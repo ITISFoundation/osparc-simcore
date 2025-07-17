@@ -3,11 +3,16 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Iterator
 from datetime import datetime, timedelta
 
 import pytest
+import simcore_postgres_database.cli
 import sqlalchemy as sa
+import sqlalchemy.engine
+import sqlalchemy.exc
 from faker import Faker
+from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_repos import (
@@ -208,3 +213,136 @@ async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table:
             .values(status=UserStatus.EXPIRED)
             .where(users.c.id == user_id)
         )
+
+
+@pytest.fixture
+def sync_engine_with_migration(
+    sync_engine: sqlalchemy.engine.Engine, db_metadata: sa.MetaData
+) -> Iterator[sqlalchemy.engine.Engine]:
+    # EXTENDS sync_engine fixture to include cleanup and prepare migration
+
+    # cleanup tables
+    db_metadata.drop_all(sync_engine)
+
+    # prepare migration upgrade
+    assert simcore_postgres_database.cli.discover.callback
+    assert simcore_postgres_database.cli.upgrade.callback
+
+    dsn = sync_engine.url
+    simcore_postgres_database.cli.discover.callback(
+        user=dsn.username,
+        password=dsn.password,
+        host=dsn.host,
+        database=dsn.database,
+        port=dsn.port,
+    )
+
+    yield sync_engine
+
+    # cleanup tables
+    postgres_tools.force_drop_all_tables(sync_engine)
+
+
+def test_users_secrets_migration_upgrade_downgrade(
+    sync_engine_with_migration: sqlalchemy.engine.Engine, faker: Faker
+):
+    """Tests the migration script that moves password_hash from users to users_secrets table."""
+    assert simcore_postgres_database.cli.discover.callback
+    assert simcore_postgres_database.cli.upgrade.callback
+    assert simcore_postgres_database.cli.downgrade.callback
+
+    # UPGRADE just one before 5679165336c8_new_users_secrets.py
+    simcore_postgres_database.cli.upgrade.callback("61b98a60e934")
+
+    with sync_engine_with_migration.connect() as conn:
+        # Ensure the users_secrets table does NOT exist yet
+        with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
+            conn.execute(
+                sa.select(sa.func.count()).select_from(sa.table("users_secrets"))
+            ).scalar()
+        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+
+        # INSERT users with password hashes (emulates data in-place before migration)
+        users_data = [
+            random_user(
+                faker,
+                name="user_with_password_1",
+                email="user1@example.com",
+                password_hash="hashed_password_1",  # noqa: S106
+                status=UserStatus.ACTIVE,
+            ),
+            random_user(
+                faker,
+                name="user_with_password_2",
+                email="user2@example.com",
+                password_hash="hashed_password_2",  # noqa: S106
+                status=UserStatus.ACTIVE,
+            ),
+        ]
+
+        inserted_user_ids = []
+        for user_data in users_data:
+            result = conn.execute(
+                users.insert().values(**user_data).returning(users.c.id)
+            )
+            inserted_user_ids.append(result.scalar())
+
+        # Verify password hashes are in users table
+        result = conn.execute(
+            sa.select(users.c.id, users.c.password_hash).where(
+                users.c.id.in_(inserted_user_ids)
+            )
+        ).fetchall()
+
+        password_hashes_before = {row.id: row.password_hash for row in result}
+        assert len(password_hashes_before) == 2
+        assert password_hashes_before[inserted_user_ids[0]] == "hashed_password_1"
+        assert password_hashes_before[inserted_user_ids[1]] == "hashed_password_2"
+
+    # MIGRATE UPGRADE: this should move password hashes to users_secrets
+    simcore_postgres_database.cli.upgrade.callback("5679165336c8")
+
+    with sync_engine_with_migration.connect() as conn:
+        # Verify users_secrets table exists and contains the password hashes
+        users_secrets_table = sa.table(
+            "users_secrets", sa.column("user_id"), sa.column("password_hash")
+        )
+        result = conn.execute(
+            sa.select(
+                users_secrets_table.c.user_id, users_secrets_table.c.password_hash
+            ).order_by(users_secrets_table.c.user_id)
+        ).fetchall()
+
+        # Only users with non-null password hashes should be in users_secrets
+        assert len(result) == 2
+        secrets_data = {row.user_id: row.password_hash for row in result}
+        assert secrets_data[inserted_user_ids[0]] == "hashed_password_1"
+        assert secrets_data[inserted_user_ids[1]] == "hashed_password_2"
+
+        # Verify password_hash column is removed from users table
+        with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
+            conn.execute(sa.select(users.c.password_hash))
+        assert "psycopg2.errors.UndefinedColumn" in f"{exc_info.value}"
+
+    # MIGRATE DOWNGRADE: this should move password hashes back to users
+    simcore_postgres_database.cli.downgrade.callback("61b98a60e934")
+
+    with sync_engine_with_migration.connect() as conn:
+        # Verify users_secrets table no longer exists
+        with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
+            conn.execute(
+                sa.select(sa.func.count()).select_from(sa.table("users_secrets"))
+            ).scalar()
+        assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
+
+        # Verify password hashes are back in users table
+        result = conn.execute(
+            sa.select(users.c.id, users.c.password_hash).where(
+                users.c.id.in_(inserted_user_ids)
+            )
+        ).fetchall()
+
+        password_hashes_after = {row.id: row.password_hash for row in result}
+        assert len(password_hashes_after) == 2
+        assert password_hashes_after[inserted_user_ids[0]] == "hashed_password_1"
+        assert password_hashes_after[inserted_user_ids[1]] == "hashed_password_2"
