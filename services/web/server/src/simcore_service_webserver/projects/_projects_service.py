@@ -1531,20 +1531,36 @@ async def _get_project_share_state(
     prj_locked_state = await get_project_locked_state(
         get_redis_lock_manager_client_sdk(app), project_uuid
     )
+    app_settings = get_application_settings(app)
     if prj_locked_state:
         log.debug(
             "project [%s] is currently locked: %s",
             f"{project_uuid=}",
             f"{prj_locked_state=}",
         )
+
+        if app_settings.WEBSERVER_REALTIME_COLLABORATION:
+            return ProjectShareState(
+                status=prj_locked_state.status,
+                locked=prj_locked_state.status
+                in [
+                    ProjectStatus.CLONING,
+                    ProjectStatus.EXPORTING,
+                    ProjectStatus.MAINTAINING,
+                ],
+                current_user_groupids=(
+                    [
+                        await users_service.get_user_primary_group_id(
+                            app, prj_locked_state.owner.user_id
+                        )
+                    ]
+                    if prj_locked_state.owner
+                    else []
+                ),
+            )
         return ProjectShareState(
             status=prj_locked_state.status,
-            locked=prj_locked_state.status
-            in [
-                ProjectStatus.CLONING,
-                ProjectStatus.EXPORTING,
-                ProjectStatus.MAINTAINING,
-            ],
+            locked=prj_locked_state.value,
             current_user_groupids=(
                 [
                     await users_service.get_user_primary_group_id(
@@ -1576,9 +1592,34 @@ async def _get_project_share_state(
         f"{set_user_ids=}",
     )
 
+    if app_settings.WEBSERVER_REALTIME_COLLABORATION is None:  # noqa: SIM102
+        # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
+        if set_user_ids.issubset(
+            {user_id}
+        ) and not await _user_has_another_active_session(
+            user_sessions_with_project, app
+        ):
+            # in this case the project is re-openable by the same user until it gets closed
+            log.debug(
+                "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
+                f"{project_uuid=}",
+                f"{set_user_ids=}",
+            )
+            return ProjectShareState(
+                status=ProjectStatus.OPENED,
+                locked=False,
+                current_user_groupids=await limited_gather(
+                    *[
+                        users_service.get_user_primary_group_id(app, user_id=uid)
+                        for uid in set_user_ids
+                    ],
+                    limit=10,
+                ),
+            )
+
     return ProjectShareState(
         status=ProjectStatus.OPENED,
-        locked=False,
+        locked=app_settings.WEBSERVER_REALTIME_COLLABORATION is None,
         current_user_groupids=await limited_gather(
             *[
                 users_service.get_user_primary_group_id(app, user_id=uid)
