@@ -1533,7 +1533,7 @@ async def _get_project_lock_state(
         f"{project_uuid=}",
         f"{user_id=}",
     )
-    prj_locked_state: ProjectLocked | None = await get_project_locked_state(
+    prj_locked_state = await get_project_locked_state(
         get_redis_lock_manager_client_sdk(app), project_uuid
     )
     if prj_locked_state:
@@ -1544,10 +1544,10 @@ async def _get_project_lock_state(
 
     # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
-        user_session_id_list: list[UserSessionID] = await rt.find_users_of_resource(
+        user_sessions_with_project = await rt.find_users_of_resource(
             app, PROJECT_ID_KEY, project_uuid
         )
-    set_user_ids = {user_session.user_id for user_session in user_session_id_list}
+    set_user_ids = {user_session.user_id for user_session in user_sessions_with_project}
 
     assert (  # nosec
         len(set_user_ids) <= 1
@@ -1563,12 +1563,12 @@ async def _get_project_lock_state(
         f"{project_uuid=}",
         f"{set_user_ids=}",
     )
-    usernames: list[FullNameDict] = [
+    usernames = [
         await users_service.get_user_fullname(app, user_id=uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
     if set_user_ids.issubset({user_id}) and not await _user_has_another_active_session(
-        user_session_id_list, app
+        user_sessions_with_project, app
     ):
         # in this case the project is re-openable by the same user until it gets closed
         log.debug(
@@ -1656,9 +1656,6 @@ async def add_project_states_for_user(
     return project
 
 
-#
-# SERVICE DEPRECATION ----------------------------
-#
 async def is_service_deprecated(
     app: web.Application,
     user_id: UserID,
@@ -1696,11 +1693,6 @@ async def is_project_node_deprecated(
             app, user_id, project_node["key"], project_node["version"], product_name
         )
     raise NodeNotFoundError(project_uuid=project["uuid"], node_uuid=f"{node_id}")
-
-
-#
-# SERVICE RESOURCES -----------------------------------
-#
 
 
 async def get_project_node_resources(
@@ -1772,11 +1764,6 @@ async def update_project_node_resources(
         raise NodeNotFoundError(
             project_uuid=f"{project_id}", node_uuid=f"{node_id}"
         ) from exc
-
-
-#
-# PROJECT DYNAMIC SERVICES -----------------------------------------------------
-#
 
 
 async def run_project_dynamic_services(
@@ -1916,11 +1903,6 @@ async def remove_project_dynamic_services(
             )
 
     await _locked_stop_dynamic_serivces_in_project()
-
-
-#
-# NOTIFICATIONS & LOCKS -----------------------------------------------------
-#
 
 
 async def notify_project_state_update(
