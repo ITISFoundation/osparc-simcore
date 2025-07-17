@@ -10,10 +10,10 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
 from simcore_sdk.node_ports_common import data_items_utils
 
 from ...constants import LOGS_FILE_NAME
-from ...core.errors import PipelineNotFoundError
+from ...core.errors import PipelineNotFoundError, PipelineTaskMissingError
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
-from ...utils.computations_tasks import get_pipeline_info
+from ...utils.computations_tasks import validate_pipeline
 
 router = RPCRouter()
 
@@ -27,12 +27,12 @@ async def get_computation_task_log_file_ids(
     comp_tasks_repo = CompTasksRepository.instance(db_engine=app.state.engine)
 
     try:
-        info = await get_pipeline_info(
+        info = await validate_pipeline(
             project_id=project_id,
             comp_pipelines_repo=comp_pipelines_repo,
             comp_tasks_repo=comp_tasks_repo,
         )
-    except PipelineNotFoundError as exc:
+    except (PipelineNotFoundError, PipelineTaskMissingError) as exc:
         raise ComputationalTaskMissingError(project_id=project_id) from exc
 
     iter_task_ids = (t.node_id for t in info.filtered_tasks)

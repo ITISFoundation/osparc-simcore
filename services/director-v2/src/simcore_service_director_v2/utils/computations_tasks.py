@@ -2,6 +2,7 @@ from typing import NamedTuple
 
 import networkx as nx
 from models_library.projects import ProjectID
+from simcore_service_director_v2.core.errors import PipelineTaskMissingError
 
 from ..models.comp_pipelines import CompPipelineAtDB
 from ..models.comp_tasks import CompTaskAtDB
@@ -16,7 +17,7 @@ class PipelineInfo(NamedTuple):
     filtered_tasks: list[CompTaskAtDB]  # nodes that actually run i.e. part of the dag
 
 
-async def get_pipeline_info(
+async def _get_pipeline_info(
     *,
     project_id: ProjectID,
     comp_pipelines_repo: CompPipelinesRepository,
@@ -39,3 +40,28 @@ async def get_pipeline_info(
     ]
 
     return PipelineInfo(pipeline_dag, all_tasks, filtered_tasks)
+
+
+async def validate_pipeline(
+    project_id: ProjectID,
+    comp_pipelines_repo: CompPipelinesRepository,
+    comp_tasks_repo: CompTasksRepository,
+) -> PipelineInfo:
+    """
+    Loads and validates data from pipelines and tasks tables and
+    reports it back as PipelineInfo
+
+    raises PipelineTaskMissingError
+    """
+
+    pipeline_info = await _get_pipeline_info(
+        project_id=project_id,
+        comp_pipelines_repo=comp_pipelines_repo,
+        comp_tasks_repo=comp_tasks_repo,
+    )
+
+    # check that we have the expected tasks
+    if len(pipeline_info.filtered_tasks) != len(pipeline_info.pipeline_dag):
+        raise PipelineTaskMissingError(project_id=project_id)
+
+    return pipeline_info
