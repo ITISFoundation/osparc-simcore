@@ -41,7 +41,7 @@ qx.Class.define("osparc.data.model.Function", {
       lastChangeDate: functionData.lastChangeDate ? new Date(functionData.lastChangeDate) : this.getLastChangeDate(),
       thumbnail: functionData.thumbnail || this.getThumbnail(),
       workbenchData: functionData.workbench || this.getWorkbenchData(),
-      functionUIData: functionData.ui || this.functionUIData(),
+      functionUIData: functionData.ui || this.getFunctionUIData(),
     });
   },
 
@@ -147,6 +147,34 @@ qx.Class.define("osparc.data.model.Function", {
         canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
       }
       return canWrite;
+    },
+  },
+
+  members: {
+    serialize: function(clean = true) {
+      let jsonObject = {};
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        jsonObject[key] = this.get(key);
+      });
+      return jsonObject;
+    },
+
+    patchFunction: function(functionChanges) {
+      return osparc.store.Study.getInstance().patchStudy(this.getUuid(), functionChanges)
+        .then(() => {
+          Object.keys(functionChanges).forEach(fieldKey => {
+            const upKey = qx.lang.String.firstUp(fieldKey);
+            const setter = "set" + upKey;
+            this[setter](functionChanges[fieldKey]);
+          })
+          this.set({
+            lastChangeDate: new Date()
+          });
+          const functionData = this.serialize();
+          resolve(functionData);
+        })
+        .catch(err => reject(err));
     },
   }
 });

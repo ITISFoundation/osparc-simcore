@@ -84,7 +84,7 @@ qx.Class.define("osparc.store.Functions", {
     },
 
     registerFunction: function(templateData, name, description, defaultInputs, exposedInputs, exposedOutputs) {
-      const functionData = this.self().__createFunctionData(templateData, name, description, defaultInputs, exposedInputs, exposedOutputs);
+      const functionData = this.__createFunctionData(templateData, name, description, defaultInputs, exposedInputs, exposedOutputs);
       const params = {
         data: functionData,
       };
@@ -122,7 +122,7 @@ qx.Class.define("osparc.store.Functions", {
           "functionId": functionId
         }
       };
-      return osparc.data.Resources.fetch("functions", "getOne", params, options)
+      return osparc.data.Resources.fetch("functions", "getOne", params)
         .then(func => {
           func["resourceType"] = "function";
           return func;

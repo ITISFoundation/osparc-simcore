@@ -168,7 +168,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
 
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
-      const textEditor = new osparc.editor.MarkdownEditor(this.getStudy().getDescription());
+      const textEditor = new osparc.editor.MarkdownEditor(this.getFunction().getDescription());
       textEditor.setMaxHeight(570);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
@@ -182,11 +182,10 @@ qx.Class.define("osparc.info.FunctionLarge", {
     },
 
     __patchFunction: function(fieldKey, value) {
-      this.getStudy().patchStudy({[fieldKey]: value})
-        .then(studyData => {
-          studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
-          this.fireDataEvent("updateStudy", studyData);
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
+      this.getFunction().patchFunction({[fieldKey]: value})
+        .then(functionData => {
+          this.fireDataEvent("updateFunction", functionData);
+          qx.event.message.Bus.getInstance().dispatchByName("updateFunction", functionData);
         })
         .catch(err => {
           const msg = this.tr("An issue occurred while updating the information.");
