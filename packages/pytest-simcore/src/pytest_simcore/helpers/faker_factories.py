@@ -20,10 +20,9 @@ from typing import Any, Final
 from uuid import uuid4
 
 import arrow
-import faker
 from faker import Faker
 
-DEFAULT_FAKER: Final = faker.Faker()
+DEFAULT_FAKER: Final = Faker()
 
 
 def random_icon_url(fake: Faker):
@@ -34,10 +33,10 @@ def random_thumbnail_url(fake: Faker):
     return fake.image_url(width=32, height=32)
 
 
-def random_phone_number(faker: Faker) -> str:
+def random_phone_number(fake: Faker) -> str:
     # NOTE: faker.phone_number() does not validate with `phonenumbers` library.
-    phone = faker.random_element(["+41763456789", "+19104630364", "+13013044567"])
-    tail = f"{faker.pyint(100, 999)}"
+    phone = fake.random_element(["+41763456789", "+19104630364", "+13013044567"])
+    tail = f"{fake.pyint(100, 999)}"
     return phone[: -len(tail)] + tail  # ensure phone keeps its length
 
 
