@@ -15828,7 +15828,7 @@ components:
       properties:
         share_state:
           $ref: '#/components/schemas/ProjectShareState'
-          description: The project lock state
+          description: The project share state
         state:
           $ref: '#/components/schemas/ProjectRunningState'
           description: The project running state
@@ -15842,7 +15842,6 @@ components:
       properties:
         shareState:
           $ref: '#/components/schemas/ProjectShareStateOutputSchema'
-          description: The project lock state
         state:
           $ref: '#/components/schemas/ProjectRunningState'
           description: The project running state

@@ -3,7 +3,7 @@ Models both project and node states
 """
 
 from enum import Enum, unique
-from typing import Annotated, Self
+from typing import Annotated, Self, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -82,15 +82,24 @@ class ProjectStatus(str, Enum):
     MAINTAINING = "MAINTAINING"  # used for maintenance tasks, like removing EFS data
 
 
+ProjectShareStatus: TypeAlias = Annotated[
+    ProjectStatus, Field(description="The status of the project")
+]
+ProjectShareLocked: TypeAlias = Annotated[
+    bool, Field(description="True if the project is locked")
+]
+ProjectShareCurrentUserGroupIDs: TypeAlias = Annotated[
+    list[GroupID],
+    Field(
+        description="Current users in the project (if the project is locked, the list contains only the lock owner)"
+    ),
+]
+
+
 class ProjectShareState(BaseModel):
-    status: Annotated[ProjectStatus, Field(description="The status of the project")]
-    locked: Annotated[bool, Field(description="True if the project is locked")]
-    current_user_groupids: Annotated[
-        list[GroupID],
-        Field(
-            description="Current users in the project (if the project is locked, the list contains only the lock owner)"
-        ),
-    ]
+    status: ProjectShareStatus
+    locked: ProjectShareLocked
+    current_user_groupids: ProjectShareCurrentUserGroupIDs
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -225,12 +234,16 @@ class ProjectRunningState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+ProjectStateShareState: TypeAlias = Annotated[
+    ProjectShareState, Field(description="The project share state")
+]
+ProjectStateRunningState: TypeAlias = Annotated[
+    ProjectRunningState, Field(description="The project running state")
+]
+
+
 class ProjectState(BaseModel):
-    share_state: Annotated[
-        ProjectShareState, Field(description="The project lock state")
-    ]
-    state: Annotated[
-        ProjectRunningState, Field(description="The project running state")
-    ]
+    share_state: ProjectStateShareState
+    state: ProjectStateRunningState
 
     model_config = ConfigDict(extra="forbid")
