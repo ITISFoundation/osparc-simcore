@@ -4,6 +4,7 @@ from models_library.api_schemas_webserver.functions import (
     FunctionToRegister,
     RegisteredFunction,
     RegisteredFunctionGet,
+    RegisteredFunctionUpdate,
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from pydantic import TypeAdapter
@@ -82,7 +83,7 @@ async def get_function(request: web.Request) -> web.Response:
     )
 
 
-@routes.put(
+@routes.patch(
     "/{VTAG}/functions/{function_id}",
     name="update_function",
 )
@@ -93,9 +94,24 @@ async def update_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
+    function_update = TypeAdapter(RegisteredFunctionUpdate).validate_python(
+        await request.json()
+    )
     req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    raise NotImplementedError
+    updated_function = await _functions_service.update_function(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+        function=function_update,
+    )
+
+    return envelope_json_response(
+        TypeAdapter(RegisteredFunctionUpdate).validate_python(
+            updated_function.model_dump(mode="json")
+        )
+    )
 
 
 @routes.delete(

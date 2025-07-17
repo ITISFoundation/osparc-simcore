@@ -14,6 +14,7 @@ from models_library.functions import (
     FunctionJobDB,
     FunctionJobID,
     FunctionOutputSchema,
+    FunctionUpdate,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     RegisteredFunction,
@@ -291,38 +292,20 @@ async def delete_function_job_collection(
     )
 
 
-async def update_function_title(
+async def update_function(
     app: web.Application,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    title: str,
+    function: FunctionUpdate,
 ) -> RegisteredFunction:
-    updated_function = await _functions_repository.update_function_title(
+    updated_function = await _functions_repository.update_function(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
-        title=title,
-    )
-    return _decode_function(updated_function)
-
-
-async def update_function_description(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    function_id: FunctionID,
-    description: str,
-) -> RegisteredFunction:
-    updated_function = await _functions_repository.update_function_description(
-        app=app,
-        user_id=user_id,
-        product_name=product_name,
-        function_id=function_id,
-        description=description,
+        function=function,
     )
     return _decode_function(updated_function)
 

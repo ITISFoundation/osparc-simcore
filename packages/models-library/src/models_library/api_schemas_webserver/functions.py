@@ -23,6 +23,7 @@ from ..functions import (
     FunctionOutputs,
     FunctionOutputSchema,
     FunctionSchemaClass,
+    FunctionUpdate,
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
     ProjectFunction,
@@ -131,3 +132,6 @@ RegisteredFunctionGet: TypeAlias = Annotated[
     RegisteredProjectFunctionGet | RegisteredSolverFunctionGet,
     Field(discriminator="function_class"),
 ]
+
+
+class RegisteredFunctionUpdate(FunctionUpdate, InputSchema): ...

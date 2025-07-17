@@ -101,6 +101,11 @@ class RegisteredFunctionBase(FunctionBase):
     created_at: datetime.datetime
 
 
+class FunctionUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+
+
 class ProjectFunction(FunctionBase):
     function_class: Literal[FunctionClass.PROJECT] = FunctionClass.PROJECT
     project_id: ProjectID
