@@ -114,7 +114,9 @@ __all__ = [
 class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema): ...
 
 
-class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema): ...
+class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
+    thumbnail: str | None = None
+    template_id: int | None = None
 
 
 class SolverFunctionToRegister(SolverFunction, InputSchema): ...

@@ -5,8 +5,10 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunction,
     RegisteredFunctionGet,
     RegisteredFunctionUpdate,
+    RegisteredProjectFunctionGet,
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
+from models_library.functions import FunctionClass
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -87,7 +89,26 @@ async def get_function(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
     )
 
-    # TODO: enrich with project data
+    if registered_function.function_class == FunctionClass.PROJECT:
+        from ...projects import _projects_service
+
+        assert isinstance(registered_function, RegisteredProjectFunctionGet)  # nosec
+
+        project_dict = await _projects_service.get_project_for_user(
+            app=request.app,
+            project_uuid=f"{registered_function.project_id}",
+            user_id=req_ctx.user_id,
+        )
+
+        return envelope_json_response(
+            TypeAdapter(RegisteredProjectFunctionGet).validate_python(
+                registered_function.model_dump(mode="json")
+                | {
+                    "thumbnail": project_dict.get("thumbnail", None),
+                    "template_id": project_dict.get("project_id", None),
+                }
+            )
+        )
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(

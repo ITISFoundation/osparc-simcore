@@ -3348,6 +3348,18 @@ paths:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/functions:
+    get:
+      tags:
+      - functions
+      summary: List Functions
+      operationId: list_functions
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____'
     post:
       tags:
       - functions
@@ -11265,6 +11277,30 @@ components:
           title: Error
       type: object
       title: Envelope[dict[str, Any]]
+    Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____:
+      properties:
+        data:
+          anyOf:
+          - items:
+              oneOf:
+              - $ref: '#/components/schemas/RegisteredProjectFunctionGet'
+              - $ref: '#/components/schemas/RegisteredSolverFunctionGet'
+              discriminator:
+                propertyName: functionClass
+                mapping:
+                  PROJECT: '#/components/schemas/RegisteredProjectFunctionGet'
+                  SOLVER: '#/components/schemas/RegisteredSolverFunctionGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[Annotated[Union[RegisteredProjectFunctionGet, RegisteredSolverFunctionGet],
+        FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]]
     Envelope_list_Annotated_str__StringConstraints___:
       properties:
         data:
@@ -16067,6 +16103,16 @@ components:
           type: string
           format: uuid
           title: Projectid
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
+        templateId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Templateid
       type: object
       required:
       - inputSchema
