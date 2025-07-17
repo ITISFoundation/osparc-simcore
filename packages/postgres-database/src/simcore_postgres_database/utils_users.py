@@ -9,12 +9,10 @@ from datetime import datetime
 from typing import Any, Final
 
 import sqlalchemy as sa
-from common_library.async_tools import maybe_await
 from sqlalchemy import Column
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
 
-from ._protocols import DBConnection
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
 from .utils_repos import pass_or_acquire_connection, transaction_context
@@ -183,64 +181,76 @@ class UsersRepo:
             .where(users.c.id == user_id)
         )
 
-    @staticmethod
-    async def get_billing_details(conn: DBConnection, user_id: int) -> Any | None:
-        result = await conn.execute(
-            UsersRepo.get_billing_details_query(user_id=user_id)
-        )
-        return await maybe_await(result.fetchone())
+    async def get_billing_details(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> Any | None:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(self.get_billing_details_query(user_id=user_id))
+            return result.one_or_none()
 
-    @staticmethod
-    async def get_role(conn: DBConnection, user_id: int) -> UserRole:
-        value: UserRole | None = await conn.scalar(
-            sa.select(users.c.role).where(users.c.id == user_id)
-        )
-        if value:
-            assert isinstance(value, UserRole)  # nosec
-            return UserRole(value)
+    async def get_role(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> UserRole:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
 
-        raise UserNotFoundInRepoError
-
-    @staticmethod
-    async def get_email(conn: DBConnection, user_id: int) -> str:
-        value: str | None = await conn.scalar(
-            sa.select(users.c.email).where(users.c.id == user_id)
-        )
-        if value:
-            assert isinstance(value, str)  # nosec
-            return value
-
-        raise UserNotFoundInRepoError
-
-    @staticmethod
-    async def get_active_user_email(conn: DBConnection, user_id: int) -> str:
-        value: str | None = await conn.scalar(
-            sa.select(users.c.email).where(
-                (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
+            value: UserRole | None = await conn.scalar(
+                sa.select(users.c.role).where(users.c.id == user_id)
             )
-        )
-        if value is not None:
-            assert isinstance(value, str)  # nosec
-            return value
+            if value:
+                assert isinstance(value, UserRole)  # nosec
+                return UserRole(value)
 
-        raise UserNotFoundInRepoError
+            raise UserNotFoundInRepoError
 
-    @staticmethod
-    async def is_email_used(conn: DBConnection, email: str) -> bool:
-        email = email.lower()
+    async def get_email(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> str:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
 
-        registered = await conn.scalar(
-            sa.select(users.c.id).where(users.c.email == email)
-        )
-        if registered:
-            return True
-
-        pre_registered = await conn.scalar(
-            sa.select(users_pre_registration_details.c.user_id).where(
-                users_pre_registration_details.c.pre_email == email
+            value: str | None = await conn.scalar(
+                sa.select(users.c.email).where(users.c.id == user_id)
             )
-        )
-        return bool(pre_registered)
+            if value:
+                assert isinstance(value, str)  # nosec
+                return value
+
+            raise UserNotFoundInRepoError
+
+    async def get_active_user_email(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> str:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            value: str | None = await conn.scalar(
+                sa.select(users.c.email).where(
+                    (users.c.status == UserStatus.ACTIVE) & (users.c.id == user_id)
+                )
+            )
+            if value is not None:
+                assert isinstance(value, str)  # nosec
+                return value
+
+            raise UserNotFoundInRepoError
+
+    async def is_email_used(
+        self, connection: AsyncConnection | None = None, *, email: str
+    ) -> bool:
+
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+
+            email = email.lower()
+
+            registered = await conn.scalar(
+                sa.select(users.c.id).where(users.c.email == email)
+            )
+            if registered:
+                return True
+
+            pre_registered = await conn.scalar(
+                sa.select(users_pre_registration_details.c.user_id).where(
+                    users_pre_registration_details.c.pre_email == email
+                )
+            )
+            return bool(pre_registered)
 
 
 #

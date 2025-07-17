@@ -159,10 +159,12 @@ async def test_new_user(
     assert other_user.name != new_user.name
 
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
-        assert await UsersRepo.get_email(connection, other_user.id) == other_user.email
-        assert await UsersRepo.get_role(connection, other_user.id) == other_user.role
         assert (
-            await UsersRepo.get_active_user_email(connection, other_user.id)
+            await repo.get_email(connection, user_id=other_user.id) == other_user.email
+        )
+        assert await repo.get_role(connection, user_id=other_user.id) == other_user.role
+        assert (
+            await repo.get_active_user_email(connection, user_id=other_user.id)
             == other_user.email
         )
 

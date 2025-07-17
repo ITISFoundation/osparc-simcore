@@ -5,7 +5,6 @@ from aiohttp.web import RouteTableDef
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
@@ -228,9 +227,9 @@ async def initiate_change_email(request: web.Request):
     if user["email"] == request_body.email:
         return flash_response("Email changed")
 
-    async with pass_or_acquire_connection(get_asyncpg_engine(request.app)) as conn:
-        if await UsersRepo.is_email_used(conn, email=request_body.email):
-            raise web.HTTPUnprocessableEntity(text="This email cannot be used")
+    repo = UsersRepo(get_asyncpg_engine(request.app))
+    if await repo.is_email_used(email=request_body.email):
+        raise web.HTTPUnprocessableEntity(text="This email cannot be used")
 
     # Reset if previously requested
     confirmation = await db.get_confirmation({"user": user, "action": CHANGE_EMAIL})
