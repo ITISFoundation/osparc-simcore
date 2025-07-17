@@ -51,7 +51,7 @@ def test_project_share_state_validations(status, locked, current_users, should_r
     data = {
         "status": status,
         "locked": locked,
-        "current_users": current_users,
+        "current_user_groupids": current_users,
     }
     if should_raise:
         with pytest.raises(ValueError, match=r"If the project is "):
@@ -60,4 +60,4 @@ def test_project_share_state_validations(status, locked, current_users, should_r
         state = ProjectShareState.model_validate(data)
         assert state.status == status
         assert state.locked == locked
-        assert state.current_users == current_users
+        assert state.current_user_groupids == current_users
