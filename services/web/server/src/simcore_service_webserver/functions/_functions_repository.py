@@ -17,6 +17,7 @@ from models_library.functions import (
     FunctionJobCollectionAccessRightsDB,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
     FunctionsApiAccessRights,
@@ -471,6 +472,86 @@ async def list_function_jobs(
             limit=pagination_limit,
             count=len(results),
         )
+
+
+async def get_function_job_status(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionJobStatus:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        await check_user_api_access_rights(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
+        )
+        await check_user_permissions(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_id=function_job_id,
+            permissions=["read"],
+        )
+
+        result = await conn.execute(
+            function_jobs_table.select().where(
+                function_jobs_table.c.uuid == function_job_id
+            )
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
+
+        return FunctionJobStatus(status=row.status)  # type: ignore[no-any-return]
+
+
+async def update_function_job_status(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    job_status: FunctionJobStatus,
+) -> FunctionJobStatus:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        await check_user_api_access_rights(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTION_JOBS],
+        )
+        await check_user_permissions(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_id=function_job_id,
+            permissions=["write"],
+        )
+
+        result = await conn.execute(
+            function_jobs_table.update()
+            .where(function_jobs_table.c.uuid == function_job_id)
+            .values(status=job_status.status)
+            .returning(*_FUNCTION_JOBS_TABLE_COLS)
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
+
+        return FunctionJobStatus(status=row.status)  # type: ignore[no-any-return]
 
 
 async def list_function_job_collections(

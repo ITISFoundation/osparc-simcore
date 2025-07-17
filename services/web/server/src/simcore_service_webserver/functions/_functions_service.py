@@ -13,6 +13,7 @@ from models_library.functions import (
     FunctionJobCollectionsListFilters,
     FunctionJobDB,
     FunctionJobID,
+    FunctionJobStatus,
     FunctionOutputSchema,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
@@ -445,6 +446,21 @@ async def get_function_user_permissions(
             write=False,
             execute=False,
         )
+    )
+
+
+async def get_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionJobStatus:
+    return await _functions_repository.get_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
     )
 
 

@@ -3,7 +3,6 @@ from typing import Annotated, Final
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_webserver.functions import (
-    Function,
     FunctionClass,
     FunctionJob,
     FunctionJobID,
@@ -11,11 +10,13 @@ from models_library.api_schemas_webserver.functions import (
     FunctionOutputs,
     RegisteredFunctionJob,
 )
+from models_library.functions import RegisteredFunction
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -181,6 +182,12 @@ async def function_job_status(
         user_id=user_id,
         product_name=product_name,
     )
+    old_job_status = await wb_api_rpc.get_function_job_status(
+        function_job_id=function_job.uid, user_id=user_id, product_name=product_name
+    )
+
+    if old_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
+        return old_job_status
 
     if (
         function.function_class == FunctionClass.PROJECT
@@ -192,7 +199,7 @@ async def function_job_status(
             user_id=user_id,
             director2_api=director2_api,
         )
-        return FunctionJobStatus(status=job_status.state)
+        job_status = FunctionJobStatus(status=job_status.state)
 
     if (function.function_class == FunctionClass.SOLVER) and (
         function_job.function_class == FunctionClass.SOLVER
@@ -204,12 +211,13 @@ async def function_job_status(
             user_id=user_id,
             director2_api=director2_api,
         )
-        return FunctionJobStatus(status=job_status.state)
-
-    raise UnsupportedFunctionFunctionJobClassCombinationError(
-        function_class=function.function_class,
-        function_job_class=function_job.function_class,
-    )
+        job_status = FunctionJobStatus(status=job_status.state)
+    else:
+        raise UnsupportedFunctionFunctionJobClassCombinationError(
+            function_class=function.function_class,
+            function_job_class=function_job.function_class,
+        )
+    return job_status
 
 
 async def get_function_from_functionjobid(
@@ -217,7 +225,7 @@ async def get_function_from_functionjobid(
     function_job_id: FunctionJobID,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-) -> tuple[Function, FunctionJob]:
+) -> tuple[RegisteredFunction, RegisteredFunctionJob]:
     function_job = await get_function_job(
         wb_api_rpc=wb_api_rpc,
         function_job_id=function_job_id,

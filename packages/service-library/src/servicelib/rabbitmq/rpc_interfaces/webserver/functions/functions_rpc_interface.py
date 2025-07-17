@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.functions import (
+    FunctionJobStatus,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
 )
@@ -298,6 +299,24 @@ async def get_function_job(
     )
 
     return TypeAdapter(RegisteredFunctionJob).validate_python(result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def get_function_job_status(
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    *,
+    user_id: UserID,
+    function_job_id: FunctionJobID,
+    product_name: ProductName,
+) -> FunctionJobStatus:
+    result = await rabbitmq_rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_function_job_status"),
+        function_job_id=function_job_id,
+        user_id=user_id,
+        product_name=product_name,
+    )
+    return TypeAdapter(FunctionJobStatus).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)

@@ -10,6 +10,7 @@ from models_library.functions import (
     FunctionJobCollection,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobStatus,
     FunctionOutputSchema,
     FunctionUserApiAccessRights,
     RegisteredFunction,
@@ -382,6 +383,25 @@ async def get_function_input_schema(
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError))
+async def get_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionJobStatus:
+    """
+    Returns the status of a function job.
+    """
+    return await _functions_service.get_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
     )
 
 
