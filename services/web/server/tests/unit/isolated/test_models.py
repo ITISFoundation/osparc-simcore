@@ -12,10 +12,17 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
     PhoneNumberStr,
 )
 
+from services.web.server.tests.conftest import random_phone_number
+
 
 @pytest.mark.parametrize(
     "phone",
-    ["+41763456789", "+19104630364", "+1 301-304-4567"],
+    ["+41763456789", "+19104630364", "+1 301-304-4567"]
+    + [
+        # tests hand-made random_phone_number
+        random_phone_number()
+        for _ in range(6)
+    ],
 )
 def test_valid_phone_numbers(phone: str):
     # This test is used to tune options of PhoneNumberValidator
