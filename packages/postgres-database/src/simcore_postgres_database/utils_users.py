@@ -16,6 +16,7 @@ from sqlalchemy.sql import Select
 
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
+from .models.users_secrets import users_secrets
 from .utils_repos import pass_or_acquire_connection, transaction_context
 
 
@@ -78,10 +79,9 @@ class UsersRepo:
         status: UserStatus,
         expires_at: datetime | None,
     ) -> Any:
-        data: dict[str, Any] = {
+        user_data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
-            "password_hash": password_hash,
             "status": status,
             "role": UserRole.USER,
             "expires_at": expires_at,
@@ -91,11 +91,21 @@ class UsersRepo:
         while user_id is None:
             try:
                 async with transaction_context(self._engine, connection) as conn:
+                    # Insert user record
                     user_id = await conn.scalar(
-                        users.insert().values(**data).returning(users.c.id)
+                        users.insert().values(**user_data).returning(users.c.id)
+                    )
+
+                    # Insert password hash into users_secrets table
+                    await conn.execute(
+                        users_secrets.insert().values(
+                            user_id=user_id,
+                            password_hash=password_hash,
+                        )
                     )
             except IntegrityError:
-                data["name"] = generate_alternative_username(data["name"])
+                user_data["name"] = generate_alternative_username(user_data["name"])
+                user_id = None  # Reset to retry with new username
 
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
@@ -232,6 +242,35 @@ class UsersRepo:
         )
         assert isinstance(value, str)  # nosec
         return value
+
+    async def get_password_hash(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> str:
+        value = await self._get_scalar_or_raise(
+            sa.select(users_secrets.c.password_hash).where(
+                users_secrets.c.user_id == user_id
+            ),
+            connection=connection,
+        )
+        assert isinstance(value, str)  # nosec
+        return value
+
+    async def get_user_by_email_or_none(
+        self, connection: AsyncConnection | None = None, *, email: str
+    ) -> Any | None:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(
+                    users.c.id,
+                    users.c.name,
+                    users.c.email,
+                    users.c.role,
+                    users.c.status,
+                    users.c.first_name,
+                    users.c.phone,
+                ).where(users.c.email == email.lower())
+            )
+            return result.one_or_none()
 
     async def is_email_used(
         self, connection: AsyncConnection | None = None, *, email: str

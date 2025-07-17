@@ -10,8 +10,10 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
+from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
+from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....products.models import Product
 from ....security import security_web
@@ -73,13 +75,21 @@ async def login(request: web.Request):
     login_data = await parse_request_body_as(LoginBody, request)
 
     # Authenticate user and verify access to the product
+    user = await _auth_service.get_user_by_email_or_none(
+        request.app, email=login_data.email
+    )
+
+    user = _auth_service.check_not_null_user(user)
+
+    repo = UsersRepo(get_asyncpg_engine(request.app))
     user = await _auth_service.check_authorized_user_credentials_or_raise(
-        user=await _auth_service.get_user_by_email(request.app, email=login_data.email),
+        user,
         password=login_data.password.get_secret_value(),
+        password_hash=await repo.get_password_hash(user_id=user["id"]),
         product=product,
     )
     await _auth_service.check_authorized_user_in_product_or_raise(
-        request.app, user=user, product=product
+        request.app, user_email=user["email"], product=product
     )
 
     # Check if user role allows skipping 2FA or if 2FA is not required
@@ -150,7 +160,7 @@ async def login(request: web.Request):
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
             twilio_alpha_numeric_sender=product.twilio_alpha_numeric_sender_id,
-            first_name=user["first_name"],
+            first_name=user["first_name"] or user["name"],
             user_id=user["id"],
         )
 
@@ -227,8 +237,11 @@ async def login_2fa(request: web.Request):
             reason=MSG_WRONG_2FA_CODE__INVALID, content_type=MIMETYPE_APPLICATION_JSON
         )
 
-    user = await _auth_service.get_user_by_email(request.app, email=login_2fa_.email)
-    assert user is not None  # nosec
+    user = _auth_service.check_not_null_user(
+        await _auth_service.get_user_by_email_or_none(
+            request.app, email=login_2fa_.email
+        )
+    )
 
     # NOTE: a priviledge user should not have called this entrypoint
     assert UserRole(user["role"]) <= UserRole.USER  # nosec
@@ -236,7 +249,7 @@ async def login_2fa(request: web.Request):
     # dispose since code was used
     await _twofa_service.delete_2fa_code(request.app, login_2fa_.email)
 
-    return await _security_service.login_granted_response(request, user=dict(user))
+    return await _security_service.login_granted_response(request, user=user)
 
 
 @routes.post(f"/{API_VTAG}/auth/logout", name="auth_logout")

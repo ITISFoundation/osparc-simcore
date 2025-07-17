@@ -136,7 +136,11 @@ async def initiate_reset_password(request: web.Request):
 
         # CHECK user state
         try:
-            validate_user_status(user=dict(user), support_email=product.support_email)
+            validate_user_status(
+                user_status=user["status"],
+                user_role=user["role"],
+                support_email=product.support_email,
+            )
         except web.HTTPError as err:
             # NOTE: we abuse here (untiby reusing `validate_user_status` and catching http errors that we
             # do not want to forward but rather log due to the special rules in this entrypoint

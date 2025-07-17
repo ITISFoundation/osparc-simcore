@@ -235,7 +235,7 @@ async def phone_confirmation(request: web.Request):
                 content_type=MIMETYPE_APPLICATION_JSON,
             ) from err
 
-        return await _security_service.login_granted_response(request, user=dict(user))
+        return await _security_service.login_granted_response(request, user=user)
 
     # fails because of invalid or no code
     raise web.HTTPUnauthorized(
