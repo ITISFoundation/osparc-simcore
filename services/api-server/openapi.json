@@ -5709,8 +5709,9 @@
         "tags": [
           "function_jobs"
         ],
-        "summary": "Start Function Job Logs",
-        "operationId": "start_function_job_logs",
+        "summary": "Get Function Job Logs Task",
+        "description": "Get function job logs task\n\nNew in *version 0.10-rc1*",
+        "operationId": "get_function_job_logs_task",
         "security": [
           {
             "HTTPBasic": []
