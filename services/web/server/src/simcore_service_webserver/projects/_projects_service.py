@@ -29,7 +29,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects import ProjectGet, ProjectPatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
@@ -84,6 +84,7 @@ from servicelib.redis import (
     is_project_locked,
     with_project_locked,
 )
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
@@ -1906,11 +1907,15 @@ async def notify_project_state_update(
 ) -> None:
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
+    output_project_model = ProjectGet.from_domain_model(project)
+    assert output_project_model.state  # nosec
     message = SocketMessageDict(
         event_type=SOCKET_IO_PROJECT_UPDATED_EVENT,
         data={
             "project_uuid": project["uuid"],
-            "data": project["state"],
+            "data": output_project_model.state.model_dump(
+                **RESPONSE_MODEL_POLICY,
+            ),
         },
     )
 
