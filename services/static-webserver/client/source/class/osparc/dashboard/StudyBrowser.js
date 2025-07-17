@@ -1554,9 +1554,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;
       }
-      const studyItem = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
-      if (studyItem) {
-        studyItem.setState(state);
+      const studyCard = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
+      if (studyCard) {
+        studyCard.setState(state);
       }
     },
 
