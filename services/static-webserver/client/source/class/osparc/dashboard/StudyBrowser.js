@@ -106,8 +106,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __dontShowTutorial: null,
+    __dontQuickStart: null,
     __header: null,
+    __sortByButton: null,
     __workspacesList: null,
     __foldersList: null,
     __loadingFolders: null,
@@ -349,8 +350,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // Show Quick Start if there are no studies in the root folder of the personal workspace
           const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
           if (quickStartInfo) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
-            if (dontShow === "true" || this.__dontShowTutorial) {
+            const dontShowQuickStart = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
+            if (dontShowQuickStart === "true" || this.__dontQuickStart) {
               return;
             }
             const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
@@ -364,7 +365,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               quickStartWindow.center();
               quickStartWindow.open();
               quickStartWindow.addListener("close", () => {
-                this.__dontShowTutorial = true;
+                this.__dontQuickStart = true;
               }, this);
             }
           }
@@ -1233,13 +1234,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesList = [];
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
+      // functions will disable it
       this._searchBarFilter.setEnabled(true);
+      // workspaces will exclude it
+      this._toolbar.show();
+      // functions will exclude it
+      this.__sortByButton.show();
 
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
-          this._toolbar.show();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
@@ -1248,12 +1253,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES:
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          // workspaces can't be sorted and don't support list view
           this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
-          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1266,7 +1271,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.resetFilters();
           }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Templates");
-          this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
@@ -1277,7 +1281,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.resetFilters();
           }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Public Projects");
-          this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
@@ -1285,9 +1288,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
+          // functions can't be searched yet
           this._searchBarFilter.setEnabled(false);
           // functions can't be sorted yet
-          this._toolbar.exclude();
+          this.__sortByButton.exclude();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateFunctions();
           this.__reloadStudies();
@@ -1295,7 +1299,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
-          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1365,7 +1368,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addSortByButton: function() {
-      const sortByButton = new osparc.dashboard.SortedByMenuButton();
+      const sortByButton = this.__sortByButton = new osparc.dashboard.SortedByMenuButton();
       sortByButton.set({
         appearance: "form-button-outlined"
       });
