@@ -42,12 +42,10 @@ qx.Class.define("osparc.data.model.Function", {
       thumbnail: functionData.thumbnail || this.getThumbnail(),
     });
 
-    const wbData = functionData.workbench || this.getWorkbench();
-    const workbench = new osparc.data.model.Workbench(wbData, functionData.ui);
-    this.setWorkbench(workbench);
-    workbench.setFunction(this);
-
-    this.getWorkbench().buildWorkbench();
+    const wbData = functionData.workbench || {};
+    const wbUiData = functionData.ui || {};
+    const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview2(wbData, wbUiData);
+    this.setWorkbenchUiPreview(workbenchUIPreview);
   },
 
   properties: {
@@ -128,11 +126,10 @@ qx.Class.define("osparc.data.model.Function", {
       init: null
     },
 
-    workbench: {
-      check: "osparc.data.model.Workbench",
+    workbenchUiPreview: {
+      check: "osparc.workbench.WorkbenchUIPreview2",
       nullable: false,
-      event: "changeWorkbench",
-      init: {}
+      init: null,
     },
   },
 
