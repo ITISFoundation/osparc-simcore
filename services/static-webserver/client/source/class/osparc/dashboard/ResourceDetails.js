@@ -394,7 +394,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       } else if (this.__resourceData["resourceType"] === "function") {
         this.__addInfoPage();
-        this.__addPreviewPage();
+        // to build the preview page we need the underlying template data
+        // this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
       }
@@ -577,7 +578,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const resourceModel = this.__resourceModel;
         let preview = null;
         if (osparc.utils.Resources.isFunction(this.__resourceData)) {
-          preview = new osparc.study.FunctionPreview(resourceModel);
+          preview = new osparc.study.StudyPreview(resourceModel);
         } else {
           preview = new osparc.study.StudyPreview(resourceModel);
         }
