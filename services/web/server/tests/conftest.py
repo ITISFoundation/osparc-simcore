@@ -25,6 +25,7 @@ from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.faker_factories import random_phone_number
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.webserver_login import LoggedUser
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
@@ -145,10 +146,8 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 
 @pytest.fixture
-def user_phone(faker: Faker) -> PhoneNumberStr:
-    phone = faker.random_element(["+41763456789", "+19104630364", "+13013044567"])
-    tail = f"{faker.pyint(100, 999)}"
-    valid_phone = phone[: -len(tail)] + tail  # ensure phone keeps its length
+def user_phone_number(faker: Faker) -> PhoneNumberStr:
+    valid_phone = random_phone_number(faker)
     assert TypeAdapter(PhoneNumberStr).validate_python(valid_phone) == valid_phone
     return valid_phone
 
@@ -166,7 +165,10 @@ async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
 
 @pytest.fixture
 async def logged_user(
-    client: TestClient, user_role: UserRole, faker: Faker, user_phone: PhoneNumberStr
+    client: TestClient,
+    user_role: UserRole,
+    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ) -> AsyncIterator[UserInfoDict]:
     """adds a user in db and logs in with client
 
@@ -178,7 +180,7 @@ async def logged_user(
             "role": user_role.name,
             "first_name": faker.first_name(),
             "last_name": faker.last_name(),
-            "phone": user_phone,
+            "phone": user_phone_number,
         },
         check_if_succeeds=user_role != UserRole.ANONYMOUS,
     ) as user:

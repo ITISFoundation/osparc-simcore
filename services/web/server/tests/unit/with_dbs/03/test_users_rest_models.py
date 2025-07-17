@@ -14,6 +14,7 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from pytest_simcore.helpers.faker_factories import random_pre_registration_details
+from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.users._controller.rest._rest_schemas import (
     MAX_BYTES_SIZE_EXTRAS,
     UserAccountRestPreRegister,
@@ -21,13 +22,15 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
 
 
 @pytest.fixture
-def account_request_form(faker: Faker) -> dict[str, Any]:
+def account_request_form(
+    faker: Faker, user_phone_number: PhoneNumberStr
+) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     form = {
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": faker.email(),
-        "phone": faker.phone_number(),
+        "phone": user_phone_number,
         "company": faker.company(),
         # billing info
         "address": faker.address().replace("\n", ", "),

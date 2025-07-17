@@ -34,6 +34,13 @@ def random_thumbnail_url(fake: Faker):
     return fake.image_url(width=32, height=32)
 
 
+def random_phone_number(faker: Faker) -> str:
+    # NOTE: faker.phone_number() does not validate with `phonenumbers` library.
+    phone = faker.random_element(["+41763456789", "+19104630364", "+13013044567"])
+    tail = f"{faker.pyint(100, 999)}"
+    return phone[: -len(tail)] + tail  # ensure phone keeps its length
+
+
 def _compute_hash(password: str) -> str:
     try:
         # 'passlib' will be used only if already installed.
@@ -105,7 +112,7 @@ def random_pre_registration_details(
         "pre_first_name": fake.first_name(),
         "pre_last_name": fake.last_name(),
         "pre_email": fake.email(),
-        "pre_phone": fake.phone_number(),
+        "pre_phone": random_phone_number(fake),
         "institution": fake.company(),
         "address": fake.address().replace("\n", ", "),
         "city": fake.city(),
