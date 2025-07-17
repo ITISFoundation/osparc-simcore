@@ -19,7 +19,6 @@ from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.api_schemas_webserver.users import PhoneNumberStr
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import ProjectState
@@ -41,6 +40,7 @@ from simcore_service_webserver.application_settings_utils import (
     convert_to_environ_vars,
 )
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.projects._crud_api_create import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
@@ -145,6 +145,15 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 
 @pytest.fixture
+def user_phone(faker: Faker) -> PhoneNumberStr:
+    phone = faker.random_element(["+41763456789", "+19104630364", "+13013044567"])
+    tail = f"{faker.pyint(100, 999)}"
+    valid_phone = phone[: -len(tail)] + tail  # ensure phone keeps its length
+    assert TypeAdapter(PhoneNumberStr).validate_python(valid_phone) == valid_phone
+    return valid_phone
+
+
+@pytest.fixture
 async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
     async with NewUser(
         user_data={
@@ -153,15 +162,6 @@ async def user(client: TestClient) -> AsyncIterator[UserInfoDict]:
         app=client.app,
     ) as user_info:
         yield user_info
-
-
-@pytest.fixture
-def user_phone(faker: Faker) -> PhoneNumberStr:
-    phone = faker.random_element(["+41763456789", "+19104630364", "+13013044567"])
-    tail = f"{faker.pyint(100, 999)}"
-    valid_phone = phone[: -len(tail)] + tail  # ensure phone keeps its length
-    assert TypeAdapter(PhoneNumberStr).validate_python(valid_phone) == valid_phone
-    return valid_phone
 
 
 @pytest.fixture
