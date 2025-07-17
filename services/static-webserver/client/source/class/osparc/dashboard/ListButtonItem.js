@@ -45,6 +45,15 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
             column: osparc.dashboard.ListButtonBase.POS.LOCK_STATUS
           });
           break;
+        case "avatar-group":
+          control = new osparc.ui.basic.AvatarGroup(24, "right", 100).set({
+            paddingTop: 4, // to align it in the middle
+          });
+          this._add(control, {
+            row: 0,
+            column: osparc.dashboard.ListButtonBase.POS.AVATAR_GROUP
+          });
+          break;
         case "tags":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignY: "middle"
@@ -236,8 +245,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       const label = this.getChildControl("owner");
       const user = this.__createOwner(value);
       label.setValue(user);
+
       this.__makeItemResponsive(label);
-      return;
     },
 
     _applyAccessRights: function(value) {

@@ -50,6 +50,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "text-darker": "rgba(20, 20, 20, 1)",
     "contrasted-text-dark": "rgba(20, 20, 20, 1)",
     "contrasted-text-light": "rgba(40, 40, 40, 1)",
+    "text-complementary": "rgba(216, 216, 216, 1)",
     "link": "rgba(10, 182, 255, 1)",
 
     // shadows
