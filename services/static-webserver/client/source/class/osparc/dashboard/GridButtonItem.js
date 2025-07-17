@@ -34,7 +34,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
   },
 
   statics: {
-    MENU_BTN_DIMENSIONS: 24
+    MENU_BTN_DIMENSIONS: 24,
+
+    BODY_POS: {
+      AVATAR_GROUP: 0,
+      TAGS: 1,
+    },
   },
 
   members: {
@@ -81,16 +86,25 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           layout = this.getChildControl("footer");
           layout.add(control, osparc.dashboard.GridButtonBase.FPOS.HITS);
           break;
-        case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
-            anonymous: true,
-            paddingLeft: osparc.dashboard.GridButtonBase.PADDING,
-            paddingRight: osparc.dashboard.GridButtonBase.PADDING,
-            paddingBottom: osparc.dashboard.GridButtonBase.PADDING / 2
-          });
-          layout = this.getChildControl("main-layout");
-          layout.add(control, osparc.dashboard.GridButtonBase.POS.TAGS);
+        case "avatar-group": {
+          const maxWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH - osparc.dashboard.GridButtonBase.PADDING * 2;
+          control = new osparc.ui.basic.AvatarGroup(24, "left", maxWidth);
+          this.getChildControl("body").addAt(control, this.self().BODY_POS.AVATAR_GROUP);
           break;
+        }
+        case "tags": {
+          const wrapper = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          // Add spacer to push tags to bottom
+          wrapper.add(new qx.ui.core.Spacer(), {flex: 1});
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4)).set({
+            anonymous: true,
+          });
+          wrapper.add(control);
+          this.getChildControl("body").addAt(wrapper, this.self().BODY_POS.TAGS, {
+            flex: 1,
+          });
+          break;
+        }
         case "menu-selection-stack":
           control = new qx.ui.container.Stack();
           control.set({
@@ -261,7 +275,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.setVisibility(tags.length ? "visible" : "excluded");
         tagsContainer.removeAll();
-        for (let i=0; i<=tags.length && i<maxTags; i++) {
+        for (let i=0; i<tags.length && i<maxTags; i++) {
           const tag = tags[i];
           const tagUI = new osparc.ui.basic.Tag(tag, "searchBarFilter");
           tagUI.set({
