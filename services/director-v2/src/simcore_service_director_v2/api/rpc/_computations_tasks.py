@@ -9,10 +9,10 @@ from servicelib.rabbitmq.rpc_interfaces.director_v2.errors import (
 )
 from simcore_sdk.node_ports_common import data_items_utils
 
+from ...constants import LOGS_FILE_NAME
 from ...core.errors import PipelineNotFoundError
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
-from ...utils import dask as dask_utils
 from ...utils.computations_tasks import get_pipeline_info
 
 router = RPCRouter()
@@ -41,7 +41,7 @@ async def get_computation_task_log_file_ids(
         TaskLogFileIdGet(
             task_id=node_id,
             file_id=data_items_utils.create_simcore_file_id(
-                Path(dask_utils.LOGS_FILE_NAME), f"{project_id}", f"{node_id}"
+                Path(LOGS_FILE_NAME), f"{project_id}", f"{node_id}"
             ),
         )
         for node_id in iter_task_ids

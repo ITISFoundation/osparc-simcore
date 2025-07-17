@@ -40,7 +40,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..constants import UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
+from ..constants import LOGS_FILE_NAME, UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -259,9 +259,6 @@ async def compute_output_data_schema(
             )
 
     return TaskOutputDataSchema.model_validate(output_data_schema)
-
-
-LOGS_FILE_NAME = "logs.zip"
 
 
 async def compute_service_log_file_upload_link(
