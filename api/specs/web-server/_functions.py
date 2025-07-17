@@ -40,7 +40,7 @@ async def register_function(
     "/functions",
     response_model=Envelope[list[RegisteredFunctionGet]],
 )
-async def list_functions() -> Envelope[list[RegisteredFunctionGet]]: ...
+async def list_functions(): ...
 
 
 @router.get(

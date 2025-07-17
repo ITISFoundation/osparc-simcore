@@ -11277,8 +11277,8 @@ components:
           title: Error
       type: object
       title: Envelope[dict[str, Any]]
-    Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____:
-      properties:
+    ? Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____
+    : properties:
         data:
           anyOf:
           - items:

@@ -19,6 +19,7 @@ from servicelib.aiohttp.requests_validation import (
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
+from ...projects import _projects_service
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _functions_service
@@ -90,8 +91,6 @@ async def get_function(request: web.Request) -> web.Response:
     )
 
     if registered_function.function_class == FunctionClass.PROJECT:
-        from ...projects import _projects_service
-
         assert isinstance(registered_function, RegisteredProjectFunctionGet)  # nosec
 
         project_dict = await _projects_service.get_project_for_user(
