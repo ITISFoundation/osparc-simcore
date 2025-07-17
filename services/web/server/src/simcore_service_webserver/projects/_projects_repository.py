@@ -8,7 +8,7 @@ from aiohttp import web
 from common_library.exclude import Unset, is_set
 from models_library.basic_types import IDStr
 from models_library.groups import GroupID
-from models_library.projects import Project, ProjectID
+from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.workspaces import WorkspaceID
@@ -156,7 +156,7 @@ async def batch_get_projects(
     connection: AsyncConnection | None = None,
     *,
     project_uuids: list[ProjectID],
-) -> list[Project]:
+) -> list[ProjectDBGet]:
     if not project_uuids:
         return []
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -166,7 +166,7 @@ async def batch_get_projects(
             .where(projects.c.uuid.in_([f"{uuid}" for uuid in project_uuids]))
         )
         result = await conn.stream(query)
-        return [Project.model_validate(row) async for row in result]
+        return [ProjectDBGet.model_validate(row) async for row in result]
 
 
 def _select_trashed_by_primary_gid_query() -> sql.Select:
