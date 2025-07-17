@@ -85,7 +85,7 @@ class ProjectStatus(str, Enum):
 class ProjectShareState(BaseModel):
     status: Annotated[ProjectStatus, Field(description="The status of the project")]
     locked: Annotated[bool, Field(description="True if the project is locked")]
-    current_users: Annotated[
+    current_user_groupids: Annotated[
         list[GroupID],
         Field(
             description="Current users in the project (if the project is locked, the list contains only the lock owner)"
@@ -143,17 +143,19 @@ class ProjectShareState(BaseModel):
             ProjectStatus.EXPORTING,
             ProjectStatus.MAINTAINING,
         ]
-        if self.locked and not self.current_users:
+        if self.locked and not self.current_user_groupids:
             msg = "If the project is locked, the current_users list must contain at least the lock owner"
             raise ValueError(msg)
         if self.status is ProjectStatus.CLOSED:
             if self.locked:
                 msg = "If the project is closed, it cannot be locked"
                 raise ValueError(msg)
-            if self.current_users:
+            if self.current_user_groupids:
                 msg = "If the project is closed, the current_users list must be empty"
                 raise ValueError(msg)
-        elif not self.current_users:
+        elif not self.current_user_groupids and (
+            self.status is not ProjectStatus.MAINTAINING
+        ):
             msg = f"If the project is {self.status=}, the current_users list must not be None"
             raise ValueError(msg)
 
