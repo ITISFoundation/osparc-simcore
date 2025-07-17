@@ -7,12 +7,11 @@
 
 import pytest
 from pydantic import TypeAdapter, ValidationError
+from pytest_simcore.helpers.faker_factories import random_phone_number
 from simcore_service_webserver.users._controller.rest._rest_schemas import (
     MyPhoneRegister,
     PhoneNumberStr,
 )
-
-from services.web.server.tests.conftest import random_phone_number
 
 
 @pytest.mark.parametrize(
