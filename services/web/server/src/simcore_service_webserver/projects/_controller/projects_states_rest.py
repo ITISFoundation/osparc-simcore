@@ -20,6 +20,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..._meta import API_VTAG as VTAG
+from ...collaboration import settings as collaboration_settings
 from ...director_v2.exceptions import DirectorV2ServiceError
 from ...login.decorators import login_required
 from ...notifications import project_logs
@@ -100,7 +101,9 @@ async def open_project(request: web.Request) -> web.Response:
             client_session_id=client_session_id,
             app=request.app,
             max_number_of_opened_projects_per_user=product.max_open_studies_per_user,
-            max_number_of_user_sessions_per_project=1,
+            max_number_of_user_sessions_per_project=collaboration_settings.get_plugin_settings(
+                request.app
+            ).RTC_MAX_NUMBER_OF_USERS,
         ):
             raise HTTPLockedError(text="Project is locked, try later")
 
