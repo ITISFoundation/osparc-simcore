@@ -53,6 +53,7 @@ from ...core.errors import (
     ComputationalRunNotFoundError,
     ComputationalSchedulerError,
     ConfigurationError,
+    PipelineTaskMissingError,
     PricingPlanUnitNotFoundError,
     ProjectNotFoundError,
     WalletNotEnoughCreditsError,
@@ -453,9 +454,15 @@ async def get_computation(
     # check that project actually exists
     await project_repo.get_project(project_id)
 
-    pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
-        project_id, comp_pipelines_repo, comp_tasks_repo
-    )
+    try:
+        pipeline_dag, all_tasks, _filtered_tasks = await validate_pipeline(
+            project_id, comp_pipelines_repo, comp_tasks_repo
+        )
+    except PipelineTaskMissingError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The tasks referenced by the pipeline are missing",
+        ) from exc
 
     # create the complete DAG graph
     complete_dag = create_complete_dag_from_tasks(all_tasks)
