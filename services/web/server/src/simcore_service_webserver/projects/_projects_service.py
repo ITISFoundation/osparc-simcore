@@ -1365,7 +1365,7 @@ async def post_trigger_connected_service_retrieve(
 #
 
 
-async def _user_has_another_client_open(
+async def _user_has_another_active_session(
     users_sessions_ids: list[UserSessionID], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
@@ -1405,7 +1405,7 @@ async def try_open_project_for_user(
     client_session_id: str,
     app: web.Application,
     max_number_of_opened_projects_per_user: int | None,
-    max_number_of_users_per_project: PositiveInt | None,
+    max_number_of_user_sessions_per_project: PositiveInt | None,
 ) -> bool:
     """
     Raises:
@@ -1428,8 +1428,7 @@ async def try_open_project_for_user(
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
-                # NOTE: if max_number_of_studies_per_user is set, the same
-                # project shall still be openable if the tab was closed
+                # Enforce per-user open project limit
                 if max_number_of_opened_projects_per_user is not None and (
                     len(
                         {
@@ -1450,35 +1449,39 @@ async def try_open_project_for_user(
                     )
 
                 # Assign project_id to current_session
-                current_session: UserSessionID = user_session.get_id()
-                sessions_with_project: list[UserSessionID] = (
-                    await user_session.find_users_of_resource(
-                        app, PROJECT_ID_KEY, f"{project_uuid}"
-                    )
+                sessions_with_project = await user_session.find_users_of_resource(
+                    app, PROJECT_ID_KEY, f"{project_uuid}"
                 )
-                if not sessions_with_project:
+                if (
+                    max_number_of_user_sessions_per_project is None
+                    or not sessions_with_project
+                ) or (
+                    len(sessions_with_project) < max_number_of_user_sessions_per_project
+                ):
                     # no one has the project so we assign it
                     await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                     return True
 
-                # Otherwise if this is the only user (NOTE: a session = user_id + client_seesion_id !)
-                user_ids: set[int] = {s.user_id for s in sessions_with_project}
-                if user_ids.issubset({user_id}):
-                    other_sessions_with_project = [
-                        usid
-                        for usid in sessions_with_project
-                        if usid != current_session
-                    ]
-                    if not await _user_has_another_client_open(
-                        other_sessions_with_project,
-                        app,
-                    ):
-                        # steal the project
-                        await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
-                        await _clean_user_disconnected_clients(
-                            sessions_with_project, app
-                        )
-                        return True
+                # NOTE: Special case for backwards compatibility, allow to close a tab and open the project again in a new tab
+                if max_number_of_user_sessions_per_project == 1:
+                    current_session = user_session.get_id()
+                    user_ids: set[int] = {s.user_id for s in sessions_with_project}
+                    if user_ids.issubset({user_id}):
+                        other_sessions_with_project = [
+                            usid
+                            for usid in sessions_with_project
+                            if usid != current_session
+                        ]
+                        if not await _user_has_another_active_session(
+                            other_sessions_with_project,
+                            app,
+                        ):
+                            # steal the project
+                            await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
+                            await _clean_user_disconnected_clients(
+                                sessions_with_project, app
+                            )
+                            return True
 
             return False
 
@@ -1602,7 +1605,7 @@ async def _get_project_lock_state(
         await users_service.get_user_fullname(app, user_id=uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
-    if set_user_ids.issubset({user_id}) and not await _user_has_another_client_open(
+    if set_user_ids.issubset({user_id}) and not await _user_has_another_active_session(
         user_session_id_list, app
     ):
         # in this case the project is re-openable by the same user until it gets closed
