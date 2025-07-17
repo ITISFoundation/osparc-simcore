@@ -138,3 +138,29 @@ async def check_authorized_user_in_product_or_raise(
         raise web.HTTPUnauthorized(
             text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
         )
+
+
+async def update_user_password(
+    app: web.Application,
+    *,
+    user_id: int,
+    current_password: str,
+    new_password: str,
+) -> None:
+    """Updates user password after verifying current password"""
+    repo = UsersRepo(get_asyncpg_engine(app))
+
+    # Get current password hash
+    current_password_hash = await repo.get_password_hash(user_id=user_id)
+
+    # Verify current password
+    if not security_service.check_password(current_password, current_password_hash):
+        raise web.HTTPUnauthorized(
+            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+        )
+
+    # Encrypt new password and update
+    new_password_hash = security_service.encrypt_password(new_password)
+    await repo.update_user_password_hash(
+        user_id=user_id, password_hash=new_password_hash
+    )
