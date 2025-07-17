@@ -1,7 +1,6 @@
 import logging
 from typing import Annotated, Literal
 
-from models_library.api_schemas_webserver.users import PhoneNumberStr
 from models_library.emails import LowerCaseEmailStr
 from pydantic import (
     BaseModel,
@@ -12,6 +11,7 @@ from pydantic import (
     field_validator,
 )
 
+from ....models import PhoneNumberStr
 from ....utils_aiohttp import NextPage
 from ..._models import InputSchema, check_confirm_password_match
 

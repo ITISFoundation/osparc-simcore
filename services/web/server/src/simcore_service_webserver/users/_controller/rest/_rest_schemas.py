@@ -7,7 +7,7 @@ the rest (hidden or needs a dependency) is here
 import re
 import sys
 from contextlib import suppress
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Final
 
 import pycountry
 from common_library.basic_types import DEFAULT_FACTORY
@@ -21,9 +21,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 
-from ....models import AuthenticatedRequestContext
+from ....models import AuthenticatedRequestContext, PhoneNumberStr
 
 MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
 
@@ -34,13 +33,6 @@ class UsersRequestContext(AuthenticatedRequestContext): ...
 #
 # PHONE REGISTRATION
 #
-
-
-PhoneNumberStr: TypeAlias = Annotated[
-    # NOTE: validator require installing `phonenumbers``
-    str,
-    PhoneNumberValidator(number_format="E164"),
-]
 
 
 class MyPhoneRegister(InputSchema):
