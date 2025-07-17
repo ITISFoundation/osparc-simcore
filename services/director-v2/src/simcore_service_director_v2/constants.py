@@ -15,13 +15,17 @@ DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: Final[str] = "io.simcore.scheduler-data"
 # - local
 # - itisfoundation
 # - 10.0.0.0:8473 (IP & Port)
-DYNAMIC_SIDECAR_DOCKER_IMAGE_RE = (
+DYNAMIC_SIDECAR_DOCKER_IMAGE_RE: Final[str] = (
     r"^(([_a-zA-Z0-9:.-]+)/)?(dynamic-sidecar):([_a-zA-Z0-9.-]+)$"
 )
 
-REGEX_DY_SERVICE_SIDECAR = rf"^{DYNAMIC_SIDECAR_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
-REGEX_DY_SERVICE_PROXY = rf"^{DYNAMIC_PROXY_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
+LOGS_FILE_NAME: Final[str] = "logs.zip"
 
-UNDEFINED_STR_METADATA = "undefined-metadata"
-UNDEFINED_DOCKER_LABEL = "undefined-label"
-UNDEFINED_API_BASE_URL = "https://api.local"
+REGEX_DY_SERVICE_SIDECAR: Final[str] = (
+    rf"^{DYNAMIC_SIDECAR_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
+)
+REGEX_DY_SERVICE_PROXY: Final[str] = rf"^{DYNAMIC_PROXY_SERVICE_PREFIX}_[a-zA-Z0-9-_]*"
+
+UNDEFINED_STR_METADATA: Final[str] = "undefined-metadata"
+UNDEFINED_DOCKER_LABEL: Final[str] = "undefined-label"
+UNDEFINED_API_BASE_URL: Final[str] = "https://api.local"

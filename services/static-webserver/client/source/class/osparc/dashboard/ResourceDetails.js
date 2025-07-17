@@ -33,10 +33,13 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         latestPromise = osparc.store.Study.getInstance().getOne(resourceData["uuid"]);
         break;
       }
-      case "function": {
+      case "functionedTemplate": {
         latestPromise = osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
         break;
       }
+      case "function":
+        latestPromise = osparc.store.Functions.fetchFunction(resourceData["uuid"]);
+        break;
       case "service": {
         latestPromise = osparc.store.Services.getService(resourceData["key"], resourceData["version"]);
         break;
@@ -57,7 +60,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           case "template":
           case "tutorial":
           case "hypertool":
-          case "function":
+          case "functionedTemplate":
             // when getting the latest study data, the debt information was lost
             if (osparc.study.Utils.isInDebt(this.__resourceData)) {
               const studyStore = osparc.store.Study.getInstance();
@@ -69,8 +72,20 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
                 this.__resourceModel["resourceType"] = resourceData["resourceType"];
                 this.__resourceData["services"] = resourceData["services"];
                 this.__addPages();
-              })
+              });
             break;
+          case "function": {
+            // use function's underlying template info to fetch services metadata
+            // osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
+            osparc.store.Services.getStudyServicesMetadata(latestResourceData)
+              .finally(() => {
+                this.__resourceModel = new osparc.data.model.Function(latestResourceData);
+                this.__resourceModel["resourceType"] = resourceData["resourceType"];
+                this.__resourceData["services"] = resourceData["services"];
+                this.__addPages();
+              });
+            break;
+          }
           case "service": {
             this.__resourceModel = new osparc.data.model.Service(latestResourceData);
             this.__resourceModel["resourceType"] = resourceData["resourceType"];
@@ -92,6 +107,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTutorial": "qx.event.type.Data",
+    "updateFunction": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -156,6 +172,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     __addToolbarButtons: function(page) {
       const resourceData = this.__resourceData;
+
+      if (this.__resourceData["resourceType"] === "function") {
+        return; // no toolbar buttons for functions
+      }
 
       const toolbar = this.self().createToolbar();
       page.addToHeader(toolbar);
@@ -370,9 +390,15 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       // removeAll
       osparc.utils.Utils.removeAllChildren(tabsView);
 
-      if (this.__resourceData["resourceType"] === "function") {
+      if (this.__resourceData["resourceType"] === "functionedTemplate") {
         // for now, we only want the preview page
         this.__addPreviewPage();
+        this.fireEvent("pagesAdded");
+        return;
+      } else if (this.__resourceData["resourceType"] === "function") {
+        this.__addInfoPage();
+        // to build the preview page we need the underlying template data
+        // this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
       }
@@ -417,6 +443,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         case "tutorial":
           this.fireDataEvent("updateTutorial", updatedData);
           break;
+        case "function":
+          this.fireDataEvent("updateFunction", updatedData);
+          break;
         case "hypertool":
           this.fireDataEvent("updateHypertool", updatedData);
           break;
@@ -445,6 +474,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         if (osparc.utils.Resources.isService(resourceData)) {
           infoCard = new osparc.info.ServiceLarge(resourceData, null, false);
           infoCard.addListener("updateService", e => {
+            const updatedData = e.getData();
+            this.__fireUpdateEvent(resourceData, updatedData);
+          });
+        } else if (osparc.utils.Resources.isFunction(resourceData)) {
+          infoCard = new osparc.info.FunctionLarge(resourceModel);
+          infoCard.addListener("updateFunction", e => {
             const updatedData = e.getData();
             this.__fireUpdateEvent(resourceData, updatedData);
           });

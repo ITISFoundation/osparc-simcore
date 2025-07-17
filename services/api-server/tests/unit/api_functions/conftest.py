@@ -29,6 +29,8 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     RegisteredFunctionJobCollection,
     RegisteredSolverFunction,
+    RegisteredSolverFunctionJob,
+    SolverFunctionJob,
 )
 from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.projects import ProjectID
@@ -155,7 +157,7 @@ def mock_registered_solver_function(
 
 
 @pytest.fixture
-def mock_function_job(
+def mock_project_function_job(
     mock_registered_project_function: RegisteredFunction,
 ) -> FunctionJob:
     mock_function_job = {
@@ -171,12 +173,40 @@ def mock_function_job(
 
 
 @pytest.fixture
-def mock_registered_function_job(
-    mock_function_job: FunctionJob,
+def mock_registered_project_function_job(
+    mock_project_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     return RegisteredProjectFunctionJob(
         **{
-            **mock_function_job.dict(),
+            **mock_project_function_job.dict(),
+            "uid": str(uuid4()),
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
+    )
+
+
+@pytest.fixture
+def mock_solver_function_job(
+    mock_registered_solver_function: RegisteredFunction,
+) -> FunctionJob:
+    return SolverFunctionJob(
+        title="Test Function Job",
+        description="A test function job",
+        function_uid=mock_registered_solver_function.uid,
+        inputs={"key": "value"},
+        outputs=None,
+        function_class=FunctionClass.SOLVER,
+        solver_job_id=ProjectID(f"{uuid4()}"),
+    )
+
+
+@pytest.fixture
+def mock_registered_solver_function_job(
+    mock_solver_function_job: FunctionJob,
+) -> RegisteredFunctionJob:
+    return RegisteredSolverFunctionJob(
+        **{
+            **mock_solver_function_job.dict(),
             "uid": str(uuid4()),
             "created_at": datetime.datetime.now(datetime.UTC),
         }
@@ -185,15 +215,17 @@ def mock_registered_function_job(
 
 @pytest.fixture
 def mock_function_job_collection(
-    mock_registered_function_job: RegisteredFunctionJob,
+    mock_registered_project_function_job: RegisteredFunctionJob,
 ) -> FunctionJobCollection:
     mock_function_job_collection = {
         "title": "Test Function Job Collection",
         "description": "A test function job collection",
-        "function_uid": mock_registered_function_job.function_uid,
+        "function_uid": mock_registered_project_function_job.function_uid,
         "function_class": FunctionClass.PROJECT,
         "project_id": str(uuid4()),
-        "function_job_ids": [mock_registered_function_job.uid for _ in range(5)],
+        "function_job_ids": [
+            mock_registered_project_function_job.uid for _ in range(5)
+        ],
     }
     return FunctionJobCollection(**mock_function_job_collection)
 
