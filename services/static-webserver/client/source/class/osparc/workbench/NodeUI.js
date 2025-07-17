@@ -298,11 +298,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
 
-      if (node.getStudy()) {
-        node.getStudy().bind("pipelineRunning", this._deleteBtn, "enabled", {
-          converter: running => !running
-        });
-      }
+      node.getStudy().bind("pipelineRunning", this._deleteBtn, "enabled", {
+        converter: running => !running
+      });
 
       const evaluateLifeCycleIcon = () => {
         const deprecatedIcon = this.getChildControl("deprecated-icon");

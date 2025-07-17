@@ -26,12 +26,8 @@ qx.Class.define("osparc.study.StudyPreview", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    if (study instanceof osparc.data.model.Study) {
-      const uiMode = study.getUi().getMode();
-      if (["workbench", "pipeline"].includes(uiMode)) {
-        this.__buildPreview(study);
-      }
-    } else if (study instanceof osparc.data.model.Function) {
+    const uiMode = study.getUi().getMode();
+    if (["workbench", "pipeline"].includes(uiMode)) {
       this.__buildPreview(study);
     }
   },
@@ -40,11 +36,7 @@ qx.Class.define("osparc.study.StudyPreview", {
     __buildPreview: function(study) {
       const workbenchReady = () => {
         const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
-        if (study instanceof osparc.data.model.Study) {
-          workbenchUIPreview.setStudy(study);
-        } else if (study instanceof osparc.data.model.Function) {
-          workbenchUIPreview.setFunction(study);
-        }
+        workbenchUIPreview.setStudy(study);
         workbenchUIPreview.loadModel(study.getWorkbench());
         workbenchUIPreview.setMaxHeight(550);
         this._add(workbenchUIPreview);

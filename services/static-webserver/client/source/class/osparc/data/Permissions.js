@@ -312,7 +312,7 @@ qx.Class.define("osparc.data.Permissions", {
 
       // This needs to be provided by the backend
       if (action === "readFunctions") {
-        return true;
+        return osparc.utils.Utils.isDevelopmentPlatform();
       }
 
       if (

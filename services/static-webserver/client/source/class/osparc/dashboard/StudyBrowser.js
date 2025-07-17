@@ -930,7 +930,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           request = osparc.store.Templates.searchTemplatesPaginated(params, options);
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
-          // OM: implement this
           request = osparc.store.Functions.fetchFunctionsPaginated(params, options);
       }
       return request;
@@ -1179,6 +1178,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES;
               break;
             case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+              // functions are not searchable yet
               searchContext = null;
               break;
             default:
@@ -1286,6 +1286,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
           this._searchBarFilter.setEnabled(false);
+          // functions can't be sorted yet
           this._toolbar.exclude();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateFunctions();
@@ -1651,7 +1652,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _updateFunctionData: function(functionData) {
       functionData["resourceType"] = "function";
 
-      const index = this._resourcesList.findIndex(study => study["uuid"] === studyData["uuid"]);
+      const index = this._resourcesList.findIndex(func => func["uuid"] === functionData["uuid"]);
       if (index === -1) {
         // add it in first position, most likely it's a new study
         this._resourcesList.unshift(functionData);
