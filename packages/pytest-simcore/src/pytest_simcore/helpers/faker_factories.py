@@ -36,7 +36,7 @@ def random_thumbnail_url(fake: Faker):
 def random_phone_number(fake: Faker = DEFAULT_FAKER) -> str:
     # NOTE: faker.phone_number() does not validate with `phonenumbers` library.
     phone = fake.random_element(
-        ["+41763456789", "+19104630364", "+13013044567", "+34 951 453 837"]
+        ["+41763456789", "+19104630364", "+13013044567", "+34 950 453 837"]
     )
     tail = f"{fake.pyint(100, 999)}"
     return phone[: -len(tail)] + tail  # ensure phone keeps its length

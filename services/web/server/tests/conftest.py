@@ -147,9 +147,7 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 @pytest.fixture
 def user_phone_number(faker: Faker) -> PhoneNumberStr:
-    valid_phone = random_phone_number(faker)
-    assert TypeAdapter(PhoneNumberStr).validate_python(valid_phone) == valid_phone
-    return valid_phone
+    return TypeAdapter(PhoneNumberStr).validate_python(random_phone_number(faker))
 
 
 @pytest.fixture
