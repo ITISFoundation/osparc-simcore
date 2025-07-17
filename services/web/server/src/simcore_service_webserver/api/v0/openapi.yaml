@@ -15263,7 +15263,7 @@ components:
           title: Lastchangedate
         state:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         trashedAt:
           anyOf:
@@ -15466,7 +15466,7 @@ components:
           title: Lastchangedate
         state:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         trashedAt:
           anyOf:
@@ -15800,6 +15800,30 @@ components:
       - locked
       - current_user_groupids
       title: ProjectShareState
+    ProjectShareStateOutputSchema:
+      properties:
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+          description: The status of the project
+        locked:
+          type: boolean
+          title: Locked
+          description: True if the project is locked
+        currentUserGroupids:
+          items:
+            type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          type: array
+          title: Currentusergroupids
+          description: Current users in the project (if the project is locked, the
+            list contains only the lock owner)
+      type: object
+      required:
+      - status
+      - locked
+      - currentUserGroupids
+      title: ProjectShareStateOutputSchema
     ProjectState:
       properties:
         share_state:
@@ -15814,6 +15838,19 @@ components:
       - share_state
       - state
       title: ProjectState
+    ProjectStateOutputSchema:
+      properties:
+        shareState:
+          $ref: '#/components/schemas/ProjectShareStateOutputSchema'
+          description: The project lock state
+        state:
+          $ref: '#/components/schemas/ProjectRunningState'
+          description: The project running state
+      type: object
+      required:
+      - shareState
+      - state
+      title: ProjectStateOutputSchema
     ProjectStatus:
       type: string
       enum:
