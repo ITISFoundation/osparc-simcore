@@ -34,7 +34,7 @@ from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.projects import Project, ProjectID, ProjectIDStr
+from models_library.projects import Project, ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_nodes import Node, NodeState, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
@@ -291,7 +291,7 @@ async def update_project_last_change_timestamp(
 ):
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec
-    await db.update_project_last_change_timestamp(ProjectIDStr(f"{project_uuid}"))
+    await db.update_project_last_change_timestamp(f"{project_uuid}")
 
 
 async def patch_project(
@@ -1593,7 +1593,7 @@ async def get_project_states_for_user(
 ) -> ProjectState:
     # for templates: the project is never locked and never opened. also the running state is always unknown
     running_state = RunningState.UNKNOWN
-    lock_state, computation_task = await logged_gather(
+    share_state, computation_task = await logged_gather(
         _get_project_share_state(user_id, project_uuid, app),
         director_v2_service.get_computation_task(app, user_id, UUID(project_uuid)),
     )
@@ -1602,7 +1602,7 @@ async def get_project_states_for_user(
         running_state = computation_task.state
 
     return ProjectState(
-        locked=lock_state, state=ProjectRunningState(value=running_state)
+        share_state=share_state, state=ProjectRunningState(value=running_state)
     )
 
 
@@ -1619,7 +1619,7 @@ async def add_project_states_for_user(
         f"{project['uuid']=}",
     )
     # for templates: the project is never locked and never opened. also the running state is always unknown
-    lock_state = await _get_project_share_state(user_id, project["uuid"], app)
+    share_state = await _get_project_share_state(user_id, project["uuid"], app)
     running_state = RunningState.UNKNOWN
 
     if not is_template and (
@@ -1645,7 +1645,7 @@ async def add_project_states_for_user(
             prj_node.update({"progress": round(prj_node_progress * 100.0)})
 
     project["state"] = ProjectState(
-        locked=lock_state, state=ProjectRunningState(value=running_state)
+        share_state=share_state, state=ProjectRunningState(value=running_state)
     ).model_dump(by_alias=True, exclude_unset=True)
     return project
 

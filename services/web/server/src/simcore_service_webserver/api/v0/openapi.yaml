@@ -14043,35 +14043,6 @@ components:
       - service_key
       - running_time_in_hours
       title: OsparcCreditsAggregatedByServiceGet
-    Owner:
-      properties:
-        user_id:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          description: Owner's user id
-          minimum: 0
-        first_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: First Name
-          description: Owner's first name
-        last_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Last Name
-          description: Owner's last name
-      additionalProperties: false
-      type: object
-      required:
-      - user_id
-      - first_name
-      - last_name
-      title: Owner
     PageLinks:
       properties:
         self:
@@ -15577,26 +15548,6 @@ components:
       - workspaceId
       - folderId
       title: ProjectListItem
-    ProjectLocked:
-      properties:
-        value:
-          type: boolean
-          title: Value
-          description: True if the project is locked
-        status:
-          $ref: '#/components/schemas/ProjectStatus'
-          description: The status of the project
-        owner:
-          anyOf:
-          - $ref: '#/components/schemas/Owner'
-          - type: 'null'
-          description: If locked, the user that owns the lock
-      additionalProperties: false
-      type: object
-      required:
-      - value
-      - status
-      title: ProjectLocked
     ProjectMetadataGet:
       properties:
         projectUuid:
@@ -15824,10 +15775,35 @@ components:
       - shareeEmail
       - confirmationLink
       title: ProjectShareAccepted
+    ProjectShareState:
+      properties:
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+          description: The status of the project
+        locked:
+          type: boolean
+          title: Locked
+          description: True if the project is locked
+        current_user_groupids:
+          items:
+            type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          type: array
+          title: Current User Groupids
+          description: Current users in the project (if the project is locked, the
+            list contains only the lock owner)
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      - locked
+      - current_user_groupids
+      title: ProjectShareState
     ProjectState:
       properties:
-        locked:
-          $ref: '#/components/schemas/ProjectLocked'
+        share_state:
+          $ref: '#/components/schemas/ProjectShareState'
           description: The project lock state
         state:
           $ref: '#/components/schemas/ProjectRunningState'
@@ -15835,7 +15811,7 @@ components:
       additionalProperties: false
       type: object
       required:
-      - locked
+      - share_state
       - state
       title: ProjectState
     ProjectStatus:
