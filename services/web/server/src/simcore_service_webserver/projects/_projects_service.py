@@ -39,8 +39,8 @@ from models_library.projects_access import Owner
 from models_library.projects_nodes import Node, NodeState, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
-    ProjectLocked,
     ProjectRunningState,
+    ProjectShareState,
     ProjectState,
     ProjectStatus,
     RunningState,
@@ -84,7 +84,7 @@ from servicelib.redis import (
     is_project_locked,
     with_project_locked,
 )
-from servicelib.utils import fire_and_forget_task, logged_gather
+from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
@@ -1516,31 +1516,44 @@ async def try_close_project_for_user(
         )
 
 
-async def _get_project_lock_state(
+async def _get_project_share_state(
     user_id: int,
     project_uuid: str,
     app: web.Application,
-) -> ProjectLocked:
+) -> ProjectShareState:
     """returns the lock state of a project
     1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
-    2. If a client_session_id is passed, then first check to see if the project is currently opened by this very user/tab combination, if yes returns the project as Locked and OPENED.
     3. If any other user than user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
     4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
-    log.debug(
-        "getting project [%s] lock state for user [%s]...",
-        f"{project_uuid=}",
-        f"{user_id=}",
-    )
     prj_locked_state = await get_project_locked_state(
         get_redis_lock_manager_client_sdk(app), project_uuid
     )
     if prj_locked_state:
         log.debug(
-            "project [%s] is locked: %s", f"{project_uuid=}", f"{prj_locked_state=}"
+            "project [%s] is currently locked: %s",
+            f"{project_uuid=}",
+            f"{prj_locked_state=}",
         )
-        return prj_locked_state
+        return ProjectShareState(
+            status=prj_locked_state.status,
+            locked=prj_locked_state.status
+            in [
+                ProjectStatus.CLONING,
+                ProjectStatus.EXPORTING,
+                ProjectStatus.MAINTAINING,
+            ],
+            current_user_groupids=(
+                [
+                    await users_service.get_user_primary_group_id(
+                        app, prj_locked_state.owner.user_id
+                    )
+                ]
+                if prj_locked_state.owner
+                else []
+            ),
+        )
 
     # let's now check if anyone has the project in use somehow
     with managed_resource(user_id, None, app) as rt:
@@ -1549,48 +1562,29 @@ async def _get_project_lock_state(
         )
     set_user_ids = {user_session.user_id for user_session in user_sessions_with_project}
 
-    assert (  # nosec
-        len(set_user_ids) <= 1
-    )  # nosec  # NOTE: A project can only be opened by one user in one tab at the moment
-
     if not set_user_ids:
         # no one has the project, so it is unlocked and closed.
         log.debug("project [%s] is not in use", f"{project_uuid=}")
-        return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
+        return ProjectShareState(
+            status=ProjectStatus.CLOSED, locked=False, current_user_groupids=[]
+        )
 
     log.debug(
         "project [%s] might be used by the following users: [%s]",
         f"{project_uuid=}",
         f"{set_user_ids=}",
     )
-    usernames = [
-        await users_service.get_user_fullname(app, user_id=uid) for uid in set_user_ids
-    ]
-    # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
-    if set_user_ids.issubset({user_id}) and not await _user_has_another_active_session(
-        user_sessions_with_project, app
-    ):
-        # in this case the project is re-openable by the same user until it gets closed
-        log.debug(
-            "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
-            f"{project_uuid=}",
-            f"{set_user_ids=}",
-        )
-        return ProjectLocked(
-            value=False,
-            owner=Owner(user_id=next(iter(set_user_ids)), **usernames[0]),
-            status=ProjectStatus.OPENED,
-        )
-    # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
-    log.debug(
-        "project [%s] is in use by another user [%s], so it is locked",
-        f"{project_uuid=}",
-        f"{set_user_ids=}",
-    )
-    return ProjectLocked(
-        value=True,
-        owner=Owner(user_id=next(iter(set_user_ids)), **usernames[0]),
+
+    return ProjectShareState(
         status=ProjectStatus.OPENED,
+        locked=False,
+        current_user_groupids=await limited_gather(
+            *[
+                users_service.get_user_primary_group_id(app, user_id=uid)
+                for uid in set_user_ids
+            ],
+            limit=10,
+        ),
     )
 
 
@@ -1600,7 +1594,7 @@ async def get_project_states_for_user(
     # for templates: the project is never locked and never opened. also the running state is always unknown
     running_state = RunningState.UNKNOWN
     lock_state, computation_task = await logged_gather(
-        _get_project_lock_state(user_id, project_uuid, app),
+        _get_project_share_state(user_id, project_uuid, app),
         director_v2_service.get_computation_task(app, user_id, UUID(project_uuid)),
     )
     if computation_task:
@@ -1625,7 +1619,7 @@ async def add_project_states_for_user(
         f"{project['uuid']=}",
     )
     # for templates: the project is never locked and never opened. also the running state is always unknown
-    lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
+    lock_state = await _get_project_share_state(user_id, project["uuid"], app)
     running_state = RunningState.UNKNOWN
 
     if not is_template and (
