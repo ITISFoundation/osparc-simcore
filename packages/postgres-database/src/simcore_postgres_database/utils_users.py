@@ -5,11 +5,13 @@ i.e. models.users main table and all its relations
 import re
 import secrets
 import string
+from dataclasses import dataclass, fields
 from datetime import datetime
 from typing import Any, Final
 
 import sqlalchemy as sa
 from sqlalchemy import Column
+from sqlalchemy.engine.result import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
 from sqlalchemy.sql import Select
@@ -54,7 +56,34 @@ def generate_alternative_username(username: str) -> str:
     return f"{username}_{_generate_random_chars()}"
 
 
+@dataclass(frozen=True)
+class UserRow:
+    id: int
+    name: str
+    email: str
+    role: UserRole
+    status: UserStatus
+    first_name: str | None = None
+    last_name: str | None = None
+    phone: str | None = None
+
+    @classmethod
+    def from_row(cls, row: Row) -> "UserRow":
+        return cls(**{f.name: getattr(row, f.name) for f in fields(cls)})
+
+
 class UsersRepo:
+    _user_columns = (
+        users.c.id,
+        users.c.name,
+        users.c.email,
+        users.c.role,
+        users.c.status,
+        users.c.first_name,
+        users.c.last_name,
+        users.c.phone,
+    )
+
     def __init__(self, engine: AsyncEngine):
         self._engine = engine
 
@@ -78,7 +107,7 @@ class UsersRepo:
         password_hash: str,
         status: UserStatus,
         expires_at: datetime | None,
-    ) -> Any:
+    ) -> UserRow:
         user_data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
@@ -109,15 +138,9 @@ class UsersRepo:
 
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
-                sa.select(
-                    users.c.id,
-                    users.c.name,
-                    users.c.email,
-                    users.c.role,
-                    users.c.status,
-                ).where(users.c.id == user_id)
+                sa.select(*self._user_columns).where(users.c.id == user_id)
             )
-            return result.one()
+            return UserRow.from_row(result.one())
 
     async def link_and_update_user_from_pre_registration(
         self,
@@ -257,37 +280,23 @@ class UsersRepo:
 
     async def get_user_by_email_or_none(
         self, connection: AsyncConnection | None = None, *, email: str
-    ) -> Any | None:
+    ) -> UserRow | None:
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
-                sa.select(
-                    users.c.id,
-                    users.c.name,
-                    users.c.email,
-                    users.c.role,
-                    users.c.status,
-                    users.c.first_name,
-                    users.c.phone,
-                ).where(users.c.email == email.lower())
+                sa.select(*self._user_columns).where(users.c.email == email.lower())
             )
-            return result.one_or_none()
+            row = result.one_or_none()
+            return UserRow.from_row(row) if row else None
 
     async def get_user_by_id_or_none(
         self, connection: AsyncConnection | None = None, *, user_id: int
-    ) -> Any | None:
+    ) -> UserRow | None:
         async with pass_or_acquire_connection(self._engine, connection) as conn:
             result = await conn.execute(
-                sa.select(
-                    users.c.id,
-                    users.c.name,
-                    users.c.email,
-                    users.c.role,
-                    users.c.status,
-                    users.c.first_name,
-                    users.c.phone,
-                ).where(users.c.id == user_id)
+                sa.select(*self._user_columns).where(users.c.id == user_id)
             )
-            return result.one_or_none()
+            row = result.one_or_none()
+            return UserRow.from_row(row) if row else None
 
     async def update_user_phone(
         self, connection: AsyncConnection | None = None, *, user_id: int, phone: str

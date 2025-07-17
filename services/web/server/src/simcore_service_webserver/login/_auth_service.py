@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, TypedDict
+from typing import TypedDict
 
 from aiohttp import web
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -64,12 +64,12 @@ async def create_user(
     password: str,
     status_upon_creation: UserStatus,
     expires_at: datetime | None,
-) -> dict[str, Any]:
+) -> UserInfoDict:
 
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
     async with transaction_context(asyncpg_engine) as conn:
-        user = await repo.new_user(
+        user_row = await repo.new_user(
             conn,
             email=email,
             password_hash=security_service.encrypt_password(password),
@@ -78,11 +78,20 @@ async def create_user(
         )
         await repo.link_and_update_user_from_pre_registration(
             conn,
-            new_user_id=user.id,
-            new_user_email=user.email,
+            new_user_id=user_row.id,
+            new_user_email=user_row.email,
             # FIXME: must fit product_name!!
         )
-    return dict(user._mapping)  # pylint: disable=protected-access # noqa: SLF001
+    return UserInfoDict(
+        id=user_row.id,
+        name=user_row.name,
+        email=user_row.email,
+        role=user_row.role.value,
+        status=user_row.status.value,
+        first_name=user_row.first_name,
+        last_name=user_row.last_name,
+        phone=user_row.phone,
+    )
 
 
 def check_not_null_user(user: UserInfoDict | None) -> UserInfoDict:
