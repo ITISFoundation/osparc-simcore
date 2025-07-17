@@ -10,8 +10,10 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyFunctionPermissionsGet,
     MyPermissionGet,
-    MyProfileGet,
-    MyProfilePatch,
+    MyPhoneConfirm,
+    MyPhoneRegister,
+    MyProfileRestGet,
+    MyProfileRestPatch,
     MyTokenCreate,
     MyTokenGet,
     TokenPathParams,
@@ -36,7 +38,7 @@ router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 
 @router.get(
     "/me",
-    response_model=Envelope[MyProfileGet],
+    response_model=Envelope[MyProfileRestGet],
 )
 async def get_my_profile(): ...
 
@@ -45,7 +47,58 @@ async def get_my_profile(): ...
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_my_profile(_body: MyProfilePatch): ...
+async def update_my_profile(_body: MyProfileRestPatch): ...
+
+
+@router.post(
+    "/me/phone:register",
+    description="Starts the phone registration process",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_202_ACCEPTED: {"description": "Phone registration initiated"},
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Invalid phone number format"
+        },
+    },
+)
+async def my_phone_register(_body: MyPhoneRegister): ...
+
+
+@router.post(
+    "/me/phone:resend",
+    description="Resends the phone registration code",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_202_ACCEPTED: {"description": "Phone code resent"},
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "No pending phone registration found"
+        },
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
+    },
+)
+async def my_phone_resend(): ...
+
+
+@router.post(
+    "/me/phone:confirm",
+    description="Confirms the phone registration",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_204_NO_CONTENT: {"description": "Phone registration confirmed"},
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "No pending registration or invalid code"
+        },
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Invalid confirmation code format"
+        },
+    },
+)
+async def my_phone_confirm(_body: MyPhoneConfirm): ...
 
 
 @router.patch(

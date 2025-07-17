@@ -56,7 +56,7 @@ _DEFAULT_TASK_STATUS_CODES: dict[int | str, dict[str, Any]] = {
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=True,
 )
 async def list_tasks(
     app: Annotated[FastAPI, Depends(get_app)],
@@ -96,7 +96,7 @@ async def list_tasks(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=True,
 )
 async def get_task_status(
     task_id: AsyncJobId,
@@ -128,7 +128,7 @@ async def get_task_status(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=True,
 )
 async def cancel_task(
     task_id: AsyncJobId,
@@ -162,7 +162,7 @@ async def cancel_task(
             FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
         ],
     ),
-    include_in_schema=False,  # TO BE RELEASED in 0.10-rc1
+    include_in_schema=True,
 )
 async def get_task_result(
     task_id: AsyncJobId,

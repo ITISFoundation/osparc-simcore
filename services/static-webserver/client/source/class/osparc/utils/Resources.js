@@ -39,6 +39,10 @@ qx.Class.define("osparc.utils.Resources", {
       return ((hypertoolData["resourceType"] === "hypertool") && ("uuid" in hypertoolData));
     },
 
+    isFunction: function(functionData) {
+      return ((functionData["resourceType"] === "function") && ("uuid" in functionData));
+    },
+
     isService: function(serviceData) {
       return ((serviceData["resourceType"] === "service") && ("key" in serviceData) && ("version" in serviceData));
     },

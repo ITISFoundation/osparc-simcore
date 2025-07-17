@@ -29,6 +29,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog.settings import CatalogSettings
+from .collaboration.settings import RealTimeCollaborationSettings
 from .constants import APP_SETTINGS_KEY
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
@@ -55,7 +56,7 @@ _logger = logging.getLogger(__name__)
 
 
 # NOTE: to mark a plugin as a DEV-FEATURE annotated it with
-#    `Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})`
+#    `Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})`
 # This will force it to be disabled when WEBSERVER_DEV_FEATURES_ENABLED=False
 _X_FEATURE_UNDER_DEVELOPMENT: Final[str] = "x-dev-feature"
 
@@ -277,6 +278,17 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
+    WEBSERVER_REALTIME_COLLABORATION: Annotated[
+        RealTimeCollaborationSettings | None,
+        Field(
+            description="Enables real-time collaboration features",
+            json_schema_extra={
+                "auto_default_from_env": True,
+                _X_FEATURE_UNDER_DEVELOPMENT: True,
+            },
+        ),
+    ]
+
     WEBSERVER_REDIS: Annotated[
         RedisSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
     ]
@@ -482,6 +494,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "WEBSERVER_LICENSES",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
+            "WEBSERVER_REALTIME_COLLABORATION",
         }
         return [_ for _ in advertised_plugins if not self.is_enabled(_)] + [
             # NOTE: Permanently retired in https://github.com/ITISFoundation/osparc-simcore/pull/7182
@@ -557,6 +570,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 },
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
+                },
+                "WEBSERVER_REALTIME_COLLABORATION": {
+                    "RTC_MAX_NUMBER_OF_USERS",
                 },
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
                 "WEBSERVER_TRASH": {
