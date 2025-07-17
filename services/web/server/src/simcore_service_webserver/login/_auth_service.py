@@ -31,8 +31,10 @@ async def create_user(
     expires_at: datetime | None,
 ) -> dict[str, Any]:
 
-    async with transaction_context(get_asyncpg_engine(app)) as conn:
+    asyncpg_engine = get_asyncpg_engine(app)
+    async with transaction_context(asyncpg_engine) as conn:
         user = await UsersRepo.new_user(
+            asyncpg_engine,
             conn,
             email=email,
             password_hash=security_service.encrypt_password(password),

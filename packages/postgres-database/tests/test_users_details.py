@@ -258,6 +258,7 @@ async def test_create_and_link_user_from_pre_registration(
     async with transaction_context(asyncpg_engine) as connection:
         # user gets created
         new_user = await UsersRepo.new_user(
+            asyncpg_engine,
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
@@ -292,6 +293,7 @@ async def test_get_billing_details_from_pre_registration(
     # Create the user
     async with transaction_context(asyncpg_engine) as connection:
         new_user = await UsersRepo.new_user(
+            asyncpg_engine,
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
@@ -332,6 +334,7 @@ async def test_update_user_from_pre_registration(
     # Create the user and link to pre-registration
     async with transaction_context(asyncpg_engine) as connection:
         new_user = await UsersRepo.new_user(
+            asyncpg_engine,
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
@@ -490,6 +493,7 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
     # 3.Now create a user account with the approved pre-registration
     async with transaction_context(asyncpg_engine) as connection:
         new_user = await UsersRepo.new_user(
+            asyncpg_engine,
             connection,
             email=user_email,
             password_hash="123456",  # noqa: S106

@@ -11,11 +11,13 @@ from typing import Any, Final
 import sqlalchemy as sa
 from common_library.async_tools import maybe_await
 from sqlalchemy import Column
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio.engine import AsyncConnection, AsyncEngine
 
 from ._protocols import DBConnection
-from .aiopg_errors import UniqueViolation
 from .models.users import UserRole, UserStatus, users
 from .models.users_details import users_pre_registration_details
+from .utils_repos import pass_or_acquire_connection, transaction_context
 
 
 class BaseUserRepoError(Exception):
@@ -53,9 +55,12 @@ def generate_alternative_username(username: str) -> str:
 
 
 class UsersRepo:
+
     @staticmethod
     async def new_user(
-        conn: DBConnection,
+        engine: AsyncEngine,
+        connection: AsyncConnection | None = None,
+        *,
         email: str,
         password_hash: str,
         status: UserStatus,
@@ -73,26 +78,28 @@ class UsersRepo:
         user_id = None
         while user_id is None:
             try:
-                user_id = await conn.scalar(
-                    users.insert().values(**data).returning(users.c.id)
-                )
-            except UniqueViolation:
+                async with transaction_context(engine, connection) as conn:
+                    user_id = await conn.scalar(
+                        users.insert().values(**data).returning(users.c.id)
+                    )
+            except IntegrityError:
                 data["name"] = generate_alternative_username(data["name"])
 
-        result = await conn.execute(
-            sa.select(
-                users.c.id,
-                users.c.name,
-                users.c.email,
-                users.c.role,
-                users.c.status,
-            ).where(users.c.id == user_id)
-        )
-        return await maybe_await(result.first())
+        async with pass_or_acquire_connection(engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(
+                    users.c.id,
+                    users.c.name,
+                    users.c.email,
+                    users.c.role,
+                    users.c.status,
+                ).where(users.c.id == user_id)
+            )
+            return result.one()
 
     @staticmethod
     async def link_and_update_user_from_pre_registration(
-        conn: DBConnection,
+        connection: AsyncConnection,
         *,
         new_user_id: int,
         new_user_email: str,
@@ -107,7 +114,7 @@ class UsersRepo:
         assert new_user_id > 0  # nosec
 
         # link both tables first
-        result = await conn.execute(
+        result = await connection.execute(
             users_pre_registration_details.update()
             .where(users_pre_registration_details.c.pre_email == new_user_email)
             .values(user_id=new_user_id)
@@ -133,14 +140,14 @@ class UsersRepo:
                 and c.name.startswith("pre_")
             }, "Different pre-cols detected. This code might need an update update"
 
-            result = await conn.execute(
+            result = await connection.execute(
                 sa.select(*pre_columns).where(
                     users_pre_registration_details.c.pre_email == new_user_email
                 )
             )
             if pre_registration_details_data := result.first():
                 # NOTE: could have many products! which to use?
-                await conn.execute(
+                await connection.execute(
                     users.update()
                     .where(users.c.id == new_user_id)
                     .values(
