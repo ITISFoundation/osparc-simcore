@@ -58,6 +58,17 @@ async def register_function(request: web.Request) -> web.Response:
 
 
 @routes.get(
+    f"/{VTAG}/functions",
+    name="list_functions",
+)
+@login_required
+@permission_required("function.read")
+@handle_rest_requests_exceptions
+async def list_functions(request: web.Request) -> web.Response:
+    raise NotImplementedError
+
+
+@routes.get(
     f"/{VTAG}/functions/{{function_id}}",
     name="get_function",
 )
@@ -75,6 +86,8 @@ async def get_function(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
+
+    # TODO: enrich with project data
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
