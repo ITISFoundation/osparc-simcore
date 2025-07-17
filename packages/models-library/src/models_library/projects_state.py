@@ -227,7 +227,11 @@ class ProjectRunningState(BaseModel):
 
 
 class ProjectState(BaseModel):
-    locked: Annotated[ProjectLocked, Field(..., description="The project lock state")]
-    state: ProjectRunningState = Field(..., description="The project running state")
+    share_state: Annotated[
+        ProjectShareState, Field(description="The project lock state")
+    ]
+    state: Annotated[
+        ProjectRunningState, Field(description="The project running state")
+    ]
 
     model_config = ConfigDict(extra="forbid")
