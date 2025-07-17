@@ -61,7 +61,7 @@ from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize, PositiveInt, TypeAdapter
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
@@ -1405,6 +1405,7 @@ async def try_open_project_for_user(
     client_session_id: str,
     app: web.Application,
     max_number_of_opened_projects_per_user: int | None,
+    max_number_of_users_per_project: PositiveInt | None,
 ) -> bool:
     """
     Raises:
