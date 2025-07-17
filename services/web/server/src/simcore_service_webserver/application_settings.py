@@ -29,6 +29,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog.settings import CatalogSettings
+from .collaboration.settings import RealTimeCollaborationSettings
 from .constants import APP_SETTINGS_KEY
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
@@ -40,7 +41,6 @@ from .licenses.settings import LicensesSettings
 from .login.settings import LoginSettings
 from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings
-from .realtime.settings import RealTimeCollaborationSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .resource_usage.settings import ResourceUsageTrackerSettings
 from .rest.settings import RestSettings
