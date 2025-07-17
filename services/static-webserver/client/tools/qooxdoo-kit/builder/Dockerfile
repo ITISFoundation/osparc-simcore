@@ -4,7 +4,7 @@
 #
 # Note: context at osparc-simcore/services/static-webserver/client expected
 #
-ARG tag
+ARG tag=latest
 FROM itisfoundation/qooxdoo-kit:${tag} AS touch
 
 WORKDIR /project
@@ -84,7 +84,7 @@ FROM server-base AS production
 COPY --from=build-client \
   --chown=${SC_USER_NAME}:${SC_USER_NAME} \
   /project/build-output "/static-content"
-ENV SC_BUILD_TARGET production
+ENV SC_BUILD_TARGET=production
 
 FROM server-base AS development
-ENV SC_BUILD_TARGET development
+ENV SC_BUILD_TARGET=development
