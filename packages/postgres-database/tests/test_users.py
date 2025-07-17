@@ -7,31 +7,31 @@ from datetime import datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_user
-from simcore_postgres_database.aiopg_errors import (
-    InvalidTextRepresentation,
-    UniqueViolation,
-)
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
+from simcore_postgres_database.utils_repos import (
+    transaction_context,
+)
 from simcore_postgres_database.utils_users import (
     UsersRepo,
     _generate_username_from_email,
     generate_alternative_username,
 )
+from sqlalchemy.exc import DataError, IntegrityError
+from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql import func
 
 
 @pytest.fixture
-async def clean_users_db_table(connection: SAConnection):
+async def clean_users_db_table(asyncpg_engine: AsyncEngine):
     yield
-    await connection.execute(users.delete())
+    async with transaction_context(asyncpg_engine) as connection:
+        await connection.execute(users.delete())
 
 
 async def test_user_status_as_pending(
-    connection: SAConnection, faker: Faker, clean_users_db_table: None
+    asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None
 ):
     """Checks a bug where the expression
 
@@ -51,10 +51,13 @@ async def test_user_status_as_pending(
     # tests that the database never stores the word "PENDING"
     data = random_user(faker, status="PENDING")
     assert data["status"] == "PENDING"
-    with pytest.raises(InvalidTextRepresentation) as err_info:
-        await connection.execute(users.insert().values(data))
+    async with transaction_context(asyncpg_engine) as connection:
+        with pytest.raises(DataError) as err_info:
+            await connection.execute(users.insert().values(data))
 
-    assert 'invalid input value for enum userstatus: "PENDING"' in f"{err_info.value}"
+        assert (
+            'invalid input value for enum userstatus: "PENDING"' in f"{err_info.value}"
+        )
 
 
 @pytest.mark.parametrize(
@@ -66,27 +69,30 @@ async def test_user_status_as_pending(
 )
 async def test_user_status_inserted_as_enum_or_int(
     status_value: UserStatus | str,
-    connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
     faker: Faker,
     clean_users_db_table: None,
 ):
     # insert as `status_value`
     data = random_user(faker, status=status_value)
     assert data["status"] == status_value
-    user_id = await connection.scalar(users.insert().values(data).returning(users.c.id))
 
-    # get as UserStatus.CONFIRMATION_PENDING
-    user = await (
-        await connection.execute(users.select().where(users.c.id == user_id))
-    ).first()
-    assert user
+    async with transaction_context(asyncpg_engine) as connection:
+        user_id = await connection.scalar(
+            users.insert().values(data).returning(users.c.id)
+        )
 
-    assert UserStatus(user.status) == UserStatus.CONFIRMATION_PENDING
-    assert user.status == UserStatus.CONFIRMATION_PENDING
+        # get as UserStatus.CONFIRMATION_PENDING
+        result = await connection.execute(users.select().where(users.c.id == user_id))
+        user = result.one_or_none()
+        assert user
+
+        assert UserStatus(user.status) == UserStatus.CONFIRMATION_PENDING
+        assert user.status == UserStatus.CONFIRMATION_PENDING
 
 
 async def test_unique_username(
-    connection: SAConnection, faker: Faker, clean_users_db_table: None
+    asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None
 ):
     data = random_user(
         faker,
@@ -96,33 +102,35 @@ async def test_unique_username(
         first_name="Pedro",
         last_name="Crespo Valero",
     )
-    user_id = await connection.scalar(users.insert().values(data).returning(users.c.id))
-    user = await (
-        await connection.execute(users.select().where(users.c.id == user_id))
-    ).first()
-    assert user
+    async with transaction_context(asyncpg_engine) as connection:
+        user_id = await connection.scalar(
+            users.insert().values(data).returning(users.c.id)
+        )
+        result = await connection.execute(users.select().where(users.c.id == user_id))
+        user = result.one_or_none()
+        assert user
 
-    assert user.id == user_id
-    assert user.name == "pcrespov"
+        assert user.id == user_id
+        assert user.name == "pcrespov"
 
-    # same name fails
-    data["email"] = faker.email()
-    with pytest.raises(UniqueViolation):
+        # same name fails
+        data["email"] = faker.email()
+        with pytest.raises(IntegrityError):
+            await connection.scalar(users.insert().values(data).returning(users.c.id))
+
+        # generate new name
+        data["name"] = _generate_username_from_email(user.email)
+        data["email"] = faker.email()
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
-    # generate new name
-    data["name"] = _generate_username_from_email(user.email)
-    data["email"] = faker.email()
-    await connection.scalar(users.insert().values(data).returning(users.c.id))
-
-    # and another one
-    data["name"] = generate_alternative_username(data["name"])
-    data["email"] = faker.email()
-    await connection.scalar(users.insert().values(data).returning(users.c.id))
+        # and another one
+        data["name"] = generate_alternative_username(data["name"])
+        data["email"] = faker.email()
+        await connection.scalar(users.insert().values(data).returning(users.c.id))
 
 
 async def test_new_user(
-    connection: SAConnection, faker: Faker, clean_users_db_table: None
+    asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None
 ):
     data = {
         "email": faker.email(),
@@ -130,61 +138,65 @@ async def test_new_user(
         "status": UserStatus.ACTIVE,
         "expires_at": datetime.utcnow(),
     }
-    new_user = await UsersRepo.new_user(connection, **data)
+    async with transaction_context(asyncpg_engine) as connection:
+        new_user = await UsersRepo.new_user(connection, **data)
 
-    assert new_user.email == data["email"]
-    assert new_user.status == data["status"]
-    assert new_user.role == UserRole.USER
+        assert new_user.email == data["email"]
+        assert new_user.status == data["status"]
+        assert new_user.role == UserRole.USER
 
-    other_email = f"{new_user.name}@other-domain.com"
-    assert _generate_username_from_email(other_email) == new_user.name
-    other_data = {**data, "email": other_email}
+        other_email = f"{new_user.name}@other-domain.com"
+        assert _generate_username_from_email(other_email) == new_user.name
+        other_data = {**data, "email": other_email}
 
-    other_user = await UsersRepo.new_user(connection, **other_data)
-    assert other_user.email != new_user.email
-    assert other_user.name != new_user.name
+        other_user = await UsersRepo.new_user(connection, **other_data)
+        assert other_user.email != new_user.email
+        assert other_user.name != new_user.name
 
-    assert await UsersRepo.get_email(connection, other_user.id) == other_user.email
-    assert await UsersRepo.get_role(connection, other_user.id) == other_user.role
-    assert (
-        await UsersRepo.get_active_user_email(connection, other_user.id)
-        == other_user.email
-    )
+        assert await UsersRepo.get_email(connection, other_user.id) == other_user.email
+        assert await UsersRepo.get_role(connection, other_user.id) == other_user.role
+        assert (
+            await UsersRepo.get_active_user_email(connection, other_user.id)
+            == other_user.email
+        )
 
 
-async def test_trial_accounts(connection: SAConnection, clean_users_db_table: None):
+async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table: None):
     EXPIRATION_INTERVAL = timedelta(minutes=5)
 
     # creates trial user
     client_now = datetime.utcnow()
-    user_id: int | None = await connection.scalar(
-        users.insert()
-        .values(
-            **random_user(
-                status=UserStatus.ACTIVE,
-                # Using some magic from sqlachemy ...
-                expires_at=func.now() + EXPIRATION_INTERVAL,
+    async with transaction_context(asyncpg_engine) as connection:
+        user_id: int | None = await connection.scalar(
+            users.insert()
+            .values(
+                **random_user(
+                    status=UserStatus.ACTIVE,
+                    # Using some magic from sqlachemy ...
+                    expires_at=func.now() + EXPIRATION_INTERVAL,
+                )
+            )
+            .returning(users.c.id)
+        )
+        assert user_id
+
+        # check expiration date
+        result = await connection.execute(
+            sa.select(users.c.status, users.c.created_at, users.c.expires_at).where(
+                users.c.id == user_id
             )
         )
-        .returning(users.c.id)
-    )
-    assert user_id
+        row = result.one_or_none()
+        assert row
+        assert row.created_at - client_now < timedelta(
+            minutes=1
+        ), "Difference between server and client now should not differ much"
+        assert row.expires_at - row.created_at == EXPIRATION_INTERVAL
+        assert row.status == UserStatus.ACTIVE
 
-    # check expiration date
-    result: ResultProxy = await connection.execute(
-        sa.select(users.c.status, users.c.created_at, users.c.expires_at).where(
-            users.c.id == user_id
+        # sets user as expired
+        await connection.execute(
+            users.update()
+            .values(status=UserStatus.EXPIRED)
+            .where(users.c.id == user_id)
         )
-    )
-    row: RowProxy | None = await result.first()
-    assert row
-    assert row.created_at - client_now < timedelta(
-        minutes=1
-    ), "Difference between server and client now should not differ much"
-    assert row.expires_at - row.created_at == EXPIRATION_INTERVAL
-    assert row.status == UserStatus.ACTIVE
-
-    # sets user as expired
-    await connection.execute(
-        users.update().values(status=UserStatus.EXPIRED).where(users.c.id == user_id)
-    )
