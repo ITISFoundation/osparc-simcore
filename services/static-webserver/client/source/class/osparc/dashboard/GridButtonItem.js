@@ -204,6 +204,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           "template",
           "tutorial",
           "hypertool",
+          "function",
         ].includes(this.getResourceType())) {
           const dateBy = this.getChildControl("date-by");
           dateBy.set({
