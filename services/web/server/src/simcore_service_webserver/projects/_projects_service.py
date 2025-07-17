@@ -166,11 +166,6 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-#
-# GET project -----------------------------------------------------
-#
-
-
 async def get_project_for_user(
     app: web.Application,
     project_uuid: str,
@@ -368,11 +363,6 @@ async def patch_project(
     )
 
 
-#
-# DELETE project -----------------------------------------------------
-#
-
-
 async def delete_project_by_user(
     app: web.Application,
     *,
@@ -435,11 +425,6 @@ async def submit_delete_project_task(
     return task
 
 
-#
-# PROJECT NODES -----------------------------------------------------
-#
-
-
 async def _get_default_pricing_and_hardware_info(
     app: web.Application,
     product_name: str,
@@ -493,11 +478,11 @@ async def update_project_node_resources_from_hardware_info(
         return
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
-            await get_instance_type_details(
-                rabbitmq_rpc_client,
-                instance_type_names=set(hardware_info.aws_ec2_instances),
-            )
+        unordered_list_ec2_instance_types: list[
+            EC2InstanceTypeGet
+        ] = await get_instance_type_details(
+            rabbitmq_rpc_client,
+            instance_type_names=set(hardware_info.aws_ec2_instances),
         )
 
         assert unordered_list_ec2_instance_types  # nosec
@@ -1360,11 +1345,6 @@ async def post_trigger_connected_service_retrieve(
     )
 
 
-#
-# OPEN PROJECT -------------------------------------------------------------------
-#
-
-
 async def _user_has_another_active_session(
     users_sessions_ids: list[UserSessionID], app: web.Application
 ) -> bool:
@@ -1492,11 +1472,6 @@ async def try_open_project_for_user(
         return False
 
 
-#
-# CLOSE PROJECT -------------------------------------------------------------------
-#
-
-
 async def try_close_project_for_user(
     user_id: int,
     project_uuid: str,
@@ -1505,15 +1480,13 @@ async def try_close_project_for_user(
     simcore_user_agent: str,
 ):
     with managed_resource(user_id, client_session_id, app) as user_session:
-        current_session: UserSessionID = user_session.get_id()
-        all_sessions_with_project: list[UserSessionID] = (
-            await user_session.find_users_of_resource(
-                app, key=PROJECT_ID_KEY, value=project_uuid
-            )
+        current_user_session = user_session.get_id()
+        all_user_sessions_with_project = await user_session.find_users_of_resource(
+            app, key=PROJECT_ID_KEY, value=project_uuid
         )
 
         # first check whether other sessions registered this project
-        if current_session not in all_sessions_with_project:
+        if current_user_session not in all_user_sessions_with_project:
             # nothing to do, I do not have this project registered
             log.warning(
                 "%s is not registered as resource of %s. Skipping close project",
@@ -1530,9 +1503,9 @@ async def try_close_project_for_user(
         await user_session.remove(key=PROJECT_ID_KEY)
 
     # check it is not opened by someone else
-    all_sessions_with_project.remove(current_session)
-    log.debug("remaining user_to_session_ids: %s", all_sessions_with_project)
-    if not all_sessions_with_project:
+    all_user_sessions_with_project.remove(current_user_session)
+    log.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
+    if not all_user_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         fire_and_forget_task(
             remove_project_dynamic_services(
@@ -1545,13 +1518,8 @@ async def try_close_project_for_user(
         log.error(
             "project [%s] is used by other users: [%s]. This should not be possible",
             project_uuid,
-            {user_session.user_id for user_session in all_sessions_with_project},
+            {user_session.user_id for user_session in all_user_sessions_with_project},
         )
-
-
-#
-#  PROJECT STATE -------------------------------------------------------------------
-#
 
 
 async def _get_project_lock_state(
