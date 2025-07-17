@@ -33,9 +33,6 @@
  * </pre>
  */
 
-const BUTTON_SIZE = 38;
-const NODE_INPUTS_WIDTH = 210;
-
 qx.Class.define("osparc.workbench.WorkbenchUI", {
   extend: qx.ui.core.Widget,
 
@@ -56,16 +53,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
   },
 
   statics: {
-    getDashedBorderStyle(isRight) {
-      const side = isRight ? "right" : "left";
-      const borderStyle = {};
-      borderStyle["background-image"] = `linear-gradient(to bottom, #3D3D3D 50%, rgba(255, 255, 255, 0) 0%)`;
-      borderStyle["background-position"] = side;
-      borderStyle["background-size"] = "5px 50px";
-      borderStyle["background-repeat"] = "repeat-y";
-      return borderStyle;
-    },
-
+    BUTTON_SIZE: 38,
+    NODE_INPUTS_WIDTH: 210,
     ZOOM_VALUES: [
       0.1,
       0.2,
@@ -83,7 +72,17 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       2,
       2.5,
       3
-    ]
+    ],
+
+    getDashedBorderStyle(isRight) {
+      const side = isRight ? "right" : "left";
+      const borderStyle = {};
+      borderStyle["background-image"] = `linear-gradient(to bottom, #3D3D3D 50%, rgba(255, 255, 255, 0) 0%)`;
+      borderStyle["background-position"] = side;
+      borderStyle["background-size"] = "5px 50px";
+      borderStyle["background-repeat"] = "repeat-y";
+      return borderStyle;
+    },
   },
 
   events: {
@@ -227,8 +226,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __addDeleteItemButton: function() {
       const deleteItemButton = this.__deleteItemButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/trash/18",
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE,
+        width: this.self().BUTTON_SIZE,
+        height: this.self().BUTTON_SIZE,
         visibility: "excluded"
       });
       deleteItemButton.addListener("execute", () => {
@@ -271,8 +270,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const label = isInput ? this.tr("INPUTS") : this.tr("OUTPUTS");
       const inputOutputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       inputOutputNodesLayout.set({
-        width: NODE_INPUTS_WIDTH,
-        maxWidth: NODE_INPUTS_WIDTH,
+        width: this.self().NODE_INPUTS_WIDTH,
+        maxWidth: this.self().NODE_INPUTS_WIDTH,
         allowGrowX: false,
         padding: [0, 6]
       });
