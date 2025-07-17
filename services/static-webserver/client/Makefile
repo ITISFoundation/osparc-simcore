@@ -31,10 +31,10 @@ compile-dev: qx_packages source-output ## qx compiles host' 'source' -> host's '
 	# qx compile 'source' $(flags) --> 'source-output' [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
 	$(docker_compose) run --detach --rm --name=$(container_name) qooxdoo-kit \
 		qx compile $(flags) \
+			--set-env osparc.vcsOriginUrl="${VCS_URL}" \
 			--set-env osparc.vcsRef="${VCS_REF}" \
 			--set-env osparc.vcsRefClient="${VCS_REF_CLIENT}" \
-			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}" \
-			--set-env osparc.vcsOriginUrl="${VCS_URL}"
+			--set-env osparc.vcsStatusClient="${VCS_STATUS_CLIENT}"
 
 .PHONY: follow-dev-logs
 follow-dev-logs: ## follow the logs of the qx compiler
@@ -44,8 +44,10 @@ follow-dev-logs: ## follow the logs of the qx compiler
 .PHONY: compile touch upgrade
 compile: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker buildx build --file $(docker_file) --tag $(docker_image) \
+	@docker buildx build \
 		--load \
+		--file $(docker_file) \
+		--tag $(docker_image) \
 		--build-arg tag=${QOOXDOO_KIT_TAG} \
 		--build-arg VCS_REF=${VCS_REF} \
 		--build-arg VCS_REF_CLIENT=${VCS_REF_CLIENT} \
@@ -56,7 +58,13 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 
 touch: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
-	@docker buildx build --load --file $(docker_file) --tag $(docker_image) --build-arg tag=${QOOXDOO_KIT_TAG} --target=touch .
+	@docker buildx build \
+		--load \
+		--file $(docker_file) \
+		--tag $(docker_image) \
+		--build-arg tag=${QOOXDOO_KIT_TAG} \
+		--target=touch \
+		.
 
 upgrade: ## upgrade to official version of the tool
 	# upgrading to ${QOOXDOO_KIT_TAG}
