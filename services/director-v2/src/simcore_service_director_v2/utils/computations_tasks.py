@@ -11,10 +11,9 @@ from ..modules.db.repositories.comp_tasks import CompTasksRepository
 
 
 class PipelineInfo(NamedTuple):
-    # NOTE: kept old names for legacy but should rename for clarity
     pipeline_dag: nx.DiGraph
-    all_tasks: list[CompTaskAtDB]  # all nodes in pipeline
-    filtered_tasks: list[CompTaskAtDB]  # nodes that actually run i.e. part of the dag
+    all_tasks: list[CompTaskAtDB]
+    filtered_tasks: list[CompTaskAtDB]
 
 
 async def _get_pipeline_info(
