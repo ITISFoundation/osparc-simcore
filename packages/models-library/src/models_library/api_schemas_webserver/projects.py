@@ -35,7 +35,7 @@ from ..projects import (
     ProjectType,
 )
 from ..projects_access import AccessRights, GroupIDStr
-from ..projects_state import ProjectState
+from ..projects_state import ProjectShareState, ProjectState
 from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -105,6 +105,15 @@ class ProjectCopyOverride(InputSchema):
         )
 
 
+class ProjectShareStateOutputSchema(ProjectShareState, OutputSchema): ...
+
+
+class ProjectStateOutputSchema(ProjectState, OutputSchema):
+    share_state: Annotated[
+        ProjectShareStateOutputSchema, Field(description="The project lock state")
+    ]
+
+
 class ProjectGet(OutputSchema):
     uuid: ProjectID
 
@@ -124,7 +133,7 @@ class ProjectGet(OutputSchema):
     # state
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
-    state: ProjectState | None = None
+    state: ProjectStateOutputSchema | None = None
     trashed_at: datetime | None
     trashed_by: Annotated[
         GroupID | None, Field(description="The primary gid of the user who trashed")
