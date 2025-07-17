@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Final
 
 from aiohttp import web
+from models_library.users import UserID
 from servicelib.logging_utils import get_log_record_extra, log_context
 
 from .registry import (
@@ -32,7 +33,7 @@ def _get_service_deletion_timeout(app: web.Application) -> int:
 
 @dataclass(order=True, frozen=True)
 class UserSessionID:
-    user_id: int
+    user_id: UserID
     client_session_id: str
 
 
