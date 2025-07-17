@@ -21,10 +21,11 @@ from models_library.users import UserID
 from servicelib.utils import logged_gather
 from starlette import status
 
+from ...core.errors import PipelineTaskMissingError
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...utils import dask as dask_utils
-from ...utils.computations_tasks import PipelineTaskMissingError, validate_pipeline
+from ...utils.computations_tasks import validate_pipeline
 from ..dependencies.database import get_repository
 
 log = logging.getLogger(__name__)

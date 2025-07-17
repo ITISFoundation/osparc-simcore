@@ -70,6 +70,7 @@ from ...modules.db.repositories.projects_metadata import ProjectsMetadataReposit
 from ...modules.db.repositories.users import UsersRepository
 from ...modules.resource_usage_tracker_client import ResourceUsageTrackerClient
 from ...utils import computations as utils
+from ...utils.computations_tasks import validate_pipeline
 from ...utils.dags import (
     compute_pipeline_details,
     compute_pipeline_started_timestamp,
@@ -83,7 +84,6 @@ from ..dependencies.catalog import get_catalog_client
 from ..dependencies.database import get_repository
 from ..dependencies.rabbitmq import rabbitmq_rpc_client
 from ..dependencies.rut_client import get_rut_client
-from .computations_tasks import validate_pipeline
 
 _PIPELINE_ABORT_TIMEOUT_S: Final[timedelta] = timedelta(seconds=30)
 
