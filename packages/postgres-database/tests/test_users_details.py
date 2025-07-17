@@ -309,11 +309,8 @@ async def test_get_billing_details_from_pre_registration(
         )
 
     # Get billing details
-    async with pass_or_acquire_connection(asyncpg_engine) as connection:
-        invoice_data = await UsersRepo.get_billing_details(
-            connection, user_id=new_user.id
-        )
-        assert invoice_data is not None
+    invoice_data = await repo.get_billing_details(user_id=new_user.id)
+    assert invoice_data is not None
 
     # Test UserAddress model conversion
     user_address = UserAddress.create_from_db(invoice_data)
