@@ -82,6 +82,22 @@ async def get_function(request: web.Request) -> web.Response:
     )
 
 
+@routes.put(
+    "/{VTAG}/functions/{function_id}",
+    name="update_function",
+)
+@login_required
+@permission_required("function.write")
+@handle_rest_requests_exceptions
+async def update_function(request: web.Request) -> web.Response:
+    path_params = parse_request_path_parameters_as(FunctionPathParams, request)
+    function_id = path_params.function_id
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+
+    raise NotImplementedError
+
+
 @routes.delete(
     f"/{VTAG}/functions/{{function_id}}",
     name="delete_function",
