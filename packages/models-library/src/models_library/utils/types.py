@@ -1,6 +1,8 @@
+from functools import lru_cache
 from typing import Annotated, Any, Union, get_args, get_origin
 
 
+@lru_cache
 def get_types_from_annotated_union(annotated_alias: Any) -> tuple[type, ...]:
     """
     Introspects a complex Annotated alias to extract the base types from its inner Union.
