@@ -16,6 +16,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
+from faker import Faker
 from models_library.projects_state import RunningState
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
@@ -23,7 +24,9 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.status_codes_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
     NodeClass,
@@ -518,3 +521,61 @@ async def test_run_pipeline_and_check_state(
     )
 
     print(f"<-- pipeline completed successfully in {time.monotonic() - start} seconds")
+
+
+@pytest.fixture
+async def populated_project_metadata(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    faker: Faker,
+    postgres_db: sa.engine.Engine,
+):
+    assert client.app
+    project_uuid = user_project["uuid"]
+    with postgres_db.connect() as con:
+        con.execute(
+            projects_metadata.insert().values(
+                **{
+                    "project_uuid": project_uuid,
+                    "custom": {
+                        "job_name": "My Job Name",
+                        "group_id": faker.uuid4(),
+                        "group_name": "My Group Name",
+                    },
+                }
+            )
+        )
+        yield
+        con.execute(projects_metadata.delete())
+        con.execute(comp_runs_collections.delete())  # cleanup
+
+
+@pytest.mark.parametrize(*user_role_response(), ids=str)
+async def test_start_multiple_computation_with_the_same_collection_run_id(
+    client: TestClient,
+    sleeper_service: dict[str, str],
+    postgres_db: sa.engine.Engine,
+    populated_project_metadata: None,
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    fake_workbench_adjacency_list: dict[str, Any],
+    user_role: UserRole,
+    expected: _ExpectedResponseTuple,
+):
+    assert client.app
+    project_id = user_project["uuid"]
+
+    url_start = client.app.router["start_computation"].url_for(project_id=project_id)
+    assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
+
+    # POST /v0/computations/{project_id}:start
+    resp = await client.post(f"{url_start}")
+    await assert_status(resp, expected.created)
+
+    resp = await client.post(f"{url_start}")
+    # starting again should be disallowed, since it's already running
+    assert resp.status == expected.confict
+
+    # NOTE: This tests that there is only one entry in comp_runs_collections table created
+    # as the project metadata has the same group_id

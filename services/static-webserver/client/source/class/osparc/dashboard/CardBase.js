@@ -24,6 +24,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
   construct: function() {
     this.base(arguments);
 
+    if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      // "IN_USE" is not a blocker anymore
+      const inUseIdx = qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.indexOf("IN_USE");
+      if (inUseIdx > -1) {
+        qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.splice(inUseIdx, 1);
+      }
+    }
+
     [
       "pointerover",
       "focus"
@@ -768,13 +776,22 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      let lockInUse = false;
+      let projectInUse = false;
       if ("locked" in state && "value" in state["locked"]) {
-        lockInUse = state["locked"]["value"];
+        projectInUse = state["locked"]["value"];
       }
-      this.setBlocked(lockInUse ? "IN_USE" : false);
-      if (lockInUse) {
-        this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+        if (projectInUse && state["locked"]["status"] === "OPENED") {
+          this.__showWhoIsIn(state["locked"]["owner"]);
+        } else {
+          this.__showWhoIsIn(null);
+        }
+      } else {
+        this.setBlocked(projectInUse ? "IN_USE" : false);
+        if (projectInUse) {
+          this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+        }
       }
 
       const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
@@ -790,13 +807,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    // pipelineState: ["NOT_STARTED", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
+    // pipelineState: ["NOT_STARTED", "PUBLISHED", "STOPPING", "STARTED", "SUCCESS", "ABORTED", "FAILED", "UNKNOWN"]
     __applyPipelineState: function(pipelineState) {
       let iconSource;
       let toolTipText;
       let borderColor;
       switch (pipelineState) {
+        case "PUBLISHED":
         case "STARTED":
+        case "STOPPING":
           iconSource = "@FontAwesome5Solid/spinner/10";
           toolTipText = this.tr("Running");
           borderColor = "info";
@@ -850,6 +869,30 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipIcon: iconSource,
         toolTipText
       });
+    },
+
+    __showWhoIsIn: function(whoIsIn) {
+      let users = [];
+      if (whoIsIn) {
+        // replace this once the backend returns a list of group__ids
+        const allUsers = [
+          { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
+          { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
+          { name: "Charlie", avatar: "https://i.pravatar.cc/150?img=3" },
+          { name: "Dana", avatar: "https://i.pravatar.cc/150?img=4" },
+          { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
+          { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
+        ];
+        // Random number of users between 1 and 6
+        const randomCount = Math.floor(Math.random() * 6) + 1;
+        // Shuffle the array and take the first randomCount users
+        const shuffled = allUsers.sort(() => 0.5 - Math.random());
+        users = shuffled.slice(0, randomCount);
+      }
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() && this.getResourceType() === "study") {
+        const avatarGroup = this.getChildControl("avatar-group");
+        avatarGroup.setUsers(users);
+      }
     },
 
     __showBlockedCardFromStatus: function(reason, moreInfo) {
@@ -1062,7 +1105,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     openData: function() {
       const resourceData = this.getResourceData();
-      osparc.widget.StudyDataManager.popUpInWindow(resourceData["uuid"]);
+      osparc.widget.StudyDataManager.popUpInWindow(resourceData);
     },
 
     openBilling: function() {

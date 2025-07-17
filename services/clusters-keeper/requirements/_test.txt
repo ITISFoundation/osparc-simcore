@@ -95,7 +95,7 @@ flask==3.1.1
     # via
     #   flask-cors
     #   moto
-flask-cors==6.0.0
+flask-cors==6.0.1
     # via moto
 frozenlist==1.6.0
     # via
@@ -197,7 +197,9 @@ parse==1.20.2
 pathable==0.4.4
     # via jsonschema-path
 pluggy==1.6.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 ply==3.11
     # via jsonpath-ng
 propcache==0.3.1
@@ -213,7 +215,7 @@ py-partiql-parser==0.6.1
     # via moto
 pycparser==2.22
     # via cffi
-pydantic==2.11.4
+pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -222,19 +224,23 @@ pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
+pygments==2.19.1
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 pyparsing==3.2.3
     # via moto
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==0.26.0
+pytest-asyncio==1.0.0
     # via -r requirements/_test.in
-pytest-cov==6.1.1
+pytest-cov==6.2.1
     # via -r requirements/_test.in
-pytest-mock==3.14.0
+pytest-mock==3.14.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
@@ -269,7 +275,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 regex==2024.11.6
     # via cfn-lint
-requests==2.32.3
+requests==2.32.4
     # via
     #   -c requirements/_base.txt
     #   docker
@@ -291,7 +297,7 @@ s3transfer==0.11.3
     # via
     #   -c requirements/_base.txt
     #   boto3
-setuptools==80.7.1
+setuptools==80.9.0
     # via moto
 six==1.17.0
     # via
@@ -311,7 +317,7 @@ sympy==1.14.0
     # via cfn-lint
 types-pyyaml==6.0.12.20250516
     # via -r requirements/_test.in
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   anyio
@@ -326,7 +332,7 @@ typing-inspection==0.4.0
     #   pydantic
 tzdata==2025.2
     # via faker
-urllib3==2.4.0
+urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

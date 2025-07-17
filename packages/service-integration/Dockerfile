@@ -50,7 +50,8 @@ ENV LANG=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1 \
   VIRTUAL_ENV=/home/scu/.venv
 # https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
+ENV UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy
 
 # Ensures that the python and pip executables used
 # in the image will be those from our virtualenv.
@@ -73,13 +74,6 @@ COPY --from=uv_build /uv /uvx /bin/
 # packages may be moved to production image easily by copying the venv
 RUN uv venv "${VIRTUAL_ENV}"
 
-
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-  uv pip install --upgrade \
-  pip~=24.0  \
-  wheel \
-  setuptools
 
 WORKDIR /build/packages/service-integration
 

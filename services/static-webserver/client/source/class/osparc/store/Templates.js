@@ -24,6 +24,20 @@ qx.Class.define("osparc.store.Templates", {
     __hypertools: null,
     __hypertoolsPromiseCached: null,
 
+    createTemplate: function(studyId, copyData = true, hidden = false) {
+      const params = {
+        url: {
+          "study_id": studyId,
+          "copy_data": copyData,
+          hidden,
+        },
+      };
+      const options = {
+        pollTask: true
+      };
+      return osparc.data.Resources.fetch("templates", "postToTemplate", params, options);
+    },
+
     fetchTemplatesPaginated: function(params, options) {
       params["url"]["templateType"] = osparc.data.model.StudyUI.TEMPLATE_TYPE;
       return osparc.data.Resources.fetch("templates", "getPageFilteredSorted", params, options)
@@ -47,12 +61,7 @@ qx.Class.define("osparc.store.Templates", {
     },
 
     fetchTemplate: function(templateId) {
-      const params = {
-        url: {
-          "studyId": templateId,
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "getOne", params)
+      return osparc.store.Study.getInstance().getOne(templateId)
         .catch(err => console.error(err));
     },
 

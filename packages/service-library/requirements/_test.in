@@ -41,3 +41,4 @@ types_aiofiles
 types_tqdm
 types-psutil
 types-psycopg2
+uvloop

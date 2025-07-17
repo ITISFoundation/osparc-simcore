@@ -1,6 +1,5 @@
 # pylint:disable=unused-import
 
-from sys import version
 from typing import Final
 
 from common_library.user_messages import user_message
@@ -51,6 +50,9 @@ RQ_PRODUCT_KEY: Final[str] = f"{__name__}.RQ_PRODUCT_KEY"
 MSG_TRY_AGAIN_OR_SUPPORT: Final[str] = user_message(
     "Please try again shortly. If the issue persists, contact support.", _version=1
 )
+
+ASYNC_JOB_CLIENT_NAME: Final[str] = "WEBSERVER"
+
 
 __all__: tuple[str, ...] = (
     "APP_AIOPG_ENGINE_KEY",

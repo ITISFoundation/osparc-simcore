@@ -11,6 +11,7 @@ from models_library.groups import AccessRightsDict
 from models_library.rest_filters import Filters
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
+    BaseModel,
     ConfigDict,
     EmailStr,
     Field,
@@ -61,7 +62,7 @@ class MyProfilePrivacyPatch(InputSchema):
     hide_email: bool | None = None
 
 
-class MyProfileGet(OutputSchemaWithoutCamelCase):
+class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[
         IDStr, Field(description="Unique username identifier", alias="userName")
@@ -69,6 +70,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
+    phone: str | None = None
 
     role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
     groups: MyGroupsGet | None = None
@@ -140,6 +142,7 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
                     "last_name",
                     "email",
                     "role",
+                    "phone",
                     "privacy",
                     "expiration_date",
                 },
@@ -154,21 +157,19 @@ class MyProfileGet(OutputSchemaWithoutCamelCase):
         )
 
 
-class MyProfilePatch(InputSchemaWithoutCamelCase):
+class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
+    # NOTE: phone is updated via a dedicated endpoint!
 
     privacy: MyProfilePrivacyPatch | None = None
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "first_name": "Pedro",
-                "last_name": "Crespo",
-            }
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update({"examples": [{"first_name": "Pedro", "last_name": "Crespo"}]})
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
     @field_validator("user_name")
     @classmethod
@@ -204,6 +205,27 @@ class MyProfilePatch(InputSchemaWithoutCamelCase):
             raise ValueError(msg)
 
         return value
+
+
+#
+# PHONE REGISTRATION
+#
+
+
+class MyPhoneRegister(InputSchema):
+    phone: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1),
+        Field(description="Phone number to register"),
+    ]
+
+
+class MyPhoneConfirm(InputSchema):
+    code: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, pattern=r"^[A-Za-z0-9]+$"),
+        Field(description="Alphanumeric confirmation code"),
+    ]
 
 
 #
@@ -300,8 +322,9 @@ class UserAccountGet(OutputSchema):
         ),
     ] = DEFAULT_FACTORY
 
-    # pre-registration
+    # pre-registration NOTE: that some users have no pre-registartion and therefore all options here can be none
     pre_registration_id: int | None
+    pre_registration_created: datetime | None
     invited_by: str | None = None
     account_request_status: AccountRequestStatus | None
     account_request_reviewed_by: UserID | None = None
@@ -331,6 +354,10 @@ class UserAccountGet(OutputSchema):
 #
 # THIRD-PARTY TOKENS
 #
+
+
+class TokenPathParams(BaseModel):
+    service: str
 
 
 class MyTokenCreate(InputSchemaWithoutCamelCase):

@@ -36,7 +36,7 @@ from servicelib.common_headers import (
 )
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from simcore_service_director_v2.core.application import init_app
+from simcore_service_director_v2.core.application import create_app
 from simcore_service_director_v2.core.settings import AppSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -97,9 +97,11 @@ def user_id(user_db: dict[str, Any]) -> UserID:
 
 @pytest.fixture
 async def project_id(
-    user_db: dict[str, Any], project: Callable[..., Awaitable[ProjectAtDB]]
+    user_db: dict[str, Any],
+    create_project: Callable[..., Awaitable[ProjectAtDB]],
+    with_product: dict[str, Any],
 ) -> str:
-    prj = await project(user=user_db)
+    prj = await create_project(user=user_db)
     return f"{prj.uuid}"
 
 
@@ -195,7 +197,7 @@ async def director_v2_client(
 
     settings = AppSettings.create_from_envs()
 
-    app = init_app(settings)
+    app = create_app(settings)
 
     async with TestClient(app) as client:
         yield client

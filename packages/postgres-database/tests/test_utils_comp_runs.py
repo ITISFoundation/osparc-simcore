@@ -4,13 +4,14 @@ import datetime
 
 import pytest
 import sqlalchemy as sa
+from faker import Faker
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.utils_comp_runs import get_latest_run_id_for_project
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-async def sample_comp_runs(asyncpg_engine: AsyncEngine):
+async def sample_comp_runs(asyncpg_engine: AsyncEngine, faker: Faker):
     async with asyncpg_engine.begin() as conn:
         await conn.execute(sa.text("SET session_replication_role = replica;"))
         await conn.execute(sa.delete(comp_runs))
@@ -37,6 +38,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "metadata": None,
                     "use_on_demand_clusters": False,
                     "dag_adjacency_list": {},
+                    "collection_run_id": faker.uuid4(),
                 },
                 {
                     "run_id": 2,
@@ -58,6 +60,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "metadata": None,
                     "use_on_demand_clusters": False,
                     "dag_adjacency_list": {},
+                    "collection_run_id": faker.uuid4(),
                 },
                 {
                     "run_id": 3,
@@ -79,6 +82,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "metadata": None,
                     "use_on_demand_clusters": False,
                     "dag_adjacency_list": {},
+                    "collection_run_id": faker.uuid4(),
                 },
                 {
                     "run_id": 4,
@@ -100,6 +104,7 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine):
                     "metadata": None,
                     "use_on_demand_clusters": False,
                     "dag_adjacency_list": {},
+                    "collection_run_id": faker.uuid4(),
                 },
             ],
         )

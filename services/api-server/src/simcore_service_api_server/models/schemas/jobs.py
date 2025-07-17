@@ -39,7 +39,7 @@ from ..basic_types import VersionStr
 from ..domain.files import File as DomainFile
 from ..domain.files import FileInProgramJobData
 from ..schemas.files import UserFile
-from ._base import ApiServerInputSchema
+from .base import ApiServerInputSchema
 
 # JOB SUB-RESOURCES  ----------
 #

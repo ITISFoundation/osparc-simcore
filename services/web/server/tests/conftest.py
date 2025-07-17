@@ -3,7 +3,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import asyncio
 import contextlib
 import json
 import logging
@@ -66,6 +65,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 # imports the fixtures for the integration tests
 pytest_plugins = [
     "aiohttp.pytest_plugin",
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.db_entries_mocks",
     "pytest_simcore.docker_compose",
@@ -74,6 +74,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.hypothesis_type_strategies",
+    "pytest_simcore.logging",
     "pytest_simcore.openapi_specs",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -488,11 +489,3 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
         "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
         autospec=True,
     )
-
-
-@pytest.fixture
-async def loop(
-    event_loop: asyncio.AbstractEventLoop,
-) -> asyncio.AbstractEventLoop:
-    """Override the event loop inside pytest-aiohttp with the one from pytest-asyncio."""
-    return event_loop

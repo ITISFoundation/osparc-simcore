@@ -4,15 +4,22 @@
 
 
 import pytest
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_directorv2.comp_runs import (
+    ComputationCollectionRunRpcGet,
+    ComputationCollectionRunRpcGetPage,
+    ComputationCollectionRunTaskRpcGet,
+    ComputationCollectionRunTaskRpcGetPage,
     ComputationRunRpcGet,
     ComputationRunRpcGetPage,
     ComputationTaskRpcGet,
     ComputationTaskRpcGetPage,
 )
 from models_library.api_schemas_webserver.computations import (
+    ComputationCollectionRunRestGet,
+    ComputationCollectionRunTaskRestGet,
     ComputationRunRestGet,
     ComputationTaskRestGet,
 )
@@ -26,6 +33,8 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from pytest_simcore.services_api_mocks_for_aiohttp_clients import AioResponsesMock
 from servicelib.aiohttp import status
+from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
+from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -241,3 +250,233 @@ async def test_list_computations_latest_iteration(
     )
     if user_role != UserRole.ANONYMOUS:
         assert ComputationTaskRestGet.model_validate(data[0])
+
+
+@pytest.fixture
+def mock_rpc_list_computation_collection_runs_page(
+    mocker: MockerFixture,
+    user_project: ProjectDict,
+) -> ComputationCollectionRunRpcGetPage:
+    project_uuid = user_project["uuid"]
+    example = ComputationCollectionRunRpcGet.model_config["json_schema_extra"][
+        "examples"
+    ][0]
+    example["project_ids"] = [project_uuid]
+    example["info"]["project_metadata"]["root_parent_project_id"] = project_uuid
+
+    return mocker.patch(
+        "simcore_service_webserver.director_v2._computations_service.computations.list_computation_collection_runs_page",
+        spec=True,
+        return_value=ComputationCollectionRunRpcGetPage(
+            items=[ComputationCollectionRunRpcGet.model_validate(example)],
+            total=1,
+        ),
+    )
+
+
+@pytest.fixture
+def mock_rpc_list_computation_collection_run_tasks_page(
+    mocker: MockerFixture,
+    user_project: ProjectDict,
+) -> str:
+    project_uuid = user_project["uuid"]
+    workbench_ids = list(user_project["workbench"].keys())
+    example = ComputationCollectionRunTaskRpcGet.model_config["json_schema_extra"][
+        "examples"
+    ][0]
+    example["node_id"] = workbench_ids[0]
+    example["project_uuid"] = project_uuid
+
+    mocker.patch(
+        "simcore_service_webserver.director_v2._computations_service.computations.list_computation_collection_run_tasks_page",
+        spec=True,
+        return_value=ComputationCollectionRunTaskRpcGetPage(
+            items=[ComputationCollectionRunTaskRpcGet.model_validate(example)],
+            total=1,
+        ),
+    )
+
+    return workbench_ids[0]
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computation_collection_runs_and_tasks(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mock_rpc_list_computation_collection_runs_page: None,
+    mock_rpc_list_computation_collection_run_tasks_page: str,
+    faker: Faker,
+):
+    assert client.app
+    url = client.app.router["list_computation_collection_runs"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunRestGet.model_validate(data[0])
+        assert data[0]["name"] == user_project["name"]
+
+    url = client.app.router["list_computation_collection_run_tasks"].url_for(
+        collection_run_id=faker.uuid4()
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunTaskRestGet.model_validate(data[0])
+        assert len(data) == 1
+        assert (
+            data[0]["name"]
+            == user_project["workbench"][
+                mock_rpc_list_computation_collection_run_tasks_page
+            ]["label"]
+        )
+
+
+@pytest.fixture
+async def populated_comp_run_collection(
+    client: TestClient,
+    postgres_db: sa.engine.Engine,
+):
+    assert client.app
+    example = ComputationCollectionRunRpcGet.model_config["json_schema_extra"][
+        "examples"
+    ][0]
+    collection_run_id = example["collection_run_id"]
+
+    with postgres_db.connect() as con:
+        con.execute(
+            comp_runs_collections.insert()
+            .values(
+                collection_run_id=collection_run_id,
+                client_or_system_generated_id=collection_run_id,
+                client_or_system_generated_display_name="My Collection Run",
+                is_generated_by_system=False,
+                created=sa.func.now(),
+                modified=sa.func.now(),
+            )
+            .returning(comp_runs_collections.c.collection_run_id)
+        )
+        yield
+        con.execute(comp_runs_collections.delete())
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computation_collection_runs_with_client_defined_name(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    populated_comp_run_collection: None,
+    mock_rpc_list_computation_collection_runs_page: None,
+):
+    assert client.app
+    url = client.app.router["list_computation_collection_runs"].url_for()
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunRestGet.model_validate(data[0])
+        assert data[0]["name"] == "My Collection Run"
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computation_collection_runs_with_filter_only_running(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    populated_comp_run_collection: None,
+    mock_rpc_list_computation_collection_runs_page: None,
+):
+    assert client.app
+    url = client.app.router["list_computation_collection_runs"].url_for()
+    query_parameters = {"filter_only_running": "true"}
+    url_with_query = url.with_query(**query_parameters)
+    resp = await client.get(f"{url_with_query}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunRestGet.model_validate(data[0])
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computation_collection_runs_with_filter_root_project(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    populated_comp_run_collection: None,
+    mock_rpc_list_computation_collection_runs_page: None,
+):
+    assert client.app
+    url = client.app.router["list_computation_collection_runs"].url_for()
+    query_parameters = {"filter_by_root_project_id": user_project["uuid"]}
+    url_with_query = url.with_query(**query_parameters)
+    resp = await client.get(f"{url_with_query}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunRestGet.model_validate(data[0])
+
+
+@pytest.fixture
+async def populated_project_metadata(
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_project: ProjectDict,
+    postgres_db: sa.engine.Engine,
+):
+    assert client.app
+    project_uuid = user_project["uuid"]
+    with postgres_db.connect() as con:
+        con.execute(
+            projects_metadata.insert().values(
+                **{
+                    "project_uuid": project_uuid,
+                    "custom": {"job_name": "My Job Name"},
+                }
+            )
+        )
+        yield
+        con.execute(projects_metadata.delete())
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_list_computation_collection_runs_tasks_with_different_names(
+    director_v2_service_mock: AioResponsesMock,
+    user_project: ProjectDict,
+    client: TestClient,
+    logged_user: LoggedUser,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    populated_project_metadata: None,
+    mock_rpc_list_computation_collection_run_tasks_page: str,
+    faker: Faker,
+):
+    assert client.app
+    url = client.app.router["list_computation_collection_run_tasks"].url_for(
+        collection_run_id=faker.uuid4()
+    )
+    resp = await client.get(f"{url}")
+    data, _ = await assert_status(
+        resp, status.HTTP_200_OK if user_role == UserRole.GUEST else expected.ok
+    )
+    if user_role != UserRole.ANONYMOUS:
+        assert ComputationCollectionRunTaskRestGet.model_validate(data[0])
+        assert data[0]["name"] == "My Job Name"

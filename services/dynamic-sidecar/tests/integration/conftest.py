@@ -7,6 +7,8 @@ from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import users
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
+    "pytest_simcore.logging",
     "pytest_simcore.postgres_service",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.rabbit_service",

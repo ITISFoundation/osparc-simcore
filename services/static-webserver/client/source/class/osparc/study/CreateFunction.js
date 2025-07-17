@@ -303,19 +303,11 @@ qx.Class.define("osparc.study.CreateFunction", {
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a hidden template
-      const params = {
-        url: {
-          "study_id": this.__studyData["uuid"],
-          "copy_data": true,
-          "hidden": true,
-        },
-      };
-      const options = {
-        pollTask: true
-      };
-      const fetchPromise = osparc.data.Resources.fetch("studies", "postToTemplate", params, options);
+      const copyData = true;
+      const hidden = true;
+      const pollPromise = osparc.store.Templates.createTemplate(this.__studyData["uuid"], copyData, hidden);
       const pollTasks = osparc.store.PollTasks.getInstance();
-      pollTasks.createPollingTask(fetchPromise)
+      pollTasks.createPollingTask(pollPromise)
         .then(task => {
           task.addListener("resultReceived", e => {
             const templateData = e.getData();
@@ -330,18 +322,12 @@ qx.Class.define("osparc.study.CreateFunction", {
     },
 
     __updateTemplateMetadata: function(templateData) {
-      const patchData = {
+      const metadata = {
         "custom" : {
           "hidden": "Base template for function",
         }
       };
-      const params = {
-        url: {
-          "studyId": templateData["uuid"],
-        },
-        data: patchData
-      };
-      osparc.data.Resources.fetch("studies", "updateMetadata", params)
+      osparc.store.Study.getInstance().updateMetadata(templateData["uuid"], metadata)
         .catch(err => console.error(err));
     },
 

@@ -149,10 +149,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}&type=user"
           },
-          postToTemplate: {
-            method: "POST",
-            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}&hidden={hidden}"
-          },
           open: {
             method: "POST",
             url: statics.API + "/projects/{studyId}:open"
@@ -310,7 +306,7 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       "conversations": {
-        useCache: false,
+        useCache: false, // It has its own cache handler
         endpoints: {
           addConversation: {
             method: "POST",
@@ -319,6 +315,10 @@ qx.Class.define("osparc.data.Resources", {
           getConversationsPage: {
             method: "GET",
             url: statics.API + "/projects/{studyId}/conversations?offset={offset}&limit={limit}"
+          },
+          getConversation: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
           },
           renameConversation: {
             method: "PUT",
@@ -364,11 +364,11 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/-/iterations/latest?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}&filters={filters}"
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_only_running={runningOnly}"
           },
           getPageHistory: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
+            url: statics.API + "/computation-collection-runs?offset={offset}&limit={limit}&order_by={orderBy}&filter_by_root_project_id={projectId}"
           },
         }
       },
@@ -377,7 +377,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           getPageLatest: {
             method: "GET",
-            url: statics.API + "/computations/{studyId}/iterations/latest/tasks?offset={offset}&limit={limit}&order_by={orderBy}&include_children={includeChildren}"
+            url: statics.API + "/computation-collection-runs/{collectionRunId}/tasks?offset={offset}&limit={limit}&order_by={orderBy}"
           },
         }
       },
@@ -615,6 +615,10 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearchFilteredSorted: {
             method: "GET",
             url: statics.API + "/projects:search?type=template&offset={offset}&limit={limit}&order_by={orderBy}&template_type={templateType}&text={text}"
+          },
+          postToTemplate: {
+            method: "POST",
+            url: statics.API + "/projects?from_study={study_id}&as_template=true&copy_data={copy_data}&hidden={hidden}"
           },
         }
       },

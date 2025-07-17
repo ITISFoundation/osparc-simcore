@@ -112,7 +112,7 @@ class ProjectPatchInternalExtended(ProjectPatch):
     trashed_by: UserID | None
     trashed_explicitly: bool
 
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(validate_by_name=True, extra="forbid")
 
     def to_domain_model(self) -> dict[str, Any]:
         return remap_keys(

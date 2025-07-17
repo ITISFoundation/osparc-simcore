@@ -97,8 +97,8 @@ async def _check_pipeline_not_running_or_raise_409(
     computation: ComputationCreate,
 ) -> None:
     with contextlib.suppress(ComputationalRunNotFoundError):
-        last_run = await comp_runs_repo.get(
-            user_id=computation.user_id, project_id=computation.project_id
+        last_run = await comp_runs_repo.get_latest_run_by_project(
+            project_id=computation.project_id
         )
         pipeline_state = last_run.result
 
@@ -224,6 +224,11 @@ async def _try_start_pipeline(
         wallet_id = computation.wallet_info.wallet_id
         wallet_name = computation.wallet_info.wallet_name
 
+    if computation.collection_run_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Project {computation.project_id} has no collection run ID",
+        )
     await run_new_pipeline(
         app,
         user_id=computation.user_id,
@@ -245,6 +250,7 @@ async def _try_start_pipeline(
         )
         or {},
         use_on_demand_clusters=computation.use_on_demand_clusters,
+        collection_run_id=computation.collection_run_id,
     )
 
 
@@ -361,8 +367,8 @@ async def create_or_update_or_start_computation(  # noqa: PLR0913 # pylint: disa
         last_run: CompRunsAtDB | None = None
         pipeline_state = RunningState.NOT_STARTED
         with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get(
-                user_id=computation.user_id, project_id=computation.project_id
+            last_run = await comp_runs_repo.get_latest_run_by_project(
+                project_id=computation.project_id
             )
             pipeline_state = last_run.result
 
@@ -461,7 +467,7 @@ async def get_computation(
     last_run: CompRunsAtDB | None = None
     pipeline_state = RunningState.NOT_STARTED
     with contextlib.suppress(ComputationalRunNotFoundError):
-        last_run = await comp_runs_repo.get(user_id=user_id, project_id=project_id)
+        last_run = await comp_runs_repo.get_latest_run_by_project(project_id=project_id)
         pipeline_state = last_run.result
 
     _logger.debug(
@@ -536,8 +542,8 @@ async def stop_computation(
         last_run: CompRunsAtDB | None = None
         pipeline_state = RunningState.UNKNOWN
         with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get(
-                user_id=computation_stop.user_id, project_id=project_id
+            last_run = await comp_runs_repo.get_latest_run_by_project(
+                project_id=project_id
             )
             pipeline_state = last_run.result
             if utils.is_pipeline_running(last_run.result):
@@ -595,8 +601,8 @@ async def delete_computation(
         # check if current state allow to stop the computation
         pipeline_state = RunningState.UNKNOWN
         with contextlib.suppress(ComputationalRunNotFoundError):
-            last_run = await comp_runs_repo.get(
-                user_id=computation_stop.user_id, project_id=project_id
+            last_run = await comp_runs_repo.get_latest_run_by_project(
+                project_id=project_id
             )
             pipeline_state = last_run.result
         if utils.is_pipeline_running(pipeline_state):
@@ -630,8 +636,8 @@ async def delete_computation(
                 before_sleep=before_sleep_log(_logger, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                last_run = await comp_runs_repo.get(
-                    user_id=computation_stop.user_id, project_id=project_id
+                last_run = await comp_runs_repo.get_latest_run_by_project(
+                    project_id=project_id
                 )
                 pipeline_state = last_run.result
                 return utils.is_pipeline_stopped(pipeline_state)

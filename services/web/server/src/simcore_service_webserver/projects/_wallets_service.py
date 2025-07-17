@@ -16,7 +16,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
 )
 
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..users import api as users_service
+from ..users import users_service
 from ..wallets import _api as wallets_service
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (

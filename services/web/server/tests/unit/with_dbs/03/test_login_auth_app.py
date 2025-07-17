@@ -37,7 +37,7 @@ async def auth_app(
     return app
 
 
-@pytest_asyncio.fixture(loop_scope="function")
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def web_server(
     postgres_db: sa.engine.Engine,
     auth_app: web.Application,

@@ -36,6 +36,7 @@ from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 
 pytest_plugins = [
+    "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
@@ -43,6 +44,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_products_data",
     "pytest_simcore.faker_users_data",
+    "pytest_simcore.logging",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
@@ -178,7 +180,6 @@ def client(
     assert spy_app.on_shutdown.call_count == 0
 
     with TestClient(app_under_test) as cli:
-
         assert spy_app.on_startup.call_count == 1
         assert spy_app.on_shutdown.call_count == 0
 
@@ -391,7 +392,6 @@ def mocked_director_rest_api_base(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-
         # HEATHCHECK
         assert openapi["paths"].get("/")
         respx_mock.head("/", name="healthcheck").respond(

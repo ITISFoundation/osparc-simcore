@@ -10,10 +10,13 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyFunctionPermissionsGet,
     MyPermissionGet,
-    MyProfileGet,
-    MyProfilePatch,
+    MyPhoneConfirm,
+    MyPhoneRegister,
+    MyProfileRestGet,
+    MyProfileRestPatch,
     MyTokenCreate,
     MyTokenGet,
+    TokenPathParams,
     UserGet,
     UsersSearch,
 )
@@ -21,20 +24,21 @@ from models_library.api_schemas_webserver.users_preferences import PatchRequestB
 from models_library.generics import Envelope
 from models_library.user_preferences import PreferenceIdentifier
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.users._notifications import (
+from simcore_service_webserver.user_notifications._controller.rest.user_notification_rest import (
+    NotificationPathParams,
+)
+from simcore_service_webserver.user_notifications._models import (
     UserNotification,
     UserNotificationCreate,
     UserNotificationPatch,
 )
-from simcore_service_webserver.users._notifications_rest import _NotificationPathParams
-from simcore_service_webserver.users._tokens_rest import _TokenPathParams
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 
 
 @router.get(
     "/me",
-    response_model=Envelope[MyProfileGet],
+    response_model=Envelope[MyProfileRestGet],
 )
 async def get_my_profile(): ...
 
@@ -43,7 +47,58 @@ async def get_my_profile(): ...
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def update_my_profile(_body: MyProfilePatch): ...
+async def update_my_profile(_body: MyProfileRestPatch): ...
+
+
+@router.post(
+    "/me/phone:register",
+    description="Starts the phone registration process",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_202_ACCEPTED: {"description": "Phone registration initiated"},
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Invalid phone number format"
+        },
+    },
+)
+async def my_phone_register(_body: MyPhoneRegister): ...
+
+
+@router.post(
+    "/me/phone:resend",
+    description="Resends the phone registration code",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        status.HTTP_202_ACCEPTED: {"description": "Phone code resent"},
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "No pending phone registration found"
+        },
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
+    },
+)
+async def my_phone_resend(): ...
+
+
+@router.post(
+    "/me/phone:confirm",
+    description="Confirms the phone registration",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_204_NO_CONTENT: {"description": "Phone registration confirmed"},
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "No pending registration or invalid code"
+        },
+        status.HTTP_401_UNAUTHORIZED: {"description": "Authentication required"},
+        status.HTTP_403_FORBIDDEN: {"description": "Insufficient permissions"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Invalid confirmation code format"
+        },
+    },
+)
+async def my_phone_confirm(_body: MyPhoneConfirm): ...
 
 
 @router.patch(
@@ -76,7 +131,7 @@ async def create_token(_body: MyTokenCreate): ...
     response_model=Envelope[MyTokenGet],
 )
 async def get_token(
-    _path: Annotated[_TokenPathParams, Depends()],
+    _path: Annotated[TokenPathParams, Depends()],
 ): ...
 
 
@@ -84,7 +139,7 @@ async def get_token(
     "/me/tokens/{service}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_token(_path: Annotated[_TokenPathParams, Depends()]): ...
+async def delete_token(_path: Annotated[TokenPathParams, Depends()]): ...
 
 
 @router.get(
@@ -108,7 +163,7 @@ async def create_user_notification(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def mark_notification_as_read(
-    _path: Annotated[_NotificationPathParams, Depends()],
+    _path: Annotated[NotificationPathParams, Depends()],
     _body: UserNotificationPatch,
 ): ...
 

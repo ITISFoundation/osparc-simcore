@@ -19,7 +19,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       showMaximize: false,
       autoDestroy: true,
       modal: true,
-      width: 350,
+      width: 430,
       maxHeight: 500,
       clickAwayClose: true
     });
@@ -34,7 +34,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
     this.__potentialCollaborators = {};
     this.__reloadPotentialCollaborators();
 
-    this.__shareWithEmailEnabled = this.__resourceData["resourceType"] === "study";
+    this.__shareWithEmailEnabled = osparc.utils.Utils.isDevelopmentPlatform() && this.__resourceData["resourceType"] === "study";
 
     if (preselectCollaboratorGids && preselectCollaboratorGids.length) {
       preselectCollaboratorGids.forEach(preselectCollaboratorGid => {
@@ -76,9 +76,9 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       switch (id) {
         case "intro-text": {
           let text = this.__showOrganizations ?
-            this.tr("Select users or organizations from the list below.") :
-            this.tr("Select users from the list below.");
-          text += this.tr("<br>Search them if they aren't listed.");
+            this.tr("Select organizations or users from the list or search by name, username or email.") :
+            this.tr("Select users from the list or search by name, username or email.");
+          text += "<br>" + this.tr("Keep in mind that users are only searchable based on the information they've chosen to make visible. To make yourself easier to find, adjust your visibility settings in My Account → Privacy.");
           control = new qx.ui.basic.Label().set({
             value: text,
             rich: true,

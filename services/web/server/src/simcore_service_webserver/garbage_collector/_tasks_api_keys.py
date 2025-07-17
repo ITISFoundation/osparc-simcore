@@ -10,9 +10,9 @@ from datetime import timedelta
 from aiohttp import web
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.logging_utils import log_context
-from simcore_service_webserver.redis import get_redis_lock_manager_client_sdk
 
 from ..api_keys import api_keys_service
+from ..redis import get_redis_lock_manager_client_sdk
 from ._tasks_utils import CleanupContextFunc, periodic_task_lifespan
 
 _logger = logging.getLogger(__name__)
