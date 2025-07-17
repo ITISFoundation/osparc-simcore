@@ -1,7 +1,4 @@
-""" Application's metadata
-
-"""
-
+"""Application's metadata"""
 
 from typing import Final
 
@@ -9,7 +6,7 @@ import dask
 from models_library.basic_types import VersionStr
 from servicelib.utils_meta import PackageInfo
 
-info: Final = PackageInfo(package_name="simcore_service_dask_sidecar")
+info: Final = PackageInfo(package_name="simcore-service-dask-sidecar")
 __version__: Final[VersionStr] = info.__version__
 
 
