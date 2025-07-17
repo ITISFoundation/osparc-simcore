@@ -11,6 +11,7 @@ from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
     transaction_context,
 )
 from simcore_postgres_database.utils_users import (
@@ -18,7 +19,7 @@ from simcore_postgres_database.utils_users import (
     _generate_username_from_email,
     generate_alternative_username,
 )
-from sqlalchemy.exc import DataError, IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.sql import func
 
@@ -52,7 +53,7 @@ async def test_user_status_as_pending(
     data = random_user(faker, status="PENDING")
     assert data["status"] == "PENDING"
     async with transaction_context(asyncpg_engine) as connection:
-        with pytest.raises(DataError) as err_info:
+        with pytest.raises(DBAPIError) as err_info:
             await connection.execute(users.insert().values(data))
 
         assert (
@@ -113,15 +114,19 @@ async def test_unique_username(
         assert user.id == user_id
         assert user.name == "pcrespov"
 
+    async with transaction_context(asyncpg_engine) as connection:
         # same name fails
         data["email"] = faker.email()
         with pytest.raises(IntegrityError):
             await connection.scalar(users.insert().values(data).returning(users.c.id))
 
+    async with transaction_context(asyncpg_engine) as connection:
         # generate new name
         data["name"] = _generate_username_from_email(user.email)
         data["email"] = faker.email()
         await connection.scalar(users.insert().values(data).returning(users.c.id))
+
+    async with transaction_context(asyncpg_engine) as connection:
 
         # and another one
         data["name"] = generate_alternative_username(data["name"])
@@ -138,21 +143,21 @@ async def test_new_user(
         "status": UserStatus.ACTIVE,
         "expires_at": datetime.utcnow(),
     }
-    async with transaction_context(asyncpg_engine) as connection:
-        new_user = await UsersRepo.new_user(connection, **data)
+    new_user = await UsersRepo.new_user(asyncpg_engine, **data)
 
-        assert new_user.email == data["email"]
-        assert new_user.status == data["status"]
-        assert new_user.role == UserRole.USER
+    assert new_user.email == data["email"]
+    assert new_user.status == data["status"]
+    assert new_user.role == UserRole.USER
 
-        other_email = f"{new_user.name}@other-domain.com"
-        assert _generate_username_from_email(other_email) == new_user.name
-        other_data = {**data, "email": other_email}
+    other_email = f"{new_user.name}@other-domain.com"
+    assert _generate_username_from_email(other_email) == new_user.name
+    other_data = {**data, "email": other_email}
 
-        other_user = await UsersRepo.new_user(connection, **other_data)
-        assert other_user.email != new_user.email
-        assert other_user.name != new_user.name
+    other_user = await UsersRepo.new_user(asyncpg_engine, **other_data)
+    assert other_user.email != new_user.email
+    assert other_user.name != new_user.name
 
+    async with pass_or_acquire_connection(asyncpg_engine) as connection:
         assert await UsersRepo.get_email(connection, other_user.id) == other_user.email
         assert await UsersRepo.get_role(connection, other_user.id) == other_user.role
         assert (
