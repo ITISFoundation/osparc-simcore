@@ -16,7 +16,7 @@ from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
-from ... import _confirmation_service, _confirmation_web
+from ... import _auth_service, _confirmation_service, _confirmation_web
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import (
@@ -30,7 +30,6 @@ from ...constants import (
     MSG_EMAIL_SENT,
     MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
-    MSG_WRONG_PASSWORD,
 )
 from ...decorators import login_required
 from ...settings import LoginOptions, get_plugin_options
@@ -272,13 +271,14 @@ async def change_password(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
     passwords = await parse_request_body_as(ChangePasswordBody, request)
 
-    user = await db.get_user({"id": request[RQT_USERID_KEY]})
-    assert user  # nosec
+    user = await _auth_service.get_user_or_none(request.app, user_id=user["id"])
 
-    if not security_service.check_password(
-        passwords.current.get_secret_value(), user["password_hash"]
-    ):
-        raise web.HTTPUnprocessableEntity(text=MSG_WRONG_PASSWORD)  # 422
+    await _auth_service.check_authorized_user_credentials_or_raise(
+        request.app,
+        user=user,
+        password=passwords.current.get_secret_value(),
+        product=products_web.get_current_product(request),
+    )
 
     await db.update_user(
         dict(user),

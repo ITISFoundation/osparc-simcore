@@ -272,6 +272,23 @@ class UsersRepo:
             )
             return result.one_or_none()
 
+    async def get_user_by_id_or_none(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> Any | None:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(
+                    users.c.id,
+                    users.c.name,
+                    users.c.email,
+                    users.c.role,
+                    users.c.status,
+                    users.c.first_name,
+                    users.c.phone,
+                ).where(users.c.id == user_id)
+            )
+            return result.one_or_none()
+
     async def update_user_phone(
         self, connection: AsyncConnection | None = None, *, user_id: int, phone: str
     ) -> None:

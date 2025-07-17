@@ -185,9 +185,7 @@ async def register(request: web.Request):
             ).replace(tzinfo=None)
 
     #  get authorized user or create new
-    user = await _auth_service.get_user_by_email_or_none(
-        request.app, email=registration.email
-    )
+    user = await _auth_service.get_user_or_none(request.app, email=registration.email)
     if user:
         await _auth_service.check_authorized_user_credentials_or_raise(
             request.app,
