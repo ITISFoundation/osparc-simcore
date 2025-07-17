@@ -3395,6 +3395,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    patch:
+      tags:
+      - functions
+      summary: Update Function
+      operationId: update_function
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisteredFunctionUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
     delete:
       tags:
       - functions
@@ -15978,6 +16004,20 @@ components:
       - name
       - message
       title: RegisterPhoneNextPage
+    RegisteredFunctionUpdate:
+      properties:
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      title: RegisteredFunctionUpdate
     RegisteredProjectFunctionGet:
       properties:
         functionClass:

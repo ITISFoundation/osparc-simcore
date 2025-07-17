@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.functions import (
     FunctionToRegister,
     RegisteredFunctionGet,
+    RegisteredFunctionUpdate,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
@@ -40,6 +41,16 @@ async def register_function(
     response_model=Envelope[RegisteredFunctionGet],
 )
 async def get_function(
+    _path: Annotated[FunctionPathParams, Depends()],
+): ...
+
+
+@router.patch(
+    "/functions/{function_id}",
+    response_model=Envelope[RegisteredFunctionGet],
+)
+async def update_function(
+    _body: RegisteredFunctionUpdate,
     _path: Annotated[FunctionPathParams, Depends()],
 ): ...
 
