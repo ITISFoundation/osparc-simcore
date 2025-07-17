@@ -15,6 +15,7 @@ from faker import Faker
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
+from simcore_postgres_database.models.users_secrets import users_secrets
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -304,13 +305,10 @@ def test_users_secrets_migration_upgrade_downgrade(
 
     with sync_engine_with_migration.connect() as conn:
         # Verify users_secrets table exists and contains the password hashes
-        users_secrets_table = sa.table(
-            "users_secrets", sa.column("user_id"), sa.column("password_hash")
-        )
         result = conn.execute(
-            sa.select(
-                users_secrets_table.c.user_id, users_secrets_table.c.password_hash
-            ).order_by(users_secrets_table.c.user_id)
+            sa.select(users_secrets.c.user_id, users_secrets.c.password_hash).order_by(
+                users_secrets.c.user_id
+            )
         ).fetchall()
 
         # Only users with non-null password hashes should be in users_secrets
@@ -330,9 +328,7 @@ def test_users_secrets_migration_upgrade_downgrade(
     with sync_engine_with_migration.connect() as conn:
         # Verify users_secrets table no longer exists
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
-            conn.execute(
-                sa.select(sa.func.count()).select_from(sa.table("users_secrets"))
-            ).scalar()
+            conn.execute(sa.select(sa.func.count()).select_from(users_secrets)).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
 
         # Verify password hashes are back in users table
