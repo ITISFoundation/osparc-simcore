@@ -227,9 +227,7 @@ async def phone_confirmation(request: web.Request):
         await _twofa_service.delete_2fa_code(request.app, request_body.email)
 
         user = _auth_service.check_not_null_user(
-            await _auth_service.get_user_by_email_or_none(
-                request.app, email=request_body.email
-            )
+            await _auth_service.get_user_or_none(request.app, email=request_body.email)
         )
 
         await _registration_service.register_user_phone(

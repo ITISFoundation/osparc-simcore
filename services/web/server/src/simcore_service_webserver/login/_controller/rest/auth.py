@@ -73,9 +73,7 @@ async def login(request: web.Request):
     login_data = await parse_request_body_as(LoginBody, request)
 
     # Authenticate user and verify access to the product
-    user = await _auth_service.get_user_by_email_or_none(
-        request.app, email=login_data.email
-    )
+    user = await _auth_service.get_user_or_none(request.app, email=login_data.email)
 
     user = _auth_service.check_not_null_user(user)
 
@@ -235,9 +233,7 @@ async def login_2fa(request: web.Request):
         )
 
     user = _auth_service.check_not_null_user(
-        await _auth_service.get_user_by_email_or_none(
-            request.app, email=login_2fa_.email
-        )
+        await _auth_service.get_user_or_none(request.app, email=login_2fa_.email)
     )
 
     # NOTE: a priviledge user should not have called this entrypoint

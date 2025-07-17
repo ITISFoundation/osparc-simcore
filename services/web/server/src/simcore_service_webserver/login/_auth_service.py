@@ -26,13 +26,22 @@ class UserInfoDict(TypedDict):
     phone: str | None
 
 
-async def get_user_by_email_or_none(
-    app: web.Application, *, email: str
+async def get_user_or_none(
+    app: web.Application, *, email: str | None = None, user_id: int | None = None
 ) -> UserInfoDict | None:
+    if email is None and user_id is None:
+        msg = "Either email or user_id must be provided"
+        raise ValueError(msg)
 
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
-    user_row = await repo.get_user_by_email_or_none(email=email.lower())
+
+    if email is not None:
+        user_row = await repo.get_user_by_email_or_none(email=email.lower())
+    else:
+        assert user_id is not None
+        user_row = await repo.get_user_by_id_or_none(user_id=user_id)
+
     if user_row is None:
         return None
 
