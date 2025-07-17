@@ -57,7 +57,7 @@ async def get_test_broker(
 
 @pytest.fixture
 def rabbit_exchange() -> RabbitExchange:
-    return RabbitExchange("test_exchange", durable=True)
+    return RabbitExchange("test_exchange", durable=True, auto_delete=True)
 
 
 async def _assert_call_count(
@@ -257,7 +257,10 @@ async def test_fan_out_exchange_message_delivery(
     handler_2_call_count = Mock()
 
     fan_out_exchange = RabbitExchange(
-        "test_fan_out_exchange", type=ExchangeType.FANOUT, durable=True
+        "test_fan_out_exchange",
+        type=ExchangeType.FANOUT,
+        durable=True,
+        auto_delete=True,
     )
 
     @rabbit_broker.subscriber(queue="handler_1", exchange=fan_out_exchange, retry=True)

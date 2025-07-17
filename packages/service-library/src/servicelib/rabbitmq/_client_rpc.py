@@ -49,7 +49,7 @@ class RabbitMQRPCClient(RabbitMQClientBase):
         self._channel = await self._connection.channel()
 
         self._rpc = aio_pika.patterns.RPC(self._channel)
-        await self._rpc.initialize(durable=True)
+        await self._rpc.initialize(durable=True, auto_delete=True)
 
     async def close(self) -> None:
         with log_context(
