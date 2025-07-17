@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Self, TypeAlias
+from typing import Annotated, Any, Literal, Self
 
 import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
@@ -20,7 +20,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic.config import JsonDict
-from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -206,29 +205,6 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
             raise ValueError(msg)
 
         return value
-
-
-#
-# PHONE REGISTRATION
-#
-
-
-PhoneNumberStr: TypeAlias = Annotated[str, PhoneNumberValidator(number_format="E164")]
-
-
-class MyPhoneRegister(InputSchema):
-    phone: Annotated[
-        PhoneNumberStr,
-        Field(description="Phone number to register"),
-    ]
-
-
-class MyPhoneConfirm(InputSchema):
-    code: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, pattern=r"^[A-Za-z0-9]+$"),
-        Field(description="Alphanumeric confirmation code"),
-    ]
 
 
 #

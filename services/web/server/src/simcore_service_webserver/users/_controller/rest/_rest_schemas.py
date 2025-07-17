@@ -7,26 +7,64 @@ the rest (hidden or needs a dependency) is here
 import re
 import sys
 from contextlib import suppress
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, TypeAlias
 
 import pycountry
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.api_schemas_webserver._base import InputSchema
-from models_library.api_schemas_webserver.users import PhoneNumberStr, UserAccountGet
+from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
+from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 
 from ....models import AuthenticatedRequestContext
+
+MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
 
 
 class UsersRequestContext(AuthenticatedRequestContext): ...
 
 
-MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
+#
+# PHONE REGISTRATION
+#
+
+
+PhoneNumberStr: TypeAlias = Annotated[
+    # NOTE: validator require installing `phonenumbers``
+    str,
+    PhoneNumberValidator(number_format="E164"),
+]
+
+
+class MyPhoneRegister(InputSchema):
+    phone: Annotated[
+        PhoneNumberStr,
+        Field(description="Phone number to register"),
+    ]
+
+
+class MyPhoneConfirm(InputSchema):
+    code: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, pattern=r"^[A-Za-z0-9]+$"),
+        Field(description="Alphanumeric confirmation code"),
+    ]
+
+
+#
+# USER-ACCCOUNT
+#
 
 
 class UserAccountRestPreRegister(InputSchema):
-    # NOTE: validators need pycountry!
+    # NOTE: validators require installing `pycountry`
 
     first_name: str
     last_name: str
