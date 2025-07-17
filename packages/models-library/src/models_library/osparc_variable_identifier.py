@@ -92,7 +92,7 @@ def raise_if_unresolved(var: OsparcVariableIdentifier | T) -> T:
     """
     if isinstance(var, get_types_from_annotated_union(OsparcVariableIdentifier)):
         raise UnresolvedOsparcVariableIdentifierError(value=var)
-    return var
+    return var  # type: ignore[return-value]
 
 
 def replace_osparc_variable_identifier(  # noqa: C901
@@ -118,10 +118,10 @@ def replace_osparc_variable_identifier(  # noqa: C901
     """
 
     if isinstance(obj, get_types_from_annotated_union(OsparcVariableIdentifier)):
-        if obj.name in osparc_variables:
-            return deepcopy(osparc_variables[obj.name])  # type: ignore
-        if obj.default_value is not None:
-            return deepcopy(obj.default_value)  # type: ignore
+        if obj.name in osparc_variables:  # type: ignore[attr-defined]
+            return deepcopy(osparc_variables[obj.name])  # type: ignore[no-any-return,attr-defined]
+        if obj.default_value is not None:  # type: ignore[attr-defined]
+            return deepcopy(obj.default_value)  # type: ignore[no-any-return,attr-defined]
     elif isinstance(obj, dict):
         for key, value in obj.items():
             obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
