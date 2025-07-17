@@ -5,7 +5,6 @@ Models both project and node states
 from enum import Enum, unique
 from typing import Annotated, Self
 
-from models_library.groups import GroupID
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -16,6 +15,7 @@ from pydantic import (
 )
 from pydantic.config import JsonDict
 
+from .groups import GroupID
 from .projects_access import Owner
 
 
