@@ -39,51 +39,54 @@ qx.Class.define("osparc.workbench.WorkbenchUIPreview2", {
     this.set({
       backgroundColor: "background-main"
     });
+
+    this.__wbData = wbData || {};
+    this.__wbDataUi = wbDataUi || {};
+
+    this.__buildPreview();
   },
 
   members: {
+    __wbData: null,
+    __wbDataUi: null,
+
     // overridden
     _addItemsToLayout: function() {
       this._addWorkbenchLayer();
     },
 
     // overridden
-    _loadModel: function(model) {
-      this._clearAll();
-      this.resetSelection();
-      this._currentModel = model;
-      if (model) {
-        qx.ui.core.queue.Visibility.flush();
-
-        // create nodes
-        const nodes = model.getNodes();
-        for (const nodeId in nodes) {
-          const node = nodes[nodeId];
-          const nodeUI = this._createNodeUI(nodeId);
-          nodeUI.setIsMovable(false);
-          this._addNodeUIToWorkbench(nodeUI, node.getPosition());
-        }
-        qx.ui.core.queue.Layout.flush();
-
-        // create edges
-        for (const nodeId in nodes) {
-          const node = nodes[nodeId];
-          const inputNodeIDs = node.getInputNodes();
-          inputNodeIDs.forEach(inputNodeId => {
-            if (inputNodeId in nodes) {
-              this._createEdgeBetweenNodes(inputNodeId, nodeId, false);
-            }
-          });
-        }
-
-        const maxScale = 0.7;
-        this._fitScaleToNodes(maxScale);
-      }
+    _loadModel: function() {
+      return; // no model to load, this is a preview
     },
 
     // overridden
     _addEventListeners: function() {
       this.addListenerOnce("appear", this._listenToMouseWheel, this);
-    }
+    },
+
+    __buildPreview: function() {
+      this._clearAll();
+      this.resetSelection();
+
+      // create nodes
+      const nodes = this.__wbData.nodes || {};
+      Object.entries(nodes).forEach(([nodeId, nodeData]) => {
+        // we assume that the metadata was fetched before
+        const serviceMetadata = osparc.store.Services.getMetadata(nodeData["key"], nodeData["version"]);
+        const node = osparc.data.model.Node(null, serviceMetadata, nodeId);
+        const nodeUI = new osparc.workbench.NodeUI(node);
+        nodeUI.setIsMovable(false);
+        this._addNodeUIToWorkbench(nodeUI, node.position);
+      });
+      qx.ui.core.queue.Layout.flush();
+
+      // create edges
+      const edges = this.__wbData.edges || {};
+      for (const edgeId in edges) {
+        const edge = edges[edgeId];
+        this._createEdge(edge.from, edge.to, edgeId);
+      }
+    },
   }
 });
