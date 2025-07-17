@@ -4,7 +4,6 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.projects_state import ProjectState
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -16,6 +15,7 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
@@ -218,11 +218,16 @@ async def get_project_state(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state
-    validated_project = await _projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_state=True,
     )
-    project_state = ProjectState(**validated_project["state"])
-    return envelope_json_response(project_state.model_dump())
+    project_state = ProjectGet.from_domain_model(project).state
+    assert project_state  # nosec
+    return envelope_json_response(
+        project_state.model_dump(
+            **RESPONSE_MODEL_POLICY,
+        )
+    )
