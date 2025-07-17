@@ -9,10 +9,8 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
-from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
-from ....db.plugin import get_asyncpg_engine
 from ....groups.api import auto_add_user_to_groups, auto_add_user_to_product_group
 from ....invitations.api import is_service_invitation_code
 from ....products import products_web
@@ -187,15 +185,14 @@ async def register(request: web.Request):
             ).replace(tzinfo=None)
 
     #  get authorized user or create new
-    repo = UsersRepo(get_asyncpg_engine(request.app))
     user = await _auth_service.get_user_by_email_or_none(
         request.app, email=registration.email
     )
     if user:
         await _auth_service.check_authorized_user_credentials_or_raise(
+            request.app,
             user,
             password=registration.password.get_secret_value(),
-            password_hash=await repo.get_password_hash(user_id=user["id"]),
             product=product,
         )
     else:
@@ -210,6 +207,8 @@ async def register(request: web.Request):
             ),
             expires_at=expires_at,
         )
+
+    assert user is not None  # nosec
 
     # setup user groups
     assert (  # nosec
@@ -273,7 +272,7 @@ async def register(request: web.Request):
                 )
             )
 
-            await db.delete_confirmation_and_user(user, _confirmation)
+            await db.delete_confirmation_and_user(user["id"], _confirmation)
 
             raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
