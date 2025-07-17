@@ -44,7 +44,7 @@ follow-dev-logs: ## follow the logs of the qx compiler
 .PHONY: compile touch upgrade
 compile: ## qx compiles host' 'source' -> image's 'build-output'
 	# qx compile 'source' within $(docker_image) image  [itisfoundation/qooxdoo-kit:${QOOXDOO_KIT_TAG}]
-	@docker --debug buildx build \
+	@docker buildx build \
 		--load \
 		--file $(docker_file) \
 		--tag $(docker_image) \
@@ -58,7 +58,7 @@ compile: ## qx compiles host' 'source' -> image's 'build-output'
 
 touch: ## minimal image build with /project/output-build inside
 	# touch /project/output-build such that multi-stage 'services/web/Dockerfile' can build development target (fixes #1097)
-	@docker --debug buildx build \
+	@docker buildx build \
 		--load \
 		--file $(docker_file) \
 		--tag $(docker_image) \
