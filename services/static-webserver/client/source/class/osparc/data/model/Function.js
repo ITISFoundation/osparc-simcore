@@ -40,12 +40,9 @@ qx.Class.define("osparc.data.model.Function", {
       creationDate: functionData.creationDate ? new Date(functionData.creationDate) : this.getCreationDate(),
       lastChangeDate: functionData.lastChangeDate ? new Date(functionData.lastChangeDate) : this.getLastChangeDate(),
       thumbnail: functionData.thumbnail || this.getThumbnail(),
+      workbenchData: functionData.workbench || this.getWorkbenchData(),
+      functionUIData: functionData.ui || this.functionUIData(),
     });
-
-    const wbData = functionData.workbench || {};
-    const wbUiData = functionData.ui || {};
-    const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview2(wbData, wbUiData);
-    this.setWorkbenchUiPreview(workbenchUIPreview);
   },
 
   properties: {
@@ -126,10 +123,16 @@ qx.Class.define("osparc.data.model.Function", {
       init: null
     },
 
-    workbenchUiPreview: {
-      check: "osparc.workbench.WorkbenchUIPreview2",
+    workbenchData: {
+      check: "Object",
       nullable: false,
-      init: null,
+      init: {},
+    },
+
+    functionUIData: {
+      check: "Object",
+      nullable: false,
+      init: {},
     },
   },
 

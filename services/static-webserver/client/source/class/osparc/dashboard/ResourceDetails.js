@@ -394,7 +394,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       } else if (this.__resourceData["resourceType"] === "function") {
         this.__addInfoPage();
-        // this.__addPreviewPage();
+        this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
       }
@@ -575,7 +575,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const resourceModel = this.__resourceModel;
-        const preview = new osparc.study.StudyPreview(resourceModel);
+        let preview = null;
+        if (osparc.utils.Resources.isFunction(this.__resourceData)) {
+          preview = new osparc.study.FunctionPreview(resourceModel);
+        } else {
+          preview = new osparc.study.StudyPreview(resourceModel);
+        }
         page.addToContent(preview);
         this.__widgets.push(preview);
       }

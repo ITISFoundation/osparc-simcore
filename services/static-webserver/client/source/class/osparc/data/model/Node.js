@@ -577,6 +577,9 @@ qx.Class.define("osparc.data.model.Node", {
      */
     __addSettings: function(inputs) {
       const form = this.__settingsForm = new osparc.form.Auto(inputs);
+      if (!this.getStudy()) {
+        return;
+      }
       const propsForm = new osparc.form.renderer.PropForm(form, this, this.getStudy());
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {

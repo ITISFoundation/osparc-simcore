@@ -43,7 +43,9 @@ qx.Class.define("osparc.workbench.WorkbenchUIPreview2", {
     this.__wbData = wbData || {};
     this.__wbDataUi = wbDataUi || {};
 
-    this.__buildPreview();
+    setTimeout(() => {
+      this.__buildPreview();
+    }, 200);
   },
 
   members: {
@@ -70,11 +72,10 @@ qx.Class.define("osparc.workbench.WorkbenchUIPreview2", {
       this.resetSelection();
 
       // create nodes
-      const nodes = this.__wbData.nodes || {};
-      Object.entries(nodes).forEach(([nodeId, nodeData]) => {
+      Object.entries(this.__wbData).forEach(([nodeId, nodeData]) => {
         // we assume that the metadata was fetched before
         const serviceMetadata = osparc.store.Services.getMetadata(nodeData["key"], nodeData["version"]);
-        const node = osparc.data.model.Node(null, serviceMetadata, nodeId);
+        const node = new osparc.data.model.Node(null, serviceMetadata, nodeId);
         const nodeUI = new osparc.workbench.NodeUI(node);
         nodeUI.setIsMovable(false);
         this._addNodeUIToWorkbench(nodeUI, node.position);

@@ -418,7 +418,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       nodeUI.addListener("appear", () => this.__updateNodeUIPos(nodeUI), this);
 
-      const isStudyReadOnly = this.getStudy().isReadOnly();
+      const isStudyReadOnly = this.isPropertyInitialized("study") ? this.getStudy().isReadOnly() : true;
       nodeUI.set({
         movable: !isStudyReadOnly,
         selectable: !isStudyReadOnly,
