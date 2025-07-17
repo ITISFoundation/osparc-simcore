@@ -76,7 +76,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 
 # TODO: eliminate this variable!
-ENV IS_CONTAINER_CONTEXT Yes
+ENV IS_CONTAINER_CONTEXT=Yes
 
 
 EXPOSE 8080
@@ -93,7 +93,7 @@ EXPOSE 8080
 
 FROM base AS build
 
-ENV SC_BUILD_TARGET build
+ENV SC_BUILD_TARGET=build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \
@@ -206,7 +206,7 @@ CMD ["services/web/server/docker/boot.sh"]
 #
 FROM build AS development
 
-ENV SC_BUILD_TARGET development
+ENV SC_BUILD_TARGET=development
 
 WORKDIR /devel
 

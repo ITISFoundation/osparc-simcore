@@ -55,11 +55,5 @@ COPY entrypoint.bash /home/entrypoint.bash
 
 RUN chmod +x /home/entrypoint.bash
 
-ENV POSTGRES_USER=scu \
-  POSTGRES_PASSWORD=adminadmin \
-  POSTGRES_HOST=postgres \
-  POSTGRES_PORT=5432 \
-  POSTGRES_DB=simcoredb
-
 ENTRYPOINT [ "/bin/bash", "/home/entrypoint.bash" ]
 CMD [ "sc-pg", "upgrade" ]
