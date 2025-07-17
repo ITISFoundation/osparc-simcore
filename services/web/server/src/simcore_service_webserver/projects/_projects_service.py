@@ -1404,7 +1404,7 @@ async def try_open_project_for_user(
     project_uuid: ProjectID,
     client_session_id: str,
     app: web.Application,
-    max_number_of_studies_per_user: int | None,
+    max_number_of_opened_projects_per_user: int | None,
 ) -> bool:
     """
     Raises:
@@ -1429,7 +1429,7 @@ async def try_open_project_for_user(
             with managed_resource(user_id, client_session_id, app) as user_session:
                 # NOTE: if max_number_of_studies_per_user is set, the same
                 # project shall still be openable if the tab was closed
-                if max_number_of_studies_per_user is not None and (
+                if max_number_of_opened_projects_per_user is not None and (
                     len(
                         {
                             uuid
@@ -1439,10 +1439,10 @@ async def try_open_project_for_user(
                             if uuid != f"{project_uuid}"
                         }
                     )
-                    >= max_number_of_studies_per_user
+                    >= max_number_of_opened_projects_per_user
                 ):
                     raise ProjectTooManyProjectOpenedError(
-                        max_num_projects=max_number_of_studies_per_user,
+                        max_num_projects=max_number_of_opened_projects_per_user,
                         user_id=user_id,
                         project_uuid=project_uuid,
                         client_session_id=client_session_id,

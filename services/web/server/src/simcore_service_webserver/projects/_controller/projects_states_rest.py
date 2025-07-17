@@ -99,7 +99,7 @@ async def open_project(request: web.Request) -> web.Response:
             project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
-            max_number_of_studies_per_user=product.max_open_studies_per_user,
+            max_number_of_opened_projects_per_user=product.max_open_studies_per_user,
         ):
             raise HTTPLockedError(text="Project is locked, try later")
 
