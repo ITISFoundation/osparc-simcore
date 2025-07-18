@@ -18,7 +18,10 @@ import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
-from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectGet,
+    ProjectStateOutputSchema,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
@@ -426,10 +429,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         # now check returned is as expected
         if new_project:
             # has project state
-            assert (
-                new_project.get("state", {}).get("shareState", {}).get("locked", False)
-                is False
-            ), "Newly created projects should be unlocked"
+            assert not ProjectStateOutputSchema(
+                **new_project.get("state", {})
+            ).share_state.locked, "Newly created projects should be unlocked"
 
             # updated fields
             assert expected_data["uuid"] != new_project["uuid"]
