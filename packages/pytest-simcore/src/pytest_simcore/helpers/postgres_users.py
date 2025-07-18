@@ -48,6 +48,7 @@ async def insert_and_get_user_and_secrets_lifespan(
 
 async def insert_user_and_secrets(conn, **overrides) -> int:
     # NOTE: Legacy adapter. Use insert_and_get_user_and_secrets_lifespan instead
+    # Temporarily used where conn is produce by aiopg_engine
 
     user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
 

@@ -205,36 +205,6 @@ class UsersRepo:
                         )
                     )
 
-    @staticmethod
-    def get_billing_details_query(user_id: int):
-        return (
-            sa.select(
-                users.c.first_name,
-                users.c.last_name,
-                users_pre_registration_details.c.institution,
-                users_pre_registration_details.c.address,
-                users_pre_registration_details.c.city,
-                users_pre_registration_details.c.state,
-                users_pre_registration_details.c.country,
-                users_pre_registration_details.c.postal_code,
-                users.c.phone,
-            )
-            .select_from(
-                users.join(
-                    users_pre_registration_details,
-                    users.c.id == users_pre_registration_details.c.user_id,
-                )
-            )
-            .where(users.c.id == user_id)
-        )
-
-    async def get_billing_details(
-        self, connection: AsyncConnection | None = None, *, user_id: int
-    ) -> Any | None:
-        async with pass_or_acquire_connection(self._engine, connection) as conn:
-            result = await conn.execute(self.get_billing_details_query(user_id=user_id))
-            return result.one_or_none()
-
     async def get_role(
         self, connection: AsyncConnection | None = None, *, user_id: int
     ) -> UserRole:
@@ -344,6 +314,32 @@ class UsersRepo:
                 )
             )
             return bool(pre_registered)
+
+    async def get_billing_details(
+        self, connection: AsyncConnection | None = None, *, user_id: int
+    ) -> Any | None:
+        async with pass_or_acquire_connection(self._engine, connection) as conn:
+            result = await conn.execute(
+                sa.select(
+                    users.c.first_name,
+                    users.c.last_name,
+                    users_pre_registration_details.c.institution,
+                    users_pre_registration_details.c.address,
+                    users_pre_registration_details.c.city,
+                    users_pre_registration_details.c.state,
+                    users_pre_registration_details.c.country,
+                    users_pre_registration_details.c.postal_code,
+                    users.c.phone,
+                )
+                .select_from(
+                    users.join(
+                        users_pre_registration_details,
+                        users.c.id == users_pre_registration_details.c.user_id,
+                    )
+                )
+                .where(users.c.id == user_id)
+            )
+            return result.one_or_none()
 
 
 #
