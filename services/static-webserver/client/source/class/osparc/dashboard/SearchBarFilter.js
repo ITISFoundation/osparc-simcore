@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this._setLayout(new qx.ui.layout.HBox(5));
 
     this.set({
-      backgroundColor: "input_background",
+      backgroundColor: this.self().BG_COLOR,
       paddingLeft: 6,
       height: this.self().HEIGHT,
       maxHeight: this.self().HEIGHT,
@@ -52,6 +52,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   statics: {
     HEIGHT: 36,
+    BG_COLOR: "input_background",
 
     getSharedWithOptions: function(resourceType) {
       if (resourceType === "template") {
@@ -109,7 +110,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         case "text-field":
           control = new qx.ui.form.TextField().set({
-            backgroundColor: "input_background",
+            backgroundColor: this.self().BG_COLOR,
             font: "text-16",
             placeholder: this.tr("search"),
             alignY: "bottom",
@@ -313,7 +314,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         }
       });
     },
-
 
     setSharedWithActiveFilter: function(optionId, optionLabel) {
       this.__removeChips("shared-with");

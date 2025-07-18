@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
-      backgroundColor: "input_background",
+      backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
       padding: 8,
       decorator: "rounded",
     });
@@ -80,7 +80,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
           control = new qx.ui.toolbar.ToolBar().set({
             spacing: 0,
             padding: 0,
-            backgroundColor: "input_background"
+            backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
           });
           this._add(control);
           break;
@@ -113,6 +113,22 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
           control = new osparc.dashboard.SearchBarFilter(this.__resourceType);
           this._add(control);
           break;
+        case "filter-buttons":
+          control = new qx.ui.toolbar.ToolBar().set({
+            backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
+          });
+          this._add(control);
+          break;
+        case "shared-with-button":
+          control = new qx.ui.toolbar.MenuButton(this.tr("Shared with"), "@FontAwesome5Solid/share-alt/12");
+          this.__addSharedWithMenu(control);
+          this.getChildControl("filter-buttons").add(control);
+          break;
+        case "tags-button":
+          control = new qx.ui.toolbar.MenuButton(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
+          this.__addTagsMenu(control);
+          this.getChildControl("filter-buttons").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -144,14 +160,57 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
 
     __searchMyProjectsSelected: function() {
       this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search My projects"));
+
+      this.getChildControl("shared-with-button").setVisibility("visible");
+      this.getChildControl("tags-button").setVisibility("visible");
     },
 
     __searchTemplatesSelected: function() {
       this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search Templates"));
+
+      this.getChildControl("shared-with-button").setVisibility("excluded");
+      this.getChildControl("tags-button").setVisibility("visible");
     },
 
     __searchPublicProjectsSelected: function() {
       this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search Public projects"));
+
+      this.getChildControl("shared-with-button").setVisibility("excluded");
+      this.getChildControl("tags-button").setVisibility("visible");
+    },
+
+    __addSharedWithMenu: function(menuButton) {
+      const menu = new qx.ui.menu.Menu();
+
+      const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
+      const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
+      options.forEach((option, idx) => {
+        const button = new qx.ui.menu.RadioButton(option.label);
+        menu.add(button);
+        button.addListener("execute", () => this.getChildControl("search-bar-filter").setSharedWithActiveFilter(option.id, option.label));
+        sharedWithRadioGroup.add(button);
+        // preselect show-all
+        if (idx === 0) {
+          sharedWithRadioGroup.setSelection([button]);
+        }
+      });
+      menuButton.setMenu(menu);
+    },
+
+    __addTagsMenu: function(menuButton) {
+      const tags = osparc.store.Tags.getInstance().getTags();
+      menuButton.setVisibility(tags.length ? "visible" : "excluded");
+      if (tags.length) {
+        const menu = new qx.ui.menu.Menu();
+        osparc.utils.Utils.setIdToWidget(menu, "searchBarFilter-tags-menu");
+        tags.forEach(tag => {
+          const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
+          tagButton.getChildControl("icon").setTextColor(tag.getColor());
+          menu.add(tagButton);
+          tagButton.addListener("execute", () => this.getChildControl("search-bar-filter").addTagActiveFilter(tag));
+        });
+        menuButton.setMenu(menu);
+      }
     },
 
     __attachHideHandlers: function() {
