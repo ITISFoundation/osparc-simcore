@@ -16,7 +16,7 @@ from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from common_library.users_enums import UserRole
-from models_library.projects_state import ProjectStatus
+from models_library.projects_state import ProjectShareState, ProjectStatus
 from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
