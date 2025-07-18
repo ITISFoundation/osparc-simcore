@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, FastAPI, Request, status
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import TaskAlreadyRunningError
 from servicelib.long_running_tasks.models import TaskId
-from servicelib.long_running_tasks.task import start_task
 
 from ...core.settings import ApplicationSettings
 from ...models.schemas.application_health import ApplicationHealth
@@ -58,9 +58,9 @@ async def pull_user_servcices_docker_images(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_pull_user_servcices_docker_images,
+            task_pull_user_servcices_docker_images.__name__,
             unique=True,
             app=app,
             shared_store=shared_store,
@@ -99,9 +99,9 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_create_service_containers,
+            task_create_service_containers.__name__,
             unique=True,
             settings=settings,
             containers_create=containers_create,
@@ -133,9 +133,9 @@ async def runs_docker_compose_down_task(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_runs_docker_compose_down,
+            task_runs_docker_compose_down.__name__,
             unique=True,
             app=app,
             shared_store=shared_store,
@@ -165,9 +165,9 @@ async def state_restore_task(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_restore_state,
+            task_restore_state.__name__,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -196,9 +196,9 @@ async def state_save_task(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_save_state,
+            task_save_state.__name__,
             unique=True,
             settings=settings,
             mounted_volumes=mounted_volumes,
@@ -229,9 +229,9 @@ async def ports_inputs_pull_task(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_ports_inputs_pull,
+            task_ports_inputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -262,9 +262,9 @@ async def ports_outputs_pull_task(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_ports_outputs_pull,
+            task_ports_outputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
             mounted_volumes=mounted_volumes,
@@ -292,9 +292,9 @@ async def ports_outputs_push_task(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_ports_outputs_push,
+            task_ports_outputs_push.__name__,
             unique=True,
             outputs_manager=outputs_manager,
             app=app,
@@ -322,9 +322,9 @@ async def containers_restart_task(
     assert request  # nosec
 
     try:
-        return start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task=task_containers_restart,
+            task_containers_restart.__name__,
             unique=True,
             app=app,
             settings=settings,
