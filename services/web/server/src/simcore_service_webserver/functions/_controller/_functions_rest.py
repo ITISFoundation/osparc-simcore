@@ -129,6 +129,7 @@ async def list_functions(request: web.Request) -> web.Response:
                     TypeAdapter(RegisteredProjectFunctionGet).validate_python(
                         function.model_dump(mode="json")
                         | {
+                            "uuid": function.uid,
                             "thumbnail": (
                                 f"{project.thumbnail}" if project.thumbnail else None
                             ),
