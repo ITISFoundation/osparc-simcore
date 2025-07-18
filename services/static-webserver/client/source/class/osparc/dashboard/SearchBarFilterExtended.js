@@ -34,9 +34,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
     this.__buildLayout();
 
+    // defaults to "My Projects"
     this.__searchMyProjectsSelected();
-
-    this.__currentFilter = null;
 
     qx.core.Init.getApplication().getRoot().add(this);
 
@@ -72,8 +71,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   members: {
     __sourceSearchBarFilter: null,
     __resourceType: null,
-    __currentFilter: null,
-    __filtersMenu: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -112,7 +109,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           break;
         case "public-projects-button":
           control = this.self().createToolbarRadioButton(
-            this.tr("My Projects"),
+            this.tr("Public Projects"),
             "@FontAwesome5Solid/globe/14",
             null,
             "right",
