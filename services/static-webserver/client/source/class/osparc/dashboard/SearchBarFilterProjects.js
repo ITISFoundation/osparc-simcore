@@ -33,6 +33,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
 
     this.__buildLayout();
 
+    this.__searchMyProjectsSelected();
+
     this.__currentFilter = null;
 
     qx.core.Init.getApplication().getRoot().add(this);
@@ -107,7 +109,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
           );
           this.getChildControl("context-buttons").add(control);
           break;
-        case "search-bar":
+        case "search-bar-filter":
           control = new osparc.dashboard.SearchBarFilter(this.__resourceType);
           this._add(control);
           break;
@@ -120,12 +122,26 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
       const myProjectsButton = this.getChildControl("my-projects-button");
       const templatesButton = this.getChildControl("templates-button");
       const publicProjectsButton = this.getChildControl("public-projects-button");
-      const searchBar = this.getChildControl("search-bar");
-      searchBar.set({
+      this.getChildControl("search-bar-filter").set({
         showFilterMenu: false,
       });
 
       radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
+      myProjectsButton.addListener("changeValue", this.__searchMyProjectsSelected, this);
+      templatesButton.addListener("changeValue", this.__searchTemplatesSelected, this);
+      publicProjectsButton.addListener("changeValue", this.__searchPublicProjectsSelected, this);
+    },
+
+    __searchMyProjectsSelected: function() {
+      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search My projects"));
+    },
+
+    __searchTemplatesSelected: function() {
+      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search Templates"));
+    },
+
+    __searchPublicProjectsSelected: function() {
+      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search Public projects"));
     },
 
     __attachHideHandlers: function() {

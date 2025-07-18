@@ -28,6 +28,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.set({
       backgroundColor: "input_background",
       paddingLeft: 6,
+      height: this.self().HEIGHT,
       maxHeight: this.self().HEIGHT,
       decorator: "rounded",
     });
@@ -124,7 +125,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         case "reset-button":
           control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/20").set({
-            cursor: "pointer",
             paddingLeft: 0,
             paddingRight: 10,
             alignY: "middle",
