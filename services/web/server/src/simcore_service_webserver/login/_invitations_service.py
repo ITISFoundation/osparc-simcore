@@ -40,6 +40,7 @@ from ..invitations.errors import (
     InvitationsServiceUnavailableError,
 )
 from ..products.models import Product
+from ..users import users_service
 from . import _auth_service, _confirmation_service
 from ._login_repository_legacy import (
     AsyncpgStorage,
@@ -144,7 +145,9 @@ async def check_other_registrations(
                 )
                 if drop_previous_registration:
                     if not _confirmation:
-                        await db.delete_user(user=dict(user))
+                        await users_service.delete_user_without_projects(
+                            app, user_id=user["id"], clean_cache=False
+                        )
                     else:
                         await db.delete_confirmation_and_user(
                             user_id=user["id"], confirmation=_confirmation

@@ -213,7 +213,9 @@ async def get_user_invoice_address(
 #
 
 
-async def delete_user_without_projects(app: web.Application, user_id: UserID) -> None:
+async def delete_user_without_projects(
+    app: web.Application, *, user_id: UserID, clean_cache: bool = True
+) -> None:
     """Deletes a user from the database if the user exists"""
     # WARNING: user cannot be deleted without deleting first all ist project
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
@@ -228,9 +230,10 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
         )
         return
 
-    # This user might be cached in the auth. If so, any request
-    # with this user-id will get thru producing unexpected side-effects
-    await security_service.clean_auth_policy_cache(app)
+    if clean_cache:
+        # This user might be cached in the auth. If so, any request
+        # with this user-id will get thru producing unexpected side-effects
+        await security_service.clean_auth_policy_cache(app)
 
 
 async def set_user_as_deleted(app: web.Application, *, user_id: UserID) -> None:

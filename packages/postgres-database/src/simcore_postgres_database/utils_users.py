@@ -107,12 +107,13 @@ class UsersRepo:
         password_hash: str,
         status: UserStatus,
         expires_at: datetime | None,
+        role: UserRole = UserRole.USER,
     ) -> UserRow:
         user_data: dict[str, Any] = {
             "name": _generate_username_from_email(email),
             "email": email,
             "status": status,
-            "role": UserRole.USER,
+            "role": role,
             "expires_at": expires_at,
         }
 
