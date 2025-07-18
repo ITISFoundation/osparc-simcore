@@ -63,9 +63,7 @@ DEFAULT_TEST_PASSWORD = "password-with-at-least-12-characters"  # noqa: S105
 _DEFAULT_HASH = _compute_hash(DEFAULT_TEST_PASSWORD)
 
 
-def random_user(
-    fake: Faker = DEFAULT_FAKER, password: str | None = None, **overrides
-) -> dict[str, Any]:
+def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     from simcore_postgres_database.models.users import users
     from simcore_postgres_database.webserver_models import UserStatus
 
@@ -75,11 +73,33 @@ def random_user(
         # NOTE: ensures user name is unique to avoid flaky tests
         "name": f"{fake.user_name()}_{fake.uuid4()}",
         "email": f"{fake.uuid4()}_{fake.email().lower()}",
-        "password_hash": _DEFAULT_HASH,
         "status": UserStatus.ACTIVE,
     }
-
     assert set(data.keys()).issubset({c.name for c in users.columns})
+
+    data.update(overrides)
+    return data
+
+
+def random_user_secrets(
+    fake: Faker = DEFAULT_FAKER,
+    *,
+    # foreign keys
+    user_id: int,
+    password: str | None = None,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.users_secrets import users_secrets
+
+    assert fake  # nosec
+
+    assert set(overrides.keys()).issubset({c.name for c in users_secrets.columns})
+
+    data = {
+        "user_id": user_id,
+        "password_hash": _DEFAULT_HASH,
+    }
+    assert set(data.keys()).issubset({c.name for c in users_secrets.columns})
 
     # transform password in hash
     if password:

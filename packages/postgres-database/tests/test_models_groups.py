@@ -10,7 +10,7 @@ import pytest
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
-from pytest_simcore.helpers.faker_factories import random_user
+from pytest_simcore.helpers import postgres_users
 from simcore_postgres_database.webserver_models import (
     GroupType,
     groups,
@@ -64,9 +64,8 @@ async def test_all_group(
         await connection.execute(groups.delete().where(groups.c.gid == all_group_gid))
 
     # check adding a user is automatically added to the all group
-    result = await connection.execute(
-        users.insert().values(**random_user()).returning(literal_column("*"))
-    )
+    user_id = await postgres_users.insert_user_and_secrets(connection)
+    result = await connection.execute(users.select().where(users.c.id == user_id))
     user: RowProxy = await result.fetchone()
 
     result = await connection.execute(
@@ -98,9 +97,8 @@ async def test_all_group(
 async def test_own_group(
     connection: SAConnection,
 ):
-    result = await connection.execute(
-        users.insert().values(**random_user()).returning(literal_column("*"))
-    )
+    user_id = await postgres_users.insert_user_and_secrets(connection)
+    result = await connection.execute(users.select().where(users.c.id == user_id))
     user: RowProxy = await result.fetchone()
     assert not user.primary_gid
 
