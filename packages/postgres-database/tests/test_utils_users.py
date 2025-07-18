@@ -9,13 +9,10 @@ from typing import Any
 
 import pytest
 from faker import Faker
-from pytest_simcore.helpers.faker_factories import (
-    random_user,
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
 )
-from pytest_simcore.helpers.postgres_tools import (
-    insert_and_get_row_lifespan,
-)
-from simcore_postgres_database.models.users import UserRole, users
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
 )
@@ -28,16 +25,11 @@ async def user(
     faker: Faker,
     asyncpg_engine: AsyncEngine,
 ) -> AsyncIterable[dict[str, Any]]:
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+    async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         asyncpg_engine,
-        table=users,
-        values=random_user(
-            faker,
-            role=faker.random_element(elements=UserRole),
-        ),
-        pk_col=users.c.id,
-    ) as row:
-        yield row
+        role=faker.random_element(elements=UserRole),
+    ) as user_and_secrets_row:
+        yield user_and_secrets_row
 
 
 async def test_users_repo_get(asyncpg_engine: AsyncEngine, user: dict[str, Any]):
