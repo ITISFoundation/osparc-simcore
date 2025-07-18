@@ -284,9 +284,6 @@ class UsersRepo:
         user_id: int,
         password_hash: str,
     ) -> None:
-        assert (
-            password_hash.strip()
-        ), f"Password hash cannot be empty: {password_hash}"  # nosec
         async with transaction_context(self._engine, connection) as conn:
             await conn.execute(
                 users_secrets.update()
