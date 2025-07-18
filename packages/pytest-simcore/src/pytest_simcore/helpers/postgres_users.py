@@ -32,7 +32,7 @@ async def insert_and_get_user_and_secrets_lifespan(
             insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
                 sqlalchemy_async_engine,
                 table=users,
-                values=random_user(**random_user(**user_kwargs)),
+                values=random_user(**user_kwargs),
                 pk_col=users.c.id,
             )
         )
@@ -85,7 +85,7 @@ def sync_insert_and_get_user_and_secrets_lifespan(
 
 
 async def insert_user_and_secrets(conn, **overrides) -> int:
-    # NOTE: Legacy adapter. Use insert_and_get_user_and_secrets_lifespan instead
+    # NOTE: DEPRECATED: Legacy adapter. Use insert_and_get_user_and_secrets_lifespan instead
     # Temporarily used where conn is produce by aiopg_engine
 
     user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
