@@ -1,461 +1,462 @@
 [
- {
-  "name": "get_profile",
-  "description": "<Request('GET', 'http://webserver:8080/v0/me')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/me",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "first_name": "crespo",
-    "last_name": "",
-    "id": 1,
-    "login": "rturner@example.net",
-    "role": "User",
-    "groups": {
-     "me": {
-      "gid": 3,
-      "label": "crespo",
-      "description": "primary group",
-      "thumbnail": null,
-      "accessRights": {
-       "read": true,
-       "write": false,
-       "delete": false
-      },
-      "inclusionRules": {}
-     },
-     "organizations": [
-      {
-       "gid": 2,
-       "label": "osparc",
-       "description": "osparc product group",
-       "thumbnail": null,
-       "accessRights": {
-        "read": false,
-        "write": false,
-        "delete": false
-       },
-       "inclusionRules": {}
+  {
+    "name": "get_profile",
+    "description": "<Request('GET', 'http://webserver:8080/v0/me')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/me",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "first_name": "crespo",
+        "last_name": "",
+        "id": 1,
+        "login": "rturner@example.net",
+        "role": "User",
+        "groups": {
+          "me": {
+            "gid": 3,
+            "label": "crespo",
+            "description": "primary group",
+            "thumbnail": null,
+            "accessRights": {
+              "read": true,
+              "write": false,
+              "delete": false
+            },
+            "inclusionRules": {}
+          },
+          "organizations": [
+            {
+              "gid": 2,
+              "label": "osparc",
+              "description": "osparc product group",
+              "thumbnail": null,
+              "accessRights": {
+                "read": false,
+                "write": false,
+                "delete": false
+              },
+              "inclusionRules": {}
+            }
+          ],
+          "all": {
+            "gid": 1,
+            "label": "Everyone",
+            "description": "all users",
+            "thumbnail": null,
+            "accessRights": {
+              "read": true,
+              "write": false,
+              "delete": false
+            },
+            "inclusionRules": {}
+          }
+        },
+        "gravatar_id": "aa33f6ec77ea434c2ea4fb92d0fd379e"
       }
-     ],
-     "all": {
-      "gid": 1,
-      "label": "Everyone",
-      "description": "all users",
+    },
+    "status_code": 200
+  },
+  {
+    "name": "get_service",
+    "description": "<Request('GET', 'http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0?user_id=1')>",
+    "method": "GET",
+    "host": "catalog",
+    "path": "/v0/services/simcore/services/comp/itis/sleeper/2.0.0",
+    "query": "user_id=1",
+    "request_payload": null,
+    "response_body": {
+      "name": "sleeper",
       "thumbnail": null,
-      "accessRights": {
-       "read": true,
-       "write": false,
-       "delete": false
-      },
-      "inclusionRules": {}
-     }
-    },
-    "gravatar_id": "aa33f6ec77ea434c2ea4fb92d0fd379e"
-   }
-  },
-  "status_code": 200
- },
- {
-  "name": "get_service",
-  "description": "<Request('GET', 'http://catalog:8000/v0/services/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.0?user_id=1')>",
-  "method": "GET",
-  "host": "catalog",
-  "path": "/v0/services/simcore/services/comp/itis/sleeper/2.0.0",
-  "query": "user_id=1",
-  "request_payload": null,
-  "response_body": {
-   "name": "sleeper",
-   "thumbnail": null,
-   "description": "A service which awaits for time to pass.",
-   "deprecated": null,
-   "classifiers": [],
-   "quality": {},
-   "key": "simcore/services/comp/itis/sleeper",
-   "version": "2.0.0",
-   "integration-version": "1.0.0",
-   "type": "computational",
-   "authors": [
-    {
-     "name": "Joshua Boone",
-     "email": "sharon60@example.net",
-     "affiliation": "Johnson Inc"
-    },
-    {
-     "name": "Kenneth Alvarez",
-     "email": "ncollins@example.com",
-     "affiliation": "Singh LLC"
-    },
-    {
-     "name": "Jennifer Howard",
-     "email": "amyhood@example.org",
-     "affiliation": "Campos-Weaver"
-    }
-   ],
-   "contact": "sharon91@example.com",
-   "inputs": {
-    "input_1": {
-     "displayOrder": 1.0,
-     "label": "File with int number",
-     "description": "Pick a file containing only one integer",
-     "type": "data:text/plain",
-     "fileToKeyMap": {
-      "single_number.txt": "input_1"
-     }
-    },
-    "input_2": {
-     "displayOrder": 2.0,
-     "label": "Sleep interval",
-     "description": "Choose an amount of time to sleep",
-     "type": "integer",
-     "defaultValue": 2
-    },
-    "input_3": {
-     "displayOrder": 3.0,
-     "label": "Fail after sleep",
-     "description": "If set to true will cause service to fail after it sleeps",
-     "type": "boolean",
-     "defaultValue": false
-    }
-   },
-   "outputs": {
-    "output_1": {
-     "displayOrder": 1.0,
-     "label": "File containing one random integer",
-     "description": "Integer is generated in range [1-9]",
-     "type": "data:text/plain",
-     "fileToKeyMap": {
-      "single_number.txt": "output_1"
-     }
-    },
-    "output_2": {
-     "displayOrder": 2.0,
-     "label": "Random sleep interval",
-     "description": "Interval is generated in range [1-9]",
-     "type": "integer"
-    }
-   }
-  },
-  "status_code": 200
- },
- {
-  "name": "create_project",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": "/v0/projects",
-  "query": "hidden=true",
-  "request_payload": {
-   "uuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
-   "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2",
-   "description": "Study associated to solver job:\n{\n  \"id\": \"767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"inputs_checksum\": \"f6fce006d0fe7b6168fc20a10ec1fe74d1723ebc935232d3c0707c277db2ef0c\",\n  \"created_at\": \"2023-07-12T12:45:30.757605+00:00\"\n}",
-   "thumbnail": "https://via.placeholder.com/170x120.png",
-   "workbench": {
-    "d49543e7-6e36-57ee-86ff-46b71f63757f": {
-     "key": "simcore/services/comp/itis/sleeper",
-     "version": "2.0.0",
-     "label": "sleeper",
-     "progress": null,
-     "thumbnail": null,
-     "runHash": null,
-     "inputs": {
-      "x": 4.33,
-      "n": 55,
-      "title": "Temperature",
-      "enabled": true
-     },
-     "inputsUnits": {},
-     "inputAccess": null,
-     "inputNodes": [],
-     "outputs": {},
-     "outputNode": null,
-     "outputNodes": null,
-     "parent": null,
-     "position": null,
-     "state": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "NOT_STARTED",
-      "progress": 0
-     },
-     "bootOptions": null
-    }
-   },
-   "accessRights": {},
-   "tags": [],
-   "classifiers": [],
-   "ui": {
-    "workbench": {
-     "d49543e7-6e36-57ee-86ff-46b71f63757f": {
-      "position": {
-       "x": 633,
-       "y": 229
-      },
-      "marker": null
-     }
-    },
-    "slideshow": {},
-    "currentNodeId": "d49543e7-6e36-57ee-86ff-46b71f63757f",
-    "annotations": {}
-   }
-  },
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
-    "task_name": "POST /v0/projects?hidden=true",
-    "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
-    "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b/result",
-    "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "get_task_status_1",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "message": "creating new study...",
-     "percent": 0.0
-    },
-    "done": false,
-    "started": "2023-07-12T12:45:30.825756"
-   }
-  },
-  "status_code": 200
- },
- {
-  "name": "get_task_status_2",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "message": "creating new study...",
-     "percent": 0.0
-    },
-    "done": false,
-    "started": "2023-07-12T12:45:30.825756"
-   }
-  },
-  "status_code": 200
- },
- {
-  "name": "get_task_status_3",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2023-07-12T12:45:30.825756"
-   }
-  },
-  "status_code": 200
- },
- {
-  "name": "get_task_result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b/result",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "uuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
-    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2",
-    "description": "Study associated to solver job:\n{\n  \"id\": \"767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"inputs_checksum\": \"f6fce006d0fe7b6168fc20a10ec1fe74d1723ebc935232d3c0707c277db2ef0c\",\n  \"created_at\": \"2023-07-12T12:45:30.757605+00:00\"\n}",
-    "thumbnail": "https://via.placeholder.com/170x120.png",
-    "creationDate": "2023-07-12T12:45:30.832Z",
-    "lastChangeDate": "2023-07-12T12:45:30.832Z",
-    "workbench": {
-     "d49543e7-6e36-57ee-86ff-46b71f63757f": {
+      "description": "A service which awaits for time to pass.",
+      "deprecated": null,
+      "classifiers": [],
+      "quality": {},
       "key": "simcore/services/comp/itis/sleeper",
       "version": "2.0.0",
-      "label": "sleeper",
-      "progress": 0.0,
+      "integration-version": "1.0.0",
+      "type": "computational",
+      "authors": [
+        {
+          "name": "Joshua Boone",
+          "email": "sharon60@example.net",
+          "affiliation": "Johnson Inc"
+        },
+        {
+          "name": "Kenneth Alvarez",
+          "email": "ncollins@example.com",
+          "affiliation": "Singh LLC"
+        },
+        {
+          "name": "Jennifer Howard",
+          "email": "amyhood@example.org",
+          "affiliation": "Campos-Weaver"
+        }
+      ],
+      "contact": "sharon91@example.com",
       "inputs": {
-       "x": 4.33,
-       "n": 55,
-       "title": "Temperature",
-       "enabled": true
+        "input_1": {
+          "displayOrder": 1.0,
+          "label": "File with int number",
+          "description": "Pick a file containing only one integer",
+          "type": "data:text/plain",
+          "fileToKeyMap": {
+            "single_number.txt": "input_1"
+          }
+        },
+        "input_2": {
+          "displayOrder": 2.0,
+          "label": "Sleep interval",
+          "description": "Choose an amount of time to sleep",
+          "type": "integer",
+          "defaultValue": 2
+        },
+        "input_3": {
+          "displayOrder": 3.0,
+          "label": "Fail after sleep",
+          "description": "If set to true will cause service to fail after it sleeps",
+          "type": "boolean",
+          "defaultValue": false
+        }
       },
-      "inputsUnits": {},
-      "inputNodes": [],
-      "outputs": {},
-      "state": {
-       "modified": true,
-       "dependencies": [],
-       "currentStatus": "NOT_STARTED",
-       "progress": 0.0
+      "outputs": {
+        "output_1": {
+          "displayOrder": 1.0,
+          "label": "File containing one random integer",
+          "description": "Integer is generated in range [1-9]",
+          "type": "data:text/plain",
+          "fileToKeyMap": {
+            "single_number.txt": "output_1"
+          }
+        },
+        "output_2": {
+          "displayOrder": 2.0,
+          "label": "Random sleep interval",
+          "description": "Interval is generated in range [1-9]",
+          "type": "integer"
+        }
       }
-     }
     },
-    "prjOwner": "brownlisa@example.com",
-    "accessRights": {
-     "3": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
-    },
-    "tags": [],
-    "classifiers": [],
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "NOT_STARTED"
-     }
-    },
-    "ui": {
-     "workbench": {
-      "d49543e7-6e36-57ee-86ff-46b71f63757f": {
-       "position": {
-        "x": 633,
-        "y": 229
-       }
+    "status_code": 200
+  },
+  {
+    "name": "create_project",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": "/v0/projects",
+    "query": "hidden=true",
+    "request_payload": {
+      "uuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
+      "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2",
+      "description": "Study associated to solver job:\n{\n  \"id\": \"767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"inputs_checksum\": \"f6fce006d0fe7b6168fc20a10ec1fe74d1723ebc935232d3c0707c277db2ef0c\",\n  \"created_at\": \"2023-07-12T12:45:30.757605+00:00\"\n}",
+      "thumbnail": "https://via.placeholder.com/170x120.png",
+      "workbench": {
+        "d49543e7-6e36-57ee-86ff-46b71f63757f": {
+          "key": "simcore/services/comp/itis/sleeper",
+          "version": "2.0.0",
+          "label": "sleeper",
+          "progress": null,
+          "thumbnail": null,
+          "runHash": null,
+          "inputs": {
+            "x": 4.33,
+            "n": 55,
+            "title": "Temperature",
+            "enabled": true
+          },
+          "inputsUnits": {},
+          "inputAccess": null,
+          "inputNodes": [],
+          "outputs": {},
+          "outputNode": null,
+          "outputNodes": null,
+          "parent": null,
+          "position": null,
+          "state": {
+            "modified": true,
+            "dependencies": [],
+            "currentStatus": "NOT_STARTED",
+            "progress": 0
+          },
+          "bootOptions": null
+        }
+      },
+      "accessRights": {},
+      "tags": [],
+      "classifiers": [],
+      "ui": {
+        "workbench": {
+          "d49543e7-6e36-57ee-86ff-46b71f63757f": {
+            "position": {
+              "x": 633,
+              "y": 229
+            },
+            "marker": null
+          }
+        },
+        "slideshow": {},
+        "currentNodeId": "d49543e7-6e36-57ee-86ff-46b71f63757f",
+        "annotations": {}
       }
-     },
-     "slideshow": {},
-     "currentNodeId": "d49543e7-6e36-57ee-86ff-46b71f63757f",
-     "annotations": {}
     },
-    "quality": {},
-    "dev": {}
-   }
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
+        "task_name": "POST /v0/projects?hidden=true",
+        "status_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
+        "result_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b/result",
+        "abort_href": "/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b"
+      }
+    },
+    "status_code": 202
   },
-  "status_code": 201
- },
- {
-  "name": "get_project_metadata",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "projectUuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
-    "custom": {}
-   }
+  {
+    "name": "get_task_status_1",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "message": "creating new study...",
+          "percent": 0.0
+        },
+        "done": false,
+        "started": "2023-07-12T12:45:30.825756"
+      }
+    },
+    "status_code": 200
   },
-  "status_code": 200
- },
- {
-  "name": "update_project_metadata",
-  "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
-  "method": "PATCH",
-  "host": "webserver",
-  "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
-  "query": null,
-  "request_payload": {
-   "custom": {
-    "number": 3.14,
-    "integer": 42,
-    "string": "foo",
-    "boolean": true
-   }
+  {
+    "name": "get_task_status_2",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "message": "creating new study...",
+          "percent": 0.0
+        },
+        "done": false,
+        "started": "2023-07-12T12:45:30.825756"
+      }
+    },
+    "status_code": 200
   },
-  "response_body": {
-   "data": {
-    "projectUuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
-    "custom": {
-     "number": 3.14,
-     "string": "foo",
-     "boolean": true,
-     "integer": 42
-    }
-   }
+  {
+    "name": "get_task_status_3",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2023-07-12T12:45:30.825756"
+      }
+    },
+    "status_code": 200
   },
-  "status_code": 200
- },
- {
-  "name": "get_project_metadata_1",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": {
-    "projectUuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
-    "custom": {
-     "number": 3.14,
-     "string": "foo",
-     "boolean": true,
-     "integer": 42
-    }
-   }
+  {
+    "name": "get_task_result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks/POST%2520%252Fv0%252Fprojects%253Fhidden%253Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/tasks/POST%20%2Fv0%2Fprojects%3Fhidden%3Dtrue.ceb7b7ab-ccef-4ea6-b82f-199d265d4c3b/result",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "uuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
+        "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2",
+        "description": "Study associated to solver job:\n{\n  \"id\": \"767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"name\": \"solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.0/jobs/767a7355-3062-4ceb-b339-ed67d07d2ed2\",\n  \"inputs_checksum\": \"f6fce006d0fe7b6168fc20a10ec1fe74d1723ebc935232d3c0707c277db2ef0c\",\n  \"created_at\": \"2023-07-12T12:45:30.757605+00:00\"\n}",
+        "thumbnail": "https://via.placeholder.com/170x120.png",
+        "creationDate": "2023-07-12T12:45:30.832Z",
+        "lastChangeDate": "2023-07-12T12:45:30.832Z",
+        "workbench": {
+          "d49543e7-6e36-57ee-86ff-46b71f63757f": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.0.0",
+            "label": "sleeper",
+            "progress": 0.0,
+            "inputs": {
+              "x": 4.33,
+              "n": 55,
+              "title": "Temperature",
+              "enabled": true
+            },
+            "inputsUnits": {},
+            "inputNodes": [],
+            "outputs": {},
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": 0.0
+            }
+          }
+        },
+        "prjOwner": "brownlisa@example.com",
+        "accessRights": {
+          "3": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "tags": [],
+        "classifiers": [],
+        "state": {
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
+          },
+          "state": {
+            "value": "NOT_STARTED"
+          }
+        },
+        "ui": {
+          "workbench": {
+            "d49543e7-6e36-57ee-86ff-46b71f63757f": {
+              "position": {
+                "x": 633,
+                "y": 229
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "d49543e7-6e36-57ee-86ff-46b71f63757f",
+          "annotations": {}
+        },
+        "quality": {},
+        "dev": {}
+      }
+    },
+    "status_code": 201
   },
-  "status_code": 200
- },
- {
-  "name": "delete_project",
-  "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2')>",
-  "method": "DELETE",
-  "host": "webserver",
-  "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2",
-  "query": null,
-  "request_payload": null,
-  "response_body": null,
-  "status_code": 204
- },
- {
-  "name": "get_project_metadata_2",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
-  "query": null,
-  "request_payload": null,
-  "response_body": {
-   "data": null,
-   "error": {
-    "logs": [
-     {
-      "message": "Project with uuid 767a7355-3062-4ceb-b339-ed67d07d2ed2 not found.",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ],
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Project with uuid 767a7355-3062-4ceb-b339-ed67d07d2ed2 not found.",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "status": 404,
-    "message": "Project with uuid 767a7355-3062-4ceb-b339-ed67d07d2ed2 not found."
-   }
+  {
+    "name": "get_project_metadata",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "projectUuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
+        "custom": {}
+      }
+    },
+    "status_code": 200
   },
-  "status_code": 404
- }
+  {
+    "name": "update_project_metadata",
+    "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
+    "method": "PATCH",
+    "host": "webserver",
+    "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
+    "query": null,
+    "request_payload": {
+      "custom": {
+        "number": 3.14,
+        "integer": 42,
+        "string": "foo",
+        "boolean": true
+      }
+    },
+    "response_body": {
+      "data": {
+        "projectUuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
+        "custom": {
+          "number": 3.14,
+          "string": "foo",
+          "boolean": true,
+          "integer": 42
+        }
+      }
+    },
+    "status_code": 200
+  },
+  {
+    "name": "get_project_metadata_1",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": {
+        "projectUuid": "767a7355-3062-4ceb-b339-ed67d07d2ed2",
+        "custom": {
+          "number": 3.14,
+          "string": "foo",
+          "boolean": true,
+          "integer": 42
+        }
+      }
+    },
+    "status_code": 200
+  },
+  {
+    "name": "delete_project",
+    "description": "<Request('DELETE', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2')>",
+    "method": "DELETE",
+    "host": "webserver",
+    "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2",
+    "query": null,
+    "request_payload": null,
+    "response_body": null,
+    "status_code": 204
+  },
+  {
+    "name": "get_project_metadata_2",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": "/v0/projects/767a7355-3062-4ceb-b339-ed67d07d2ed2/metadata",
+    "query": null,
+    "request_payload": null,
+    "response_body": {
+      "data": null,
+      "error": {
+        "logs": [
+          {
+            "message": "Project with uuid 767a7355-3062-4ceb-b339-ed67d07d2ed2 not found.",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ],
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Project with uuid 767a7355-3062-4ceb-b339-ed67d07d2ed2 not found.",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "status": 404,
+        "message": "Project with uuid 767a7355-3062-4ceb-b339-ed67d07d2ed2 not found."
+      }
+    },
+    "status_code": 404
+  }
 ]

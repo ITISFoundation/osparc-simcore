@@ -7,9 +7,11 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
-from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectGet,
+    ProjectStateOutputSchema,
+)
 from models_library.generics import Envelope
-from models_library.projects_state import ProjectState
 from pydantic import ValidationError
 from servicelib.aiohttp import status
 from simcore_service_webserver._meta import API_VTAG
@@ -80,7 +82,9 @@ def close_project(
 ): ...
 
 
-@router.get("/projects/{project_id}/state", response_model=Envelope[ProjectState])
+@router.get(
+    "/projects/{project_id}/state", response_model=Envelope[ProjectStateOutputSchema]
+)
 def get_project_state(
     _path_params: Annotated[ProjectPathParams, Depends()],
 ): ...

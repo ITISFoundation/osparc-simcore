@@ -19,10 +19,12 @@ import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
-from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectGet,
+    ProjectStateOutputSchema,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import ProjectState
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -418,9 +420,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         # now check returned is as expected
         if new_project:
             # has project state
-            assert not ProjectState(
+            assert not ProjectStateOutputSchema(
                 **new_project.get("state", {})
-            ).locked.value, "Newly created projects should be unlocked"
+            ).share_state.locked, "Newly created projects should be unlocked"
 
             # updated fields
             assert expected_data["uuid"] != new_project["uuid"]

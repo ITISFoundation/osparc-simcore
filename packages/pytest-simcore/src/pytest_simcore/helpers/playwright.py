@@ -274,8 +274,8 @@ class SocketIOProjectClosedWaiter:
             decoded_message = decode_socketio_42_message(message)
             if (
                 (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
-                and (decoded_message.obj["data"]["locked"]["status"] == "CLOSED")
-                and (decoded_message.obj["data"]["locked"]["value"] is False)
+                and (decoded_message.obj["data"]["shareState"]["status"] == "CLOSED")
+                and (decoded_message.obj["data"]["shareState"]["locked"] is False)
             ):
                 self.logger.info("project successfully closed")
                 return True

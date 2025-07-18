@@ -16,7 +16,7 @@ from aiohttp import ClientResponse, ClientSession
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from common_library.users_enums import UserRole
-from models_library.projects_state import ProjectLocked, ProjectStatus
+from models_library.projects_state import ProjectShareState, ProjectStatus
 from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -299,8 +299,10 @@ def mocks_on_projects_api(mocker) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
-        return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+        "simcore_service_webserver.projects._projects_service._get_project_share_state",
+        return_value=ProjectShareState(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
     )
 
 
@@ -424,7 +426,7 @@ async def test_dispatch_study_anonymously(
 
         # guest user only a copy of the template project
         url = client.app.router["list_projects"].url_for()
-        response = await client.get(f'{url.with_query(type="user")}')
+        response = await client.get(f"{url.with_query(type='user')}")
 
         payload = await response.json()
         assert response.status == 200, payload
@@ -481,7 +483,7 @@ async def test_dispatch_logged_in_user(
 
     # guest user only a copy of the template project
     url = client.app.router["list_projects"].url_for()
-    response = await client.get(f'{url.with_query(type="user")}')
+    response = await client.get(f"{url.with_query(type='user')}")
 
     payload = await response.json()
     assert response.status == 200, payload

@@ -35,8 +35,8 @@ from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGet
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import (
-    ProjectLocked,
     ProjectRunningState,
+    ProjectShareState,
     ProjectState,
     ProjectStatus,
     RunningState,
@@ -1016,7 +1016,7 @@ async def test_get_active_project(
             client.app, ProjectID(user_project["uuid"])
         )
         assert not error
-        assert ProjectState(**data.pop("state")).locked.value
+        assert ProjectState(**data.pop("state")).share_state.locked
         data.pop("folderId")
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
@@ -1298,7 +1298,9 @@ async def test_open_shared_project_2_users_locked(
     )
     # expected is that the project is closed and unlocked
     expected_project_state_client_1 = ProjectState(
-        locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+        share_state=ProjectShareState(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     for _client_id in [client_id1, None]:
@@ -1320,9 +1322,11 @@ async def test_open_shared_project_2_users_locked(
         first_name=logged_user.get("first_name"),
         last_name=logged_user.get("last_name"),
     )
-    expected_project_state_client_1.locked.value = True
-    expected_project_state_client_1.locked.status = ProjectStatus.OPENED
-    expected_project_state_client_1.locked.owner = owner1
+    expected_project_state_client_1.share_state.locked = True
+    expected_project_state_client_1.share_state.status = ProjectStatus.OPENED
+    expected_project_state_client_1.share_state.current_user_groupids = logged_user[
+        "primary_gid"
+    ]
     # NOTE: there are 2 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
@@ -1358,7 +1362,7 @@ async def test_open_shared_project_2_users_locked(
         expected.locked if user_role != UserRole.GUEST else status.HTTP_423_LOCKED,
     )
     expected_project_state_client_2 = deepcopy(expected_project_state_client_1)
-    expected_project_state_client_2.locked.status = ProjectStatus.OPENED
+    expected_project_state_client_2.share_state.status = ProjectStatus.OPENED
 
     await _state_project(
         client_2,
@@ -1372,7 +1376,9 @@ async def test_open_shared_project_2_users_locked(
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         # Guests cannot close projects
         expected_project_state_client_1 = ProjectState(
-            locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+            share_state=ProjectShareState(
+                locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+            ),
             state=ProjectRunningState(value=RunningState.NOT_STARTED),
         )
 
@@ -1385,8 +1391,12 @@ async def test_open_shared_project_2_users_locked(
         [
             expected_project_state_client_1.model_copy(
                 update={
-                    "locked": ProjectLocked(
-                        value=True, status=ProjectStatus.CLOSING, owner=owner1
+                    "share_state": ProjectShareState(
+                        locked=True,
+                        status=ProjectStatus.CLOSING,
+                        current_user_groupids=[
+                            owner1.user_id
+                        ],  # this should be the group of that user
                     )
                 }
             )
@@ -1418,17 +1428,21 @@ async def test_open_shared_project_2_users_locked(
         expected.ok if user_role != UserRole.GUEST else status.HTTP_423_LOCKED,
     )
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
-        expected_project_state_client_2.locked.value = True
-        expected_project_state_client_2.locked.status = ProjectStatus.OPENED
+        expected_project_state_client_2.share_state.locked = True
+        expected_project_state_client_2.share_state.status = ProjectStatus.OPENED
         owner2 = Owner(
             user_id=PositiveInt(user_2["id"]),
             first_name=user_2.get("first_name", None),
             last_name=user_2.get("last_name", None),
         )
-        expected_project_state_client_2.locked.owner = owner2
-        expected_project_state_client_1.locked.value = True
-        expected_project_state_client_1.locked.status = ProjectStatus.OPENED
-        expected_project_state_client_1.locked.owner = owner2
+        expected_project_state_client_2.share_state.current_user_groupids = [
+            owner2.user_id
+        ]  # this should be the group of that user
+        expected_project_state_client_1.share_state.locked = True
+        expected_project_state_client_1.share_state.status = ProjectStatus.OPENED
+        expected_project_state_client_1.share_state.current_user_groupids = [
+            owner2.user_id
+        ]  # this should be the group of that user
     # NOTE: there are 3 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
@@ -1532,11 +1546,11 @@ async def test_open_shared_project_at_same_time(
                 project_status = ProjectState(**data.pop("state"))
                 data.pop("folderId")
                 assert data == {k: shared_project[k] for k in data}
-                assert project_status.locked.value
-                assert project_status.locked.owner
-                assert project_status.locked.owner.first_name in [
+                assert project_status.share_state.locked
+                assert project_status.share_state.current_user_groupids
+                assert project_status.share_state.current_user_groupids in [
                     c["user"]["first_name"] for c in clients
-                ]
+                ]  # TODO: this will fail
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS
 

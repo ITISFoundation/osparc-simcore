@@ -6,8 +6,8 @@ from typing import Any, Final, ParamSpec, TypeVar
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import ProjectLocked, ProjectStatus
-from servicelib.logging_utils import log_catch
 
+from ..logging_utils import log_catch
 from ._client import RedisClientSDK
 from ._decorators import exclusive
 from ._errors import CouldNotAcquireLockError, ProjectLockError

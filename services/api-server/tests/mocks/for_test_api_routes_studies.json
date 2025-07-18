@@ -160,9 +160,10 @@
           "tags": [],
           "classifiers": [],
           "state": {
-            "locked": {
-              "value": false,
-              "status": "CLOSED"
+            "shareState": {
+              "locked": false,
+              "status": "CLOSED",
+              "currentUserGroupids": []
             },
             "state": {
               "value": "UNKNOWN"
@@ -385,9 +386,10 @@
         "tags": [],
         "classifiers": [],
         "state": {
-          "locked": {
-            "value": false,
-            "status": "CLOSED"
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
           },
           "state": {
             "value": "UNKNOWN"
