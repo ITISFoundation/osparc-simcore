@@ -18,10 +18,7 @@
 qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   extend: qx.ui.core.Widget,
 
-  construct: function(sourceSearchBarFilter, resourceType) {
-    this.__sourceSearchBarFilter = sourceSearchBarFilter;
-    this.__resourceType = resourceType;
-
+  construct: function(sourceSearchBarFilter, resourceType, initFilterData = {}) {
     this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -31,6 +28,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       padding: 8,
       decorator: "rounded",
     });
+
+    this.__sourceSearchBarFilter = sourceSearchBarFilter;
+    this.__resourceType = resourceType;
+    this.__initFilterData = initFilterData;
 
     this.__buildLayout();
 
@@ -75,14 +76,19 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "search-bar-filter":
+        case "search-bar-filter": {
           control = new osparc.dashboard.SearchBarFilter(this.__resourceType);
-          control.getChildControl("text-field").addListener("appear", () => {
-            control.getChildControl("text-field").focus();
-            control.getChildControl("text-field").activate();
+          const textField = control.getChildControl("text-field");
+          if ("text" in this.__initFilterData) {
+            textField.setValue(this.__initFilterData["text"]);
+          }
+          textField.addListener("appear", () => {
+            textField.focus();
+            textField.activate();
           });
           this._add(control);
           break;
+        }
         case "context-buttons":
           control = new qx.ui.toolbar.ToolBar().set({
             spacing: 0,
