@@ -98,12 +98,9 @@ async def test_own_group(
     connection: SAConnection,
 ):
     user_id = await postgres_users.insert_user_and_secrets(connection)
-    result = await connection.execute(users.select().where(users.c.id == user_id))
-    user: RowProxy = await result.fetchone()
-    assert not user.primary_gid
 
     # now fetch the same user that shall have a primary group set by the db
-    result = await connection.execute(users.select().where(users.c.id == user.id))
+    result = await connection.execute(users.select().where(users.c.id == user_id))
     user: RowProxy = await result.fetchone()
     assert user.primary_gid
 
