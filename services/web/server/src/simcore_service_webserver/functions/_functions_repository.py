@@ -20,6 +20,7 @@ from models_library.functions import (
     FunctionOutputs,
     FunctionOutputSchema,
     FunctionsApiAccessRights,
+    FunctionUpdate,
     FunctionUserApiAccessRights,
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
@@ -633,14 +634,14 @@ async def delete_function(
         )
 
 
-async def _update_function_attribute(
+async def update_function(
     app: web.Application,
-    connection: AsyncConnection | None,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    **update_kwargs,
+    function: FunctionUpdate,
 ) -> RegisteredFunctionDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
@@ -667,7 +668,7 @@ async def _update_function_attribute(
         result = await transaction.execute(
             functions_table.update()
             .where(functions_table.c.uuid == function_id)
-            .values(**update_kwargs)
+            .values(**function.model_dump(exclude_none=True, exclude_unset=True))
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
         row = result.one_or_none()
@@ -676,44 +677,6 @@ async def _update_function_attribute(
             raise FunctionIDNotFoundError(function_id=function_id)
 
         return RegisteredFunctionDB.model_validate(row)
-
-
-async def update_function_title(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    function_id: FunctionID,
-    title: str,
-) -> RegisteredFunctionDB:
-    return await _update_function_attribute(
-        app,
-        connection=connection,
-        user_id=user_id,
-        product_name=product_name,
-        function_id=function_id,
-        title=title,
-    )
-
-
-async def update_function_description(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    function_id: FunctionID,
-    description: str,
-) -> RegisteredFunctionDB:
-    return await _update_function_attribute(
-        app,
-        connection=connection,
-        user_id=user_id,
-        product_name=product_name,
-        function_id=function_id,
-        description=description,
-    )
 
 
 async def get_function_job(

@@ -151,6 +151,24 @@ async def batch_get_project_name(
     return [rows.get(project_uuid) for project_uuid in projects_uuids_str]
 
 
+async def batch_get_projects(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuids: list[ProjectID],
+) -> list[ProjectDBGet]:
+    if not project_uuids:
+        return []
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        query = (
+            sql.select(projects)
+            .select_from(projects)
+            .where(projects.c.uuid.in_([f"{uuid}" for uuid in project_uuids]))
+        )
+        result = await conn.stream(query)
+        return [ProjectDBGet.model_validate(row) async for row in result]
+
+
 def _select_trashed_by_primary_gid_query() -> sql.Select:
     return sql.select(
         projects.c.uuid,

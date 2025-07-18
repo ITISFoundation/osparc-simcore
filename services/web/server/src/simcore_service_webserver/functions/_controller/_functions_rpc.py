@@ -11,6 +11,7 @@ from models_library.functions import (
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionOutputSchema,
+    FunctionUpdate,
     FunctionUserApiAccessRights,
     RegisteredFunction,
     RegisteredFunctionJob,
@@ -318,12 +319,12 @@ async def update_function_title(
     function_id: FunctionID,
     title: str,
 ) -> RegisteredFunction:
-    return await _functions_service.update_function_title(
+    return await _functions_service.update_function(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
-        title=title,
+        function=FunctionUpdate(title=title),
     )
 
 
@@ -342,12 +343,12 @@ async def update_function_description(
     function_id: FunctionID,
     description: str,
 ) -> RegisteredFunction:
-    return await _functions_service.update_function_description(
+    return await _functions_service.update_function(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
-        description=description,
+        function=FunctionUpdate(description=description),
     )
 
 
