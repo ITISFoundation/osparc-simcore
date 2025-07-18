@@ -41,6 +41,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__currentFilter = null;
   },
 
+  properties: {
+    showFilterMenu: {
+      check: "Boolean",
+      init: true,
+      event: "changeShowFilterMenu",
+    }
+  },
+
   statics: {
     HEIGHT: 36,
 
@@ -203,7 +211,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         left: left
       });
 
-      this.__filtersMenu.show();
+      if (this.getShowFilterMenu()) {
+        this.__filtersMenu.show();
+      }
     },
 
     __hideFilterMenu: function() {

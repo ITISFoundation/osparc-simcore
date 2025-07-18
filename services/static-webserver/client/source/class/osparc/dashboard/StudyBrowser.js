@@ -1059,6 +1059,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _createLayout: function() {
       const searchBarFilter = this._createSearchBar();
       searchBarFilter.set({
+        showFilterMenu: false,
         cursor: "pointer",
       });
       searchBarFilter.addListener("tap", () => {
