@@ -302,13 +302,13 @@ def test_users_secrets_migration_upgrade_downgrade(
         for user_data in users_data_with_hashed_password:
             columns = ", ".join(user_data.keys())
             values_placeholders = ", ".join(f":{key}" for key in user_data)
-            result = conn.execute(
+            user_id = conn.execute(
                 sa.text(
                     f"INSERT INTO users ({columns}) VALUES ({values_placeholders}) RETURNING id"  # noqa: S608
                 ),
                 user_data,
-            )
-            inserted_user_ids.append(result.scalar())
+            ).scalar()
+            inserted_user_ids.append(user_id)
 
         # Verify password hashes are in users table
         result = conn.execute(
