@@ -30,8 +30,7 @@ _S3_CONFIG_KEY_SOURCE: Final[str] = "s3-source"
 _logger = logging.getLogger(__name__)
 
 
-class BaseRCloneError(OsparcErrorMixin, RuntimeError):
-    ...
+class BaseRCloneError(OsparcErrorMixin, RuntimeError): ...
 
 
 class RCloneFailedError(BaseRCloneError):
@@ -207,6 +206,16 @@ async def _sync_sources(
             # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
             r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
+            "--checkers",
+            f"{r_clone_settings.R_CLONE_OPTION_CHECKERS}",
+            "--s3-upload-concurrency",
+            f"{r_clone_settings.R_CLONE_S3_UPLOAD_CONCURRENCY}",
+            "--s3-chunk-size",
+            r_clone_settings.R_CLONE_CHUNK_SIZE,
+            # handles the order of file upload
+            "--order-by",
+            r_clone_settings.R_CLONE_ORDER_BY,
+            "--fast-list",
             "--use-json-log",
             # frequent polling for faster progress updates
             "--stats",

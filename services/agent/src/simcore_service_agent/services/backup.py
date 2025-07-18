@@ -162,7 +162,7 @@ async def _store_in_s3(
         # below two options reduce to a minimum the memory footprint
         # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
         "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
-        "0M",
+        "16M",
         "--stats",
         "5s",
         "--stats-one-line",
