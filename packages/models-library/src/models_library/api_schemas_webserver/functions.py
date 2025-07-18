@@ -115,7 +115,6 @@ class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema): ...
 
 
 class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
-    uuid: FunctionID
     thumbnail: str | None = None
     template_id: int | None = None
 
