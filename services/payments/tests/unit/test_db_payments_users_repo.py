@@ -14,10 +14,12 @@ from models_library.groups import GroupID
 from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.users import users
 from simcore_service_payments.db.payment_users_repo import PaymentsUsersRepo
 from simcore_service_payments.services.postgres import get_engine
 
@@ -60,14 +62,10 @@ async def user(
     injects a user in db
     """
     assert user_id == user["id"]
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-        get_engine(app),
-        table=users,
-        values=user,
-        pk_col=users.c.id,
-        pk_value=user["id"],
-    ) as row:
-        yield row
+    async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        get_engine(app), **user
+    ) as user_row:
+        yield user_row
 
 
 @pytest.fixture
