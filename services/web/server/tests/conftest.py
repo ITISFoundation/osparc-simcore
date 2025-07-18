@@ -429,7 +429,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             # has project state
             assert not ProjectState(
                 **new_project.get("state", {})
-            ).locked.value, "Newly created projects should be unlocked"
+            ).share_state.locked, "Newly created projects should be unlocked"
 
             # updated fields
             assert expected_data["uuid"] != new_project["uuid"]

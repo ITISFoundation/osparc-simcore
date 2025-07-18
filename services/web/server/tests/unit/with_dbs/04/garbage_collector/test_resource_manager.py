@@ -573,13 +573,9 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
                     {
                         "project_uuid": empty_user_project["uuid"],
                         "data": {
-                            "locked": {
-                                "value": False,
-                                "owner": {
-                                    "user_id": user_id,
-                                    "first_name": logged_user.get("first_name", None),
-                                    "last_name": logged_user.get("last_name", None),
-                                },
+                            "shareState": {
+                                "locked": False,
+                                "currentUserGroupids": [user_id],  # TODO: change this
                                 "status": "OPENED",
                             },
                             "state": {"value": "NOT_STARTED"},
