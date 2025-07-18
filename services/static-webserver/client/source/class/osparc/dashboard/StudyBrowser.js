@@ -1060,9 +1060,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const searchBarFilter = this._createSearchBar();
       searchBarFilter.set({
         showFilterMenu: false,
+      });
+      const textField = searchBarFilter.getChildControl("text-field");
+      textField.set({
         cursor: "pointer",
       });
-      searchBarFilter.addListener("tap", () => {
+      textField.addListener("tap", () => {
         searchBarFilter.popUpSearchBarFilter();
       });
 
