@@ -285,6 +285,9 @@ class UsersRepo:
         password_hash: str,
     ) -> None:
         async with transaction_context(self._engine, connection) as conn:
+            await self.get_password_hash(
+                connection=conn, user_id=user_id
+            )  # ensure user exists
             await conn.execute(
                 users_secrets.update()
                 .where(users_secrets.c.user_id == user_id)

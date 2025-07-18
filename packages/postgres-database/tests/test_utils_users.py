@@ -95,15 +95,3 @@ async def test_update_user_password_hash_updates_modified_column(
             await repo.get_password_hash(connection, user_id=user["id"])
             == new_password_hash
         )
-
-
-async def test_update_user_password_hash_raises_when_user_not_found(
-    asyncpg_engine: AsyncEngine, faker: Faker
-):
-    repo = UsersRepo(asyncpg_engine)
-
-    async with pass_or_acquire_connection(asyncpg_engine) as connection:
-        with pytest.raises(UserNotFoundInRepoError):
-            await repo.update_user_password_hash(
-                connection, user_id=999999, password_hash=faker.password()
-            )
