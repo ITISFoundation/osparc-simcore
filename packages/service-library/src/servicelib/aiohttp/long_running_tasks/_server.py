@@ -9,12 +9,13 @@ from common_library.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, TypeAdapter
 
 from ...aiohttp import status
+from ...long_running_tasks import lrt_api
 from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_CHECK_INTERVAL,
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
 from ...long_running_tasks.models import TaskGet
-from ...long_running_tasks.task import TaskContext, TaskProtocol, start_task
+from ...long_running_tasks.task import RegisteredTaskName, TaskContext
 from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
@@ -25,11 +26,11 @@ from ._error_handlers import base_long_running_error_handler
 from ._manager import AiohttpLongRunningManager, get_long_running_manager
 
 
-def no_ops_decorator(handler: Handler):
+def _no_ops_decorator(handler: Handler):
     return handler
 
 
-def no_task_context_decorator(handler: Handler):
+def _no_task_context_decorator(handler: Handler):
     @wraps(handler)
     async def _wrap(request: web.Request):
         request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = {}
@@ -45,7 +46,7 @@ def _create_task_name_from_request(request: web.Request) -> str:
 async def start_long_running_task(
     # NOTE: positional argument are suffixed with "_" to avoid name conflicts with "task_kwargs" keys
     request_: web.Request,
-    task_: TaskProtocol,
+    registerd_task_name: RegisteredTaskName,
     *,
     fire_and_forget: bool = False,
     task_context: TaskContext,
@@ -55,9 +56,9 @@ async def start_long_running_task(
     task_name = _create_task_name_from_request(request_)
     task_id = None
     try:
-        task_id = start_task(
+        task_id = await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            task_,
+            registerd_task_name,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
             task_name=task_name,
@@ -78,7 +79,6 @@ async def start_long_running_task(
         )
         task_get = TaskGet(
             task_id=task_id,
-            task_name=task_name,
             status_href=f"{status_url}",
             result_href=f"{result_url}",
             abort_href=f"{abort_url}",
@@ -121,8 +121,8 @@ def setup(
     app: web.Application,
     *,
     router_prefix: str,
-    handler_check_decorator: Callable = no_ops_decorator,
-    task_request_context_decorator: Callable = no_task_context_decorator,
+    handler_check_decorator: Callable = _no_ops_decorator,
+    task_request_context_decorator: Callable = _no_task_context_decorator,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
     stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:

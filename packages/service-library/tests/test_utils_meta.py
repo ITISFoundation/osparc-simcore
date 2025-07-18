@@ -1,7 +1,9 @@
 from typing import Final
 
+import pytest
 from models_library.basic_types import VersionStr
 from packaging.version import Version
+from pytest_mock import MockerFixture
 from servicelib.utils_meta import PackageInfo
 
 
@@ -32,3 +34,33 @@ def test_meta_module_implementation():
 
     assert __version__ in APP_FINISHED_BANNER_MSG
     assert PROJECT_NAME in APP_FINISHED_BANNER_MSG
+
+
+@pytest.mark.parametrize(
+    "package_name, app_name, is_valid_app_name, is_correct_app_name",
+    [
+        ("simcore-service-library", "simcore-service-library", True, True),
+        ("simcore-service-lib", "simcore-service-library", True, False),
+        ("simcore_service_library", "simcore_service_library", False, True),
+    ],
+)
+def test_app_name(
+    mocker: MockerFixture,
+    package_name: str,
+    app_name: str,
+    is_valid_app_name: bool,
+    is_correct_app_name: bool,
+):
+
+    def mock_distribution(name):
+        return mocker.Mock(metadata={"Name": name, "Version": "1.0.0"})
+
+    mocker.patch("servicelib.utils_meta.distribution", side_effect=mock_distribution)
+    if is_valid_app_name:
+        info = PackageInfo(package_name=package_name)
+        if is_correct_app_name:
+            assert info.app_name == app_name
+            assert info.prometheus_friendly_app_name == app_name.replace("-", "_")
+    else:
+        with pytest.raises(ValueError):
+            _ = PackageInfo(package_name=package_name)

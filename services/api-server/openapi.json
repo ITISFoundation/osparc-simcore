@@ -11480,7 +11480,6 @@
         "type": "object",
         "required": [
           "task_id",
-          "task_name",
           "status_href",
           "result_href",
           "abort_href"
