@@ -180,7 +180,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
     },
 
     __addSharedWithMenu: function(menuButton) {
-      const menu = new qx.ui.menu.Menu();
+      const menu = this.__sharedWithMenu = new qx.ui.menu.Menu();
 
       const sharedWithRadioGroup = new qx.ui.form.RadioGroup();
       const options = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
@@ -201,7 +201,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
       const tags = osparc.store.Tags.getInstance().getTags();
       menuButton.setVisibility(tags.length ? "visible" : "excluded");
       if (tags.length) {
-        const menu = new qx.ui.menu.Menu();
+        const menu = this.__tagsMenu = new qx.ui.menu.Menu();
         osparc.utils.Utils.setIdToWidget(menu, "searchBarFilter-tags-menu");
         tags.forEach(tag => {
           const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
@@ -215,9 +215,17 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
 
     __attachHideHandlers: function() {
       const tapListener = e => {
-        if (osparc.utils.Utils.isMouseOnElement(this, e)) {
-          return;
+        const excludeElements = [
+          this,
+          this.__sharedWithMenu,
+          this.__tagsMenu,
+        ];
+        for (let i=0; i<excludeElements.length; i++) {
+          if (osparc.utils.Utils.isMouseOnElement(excludeElements[i], e)) {
+            return;
+          }
         }
+
         this.exclude();
         document.removeEventListener("mousedown", tapListener);
       };;
