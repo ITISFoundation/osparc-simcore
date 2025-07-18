@@ -631,6 +631,14 @@ qx.Class.define("osparc.data.Resources", {
           create: {
             method: "POST",
             url: statics.API + "/functions"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/functions/{functionId}?include_extras=true"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/functions?include_extras=true"
           }
         }
       },
