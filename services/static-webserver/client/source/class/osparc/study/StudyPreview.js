@@ -26,38 +26,30 @@ qx.Class.define("osparc.study.StudyPreview", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__study = study;
-
-    this.__buildPreview();
+    const uiMode = study.getUi().getMode();
+    if (["workbench", "pipeline"].includes(uiMode)) {
+      this.__buildPreview(study);
+    }
   },
 
   members: {
-    __study: null,
-
-    __buildPreview: function() {
-      const study = this.__study;
-
+    __buildPreview: function(study) {
       const workbenchReady = () => {
-        if (!study.isPipelineEmpty()) {
-          const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
-          workbenchUIPreview.setStudy(study);
-          workbenchUIPreview.loadModel(study.getWorkbench());
-          workbenchUIPreview.setMaxHeight(550);
-          this._add(workbenchUIPreview);
-        }
+        const workbenchUIPreview = new osparc.workbench.WorkbenchUIPreview();
+        workbenchUIPreview.setStudy(study);
+        workbenchUIPreview.loadModel(study.getWorkbench());
+        workbenchUIPreview.setMaxHeight(550);
+        this._add(workbenchUIPreview);
       };
 
-      const uiMode = study.getUi().getMode();
-      if (["workbench", "pipeline"].includes(uiMode)) {
-        if (study.getWorkbench().isDeserialized()) {
-          workbenchReady();
-        } else {
-          study.getWorkbench().addListenerOnce("changeDeserialized", e => {
-            if (e.getData()) {
-              workbenchReady();
-            }
-          }, this);
-        }
+      if (study.getWorkbench().isDeserialized()) {
+        workbenchReady();
+      } else {
+        study.getWorkbench().addListenerOnce("changeDeserialized", e => {
+          if (e.getData()) {
+            workbenchReady();
+          }
+        }, this);
       }
     }
   }

@@ -40,7 +40,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..constants import UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
+from ..constants import LOGS_FILE_NAME, UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -261,9 +261,6 @@ async def compute_output_data_schema(
     return TaskOutputDataSchema.model_validate(output_data_schema)
 
 
-_LOGS_FILE_NAME = "logs.zip"
-
-
 async def compute_service_log_file_upload_link(
     user_id: UserID,
     project_id: ProjectID,
@@ -274,7 +271,7 @@ async def compute_service_log_file_upload_link(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
-        file_name=_LOGS_FILE_NAME,
+        file_name=LOGS_FILE_NAME,
         link_type=file_link_type,
         file_size=ByteSize(0),  # will create a single presigned link
         sha256_checksum=None,
@@ -375,7 +372,7 @@ async def _get_service_log_file_download_link(
             user_id=user_id,
             project_id=f"{project_id}",
             node_id=f"{node_id}",
-            file_name=_LOGS_FILE_NAME,
+            file_name=LOGS_FILE_NAME,
             link_type=file_link_type,
         )
         return value_link
@@ -444,10 +441,10 @@ async def clean_task_output_and_log_files_if_invalid(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
-        file_name=_LOGS_FILE_NAME,
+        file_name=LOGS_FILE_NAME,
     ):
         await port_utils.delete_target_link(
-            user_id, f"{project_id}", f"{node_id}", _LOGS_FILE_NAME
+            user_id, f"{project_id}", f"{node_id}", LOGS_FILE_NAME
         )
 
 
