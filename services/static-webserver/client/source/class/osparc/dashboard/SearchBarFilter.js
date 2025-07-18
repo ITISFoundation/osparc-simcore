@@ -80,7 +80,19 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         label: qx.locale.Manager.tr("Public") + " " + resourceAlias,
         icon: "@FontAwesome5Solid/globe/20"
       }];
-    }
+    },
+
+    createChip: function(chipType, chipId, chipLabel) {
+      const chipButton = new qx.ui.form.Button().set({
+        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
+        icon: "@MaterialIcons/close/12",
+        toolTipText: chipLabel,
+        appearance: "chip-button"
+      });
+      chipButton.type = chipType;
+      chipButton.id = chipId;
+      return chipButton;
+    },
   },
 
   events: {
@@ -356,22 +368,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       if (chipFound) {
         return;
       }
-      const chip = this.__createChip(type, id, label);
+      const chip = this.self().createChip(type, id, label);
+      chip.addListener("execute", () => this.__removeChip(chipType, chipId), this);
       activeFilter.add(chip);
       this.__filter();
-    },
-
-    __createChip: function(chipType, chipId, chipLabel) {
-      const chipButton = new qx.ui.form.Button().set({
-        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
-        icon: "@MaterialIcons/close/12",
-        toolTipText: chipLabel,
-        appearance: "chip-button"
-      });
-      chipButton.type = chipType;
-      chipButton.id = chipId;
-      chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
-      return chipButton;
     },
 
     __removeChip: function(type, id) {
