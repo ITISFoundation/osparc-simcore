@@ -70,7 +70,11 @@ NEW_PROJECT = HttpApiCallCapture(
             "prjOwner": "foo@bar.com",
             "tags": [],
             "state": {
-                "locked": {"value": False, "status": "CLOSED"},
+                "shareState": {
+                    "status": "CLOSED",
+                    "locked": False,
+                    "currentUserGroupids": [],
+                },
                 "state": {"value": "NOT_STARTED"},
             },
             "dev": None,
@@ -114,7 +118,11 @@ GET_PROJECT = HttpApiCallCapture(
             "quality": {},
             "tags": [],
             "state": {
-                "locked": {"value": False, "status": "CLOSED"},
+                "shareState": {
+                    "status": "CLOSED",
+                    "locked": False,
+                    "currentUserGroupids": [],
+                },
                 "state": {"value": "NOT_STARTED"},
             },
             "workspace_id": None,
@@ -284,14 +292,10 @@ REPLACE_PROJECT = HttpApiCallCapture(
             },
             "tags": [],
             "state": {
-                "locked": {
-                    "value": True,
-                    "owner": {
-                        "user_id": 1,
-                        "first_name": "crespo",
-                        "last_name": "",
-                    },
+                "shareState": {
                     "status": "OPENED",
+                    "locked": True,
+                    "currentUserGroupids": [1],
                 },
                 "state": {"value": "NOT_STARTED"},
             },
@@ -547,14 +551,10 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
             },
             "tags": [],
             "state": {
-                "locked": {
-                    "value": True,
-                    "owner": {
-                        "user_id": 1,
-                        "first_name": "crespo",
-                        "last_name": "",
-                    },
+                "shareState": {
                     "status": "OPENED",
+                    "locked": True,
+                    "currentUserGroupids": [1],
                 },
                 "state": {"value": "NOT_STARTED"},
             },
@@ -734,7 +734,11 @@ LIST_PROJECTS = HttpApiCallCapture(
                 },
                 "tags": [],
                 "state": {
-                    "locked": {"value": False, "status": "CLOSED"},
+                    "shareState": {
+                        "status": "CLOSED",
+                        "locked": False,
+                        "currentUserGroupids": [],
+                    },
                     "state": {"value": "NOT_STARTED"},
                 },
             }
@@ -988,7 +992,11 @@ CREATE_FROM_TEMPLATE__TASK_RESULT = HttpApiCallCapture(
             "prjOwner": "user@company.com",
             "tags": [22],
             "state": {
-                "locked": {"value": False, "status": "CLOSED"},
+                "shareState": {
+                    "status": "CLOSED",
+                    "locked": False,
+                    "currentUserGroupids": [],
+                },
                 "state": {"value": "NOT_STARTED"},
             },
         }
