@@ -211,7 +211,7 @@ async def test_list_projects(
 
         assert not ProjectState(
             **project_state
-        ).locked.value, "Templates are not locked"
+        ).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
         # standard project
@@ -240,7 +240,7 @@ async def test_list_projects(
         assert got == {k: user_project[k] for k in got}
         assert not ProjectState(
             **project_state
-        ).locked.value, "Single user does not lock"
+        ).share_state.locked, "Single user does not lock"
         assert project_permalink is None
 
     # GET /v0/projects?type=template
@@ -258,7 +258,7 @@ async def test_list_projects(
         assert got == {k: template_project[k] for k in got}
         assert not ProjectState(
             **project_state
-        ).locked.value, "Templates are not locked"
+        ).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
 

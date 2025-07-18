@@ -21,7 +21,10 @@ from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
 from models_library.progress_bar import ProgressReport
-from models_library.projects_state import ProjectLocked, ProjectStatus
+from models_library.projects_state import (
+    ProjectShareState,
+    ProjectStatus,
+)
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
@@ -144,8 +147,10 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
-        return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+        "simcore_service_webserver.projects._projects_service._get_project_share_state",
+        return_value=ProjectShareState(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
     )
 
 
