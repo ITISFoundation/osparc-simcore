@@ -99,7 +99,7 @@ async def list_functions(request: web.Request) -> web.Response:
     )
 
     chunk: list[RegisteredFunctionGet] = []
-    projects_map: dict[str, ProjectDBGet] = (
+    projects_map: dict[str, ProjectDBGet | None] = (
         {}
     )  # ProjectDBGet has to be renamed at some point!
 
