@@ -16,6 +16,7 @@ from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
+from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
@@ -30,6 +31,7 @@ from ._models import (
 )
 from .exceptions import (
     MissingGroupExtraPropertiesForProductError,
+    UserNotFoundError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -159,21 +161,19 @@ get_user_role = _users_repository.get_user_role
 async def get_user_credentials(
     app: web.Application, *, user_id: UserID
 ) -> UserCredentialsTuple:
-    row = await _users_repository.get_user_or_raise(
-        get_asyncpg_engine(app),
-        user_id=user_id,
-        return_column_names=[
-            "name",
-            "first_name",
-            "email",
-            "password_hash",
-        ],
-    )
+
+    repo = UsersRepo(get_asyncpg_engine(app))
+
+    user_row = await repo.get_user_by_id_or_none(user_id=user_id)
+    if user_row is None:
+        raise UserNotFoundError(user_id=user_id)
+
+    user_password_hash = await repo.get_password_hash(user_id=user_id)
 
     return UserCredentialsTuple(
-        email=TypeAdapter(LowerCaseEmailStr).validate_python(row["email"]),
-        password_hash=row["password_hash"],
-        display_name=row["first_name"] or row["name"].capitalize(),
+        email=TypeAdapter(LowerCaseEmailStr).validate_python(user_row.email),
+        password_hash=user_password_hash,
+        display_name=user_row.first_name or user_row.name.capitalize(),
     )
 
 
