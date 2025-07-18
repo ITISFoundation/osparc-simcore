@@ -132,7 +132,6 @@ async def list_functions(request: web.Request) -> web.Response:
                             "thumbnail": (
                                 f"{project.thumbnail}" if project.thumbnail else None
                             ),
-                            "template_id": project.id,
                         }
                     )
                 )
@@ -195,7 +194,6 @@ async def get_function(request: web.Request) -> web.Response:
                 registered_function.model_dump(mode="json")
                 | {
                     "thumbnail": project_dict.get("thumbnail", None),
-                    "template_id": project_dict.get("id", None),
                 }
             )
         )
