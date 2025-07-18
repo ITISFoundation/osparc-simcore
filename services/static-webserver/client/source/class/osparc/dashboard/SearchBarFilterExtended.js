@@ -78,6 +78,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "search-bar-filter":
+          control = new osparc.dashboard.SearchBarFilter(this.__resourceType);
+          control.getChildControl("text-field").addListener("appear", () => {
+            control.getChildControl("text-field").focus();
+            control.getChildControl("text-field").activate();
+          });
+          this._add(control);
+          break;
         case "context-buttons":
           control = new qx.ui.toolbar.ToolBar().set({
             spacing: 0,
@@ -111,10 +119,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           );
           this.getChildControl("context-buttons").add(control);
           break;
-        case "search-bar-filter":
-          control = new osparc.dashboard.SearchBarFilter(this.__resourceType);
-          this._add(control);
-          break;
         case "filter-buttons":
           control = new qx.ui.toolbar.ToolBar().set({
             backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
@@ -139,6 +143,19 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       this.getChildControl("search-bar-filter").set({
         showFilterMenu: false,
       });
+
+      const textField = this.getChildControl(("search-bar-filter")).getChildControl("text-field");
+      textField.addListener("keypress", e => {
+        if (e.getKeyIdentifier() === "Enter") {
+          this.__sourceSearchBarFilter.getChildControl("text-field").setValue(textField.getValue());
+          this.exclude();
+        }
+      }, this);
+      textField.addListener("changeValue", () => {
+        this.__sourceSearchBarFilter.getChildControl("text-field").setValue(textField.getValue());
+        this.exclude();
+      }, this);
+
       const resetButton = this.getChildControl("search-bar-filter").getChildControl("reset-button");
       resetButton.set({
         paddingRight: 2, // 10-8
@@ -190,7 +207,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         const button = new qx.ui.menu.RadioButton(option.label);
         menu.add(button);
         button.addListener("execute", () => {
-          this.getChildControl("search-bar-filter").setSharedWithActiveFilter(option.id, option.label);
+          this.__sourceSearchBarFilter.setSharedWithActiveFilter(option.id, option.label);
           this.exclude();
         });
         sharedWithRadioGroup.add(button);
@@ -213,7 +230,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           tagButton.getChildControl("icon").setTextColor(tag.getColor());
           menu.add(tagButton);
           tagButton.addListener("execute", () => {
-            this.getChildControl("search-bar-filter").addTagActiveFilter(tag);
+            this.__sourceSearchBarFilter.addTagActiveFilter(tag);
             this.exclude();
           });
         });
