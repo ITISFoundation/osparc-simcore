@@ -15,7 +15,6 @@ from faker import Faker
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_user
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
-from simcore_postgres_database.models.users_secrets import users_secrets
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -247,7 +246,12 @@ def sync_engine_with_migration(
 def test_users_secrets_migration_upgrade_downgrade(
     sync_engine_with_migration: sqlalchemy.engine.Engine, faker: Faker
 ):
-    """Tests the migration script that moves password_hash from users to users_secrets table."""
+    """Tests the migration script that moves password_hash from users to users_secrets table.
+
+
+    NOTE: all statements in conn.execute(...) must be sa.text(...) since at that migration point the schemas of the
+         code models might not be the same
+    """
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback
     assert simcore_postgres_database.cli.downgrade.callback
@@ -264,35 +268,45 @@ def test_users_secrets_migration_upgrade_downgrade(
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
 
         # INSERT users with password hashes (emulates data in-place before migration)
-        users_data = [
-            random_user(
-                faker,
-                name="user_with_password_1",
-                email="user1@example.com",
-                password_hash="hashed_password_1",  # noqa: S106
-                status=UserStatus.ACTIVE,
-            ),
-            random_user(
-                faker,
-                name="user_with_password_2",
-                email="user2@example.com",
-                password_hash="hashed_password_2",  # noqa: S106
-                status=UserStatus.ACTIVE,
-            ),
+        users_data_with_hashed_password = [
+            {
+                **random_user(
+                    faker,
+                    name="user_with_password_1",
+                    email="user1@example.com",
+                    role=UserRole.USER.value,
+                    status=UserStatus.ACTIVE,
+                ),
+                "password_hash": "hashed_password_1",  # noqa: S106
+            },
+            {
+                **random_user(
+                    faker,
+                    name="user_with_password_2",
+                    email="user2@example.com",
+                    role=UserRole.USER.value,
+                    status=UserStatus.ACTIVE,
+                ),
+                "password_hash": "hashed_password_2",  # noqa: S106
+            },
         ]
 
         inserted_user_ids = []
-        for user_data in users_data:
+        for user_data in users_data_with_hashed_password:
+            columns = ", ".join(user_data.keys())
+            values_placeholders = ", ".join(f":{key}" for key in user_data)
             result = conn.execute(
-                users.insert().values(**user_data).returning(users.c.id)
+                sa.text(
+                    f"INSERT INTO users ({columns}) VALUES ({values_placeholders}) RETURNING id"  # noqa: S608
+                ),
+                user_data,
             )
             inserted_user_ids.append(result.scalar())
 
         # Verify password hashes are in users table
         result = conn.execute(
-            sa.select(users.c.id, users.c.password_hash).where(
-                users.c.id.in_(inserted_user_ids)
-            )
+            sa.text("SELECT id, password_hash FROM users WHERE id = ANY(:user_ids)"),
+            {"user_ids": inserted_user_ids},
         ).fetchall()
 
         password_hashes_before = {row.id: row.password_hash for row in result}
@@ -306,9 +320,7 @@ def test_users_secrets_migration_upgrade_downgrade(
     with sync_engine_with_migration.connect() as conn:
         # Verify users_secrets table exists and contains the password hashes
         result = conn.execute(
-            sa.select(users_secrets.c.user_id, users_secrets.c.password_hash).order_by(
-                users_secrets.c.user_id
-            )
+            sa.text("SELECT user_id, password_hash FROM users_secrets ORDER BY user_id")
         ).fetchall()
 
         # Only users with non-null password hashes should be in users_secrets
@@ -319,7 +331,7 @@ def test_users_secrets_migration_upgrade_downgrade(
 
         # Verify password_hash column is removed from users table
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
-            conn.execute(sa.select(users.c.password_hash))
+            conn.execute(sa.text("SELECT password_hash FROM users"))
         assert "psycopg2.errors.UndefinedColumn" in f"{exc_info.value}"
 
     # MIGRATE DOWNGRADE: this should move password hashes back to users
@@ -328,14 +340,13 @@ def test_users_secrets_migration_upgrade_downgrade(
     with sync_engine_with_migration.connect() as conn:
         # Verify users_secrets table no longer exists
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
-            conn.execute(sa.select(sa.func.count()).select_from(users_secrets)).scalar()
+            conn.execute(sa.text("SELECT COUNT(*) FROM users_secrets")).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
 
         # Verify password hashes are back in users table
         result = conn.execute(
-            sa.select(users.c.id, users.c.password_hash).where(
-                users.c.id.in_(inserted_user_ids)
-            )
+            sa.text("SELECT id, password_hash FROM users WHERE id = ANY(:user_ids)"),
+            {"user_ids": inserted_user_ids},
         ).fetchall()
 
         password_hashes_after = {row.id: row.password_hash for row in result}
