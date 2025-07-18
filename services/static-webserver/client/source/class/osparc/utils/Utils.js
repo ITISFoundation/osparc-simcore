@@ -91,6 +91,22 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    getBounds: function(widget) {
+      const bounds = widget.getBounds();
+      const cel = widget.getContentElement();
+      if (cel) {
+        const domeEle = cel.getDomElement();
+        if (domeEle) {
+          const rect = domeEle.getBoundingClientRect();
+          bounds.left = parseInt(rect.x);
+          bounds.top = parseInt(rect.y);
+          bounds.width = parseInt(rect.width);
+          bounds.height = parseInt(rect.height);
+        }
+      }
+      return bounds;
+    },
+
     replaceIconWithThumbnail: function(widget, thumbnailUrl, size = 24) {
       if (thumbnailUrl) {
         const thumbnail = new osparc.ui.basic.Thumbnail(thumbnailUrl, size, size).set({

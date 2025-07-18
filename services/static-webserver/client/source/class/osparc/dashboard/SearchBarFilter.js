@@ -323,6 +323,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    // this widget pops up a larger widget with all filters visible
+    // and lets users search between projects, templates, public projects and, eventually, files
+    popUpSearchBarFilter: function() {
+      const searchBarFilterProjects = new osparc.dashboard.SearchBarFilterProjects(this.__resourceType);
+      const bounds = osparc.utils.Utils.getBounds(this);
+      searchBarFilterProjects.setLayoutProperties({
+        left: bounds.left,
+        top: bounds.top,
+        width: bounds.width,
+      });
+    },
+
     __addChip: function(type, id, label) {
       const activeFilter = this.getChildControl("active-filters");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);

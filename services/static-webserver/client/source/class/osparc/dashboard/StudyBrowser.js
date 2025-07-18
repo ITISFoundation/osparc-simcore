@@ -1061,6 +1061,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       searchBarFilter.set({
         cursor: "pointer",
       });
+      searchBarFilter.addListener("tap", () => {
+        searchBarFilter.popUpSearchBarFilter();
+      });
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
       this.__header.addListener("trashEmptied", () => this.reloadResources(), this);
