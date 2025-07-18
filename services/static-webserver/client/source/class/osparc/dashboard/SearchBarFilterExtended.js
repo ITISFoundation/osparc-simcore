@@ -15,10 +15,11 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
+qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   extend: osparc.filter.UIFilter,
 
-  construct: function(resourceType) {
+  construct: function(sourceSearchBarFilter, resourceType) {
+    this.__sourceSearchBarFilter = sourceSearchBarFilter;
     this.__resourceType = resourceType;
 
     this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
@@ -69,6 +70,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
   },
 
   members: {
+    __sourceSearchBarFilter: null,
     __resourceType: null,
     __currentFilter: null,
     __filtersMenu: null,
