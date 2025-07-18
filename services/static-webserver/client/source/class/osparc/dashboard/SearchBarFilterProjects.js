@@ -31,8 +31,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
       decorator: "rounded",
     });
 
-    this.__radioGroup = new qx.ui.form.RadioGroup();
-
     this.__buildLayout();
 
     // this.__buildFiltersMenu();
@@ -76,7 +74,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
     __resourceType: null,
     __currentFilter: null,
     __filtersMenu: null,
-    __radioGroup: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -96,7 +93,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
             null,
             "left",
           );
-          this.__radioGroup.add(control);
           this.getChildControl("context-buttons").add(control);
           break;
         case "templates-button":
@@ -104,7 +100,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
             this.tr("Templates"),
             "@FontAwesome5Solid/copy/14",
           );
-          this.__radioGroup.add(control);
           this.getChildControl("context-buttons").add(control);
           break;
         case "public-projects-button":
@@ -114,7 +109,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
             null,
             "right",
           );
-          this.__radioGroup.add(control);
           this.getChildControl("context-buttons").add(control);
           break;
         case "search-bar":
@@ -126,10 +120,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("my-projects-button");
-      this.getChildControl("templates-button");
-      this.getChildControl("public-projects-button");
-      this.getChildControl("search-bar");
+      const radioGroup = new qx.ui.form.RadioGroup();
+      const myProjectsButton = this.getChildControl("my-projects-button");
+      const templatesButton = this.getChildControl("templates-button");
+      const publicProjectsButton = this.getChildControl("public-projects-button");
+      const searchBar = this.getChildControl("search-bar");
+
+      radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
     },
 
     __attachHideHandlers: function() {
