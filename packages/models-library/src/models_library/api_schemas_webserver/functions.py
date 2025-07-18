@@ -123,7 +123,6 @@ class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
     thumbnail: str | None = None
-    template_id: ProjectID | None = None
 
 
 class SolverFunctionToRegister(SolverFunction, InputSchema): ...
