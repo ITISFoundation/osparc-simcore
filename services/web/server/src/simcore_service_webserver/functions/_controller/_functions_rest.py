@@ -126,6 +126,15 @@ async def list_functions(request: web.Request) -> web.Response:
                         function.model_dump(mode="json")
                     )
                 )
+    else:
+        chunk.extend(
+            [
+                TypeAdapter(RegisteredFunctionGet).validate_python(
+                    function.model_dump(mode="json")
+                )
+                for function in functions
+            ]
+        )
 
     page = Page[RegisteredFunctionGet].model_validate(
         paginate_data(
