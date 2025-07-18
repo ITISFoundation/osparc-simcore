@@ -421,7 +421,7 @@ async def test_access_cookie_of_expired_user(
         )
         await delete_task
 
-        await delete_user_without_projects(app, uid)
+        await delete_user_without_projects(app, user_id=uid)
         return uid
 
     user_id = await enforce_garbage_collect_guest(uid=data["id"])

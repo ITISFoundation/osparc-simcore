@@ -15,8 +15,7 @@ async def test_logout(client: TestClient, db: AsyncpgStorage):
     logout_url = client.app.router["auth_logout"].url_for()
     protected_url = client.app.router["get_my_profile"].url_for()
 
-    async with LoggedUser(client) as user:
-
+    async with LoggedUser(client):
         # try to access protected page
         response = await client.get(f"{protected_url}")
         assert response.url.path == protected_url.path
@@ -31,5 +30,3 @@ async def test_logout(client: TestClient, db: AsyncpgStorage):
         response = await client.get(f"{protected_url}")
         assert response.url.path == protected_url.path
         await assert_status(response, status.HTTP_401_UNAUTHORIZED)
-
-    await db.delete_user(user)
