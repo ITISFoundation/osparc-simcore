@@ -35,9 +35,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
     this.__buildLayout();
 
-    // defaults to "My Projects"
-    this.__searchMyProjectsSelected();
-
     qx.core.Init.getApplication().getRoot().add(this);
 
     this.__attachHideHandlers();
@@ -79,9 +76,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "search-bar-filter": {
           control = new osparc.dashboard.SearchBarFilter(this.__resourceType);
           const textField = control.getChildControl("text-field");
-          if ("text" in this.__initFilterData) {
-            textField.setValue(this.__initFilterData["text"]);
-          }
           textField.addListener("appear", () => {
             textField.focus();
             textField.activate();
@@ -147,7 +141,45 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         showFilterMenu: false,
       });
 
-      const textField = this.getChildControl(("search-bar-filter")).getChildControl("text-field");
+      const resetButton = this.getChildControl("search-bar-filter").getChildControl("reset-button");
+      resetButton.set({
+        paddingRight: 2, // 10-8
+        opacity: 0.7,
+        backgroundColor: "transparent",
+      });
+      osparc.utils.Utils.hideBorder(resetButton);
+
+      const radioGroup = new qx.ui.form.RadioGroup();
+      const myProjectsButton = this.getChildControl("my-projects-button");
+      const templatesButton = this.getChildControl("templates-button");
+      const publicProjectsButton = this.getChildControl("public-projects-button");
+      radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
+      myProjectsButton.addListener("changeValue", this.__searchMyProjectsSelected, this);
+      templatesButton.addListener("changeValue", this.__searchTemplatesSelected, this);
+      publicProjectsButton.addListener("changeValue", this.__searchPublicProjectsSelected, this);
+
+      // Set initial state based on the provided initFilterData
+      const activeFilters = this.getChildControl("search-bar-filter").getChildControl("active-filters");
+      const textField = this.getChildControl("search-bar-filter").getChildControl("text-field");
+      if ("sharedWith" in this.__initFilterData) {
+        const chip = osparc.dashboard.SearchBarFilter.createChip("sharedWith", this.__initFilterData["sharedWith"], this.tr("Shared with"));
+        activeFilters.add(chip);
+      }
+      if ("tags" in this.__initFilterData) {
+        const tags = osparc.store.Tags.getInstance().getTags();
+        this.__initFilterData["tags"].forEach(tagId => {
+          const tagFound = tags.find(tag => tag.getTagId() === tagId);
+          if (tagFound) {
+            const chip = osparc.dashboard.SearchBarFilter.createChip("tag", tagId, tagFound.getName());
+            activeFilters.add(chip);
+          }
+        });
+      }
+      if ("text" in this.__initFilterData) {
+        textField.setValue(this.__initFilterData["text"]);
+      }
+
+      // Add listeners
       textField.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
           this.__sourceSearchBarFilter.getChildControl("text-field").setValue(textField.getValue());
@@ -159,25 +191,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         this.exclude();
       }, this);
 
-      const resetButton = this.getChildControl("search-bar-filter").getChildControl("reset-button");
-      resetButton.set({
-        paddingRight: 2, // 10-8
-        opacity: 0.7,
-        backgroundColor: "transparent",
-      });
-      osparc.utils.Utils.hideBorder(resetButton);
       resetButton.addListener("tap", () =>{
         this.exclude();
       });
-
-      const radioGroup = new qx.ui.form.RadioGroup();
-      const myProjectsButton = this.getChildControl("my-projects-button");
-      const templatesButton = this.getChildControl("templates-button");
-      const publicProjectsButton = this.getChildControl("public-projects-button");
-      radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
-      myProjectsButton.addListener("changeValue", this.__searchMyProjectsSelected, this);
-      templatesButton.addListener("changeValue", this.__searchTemplatesSelected, this);
-      publicProjectsButton.addListener("changeValue", this.__searchPublicProjectsSelected, this);
     },
 
     __searchMyProjectsSelected: function() {
@@ -249,7 +265,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.__tagsMenu,
         ];
         for (let i=0; i<excludeElements.length; i++) {
-          if (osparc.utils.Utils.isMouseOnElement(excludeElements[i], e)) {
+          if (excludeElements[i] && osparc.utils.Utils.isMouseOnElement(excludeElements[i], e)) {
             return;
           }
         }
