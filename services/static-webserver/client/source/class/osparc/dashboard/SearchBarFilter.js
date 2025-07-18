@@ -331,8 +331,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       searchBarFilterProjects.setLayoutProperties({
         left: bounds.left,
         top: bounds.top,
-        width: bounds.width,
       });
+      searchBarFilterProjects.set({
+        width: bounds.width,
+      })
     },
 
     __addChip: function(type, id, label) {

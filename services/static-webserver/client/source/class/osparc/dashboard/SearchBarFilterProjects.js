@@ -49,15 +49,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
   },
 
   statics: {
-    createToolbarRadioButton: function(label, icon, toolTipText, pos) {
+    createToolbarRadioButton: function(label, icon, toolTipText = null, pos = null) {
       const rButton = new qx.ui.toolbar.RadioButton().set({
         label,
         icon,
         toolTipText,
-        padding: 5,
-        paddingLeft: 8,
-        paddingRight: 8,
-        margin: 0
+        padding: 8,
+        gap: 8,
+        margin: 0,
       });
       rButton.getContentElement().setStyles({
         "border-radius": "0px"
@@ -91,9 +90,27 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
         case "my-projects-button":
           control = this.self().createToolbarRadioButton(
             this.tr("My Projects"),
-            "@FontAwesome5Solid/file/20",
+            "@FontAwesome5Solid/file/14",
             null,
             "left",
+          );
+          this.__radioGroup.add(control);
+          this.getChildControl("context-buttons").add(control);
+          break;
+        case "templates-button":
+          control = this.self().createToolbarRadioButton(
+            this.tr("Templates"),
+            "@FontAwesome5Solid/copy/14",
+          );
+          this.__radioGroup.add(control);
+          this.getChildControl("context-buttons").add(control);
+          break;
+        case "public-projects-button":
+          control = this.self().createToolbarRadioButton(
+            this.tr("My Projects"),
+            "@FontAwesome5Solid/globe/14",
+            null,
+            "right",
           );
           this.__radioGroup.add(control);
           this.getChildControl("context-buttons").add(control);
@@ -108,6 +125,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
 
     __buildLayout: function() {
       this.getChildControl("my-projects-button");
+      this.getChildControl("templates-button");
+      this.getChildControl("public-projects-button");
       this.getChildControl("search-bar");
     },
 
