@@ -1,5 +1,4 @@
 from aiohttp import web
-from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.functions import (
     Function,
     FunctionToRegister,
@@ -128,12 +127,7 @@ async def list_functions(request: web.Request) -> web.Response:
             if project:
                 chunk.append(
                     TypeAdapter(RegisteredProjectFunctionGet).validate_python(
-                        remap_keys(
-                            function.model_dump(mode="json"),
-                            rename={
-                                "uid": "uuid",
-                            },
-                        )
+                        function.model_dump(mode="json")
                         | {
                             "thumbnail": (
                                 f"{project.thumbnail}" if project.thumbnail else None
@@ -198,12 +192,7 @@ async def get_function(request: web.Request) -> web.Response:
 
         return envelope_json_response(
             TypeAdapter(RegisteredProjectFunctionGet).validate_python(
-                remap_keys(
-                    registered_function.model_dump(mode="json"),
-                    rename={
-                        "uid": "uuid",
-                    },
-                )
+                registered_function.model_dump(mode="json")
                 | {
                     "thumbnail": project_dict.get("thumbnail", None),
                     "template_id": project_dict.get("id", None),
