@@ -881,7 +881,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const filterData = this._searchBarFilter.getFilterData();
         if (filterData.text) {
           requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
-          requestParams["tagIds"] = filterData.tags.length ? filterData.tags.join(",") : "";
         }
       }
 
@@ -1058,7 +1057,32 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // LAYOUT //
     _createLayout: function() {
-      this._createSearchBar();
+      const searchBarFilter = this._createSearchBar();
+      searchBarFilter.set({
+        showFilterMenu: false,
+      });
+      const textField = searchBarFilter.getChildControl("text-field");
+      textField.set({
+        cursor: "pointer",
+      });
+      textField.addListener("tap", () => {
+        const searchBarFilterExtended = searchBarFilter.popUpSearchBarFilter();
+        switch (this.getCurrentContext()) {
+          case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+          case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
+            searchBarFilterExtended.getChildControl("my-projects-button").setValue(true);
+            break;
+          case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+            searchBarFilterExtended.getChildControl("templates-button").setValue(true);
+            break;
+          case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+            searchBarFilterExtended.getChildControl("public-projects-button").setValue(true);
+            break;
+        }
+      });
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
       this.__header.addListener("trashEmptied", () => this.reloadResources(), this);

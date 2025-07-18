@@ -129,16 +129,7 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     },
 
     __positionNotificationsContainer: function() {
-      const bounds = this.getBounds();
-      const cel = this.getContentElement();
-      if (cel) {
-        const domEle = cel.getDomElement();
-        if (domEle) {
-          const rect = domEle.getBoundingClientRect();
-          bounds.left = parseInt(rect.x);
-          bounds.top = parseInt(rect.y);
-        }
-      }
+      const bounds = osparc.utils.Utils.getBounds(this);
       const bottom = bounds.top + bounds.height;
       const right = bounds.left + bounds.width;
       this.__notificationsContainer.setPosition(right, bottom);

@@ -95,16 +95,7 @@ qx.Class.define("osparc.task.TasksButton", {
         document.removeEventListener("mousedown", tapListener);
       };
 
-      const bounds = this.getBounds();
-      const cel = this.getContentElement();
-      if (cel) {
-        const domeEle = cel.getDomElement();
-        if (domeEle) {
-          const rect = domeEle.getBoundingClientRect();
-          bounds.left = parseInt(rect.x);
-          bounds.top = parseInt(rect.y);
-        }
-      }
+      const bounds = osparc.utils.Utils.getBounds(this);
       const tasks = osparc.task.TasksContainer.getInstance();
       tasks.setTasksContainerPosition(
         bounds.left + bounds.width - osparc.task.TaskUI.MAX_WIDTH,
