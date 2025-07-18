@@ -1,2368 +1,2372 @@
 [
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
-    "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
-     "message": "finished",
-     "percent": 1.0
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
     },
-    "done": true,
-    "started": "2025-06-13T13:05:50.043464+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": null,
-   "error": {
-    "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-    "support_id": null,
-    "status": 404,
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Not Found",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "logs": [
-     {
-      "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ]
-   }
-  },
-  "status_code": 404
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
-    "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:08:08.825919+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": null,
-   "error": {
-    "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-    "support_id": null,
-    "status": 404,
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Not Found",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "logs": [
-     {
-      "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ]
-   }
-  },
-  "status_code": 404
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
-    "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:09:08.065507+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": null,
-   "error": {
-    "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-    "support_id": null,
-    "status": 404,
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Not Found",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "logs": [
-     {
-      "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ]
-   }
-  },
-  "status_code": 404
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
-    "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:11:47.314542+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": null,
-   "error": {
-    "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-    "support_id": null,
-    "status": 404,
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Not Found",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "logs": [
-     {
-      "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ]
-   }
-  },
-  "status_code": 404
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
-    "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:15:55.792723+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": null,
-   "error": {
-    "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-    "support_id": null,
-    "status": 404,
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Not Found",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "logs": [
-     {
-      "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ]
-   }
-  },
-  "status_code": 404
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
-    "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:20:31.694095+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": null,
-   "error": {
-    "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-    "support_id": null,
-    "status": 404,
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Not Found",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "logs": [
-     {
-      "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ]
-   }
-  },
-  "status_code": 404
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
-    "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:23:55.125558+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": null,
-   "error": {
-    "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-    "support_id": null,
-    "status": 404,
-    "errors": [
-     {
-      "code": "HTTPNotFound",
-      "message": "Not Found",
-      "resource": null,
-      "field": null
-     }
-    ],
-    "logs": [
-     {
-      "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
-      "level": "ERROR",
-      "logger": "user"
-     }
-    ]
-   }
-  },
-  "status_code": 404
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
-    "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:29:34.382817+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "uuid": "71ec33ca-485a-11f0-bc8c-0242ac140019",
-    "name": "sleeper (Copy)",
-    "description": "",
-    "thumbnail": "",
-    "type": "STANDARD",
-    "templateType": null,
-    "workbench": {
-     "1cd13000-dd5d-5ebd-964f-7affa26606a9": {
-      "key": "simcore/services/comp/itis/sleeper",
-      "version": "2.2.1",
-      "label": "sleeper",
-      "progress": 0.0,
-      "inputs": {
-       "input_2": 2,
-       "input_3": false,
-       "input_4": 0,
-       "input_5": 0
-      },
-      "inputsRequired": [],
-      "inputNodes": [],
-      "state": {
-       "modified": true,
-       "dependencies": [],
-       "currentStatus": "NOT_STARTED",
-       "progress": null
+    "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
+        "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8"
       }
-     }
     },
-    "prjOwner": "bisgaard@itis.swiss",
-    "accessRights": {
-     "4": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
-    },
-    "creationDate": "2025-06-13T13:29:34.407Z",
-    "lastChangeDate": "2025-06-13T13:29:34.407Z",
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "NOT_STARTED"
-     }
-    },
-    "trashedAt": null,
-    "trashedBy": null,
-    "tags": [],
-    "classifiers": [],
-    "quality": {
-     "enabled": true,
-     "tsr_target": {
-      "r01": {
-       "level": 4,
-       "references": ""
-      },
-      "r02": {
-       "level": 4,
-       "references": ""
-      },
-      "r03": {
-       "level": 4,
-       "references": ""
-      },
-      "r04": {
-       "level": 4,
-       "references": ""
-      },
-      "r05": {
-       "level": 4,
-       "references": ""
-      },
-      "r06": {
-       "level": 4,
-       "references": ""
-      },
-      "r07": {
-       "level": 4,
-       "references": ""
-      },
-      "r08": {
-       "level": 4,
-       "references": ""
-      },
-      "r09": {
-       "level": 4,
-       "references": ""
-      },
-      "r10": {
-       "level": 4,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     },
-     "tsr_current": {
-      "r01": {
-       "level": 0,
-       "references": ""
-      },
-      "r02": {
-       "level": 0,
-       "references": ""
-      },
-      "r03": {
-       "level": 0,
-       "references": ""
-      },
-      "r04": {
-       "level": 0,
-       "references": ""
-      },
-      "r05": {
-       "level": 0,
-       "references": ""
-      },
-      "r06": {
-       "level": 0,
-       "references": ""
-      },
-      "r07": {
-       "level": 0,
-       "references": ""
-      },
-      "r08": {
-       "level": 0,
-       "references": ""
-      },
-      "r09": {
-       "level": 0,
-       "references": ""
-      },
-      "r10": {
-       "level": 0,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     }
-    },
-    "ui": {
-     "workbench": {
-      "1cd13000-dd5d-5ebd-964f-7affa26606a9": {
-       "position": {
-        "x": 250,
-        "y": 100
-       }
-      }
-     },
-     "slideshow": {},
-     "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
-     "mode": "pipeline"
-    },
-    "dev": {},
-    "workspaceId": null,
-    "folderId": null
-   }
+    "status_code": 202
   },
-  "status_code": 201
- },
- {
-  "name": "PATCH /projects/71ec33ca-485a-11f0-bc8c-0242ac140019",
-  "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/71ec33ca-485a-11f0-bc8c-0242ac140019')>",
-  "method": "PATCH",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:05:50.043464+00:00"
+      },
+      "error": null
     }
-   ]
   },
-  "request_payload": {
-   "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/71ec33ca-485a-11f0-bc8c-0242ac140019"
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.10b07f64-0b19-4f2a-924b-67d9bcadcef8/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": null,
+      "error": {
+        "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+        "support_id": null,
+        "status": 404,
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Not Found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "logs": [
+          {
+            "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ]
+      }
+    },
+    "status_code": 404
   },
-  "status_code": 204
- },
- {
-  "name": "GET /projects/71ec33ca-485a-11f0-bc8c-0242ac140019/inputs",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/71ec33ca-485a-11f0-bc8c-0242ac140019/inputs')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/inputs",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
+        "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:08:08.825919+00:00"
+      },
+      "error": null
     }
-   ]
   },
-  "response_body": {
-   "data": {}
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b0f371b4-5247-4efc-94fb-eb3338765f73/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": null,
+      "error": {
+        "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+        "support_id": null,
+        "status": 404,
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Not Found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "logs": [
+          {
+            "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ]
+      }
+    },
+    "status_code": 404
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
+        "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:09:08.065507+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.c7256296-53c7-408d-ad2b-53f2e2e17b77/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": null,
+      "error": {
+        "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+        "support_id": null,
+        "status": 404,
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Not Found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "logs": [
+          {
+            "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ]
+      }
+    },
+    "status_code": 404
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
+        "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:11:47.314542+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.55547ef2-50e2-4320-ae1b-ba4fb0c68feb/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": null,
+      "error": {
+        "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+        "support_id": null,
+        "status": 404,
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Not Found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "logs": [
+          {
+            "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ]
+      }
+    },
+    "status_code": 404
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
+        "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:15:55.792723+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.b20cfc08-44cb-4a7c-92a5-112e2560ba61/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": null,
+      "error": {
+        "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+        "support_id": null,
+        "status": 404,
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Not Found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "logs": [
+          {
+            "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ]
+      }
+    },
+    "status_code": 404
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
+        "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:20:31.694095+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.68d96dd3-5ee2-42c8-add2-b0e32196a773/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": null,
+      "error": {
+        "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+        "support_id": null,
+        "status": 404,
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Not Found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "logs": [
+          {
+            "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ]
+      }
+    },
+    "status_code": 404
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
+        "task_name": "POST /v0/projects?from_study=e3e70682-c209-4cac-a29f-6fbed82c07cd&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3De3e70682-c209-4cac-a29f-6fbed82c07cd%26hidden%3Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:23:55.125558+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253De3e70682-c209-4cac-a29f-6fbed82c07cd%2526hidden%253Dtrue.54dfa19d-3324-44cf-876b-e30c92f238b8/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": null,
+      "error": {
+        "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+        "support_id": null,
+        "status": 404,
+        "errors": [
+          {
+            "code": "HTTPNotFound",
+            "message": "Not Found",
+            "resource": null,
+            "field": null
+          }
+        ],
+        "logs": [
+          {
+            "message": "Project e3e70682-c209-4cac-a29f-6fbed82c07cd not found",
+            "level": "ERROR",
+            "logger": "user"
+          }
+        ]
+      }
+    },
+    "status_code": 404
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
+        "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:29:34.382817+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.40882c4a-e222-4e04-af43-3a8e45b2df24/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "uuid": "71ec33ca-485a-11f0-bc8c-0242ac140019",
+        "name": "sleeper (Copy)",
+        "description": "",
+        "thumbnail": "",
+        "type": "STANDARD",
+        "templateType": null,
+        "workbench": {
+          "1cd13000-dd5d-5ebd-964f-7affa26606a9": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.2.1",
+            "label": "sleeper",
+            "progress": 0.0,
+            "inputs": {
+              "input_2": 2,
+              "input_3": false,
+              "input_4": 0,
+              "input_5": 0
+            },
+            "inputsRequired": [],
+            "inputNodes": [],
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": null
+            }
+          }
+        },
+        "prjOwner": "bisgaard@itis.swiss",
+        "accessRights": {
+          "4": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "creationDate": "2025-06-13T13:29:34.407Z",
+        "lastChangeDate": "2025-06-13T13:29:34.407Z",
+        "state": {
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
+          },
+          "state": {
+            "value": "NOT_STARTED"
+          }
+        },
+        "trashedAt": null,
+        "trashedBy": null,
+        "tags": [],
+        "classifiers": [],
+        "quality": {
+          "enabled": true,
+          "tsr_target": {
+            "r01": {
+              "level": 4,
+              "references": ""
+            },
+            "r02": {
+              "level": 4,
+              "references": ""
+            },
+            "r03": {
+              "level": 4,
+              "references": ""
+            },
+            "r04": {
+              "level": 4,
+              "references": ""
+            },
+            "r05": {
+              "level": 4,
+              "references": ""
+            },
+            "r06": {
+              "level": 4,
+              "references": ""
+            },
+            "r07": {
+              "level": 4,
+              "references": ""
+            },
+            "r08": {
+              "level": 4,
+              "references": ""
+            },
+            "r09": {
+              "level": 4,
+              "references": ""
+            },
+            "r10": {
+              "level": 4,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          },
+          "tsr_current": {
+            "r01": {
+              "level": 0,
+              "references": ""
+            },
+            "r02": {
+              "level": 0,
+              "references": ""
+            },
+            "r03": {
+              "level": 0,
+              "references": ""
+            },
+            "r04": {
+              "level": 0,
+              "references": ""
+            },
+            "r05": {
+              "level": 0,
+              "references": ""
+            },
+            "r06": {
+              "level": 0,
+              "references": ""
+            },
+            "r07": {
+              "level": 0,
+              "references": ""
+            },
+            "r08": {
+              "level": 0,
+              "references": ""
+            },
+            "r09": {
+              "level": 0,
+              "references": ""
+            },
+            "r10": {
+              "level": 0,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          }
+        },
+        "ui": {
+          "workbench": {
+            "1cd13000-dd5d-5ebd-964f-7affa26606a9": {
+              "position": {
+                "x": 250,
+                "y": 100
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
+          "mode": "pipeline"
+        },
+        "dev": {},
+        "workspaceId": null,
+        "folderId": null
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "PATCH /projects/71ec33ca-485a-11f0-bc8c-0242ac140019",
+    "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/71ec33ca-485a-11f0-bc8c-0242ac140019')>",
+    "method": "PATCH",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "request_payload": {
+      "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/71ec33ca-485a-11f0-bc8c-0242ac140019"
+    },
+    "status_code": 204
+  },
+  {
+    "name": "GET /projects/71ec33ca-485a-11f0-bc8c-0242ac140019/inputs",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/71ec33ca-485a-11f0-bc8c-0242ac140019/inputs')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/inputs",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {}
+    }
+  },
+  {
+    "name": "POST /computations/71ec33ca-485a-11f0-bc8c-0242ac140019:start",
+    "description": "<Request('POST', 'http://webserver:8080/v0/computations/71ec33ca-485a-11f0-bc8c-0242ac140019:start')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/computations/{project_id}:start",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "request_payload": {},
+    "response_body": {
+      "data": {
+        "pipeline_id": "71ec33ca-485a-11f0-bc8c-0242ac140019"
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "GET /v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019",
+    "description": "<Request('GET', 'http://webserver:8080:30003/v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019?user_id=1')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v2/computations/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "query": "user_id=1",
+    "response_body": {
+      "id": "71ec33ca-485a-11f0-bc8c-0242ac140019",
+      "state": "STARTED",
+      "result": null,
+      "pipeline_details": {
+        "adjacency_list": {
+          "1cd13000-dd5d-5ebd-964f-7affa26606a9": []
+        },
+        "progress": 0.05,
+        "node_states": {
+          "1cd13000-dd5d-5ebd-964f-7affa26606a9": {
+            "modified": true,
+            "dependencies": [],
+            "currentStatus": "STARTED",
+            "progress": 0.05
+          }
+        }
+      },
+      "iteration": 1,
+      "started": "2025-06-13T13:30:18.988214Z",
+      "stopped": null,
+      "submitted": "2025-06-13T13:30:18.806995Z",
+      "url": "http://webserver:8080:30003/v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019?user_id=1",
+      "stop_url": "http://webserver:8080:30003/v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019:stop?user_id=1"
+    }
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
+        "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
+          "message": "Collecting files of 'sleeper'...",
+          "percent": 1.0
+        },
+        "done": false,
+        "started": "2025-06-13T13:31:09.141214+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:31:09.141214+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "uuid": "aa679b18-485a-11f0-89d1-0242ac14050c",
+        "name": "sleeper (Copy)",
+        "description": "",
+        "thumbnail": "",
+        "type": "STANDARD",
+        "templateType": null,
+        "workbench": {
+          "ed78079d-66fa-54fb-aca4-8f37ec436383": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.2.1",
+            "label": "sleeper",
+            "progress": 0.0,
+            "inputs": {
+              "input_2": 2,
+              "input_3": false,
+              "input_4": 0,
+              "input_5": 0
+            },
+            "inputsRequired": [],
+            "inputNodes": [],
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": null
+            }
+          }
+        },
+        "prjOwner": "bisgaard@itis.swiss",
+        "accessRights": {
+          "4": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "creationDate": "2025-06-13T13:31:09.169Z",
+        "lastChangeDate": "2025-06-13T13:31:09.169Z",
+        "state": {
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
+          },
+          "state": {
+            "value": "NOT_STARTED"
+          }
+        },
+        "trashedAt": null,
+        "trashedBy": null,
+        "tags": [],
+        "classifiers": [],
+        "quality": {
+          "enabled": true,
+          "tsr_target": {
+            "r01": {
+              "level": 4,
+              "references": ""
+            },
+            "r02": {
+              "level": 4,
+              "references": ""
+            },
+            "r03": {
+              "level": 4,
+              "references": ""
+            },
+            "r04": {
+              "level": 4,
+              "references": ""
+            },
+            "r05": {
+              "level": 4,
+              "references": ""
+            },
+            "r06": {
+              "level": 4,
+              "references": ""
+            },
+            "r07": {
+              "level": 4,
+              "references": ""
+            },
+            "r08": {
+              "level": 4,
+              "references": ""
+            },
+            "r09": {
+              "level": 4,
+              "references": ""
+            },
+            "r10": {
+              "level": 4,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          },
+          "tsr_current": {
+            "r01": {
+              "level": 0,
+              "references": ""
+            },
+            "r02": {
+              "level": 0,
+              "references": ""
+            },
+            "r03": {
+              "level": 0,
+              "references": ""
+            },
+            "r04": {
+              "level": 0,
+              "references": ""
+            },
+            "r05": {
+              "level": 0,
+              "references": ""
+            },
+            "r06": {
+              "level": 0,
+              "references": ""
+            },
+            "r07": {
+              "level": 0,
+              "references": ""
+            },
+            "r08": {
+              "level": 0,
+              "references": ""
+            },
+            "r09": {
+              "level": 0,
+              "references": ""
+            },
+            "r10": {
+              "level": 0,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          }
+        },
+        "ui": {
+          "workbench": {
+            "ed78079d-66fa-54fb-aca4-8f37ec436383": {
+              "position": {
+                "x": 250,
+                "y": 100
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
+          "mode": "pipeline"
+        },
+        "dev": {},
+        "workspaceId": null,
+        "folderId": null
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "PATCH /projects/aa679b18-485a-11f0-89d1-0242ac14050c",
+    "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/aa679b18-485a-11f0-89d1-0242ac14050c')>",
+    "method": "PATCH",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "request_payload": {
+      "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/aa679b18-485a-11f0-89d1-0242ac14050c"
+    },
+    "status_code": 204
+  },
+  {
+    "name": "GET /projects/aa679b18-485a-11f0-89d1-0242ac14050c/inputs",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/aa679b18-485a-11f0-89d1-0242ac14050c/inputs')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/inputs",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {}
+    }
+  },
+  {
+    "name": "POST /computations/aa679b18-485a-11f0-89d1-0242ac14050c:start",
+    "description": "<Request('POST', 'http://webserver:8080/v0/computations/aa679b18-485a-11f0-89d1-0242ac14050c:start')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/computations/{project_id}:start",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "request_payload": {},
+    "response_body": {
+      "data": {
+        "pipeline_id": "aa679b18-485a-11f0-89d1-0242ac14050c"
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "GET /v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c",
+    "description": "<Request('GET', 'http://webserver:8080:30003/v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c?user_id=1')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v2/computations/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "query": "user_id=1",
+    "response_body": {
+      "id": "aa679b18-485a-11f0-89d1-0242ac14050c",
+      "state": "STARTED",
+      "result": null,
+      "pipeline_details": {
+        "adjacency_list": {
+          "ed78079d-66fa-54fb-aca4-8f37ec436383": []
+        },
+        "progress": 0.05,
+        "node_states": {
+          "ed78079d-66fa-54fb-aca4-8f37ec436383": {
+            "modified": true,
+            "dependencies": [],
+            "currentStatus": "STARTED",
+            "progress": 0.05
+          }
+        }
+      },
+      "iteration": 1,
+      "started": "2025-06-13T13:31:17.841816Z",
+      "stopped": null,
+      "submitted": "2025-06-13T13:31:17.672682Z",
+      "url": "http://webserver:8080:30003/v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c?user_id=1",
+      "stop_url": "http://webserver:8080:30003/v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c:stop?user_id=1"
+    }
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
+        "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:34:33.232952+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "uuid": "240cb4c6-485b-11f0-89d1-0242ac14050c",
+        "name": "sleeper (Copy)",
+        "description": "",
+        "thumbnail": "",
+        "type": "STANDARD",
+        "templateType": null,
+        "workbench": {
+          "982c5607-783c-5295-9a4f-26c8e3c21211": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.2.1",
+            "label": "sleeper",
+            "progress": 0.0,
+            "inputs": {
+              "input_2": 2,
+              "input_3": false,
+              "input_4": 0,
+              "input_5": 0
+            },
+            "inputsRequired": [],
+            "inputNodes": [],
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": null
+            }
+          }
+        },
+        "prjOwner": "bisgaard@itis.swiss",
+        "accessRights": {
+          "4": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "creationDate": "2025-06-13T13:34:33.254Z",
+        "lastChangeDate": "2025-06-13T13:34:33.254Z",
+        "state": {
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
+          },
+          "state": {
+            "value": "NOT_STARTED"
+          }
+        },
+        "trashedAt": null,
+        "trashedBy": null,
+        "tags": [],
+        "classifiers": [],
+        "quality": {
+          "enabled": true,
+          "tsr_target": {
+            "r01": {
+              "level": 4,
+              "references": ""
+            },
+            "r02": {
+              "level": 4,
+              "references": ""
+            },
+            "r03": {
+              "level": 4,
+              "references": ""
+            },
+            "r04": {
+              "level": 4,
+              "references": ""
+            },
+            "r05": {
+              "level": 4,
+              "references": ""
+            },
+            "r06": {
+              "level": 4,
+              "references": ""
+            },
+            "r07": {
+              "level": 4,
+              "references": ""
+            },
+            "r08": {
+              "level": 4,
+              "references": ""
+            },
+            "r09": {
+              "level": 4,
+              "references": ""
+            },
+            "r10": {
+              "level": 4,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          },
+          "tsr_current": {
+            "r01": {
+              "level": 0,
+              "references": ""
+            },
+            "r02": {
+              "level": 0,
+              "references": ""
+            },
+            "r03": {
+              "level": 0,
+              "references": ""
+            },
+            "r04": {
+              "level": 0,
+              "references": ""
+            },
+            "r05": {
+              "level": 0,
+              "references": ""
+            },
+            "r06": {
+              "level": 0,
+              "references": ""
+            },
+            "r07": {
+              "level": 0,
+              "references": ""
+            },
+            "r08": {
+              "level": 0,
+              "references": ""
+            },
+            "r09": {
+              "level": 0,
+              "references": ""
+            },
+            "r10": {
+              "level": 0,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          }
+        },
+        "ui": {
+          "workbench": {
+            "982c5607-783c-5295-9a4f-26c8e3c21211": {
+              "position": {
+                "x": 250,
+                "y": 100
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
+          "mode": "pipeline"
+        },
+        "dev": {},
+        "workspaceId": null,
+        "folderId": null
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "PATCH /projects/240cb4c6-485b-11f0-89d1-0242ac14050c",
+    "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/240cb4c6-485b-11f0-89d1-0242ac14050c')>",
+    "method": "PATCH",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "request_payload": {
+      "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/240cb4c6-485b-11f0-89d1-0242ac14050c"
+    },
+    "status_code": 204
+  },
+  {
+    "name": "GET /projects/240cb4c6-485b-11f0-89d1-0242ac14050c/inputs",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/240cb4c6-485b-11f0-89d1-0242ac14050c/inputs')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/inputs",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {}
+    }
+  },
+  {
+    "name": "POST /computations/240cb4c6-485b-11f0-89d1-0242ac14050c:start",
+    "description": "<Request('POST', 'http://webserver:8080/v0/computations/240cb4c6-485b-11f0-89d1-0242ac14050c:start')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/computations/{project_id}:start",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "request_payload": {},
+    "response_body": {
+      "data": {
+        "pipeline_id": "240cb4c6-485b-11f0-89d1-0242ac14050c"
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "GET /v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c",
+    "description": "<Request('GET', 'http://webserver:8080:30003/v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c?user_id=1')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v2/computations/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "query": "user_id=1",
+    "response_body": {
+      "id": "240cb4c6-485b-11f0-89d1-0242ac14050c",
+      "state": "STARTED",
+      "result": null,
+      "pipeline_details": {
+        "adjacency_list": {
+          "982c5607-783c-5295-9a4f-26c8e3c21211": []
+        },
+        "progress": 0.05,
+        "node_states": {
+          "982c5607-783c-5295-9a4f-26c8e3c21211": {
+            "modified": true,
+            "dependencies": [],
+            "currentStatus": "STARTED",
+            "progress": 0.05
+          }
+        }
+      },
+      "iteration": 1,
+      "started": "2025-06-13T13:34:40.872636Z",
+      "stopped": null,
+      "submitted": "2025-06-13T13:34:40.690820Z",
+      "url": "http://webserver:8080:30003/v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c?user_id=1",
+      "stop_url": "http://webserver:8080:30003/v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c:stop?user_id=1"
+    }
+  },
+  {
+    "name": "POST /projects",
+    "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects",
+      "path_parameters": []
+    },
+    "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+    "response_body": {
+      "data": {
+        "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
+        "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
+        "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
+        "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b/result",
+        "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b"
+      }
+    },
+    "status_code": 202
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "task_progress": {
+          "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
+          "message": "finished",
+          "percent": 1.0
+        },
+        "done": true,
+        "started": "2025-06-13T13:48:21.407753+00:00"
+      },
+      "error": null
+    }
+  },
+  {
+    "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b/result",
+    "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b/result')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/tasks-legacy/{task_id}/result",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "task_id",
+          "required": true,
+          "schema": {
+            "title": "Task Id",
+            "type": "str"
+          },
+          "response_value": "tasks-legacy"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {
+        "uuid": "11ae9478-485d-11f0-bc8c-0242ac140019",
+        "name": "sleeper (Copy)",
+        "description": "",
+        "thumbnail": "",
+        "type": "STANDARD",
+        "templateType": null,
+        "workbench": {
+          "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": {
+            "key": "simcore/services/comp/itis/sleeper",
+            "version": "2.2.1",
+            "label": "sleeper",
+            "progress": 0.0,
+            "inputs": {
+              "input_2": 2,
+              "input_3": false,
+              "input_4": 0,
+              "input_5": 0
+            },
+            "inputsRequired": [],
+            "inputNodes": [],
+            "state": {
+              "modified": true,
+              "dependencies": [],
+              "currentStatus": "NOT_STARTED",
+              "progress": null
+            }
+          }
+        },
+        "prjOwner": "bisgaard@itis.swiss",
+        "accessRights": {
+          "4": {
+            "read": true,
+            "write": true,
+            "delete": true
+          }
+        },
+        "creationDate": "2025-06-13T13:48:21.431Z",
+        "lastChangeDate": "2025-06-13T13:48:21.431Z",
+        "state": {
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
+          },
+          "state": {
+            "value": "NOT_STARTED"
+          }
+        },
+        "trashedAt": null,
+        "trashedBy": null,
+        "tags": [],
+        "classifiers": [],
+        "quality": {
+          "enabled": true,
+          "tsr_target": {
+            "r01": {
+              "level": 4,
+              "references": ""
+            },
+            "r02": {
+              "level": 4,
+              "references": ""
+            },
+            "r03": {
+              "level": 4,
+              "references": ""
+            },
+            "r04": {
+              "level": 4,
+              "references": ""
+            },
+            "r05": {
+              "level": 4,
+              "references": ""
+            },
+            "r06": {
+              "level": 4,
+              "references": ""
+            },
+            "r07": {
+              "level": 4,
+              "references": ""
+            },
+            "r08": {
+              "level": 4,
+              "references": ""
+            },
+            "r09": {
+              "level": 4,
+              "references": ""
+            },
+            "r10": {
+              "level": 4,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          },
+          "tsr_current": {
+            "r01": {
+              "level": 0,
+              "references": ""
+            },
+            "r02": {
+              "level": 0,
+              "references": ""
+            },
+            "r03": {
+              "level": 0,
+              "references": ""
+            },
+            "r04": {
+              "level": 0,
+              "references": ""
+            },
+            "r05": {
+              "level": 0,
+              "references": ""
+            },
+            "r06": {
+              "level": 0,
+              "references": ""
+            },
+            "r07": {
+              "level": 0,
+              "references": ""
+            },
+            "r08": {
+              "level": 0,
+              "references": ""
+            },
+            "r09": {
+              "level": 0,
+              "references": ""
+            },
+            "r10": {
+              "level": 0,
+              "references": ""
+            },
+            "r03b": {
+              "references": ""
+            },
+            "r03c": {
+              "references": ""
+            },
+            "r07b": {
+              "references": ""
+            },
+            "r07c": {
+              "references": ""
+            },
+            "r07d": {
+              "references": ""
+            },
+            "r07e": {
+              "references": ""
+            },
+            "r08b": {
+              "references": ""
+            },
+            "r10b": {
+              "references": ""
+            }
+          }
+        },
+        "ui": {
+          "workbench": {
+            "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": {
+              "position": {
+                "x": 250,
+                "y": 100
+              }
+            }
+          },
+          "slideshow": {},
+          "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
+          "mode": "pipeline"
+        },
+        "dev": {},
+        "workspaceId": null,
+        "folderId": null
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "PATCH /projects/11ae9478-485d-11f0-bc8c-0242ac140019",
+    "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/11ae9478-485d-11f0-bc8c-0242ac140019')>",
+    "method": "PATCH",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "request_payload": {
+      "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/11ae9478-485d-11f0-bc8c-0242ac140019"
+    },
+    "status_code": 204
+  },
+  {
+    "name": "GET /projects/11ae9478-485d-11f0-bc8c-0242ac140019/inputs",
+    "description": "<Request('GET', 'http://webserver:8080/v0/projects/11ae9478-485d-11f0-bc8c-0242ac140019/inputs')>",
+    "method": "GET",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/projects/{project_id}/inputs",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "projects"
+        }
+      ]
+    },
+    "response_body": {
+      "data": {}
+    }
+  },
+  {
+    "name": "POST /computations/11ae9478-485d-11f0-bc8c-0242ac140019:start",
+    "description": "<Request('POST', 'http://webserver:8080/v0/computations/11ae9478-485d-11f0-bc8c-0242ac140019:start')>",
+    "method": "POST",
+    "host": "webserver",
+    "path": {
+      "path": "/v0/computations/{project_id}:start",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "request_payload": {},
+    "response_body": {
+      "data": {
+        "pipeline_id": "11ae9478-485d-11f0-bc8c-0242ac140019"
+      }
+    },
+    "status_code": 201
+  },
+  {
+    "name": "GET /v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019",
+    "description": "<Request('GET', 'http://director-v2:8000/v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019?user_id=1')>",
+    "method": "GET",
+    "host": "director-v2",
+    "path": {
+      "path": "/v2/computations/{project_id}",
+      "path_parameters": [
+        {
+          "in": "path",
+          "name": "project_id",
+          "required": true,
+          "schema": {
+            "title": "Project Id",
+            "type": "str",
+            "format": "uuid"
+          },
+          "response_value": "computations"
+        }
+      ]
+    },
+    "query": "user_id=1",
+    "response_body": {
+      "id": "11ae9478-485d-11f0-bc8c-0242ac140019",
+      "state": "STARTED",
+      "result": null,
+      "pipeline_details": {
+        "adjacency_list": {
+          "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": []
+        },
+        "progress": 0.05,
+        "node_states": {
+          "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": {
+            "modified": true,
+            "dependencies": [],
+            "currentStatus": "STARTED",
+            "progress": 0.05
+          }
+        }
+      },
+      "iteration": 1,
+      "started": "2025-06-13T13:48:28.876507Z",
+      "stopped": null,
+      "submitted": "2025-06-13T13:48:28.689344Z",
+      "url": "http://director-v2:8000/v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019?user_id=1",
+      "stop_url": "http://director-v2:8000/v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019:stop?user_id=1"
+    }
   }
- },
- {
-  "name": "POST /computations/71ec33ca-485a-11f0-bc8c-0242ac140019:start",
-  "description": "<Request('POST', 'http://webserver:8080/v0/computations/71ec33ca-485a-11f0-bc8c-0242ac140019:start')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/computations/{project_id}:start",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "request_payload": {},
-  "response_body": {
-   "data": {
-    "pipeline_id": "71ec33ca-485a-11f0-bc8c-0242ac140019"
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "GET /v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019",
-  "description": "<Request('GET', 'http://webserver:8080:30003/v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019?user_id=1')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v2/computations/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "query": "user_id=1",
-  "response_body": {
-   "id": "71ec33ca-485a-11f0-bc8c-0242ac140019",
-   "state": "STARTED",
-   "result": null,
-   "pipeline_details": {
-    "adjacency_list": {
-     "1cd13000-dd5d-5ebd-964f-7affa26606a9": []
-    },
-    "progress": 0.05,
-    "node_states": {
-     "1cd13000-dd5d-5ebd-964f-7affa26606a9": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "STARTED",
-      "progress": 0.05
-     }
-    }
-   },
-   "iteration": 1,
-   "started": "2025-06-13T13:30:18.988214Z",
-   "stopped": null,
-   "submitted": "2025-06-13T13:30:18.806995Z",
-   "url": "http://webserver:8080:30003/v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019?user_id=1",
-   "stop_url": "http://webserver:8080:30003/v2/computations/71ec33ca-485a-11f0-bc8c-0242ac140019:stop?user_id=1"
-  }
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
-    "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
-     "message": "Collecting files of 'sleeper'...",
-     "percent": 1.0
-    },
-    "done": false,
-    "started": "2025-06-13T13:31:09.141214+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.14b1e487-728d-4b99-badc-6993ec76f269",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:31:09.141214+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.14b1e487-728d-4b99-badc-6993ec76f269/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "uuid": "aa679b18-485a-11f0-89d1-0242ac14050c",
-    "name": "sleeper (Copy)",
-    "description": "",
-    "thumbnail": "",
-    "type": "STANDARD",
-    "templateType": null,
-    "workbench": {
-     "ed78079d-66fa-54fb-aca4-8f37ec436383": {
-      "key": "simcore/services/comp/itis/sleeper",
-      "version": "2.2.1",
-      "label": "sleeper",
-      "progress": 0.0,
-      "inputs": {
-       "input_2": 2,
-       "input_3": false,
-       "input_4": 0,
-       "input_5": 0
-      },
-      "inputsRequired": [],
-      "inputNodes": [],
-      "state": {
-       "modified": true,
-       "dependencies": [],
-       "currentStatus": "NOT_STARTED",
-       "progress": null
-      }
-     }
-    },
-    "prjOwner": "bisgaard@itis.swiss",
-    "accessRights": {
-     "4": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
-    },
-    "creationDate": "2025-06-13T13:31:09.169Z",
-    "lastChangeDate": "2025-06-13T13:31:09.169Z",
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "NOT_STARTED"
-     }
-    },
-    "trashedAt": null,
-    "trashedBy": null,
-    "tags": [],
-    "classifiers": [],
-    "quality": {
-     "enabled": true,
-     "tsr_target": {
-      "r01": {
-       "level": 4,
-       "references": ""
-      },
-      "r02": {
-       "level": 4,
-       "references": ""
-      },
-      "r03": {
-       "level": 4,
-       "references": ""
-      },
-      "r04": {
-       "level": 4,
-       "references": ""
-      },
-      "r05": {
-       "level": 4,
-       "references": ""
-      },
-      "r06": {
-       "level": 4,
-       "references": ""
-      },
-      "r07": {
-       "level": 4,
-       "references": ""
-      },
-      "r08": {
-       "level": 4,
-       "references": ""
-      },
-      "r09": {
-       "level": 4,
-       "references": ""
-      },
-      "r10": {
-       "level": 4,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     },
-     "tsr_current": {
-      "r01": {
-       "level": 0,
-       "references": ""
-      },
-      "r02": {
-       "level": 0,
-       "references": ""
-      },
-      "r03": {
-       "level": 0,
-       "references": ""
-      },
-      "r04": {
-       "level": 0,
-       "references": ""
-      },
-      "r05": {
-       "level": 0,
-       "references": ""
-      },
-      "r06": {
-       "level": 0,
-       "references": ""
-      },
-      "r07": {
-       "level": 0,
-       "references": ""
-      },
-      "r08": {
-       "level": 0,
-       "references": ""
-      },
-      "r09": {
-       "level": 0,
-       "references": ""
-      },
-      "r10": {
-       "level": 0,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     }
-    },
-    "ui": {
-     "workbench": {
-      "ed78079d-66fa-54fb-aca4-8f37ec436383": {
-       "position": {
-        "x": 250,
-        "y": 100
-       }
-      }
-     },
-     "slideshow": {},
-     "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
-     "mode": "pipeline"
-    },
-    "dev": {},
-    "workspaceId": null,
-    "folderId": null
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "PATCH /projects/aa679b18-485a-11f0-89d1-0242ac14050c",
-  "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/aa679b18-485a-11f0-89d1-0242ac14050c')>",
-  "method": "PATCH",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "request_payload": {
-   "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/aa679b18-485a-11f0-89d1-0242ac14050c"
-  },
-  "status_code": 204
- },
- {
-  "name": "GET /projects/aa679b18-485a-11f0-89d1-0242ac14050c/inputs",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/aa679b18-485a-11f0-89d1-0242ac14050c/inputs')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/inputs",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {}
-  }
- },
- {
-  "name": "POST /computations/aa679b18-485a-11f0-89d1-0242ac14050c:start",
-  "description": "<Request('POST', 'http://webserver:8080/v0/computations/aa679b18-485a-11f0-89d1-0242ac14050c:start')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/computations/{project_id}:start",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "request_payload": {},
-  "response_body": {
-   "data": {
-    "pipeline_id": "aa679b18-485a-11f0-89d1-0242ac14050c"
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "GET /v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c",
-  "description": "<Request('GET', 'http://webserver:8080:30003/v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c?user_id=1')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v2/computations/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "query": "user_id=1",
-  "response_body": {
-   "id": "aa679b18-485a-11f0-89d1-0242ac14050c",
-   "state": "STARTED",
-   "result": null,
-   "pipeline_details": {
-    "adjacency_list": {
-     "ed78079d-66fa-54fb-aca4-8f37ec436383": []
-    },
-    "progress": 0.05,
-    "node_states": {
-     "ed78079d-66fa-54fb-aca4-8f37ec436383": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "STARTED",
-      "progress": 0.05
-     }
-    }
-   },
-   "iteration": 1,
-   "started": "2025-06-13T13:31:17.841816Z",
-   "stopped": null,
-   "submitted": "2025-06-13T13:31:17.672682Z",
-   "url": "http://webserver:8080:30003/v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c?user_id=1",
-   "stop_url": "http://webserver:8080:30003/v2/computations/aa679b18-485a-11f0-89d1-0242ac14050c:stop?user_id=1"
-  }
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
-    "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:34:33.232952+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.4280a56d-58e7-4f2c-aa15-f35a137e60ca/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "uuid": "240cb4c6-485b-11f0-89d1-0242ac14050c",
-    "name": "sleeper (Copy)",
-    "description": "",
-    "thumbnail": "",
-    "type": "STANDARD",
-    "templateType": null,
-    "workbench": {
-     "982c5607-783c-5295-9a4f-26c8e3c21211": {
-      "key": "simcore/services/comp/itis/sleeper",
-      "version": "2.2.1",
-      "label": "sleeper",
-      "progress": 0.0,
-      "inputs": {
-       "input_2": 2,
-       "input_3": false,
-       "input_4": 0,
-       "input_5": 0
-      },
-      "inputsRequired": [],
-      "inputNodes": [],
-      "state": {
-       "modified": true,
-       "dependencies": [],
-       "currentStatus": "NOT_STARTED",
-       "progress": null
-      }
-     }
-    },
-    "prjOwner": "bisgaard@itis.swiss",
-    "accessRights": {
-     "4": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
-    },
-    "creationDate": "2025-06-13T13:34:33.254Z",
-    "lastChangeDate": "2025-06-13T13:34:33.254Z",
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "NOT_STARTED"
-     }
-    },
-    "trashedAt": null,
-    "trashedBy": null,
-    "tags": [],
-    "classifiers": [],
-    "quality": {
-     "enabled": true,
-     "tsr_target": {
-      "r01": {
-       "level": 4,
-       "references": ""
-      },
-      "r02": {
-       "level": 4,
-       "references": ""
-      },
-      "r03": {
-       "level": 4,
-       "references": ""
-      },
-      "r04": {
-       "level": 4,
-       "references": ""
-      },
-      "r05": {
-       "level": 4,
-       "references": ""
-      },
-      "r06": {
-       "level": 4,
-       "references": ""
-      },
-      "r07": {
-       "level": 4,
-       "references": ""
-      },
-      "r08": {
-       "level": 4,
-       "references": ""
-      },
-      "r09": {
-       "level": 4,
-       "references": ""
-      },
-      "r10": {
-       "level": 4,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     },
-     "tsr_current": {
-      "r01": {
-       "level": 0,
-       "references": ""
-      },
-      "r02": {
-       "level": 0,
-       "references": ""
-      },
-      "r03": {
-       "level": 0,
-       "references": ""
-      },
-      "r04": {
-       "level": 0,
-       "references": ""
-      },
-      "r05": {
-       "level": 0,
-       "references": ""
-      },
-      "r06": {
-       "level": 0,
-       "references": ""
-      },
-      "r07": {
-       "level": 0,
-       "references": ""
-      },
-      "r08": {
-       "level": 0,
-       "references": ""
-      },
-      "r09": {
-       "level": 0,
-       "references": ""
-      },
-      "r10": {
-       "level": 0,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     }
-    },
-    "ui": {
-     "workbench": {
-      "982c5607-783c-5295-9a4f-26c8e3c21211": {
-       "position": {
-        "x": 250,
-        "y": 100
-       }
-      }
-     },
-     "slideshow": {},
-     "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
-     "mode": "pipeline"
-    },
-    "dev": {},
-    "workspaceId": null,
-    "folderId": null
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "PATCH /projects/240cb4c6-485b-11f0-89d1-0242ac14050c",
-  "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/240cb4c6-485b-11f0-89d1-0242ac14050c')>",
-  "method": "PATCH",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "request_payload": {
-   "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/240cb4c6-485b-11f0-89d1-0242ac14050c"
-  },
-  "status_code": 204
- },
- {
-  "name": "GET /projects/240cb4c6-485b-11f0-89d1-0242ac14050c/inputs",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/240cb4c6-485b-11f0-89d1-0242ac14050c/inputs')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/inputs",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {}
-  }
- },
- {
-  "name": "POST /computations/240cb4c6-485b-11f0-89d1-0242ac14050c:start",
-  "description": "<Request('POST', 'http://webserver:8080/v0/computations/240cb4c6-485b-11f0-89d1-0242ac14050c:start')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/computations/{project_id}:start",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "request_payload": {},
-  "response_body": {
-   "data": {
-    "pipeline_id": "240cb4c6-485b-11f0-89d1-0242ac14050c"
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "GET /v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c",
-  "description": "<Request('GET', 'http://webserver:8080:30003/v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c?user_id=1')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v2/computations/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "query": "user_id=1",
-  "response_body": {
-   "id": "240cb4c6-485b-11f0-89d1-0242ac14050c",
-   "state": "STARTED",
-   "result": null,
-   "pipeline_details": {
-    "adjacency_list": {
-     "982c5607-783c-5295-9a4f-26c8e3c21211": []
-    },
-    "progress": 0.05,
-    "node_states": {
-     "982c5607-783c-5295-9a4f-26c8e3c21211": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "STARTED",
-      "progress": 0.05
-     }
-    }
-   },
-   "iteration": 1,
-   "started": "2025-06-13T13:34:40.872636Z",
-   "stopped": null,
-   "submitted": "2025-06-13T13:34:40.690820Z",
-   "url": "http://webserver:8080:30003/v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c?user_id=1",
-   "stop_url": "http://webserver:8080:30003/v2/computations/240cb4c6-485b-11f0-89d1-0242ac14050c:stop?user_id=1"
-  }
- },
- {
-  "name": "POST /projects",
-  "description": "<Request('POST', 'http://webserver:8080/v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects",
-   "path_parameters": []
-  },
-  "query": "from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-  "response_body": {
-   "data": {
-    "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
-    "task_name": "POST /v0/projects?from_study=b8dd6dc4-4857-11f0-bc8c-0242ac140019&hidden=true",
-    "status_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
-    "result_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b/result",
-    "abort_href": "http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b"
-   }
-  },
-  "status_code": 202
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "task_progress": {
-     "task_id": "POST%20%2Fv0%2Fprojects%3Ffrom_study%3Db8dd6dc4-4857-11f0-bc8c-0242ac140019%26hidden%3Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b",
-     "message": "finished",
-     "percent": 1.0
-    },
-    "done": true,
-    "started": "2025-06-13T13:48:21.407753+00:00"
-   },
-   "error": null
-  }
- },
- {
-  "name": "GET http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b/result",
-  "description": "<Request('GET', 'http://webserver:8080/v0/tasks-legacy/POST%2520%252Fv0%252Fprojects%253Ffrom_study%253Db8dd6dc4-4857-11f0-bc8c-0242ac140019%2526hidden%253Dtrue.e43e3bf5-5910-42ad-8abe-636f7aa87d7b/result')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/tasks-legacy/{task_id}/result",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "task_id",
-     "required": true,
-     "schema": {
-      "title": "Task Id",
-      "type": "str"
-     },
-     "response_value": "tasks-legacy"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {
-    "uuid": "11ae9478-485d-11f0-bc8c-0242ac140019",
-    "name": "sleeper (Copy)",
-    "description": "",
-    "thumbnail": "",
-    "type": "STANDARD",
-    "templateType": null,
-    "workbench": {
-     "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": {
-      "key": "simcore/services/comp/itis/sleeper",
-      "version": "2.2.1",
-      "label": "sleeper",
-      "progress": 0.0,
-      "inputs": {
-       "input_2": 2,
-       "input_3": false,
-       "input_4": 0,
-       "input_5": 0
-      },
-      "inputsRequired": [],
-      "inputNodes": [],
-      "state": {
-       "modified": true,
-       "dependencies": [],
-       "currentStatus": "NOT_STARTED",
-       "progress": null
-      }
-     }
-    },
-    "prjOwner": "bisgaard@itis.swiss",
-    "accessRights": {
-     "4": {
-      "read": true,
-      "write": true,
-      "delete": true
-     }
-    },
-    "creationDate": "2025-06-13T13:48:21.431Z",
-    "lastChangeDate": "2025-06-13T13:48:21.431Z",
-    "state": {
-     "locked": {
-      "value": false,
-      "status": "CLOSED"
-     },
-     "state": {
-      "value": "NOT_STARTED"
-     }
-    },
-    "trashedAt": null,
-    "trashedBy": null,
-    "tags": [],
-    "classifiers": [],
-    "quality": {
-     "enabled": true,
-     "tsr_target": {
-      "r01": {
-       "level": 4,
-       "references": ""
-      },
-      "r02": {
-       "level": 4,
-       "references": ""
-      },
-      "r03": {
-       "level": 4,
-       "references": ""
-      },
-      "r04": {
-       "level": 4,
-       "references": ""
-      },
-      "r05": {
-       "level": 4,
-       "references": ""
-      },
-      "r06": {
-       "level": 4,
-       "references": ""
-      },
-      "r07": {
-       "level": 4,
-       "references": ""
-      },
-      "r08": {
-       "level": 4,
-       "references": ""
-      },
-      "r09": {
-       "level": 4,
-       "references": ""
-      },
-      "r10": {
-       "level": 4,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     },
-     "tsr_current": {
-      "r01": {
-       "level": 0,
-       "references": ""
-      },
-      "r02": {
-       "level": 0,
-       "references": ""
-      },
-      "r03": {
-       "level": 0,
-       "references": ""
-      },
-      "r04": {
-       "level": 0,
-       "references": ""
-      },
-      "r05": {
-       "level": 0,
-       "references": ""
-      },
-      "r06": {
-       "level": 0,
-       "references": ""
-      },
-      "r07": {
-       "level": 0,
-       "references": ""
-      },
-      "r08": {
-       "level": 0,
-       "references": ""
-      },
-      "r09": {
-       "level": 0,
-       "references": ""
-      },
-      "r10": {
-       "level": 0,
-       "references": ""
-      },
-      "r03b": {
-       "references": ""
-      },
-      "r03c": {
-       "references": ""
-      },
-      "r07b": {
-       "references": ""
-      },
-      "r07c": {
-       "references": ""
-      },
-      "r07d": {
-       "references": ""
-      },
-      "r07e": {
-       "references": ""
-      },
-      "r08b": {
-       "references": ""
-      },
-      "r10b": {
-       "references": ""
-      }
-     }
-    },
-    "ui": {
-     "workbench": {
-      "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": {
-       "position": {
-        "x": 250,
-        "y": 100
-       }
-      }
-     },
-     "slideshow": {},
-     "currentNodeId": "b00f9b90-4857-11f0-bc8c-0242ac140019",
-     "mode": "pipeline"
-    },
-    "dev": {},
-    "workspaceId": null,
-    "folderId": null
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "PATCH /projects/11ae9478-485d-11f0-bc8c-0242ac140019",
-  "description": "<Request('PATCH', 'http://webserver:8080/v0/projects/11ae9478-485d-11f0-bc8c-0242ac140019')>",
-  "method": "PATCH",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "request_payload": {
-   "name": "studies/b8dd6dc4-4857-11f0-bc8c-0242ac140019/jobs/11ae9478-485d-11f0-bc8c-0242ac140019"
-  },
-  "status_code": 204
- },
- {
-  "name": "GET /projects/11ae9478-485d-11f0-bc8c-0242ac140019/inputs",
-  "description": "<Request('GET', 'http://webserver:8080/v0/projects/11ae9478-485d-11f0-bc8c-0242ac140019/inputs')>",
-  "method": "GET",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/projects/{project_id}/inputs",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "projects"
-    }
-   ]
-  },
-  "response_body": {
-   "data": {}
-  }
- },
- {
-  "name": "POST /computations/11ae9478-485d-11f0-bc8c-0242ac140019:start",
-  "description": "<Request('POST', 'http://webserver:8080/v0/computations/11ae9478-485d-11f0-bc8c-0242ac140019:start')>",
-  "method": "POST",
-  "host": "webserver",
-  "path": {
-   "path": "/v0/computations/{project_id}:start",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "request_payload": {},
-  "response_body": {
-   "data": {
-    "pipeline_id": "11ae9478-485d-11f0-bc8c-0242ac140019"
-   }
-  },
-  "status_code": 201
- },
- {
-  "name": "GET /v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019",
-  "description": "<Request('GET', 'http://director-v2:8000/v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019?user_id=1')>",
-  "method": "GET",
-  "host": "director-v2",
-  "path": {
-   "path": "/v2/computations/{project_id}",
-   "path_parameters": [
-    {
-     "in": "path",
-     "name": "project_id",
-     "required": true,
-     "schema": {
-      "title": "Project Id",
-      "type": "str",
-      "format": "uuid"
-     },
-     "response_value": "computations"
-    }
-   ]
-  },
-  "query": "user_id=1",
-  "response_body": {
-   "id": "11ae9478-485d-11f0-bc8c-0242ac140019",
-   "state": "STARTED",
-   "result": null,
-   "pipeline_details": {
-    "adjacency_list": {
-     "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": []
-    },
-    "progress": 0.05,
-    "node_states": {
-     "4a7d1258-dcfa-55ab-ab53-38d0fa99431a": {
-      "modified": true,
-      "dependencies": [],
-      "currentStatus": "STARTED",
-      "progress": 0.05
-     }
-    }
-   },
-   "iteration": 1,
-   "started": "2025-06-13T13:48:28.876507Z",
-   "stopped": null,
-   "submitted": "2025-06-13T13:48:28.689344Z",
-   "url": "http://director-v2:8000/v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019?user_id=1",
-   "stop_url": "http://director-v2:8000/v2/computations/11ae9478-485d-11f0-bc8c-0242ac140019:stop?user_id=1"
-  }
- }
 ]
