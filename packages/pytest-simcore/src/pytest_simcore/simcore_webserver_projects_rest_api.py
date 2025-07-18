@@ -157,14 +157,10 @@ OPEN_PROJECT = HttpApiCallCapture(
             "quality": {},
             "tags": [],
             "state": {
-                "locked": {
-                    "value": True,
-                    "owner": {
-                        "user_id": 1,
-                        "first_name": "crespo",
-                        "last_name": "",
-                    },
+                "shareState": {
                     "status": "OPENED",
+                    "locked": True,
+                    "currentUserGroupids": [1],
                 },
                 "state": {"value": "NOT_STARTED"},
             },
