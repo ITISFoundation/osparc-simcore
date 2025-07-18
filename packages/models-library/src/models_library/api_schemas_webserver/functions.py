@@ -47,6 +47,7 @@ from ..functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
+from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema
 
 __all__ = [
@@ -115,6 +116,9 @@ class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema): ...
 
 
 class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
+    uid: Annotated[FunctionID, Field(alias="uuid")]
+    title: Annotated[str, Field(alias="name")] = ""
+    project_id: Annotated[ProjectID, Field(alias="template_id")]
     thumbnail: str | None = None
     template_id: int | None = None
 

@@ -29,7 +29,7 @@ qx.Class.define("osparc.data.model.Function", {
     this.base(arguments);
 
     this.set({
-      uuid: functionData.uid,
+      uuid: functionData.uuid,
       functionType: functionData.functionClass,
       name: functionData.name,
       description: functionData.description,
