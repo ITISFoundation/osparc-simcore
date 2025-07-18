@@ -199,8 +199,8 @@ class UsersRepo:
                         users.update()
                         .where(users.c.id == new_user_id)
                         .values(
-                            first_name=pre_registration_details_data.pre_first_name,  # type: ignore[union-attr]
-                            last_name=pre_registration_details_data.pre_last_name,  # type: ignore[union-attr]
+                            first_name=pre_registration_details_data.pre_first_name,
+                            last_name=pre_registration_details_data.pre_last_name,
                         )
                     )
 
