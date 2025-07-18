@@ -19,7 +19,6 @@ from yarl import URL
 
 from ....products import products_web
 from ....products.models import Product
-from ....security import security_service
 from ....session.access_policies import session_access_required
 from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
@@ -262,17 +261,19 @@ async def complete_reset_password(request: web.Request):
     )
 
     if confirmation:
-        user = await db.get_user({"id": confirmation["user_id"]})
+        user = await _auth_service.get_user_or_none(
+            request.app, user_id=confirmation["user_id"]
+        )
         assert user  # nosec
 
-        await db.update_user(
-            user={"id": user["id"]},
-            updates={
-                "password_hash": security_service.encrypt_password(
-                    request_body.password.get_secret_value()
-                )
-            },
+        await _auth_service.update_user_password(
+            request.app,
+            user_id=user["id"],
+            current_password="",
+            new_password=request_body.password.get_secret_value(),
+            verify_current_password=False,  # confirmed by code
         )
+
         await db.delete_confirmation(confirmation)
 
         return flash_response(MSG_PASSWORD_CHANGED)
@@ -281,5 +282,4 @@ async def complete_reset_password(request: web.Request):
         text=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(
             support_email=product.support_email
         ),
-        content_type=MIMETYPE_APPLICATION_JSON,
     )  # 401

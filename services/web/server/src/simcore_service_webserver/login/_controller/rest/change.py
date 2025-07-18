@@ -117,7 +117,7 @@ async def initiate_reset_password(request: web.Request):
     ok = True
 
     # CHECK user exists
-    user = await db.get_user({"email": request_body.email})
+    user = await _auth_service.get_user_or_none(request.app, email=request_body.email)
     if not user:
         _logger.warning(
             **create_troubleshootting_log_kwargs(
@@ -223,7 +223,9 @@ async def initiate_change_email(request: web.Request):
 
     request_body = await parse_request_body_as(ChangeEmailBody, request)
 
-    user = await db.get_user({"id": request[RQT_USERID_KEY]})
+    user = await _auth_service.get_user_or_none(
+        request.app, user_id=request[RQT_USERID_KEY]
+    )
     assert user  # nosec
 
     if user["email"] == request_body.email:

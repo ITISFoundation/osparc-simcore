@@ -155,18 +155,20 @@ async def update_user_password(
     user_id: int,
     current_password: str,
     new_password: str,
+    verify_current_password: bool = True,
 ) -> None:
     """Updates user password after verifying current password"""
     repo = UsersRepo(get_asyncpg_engine(app))
 
-    # Get current password hash
-    current_password_hash = await repo.get_password_hash(user_id=user_id)
+    if verify_current_password:
+        # Get current password hash
+        current_password_hash = await repo.get_password_hash(user_id=user_id)
 
-    # Verify current password
-    if not security_service.check_password(current_password, current_password_hash):
-        raise web.HTTPUnauthorized(
-            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        # Verify current password
+        if not security_service.check_password(current_password, current_password_hash):
+            raise web.HTTPUnauthorized(
+                text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
+            )
 
     # Encrypt new password and update
     new_password_hash = security_service.encrypt_password(new_password)

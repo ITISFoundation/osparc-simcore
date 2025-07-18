@@ -52,12 +52,6 @@ class AsyncpgStorage:
     # CRUD user
     #
 
-    async def get_user(self, with_data: dict[str, Any]) -> asyncpg.Record | None:
-        async with self.pool.acquire() as conn:
-            return await _login_repository_legacy_sql.find_one(
-                conn, self.user_tbl, with_data
-            )
-
     async def create_user(self, data: dict[str, Any]) -> dict[str, Any]:
         async with self.pool.acquire() as conn:
             user_id = await _login_repository_legacy_sql.insert(
