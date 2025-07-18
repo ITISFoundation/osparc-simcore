@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-value-for-parameter
 
+import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any
 from uuid import uuid4
@@ -19,7 +20,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.services import services_access_rights
-from simcore_postgres_database.models.users import UserRole, UserStatus, users
+from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodeCreate,
     ProjectNodesRepo,
@@ -27,6 +28,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .helpers.postgres_tools import insert_and_get_row_lifespan
+from .helpers.postgres_users import sync_insert_and_get_user_and_secrets_lifespan
 
 
 @pytest.fixture()
@@ -35,36 +37,27 @@ def create_registered_user(
 ) -> Iterator[Callable[..., dict]]:
     created_user_ids = []
 
-    def _(**user_kwargs) -> dict[str, Any]:
-        with postgres_db.connect() as con:
-            # removes all users before continuing
-            user_config = {
-                "id": len(created_user_ids) + 1,
-                "name": faker.name(),
-                "email": faker.email(),
-                "password_hash": faker.password(),
-                "status": UserStatus.ACTIVE,
-                "role": UserRole.USER,
-            }
-            user_config.update(user_kwargs)
+    with contextlib.ExitStack() as stack:
 
-            con.execute(
-                users.insert().values(user_config).returning(sa.literal_column("*"))
+        def _(**user_kwargs) -> dict[str, Any]:
+
+            user_id = len(created_user_ids) + 1
+            user = stack.enter_context(
+                sync_insert_and_get_user_and_secrets_lifespan(
+                    postgres_db,
+                    status=UserStatus.ACTIVE,
+                    role=UserRole.USER,
+                    **user_kwargs,
+                )
             )
-            # this is needed to get the primary_gid correctly
-            result = con.execute(
-                sa.select(users).where(users.c.id == user_config["id"])
-            )
-            user = result.first()
-            assert user
+
             print(f"--> created {user=}")
+            assert user["id"] == user_id
             created_user_ids.append(user["id"])
-        return dict(user._asdict())
+            return user
 
-    yield _
+        yield _
 
-    with postgres_db.connect() as con:
-        con.execute(users.delete().where(users.c.id.in_(created_user_ids)))
     print(f"<-- deleted users {created_user_ids=}")
 
 
