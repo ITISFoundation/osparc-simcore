@@ -34,7 +34,7 @@ async def insert_and_get_user_and_secrets_lifespan(
         )
 
         # users_secrets
-        secret = await stack.enter_async_context(
+        secrets = await stack.enter_async_context(
             insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
                 sqlalchemy_async_engine,
                 table=users_secrets,
@@ -43,7 +43,9 @@ async def insert_and_get_user_and_secrets_lifespan(
             )
         )
 
-        yield {**user, "password_hash": secret["password_hash"]}
+        assert secrets.pop("user_id", None) == user["id"]
+
+        yield {**user, **secrets}
 
 
 async def insert_user_and_secrets(conn, **overrides) -> int:
