@@ -1,11 +1,15 @@
 import contextlib
 
+import sqlalchemy as sa
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.users_secrets import users_secrets
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .faker_factories import random_user, random_user_secrets
-from .postgres_tools import insert_and_get_row_lifespan
+from .postgres_tools import (
+    insert_and_get_row_lifespan,
+    sync_insert_and_get_row_lifespan,
+)
 
 
 def _get_kwargs_from_overrides(overrides: dict) -> tuple[dict, dict]:
@@ -37,6 +41,38 @@ async def insert_and_get_user_and_secrets_lifespan(
         secrets = await stack.enter_async_context(
             insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
                 sqlalchemy_async_engine,
+                table=users_secrets,
+                values=random_user_secrets(user_id=user["id"], **secrets_kwargs),
+                pk_col=users_secrets.c.user_id,
+            )
+        )
+
+        assert secrets.pop("user_id", None) == user["id"]
+
+        yield {**user, **secrets}
+
+
+@contextlib.contextmanager
+def sync_insert_and_get_user_and_secrets_lifespan(
+    sqlalchemy_sync_engine: sa.engine.Engine, **overrides
+):
+    user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
+
+    with contextlib.ExitStack() as stack:
+        # users
+        user = stack.enter_context(
+            sync_insert_and_get_row_lifespan(
+                sqlalchemy_sync_engine,
+                table=users,
+                values=random_user(**user_kwargs),
+                pk_col=users.c.id,
+            )
+        )
+
+        # users_secrets
+        secrets = stack.enter_context(
+            sync_insert_and_get_row_lifespan(
+                sqlalchemy_sync_engine,
                 table=users_secrets,
                 values=random_user_secrets(user_id=user["id"], **secrets_kwargs),
                 pk_col=users_secrets.c.user_id,
