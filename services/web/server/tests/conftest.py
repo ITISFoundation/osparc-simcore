@@ -21,7 +21,6 @@ from faker import Faker
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -427,9 +426,10 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         # now check returned is as expected
         if new_project:
             # has project state
-            assert not ProjectState(
-                **new_project.get("state", {})
-            ).share_state.locked, "Newly created projects should be unlocked"
+            assert (
+                new_project.get("state", {}).get("shareState", {}).get("locked", False)
+                is False
+            ), "Newly created projects should be unlocked"
 
             # updated fields
             assert expected_data["uuid"] != new_project["uuid"]
