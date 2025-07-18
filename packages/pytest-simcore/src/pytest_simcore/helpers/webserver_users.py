@@ -3,9 +3,9 @@ from datetime import datetime
 from typing import Any, TypedDict
 
 from aiohttp import web
+from common_library.users_enums import UserRole, UserStatus
 from models_library.users import UserID
 from simcore_postgres_database.models.users import users as users_table
-from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.groups import api as groups_service
 from simcore_service_webserver.products.products_service import list_products
