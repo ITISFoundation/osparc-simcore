@@ -23,6 +23,7 @@ from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...projects import _projects_service
+from ...projects.models import ProjectDBGet
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _functions_service
@@ -88,7 +89,10 @@ async def list_functions(request: web.Request) -> web.Response:
         pagination_offset=query_params.offset,
     )
 
-    chunk = []
+    chunk: list[RegisteredFunctionGet] = []
+    projects_map: dict[str, ProjectDBGet] = (
+        {}
+    )  # ProjectDBGet has to be renamed at some point!
 
     if query_params.include_extras:
         project_ids = []
@@ -101,40 +105,34 @@ async def list_functions(request: web.Request) -> web.Response:
             request.app,
             project_uuids=project_ids,
         )
-        projects_map = {f"{p.uuid}": p for p in projects}
+        for project in projects:
+            projects_map[f"{project.uuid}"] = project
 
-        for function in functions:
-            if (
-                query_params.include_extras
-                and function.function_class == FunctionClass.PROJECT
-            ):
-                assert isinstance(function, RegisteredProjectFunction)  # nosec
-                project = projects_map.get(f"{function.project_id}")
-                if project:
-                    chunk.append(
-                        TypeAdapter(RegisteredProjectFunctionGet).validate_python(
-                            function.model_dump(mode="json")
-                            | {
-                                "thumbnail": project.thumbnail,
-                                "template_id": project.id,
-                            }
-                        )
-                    )
-            else:
+    for function in functions:
+        if (
+            query_params.include_extras
+            and function.function_class == FunctionClass.PROJECT
+        ):
+            assert isinstance(function, RegisteredProjectFunction)  # nosec
+            project = projects_map.get(f"{function.project_id}")
+            if project:
                 chunk.append(
-                    TypeAdapter(RegisteredFunctionGet).validate_python(
+                    TypeAdapter(RegisteredProjectFunctionGet).validate_python(
                         function.model_dump(mode="json")
+                        | {
+                            "thumbnail": (
+                                f"{project.thumbnail}" if project.thumbnail else None
+                            ),
+                            "template_id": project.id,
+                        }
                     )
                 )
-    else:
-        chunk.extend(
-            [
+        else:
+            chunk.append(
                 TypeAdapter(RegisteredFunctionGet).validate_python(
                     function.model_dump(mode="json")
                 )
-                for function in functions
-            ]
-        )
+            )
 
     page = Page[RegisteredFunctionGet].model_validate(
         paginate_data(
@@ -188,7 +186,7 @@ async def get_function(request: web.Request) -> web.Response:
                 registered_function.model_dump(mode="json")
                 | {
                     "thumbnail": project_dict.get("thumbnail", None),
-                    "template_id": project_dict.get("project_id", None),
+                    "template_id": project_dict.get("id", None),
                 }
             )
         )
