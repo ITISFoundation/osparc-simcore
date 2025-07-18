@@ -42,6 +42,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
     this.__currentFilter = null;
 
     qx.core.Init.getApplication().getRoot().add(this);
+
+    this.__attachHideHandlers();
   },
 
   events: {
@@ -128,6 +130,17 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
       this.getChildControl("templates-button");
       this.getChildControl("public-projects-button");
       this.getChildControl("search-bar");
+    },
+
+    __attachHideHandlers: function() {
+      const tapListener = e => {
+        if (osparc.utils.Utils.isMouseOnElement(this, e)) {
+          return;
+        }
+        this.exclude();
+        document.removeEventListener("mousedown", tapListener);
+      };;
+      document.addEventListener("mousedown", tapListener);
     },
 
     __buildFiltersMenu: function() {
