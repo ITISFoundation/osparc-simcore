@@ -35,6 +35,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
     this.__buildLayout();
 
+    this.__searchMyProjectsSelected();
+
     qx.core.Init.getApplication().getRoot().add(this);
 
     this.__attachHideHandlers();
@@ -161,11 +163,15 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       // Set initial state based on the provided initFilterData
       const activeFilters = this.getChildControl("search-bar-filter").getChildControl("active-filters");
       const textField = this.getChildControl("search-bar-filter").getChildControl("text-field");
-      if ("sharedWith" in this.__initFilterData) {
-        const chip = osparc.dashboard.SearchBarFilter.createChip("sharedWith", this.__initFilterData["sharedWith"], this.tr("Shared with"));
-        activeFilters.add(chip);
+      if ("sharedWith" in this.__initFilterData && this.__initFilterData["sharedWith"]) {
+        const sharedWithOptions = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
+        const optionsFound = sharedWithOptions.find(option => option.id === this.__initFilterData["sharedWith"]);
+        if (optionsFound) {
+          const chip = osparc.dashboard.SearchBarFilter.createChip("sharedWith", optionsFound.id, optionsFound.label);
+          activeFilters.add(chip);
+        }
       }
-      if ("tags" in this.__initFilterData) {
+      if ("tags" in this.__initFilterData && this.__initFilterData["tags"]) {
         const tags = osparc.store.Tags.getInstance().getTags();
         this.__initFilterData["tags"].forEach(tagId => {
           const tagFound = tags.find(tag => tag.getTagId() === tagId);
@@ -175,7 +181,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           }
         });
       }
-      if ("text" in this.__initFilterData) {
+      if ("text" in this.__initFilterData && this.__initFilterData["text"]) {
         textField.setValue(this.__initFilterData["text"]);
       }
 
