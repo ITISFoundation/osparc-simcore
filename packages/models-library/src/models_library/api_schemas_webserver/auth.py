@@ -5,6 +5,7 @@ from models_library.basic_types import IDStr
 from models_library.rest_base import RequestParameters
 from pydantic import AliasGenerator, ConfigDict, Field, HttpUrl, SecretStr
 from pydantic.alias_generators import to_camel
+from pydantic.config import JsonDict
 
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema, OutputSchema
@@ -14,33 +15,39 @@ class AccountRequestInfo(InputSchema):
     form: dict[str, Any]
     captcha: str
 
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "example": {
+                    "form": {
+                        "firstName": "James",
+                        "lastName": "Maxwel",
+                        "email": "maxwel@email.com",
+                        "phone": "+41 44 245 96 96",
+                        "company": "EM Com",
+                        "address": "Infinite Loop",
+                        "city": "Washington",
+                        "postalCode": "98001",
+                        "country": "Switzerland",
+                        "application": "Antenna_Design",
+                        "description": "Description of something",
+                        "hear": "Search_Engine",
+                        "privacyPolicy": True,
+                        "eula": True,
+                    },
+                    "captcha": "A12B34",
+                }
+            }
+        )
+
     model_config = ConfigDict(
         str_strip_whitespace=True,
         str_max_length=200,
         # NOTE: this is just informative. The format of the form is defined
         # currently in the front-end and it might change
         # SEE image in  https://github.com/ITISFoundation/osparc-simcore/pull/5378
-        json_schema_extra={
-            "example": {
-                "form": {
-                    "firstName": "James",
-                    "lastName": "Maxwel",
-                    "email": "maxwel@email.com",
-                    "phone": "+1 123456789",
-                    "company": "EM Com",
-                    "address": "Infinite Loop",
-                    "city": "Washington",
-                    "postalCode": "98001",
-                    "country": "USA",
-                    "application": "Antenna_Design",
-                    "description": "Description of something",
-                    "hear": "Search_Engine",
-                    "privacyPolicy": True,
-                    "eula": True,
-                },
-                "captcha": "A12B34",
-            }
-        },
+        json_schema_extra=_update_json_schema_extra,
     )
 
 

@@ -602,7 +602,6 @@ async def test_phone_registration_basic_workflow(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
@@ -613,9 +612,11 @@ async def test_phone_registration_basic_workflow(
 
     initial_profile = MyProfileRestGet.model_validate(data)
     initial_phone = initial_profile.phone
+    assert initial_phone
 
     # REGISTER phone number
-    new_phone = user_phone_number
+    # Change the last 3 digits of the initial phone number to '999'
+    new_phone = f"{initial_phone[:-3]}999"
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -658,7 +659,6 @@ async def test_phone_registration_workflow(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
@@ -669,9 +669,10 @@ async def test_phone_registration_workflow(
 
     initial_profile = MyProfileRestGet.model_validate(data)
     initial_phone = initial_profile.phone
+    assert initial_phone
 
     # STEP 1: REGISTER phone number
-    new_phone = user_phone_number
+    new_phone = f"{initial_phone[:-3]}999"  # Change the last 3 digits to '999'
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",

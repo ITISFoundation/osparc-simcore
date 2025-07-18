@@ -14,24 +14,35 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
     PhoneNumberStr,
 )
 
-multiple_format_valid_phone_numbers = [
-    "+41763456789",
-    "+19104630364",
-    "+1 301-304-4567",
-] + [
-    # tests hand-made random_phone_number
-    # WARNING: keed constant since pytest-xdist will run this test in parallel
-    random_phone_number(Faker(seed=42))
-    for _ in range(6)
-]
 
-
-@pytest.mark.parametrize("phone", multiple_format_valid_phone_numbers)
+@pytest.mark.parametrize(
+    "phone",
+    [
+        "+41763456789",
+        "+19104630364",
+        "+1 301-304-4567",
+        "+41763456686",
+        "+19104630873",
+        "+19104630424",
+        "+34 950 453 772",
+        "+19104630700",
+        "+13013044719",
+    ],
+)
 def test_valid_phone_numbers(phone: str):
     # This test is used to tune options of PhoneNumberValidator
     assert MyPhoneRegister.model_validate({"phone": phone}).phone == TypeAdapter(
         PhoneNumberStr
     ).validate_python(phone)
+
+
+def test_random_phone_number():
+    # This test is used to tune options of PhoneNumberValidator
+    for _ in range(10):
+        phone = random_phone_number(Faker(seed=42))
+        assert MyPhoneRegister.model_validate({"phone": phone}).phone == TypeAdapter(
+            PhoneNumberStr
+        ).validate_python(phone)
 
 
 @pytest.mark.parametrize(
