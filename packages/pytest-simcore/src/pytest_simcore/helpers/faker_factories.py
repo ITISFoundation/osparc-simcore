@@ -75,9 +75,10 @@ def random_user(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "email": f"{fake.uuid4()}_{fake.email().lower()}",
         "status": UserStatus.ACTIVE,
     }
-    assert set(data.keys()).issubset({c.name for c in users.columns})
 
     data.update(overrides)
+    assert set(data.keys()).issubset({c.name for c in users.columns})
+
     return data
 
 
