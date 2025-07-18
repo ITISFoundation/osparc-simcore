@@ -73,6 +73,9 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 def test_settings_to_client_statics_plugins(
     mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
+    monkeypatch.delenv("WEBSERVER_REALTIME_COLLABORATION", raising=False)
+
+    # explicitly disable these plugins
     disable_plugins = {
         "WEBSERVER_EXPORTER",
         "WEBSERVER_SCICRUNCH",
@@ -82,12 +85,21 @@ def test_settings_to_client_statics_plugins(
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
 
+    # explicitly disable WEBSERVER_FOLDERS
     monkeypatch.setenv("WEBSERVER_FOLDERS", "0")
     disable_plugins.add("WEBSERVER_FOLDERS")
 
-    settings = ApplicationSettings.create_from_envs()
-    statics = settings.to_client_statics()
+    # set WEBSERVER_REALTIME_COLLABORATION (NOTE: for now WEBSERVER_DEV_FEATURES_ENABLED=True) )
+    monkeypatch.setenv(
+        "WEBSERVER_REALTIME_COLLABORATION", '{"RTC_MAX_NUMBER_OF_USERS":3}'
+    )
 
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.WEBSERVER_DEV_FEATURES_ENABLED
+
+    # -------------
+
+    statics = settings.to_client_statics()
     print("STATICS:\n", json_dumps(statics, indent=1))
 
     assert settings.WEBSERVER_LOGIN
@@ -111,6 +123,15 @@ def test_settings_to_client_statics_plugins(
     assert statics["vcsReleaseTag"]
     assert TypeAdapter(HttpUrl).validate_python(statics["vcsReleaseUrl"])
 
+    # check WEBSERVER_REALTIME_COLLABORATION enabled
+    assert "WEBSERVER_REALTIME_COLLABORATION" not in statics["pluginsDisabled"]
+    assert settings.WEBSERVER_REALTIME_COLLABORATION
+    assert (
+        statics["webserverRealtimeCollaboration"]["RTC_MAX_NUMBER_OF_USERS"]
+        == settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
+    )
+
+    # check disabled plugins
     assert set(statics["pluginsDisabled"]) == (disable_plugins)
 
 

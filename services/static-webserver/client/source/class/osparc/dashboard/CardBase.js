@@ -24,6 +24,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
   construct: function() {
     this.base(arguments);
 
+    if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      // "IN_USE" is not a blocker anymore
+      const inUseIdx = qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.indexOf("IN_USE");
+      if (inUseIdx > -1) {
+        qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.splice(inUseIdx, 1);
+      }
+    }
+
     [
       "pointerover",
       "focus"
@@ -41,6 +49,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTutorial": "qx.event.type.Data",
+    "updateFunction": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -326,6 +335,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: [
         "study",
         "template",
+        "function",
         "tutorial",
         "hypertool",
         "service",
@@ -527,6 +537,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
+        case "function":
+          uuid = resourceData.uuid ? resourceData.uuid : null;
+          owner = "";
+          workbench = resourceData.workbench ? resourceData.workbench : {};
+          break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
@@ -555,26 +570,31 @@ qx.Class.define("osparc.dashboard.CardBase", {
         workbench
       });
 
-      if ([
-        "study",
-        "template",
-        "tutorial",
-        "hypertool"
-      ].includes(resourceData["resourceType"])) {
-        osparc.store.Services.getStudyServices(resourceData.uuid)
-          .then(resp => {
-            const services = resp["services"];
-            resourceData["services"] = services;
-            this.setServices(services);
-          })
-          .catch(err => {
-            resourceData["services"] = null;
-            this.setServices(null);
-            console.error(err);
-          });
+      switch (resourceData["resourceType"]) {
+        case "study":
+        case "template":
+        case "tutorial":
+        case "hypertool": {
+          osparc.store.Services.getStudyServices(resourceData.uuid)
+            .then(resp => {
+              const services = resp["services"];
+              resourceData["services"] = services;
+              this.setServices(services);
+            })
+            .catch(err => {
+              resourceData["services"] = null;
+              this.setServices(null);
+              console.error(err);
+            });
 
-        osparc.study.Utils.guessIcon(resourceData)
-          .then(iconSource => this.setIcon(iconSource));
+          osparc.study.Utils.guessIcon(resourceData)
+            .then(iconSource => this.setIcon(iconSource));
+
+          break;
+        }
+        case "function":
+          this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          break;
       }
     },
 
@@ -768,13 +788,22 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      let lockInUse = false;
+      let projectInUse = false;
       if ("locked" in state && "value" in state["locked"]) {
-        lockInUse = state["locked"]["value"];
+        projectInUse = state["locked"]["value"];
       }
-      this.setBlocked(lockInUse ? "IN_USE" : false);
-      if (lockInUse) {
-        this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+        if (projectInUse && state["locked"]["status"] === "OPENED") {
+          this.__showWhoIsIn(state["locked"]["owner"]);
+        } else {
+          this.__showWhoIsIn(null);
+        }
+      } else {
+        this.setBlocked(projectInUse ? "IN_USE" : false);
+        if (projectInUse) {
+          this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+        }
       }
 
       const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
@@ -852,6 +881,30 @@ qx.Class.define("osparc.dashboard.CardBase", {
         toolTipIcon: iconSource,
         toolTipText
       });
+    },
+
+    __showWhoIsIn: function(whoIsIn) {
+      let users = [];
+      if (whoIsIn) {
+        // replace this once the backend returns a list of group__ids
+        const allUsers = [
+          { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
+          { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
+          { name: "Charlie", avatar: "https://i.pravatar.cc/150?img=3" },
+          { name: "Dana", avatar: "https://i.pravatar.cc/150?img=4" },
+          { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
+          { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
+        ];
+        // Random number of users between 1 and 6
+        const randomCount = Math.floor(Math.random() * 6) + 1;
+        // Shuffle the array and take the first randomCount users
+        const shuffled = allUsers.sort(() => 0.5 - Math.random());
+        users = shuffled.slice(0, randomCount);
+      }
+      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() && this.getResourceType() === "study") {
+        const avatarGroup = this.getChildControl("avatar-group");
+        avatarGroup.setUsers(users);
+      }
     },
 
     __showBlockedCardFromStatus: function(reason, moreInfo) {
@@ -1040,6 +1093,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
         "updateStudy",
         "updateTemplate",
         "updateTutorial",
+        "updateFunction",
         "updateService",
         "updateHypertool",
       ].forEach(ev => {

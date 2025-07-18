@@ -84,14 +84,7 @@ FROM base AS production
 
 ENV PYTHONOPTIMIZE=TRUE
 
-# testing defaults
-ENV POSTGRES_USER=scu \
-  POSTGRES_PASSWORD=adminadmin \
-  POSTGRES_HOST=postgres \
-  POSTGRES_PORT=5432 \
-  POSTGRES_DB=simcoredb \
-  SC_DONE_MARK_FILE=migration.done
-
+ENV SC_DONE_MARK_FILE=migration.done
 
 WORKDIR /home/scu
 

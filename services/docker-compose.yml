@@ -673,6 +673,7 @@ services:
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
 
       WEBSERVER_DEV_FEATURES_ENABLED: ${WEBSERVER_DEV_FEATURES_ENABLED}
+      WEBSERVER_REALTIME_COLLABORATION: ${WEBSERVER_REALTIME_COLLABORATION}
 
       WEBSERVER_LOGLEVEL: ${WEBSERVER_LOGLEVEL}
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
@@ -1287,7 +1288,7 @@ services:
     networks: *storage_networks
 
   rabbit:
-    image: itisfoundation/rabbitmq:3.13.7-management
+    image: itisfoundation/rabbitmq:4.1.2-management
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
