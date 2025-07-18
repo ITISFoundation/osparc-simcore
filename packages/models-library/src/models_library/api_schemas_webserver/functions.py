@@ -1,3 +1,4 @@
+import datetime
 from typing import Annotated, TypeAlias
 
 from pydantic import Field
@@ -118,9 +119,11 @@ class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema): ...
 class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
     uid: Annotated[FunctionID, Field(alias="uuid")]
     title: Annotated[str, Field(alias="name")] = ""
-    project_id: Annotated[ProjectID, Field(alias="template_id")]
+    project_id: Annotated[ProjectID, Field(alias="templateId")]
+    created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
+    modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
     thumbnail: str | None = None
-    template_id: int | None = None
+    template_id: ProjectID | None = None
 
 
 class SolverFunctionToRegister(SolverFunction, InputSchema): ...

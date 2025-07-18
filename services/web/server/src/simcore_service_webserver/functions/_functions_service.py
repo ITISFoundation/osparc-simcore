@@ -457,6 +457,7 @@ def _decode_function(
             project_id=function.class_specific_data["project_id"],
             default_inputs=function.default_inputs,
             created_at=function.created,
+            modified_at=function.modified,
         )
 
     if function.function_class == FunctionClass.SOLVER:
@@ -470,6 +471,7 @@ def _decode_function(
             solver_version=function.class_specific_data["solver_version"],
             default_inputs=function.default_inputs,
             created_at=function.created,
+            modified_at=function.modified,
         )
 
     raise UnsupportedFunctionClassError(function_class=function.function_class)

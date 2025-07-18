@@ -99,6 +99,7 @@ class FunctionBase(BaseModel):
 class RegisteredFunctionBase(FunctionBase):
     uid: FunctionID
     created_at: datetime.datetime
+    modified_at: datetime.datetime
 
 
 class FunctionUpdate(BaseModel):
