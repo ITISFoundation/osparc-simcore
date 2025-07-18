@@ -33,8 +33,9 @@ from .helpers.postgres_users import sync_insert_and_get_user_and_secrets_lifespa
 
 @pytest.fixture()
 def create_registered_user(
-    postgres_db: sa.engine.Engine, faker: Faker
+    postgres_db: sa.engine.Engine,
 ) -> Iterator[Callable[..., dict]]:
+    """Fixture to create a registered user with secrets in the database."""
     created_user_ids = []
 
     with contextlib.ExitStack() as stack:
