@@ -8574,14 +8574,14 @@ components:
           application: Antenna_Design
           city: Washington
           company: EM Com
-          country: USA
+          country: Switzerland
           description: Description of something
           email: maxwel@email.com
           eula: true
           firstName: James
           hear: Search_Engine
           lastName: Maxwel
-          phone: +1 123456789
+          phone: +41 44 245 96 96
           postalCode: '98001'
           privacyPolicy: true
     AccountRequestStatus:
