@@ -3,16 +3,15 @@ from datetime import datetime
 from typing import Any, TypedDict
 
 from aiohttp import web
+from common_library.users_enums import UserRole, UserStatus
 from models_library.users import UserID
-from simcore_postgres_database.models.users import users as users_table
-from simcore_service_webserver.db.models import UserRole, UserStatus
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.groups import api as groups_service
 from simcore_service_webserver.products.products_service import list_products
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .faker_factories import DEFAULT_TEST_PASSWORD, random_user
-from .postgres_tools import insert_and_get_row_lifespan
+from .faker_factories import DEFAULT_TEST_PASSWORD
+from .postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
 # WARNING: DO NOT use UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDictclass UserRowDict(TypedDict):
@@ -51,11 +50,8 @@ async def _create_user_in_db(
 
     # inject in db
     user = await exit_stack.enter_async_context(
-        insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
-            sqlalchemy_async_engine,
-            table=users_table,
-            values=random_user(**data),
-            pk_col=users_table.c.id,
+        insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+            sqlalchemy_async_engine, **data
         )
     )
     assert "first_name" in user

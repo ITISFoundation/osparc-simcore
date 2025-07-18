@@ -9,10 +9,10 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
+from pytest_simcore.helpers import postgres_users
 from pytest_simcore.helpers.faker_factories import (
     random_api_auth,
     random_product,
-    random_user,
 )
 from simcore_postgres_database.models.api_keys import api_keys
 from simcore_postgres_database.models.products import products
@@ -21,13 +21,12 @@ from simcore_postgres_database.models.users import users
 
 @pytest.fixture
 async def user_id(connection: SAConnection) -> AsyncIterable[int]:
-    uid = await connection.scalar(
-        users.insert().values(random_user()).returning(users.c.id)
-    )
-    assert uid
-    yield uid
+    user_id = await postgres_users.insert_user_and_secrets(connection)
 
-    await connection.execute(users.delete().where(users.c.id == uid))
+    assert user_id
+    yield user_id
+
+    await connection.execute(users.delete().where(users.c.id == user_id))
 
 
 @pytest.fixture
@@ -84,7 +83,10 @@ async def test_get_session_identity_for_api_server(
     # authorize a session
     #
     result = await connection.execute(
-        sa.select(api_keys.c.user_id, api_keys.c.product_name,).where(
+        sa.select(
+            api_keys.c.user_id,
+            api_keys.c.product_name,
+        ).where(
             (api_keys.c.api_key == session_auth.api_key)
             & (api_keys.c.api_secret == session_auth.api_secret),
         )

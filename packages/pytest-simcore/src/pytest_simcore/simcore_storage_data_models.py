@@ -18,7 +18,8 @@ from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .helpers.faker_factories import DEFAULT_FAKER, random_project, random_user
+from .helpers.faker_factories import DEFAULT_FAKER, random_project
+from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
 @asynccontextmanager
@@ -30,19 +31,10 @@ async def _user_context(
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
     # in time, the webserver service would bring more dependencies to other services
     # which would turn this test too complex.
-
-    # pylint: disable=no-value-for-parameter
-    stmt = users.insert().values(**random_user(name=name)).returning(users.c.id)
-    async with sqlalchemy_async_engine.begin() as conn:
-        result = await conn.execute(stmt)
-        row = result.one()
-    assert isinstance(row.id, int)
-
-    try:
-        yield TypeAdapter(UserID).validate_python(row.id)
-    finally:
-        async with sqlalchemy_async_engine.begin() as conn:
-            await conn.execute(users.delete().where(users.c.id == row.id))
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine, name=name
+    ) as user:
+        yield TypeAdapter(UserID).validate_python(user["id"])
 
 
 @pytest.fixture

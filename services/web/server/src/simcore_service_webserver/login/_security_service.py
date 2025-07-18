@@ -1,20 +1,20 @@
 """Utils that extends on security_api plugin"""
 
 import logging
-from typing import Any
 
 from aiohttp import web
 from servicelib.logging_utils import get_log_record_extra, log_context
 
 from ..security import security_web
 from ..web_utils import flash_response
+from ._auth_service import UserInfoDict
 from .constants import MSG_LOGGED_IN
 
 _logger = logging.getLogger(__name__)
 
 
 async def login_granted_response(
-    request: web.Request, *, user: dict[str, Any]
+    request: web.Request, *, user: UserInfoDict
 ) -> web.Response:
     """
     Grants authorization for user creating a responses with an auth cookie

@@ -5,19 +5,17 @@ from aiohttp.web import RouteTableDef
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
-from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_users import UsersRepo
 
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
 from ....products import products_web
 from ....products.models import Product
-from ....security import security_service
 from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
-from ... import _confirmation_service, _confirmation_web
+from ... import _auth_service, _confirmation_service, _confirmation_web
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import (
@@ -31,7 +29,6 @@ from ...constants import (
     MSG_EMAIL_SENT,
     MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
-    MSG_WRONG_PASSWORD,
 )
 from ...decorators import login_required
 from ...settings import LoginOptions, get_plugin_options
@@ -120,7 +117,7 @@ async def initiate_reset_password(request: web.Request):
     ok = True
 
     # CHECK user exists
-    user = await db.get_user({"email": request_body.email})
+    user = await _auth_service.get_user_or_none(request.app, email=request_body.email)
     if not user:
         _logger.warning(
             **create_troubleshootting_log_kwargs(
@@ -137,7 +134,11 @@ async def initiate_reset_password(request: web.Request):
 
         # CHECK user state
         try:
-            validate_user_status(user=dict(user), support_email=product.support_email)
+            validate_user_status(
+                user_status=user["status"],
+                user_role=user["role"],
+                support_email=product.support_email,
+            )
         except web.HTTPError as err:
             # NOTE: we abuse here (untiby reusing `validate_user_status` and catching http errors that we
             # do not want to forward but rather log due to the special rules in this entrypoint
@@ -222,15 +223,17 @@ async def initiate_change_email(request: web.Request):
 
     request_body = await parse_request_body_as(ChangeEmailBody, request)
 
-    user = await db.get_user({"id": request[RQT_USERID_KEY]})
+    user = await _auth_service.get_user_or_none(
+        request.app, user_id=request[RQT_USERID_KEY]
+    )
     assert user  # nosec
 
     if user["email"] == request_body.email:
         return flash_response("Email changed")
 
-    async with pass_or_acquire_connection(get_asyncpg_engine(request.app)) as conn:
-        if await UsersRepo.is_email_used(conn, email=request_body.email):
-            raise web.HTTPUnprocessableEntity(text="This email cannot be used")
+    repo = UsersRepo(get_asyncpg_engine(request.app))
+    if await repo.is_email_used(email=request_body.email):
+        raise web.HTTPUnprocessableEntity(text="This email cannot be used")
 
     # Reset if previously requested
     confirmation = await db.get_confirmation({"user": user, "action": CHANGE_EMAIL})
@@ -266,24 +269,22 @@ async def initiate_change_email(request: web.Request):
 @login_required
 async def change_password(request: web.Request):
 
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     passwords = await parse_request_body_as(ChangePasswordBody, request)
+    user_id = request[RQT_USERID_KEY]
+    user = await _auth_service.get_user_or_none(request.app, user_id=user_id)
 
-    user = await db.get_user({"id": request[RQT_USERID_KEY]})
-    assert user  # nosec
+    await _auth_service.check_authorized_user_credentials_or_raise(
+        request.app,
+        user=user,
+        password=passwords.current.get_secret_value(),
+        product=products_web.get_current_product(request),
+    )
 
-    if not security_service.check_password(
-        passwords.current.get_secret_value(), user["password_hash"]
-    ):
-        raise web.HTTPUnprocessableEntity(text=MSG_WRONG_PASSWORD)  # 422
-
-    await db.update_user(
-        dict(user),
-        {
-            "password_hash": security_service.encrypt_password(
-                passwords.new.get_secret_value()
-            )
-        },
+    await _auth_service.update_user_password(
+        request.app,
+        user_id=user_id,
+        current_password=passwords.current.get_secret_value(),
+        new_password=passwords.new.get_secret_value(),
     )
 
     return flash_response(MSG_PASSWORD_CHANGED)

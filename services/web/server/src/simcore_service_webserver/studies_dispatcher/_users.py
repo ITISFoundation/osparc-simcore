@@ -17,18 +17,21 @@ from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web
+from common_library.users_enums import UserRole, UserStatus
 from models_library.emails import LowerCaseEmailStr
+from models_library.users import UserID
 from pydantic import BaseModel, TypeAdapter
 from redis.exceptions import LockNotOwnedError
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task
 from servicelib.utils_secrets import generate_password
+from simcore_postgres_database.utils_users import UsersRepo
 
+from ..db.plugin import get_asyncpg_engine
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
-from ..groups.api import auto_add_user_to_product_group
-from ..login._login_service import ACTIVE, GUEST
-from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from ..groups import api as groups_service
+from ..login._login_service import GUEST
 from ..products import products_web
 from ..redis import get_redis_lock_manager_client
 from ..security import security_service, security_web
@@ -95,7 +98,6 @@ async def create_temporary_guest_user(request: web.Request):
         MaxGuestUsersError: No more guest users allowed
 
     """
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     redis_locks_client: aioredis.Redis = get_redis_lock_manager_client(request.app)
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
     product_name = products_web.get_product_name(request)
@@ -109,31 +111,33 @@ async def create_temporary_guest_user(request: web.Request):
     password = generate_password(length=12)
     expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
-    usr = None
+    user_id: UserID | None = None
+
+    repo = UsersRepo(get_asyncpg_engine(request.app))
+
     try:
         async with redis_locks_client.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
             timeout=MAX_DELAY_TO_CREATE_USER,
         ):
             # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
-            usr = await db.create_user(
-                {
-                    "name": random_user_name,
-                    "email": email,
-                    "password_hash": security_service.encrypt_password(password),
-                    "status": ACTIVE,
-                    "role": GUEST,
-                    "expires_at": expires_at,
-                }
+            user_row = await repo.new_user(
+                email=email,
+                password_hash=security_service.encrypt_password(password),
+                status=UserStatus.ACTIVE,
+                role=UserRole.GUEST,
+                expires_at=expires_at,
             )
-            user = await users_service.get_user(request.app, usr["id"])
-            await auto_add_user_to_product_group(
-                request.app, user_id=user["id"], product_name=product_name
+            user_id = user_row.id
+
+            user = await users_service.get_user(request.app, user_id)
+            await groups_service.auto_add_user_to_product_group(
+                request.app, user_id=user_id, product_name=product_name
             )
 
             # (2) read details above
             await redis_locks_client.lock(
-                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
+                GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id),
                 timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
             ).acquire()
 
@@ -146,14 +150,16 @@ async def create_temporary_guest_user(request: web.Request):
         # stop creating GUEST users.
 
         # NOTE: here we cleanup but if any trace is left it will be deleted by gc
-        if usr is not None and usr.get("id"):
+        if user_id:
 
-            async def _cleanup(draft_user):
+            async def _cleanup():
                 with suppress(Exception):
-                    await db.delete_user(draft_user)
+                    await users_service.delete_user_without_projects(
+                        request.app, user_id=user_id, clean_cache=False
+                    )
 
             fire_and_forget_task(
-                _cleanup(usr),
+                _cleanup(),
                 task_suffix_name="cleanup_temporary_guest_user",
                 fire_and_forget_tasks_collection=request.app[
                     APP_FIRE_AND_FORGET_TASKS_KEY

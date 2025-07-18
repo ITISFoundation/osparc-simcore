@@ -673,7 +673,6 @@ async def test_interactive_services_removed_per_project(
     mocked_notification_system,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
-    asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
     open_project: Callable,
