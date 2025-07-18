@@ -173,7 +173,7 @@ async def client(
 def test_diagnostics_setup(client: TestClient):
     assert client.app
     assert {m.__middleware_name__ for m in client.app.middlewares} == {
-        "servicelib.aiohttp.monitoring.monitor_simcore_service_webserver",
+        "servicelib.aiohttp.monitoring.monitor_simcore-service-webserver",
         "servicelib.aiohttp.rest_middlewares.envelope_v0",
         "servicelib.aiohttp.rest_middlewares.error_v0",
         "simcore_service_webserver.session.plugin.session",
@@ -188,7 +188,7 @@ async def test_healthy_app(client: TestClient, api_version_prefix: str):
     assert data
     assert not error
 
-    assert data["name"] == "simcore_service_webserver"
+    assert data["name"] == simcore_service_webserver._meta.APP_NAME
     assert data["version"] == simcore_service_webserver._meta.__version__
 
 

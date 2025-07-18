@@ -53,6 +53,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       WORKSPACES: "workspaces",
       TEMPLATES: "templates",
       PUBLIC_TEMPLATES: "publicTemplates",
+      FUNCTIONS: "functions",
       TRASH: "trash",
       SEARCH_PROJECTS: "searchProjects",
       SEARCH_TEMPLATES: "searchTemplates",
@@ -67,6 +68,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         "workspaces",
         "templates",
         "publicTemplates",
+        "functions",
         "trash",
         "searchProjects",
         "searchTemplates",
@@ -104,8 +106,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __dontShowTutorial: null,
+    __dontQuickStart: null,
     __header: null,
+    __sortByButton: null,
     __workspacesList: null,
     __foldersList: null,
     __loadingFolders: null,
@@ -327,6 +330,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this.__addResourcesToList(filteredTemplates);
               break;
             }
+            case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS: {
+              const functions = resp["data"];
+              functions.forEach(func => func["resourceType"] = "function");
+              this.__addResourcesToList(functions);
+              break;
+            }
           }
           if (this._resourcesContainer.getFlatList()) {
             this._resourcesContainer.getFlatList().nextRequest = resp["_links"]["next"];
@@ -341,8 +350,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // Show Quick Start if there are no studies in the root folder of the personal workspace
           const quickStartInfo = osparc.product.quickStart.Utils.getQuickStart();
           if (quickStartInfo) {
-            const dontShow = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
-            if (dontShow === "true" || this.__dontShowTutorial) {
+            const dontShowQuickStart = osparc.utils.Utils.localCache.getLocalStorageItem(quickStartInfo.localStorageStr);
+            if (dontShowQuickStart === "true" || this.__dontQuickStart) {
               return;
             }
             const nStudies = "_meta" in resp ? resp["_meta"]["total"] : 0;
@@ -356,7 +365,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               quickStartWindow.center();
               quickStartWindow.open();
               quickStartWindow.addListener("close", () => {
-                this.__dontShowTutorial = true;
+                this.__dontQuickStart = true;
               }, this);
             }
           }
@@ -858,6 +867,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           requestParams.templateType = osparc.data.model.StudyUI.TEMPLATE_TYPE;
           requestParams.accessRights = "public";
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+          break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
           requestParams.type = "user";
           break;
@@ -919,12 +930,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // The distinction is done in the frontend
           request = osparc.store.Templates.searchTemplatesPaginated(params, options);
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+          request = osparc.store.Functions.fetchFunctionsPaginated(params, options);
       }
       return request;
     },
 
     invalidateStudies: function() {
       osparc.store.Study.getInstance().invalidateStudies();
+      this.__resetStudiesList();
+      if (this._resourcesContainer.getFlatList()) {
+        this._resourcesContainer.getFlatList().nextRequest = null;
+      }
+    },
+
+    invalidateFunctions: function() {
+      osparc.store.Functions.invalidateFunctions();
       this.__resetStudiesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
@@ -1141,6 +1162,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourceFilter.addListener("templatesContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES));
       this._resourceFilter.addListener("publicTemplatesContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES));
+      this._resourceFilter.addListener("functionsContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS));
       this._resourceFilter.addListener("trashContext", () => this._changeContext(osparc.dashboard.StudyBrowser.CONTEXT.TRASH));
 
       this._searchBarFilter.addListener("filterChanged", e => {
@@ -1156,11 +1178,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
               searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES;
               break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+              // functions are not searchable yet
+              searchContext = null;
+              break;
             default:
               searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
               break;
           }
-          this._changeContext(searchContext);
+          if (searchContext) {
+            this._changeContext(searchContext);
+          }
         } else {
           let backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
           switch (this.getCurrentContext()) {
@@ -1206,12 +1234,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesList = [];
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
+      // functions will disable it
+      this._searchBarFilter.setEnabled(true);
+      // workspaces will exclude it
+      this._toolbar.show();
+      // functions will exclude it
+      this.__sortByButton.show();
 
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
-          this._toolbar.show();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
@@ -1220,12 +1253,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES:
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
+          // workspaces can't be sorted and don't support list view
           this._toolbar.exclude();
           this.__reloadWorkspaces();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
-          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1238,7 +1271,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.resetFilters();
           }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Templates");
-          this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
           this.__reloadStudies();
@@ -1249,15 +1281,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this._searchBarFilter.resetFilters();
           }
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Public Projects");
-          this._toolbar.show();
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateStudies();
+          this.__reloadStudies();
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+          this._searchBarFilter.resetFilters();
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in Functions");
+          // functions can't be searched yet
+          this._searchBarFilter.setEnabled(false);
+          // functions can't be sorted yet
+          this.__sortByButton.exclude();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateFunctions();
           this.__reloadStudies();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this._searchBarFilter.resetFilters();
           this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search in My Projects");
-          this._toolbar.show();
           this.__reloadWorkspaces();
           this.__reloadFolders();
           this._loadingResourcesBtn.setFetching(false);
@@ -1327,7 +1368,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addSortByButton: function() {
-      const sortByButton = new osparc.dashboard.SortedByMenuButton();
+      const sortByButton = this.__sortByButton = new osparc.dashboard.SortedByMenuButton();
       sortByButton.set({
         appearance: "form-button-outlined"
       });
@@ -1517,9 +1558,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx > -1) {
         this._resourcesList[idx]["state"] = state;
       }
-      const studyItem = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
-      if (studyItem) {
-        studyItem.setState(state);
+      const studyCard = this._resourcesContainer.getCards().find(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === studyId);
+      if (studyCard) {
+        studyCard.setState(state);
       }
     },
 
@@ -1611,6 +1652,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.base(arguments, templateData);
     },
 
+    _updateFunctionData: function(functionData) {
+      functionData["resourceType"] = "function";
+
+      const index = this._resourcesList.findIndex(func => func["uuid"] === functionData["uuid"]);
+      if (index === -1) {
+        // add it in first position, most likely it's a new study
+        this._resourcesList.unshift(functionData);
+      } else {
+        this._resourcesList[index] = functionData;
+      }
+      // it will render the studies in the right order
+      this._reloadCards();
+    },
+
     __removeFromStudyList: function(studyId) {
       const idx = this._resourcesList.findIndex(study => study["uuid"] === studyId);
       if (idx > -1) {
@@ -1621,11 +1676,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _populateCardMenu: function(card) {
       const studyData = card.getResourceData();
-      if (studyData["resourceType"] === "template") {
-        // The Study Browser can also list templates
-        this._populateTemplateCardMenu(card);
-      } else {
-        this.__populateStudyCardMenu(card);
+      switch (studyData["resourceType"]) {
+        case "study":
+          this.__populateStudyCardMenu(card);
+          break;
+        case "template":
+          this._populateTemplateCardMenu(card);
+          break;
+        case "function":
+          card.getChildControl("menu-selection-stack").exclude();
+          break;
       }
     },
 

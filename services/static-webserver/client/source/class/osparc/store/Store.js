@@ -81,6 +81,7 @@ qx.Class.define("osparc.store.Store", {
         "workspaces",
         "templates",
         "publicTemplates",
+        "functions",
         "trash",
         "searchProjects",
         "searchTemplates",

@@ -129,6 +129,10 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "pb-function": {
+      include: "pb-template",
+    },
+
     "pb-hypertool": {
       include: "pb-template",
     },

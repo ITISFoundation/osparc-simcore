@@ -236,10 +236,6 @@ qx.Class.define("osparc.info.StudyLarge", {
       return infoLayout;
     },
 
-    __createStudyId: function() {
-      return osparc.info.StudyUtils.createUuid(this.getStudy());
-    },
-
     __createThumbnail: function() {
       const maxWidth = 190;
       const maxHeight = 220;

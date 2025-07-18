@@ -67,6 +67,10 @@ class WalletNotEnoughCreditsError(DirectorError):
     msg_template = "Wallet '{wallet_name}' has {wallet_credit_amount} credits."
 
 
+class PipelineTaskMissingError(DirectorError):
+    msg_template = "Pipeline associated with project_id {project_id} is missing task(s)"
+
+
 #
 # SCHEDULER ERRORS
 #
