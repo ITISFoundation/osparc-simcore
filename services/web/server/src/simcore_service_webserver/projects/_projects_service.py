@@ -276,7 +276,9 @@ async def batch_get_project_name(
 
 
 async def batch_get_projects(
-    app: web.Application, project_uuids: list[ProjectID]
+    app: web.Application,
+    *,
+    project_uuids: list[ProjectID],
 ) -> list[ProjectDBGet]:
     return await _projects_repository.batch_get_projects(
         app=app,

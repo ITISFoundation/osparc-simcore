@@ -3348,37 +3348,25 @@ paths:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Service Unavailable
   /v0/functions:
-    get:
-      tags:
-      - functions
-      summary: List Functions
-      operationId: list_functions
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____'
     post:
       tags:
       - functions
       summary: Register Function
       operationId: register_function
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               oneOf:
               - $ref: '#/components/schemas/ProjectFunctionToRegister'
               - $ref: '#/components/schemas/SolverFunctionToRegister'
-              title: ' Body'
               discriminator:
                 propertyName: functionClass
                 mapping:
                   PROJECT: '#/components/schemas/ProjectFunctionToRegister'
                   SOLVER: '#/components/schemas/SolverFunctionToRegister'
-        required: true
+              title: ' Body'
       responses:
         '200':
           description: Successful Response
@@ -3386,6 +3374,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    get:
+      tags:
+      - functions
+      summary: List Functions
+      operationId: list_functions
+      parameters:
+      - name: include_extras
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Extras
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____'
   /v0/functions/{function_id}:
     get:
       tags:
@@ -3400,6 +3422,27 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      - name: include_extras
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Extras
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
       responses:
         '200':
           description: Successful Response

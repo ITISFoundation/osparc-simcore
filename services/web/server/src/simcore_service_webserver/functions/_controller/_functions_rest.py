@@ -8,12 +8,15 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionGet,
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
-from models_library.functions import FunctionClass
+from models_library.functions import FunctionClass, RegisteredProjectFunction
+from models_library.rest_pagination import Page
+from models_library.rest_pagination_utils import paginate_data
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     handle_validation_as_http_error,
     parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
 )
 
 from ..._meta import API_VTAG as VTAG
@@ -24,7 +27,11 @@ from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _functions_service
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
-from ._functions_rest_schemas import FunctionPathParams
+from ._functions_rest_schemas import (
+    FunctionGetQueryParams,
+    FunctionPathParams,
+    FunctionsListQueryParams,
+)
 
 routes = web.RouteTableDef()
 
@@ -68,7 +75,68 @@ async def register_function(request: web.Request) -> web.Response:
 @permission_required("function.read")
 @handle_rest_requests_exceptions
 async def list_functions(request: web.Request) -> web.Response:
-    raise NotImplementedError
+    query_params: FunctionsListQueryParams = parse_request_query_parameters_as(
+        FunctionsListQueryParams, request
+    )
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    functions, page_meta_info = await _functions_service.list_functions(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        pagination_limit=query_params.limit,
+        pagination_offset=query_params.offset,
+    )
+
+    chunk = []
+
+    if query_params.include_extras:
+        project_ids = []
+        for function in functions:
+            if function.function_class == FunctionClass.PROJECT:
+                assert isinstance(function, RegisteredProjectFunction)
+                project_ids.append(function.project_id)
+
+        projects = await _projects_service.batch_get_projects(
+            request.app,
+            project_uuids=project_ids,
+        )
+        projects_map = {f"{p.uuid}": p for p in projects}
+
+        for function in functions:
+            if (
+                query_params.include_extras
+                and function.function_class == FunctionClass.PROJECT
+            ):
+                assert isinstance(function, RegisteredProjectFunction)  # nosec
+                project = projects_map.get(f"{function.project_id}")
+                if project:
+                    chunk.append(
+                        TypeAdapter(RegisteredProjectFunctionGet).validate_python(
+                            function.model_dump(mode="json")
+                            | {
+                                "thumbnail": project.thumbnail,
+                                "template_id": project.id,
+                            }
+                        )
+                    )
+            else:
+                chunk.append(
+                    TypeAdapter(RegisteredFunctionGet).validate_python(
+                        function.model_dump(mode="json")
+                    )
+                )
+
+    page = Page[RegisteredFunctionGet].model_validate(
+        paginate_data(
+            chunk=chunk,
+            request_url=request.url,
+            total=page_meta_info.total,
+            limit=query_params.limit,
+            offset=query_params.offset,
+        )
+    )
+    return envelope_json_response(page)
 
 
 @routes.get(
@@ -82,6 +150,10 @@ async def get_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
+    query_params: FunctionGetQueryParams = parse_request_query_parameters_as(
+        FunctionGetQueryParams, request
+    )
+
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     registered_function: RegisteredFunction = await _functions_service.get_function(
         app=request.app,
@@ -90,7 +162,10 @@ async def get_function(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
     )
 
-    if registered_function.function_class == FunctionClass.PROJECT:
+    if (
+        query_params.include_extras
+        and registered_function.function_class == FunctionClass.PROJECT
+    ):
         assert isinstance(registered_function, RegisteredProjectFunctionGet)  # nosec
 
         project_dict = await _projects_service.get_project_for_user(
