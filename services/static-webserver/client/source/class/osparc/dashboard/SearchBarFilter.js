@@ -344,7 +344,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
       searchBarFilterProjects.set({
         width: bounds.width,
-      })
+      });
+      return searchBarFilterProjects;
     },
 
     __addChip: function(type, id, label) {

@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
-  extend: osparc.filter.UIFilter,
+  extend: qx.ui.core.Widget,
 
   construct: function(sourceSearchBarFilter, resourceType) {
     this.__sourceSearchBarFilter = sourceSearchBarFilter;
@@ -178,21 +178,21 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     },
 
     __searchMyProjectsSelected: function() {
-      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search My projects"));
+      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in My projects"));
 
       this.getChildControl("shared-with-button").setVisibility("visible");
       this.getChildControl("tags-button").setVisibility("visible");
     },
 
     __searchTemplatesSelected: function() {
-      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search Templates"));
+      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
 
       this.getChildControl("shared-with-button").setVisibility("excluded");
       this.getChildControl("tags-button").setVisibility("visible");
     },
 
     __searchPublicProjectsSelected: function() {
-      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search Public projects"));
+      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Public projects"));
 
       this.getChildControl("shared-with-button").setVisibility("excluded");
       this.getChildControl("tags-button").setVisibility("visible");
