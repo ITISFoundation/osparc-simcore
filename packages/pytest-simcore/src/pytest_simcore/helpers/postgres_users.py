@@ -8,12 +8,19 @@ from .faker_factories import random_user, random_user_secrets
 from .postgres_tools import insert_and_get_row_lifespan
 
 
+def _get_kwargs_from_overrides(overrides: dict) -> tuple[dict, dict]:
+    user_kwargs = overrides.copy()
+    secrets_kwargs = {"password": user_kwargs.pop("password", None)}
+    if "password_hash" in user_kwargs:
+        secrets_kwargs["password_hash"] = user_kwargs.pop("password_hash")
+    return user_kwargs, secrets_kwargs
+
+
 @contextlib.asynccontextmanager
 async def insert_and_get_user_and_secrets_lifespan(
     sqlalchemy_async_engine: AsyncEngine, **overrides
 ):
-
-    password = overrides.pop("password", None)
+    user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
 
     async with contextlib.AsyncExitStack() as stack:
         # users
@@ -21,38 +28,39 @@ async def insert_and_get_user_and_secrets_lifespan(
             insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
                 sqlalchemy_async_engine,
                 table=users,
-                values=random_user(**random_user(**overrides)),
+                values=random_user(**random_user(**user_kwargs)),
                 pk_col=users.c.id,
             )
         )
 
         # users_secrets
-        user_secret = await stack.enter_async_context(
+        secret = await stack.enter_async_context(
             insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
                 sqlalchemy_async_engine,
                 table=users_secrets,
-                values=random_user_secrets(user_id=user["id"], password=password),
-                pk_col=users.c.id,
+                values=random_user_secrets(user_id=user["id"], **secrets_kwargs),
+                pk_col=users_secrets.c.user_id,
             )
         )
 
-        yield {**user, "password_hash": user_secret["password_hash"]}
+        yield {**user, "password_hash": secret["password_hash"]}
 
 
 async def insert_user_and_secrets(conn, **overrides) -> int:
     # NOTE: Legacy adapter. Use insert_and_get_user_and_secrets_lifespan instead
 
-    password = overrides.pop("password", None)
+    user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
+
     # user data
     user_id = await conn.scalar(
-        users.insert().values(**random_user(**overrides)).returning(users.c.id)
+        users.insert().values(**random_user(**user_kwargs)).returning(users.c.id)
     )
     assert user_id is not None
 
     # secrets
     await conn.execute(
         users_secrets.insert().values(
-            **random_user_secrets(user_id=user_id, password=password)
+            **random_user_secrets(user_id=user_id, **secrets_kwargs)
         )
     )
 

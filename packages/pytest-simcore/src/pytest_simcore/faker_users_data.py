@@ -129,6 +129,8 @@ def user(
     user_name: IDStr,
     user_password: str,
 ) -> dict[str, Any]:
+    secrets = random_user_secrets(fake=faker, user_id=user_id, password=user_password)
+    assert secrets["user_id"] == user_id
     return {
         **random_user(
             id=user_id,
@@ -138,5 +140,5 @@ def user(
             last_name=user_last_name,
             fake=faker,
         ),
-        **random_user_secrets(fake=faker, user_id=user_id, password=user_password),
+        "password_hash": secrets["password_hash"],
     }
