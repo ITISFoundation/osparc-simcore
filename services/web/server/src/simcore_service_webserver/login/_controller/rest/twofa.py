@@ -10,8 +10,7 @@ from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import session_access_required
 from ....web_utils import envelope_response
-from ... import _twofa_service
-from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from ... import _auth_service, _twofa_service
 from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -41,10 +40,9 @@ async def resend_2fa_code(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
 
-    user = await db.get_user({"email": resend_2fa_.email})
+    user = await _auth_service.get_user_or_none(request.app, email=resend_2fa_.email)
     if not user:
         raise web.HTTPUnauthorized(
             text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON

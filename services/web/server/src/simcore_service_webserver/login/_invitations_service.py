@@ -40,7 +40,7 @@ from ..invitations.errors import (
     InvitationsServiceUnavailableError,
 )
 from ..products.models import Product
-from . import _confirmation_service
+from . import _auth_service, _confirmation_service
 from ._login_repository_legacy import (
     AsyncpgStorage,
     BaseConfirmationTokenDict,
@@ -114,8 +114,9 @@ async def check_other_registrations(
     db: AsyncpgStorage,
     cfg: LoginOptions,
 ) -> None:
+
     # An account is already registered with this email
-    if user := await db.get_user({"email": email}):
+    if user := await _auth_service.get_user_or_none(app, email=email):
         user_status = UserStatus(user["status"])
         match user_status:
 
