@@ -327,7 +327,7 @@ async def test_list_users_accounts(
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,
     )
-    new_user.status = UserStatus.ACTIVE
+    assert new_user["status"] == UserStatus.ACTIVE
 
     # 3. Test filtering by status
     # a. Check PENDING filter (should exclude the registered user)
