@@ -9,7 +9,7 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from models_library.functions import FunctionClass, RegisteredProjectFunction
-from models_library.rest_pagination import Page
+from models_library.rest_pagination import ItemT, Page
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
@@ -18,6 +18,8 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
+from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
@@ -35,6 +37,13 @@ from ._functions_rest_schemas import (
 )
 
 routes = web.RouteTableDef()
+
+
+def _create_json_response_from_page(page: Page[ItemT]):
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
 @routes.post(f"/{VTAG}/functions", name="register_function")
@@ -143,7 +152,7 @@ async def list_functions(request: web.Request) -> web.Response:
             offset=query_params.offset,
         )
     )
-    return envelope_json_response(page)
+    return _create_json_response_from_page(page)
 
 
 @routes.get(
