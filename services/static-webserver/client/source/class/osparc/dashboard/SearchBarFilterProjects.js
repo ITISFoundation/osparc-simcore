@@ -134,10 +134,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
     },
 
     __buildLayout: function() {
-      const radioGroup = new qx.ui.form.RadioGroup();
-      const myProjectsButton = this.getChildControl("my-projects-button");
-      const templatesButton = this.getChildControl("templates-button");
-      const publicProjectsButton = this.getChildControl("public-projects-button");
       this.getChildControl("search-bar-filter").set({
         showFilterMenu: false,
       });
@@ -152,6 +148,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
         this.exclude();
       });
 
+      const radioGroup = new qx.ui.form.RadioGroup();
+      const myProjectsButton = this.getChildControl("my-projects-button");
+      const templatesButton = this.getChildControl("templates-button");
+      const publicProjectsButton = this.getChildControl("public-projects-button");
       radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
       myProjectsButton.addListener("changeValue", this.__searchMyProjectsSelected, this);
       templatesButton.addListener("changeValue", this.__searchTemplatesSelected, this);
