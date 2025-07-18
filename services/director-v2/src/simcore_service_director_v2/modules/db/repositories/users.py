@@ -1,3 +1,5 @@
+from typing import cast
+
 from models_library.users import UserID
 from pydantic import EmailStr, TypeAdapter
 from simcore_postgres_database.models.users import UserRole
@@ -15,4 +17,4 @@ class UsersRepository(BaseRepository):
         return TypeAdapter(EmailStr).validate_python(email)
 
     async def get_user_role(self, user_id: UserID) -> UserRole:
-        return await self._repo().get_role(user_id=user_id)
+        return cast(UserRole, await self._repo().get_role(user_id=user_id))
