@@ -255,6 +255,7 @@ class FunctionDB(BaseModel):
 class RegisteredFunctionDB(FunctionDB):
     uuid: FunctionID
     created: datetime.datetime
+    modified: datetime.datetime
 
 
 class FunctionJobCollectionDB(BaseModel):
