@@ -129,6 +129,7 @@ def user(
     user_name: IDStr,
     user_password: str,
 ) -> dict[str, Any]:
+    """NOTE: it returns user data including poassword and password_hash"""
     secrets = random_user_secrets(fake=faker, user_id=user_id, password=user_password)
     assert secrets["user_id"] == user_id
     return {
