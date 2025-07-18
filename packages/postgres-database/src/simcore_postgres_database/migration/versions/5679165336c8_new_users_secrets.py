@@ -53,9 +53,10 @@ def upgrade():
 
 
 def downgrade():
+    # Add column as nullable first
     op.add_column(
         "users",
-        sa.Column("password_hash", sa.VARCHAR(), autoincrement=False, nullable=False),
+        sa.Column("password_hash", sa.VARCHAR(), autoincrement=False, nullable=True),
     )
 
     # Copy password data back from users_secrets table to users table
@@ -69,5 +70,8 @@ def downgrade():
     """
         )
     )
+
+    # Now make the column NOT NULL
+    op.alter_column("users", "password_hash", nullable=False)
 
     op.drop_table("users_secrets")

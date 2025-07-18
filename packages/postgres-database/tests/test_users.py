@@ -249,6 +249,13 @@ def test_users_secrets_migration_upgrade_downgrade(
     """Tests the migration script that moves password_hash from users to users_secrets table.
 
 
+    testing
+        packages/postgres-database/src/simcore_postgres_database/migration/versions/5679165336c8_new_users_secrets.py
+
+    revision = "5679165336c8"
+    down_revision = "61b98a60e934"
+
+
     NOTE: all statements in conn.execute(...) must be sa.text(...) since at that migration point the schemas of the
          code models might not be the same
     """
@@ -315,6 +322,7 @@ def test_users_secrets_migration_upgrade_downgrade(
         assert password_hashes_before[inserted_user_ids[1]] == "hashed_password_2"
 
     # MIGRATE UPGRADE: this should move password hashes to users_secrets
+    # packages/postgres-database/src/simcore_postgres_database/migration/versions/5679165336c8_new_users_secrets.py
     simcore_postgres_database.cli.upgrade.callback("5679165336c8")
 
     with sync_engine_with_migration.connect() as conn:
