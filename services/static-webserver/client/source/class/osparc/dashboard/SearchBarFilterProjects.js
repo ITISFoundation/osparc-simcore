@@ -23,7 +23,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
 
     this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
 
-    this._setLayout(new qx.ui.layout.VBox(8));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
       backgroundColor: "input_background",
@@ -124,6 +124,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
       const publicProjectsButton = this.getChildControl("public-projects-button");
       this.getChildControl("search-bar-filter").set({
         showFilterMenu: false,
+      });
+      const resetButton = this.getChildControl("search-bar-filter").getChildControl("reset-button");
+      resetButton.set({
+        paddingRight: 2, // 10-8
+        opacity: 0.7,
+        backgroundColor: "transparent",
+      });
+      osparc.utils.Utils.hideBorder(resetButton);
+      resetButton.addListener("tap", () =>{
+        this.exclude();
       });
 
       radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);

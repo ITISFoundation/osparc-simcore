@@ -714,10 +714,6 @@ qx.Class.define("osparc.utils.Utils", {
       widget.getContentElement().setStyle("background-color", "transparent");
     },
 
-    removeBorder: function(widget) {
-      widget.getContentElement().setStyle("border", "0px solid");
-    },
-
     hideBorder: function(widget) {
       widget.getContentElement().setStyle("border", "1px solid transparent");
     },
