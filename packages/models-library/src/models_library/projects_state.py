@@ -109,12 +109,12 @@ class ProjectShareState(BaseModel):
                     {
                         "status": ProjectStatus.CLOSED,
                         "locked": False,
-                        "current_users": [],
+                        "current_user_groupids": [],
                     },
                     {
                         "status": ProjectStatus.OPENING,
                         "locked": False,
-                        "current_users": [
+                        "current_user_groupids": [
                             "7",
                             "15",
                             "666",
@@ -123,7 +123,7 @@ class ProjectShareState(BaseModel):
                     {
                         "status": ProjectStatus.OPENED,
                         "locked": False,
-                        "current_users": [
+                        "current_user_groupids": [
                             "7",
                             "15",
                             "666",
@@ -132,7 +132,7 @@ class ProjectShareState(BaseModel):
                     {
                         "status": ProjectStatus.CLONING,
                         "locked": True,
-                        "current_users": [
+                        "current_user_groupids": [
                             "666",
                         ],
                     },
