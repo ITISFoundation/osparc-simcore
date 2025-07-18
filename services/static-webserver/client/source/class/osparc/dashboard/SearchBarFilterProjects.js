@@ -187,7 +187,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
       options.forEach((option, idx) => {
         const button = new qx.ui.menu.RadioButton(option.label);
         menu.add(button);
-        button.addListener("execute", () => this.getChildControl("search-bar-filter").setSharedWithActiveFilter(option.id, option.label));
+        button.addListener("execute", () => {
+          this.getChildControl("search-bar-filter").setSharedWithActiveFilter(option.id, option.label);
+          this.exclude();
+        });
         sharedWithRadioGroup.add(button);
         // preselect show-all
         if (idx === 0) {
@@ -207,7 +210,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilterProjects", {
           const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.getColor());
           menu.add(tagButton);
-          tagButton.addListener("execute", () => this.getChildControl("search-bar-filter").addTagActiveFilter(tag));
+          tagButton.addListener("execute", () => {
+            this.getChildControl("search-bar-filter").addTagActiveFilter(tag);
+            this.exclude();
+          });
         });
         menuButton.setMenu(menu);
       }
