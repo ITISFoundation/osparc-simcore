@@ -90,6 +90,7 @@ async def test_wrong_confirm_pass(client: TestClient, new_password: str):
                     "field": "confirm",
                 }
             ],
+            "message": "Invalid field/s 'confirm' in request body",
         }
 
 

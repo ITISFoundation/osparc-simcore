@@ -32,7 +32,6 @@ async def register_function(request: web.Request) -> web.Response:
     with handle_validation_as_http_error(
         error_msg_template="Invalid parameter/s '{failed}' in request path",
         resource_name=request.rel_url.path,
-        use_error_v1=True,
     ):
         function_to_register: FunctionToRegister = TypeAdapter(
             FunctionToRegister
