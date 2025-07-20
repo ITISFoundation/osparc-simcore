@@ -200,7 +200,7 @@ async def _close_project(
 async def _state_project(
     client: TestClient,
     project: dict,
-    expected: HTTPStatus,
+    expected: int,
     expected_project_state: ProjectState,
 ):
     assert client.app
@@ -209,7 +209,6 @@ async def _state_project(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
-        # the project is locked
         received_state = ProjectState(**data)
         assert received_state == expected_project_state
 
