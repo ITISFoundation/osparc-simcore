@@ -14,20 +14,23 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.auth import AccountRequestInfo
 from pytest_simcore.helpers.faker_factories import random_pre_registration_details
+from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.users._controller.rest._rest_schemas import (
     MAX_BYTES_SIZE_EXTRAS,
-    PreRegisteredUserGet,
+    UserAccountRestPreRegister,
 )
 
 
 @pytest.fixture
-def account_request_form(faker: Faker) -> dict[str, Any]:
+def account_request_form(
+    faker: Faker, user_phone_number: PhoneNumberStr
+) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     form = {
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": faker.email(),
-        "phone": faker.phone_number(),
+        "phone": user_phone_number,
         "company": faker.company(),
         # billing info
         "address": faker.address().replace("\n", ", "),
@@ -66,7 +69,7 @@ def test_preuserprofile_parse_model_from_request_form_data(
     data["comment"] = "extra comment"
 
     # pre-processors
-    pre_user_profile = PreRegisteredUserGet(**data)
+    pre_user_profile = UserAccountRestPreRegister(**data)
 
     print(pre_user_profile.model_dump_json(indent=1))
 
@@ -90,11 +93,11 @@ def test_preuserprofile_parse_model_without_extras(
 ):
     required = {
         f.alias or f_name
-        for f_name, f in PreRegisteredUserGet.model_fields.items()
+        for f_name, f in UserAccountRestPreRegister.model_fields.items()
         if f.is_required()
     }
     data = {k: account_request_form[k] for k in required}
-    assert not PreRegisteredUserGet(**data).extras
+    assert not UserAccountRestPreRegister(**data).extras
 
 
 def test_preuserprofile_max_bytes_size_extras_limits(faker: Faker):
@@ -114,7 +117,7 @@ def test_preuserprofile_pre_given_names(
     account_request_form["firstName"] = given_name
     account_request_form["lastName"] = given_name
 
-    pre_user_profile = PreRegisteredUserGet(**account_request_form)
+    pre_user_profile = UserAccountRestPreRegister(**account_request_form)
     print(pre_user_profile.model_dump_json(indent=1))
     assert pre_user_profile.first_name in ["Pedro-Luis", "Pedro Luis"]
     assert pre_user_profile.first_name == pre_user_profile.last_name
