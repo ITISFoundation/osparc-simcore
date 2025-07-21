@@ -1682,8 +1682,16 @@
           "address": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,4}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  }
+                ]
               },
               {
                 "type": "string"
@@ -1702,8 +1710,16 @@
                 "minimum": 0
               },
               {
-                "type": "string",
-                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,4}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  }
+                ]
               }
             ],
             "title": "Port"
@@ -2329,8 +2345,16 @@
           "hostname": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,4}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  }
+                ]
               },
               {
                 "type": "string"
@@ -2349,8 +2373,16 @@
                   "minimum": 0
                 },
                 {
-                  "type": "string",
-                  "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\${1,4}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                    }
+                  ]
                 },
                 {
                   "$ref": "#/components/schemas/_PortRange"
@@ -3399,8 +3431,16 @@
                 "minimum": 0
               },
               {
-                "type": "string",
-                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,4}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  }
+                ]
               }
             ],
             "title": "Lower"
@@ -3415,8 +3455,16 @@
                 "minimum": 0
               },
               {
-                "type": "string",
-                "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,2}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^\\${1,4}(?:\\{)?OSPARC_VARIABLE_[A-Za-z0-9_]+(?:\\})?(:-.+)?$"
+                  }
+                ]
               }
             ],
             "title": "Upper"

@@ -32,6 +32,7 @@ from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_r
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
+from servicelib.long_running_tasks.task import TaskRegistry
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
@@ -73,6 +74,8 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
     async def _just_log_task(*args, **kwargs) -> None:
         print(f"Called mocked function with {args}, {kwargs}")
 
+    TaskRegistry.register(_just_log_task)
+
     # searching by name since all start with _task
     tasks_names = [
         x[0]
@@ -86,6 +89,8 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
         )
 
     yield None
+
+    TaskRegistry.unregister(_just_log_task)
 
 
 @asynccontextmanager
@@ -506,13 +511,15 @@ async def test_same_task_id_is_returned_if_task_exists(
 
     with mock_tasks(mocker):
         task_id = await _get_awaitable()
+        assert task_id.endswith("unique")
         async with auto_remove_task(client, task_id):
             assert await _get_awaitable() == task_id
 
         # since the previous task was already removed it is again possible
-        # to create a task
+        # to create a task and it will share the same task_id
         new_task_id = await _get_awaitable()
-        assert new_task_id != task_id
+        assert new_task_id.endswith("unique")
+        assert new_task_id == task_id
         async with auto_remove_task(client, task_id):
             pass
 

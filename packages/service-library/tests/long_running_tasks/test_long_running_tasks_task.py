@@ -12,18 +12,16 @@ from typing import Any, Final
 
 import pytest
 from faker import Faker
+from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
+    TaskNotRegisteredError,
 )
-from servicelib.long_running_tasks.models import (
-    ProgressPercent,
-    TaskProgress,
-    TaskStatus,
-)
-from servicelib.long_running_tasks.task import TasksManager, start_task
+from servicelib.long_running_tasks.models import TaskProgress, TaskStatus
+from servicelib.long_running_tasks.task import TaskRegistry, TasksManager
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -39,14 +37,14 @@ _RETRY_PARAMS: dict[str, Any] = {
 
 
 async def a_background_task(
-    task_progress: TaskProgress,
+    progress: TaskProgress,
     raise_when_finished: bool,
     total_sleep: int,
 ) -> int:
     """sleeps and raises an error or returns 42"""
     for i in range(total_sleep):
         await asyncio.sleep(1)
-        task_progress.update(percent=ProgressPercent((i + 1) / total_sleep))
+        progress.update(percent=(i + 1) / total_sleep)
     if raise_when_finished:
         msg = "raised this error as instructed"
         raise RuntimeError(msg)
@@ -54,16 +52,20 @@ async def a_background_task(
     return 42
 
 
-async def fast_background_task(task_progress: TaskProgress) -> int:
+async def fast_background_task(progress: TaskProgress) -> int:
     """this task does nothing and returns a constant"""
     return 42
 
 
-async def failing_background_task(task_progress: TaskProgress):
+async def failing_background_task(progress: TaskProgress):
     """this task does nothing and returns a constant"""
     msg = "failing asap"
     raise RuntimeError(msg)
 
+
+TaskRegistry.register(a_background_task)
+TaskRegistry.register(fast_background_task)
+TaskRegistry.register(failing_background_task)
 
 TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
 
@@ -83,9 +85,9 @@ async def tasks_manager() -> AsyncIterator[TasksManager]:
 async def test_task_is_auto_removed(
     tasks_manager: TasksManager, check_task_presence_before: bool
 ):
-    task_id = start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
-        a_background_task,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10 * TEST_CHECK_STALE_INTERVAL_S,
     )
@@ -99,10 +101,9 @@ async def test_task_is_auto_removed(
     # meaning no calls via the manager methods are received
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
-            for tasks in tasks_manager._tasks_groups.values():  # noqa: SLF001
-                if task_id in tasks:
-                    msg = "wait till no element is found any longer"
-                    raise TryAgain(msg)
+            if task_id in tasks_manager._tracked_tasks:  # noqa: SLF001
+                msg = "wait till no element is found any longer"
+                raise TryAgain(msg)
 
     with pytest.raises(TaskNotFoundError):
         tasks_manager.get_task_status(task_id, with_task_context=None)
@@ -111,9 +112,9 @@ async def test_task_is_auto_removed(
 
 
 async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
-    task_id = start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
-        a_background_task,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
     )
@@ -126,9 +127,9 @@ async def test_checked_task_is_not_auto_removed(tasks_manager: TasksManager):
 
 
 async def test_fire_and_forget_task_is_not_auto_removed(tasks_manager: TasksManager):
-    task_id = start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
-        a_background_task,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
         fire_and_forget=True,
@@ -145,9 +146,9 @@ async def test_fire_and_forget_task_is_not_auto_removed(tasks_manager: TasksMana
 
 
 async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager):
-    task_id = start_task(
+    task_id = await lrt_api.start_task(
         tasks_manager,
-        a_background_task,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
     )
@@ -156,35 +157,45 @@ async def test_get_result_of_unfinished_task_raises(tasks_manager: TasksManager)
 
 
 async def test_unique_task_already_running(tasks_manager: TasksManager):
-    async def unique_task(task_progress: TaskProgress):
+    async def unique_task(progress: TaskProgress):
+        _ = progress
         await asyncio.sleep(1)
 
-    start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
+    TaskRegistry.register(unique_task)
+
+    await lrt_api.start_task(tasks_manager, unique_task.__name__, unique=True)
 
     # ensure unique running task regardless of how many times it gets started
     with pytest.raises(TaskAlreadyRunningError) as exec_info:
-        start_task(tasks_manager=tasks_manager, task=unique_task, unique=True)
+        await lrt_api.start_task(tasks_manager, unique_task.__name__, unique=True)
     assert "must be unique, found: " in f"{exec_info.value}"
+
+    TaskRegistry.unregister(unique_task)
 
 
 async def test_start_multiple_not_unique_tasks(tasks_manager: TasksManager):
-    async def not_unique_task(task_progress: TaskProgress):
+    async def not_unique_task(progress: TaskProgress):
         await asyncio.sleep(1)
 
+    TaskRegistry.register(not_unique_task)
+
     for _ in range(5):
-        start_task(tasks_manager=tasks_manager, task=not_unique_task)
+        await lrt_api.start_task(tasks_manager, not_unique_task.__name__)
+
+    TaskRegistry.unregister(not_unique_task)
 
 
-def test_get_task_id(faker):
-    obj1 = TasksManager.create_task_id(faker.word())  # noqa: SLF001
-    obj2 = TasksManager.create_task_id(faker.word())  # noqa: SLF001
+@pytest.mark.parametrize("is_unique", [True, False])
+def test_get_task_id(tasks_manager: TasksManager, faker: Faker, is_unique: bool):
+    obj1 = tasks_manager._get_task_id(faker.word(), is_unique=is_unique)  # noqa: SLF001
+    obj2 = tasks_manager._get_task_id(faker.word(), is_unique=is_unique)  # noqa: SLF001
     assert obj1 != obj2
 
 
 async def test_get_status(tasks_manager: TasksManager):
-    task_id = start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    task_id = await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
     )
@@ -192,7 +203,7 @@ async def test_get_status(tasks_manager: TasksManager):
     assert isinstance(task_status, TaskStatus)
     assert task_status.task_progress.message == ""
     assert task_status.task_progress.percent == 0.0
-    assert task_status.done == False
+    assert task_status.done is False
     assert isinstance(task_status.started, datetime)
 
 
@@ -203,7 +214,7 @@ async def test_get_status_missing(tasks_manager: TasksManager):
 
 
 async def test_get_result(tasks_manager: TasksManager):
-    task_id = start_task(tasks_manager=tasks_manager, task=fast_background_task)
+    task_id = await lrt_api.start_task(tasks_manager, fast_background_task.__name__)
     await asyncio.sleep(0.1)
     result = tasks_manager.get_task_result(task_id, with_task_context=None)
     assert result == 42
@@ -216,7 +227,7 @@ async def test_get_result_missing(tasks_manager: TasksManager):
 
 
 async def test_get_result_finished_with_error(tasks_manager: TasksManager):
-    task_id = start_task(tasks_manager=tasks_manager, task=failing_background_task)
+    task_id = await lrt_api.start_task(tasks_manager, failing_background_task.__name__)
     # wait for result
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
@@ -229,9 +240,9 @@ async def test_get_result_finished_with_error(tasks_manager: TasksManager):
 async def test_get_result_task_was_cancelled_multiple_times(
     tasks_manager: TasksManager,
 ):
-    task_id = start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    task_id = await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
     )
@@ -245,9 +256,9 @@ async def test_get_result_task_was_cancelled_multiple_times(
 
 
 async def test_remove_task(tasks_manager: TasksManager):
-    task_id = start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    task_id = await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
     )
@@ -261,9 +272,9 @@ async def test_remove_task(tasks_manager: TasksManager):
 
 async def test_remove_task_with_task_context(tasks_manager: TasksManager):
     TASK_CONTEXT = {"some_context": "some_value"}
-    task_id = start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    task_id = await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_context=TASK_CONTEXT,
@@ -294,9 +305,9 @@ async def test_remove_unknown_task(tasks_manager: TasksManager):
 
 async def test_cancel_task_with_task_context(tasks_manager: TasksManager):
     TASK_CONTEXT = {"some_context": "some_value"}
-    task_id = start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    task_id = await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_context=TASK_CONTEXT,
@@ -321,9 +332,9 @@ async def test_list_tasks(tasks_manager: TasksManager):
     task_ids = []
     for _ in range(NUM_TASKS):
         task_ids.append(  # noqa: PERF401
-            start_task(
-                tasks_manager=tasks_manager,
-                task=a_background_task,
+            await lrt_api.start_task(
+                tasks_manager,
+                a_background_task.__name__,
                 raise_when_finished=False,
                 total_sleep=10,
             )
@@ -337,22 +348,22 @@ async def test_list_tasks(tasks_manager: TasksManager):
 
 
 async def test_list_tasks_filtering(tasks_manager: TasksManager):
-    start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
     )
-    start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_context={"user_id": 213},
     )
-    start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_context={"user_id": 213, "product": "osparc"},
@@ -379,11 +390,16 @@ async def test_list_tasks_filtering(tasks_manager: TasksManager):
 
 async def test_define_task_name(tasks_manager: TasksManager, faker: Faker):
     task_name = faker.name()
-    task_id = start_task(
-        tasks_manager=tasks_manager,
-        task=a_background_task,
+    task_id = await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_name=task_name,
     )
-    assert task_id.startswith(urllib.parse.quote(task_name, safe=""))
+    assert urllib.parse.quote(task_name, safe="") in task_id
+
+
+async def test_start_not_registered_task(tasks_manager: TasksManager):
+    with pytest.raises(TaskNotRegisteredError):
+        await lrt_api.start_task(tasks_manager, "not_registered_task")
