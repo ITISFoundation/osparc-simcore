@@ -1058,19 +1058,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // LAYOUT //
     _createLayout: function() {
       this._createSearchBar();
-
       this._searchBarFilter.set({
         showFilterMenu: false,
       });
-      this._searchBarFilter.getChildControl("text-field").set({
+      const searchBarTextField = this._searchBarFilter.getChildControl("text-field");
+      searchBarTextField.set({
         cursor: "pointer",
       });
-      textField.addListener("tap", () => {
-        const searchBarFilterExtended = searchBarFilter.popUpSearchBarFilter();
-        searchBarFilterExtended.set({
-          currentContext: this.getCurrentContext(),
-        });
-      });
+      searchBarTextField.addListener("tap", () => this.__extendSearchBar());
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
       this.__header.addListener("trashEmptied", () => this.reloadResources(), this);
@@ -1150,6 +1145,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       return this._resourcesContainer;
+    },
+
+    __extendSearchBar: function() {
+      const searchBarFilterExtended = this._searchBarFilter.popUpSearchBarFilter();
+      searchBarFilterExtended.set({
+        currentContext: this.getCurrentContext(),
+      });
     },
 
     __connectContexts: function() {
