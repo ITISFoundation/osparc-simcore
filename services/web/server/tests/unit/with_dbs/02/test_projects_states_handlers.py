@@ -260,6 +260,82 @@ async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
 
 
 @pytest.mark.parametrize(*standard_role_response())
+async def test_share_project_user_roles(
+    mock_dynamic_scheduler: None,
+    client: TestClient,
+    logged_user: dict,
+    primary_group: dict[str, str],
+    standard_groups: list[dict[str, str]],
+    all_group: dict[str, str],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    storage_subsystem_mock,
+    mocked_dynamic_services_interface: dict[str, mock.Mock],
+    project_db_cleaner,
+    request_create_project: Callable[..., Awaitable[ProjectDict]],
+    exit_stack: contextlib.AsyncExitStack,
+):
+    # Use-case: test how different user roles can access shared projects
+    # Test with full access rights for all roles
+    share_rights = {"read": True, "write": True, "delete": True}
+
+    # create a project with full access rights for the all_group
+    new_project = await request_create_project(
+        client,
+        expected.accepted,
+        expected.created,
+        logged_user,
+        primary_group,
+        project={"accessRights": {str(all_group["gid"]): share_rights}},
+    )
+    if new_project:
+        assert new_project["accessRights"] == {
+            f"{primary_group['gid']}": {"read": True, "write": True, "delete": True},
+            f"{(all_group['gid'])}": share_rights,
+        }
+
+        # user 1 can always get to his project
+        await assert_get_same_project(client, new_project, expected.ok)
+
+    # get another user logged in now
+    await log_client_in(
+        client,
+        {"role": user_role.name},
+        enable_check=user_role != UserRole.ANONYMOUS,
+        exit_stack=exit_stack,
+    )
+    if new_project:
+        # user 2 can get the project if they have proper role permissions
+        await assert_get_same_project(
+            client,
+            new_project,
+            expected.ok,
+        )
+
+        # user 2 can list projects if they have proper role permissions
+        list_projects = await _list_projects(client, expected.ok)
+        expected_project_count = 1 if user_role != UserRole.ANONYMOUS else 0
+        assert len(list_projects) == expected_project_count
+
+        # user 2 can update the project if they have proper role permissions
+        project_update = deepcopy(new_project)
+        project_update["name"] = "my super name"
+        project_update.pop("accessRights")
+        await _replace_project(
+            client,
+            project_update,
+            expected.no_content,
+        )
+
+        # user 2 can delete projects if they have proper role permissions
+        resp = await _delete_project(client, new_project)
+        await assert_status(
+            resp,
+            expected_status_code=expected.no_content,
+        )
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
 @pytest.mark.parametrize(
     "share_rights",
     [
@@ -268,9 +344,9 @@ async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
         {"read": True, "write": False, "delete": False},
         {"read": False, "write": False, "delete": False},
     ],
-    ids=str,
+    ids=["full_access", "no_delete", "read_only", "no_access"],
 )
-async def test_share_project(
+async def test_share_project_access_rights(
     mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict,
@@ -286,9 +362,10 @@ async def test_share_project(
     request_create_project: Callable[..., Awaitable[ProjectDict]],
     exit_stack: contextlib.AsyncExitStack,
 ):
-    # Use-case: the user shares some projects with a group
+    # Use-case: test how different access rights affect project sharing
+    # Test with USER role only but different access rights
 
-    # create a few projects
+    # create a project with specific access rights
     new_project = await request_create_project(
         client,
         expected.accepted,
