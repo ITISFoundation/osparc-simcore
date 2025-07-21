@@ -16090,9 +16090,9 @@ components:
           const: PROJECT
           title: Functionclass
           default: PROJECT
-        title:
+        name:
           type: string
-          title: Title
+          title: Name
           default: ''
         description:
           type: string
@@ -16120,41 +16120,36 @@ components:
             type: object
           - type: 'null'
           title: Defaultinputs
-        uid:
-          type: string
-          format: uuid
-          title: Uid
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
-        projectId:
-          type: string
-          format: uuid
-          title: Projectid
         uuid:
           type: string
           format: uuid
           title: Uuid
+        creationDate:
+          type: string
+          format: date-time
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          format: date-time
+          title: Lastchangedate
+        templateId:
+          type: string
+          format: uuid
+          title: Templateid
         thumbnail:
           anyOf:
           - type: string
           - type: 'null'
           title: Thumbnail
-        templateId:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Templateid
       type: object
       required:
       - inputSchema
       - outputSchema
       - defaultInputs
-      - uid
-      - createdAt
-      - projectId
       - uuid
+      - creationDate
+      - lastChangeDate
+      - templateId
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
@@ -16201,6 +16196,10 @@ components:
           type: string
           format: date-time
           title: Createdat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
         solverKey:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -16216,6 +16215,7 @@ components:
       - defaultInputs
       - uid
       - createdAt
+      - modifiedAt
       - solverKey
       - solverVersion
       title: RegisteredSolverFunctionGet
