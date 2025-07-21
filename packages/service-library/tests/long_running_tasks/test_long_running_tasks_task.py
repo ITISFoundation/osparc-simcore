@@ -102,8 +102,9 @@ async def test_task_is_auto_removed(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             if (
-                await tasks_manager._tracked_tasks.get(task_id) is not None
-            ):  # noqa: SLF001
+                await tasks_manager._tracked_tasks.get(task_id)  # noqa: SLF001
+                is not None
+            ):
                 msg = "wait till no element is found any longer"
                 raise TryAgain(msg)
 
