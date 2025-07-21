@@ -204,7 +204,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.__filter("text", textField.getValue());
         }
       }, this);
-      textField.addListener("changeValue", () => {
+      textField.addListener("unfocus", () => {
         this.__filter("text", textField.getValue());
       }, this);
 
