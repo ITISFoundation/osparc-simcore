@@ -105,7 +105,7 @@ def _handle_unexpected_exception_as_500(
     return http_error
 
 
-def _handle_http_error(
+def handle_aiohttp_web_http_error(
     request: web.BaseRequest, exception: web.HTTPError
 ) -> web.HTTPError:
     """Handle standard HTTP errors by ensuring they're properly formatted.
@@ -156,7 +156,7 @@ def _handle_http_error(
     return exception
 
 
-def _handle_http_successful(
+def _handle_aiohttp_web_http_successful(
     request: web.Request, exception: web.HTTPSuccessful
 ) -> web.HTTPSuccessful:
     """Handle successful HTTP responses, ensuring they're properly enveloped."""
@@ -217,10 +217,10 @@ def error_middleware_factory(api_version: str) -> Middleware:
                 result = await handler(request)
 
             except web.HTTPError as exc:  # 4XX and 5XX raised as exceptions
-                result = _handle_http_error(request, exc)
+                result = handle_aiohttp_web_http_error(request, exc)
 
             except web.HTTPSuccessful as exc:  # 2XX rased as exceptions
-                result = _handle_http_successful(request, exc)
+                result = _handle_aiohttp_web_http_successful(request, exc)
 
             except web.HTTPRedirection as exc:  # 3XX raised as exceptions
                 result = exc
