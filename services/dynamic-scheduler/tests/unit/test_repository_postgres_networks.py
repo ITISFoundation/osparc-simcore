@@ -17,9 +17,11 @@ from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
     insert_and_get_row_lifespan,
 )
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.users import users
 from simcore_service_dynamic_scheduler.repository.events import (
     get_project_networks_repo,
 )
@@ -77,17 +79,14 @@ async def user_in_db(
     user_id: UserID,
 ) -> AsyncIterator[dict[str, Any]]:
     """
-    injects a user in db
+    injects a user + secrets in db
     """
     assert user_id == user["id"]
-    async with insert_and_get_row_lifespan(
+    async with insert_and_get_user_and_secrets_lifespan(
         engine,
-        table=users,
-        values=user,
-        pk_col=users.c.id,
-        pk_value=user["id"],
-    ) as row:
-        yield row
+        **user,
+    ) as user_row:
+        yield user_row
 
 
 @pytest.fixture
