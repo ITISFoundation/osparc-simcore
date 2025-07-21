@@ -118,7 +118,6 @@ class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema): ...
 
 class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
     uid: Annotated[FunctionID, Field(alias="uuid")]
-    title: Annotated[str, Field(alias="name")] = ""
     project_id: Annotated[ProjectID, Field(alias="templateId")]
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
