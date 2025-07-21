@@ -22,8 +22,8 @@ from simcore_service_webserver.security import security_web
 @pytest.fixture
 async def auth_app(
     app_environment: EnvVarsDict,
-    disable_static_webserver: Callable,
 ) -> web.Application:
+    # TODO: make sure this goes through wb-authz service
     assert app_environment
 
     # creates auth application instead
@@ -33,18 +33,16 @@ async def auth_app(
     url = app.router["check_auth"].url_for()
     assert url.path == "/v0/auth:check"
 
-    disable_static_webserver(app)
     return app
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def web_server(
-    postgres_db: sa.engine.Engine,
+    postgres_db: sa.engine.Engine,  # sets up postgres database
     auth_app: web.Application,
     webserver_test_server_port: int,
     # tools
     aiohttp_server: Callable,
-    mocked_send_email: None,
 ) -> TestServer:
     # Overrides tests/unit/with_dbs/context.py:web_server fixture
 
