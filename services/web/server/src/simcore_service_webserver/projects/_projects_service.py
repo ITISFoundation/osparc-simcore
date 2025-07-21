@@ -17,7 +17,7 @@ from contextlib import suppress
 from decimal import Decimal
 from pprint import pformat
 from typing import Any, Final, cast
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps, json_loads
@@ -1627,24 +1627,6 @@ async def _get_project_share_state(
             ],
             limit=10,
         ),
-    )
-
-
-async def get_project_states_for_user(
-    user_id: int, project_uuid: str, app: web.Application
-) -> ProjectState:
-    # for templates: the project is never locked and never opened. also the running state is always unknown
-    running_state = RunningState.UNKNOWN
-    share_state, computation_task = await logged_gather(
-        _get_project_share_state(user_id, project_uuid, app),
-        director_v2_service.get_computation_task(app, user_id, UUID(project_uuid)),
-    )
-    if computation_task:
-        # get the running state
-        running_state = computation_task.state
-
-    return ProjectState(
-        share_state=share_state, state=ProjectRunningState(value=running_state)
     )
 
 
