@@ -136,7 +136,7 @@ def docker_compose_service_environment_dict(
     service = services_docker_compose_dict["services"][service_name]
 
     def _substitute(key, value) -> tuple[str, str]:
-        if m := re.match(r"\${([^{}:-]\w+)", value):
+        if m := re.match(r"\${([^{}:-]\w+)", f"{value}"):
             expected_env_var = m.group(1)
             try:
                 # NOTE: if this raises, then the RHS env-vars in the docker-compose are
