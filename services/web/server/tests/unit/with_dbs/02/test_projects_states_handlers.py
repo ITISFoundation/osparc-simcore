@@ -31,13 +31,15 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 from models_library.api_schemas_resource_usage_tracker.credit_transactions import (
     WalletTotalCredits,
 )
+from models_library.api_schemas_webserver.projects import (
+    ProjectShareStateOutputSchema,
+    ProjectStateOutputSchema,
+)
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectRunningState,
-    ProjectShareState,
-    ProjectState,
     ProjectStatus,
     RunningState,
 )
@@ -47,7 +49,6 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import PositiveInt
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -103,7 +104,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client: TestClient,
-    expected: HTTPStatus,
+    expected: int,
     query_parameters: dict | None = None,
 ) -> list[ProjectDict]:
     assert client.app
@@ -116,11 +117,12 @@ async def _list_projects(
 
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, expected)
+    assert isinstance(data, list)
     return data
 
 
 async def _replace_project(
-    client: TestClient, project_update: ProjectDict, expected: HTTPStatus
+    client: TestClient, project_update: ProjectDict, expected: int
 ) -> ProjectDict:
     assert client.app
 
@@ -162,7 +164,7 @@ async def _open_project(
     client: TestClient,
     client_id: str,
     project: ProjectDict,
-    expected: HTTPStatus | list[HTTPStatus],
+    expected: int | list[int],
 ) -> tuple[dict, dict]:
     assert client.app
 
@@ -188,7 +190,7 @@ async def _open_project(
 
 
 async def _close_project(
-    client: TestClient, client_id: str, project: dict, expected: HTTPStatus
+    client: TestClient, client_id: str, project: dict, expected: int
 ):
     assert client.app
 
@@ -201,7 +203,7 @@ async def _state_project(
     client: TestClient,
     project: dict,
     expected: int,
-    expected_project_state: ProjectState,
+    expected_project_state: ProjectStateOutputSchema,
 ):
     assert client.app
 
@@ -209,14 +211,14 @@ async def _state_project(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
     if not error:
-        received_state = ProjectState(**data)
+        received_state = ProjectStateOutputSchema(**data)
         assert received_state == expected_project_state
 
 
 async def _assert_project_state_updated(
     handler: mock.Mock,
     shared_project: dict,
-    expected_project_state_updates: list[ProjectState],
+    expected_project_state_updates: list[ProjectStateOutputSchema],
 ) -> None:
     if not expected_project_state_updates:
         handler.assert_not_called()
@@ -609,7 +611,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -655,7 +657,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -699,7 +701,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -746,7 +748,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -794,7 +796,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     client: TestClient,
     logged_user,
     user_project,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -846,7 +848,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     one_max_open_studies_per_user: None,
     client: TestClient,
     logged_user,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     user_project: ProjectDict,
     shared_project: ProjectDict,
     expected: ExpectedResponse,
@@ -877,7 +879,7 @@ async def test_close_project(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     expected,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -970,10 +972,10 @@ async def test_close_project(
 )
 async def test_get_active_project(
     client: TestClient,
-    logged_user,
-    user_project,
-    client_session_id_factory: Callable,
-    expected,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    client_session_id_factory: Callable[[], str],
+    expected: int,
     socketio_client_factory: Callable,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -1015,7 +1017,7 @@ async def test_get_active_project(
             client.app, ProjectID(user_project["uuid"])
         )
         assert not error
-        assert ProjectState(**data.pop("state")).share_state.locked
+        assert ProjectStateOutputSchema(**data.pop("state")).share_state.locked
         data.pop("folderId")
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
@@ -1143,6 +1145,8 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     )
 
     node_sample = deepcopy(NodeGet.model_config["json_schema_extra"]["examples"][1])
+    assert node_sample
+    assert isinstance(node_sample, dict)
     mocked_dynamic_services_interface[
         "dynamic_scheduler.api.get_dynamic_service"
     ].return_value = NodeGet.model_validate(
@@ -1267,10 +1271,10 @@ async def test_open_shared_project_2_users_locked(
     logged_user: dict,
     shared_project: dict,
     socketio_client_factory: Callable,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected: ExpectedResponse,
-    mocker,
+    mocker: MockerFixture,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
@@ -1296,8 +1300,8 @@ async def test_open_shared_project_2_users_locked(
         {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
     # expected is that the project is closed and unlocked
-    expected_project_state_client_1 = ProjectState(
-        share_state=ProjectShareState(
+    expected_project_state_client_1 = ProjectStateOutputSchema(
+        share_state=ProjectShareStateOutputSchema(
             locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
@@ -1374,8 +1378,8 @@ async def test_open_shared_project_2_users_locked(
     await _close_project(client_1, client_id1, shared_project, expected.no_content)
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         # Guests cannot close projects
-        expected_project_state_client_1 = ProjectState(
-            share_state=ProjectShareState(
+        expected_project_state_client_1 = ProjectStateOutputSchema(
+            share_state=ProjectShareStateOutputSchema(
                 locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
             ),
             state=ProjectRunningState(value=RunningState.NOT_STARTED),
@@ -1390,7 +1394,7 @@ async def test_open_shared_project_2_users_locked(
         [
             expected_project_state_client_1.model_copy(
                 update={
-                    "share_state": ProjectShareState(
+                    "share_state": ProjectShareStateOutputSchema(
                         locked=True,
                         status=ProjectStatus.CLOSING,
                         current_user_groupids=[
@@ -1430,7 +1434,7 @@ async def test_open_shared_project_2_users_locked(
         expected_project_state_client_2.share_state.locked = True
         expected_project_state_client_2.share_state.status = ProjectStatus.OPENED
         owner2 = Owner(
-            user_id=PositiveInt(user_2["id"]),
+            user_id=user_2["id"],
             first_name=user_2.get("first_name", None),
             last_name=user_2.get("last_name", None),
         )
@@ -1468,7 +1472,7 @@ async def test_open_shared_project_at_same_time(
     logged_user: dict,
     shared_project: ProjectDict,
     socketio_client_factory: Callable,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -1533,7 +1537,7 @@ async def test_open_shared_project_at_same_time(
         *open_project_tasks,
         return_exceptions=True,
     )
-
+    assert isinstance(results, list)
     # one should be opened, the other locked
     if user_role != UserRole.ANONYMOUS:
         num_assertions = 0
@@ -1542,7 +1546,7 @@ async def test_open_shared_project_at_same_time(
             if error:
                 num_assertions += 1
             elif data:
-                project_status = ProjectState(**data.pop("state"))
+                project_status = ProjectStateOutputSchema(**data.pop("state"))
                 data.pop("folderId")
                 assert data == {k: shared_project[k] for k in data}
                 assert project_status.share_state.locked
@@ -1559,7 +1563,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     client: TestClient,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,

@@ -143,7 +143,7 @@ async def test_delete_multiple_opened_project_forbidden(
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     socketio_client_factory: Callable,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected_ok: HTTPStatus,
     expected_forbidden: HTTPStatus,

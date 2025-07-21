@@ -9,9 +9,10 @@ from uuid import uuid4
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from yarl import URL
+
+from .helpers.assert_checks import assert_status
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +58,7 @@ async def security_cookie_factory(
 async def socketio_client_factory(
     socketio_url_factory: Callable,
     security_cookie_factory: Callable,
-    client_session_id_factory: Callable,
+    client_session_id_factory: Callable[[], str],
 ) -> AsyncIterable[
     Callable[[str | None, TestClient | None], Awaitable[socketio.AsyncClient]]
 ]:
