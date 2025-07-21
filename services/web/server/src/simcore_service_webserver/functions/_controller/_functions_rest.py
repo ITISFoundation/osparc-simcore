@@ -39,7 +39,7 @@ from ._functions_rest_schemas import (
 routes = web.RouteTableDef()
 
 
-def _create_json_response_from_page(page: Page[ItemT]):
+def _create_json_response_from_page(page: Page[ItemT]) -> web.Response:
     return web.Response(
         text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
         content_type=MIMETYPE_APPLICATION_JSON,
@@ -110,12 +110,13 @@ async def list_functions(request: web.Request) -> web.Response:
                 assert isinstance(function, RegisteredProjectFunction)
                 project_ids.append(function.project_id)
 
-        projects = await _projects_service.batch_get_projects(
-            request.app,
-            project_uuids=project_ids,
-        )
-        for project in projects:
-            projects_map[f"{project.uuid}"] = project
+        projects_map = {
+            f"{p.uuid}": p
+            for p in await _projects_service.batch_get_projects(
+                request.app,
+                project_uuids=project_ids,
+            )
+        }
 
     for function in functions:
         if (
@@ -123,8 +124,7 @@ async def list_functions(request: web.Request) -> web.Response:
             and function.function_class == FunctionClass.PROJECT
         ):
             assert isinstance(function, RegisteredProjectFunction)  # nosec
-            project = projects_map.get(f"{function.project_id}")
-            if project:
+            if project := projects_map.get(f"{function.project_id}"):
                 chunk.append(
                     TypeAdapter(RegisteredProjectFunctionGet).validate_python(
                         function.model_dump(mode="json")
