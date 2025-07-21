@@ -154,7 +154,8 @@ def test_jupyterlab(
                     expected_message_type="stdout", expected_message_contents="copied"
                 ),
                 timeout=_WAITING_TIME_FILE_CREATION_PER_GB_IN_TERMINAL
-                * max(int(large_file_size.to("GiB")), 1),
+                * max(int(large_file_size.to("GiB")), 1)
+                * 3,  # avoids flakyness since timeout is deterimned based on size
             ):
                 terminal.fill(
                     f"dd if=/dev/urandom of=output.txt bs={large_file_block_size} count={blocks_count} iflag=fullblock"

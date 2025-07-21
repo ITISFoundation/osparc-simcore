@@ -11,6 +11,7 @@ from pydantic import (
     field_validator,
 )
 
+from ....models import PhoneNumberStr
 from ....utils_aiohttp import NextPage
 from ..._models import InputSchema, check_confirm_password_match
 
@@ -54,7 +55,8 @@ class RegisterBody(InputSchema):
 class RegisterPhoneBody(InputSchema):
     email: LowerCaseEmailStr
     phone: Annotated[
-        str, Field(description="Phone number E.164, needed on the deployments with 2FA")
+        PhoneNumberStr,
+        Field(description="Phone number E.164, needed on the deployments with 2FA"),
     ]
 
 
@@ -63,6 +65,6 @@ class _PageParams(BaseModel):
 
 
 class RegisterPhoneNextPage(NextPage[_PageParams]):
-    logger: str = Field("user", deprecated=True)
+    logger: Annotated[str, Field(deprecated=True)] = "user"
     level: Literal["INFO", "WARNING", "ERROR"] = "INFO"
     message: str
