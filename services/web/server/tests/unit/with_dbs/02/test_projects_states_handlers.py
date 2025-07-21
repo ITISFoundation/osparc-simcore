@@ -76,15 +76,20 @@ API_PREFIX = f"/{API_VTAG}"
 
 
 @pytest.fixture
-def with_disabled_rtx_collaboration(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    # disable the real-time collaboration settings
-    return app_environment | setenvs_from_dict(
+def max_number_of_user_sessions(faker: Faker) -> int:
+    return faker.pyint(min_value=1, max_value=5)
+
+
+@pytest.fixture
+def with_enabled_rtc_collaboration(
+    app_environment: EnvVarsDict,
+    with_dev_features_enabled: None,
+    monkeypatch: pytest.MonkeyPatch,
+    max_number_of_user_sessions: int,
+) -> None:
+    setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_REALTIME_COLLABORATION": "null",
-        },
+        {"RTC_MAX_NUMBER_OF_USERS": f"{max_number_of_user_sessions}"},
     )
 
 
