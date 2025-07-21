@@ -147,23 +147,35 @@ async def _replace_project(
     return data
 
 
-async def _connect_websocket(
+@pytest.fixture
+async def create_socketio_connection(
     socketio_client_factory: Callable,
-    check_connection: bool,
-    client: TestClient,
-    client_id: str,
-    events: dict[str, Callable] | None = None,
-) -> socketio.AsyncClient | None:
-    try:
-        sio = await socketio_client_factory(client_id, client)
-        assert sio.sid
-        if events:
-            for event, handler in events.items():
-                sio.on(event, handler=handler)
-        return sio
-    except SocketConnectionError:
-        if check_connection:
-            pytest.fail("socket io connection should not fail")
+) -> AsyncIterator[Callable[..., Awaitable[socketio.AsyncClient | None]]]:
+    connected_sockets = []
+
+    async def _(
+        check_connection: bool,
+        client: TestClient,
+        client_id: str,
+        events: dict[str, Callable] | None = None,
+    ) -> socketio.AsyncClient | None:
+
+        try:
+            sio = await socketio_client_factory(client_id, client)
+            assert sio.sid
+            if events:
+                for event, handler in events.items():
+                    sio.on(event, handler=handler)
+            connected_sockets.append(sio)
+            return sio
+        except SocketConnectionError:
+            if check_connection:
+                pytest.fail("socket io connection should not fail")
+
+    yield _
+
+    # cleanup
+    await asyncio.gather(*(socket.disconnect() for socket in connected_sockets))
 
 
 async def _open_project(
@@ -1338,7 +1350,37 @@ def clean_redis_table(redis_client) -> None:
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_open_shared_project_2_users_locked(
+async def test_open_shared_project_multiple_users(
+    max_number_of_user_sessions: int,
+    with_enabled_rtc_collaboration: None,
+    client: TestClient,
+    client_on_running_server_factory: Callable[[], TestClient],
+    logged_user: dict,
+    shared_project: dict,
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
+    client_session_id_factory: Callable[[], str],
+    expected: ExpectedResponse,
+    mocker: MockerFixture,
+    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
+):
+    mock_project_state_updated_handler = mocker.Mock()
+
+    base_client = client
+    base_client_tab_id = client_session_id_factory()
+    # 1. user 1 opens project
+    await create_socketio_connection(
+        True,
+        base_client,
+        base_client_tab_id,
+        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
+    )
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
+    with_enabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
@@ -1355,6 +1397,7 @@ async def test_open_shared_project_2_users_locked(
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
+    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
     mock_project_state_updated_handler = mocker.Mock()
@@ -1365,8 +1408,7 @@ async def test_open_shared_project_2_users_locked(
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
-    await _connect_websocket(
-        socketio_client_factory,
+    await create_socketio_connection(
         user_role != UserRole.ANONYMOUS,
         client_1,
         client_id1,
@@ -1426,8 +1468,7 @@ async def test_open_shared_project_2_users_locked(
         enable_check=user_role != UserRole.ANONYMOUS,
         exit_stack=exit_stack,
     )
-    await _connect_websocket(
-        socketio_client_factory,
+    await create_socketio_connection(
         user_role != UserRole.ANONYMOUS,
         client_2,
         client_id2,
@@ -1566,13 +1607,13 @@ async def test_open_shared_project_at_same_time(
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
+    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10
     # log client 1
     client_1 = client
     client_id1 = client_session_id_factory()
-    sio_1 = await _connect_websocket(
-        socketio_client_factory,
+    sio_1 = await create_socketio_connection(
         user_role != UserRole.ANONYMOUS,
         client_1,
         client_id1,
@@ -1590,8 +1631,7 @@ async def test_open_shared_project_at_same_time(
             exit_stack=exit_stack,
         )
         client_id = client_session_id_factory()
-        sio = await _connect_websocket(
-            socketio_client_factory,
+        sio = await create_socketio_connection(
             user_role != UserRole.ANONYMOUS,
             new_client,
             client_id,
@@ -1657,6 +1697,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
     mocked_notifications_plugin: dict[str, mock.Mock],
+    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
 ):
     """Simulating a refresh goes as follows:
     The user opens a project, then hit the F5 refresh page.
@@ -1665,8 +1706,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     """
 
     client_session_id = client_session_id_factory()
-    sio = await _connect_websocket(
-        socketio_client_factory,
+    sio = await create_socketio_connection(
         user_role != UserRole.ANONYMOUS,
         client,
         client_session_id,
@@ -1686,8 +1726,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     # give some time
     await asyncio.sleep(1)
     # re-connect using the same client session id
-    sio2 = await _connect_websocket(
-        socketio_client_factory,
+    sio2 = await create_socketio_connection(
         user_role != UserRole.ANONYMOUS,
         client,
         client_session_id,
