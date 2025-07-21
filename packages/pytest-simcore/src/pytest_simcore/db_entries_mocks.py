@@ -48,6 +48,7 @@ def create_registered_user(
                     postgres_db,
                     status=UserStatus.ACTIVE,
                     role=UserRole.USER,
+                    id=user_id,
                     **user_kwargs,
                 )
             )
