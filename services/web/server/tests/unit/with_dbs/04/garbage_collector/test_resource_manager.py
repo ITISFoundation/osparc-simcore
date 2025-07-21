@@ -575,7 +575,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
                         "data": {
                             "shareState": {
                                 "locked": False,
-                                "currentUserGroupids": [user_id],  # TODO: change this
+                                "currentUserGroupids": [logged_user["primary_gid"]],
                                 "status": "OPENED",
                             },
                             "state": {"value": "NOT_STARTED"},
