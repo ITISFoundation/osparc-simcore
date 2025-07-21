@@ -2,16 +2,15 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from ....products import products_web
 from ....products.models import Product
 from ....session.access_policies import session_access_required
 from ....web_utils import envelope_response
-from ... import _twofa_service
-from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
+from ... import _auth_service, _twofa_service
 from ...constants import (
     CODE_2FA_EMAIL_CODE_REQUIRED,
     CODE_2FA_SMS_CODE_REQUIRED,
@@ -41,19 +40,15 @@ async def resend_2fa_code(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     resend_2fa_ = await parse_request_body_as(Resend2faBody, request)
 
-    user = await db.get_user({"email": resend_2fa_.email})
+    user = await _auth_service.get_user_or_none(request.app, email=resend_2fa_.email)
     if not user:
-        raise web.HTTPUnauthorized(
-            text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)
 
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
-            text="2FA login is not available",
-            content_type=MIMETYPE_APPLICATION_JSON,
+            text=user_message("2FA login is not available")
         )
 
     # Already a code?
@@ -77,8 +72,14 @@ async def resend_2fa_code(request: web.Request):
 
     # sends via SMS
     if resend_2fa_.via == "SMS":
+        user_phone_number = user.get("phone")
+        if not user_phone_number:
+            raise web.HTTPBadRequest(
+                text=user_message("User does not have a phone number registered")
+            )
+
         await _twofa_service.send_sms_code(
-            phone_number=user["phone"],
+            phone_number=user_phone_number,
             code=code,
             twilio_auth=settings.LOGIN_TWILIO,
             twilio_messaging_sid=product.twilio_messaging_sid,
@@ -92,7 +93,7 @@ async def resend_2fa_code(request: web.Request):
                 "name": CODE_2FA_SMS_CODE_REQUIRED,
                 "parameters": {
                     "message": MSG_2FA_CODE_SENT.format(
-                        phone_number=_twofa_service.mask_phone_number(user["phone"])
+                        phone_number=_twofa_service.mask_phone_number(user_phone_number)
                     ),
                     "expiration_2fa": settings.LOGIN_2FA_CODE_EXPIRATION_SEC,
                 },

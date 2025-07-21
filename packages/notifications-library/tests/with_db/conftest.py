@@ -16,11 +16,14 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from notifications_library._templates import get_default_named_templates
 from pydantic import validate_call
+from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
 from simcore_postgres_database.models.jinja2_templates import jinja2_templates
 from simcore_postgres_database.models.payments_transactions import payments_transactions
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.products_to_templates import products_to_templates
-from simcore_postgres_database.models.users import users
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
@@ -50,16 +53,11 @@ async def user(
     and injects a user in db
     """
     assert user_id == user["id"]
-    pk_args = users.c.id, user["id"]
-
-    # NOTE: creation of primary group and setting `groupid`` is automatically triggered after creation of user by postgres
-    async with sqlalchemy_async_engine.begin() as conn:
-        row: Row = await _insert_and_get_row(conn, users, user, *pk_args)
-
-    yield row._asdict()
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await _delete_row(conn, users, *pk_args)
+    async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        sqlalchemy_async_engine,
+        **user,
+    ) as row:
+        yield row
 
 
 @pytest.fixture
@@ -82,15 +80,14 @@ async def product(
     # NOTE: osparc product is already in db. This is another product
     assert product["name"] != "osparc"
 
-    pk_args = products.c.name, product["name"]
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        row: Row = await _insert_and_get_row(conn, products, product, *pk_args)
-
-    yield row._asdict()
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await _delete_row(conn, products, *pk_args)
+    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        sqlalchemy_async_engine,
+        table=products,
+        values=product,
+        pk_col=products.c.name,
+        pk_value=product["name"],
+    ) as row:
+        yield row
 
 
 @pytest.fixture
