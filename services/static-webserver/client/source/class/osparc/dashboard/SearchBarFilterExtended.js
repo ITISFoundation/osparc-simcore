@@ -188,18 +188,31 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       // Add listeners
       textField.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
-          this.__sourceSearchBarFilter.getChildControl("text-field").setValue(textField.getValue());
-          this.exclude();
+          this.__filter("text");
         }
       }, this);
       textField.addListener("changeValue", () => {
-        this.__sourceSearchBarFilter.getChildControl("text-field").setValue(textField.getValue());
-        this.exclude();
+        this.__filter("text");
       }, this);
 
       resetButton.addListener("tap", () =>{
         this.exclude();
       });
+    },
+
+    __filter: function(activatedFilter, filterData) {
+      switch (activatedFilter) {
+        case "text":
+          this.__sourceSearchBarFilter.getChildControl("text-field").setValue(textField.getValue());
+          break;
+        case "sharedWith":
+          this.__sourceSearchBarFilter.setSharedWithActiveFilter(filterData.id, filterData.label);
+          break;
+        case "tag":
+          this.__sourceSearchBarFilter.addTagActiveFilter(filterData);
+          break;
+      }
+      this.exclude();
     },
 
     __searchMyProjectsSelected: function() {
@@ -231,10 +244,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       options.forEach((option, idx) => {
         const button = new qx.ui.menu.RadioButton(option.label);
         menu.add(button);
-        button.addListener("execute", () => {
-          this.__sourceSearchBarFilter.setSharedWithActiveFilter(option.id, option.label);
-          this.exclude();
-        });
+        button.addListener("execute", () => this.__filter("sharedWith", option));
         sharedWithRadioGroup.add(button);
         // preselect show-all
         if (idx === 0) {
@@ -254,10 +264,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           const tagButton = new qx.ui.menu.Button(tag.getName(), "@FontAwesome5Solid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.getColor());
           menu.add(tagButton);
-          tagButton.addListener("execute", () => {
-            this.__sourceSearchBarFilter.addTagActiveFilter(tag);
-            this.exclude();
-          });
+          tagButton.addListener("execute", () => this.__filter("tag", tag));
         });
         menuButton.setMenu(menu);
       }
