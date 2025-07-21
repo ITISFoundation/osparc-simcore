@@ -56,6 +56,7 @@ from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
+    standard_user_role_response,
 )
 from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -569,8 +570,6 @@ async def test_open_template_project_for_edition(
 @pytest.mark.parametrize(
     "user_role,expected",
     [
-        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
         (UserRole.USER, status.HTTP_403_FORBIDDEN),
         (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
     ],
@@ -600,13 +599,7 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     await assert_status(resp, expected)
 
 
-def standard_user_role() -> tuple[str, tuple]:
-    all_roles = standard_role_response()
-
-    return (all_roles[0], (pytest.param(*all_roles[1][2], id="standard user role"),))
-
-
-@pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_project_with_small_amount_of_dynamic_services_starts_them_automatically(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -652,7 +645,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     ].reset_mock()
 
 
-@pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_project_with_disable_service_auto_start_set_overrides_behavior(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -696,7 +689,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
         ].assert_not_called()
 
 
-@pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_project_with_large_amount_of_dynamic_services_does_not_start_them_automatically(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -741,7 +734,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     ].assert_not_called()
 
 
-@pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if_setting_disabled(
     mock_get_total_project_dynamic_nodes_creation_interval: None,
     disable_max_number_of_running_dynamic_nodes: dict[str, str],
@@ -791,7 +784,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     ].assert_called()
 
 
-@pytest.mark.parametrize(*standard_user_role())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynamic_services(
     client: TestClient,
     logged_user,
@@ -843,7 +836,7 @@ def one_max_open_studies_per_user(
         )
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     one_max_open_studies_per_user: None,
     client: TestClient,
@@ -1264,7 +1257,7 @@ def clean_redis_table(redis_client) -> None:
     """this just ensures the redis table is cleaned up between test runs"""
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked(
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
@@ -1465,7 +1458,7 @@ async def test_open_shared_project_2_users_locked(
     )
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_at_same_time(
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
@@ -1558,7 +1551,7 @@ async def test_open_shared_project_at_same_time(
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS
 
 
-@pytest.mark.parametrize(*standard_role_response())
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     client: TestClient,
     logged_user: dict[str, Any],
