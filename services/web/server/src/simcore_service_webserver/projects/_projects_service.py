@@ -152,6 +152,7 @@ from .exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
+    ProjectTooManyUserSessionsError,
     ProjectTypeAndTemplateIncompatibilityError,
 )
 from .models import ProjectDBGet, ProjectDict, ProjectPatchInternalExtended
@@ -1433,13 +1434,23 @@ async def try_open_project_for_user(
                 sessions_with_project = await user_session.find_users_of_resource(
                     app, PROJECT_ID_KEY, f"{project_uuid}"
                 )
+                if max_number_of_user_sessions_per_project is not None and (
+                    len(sessions_with_project)
+                    >= max_number_of_user_sessions_per_project
+                ):
+                    raise ProjectTooManyUserSessionsError(
+                        max_num_sessions=max_number_of_user_sessions_per_project,
+                        user_id=user_id,
+                        project_uuid=project_uuid,
+                        client_session_id=client_session_id,
+                    )
                 if (
                     max_number_of_user_sessions_per_project is None
                     or not sessions_with_project
                 ) or (
                     len(sessions_with_project) < max_number_of_user_sessions_per_project
                 ):
-                    # no one has the project so we assign it
+                    # if there are no sessions with this project, or the number of sessions is less than the maximum allowed
                     await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                     return True
 
