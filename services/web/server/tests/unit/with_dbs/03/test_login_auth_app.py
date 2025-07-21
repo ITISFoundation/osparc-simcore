@@ -25,16 +25,14 @@ from simcore_service_webserver.security import security_web
 
 @pytest.fixture
 def service_name() -> str:
-    return "wb-authz"
+    return "wb-auth"
 
 
 @pytest.fixture
 def app_environment_for_wb_authz_service_dict(
     docker_compose_service_environment_dict: EnvVarsDict,
-    service_name: str,
-    faker: Faker,
+    docker_compose_service_hostname: str,
 ) -> EnvVarsDict:
-    hostname, task_slot = faker.hostname(levels=0), faker.random_int(min=0, max=10)
 
     assert (
         docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"]
@@ -43,7 +41,7 @@ def app_environment_for_wb_authz_service_dict(
 
     return {
         **docker_compose_service_environment_dict,
-        "HOSTNAME": f"auth-{hostname}-{task_slot}",  # TODO: load from docker-compose
+        "HOSTNAME": docker_compose_service_hostname,
         # TODO: add everything coming from Dockerfile?
     }
 
@@ -70,6 +68,9 @@ def app_environment_for_wb_authz_service(
     )
 
     assert service_name == settings.WEBSERVER_HOST
+    assert settings.WEBSERVER_DB is not None
+    assert settings.WEBSERVER_SESSION is not None
+    assert settings.WEBSERVER_SECURITY is not None
 
     return mocked_envs
 
