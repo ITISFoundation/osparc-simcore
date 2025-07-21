@@ -171,7 +171,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
       myProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) : null, this);
       templatesButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES) : null, this);
-      publicProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATE.SEARCH_PUBLIC_TEMPLATES) : null, this);
+      publicProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES) : null, this);
 
       // Set initial state based on the provided initFilterData
       const activeFilters = this.getChildControl("search-bar-filter").getChildControl("active-filters");
@@ -297,7 +297,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
         this.exclude();
         document.removeEventListener("mousedown", tapListener);
-      };;
+      };
       document.addEventListener("mousedown", tapListener);
     },
   }

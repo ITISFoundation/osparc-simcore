@@ -369,7 +369,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         return;
       }
       const chip = this.self().createChip(type, id, label);
-      chip.addListener("execute", () => this.__removeChip(chipType, chipId), this);
+      chip.addListener("execute", () => this.__removeChip(type, id), this);
       activeFilter.add(chip);
       this.__filter();
     },
