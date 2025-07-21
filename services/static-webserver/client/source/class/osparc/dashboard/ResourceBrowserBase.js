@@ -253,8 +253,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       osparc.utils.Utils.setIdToWidget(textField, "searchBarFilter-textField-"+this._resourceType);
 
       this._addToLayout(searchBarFilter);
-
-      return searchBarFilter;
     },
 
     _createResourcesLayout: function(flatListId) {
