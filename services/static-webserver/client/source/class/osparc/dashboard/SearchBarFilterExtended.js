@@ -208,7 +208,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         this.__filter("text", textField.getValue());
       }, this);
 
-      resetButton.addListener("tap", () =>{
+      resetButton.addListener("tap", () => {
         this.exclude();
       });
     },
