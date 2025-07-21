@@ -144,8 +144,8 @@ def docker_compose_service_hostname(
 @pytest.fixture
 def docker_compose_service_environment_dict(
     docker_compose_services_dict: dict[str, Any],
-    env_devel_dict: EnvVarsDict,
     service_name: str,
+    env_devel_dict: EnvVarsDict,
     env_devel_file: Path,
 ) -> EnvVarsDict:
     """Returns env vars dict from the docker-compose `environment` section

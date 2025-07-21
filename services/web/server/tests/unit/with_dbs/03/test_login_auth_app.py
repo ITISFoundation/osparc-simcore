@@ -12,7 +12,6 @@ import pytest_asyncio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
-from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -20,6 +19,7 @@ from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.application import create_application_auth
 from simcore_service_webserver.application_settings import ApplicationSettings
+from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.security import security_web
 
 
@@ -32,7 +32,10 @@ def service_name() -> str:
 def app_environment_for_wb_authz_service_dict(
     docker_compose_service_environment_dict: EnvVarsDict,
     docker_compose_service_hostname: str,
+    default_app_cfg: AppConfigDict,
 ) -> EnvVarsDict:
+
+    postgres_cfg = default_app_cfg["db"]["postgres"]
 
     assert (
         docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"]
@@ -41,6 +44,14 @@ def app_environment_for_wb_authz_service_dict(
 
     return {
         **docker_compose_service_environment_dict,
+        # NOTE: TEST-stack uses different env-vars
+        # this is temporary here until we get rid of config files
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8129
+        "POSTGRES_DB": postgres_cfg["database"],
+        "POSTGRES_HOST": postgres_cfg["host"],
+        "POSTGRES_PORT": postgres_cfg["port"],
+        "POSTGRES_USER": postgres_cfg["user"],
+        "POSTGRES_PASSWORD": postgres_cfg["password"],
         "HOSTNAME": docker_compose_service_hostname,
         # TODO: add everything coming from Dockerfile?
     }
@@ -50,7 +61,6 @@ def app_environment_for_wb_authz_service_dict(
 def app_environment_for_wb_authz_service(
     monkeypatch: pytest.MonkeyPatch,
     app_environment_for_wb_authz_service_dict: EnvVarsDict,
-    faker: Faker,
     service_name: str,
 ) -> EnvVarsDict:
     """Mocks the environment variables for the auth app service (considering docker-compose's environment)."""
