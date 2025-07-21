@@ -297,7 +297,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
         this.exclude();
         document.removeEventListener("mousedown", tapListener);
-      };;
+      };
       document.addEventListener("mousedown", tapListener);
     },
   }
