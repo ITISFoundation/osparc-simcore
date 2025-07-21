@@ -1173,6 +1173,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       searchBarFilterExtended.addListener("filterChanged", e => {
         const data = e.getData();
+        /*
+        const searchContext = data["searchContext"];
+        switch (searchContext) {
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+            this._changeContext(searchContext);
+            break;
+        }
+        */
         const filterType = data["filterType"];
         const filterData = data["filterData"];
         switch (filterType) {
