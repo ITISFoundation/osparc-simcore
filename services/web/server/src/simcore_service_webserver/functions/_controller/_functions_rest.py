@@ -210,7 +210,7 @@ async def get_function(request: web.Request) -> web.Response:
     name="update_function",
 )
 @login_required
-@permission_required("function.write")
+@permission_required("function.update")
 @handle_rest_requests_exceptions
 async def update_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
@@ -230,7 +230,7 @@ async def update_function(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(
-        TypeAdapter(RegisteredFunctionUpdate).validate_python(
+        TypeAdapter(RegisteredFunctionGet).validate_python(
             updated_function.model_dump(mode="json")
         )
     )

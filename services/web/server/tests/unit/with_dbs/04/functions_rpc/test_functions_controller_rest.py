@@ -51,12 +51,13 @@ def mock_function() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "user_role,add_user_function_api_access_rights,expected_register,expected_get,expected_list,expected_delete,expected_get2",
+    "user_role,add_user_function_api_access_rights,expected_register,expected_get,expected_list,expected_update,expected_delete,expected_get2",
     [
         (
             UserRole.USER,
             True,
             status.HTTP_201_CREATED,
+            status.HTTP_200_OK,
             status.HTTP_200_OK,
             status.HTTP_200_OK,
             status.HTTP_204_NO_CONTENT,
@@ -65,6 +66,7 @@ def mock_function() -> dict[str, Any]:
         (
             UserRole.GUEST,
             False,
+            status.HTTP_403_FORBIDDEN,
             status.HTTP_403_FORBIDDEN,
             status.HTTP_403_FORBIDDEN,
             status.HTTP_403_FORBIDDEN,
@@ -81,11 +83,13 @@ async def test_function_workflow(
     expected_register: HTTPStatus,
     expected_get: HTTPStatus,
     expected_list: HTTPStatus,
+    expected_update: HTTPStatus,
     expected_delete: HTTPStatus,
     expected_get2: HTTPStatus,
     add_user_function_api_access_rights: AsyncIterator[None],
     request: pytest.FixtureRequest,
 ) -> None:
+    # Register a new function
     url = client.app.router["register_function"].url_for()
     response = await client.post(url, json=mock_function)
     data, error = await assert_status(response, expected_status_code=expected_register)
@@ -96,8 +100,9 @@ async def test_function_workflow(
         assert returned_function.uid is not None
         returned_function_uid = returned_function.uid
 
+    # Get the registered function
     url = client.app.router["get_function"].url_for(
-        function_id=str(returned_function_uid)
+        function_id=f"{returned_function_uid}"
     )
     response = await client.get(url)
     data, error = await assert_status(response, expected_get)
@@ -105,6 +110,7 @@ async def test_function_workflow(
         retrieved_function = RegisteredProjectFunctionGet.model_validate(data)
         assert retrieved_function.uid == returned_function.uid
 
+    # List existing functions
     url = client.app.router["list_functions"].url_for()
     response = await client.get(url)
     data, error = await assert_status(response, expected_list)
@@ -115,14 +121,31 @@ async def test_function_workflow(
         assert len(retrieved_functions) == 1
         assert retrieved_functions[0].uid == returned_function_uid
 
+    # Update existing function
+    new_title = "Test Function (edited)"
+    new_description = "A test function (edited)"
+    url = client.app.router["update_function"].url_for(
+        function_id=f"{returned_function_uid}"
+    )
+    response = await client.patch(
+        url, json={"title": new_title, "description": new_description}
+    )
+    data, error = await assert_status(response, expected_update)
+    if not error:
+        updated_function = RegisteredProjectFunctionGet.model_validate(data)
+        assert updated_function.title == new_title
+        assert updated_function.description == new_description
+
+    # Delete existing function
     url = client.app.router["delete_function"].url_for(
-        function_id=str(returned_function_uid)
+        function_id=f"{returned_function_uid}"
     )
     response = await client.delete(url)
     data, error = await assert_status(response, expected_delete)
 
+    # Check if the function was effectively deleted
     url = client.app.router["get_function"].url_for(
-        function_id=str(returned_function_uid)
+        function_id=f"{returned_function_uid}"
     )
     response = await client.get(url)
     data, error = await assert_status(response, expected_get2)
