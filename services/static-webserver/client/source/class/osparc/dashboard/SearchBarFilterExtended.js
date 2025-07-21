@@ -289,7 +289,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.__sharedWithMenu,
           this.__tagsMenu,
         ];
-        for (let i=0; i<excludeElements.length; i++) {
+        for (let i = 0; i < excludeElements.length; i++) {
           if (excludeElements[i] && osparc.utils.Utils.isMouseOnElement(excludeElements[i], e)) {
             return;
           }
