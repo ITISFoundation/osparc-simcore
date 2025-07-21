@@ -27,8 +27,6 @@ from models_library.services_resources import (
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
@@ -242,17 +240,6 @@ def assert_get_same_project_caller() -> Callable:
         return data
 
     return _assert_it
-
-
-@pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {"WEBSERVER_DEV_FEATURES_ENABLED": "1"},
-    )
-    return app_environment | envs_plugins
 
 
 @pytest.fixture
