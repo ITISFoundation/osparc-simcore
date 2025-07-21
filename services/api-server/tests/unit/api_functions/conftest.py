@@ -130,6 +130,7 @@ def mock_registered_project_function(mock_function: Function) -> RegisteredFunct
             **mock_function.dict(),
             "uid": str(uuid4()),
             "created_at": datetime.datetime.now(datetime.UTC),
+            "modified_at": datetime.datetime.now(datetime.UTC),
         }
     )
 
@@ -150,6 +151,7 @@ def mock_registered_solver_function(
             "default_inputs": None,
             "uid": str(uuid4()),
             "created_at": datetime.datetime.now(datetime.UTC),
+            "modified_at": datetime.datetime.now(datetime.UTC),
             "solver_key": "simcore/services/comp/ans-model",
             "solver_version": "1.0.1",
         }
