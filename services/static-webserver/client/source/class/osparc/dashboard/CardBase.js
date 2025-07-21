@@ -789,7 +789,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyState: function(state) {
       let projectInUse = false;
-      if ("shareState" in state && "value" in state["shareState"]) {
+      if ("shareState" in state && "locked" in state["shareState"]) {
         projectInUse = state["shareState"]["locked"];
       }
 
@@ -920,8 +920,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __blockedInUse: function(lockedStatus) {
       const status = lockedStatus["status"];
-      const owner = lockedStatus["owner"];
-      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"] || this.tr("A user"), owner["last_name"] || ""); // it will be replaced by "userName"
+      const userGroupIDs = lockedStatus["currentUserGroupids"];
+      let toolTip = userGroupIDs[0]
+      //  osparc.utils.Utils.firstsUp(userGroupIDs[0]["first_name"] || this.tr("A user"), userGroupIDs[0]["last_name"] || ""); // it will be replaced by "userName"
       let image = null;
       switch (status) {
         case "CLOSING":
