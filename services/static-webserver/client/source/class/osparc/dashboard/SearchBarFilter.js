@@ -197,7 +197,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           this.__hideFilterMenu();
         }
       }, this);
-      textField.addListener("changeValue", () => this.__filter(), this);
+      textField.addListener("focusout", () => this.__filter(), this);
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);

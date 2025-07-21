@@ -1173,16 +1173,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       searchBarFilterExtended.addListener("filterChanged", e => {
         const data = e.getData();
-        // first update the search context if necessary
-        const searchContext = data["searchContext"];
-        switch (searchContext) {
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-            this._changeContext(searchContext);
-            break;
-        }
-        // then update the filters
+        // first update the filters
         const filterType = data["filterType"];
         const filterData = data["filterData"];
         switch (filterType) {
@@ -1194,6 +1185,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             break;
           case "tag":
             this._searchBarFilter.addTagActiveFilter(filterData);
+            break;
+        }
+        // then update the search context this will trigger the search
+        const searchContext = data["searchContext"];
+        switch (searchContext) {
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+            this._changeContext(searchContext);
             break;
         }
       });
