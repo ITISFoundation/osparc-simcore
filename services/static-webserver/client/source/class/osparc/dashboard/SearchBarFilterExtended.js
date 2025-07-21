@@ -34,7 +34,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
     this.__buildLayout();
 
-    this.__searchMyProjectsSelected();
+    this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS);
 
     qx.core.Init.getApplication().getRoot().add(this);
 
@@ -48,17 +48,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   properties: {
     currentContext: {
       check: [
-        "studiesAndFolders",      // osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,
-        "workspaces",             // osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES,
-        "templates",              // osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES,
-        "publicTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES,
-        "functions",              // osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS,
-        "trash",                  // osparc.dashboard.StudyBrowser.CONTEXT.TRASH,
-        "searchProjects",         // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
-        "searchTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
-        "searchPublicTemplates",  // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+        "searchProjects",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+        "searchTemplates",       // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
+        "searchPublicTemplates", // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
       ],
-      init: "studiesAndFolders",
+      init: null,
       nullable: false,
       event: "changeCurrentContext",
       apply: "__applyCurrentContext",
@@ -174,9 +168,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       const templatesButton = this.getChildControl("templates-button");
       const publicProjectsButton = this.getChildControl("public-projects-button");
       radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
-      myProjectsButton.addListener("changeValue", this.__searchMyProjectsSelected, this);
-      templatesButton.addListener("changeValue", this.__searchTemplatesSelected, this);
-      publicProjectsButton.addListener("changeValue", this.__searchPublicProjectsSelected, this);
+      myProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) : null, this);
+      templatesButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES) : null, this);
+      publicProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATE.SEARCH_PUBLIC_TEMPLATES) : null, this);
 
       // Set initial state based on the provided initFilterData
       const activeFilters = this.getChildControl("search-bar-filter").getChildControl("active-filters");
@@ -219,50 +213,38 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     },
 
     __applyCurrentContext: function(value, old) {
+      if (value === old) {
+        return;
+      }
       switch (value) {
-        case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-        case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this.getChildControl("my-projects-button").setValue(true);
+          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in My projects"));
+          this.getChildControl("shared-with-button").setVisibility("visible");
+          this.getChildControl("tags-button").setVisibility("visible");
           break;
-        case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
           this.getChildControl("templates-button").setValue(true);
+          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
+          this.getChildControl("shared-with-button").setVisibility("excluded");
+          this.getChildControl("tags-button").setVisibility("visible");
           break;
-        case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
           this.getChildControl("public-projects-button").setValue(true);
+          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Public projects"));
+          this.getChildControl("shared-with-button").setVisibility("excluded");
+          this.getChildControl("tags-button").setVisibility("visible");
           break;
       }
     },
 
     __filter: function(filterType, filterData) {
       this.fireDataEvent("filterChanged", {
+        searchContext: this.getCurrentContext(),
         filterType,
         filterData,
       });
       this.exclude();
-    },
-
-    __searchMyProjectsSelected: function() {
-      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in My projects"));
-
-      this.getChildControl("shared-with-button").setVisibility("visible");
-      this.getChildControl("tags-button").setVisibility("visible");
-    },
-
-    __searchTemplatesSelected: function() {
-      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
-
-      this.getChildControl("shared-with-button").setVisibility("excluded");
-      this.getChildControl("tags-button").setVisibility("visible");
-    },
-
-    __searchPublicProjectsSelected: function() {
-      this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Public projects"));
-
-      this.getChildControl("shared-with-button").setVisibility("excluded");
-      this.getChildControl("tags-button").setVisibility("visible");
     },
 
     __addSharedWithMenu: function(menuButton) {

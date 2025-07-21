@@ -1149,8 +1149,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __extendSearchBar: function() {
       const searchBarFilterExtended = this._searchBarFilter.popUpSearchBarFilter();
+      let curatedContext = null;
+      switch (this.getCurrentContext()) {
+        case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+        case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
+          curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+          curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES;
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+          curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES;
+          break;
+        default:
+          curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
+          break;
+      }
       searchBarFilterExtended.set({
-        currentContext: this.getCurrentContext(),
+        currentContext: curatedContext,
       });
       searchBarFilterExtended.addListener("filterChanged", e => {
         const data = e.getData();
