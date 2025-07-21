@@ -732,16 +732,14 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     max_amount_of_auto_started_dyn_services: int,
-    faker: Faker,
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     assert client.app
-    num_of_dyn_services = max_amount_of_auto_started_dyn_services or faker.pyint(
-        min_value=3, max_value=250
+    project = await user_project_with_num_dynamic_services(
+        max_amount_of_auto_started_dyn_services
     )
-    project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
-    for num_service_already_running in range(num_of_dyn_services):
+    for num_service_already_running in range(max_amount_of_auto_started_dyn_services):
         mocked_dynamic_services_interface[
             "dynamic_scheduler.api.list_dynamic_services"
         ].return_value = [
