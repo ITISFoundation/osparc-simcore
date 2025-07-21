@@ -723,7 +723,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_open_project_with_disable_service_auto_start_set_overrides_behavior_collaboration_disabled(
+async def test_open_project_with_disable_service_auto_start_set_overrides_behavior(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
@@ -1038,8 +1038,7 @@ async def test_close_project(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_active_project_disabled_collaboration(
-    with_disabled_rtx_collaboration: EnvVarsDict,
+async def test_get_active_project(
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -1335,7 +1334,6 @@ def clean_redis_table(redis_client) -> None:
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked(
-    with_disabled_rtx_collaboration: EnvVarsDict,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
@@ -1547,8 +1545,7 @@ async def test_open_shared_project_2_users_locked(
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_open_shared_project_at_same_time_disabled_collaboration(
-    with_disabled_rtx_collaboration: EnvVarsDict,
+async def test_open_shared_project_at_same_time(
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
