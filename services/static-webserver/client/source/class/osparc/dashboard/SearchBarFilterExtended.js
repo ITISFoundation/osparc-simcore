@@ -18,7 +18,7 @@
 qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   extend: qx.ui.core.Widget,
 
-  construct: function(sourceSearchBarFilter, resourceType, initFilterData = {}) {
+  construct: function(resourceType, initFilterData = {}) {
     this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -29,7 +29,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       decorator: "rounded",
     });
 
-    this.__sourceSearchBarFilter = sourceSearchBarFilter;
     this.__resourceType = resourceType;
     this.__initFilterData = initFilterData;
 
@@ -43,7 +42,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   },
 
   events: {
-    "filterChanged": "qx.event.type.Data"
+    "filterChanged": "qx.event.type.Data",
   },
 
   properties: {
@@ -89,7 +88,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   },
 
   members: {
-    __sourceSearchBarFilter: null,
     __resourceType: null,
 
     _createChildControlImpl: function(id) {
@@ -208,11 +206,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       // Add listeners
       textField.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
-          this.__filter("text");
+          this.__filter("text", textField.getValue());
         }
       }, this);
       textField.addListener("changeValue", () => {
-        this.__filter("text");
+        this.__filter("text", textField.getValue());
       }, this);
 
       resetButton.addListener("tap", () =>{
@@ -238,22 +236,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       }
     },
 
-    __filter: function(activatedFilter, filterData) {
-      // osparc.store.Store.getInstance().setStudyBrowserContext();
-      switch (activatedFilter) {
-        case "text": {
-          const thisTextField = this.getChildControl("search-bar-filter").getChildControl("text-field");
-          const thatTextField = this.__sourceSearchBarFilter.getChildControl("text-field");
-          thatTextField.setValue(thisTextField.getValue());
-          break;
-        }
-        case "sharedWith":
-          this.__sourceSearchBarFilter.setSharedWithActiveFilter(filterData.id, filterData.label);
-          break;
-        case "tag":
-          this.__sourceSearchBarFilter.addTagActiveFilter(filterData);
-          break;
-      }
+    __filter: function(filterType, filterData) {
+      this.fireDataEvent("filterChanged", {
+        filterType,
+        filterData,
+      });
       this.exclude();
     },
 

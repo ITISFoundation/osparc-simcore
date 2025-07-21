@@ -350,7 +350,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     // and lets users search between projects, templates, public projects and, eventually, files
     popUpSearchBarFilter: function() {
       const initFilterData = this.getFilterData();
-      const searchBarFilterExtended = new osparc.dashboard.SearchBarFilterExtended(this, this.__resourceType, initFilterData);
+      const searchBarFilterExtended = new osparc.dashboard.SearchBarFilterExtended(this.__resourceType, initFilterData);
       const bounds = osparc.utils.Utils.getBounds(this);
       searchBarFilterExtended.setLayoutProperties({
         left: bounds.left,

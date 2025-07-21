@@ -1152,6 +1152,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       searchBarFilterExtended.set({
         currentContext: this.getCurrentContext(),
       });
+      searchBarFilterExtended.addListener("filterChanged", e => {
+        const data = e.getData();
+        const filterType = data["filterType"];
+        const filterData = data["filterData"];
+        switch (filterType) {
+          case "text":
+            this._searchBarFilter.getChildControl("text-field").setValue(filterData);
+            break;
+          case "sharedWith":
+            this._searchBarFilter.setSharedWithActiveFilter(filterData.id, filterData.label);
+            break;
+          case "tag":
+            this._searchBarFilter.addTagActiveFilter(filterData);
+            break;
+        }
+      });
     },
 
     __connectContexts: function() {
