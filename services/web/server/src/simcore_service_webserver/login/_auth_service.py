@@ -121,7 +121,7 @@ async def check_authorized_user_credentials(
 
     user = check_not_null_user(user)
 
-    _login_service.validate_user_status(
+    _login_service.validate_user_access(
         user_status=user["status"],
         user_role=user["role"],
         support_email=product.support_email,

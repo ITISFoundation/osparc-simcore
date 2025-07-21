@@ -307,8 +307,9 @@ class UsersRepo:
             if registered:
                 return True
 
+            # Check if email exists in pre-registration, regardless of user_id status
             pre_registered = await conn.scalar(
-                sa.select(users_pre_registration_details.c.user_id).where(
+                sa.select(users_pre_registration_details.c.id).where(
                     users_pre_registration_details.c.pre_email == email
                 )
             )

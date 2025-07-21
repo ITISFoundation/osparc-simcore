@@ -22,7 +22,7 @@ from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
-    validate_user_status,
+    validate_user_access,
 )
 from ...constants import (
     MSG_CANT_SEND_MAIL,
@@ -136,7 +136,7 @@ async def initiate_reset_password(request: web.Request):
 
         # CHECK user state
         try:
-            validate_user_status(
+            validate_user_access(
                 user_status=user["status"],
                 user_role=user["role"],
                 support_email=product.support_email,

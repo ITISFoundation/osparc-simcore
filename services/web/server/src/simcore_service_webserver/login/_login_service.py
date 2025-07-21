@@ -39,7 +39,7 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
 )
 
 
-def validate_user_status(*, user_status: str, user_role: str, support_email: str):
+def validate_user_access(*, user_status: str, user_role: str, support_email: str):
     """
 
     Raises:
