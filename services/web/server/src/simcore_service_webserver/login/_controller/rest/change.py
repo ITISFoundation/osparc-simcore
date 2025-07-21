@@ -6,7 +6,6 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
-from simcore_service_webserver.login.errors import WrongPasswordError
 
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
@@ -33,6 +32,7 @@ from ...constants import (
     MSG_WRONG_PASSWORD,
 )
 from ...decorators import login_required
+from ...errors import WrongPasswordError
 from ...settings import LoginOptions, get_plugin_options
 from .change_schemas import ChangeEmailBody, ChangePasswordBody, ResetPasswordBody
 
