@@ -46,7 +46,7 @@ async def start_task(
     Returns:
         TaskId: the task unique identifier
     """
-    return tasks_manager.start_task(
+    return await tasks_manager.start_task(
         registered_task_name,
         unique=unique,
         task_context=task_context,
@@ -56,17 +56,17 @@ async def start_task(
     )
 
 
-def list_tasks(
+async def list_tasks(
     tasks_manager: TasksManager, task_context: TaskContext | None
 ) -> list[TaskBase]:
-    return tasks_manager.list_tasks(with_task_context=task_context)
+    return await tasks_manager.list_tasks(with_task_context=task_context)
 
 
-def get_task_status(
+async def get_task_status(
     tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
 ) -> TaskStatus:
     """returns the status of a task"""
-    return tasks_manager.get_task_status(
+    return await tasks_manager.get_task_status(
         task_id=task_id, with_task_context=task_context
     )
 
@@ -75,7 +75,7 @@ async def get_task_result(
     tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
 ) -> Any:
     try:
-        task_result = tasks_manager.get_task_result(
+        task_result = await tasks_manager.get_task_result(
             task_id, with_task_context=task_context
         )
         await tasks_manager.remove_task(

@@ -29,7 +29,7 @@ async def list_tasks(
                 request.url_for("cancel_and_delete_task", task_id=t.task_id)
             ),
         )
-        for t in lrt_api.list_tasks(
+        for t in await lrt_api.list_tasks(
             long_running_manager.tasks_manager, task_context=None
         )
     ]
@@ -51,7 +51,7 @@ async def get_task_status(
     ],
 ) -> TaskStatus:
     assert request  # nosec
-    return lrt_api.get_task_status(
+    return await lrt_api.get_task_status(
         long_running_manager.tasks_manager, task_context=None, task_id=task_id
     )
 
