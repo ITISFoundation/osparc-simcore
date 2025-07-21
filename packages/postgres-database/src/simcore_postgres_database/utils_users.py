@@ -149,61 +149,60 @@ class UsersRepo:
         *,
         new_user_id: int,
         new_user_email: str,
-        update_user: bool = True,
     ) -> None:
         """After a user is created, it can be associated with information provided during invitation
 
-        WARNING: Use ONLY upon new user creation. It might override user_details.user_id, users.first_name, users.last_name etc if already applied
-        or changes happen in users table
+        Links ALL pre-registrations for the given email to the user, regardless of product_name.
+
+        WARNING: Use ONLY upon new user creation. It might override user_details.user_id,
+        users.first_name, users.last_name etc if already applied or changes happen in users table
         """
         assert new_user_email  # nosec
         assert new_user_id > 0  # nosec
 
         async with transaction_context(self._engine, connection) as conn:
-            # link both tables first
+            # Link ALL pre-registrations for this email to the user
             result = await conn.execute(
                 users_pre_registration_details.update()
                 .where(users_pre_registration_details.c.pre_email == new_user_email)
                 .values(user_id=new_user_id)
             )
 
-            if update_user:
-                # COPIES some pre-registration details to the users table
-                pre_columns = (
-                    users_pre_registration_details.c.pre_first_name,
-                    users_pre_registration_details.c.pre_last_name,
-                    # NOTE: pre_phone is not copied since it has to be validated. Otherwise, if
-                    # phone is wrong, currently user won't be able to login!
-                )
+            # COPIES some pre-registration details to the users table
+            pre_columns = (
+                users_pre_registration_details.c.pre_first_name,
+                users_pre_registration_details.c.pre_last_name,
+                # NOTE: pre_phone is not copied since it has to be validated.
+                # Otherwise, if phone is wrong, currently user won't be able to login!
+            )
 
-                assert {c.name for c in pre_columns} == {  # nosec
-                    c.name
-                    for c in users_pre_registration_details.columns
-                    if c
-                    not in (
-                        users_pre_registration_details.c.pre_email,
-                        users_pre_registration_details.c.pre_phone,
-                    )
-                    and c.name.startswith("pre_")
-                }, "Different pre-cols detected. This code might need an update update"
+            assert {c.name for c in pre_columns} == {  # nosec
+                c.name
+                for c in users_pre_registration_details.columns
+                if c
+                not in (
+                    users_pre_registration_details.c.pre_email,
+                    users_pre_registration_details.c.pre_phone,
+                )
+                and c.name.startswith("pre_")
+            }, "Different pre-cols detected. This code might need an update update"
 
-                result = await conn.execute(
-                    sa.select(*pre_columns).where(
-                        users_pre_registration_details.c.pre_email
-                        == new_user_email
-                        # FIXME: product_name!
+            # Get the most recent pre-registration data to copy to users table
+            result = await conn.execute(
+                sa.select(*pre_columns)
+                .where(users_pre_registration_details.c.pre_email == new_user_email)
+                .order_by(users_pre_registration_details.c.created.desc())
+                .limit(1)
+            )
+            if pre_registration_details_data := result.one_or_none():
+                await conn.execute(
+                    users.update()
+                    .where(users.c.id == new_user_id)
+                    .values(
+                        first_name=pre_registration_details_data.pre_first_name,
+                        last_name=pre_registration_details_data.pre_last_name,
                     )
                 )
-                if pre_registration_details_data := result.first():
-                    # NOTE: could have many products! which to use?
-                    await conn.execute(
-                        users.update()
-                        .where(users.c.id == new_user_id)
-                        .values(
-                            first_name=pre_registration_details_data.pre_first_name,
-                            last_name=pre_registration_details_data.pre_last_name,
-                        )
-                    )
 
     async def get_role(
         self, connection: AsyncConnection | None = None, *, user_id: int
@@ -338,6 +337,9 @@ class UsersRepo:
                     )
                 )
                 .where(users.c.id == user_id)
+                .order_by(users_pre_registration_details.c.created.desc())
+                .limit(1)
+                # NOTE: might want to copy billing details to users table??
             )
             return result.one_or_none()
 

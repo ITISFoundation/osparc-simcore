@@ -81,7 +81,6 @@ async def create_user(
             conn,
             new_user_id=user_row.id,
             new_user_email=user_row.email,
-            # FIXME: must fit product_name!!
         )
     return UserInfoDict(
         id=user_row.id,

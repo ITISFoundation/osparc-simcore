@@ -496,7 +496,7 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
         assert registrations[1].account_request_reviewed_by == product_owner_user["id"]
         assert registrations[1].account_request_reviewed_at is not None
 
-    # 3.Now create a user account with the approved pre-registration
+    # 3. Now create a user account and link ALL pre-registrations for this email
     async with transaction_context(asyncpg_engine) as connection:
         repo = UsersRepo(asyncpg_engine)
         new_user = await repo.new_user(
@@ -506,13 +506,14 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
+        # Link all pre-registrations for this email, regardless of approval status or product
         await repo.link_and_update_user_from_pre_registration(
             connection,
             new_user_id=new_user.id,
             new_user_email=new_user.email,
         )
 
-    # Verify both pre-registrations are linked to the new user
+    # Verify ALL pre-registrations for this email are linked to the user
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         result = await connection.execute(
             sa.select(
@@ -527,5 +528,17 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
         registrations = result.fetchall()
         assert len(registrations) == 2
 
-        # Both registrations should be linked to the same user, regardless of approval status
-        assert all(reg.user_id == new_user.id for reg in registrations)
+        # Both pre-registrations should be linked to the user, regardless of approval status
+        product1_reg = next(
+            reg for reg in registrations if reg.product_name == product1["name"]
+        )
+        product2_reg = next(
+            reg for reg in registrations if reg.product_name == product2["name"]
+        )
+
+        assert product1_reg.user_id == new_user.id  # Linked
+        assert product2_reg.user_id == new_user.id  # Linked
+
+        # Verify approval status is preserved independently of linking
+        assert product1_reg.account_request_status == AccountRequestStatus.APPROVED
+        assert product2_reg.account_request_status == AccountRequestStatus.REJECTED
