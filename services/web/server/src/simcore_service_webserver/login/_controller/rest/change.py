@@ -6,6 +6,7 @@ from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_users import UsersRepo
+from simcore_service_webserver.login.errors import WrongPasswordError
 
 from ...._meta import API_VTAG
 from ....db.plugin import get_asyncpg_engine
@@ -29,6 +30,7 @@ from ...constants import (
     MSG_EMAIL_SENT,
     MSG_OFTEN_RESET_PASSWORD,
     MSG_PASSWORD_CHANGED,
+    MSG_WRONG_PASSWORD,
 )
 from ...decorators import login_required
 from ...settings import LoginOptions, get_plugin_options
@@ -273,12 +275,15 @@ async def change_password(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     user = await _auth_service.get_user_or_none(request.app, user_id=user_id)
 
-    await _auth_service.check_authorized_user_credentials(
-        request.app,
-        user=user,
-        password=passwords.current.get_secret_value(),
-        product=products_web.get_current_product(request),
-    )
+    try:
+        await _auth_service.check_authorized_user_credentials(
+            request.app,
+            user=user,
+            password=passwords.current.get_secret_value(),
+            product=products_web.get_current_product(request),
+        )
+    except WrongPasswordError as err:
+        raise web.HTTPUnprocessableEntity(text=MSG_WRONG_PASSWORD) from err
 
     await _auth_service.update_user_password(
         request.app,

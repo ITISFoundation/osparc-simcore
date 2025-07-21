@@ -8,8 +8,12 @@ from ....exception_handling import (
     to_exceptions_handlers_map,
 )
 from ....users.exceptions import AlreadyPreRegisteredError
-from ...constants import MSG_2FA_UNAVAILABLE
-from ...errors import SendingVerificationEmailError, SendingVerificationSmsError
+from ...constants import MSG_2FA_UNAVAILABLE, MSG_WRONG_PASSWORD
+from ...errors import (
+    SendingVerificationEmailError,
+    SendingVerificationSmsError,
+    WrongPasswordError,
+)
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     AlreadyPreRegisteredError: HttpErrorInfo(
@@ -26,6 +30,10 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     SendingVerificationEmailError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         MSG_2FA_UNAVAILABLE,
+    ),
+    WrongPasswordError: HttpErrorInfo(
+        status.HTTP_401_UNAUTHORIZED,
+        MSG_WRONG_PASSWORD,
     ),
 }
 

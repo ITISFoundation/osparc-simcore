@@ -12,7 +12,8 @@ from ..groups import api as groups_service
 from ..products.models import Product
 from ..security import security_service
 from . import _login_service
-from .constants import MSG_UNKNOWN_EMAIL, MSG_WRONG_PASSWORD
+from .constants import MSG_UNKNOWN_EMAIL
+from .errors import WrongPasswordError
 
 
 class UserInfoDict(TypedDict):
@@ -112,6 +113,7 @@ async def check_authorized_user_credentials(
     """
 
     Raises:
+        WrongPasswordError: when password is invalid
         web.HTTPUnauthorized: 401
 
     Returns:
@@ -131,7 +133,7 @@ async def check_authorized_user_credentials(
     if not security_service.check_password(
         password, password_hash=await repo.get_password_hash(user_id=user["id"])
     ):
-        raise web.HTTPUnauthorized(text=MSG_WRONG_PASSWORD)
+        raise WrongPasswordError(user_id=user["id"], product_name=product.name)
     return user
 
 
@@ -174,7 +176,7 @@ async def update_user_password(
         verify_current_password -- whether to check current_password is valid (default: {True})
 
     Raises:
-        web.HTTPUnauthorized: 401
+        WrongPasswordError: when current password is invalid
     """
 
     repo = UsersRepo(get_asyncpg_engine(app))
@@ -185,7 +187,7 @@ async def update_user_password(
 
         # Verify current password
         if not security_service.check_password(current_password, current_password_hash):
-            raise web.HTTPUnauthorized(text=MSG_WRONG_PASSWORD)
+            raise WrongPasswordError(user_id=user_id)
 
     # Encrypt new password and update
     new_password_hash = security_service.encrypt_password(new_password)
