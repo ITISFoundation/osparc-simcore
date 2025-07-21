@@ -157,7 +157,7 @@ async def test_check_endpoint_in_auth_app(client: TestClient, user: UserInfoDict
 
 def test_docker_compose_dev_vendors_forwardauth_configuration(
     services_docker_compose_dev_vendors_file: Path,
-    app_environment_for_wb_authz_service_dict: EnvVarsDict,
+    env_devel_dict: EnvVarsDict,
 ):
     """Test that manual service forwardauth.address points to correct WB_AUTH_WEBSERVER_HOST and port."""
 
@@ -208,13 +208,9 @@ def test_docker_compose_dev_vendors_forwardauth_configuration(
         address_part == expected_pattern
     ), f"forwardauth.address should be '{expected_pattern}', got '{address_part}'"
 
-    # Verify that WB_AUTH_WEBSERVER_HOST and WB_AUTH_WEBSERVER_PORT are configured in the test environment
-    wb_auth_host = app_environment_for_wb_authz_service_dict.get(
-        "WB_AUTH_WEBSERVER_HOST"
-    )
-    wb_auth_port = app_environment_for_wb_authz_service_dict.get(
-        "WB_AUTH_WEBSERVER_PORT"
-    )
+    # Verify that WB_AUTH_WEBSERVER_HOST and WB_AUTH_WEBSERVER_PORT are configured in the .env-devel file!
+    wb_auth_host = env_devel_dict.get("WB_AUTH_WEBSERVER_HOST")
+    wb_auth_port = env_devel_dict.get("WB_AUTH_WEBSERVER_PORT")
 
     assert (
         wb_auth_host is not None
