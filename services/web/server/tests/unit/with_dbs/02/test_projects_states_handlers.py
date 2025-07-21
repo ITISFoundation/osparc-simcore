@@ -1562,7 +1562,7 @@ async def test_open_shared_project_2_users_locked(
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_open_shared_project_at_same_time(
+async def test_open_shared_project_at_same_time_disabled_collaboration(
     with_disabled_rtx_collaboration: EnvVarsDict,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
