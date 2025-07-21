@@ -18,6 +18,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks.models import TaskProgress
+from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.redis import with_project_locked
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
@@ -250,7 +251,7 @@ async def _compose_project_data(
 
 
 async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0913
-    task_progress: TaskProgress,
+    progress: TaskProgress,
     *,
     request: web.Request,
     new_project_was_hidden_before_data_was_copied: bool,
@@ -299,7 +300,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     copy_file_coro = None
     project_nodes = None
     try:
-        task_progress.update(message="creating new study...")
+        progress.update(message="creating new study...")
 
         workspace_id = None
         folder_id = None
@@ -337,7 +338,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 src_project_uuid=from_study,
                 as_template=as_template,
                 deep_copy=copy_data,
-                task_progress=task_progress,
+                task_progress=progress,
             )
             if project_node_coro:
                 project_nodes = await project_node_coro
@@ -387,7 +388,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
-        task_progress.update()
+        progress.update()
 
         # 3.2 move project to proper folder
         if folder_id:
@@ -415,7 +416,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(new_project["uuid"])
         )
-        task_progress.update()
+        progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_service.create_or_update_pipeline(
@@ -436,7 +437,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             is_template=as_template,
             app=request.app,
         )
-        task_progress.update()
+        progress.update()
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)
@@ -518,3 +519,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 simcore_user_agent=simcore_user_agent,
             )
         raise
+
+
+TaskRegistry.register(create_project)

@@ -14,5 +14,5 @@ PROJECT_NAME: Final[str] = info.project_name
 VERSION: Final[Version] = info.version
 API_VERSION: Final[VersionStr] = info.__version__
 API_VTAG: Final[str] = info.api_prefix_path_tag
-APP_NAME: Final[str] = PROJECT_NAME
+APP_NAME: Final[str] = info.app_name
 SUMMARY: Final[str] = info.get_summary()

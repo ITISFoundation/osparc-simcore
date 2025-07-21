@@ -10,38 +10,66 @@ from contextlib import suppress
 from typing import Annotated, Any, Final
 
 import pycountry
+from common_library.basic_types import DEFAULT_FACTORY
 from models_library.api_schemas_webserver._base import InputSchema
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
-from models_library.users import UserID
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from servicelib.request_keys import RQT_USERID_KEY
+from pydantic import (
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
-from ....constants import RQ_PRODUCT_KEY
-
-
-class UsersRequestContext(BaseModel):
-    user_id: UserID = Field(..., alias=RQT_USERID_KEY)  # type: ignore[literal-required]
-    product_name: str = Field(..., alias=RQ_PRODUCT_KEY)  # type: ignore[literal-required]
-
+from ....models import AuthenticatedRequestContext, PhoneNumberStr
 
 MAX_BYTES_SIZE_EXTRAS: Final[int] = 512
 
 
-class PreRegisteredUserGet(InputSchema):
-    # NOTE: validators need pycountry!
+class UsersRequestContext(AuthenticatedRequestContext): ...
+
+
+#
+# PHONE REGISTRATION
+#
+
+
+class MyPhoneRegister(InputSchema):
+    phone: Annotated[
+        PhoneNumberStr,
+        Field(description="Phone number to register"),
+    ]
+
+
+class MyPhoneConfirm(InputSchema):
+    code: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, pattern=r"^[A-Za-z0-9]+$"),
+        Field(description="Alphanumeric confirmation code"),
+    ]
+
+
+#
+# USER-ACCCOUNT
+#
+
+
+class UserAccountRestPreRegister(InputSchema):
+    # NOTE: validators require installing `pycountry`
 
     first_name: str
     last_name: str
     email: LowerCaseEmailStr
-    institution: str | None = Field(
-        default=None, description="company, university, ..."
-    )
-    phone: str | None
+    institution: Annotated[
+        str | None, Field(description="company, university, ...")
+    ] = None
+    phone: PhoneNumberStr | None
+
     # billing details
     address: str
     city: str
-    state: str | None = Field(default=None)
+    state: str | None = None
     postal_code: str
     country: str
     extras: Annotated[
@@ -50,7 +78,7 @@ class PreRegisteredUserGet(InputSchema):
             default_factory=dict,
             description="Keeps extra information provided in the request form.",
         ),
-    ]
+    ] = DEFAULT_FACTORY
 
     model_config = ConfigDict(str_strip_whitespace=True, str_max_length=200)
 
@@ -107,7 +135,7 @@ class PreRegisteredUserGet(InputSchema):
         return v
 
 
-# asserts field names are in sync
-assert set(PreRegisteredUserGet.model_fields).issubset(
+assert set(UserAccountRestPreRegister.model_fields).issubset(  # nosec
+    # asserts field names are in sync
     UserAccountGet.model_fields
-)  # nosec
+)

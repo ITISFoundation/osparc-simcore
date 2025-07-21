@@ -6,7 +6,7 @@ import traceback
 import urllib.parse
 from collections import deque
 from contextlib import suppress
-from typing import Any, Final, Protocol, TypeAlias
+from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
@@ -21,17 +21,47 @@ from .errors import (
     TaskExceptionError,
     TaskNotCompletedError,
     TaskNotFoundError,
+    TaskNotRegisteredError,
 )
-from .models import TaskId, TaskName, TaskStatus, TrackedTask
+from .models import TaskBase, TaskId, TaskStatus, TrackedTask
 
 _logger = logging.getLogger(__name__)
+
+
+# NOTE: for now only this one is used, in future it will be unqiue per service
+# and this default will be removed and become mandatory
+_DEFAULT_NAMESPACE: Final[str] = "lrt"
 
 _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1
 ).total_seconds()
 
+RegisteredTaskName: TypeAlias = str
+Namespace: TypeAlias = str
 TrackedTaskGroupDict: TypeAlias = dict[TaskId, TrackedTask]
 TaskContext: TypeAlias = dict[str, Any]
+
+
+class TaskProtocol(Protocol):
+    async def __call__(
+        self, progress: TaskProgress, *args: Any, **kwargs: Any
+    ) -> Any: ...
+
+    @property
+    def __name__(self) -> str: ...
+
+
+class TaskRegistry:
+    REGISTERED_TASKS: ClassVar[dict[RegisteredTaskName, TaskProtocol]] = {}
+
+    @classmethod
+    def register(cls, task: TaskProtocol) -> None:
+        cls.REGISTERED_TASKS[task.__name__] = task
+
+    @classmethod
+    def unregister(cls, task: TaskProtocol) -> None:
+        if task.__name__ in cls.REGISTERED_TASKS:
+            del cls.REGISTERED_TASKS[task.__name__]
 
 
 async def _await_task(task: asyncio.Task) -> None:
@@ -39,29 +69,27 @@ async def _await_task(task: asyncio.Task) -> None:
 
 
 def _get_tasks_to_remove(
-    tasks_groups: dict[TaskName, TrackedTaskGroupDict],
+    tracked_tasks: TrackedTaskGroupDict,
     stale_task_detect_timeout_s: PositiveFloat,
 ) -> list[TaskId]:
     utc_now = datetime.datetime.now(tz=datetime.UTC)
 
     tasks_to_remove: list[TaskId] = []
-    for tasks in tasks_groups.values():
-        for task_id, tracked_task in tasks.items():
-            if tracked_task.fire_and_forget:
-                continue
 
-            if tracked_task.last_status_check is None:
-                # the task just added or never received a poll request
-                elapsed_from_start = (utc_now - tracked_task.started).seconds
-                if elapsed_from_start > stale_task_detect_timeout_s:
-                    tasks_to_remove.append(task_id)
-            else:
-                # the task status was already queried by the client
-                elapsed_from_last_poll = (
-                    utc_now - tracked_task.last_status_check
-                ).seconds
-                if elapsed_from_last_poll > stale_task_detect_timeout_s:
-                    tasks_to_remove.append(task_id)
+    for task_id, tracked_task in tracked_tasks.items():
+        if tracked_task.fire_and_forget:
+            continue
+
+        if tracked_task.last_status_check is None:
+            # the task just added or never received a poll request
+            elapsed_from_start = (utc_now - tracked_task.started).seconds
+            if elapsed_from_start > stale_task_detect_timeout_s:
+                tasks_to_remove.append(task_id)
+        else:
+            # the task status was already queried by the client
+            elapsed_from_last_poll = (utc_now - tracked_task.last_status_check).seconds
+            if elapsed_from_last_poll > stale_task_detect_timeout_s:
+                tasks_to_remove.append(task_id)
     return tasks_to_remove
 
 
@@ -74,9 +102,11 @@ class TasksManager:
         self,
         stale_task_check_interval: datetime.timedelta,
         stale_task_detect_timeout: datetime.timedelta,
+        namespace: Namespace = _DEFAULT_NAMESPACE,
     ):
+        self.namespace = namespace
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
-        self._tasks_groups: dict[TaskName, TrackedTaskGroupDict] = {}
+        self._tracked_tasks: TrackedTaskGroupDict = {}
 
         self.stale_task_check_interval = stale_task_check_interval
         self.stale_task_detect_timeout_s: PositiveFloat = (
@@ -95,9 +125,8 @@ class TasksManager:
     async def teardown(self) -> None:
         task_ids_to_remove: deque[TaskId] = deque()
 
-        for tasks_dict in self._tasks_groups.values():
-            for tracked_task in tasks_dict.values():
-                task_ids_to_remove.append(tracked_task.task_id)
+        for tracked_task in self._tracked_tasks.values():
+            task_ids_to_remove.append(tracked_task.task_id)
 
         for task_id in task_ids_to_remove:
             # when closing we do not care about pending errors
@@ -108,9 +137,6 @@ class TasksManager:
                 await cancel_wait_task(
                     self._stale_tasks_monitor_task, max_delay=_CANCEL_TASK_TIMEOUT
                 )
-
-    def get_task_group(self, task_name: TaskName) -> TrackedTaskGroupDict:
-        return self._tasks_groups[task_name]
 
     async def _stale_tasks_monitor_worker(self) -> None:
         """
@@ -130,7 +156,7 @@ class TasksManager:
         # will not be the case.
 
         tasks_to_remove = _get_tasks_to_remove(
-            self._tasks_groups, self.stale_task_detect_timeout_s
+            self._tracked_tasks, self.stale_task_detect_timeout_s
         )
 
         # finally remove tasks and warn
@@ -149,37 +175,20 @@ class TasksManager:
                 task_id, with_task_context=None, reraise_errors=False
             )
 
-    @staticmethod
-    def create_task_id(task_name: TaskName) -> str:
-        assert len(task_name) > 0
-        return f"{task_name}.{uuid4()}"
+    def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
+        if not with_task_context:
+            return [
+                TaskBase(task_id=task.task_id) for task in self._tracked_tasks.values()
+            ]
 
-    def is_task_running(self, task_name: TaskName) -> bool:
-        """returns True if a task named `task_name` is running"""
-        if task_name not in self._tasks_groups:
-            return False
+        return [
+            TaskBase(task_id=task.task_id)
+            for task in self._tracked_tasks.values()
+            if task.task_context == with_task_context
+        ]
 
-        managed_tasks_ids = list(self._tasks_groups[task_name].keys())
-        return len(managed_tasks_ids) > 0
-
-    def list_tasks(self, with_task_context: TaskContext | None) -> list[TrackedTask]:
-        tasks: list[TrackedTask] = []
-        for task_group in self._tasks_groups.values():
-            if not with_task_context:
-                tasks.extend(task_group.values())
-            else:
-                tasks.extend(
-                    [
-                        task
-                        for task in task_group.values()
-                        if task.task_context == with_task_context
-                    ]
-                )
-        return tasks
-
-    def add_task(
+    def _add_task(
         self,
-        task_name: TaskName,
         task: asyncio.Task,
         task_progress: TaskProgress,
         task_context: TaskContext,
@@ -187,33 +196,30 @@ class TasksManager:
         *,
         fire_and_forget: bool,
     ) -> TrackedTask:
-        if task_name not in self._tasks_groups:
-            self._tasks_groups[task_name] = {}
 
         tracked_task = TrackedTask(
             task_id=task_id,
             task=task,
-            task_name=task_name,
             task_progress=task_progress,
             task_context=task_context,
             fire_and_forget=fire_and_forget,
         )
-        self._tasks_groups[task_name][task_id] = tracked_task
+        self._tracked_tasks[task_id] = tracked_task
 
         return tracked_task
 
     def _get_tracked_task(
         self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> TrackedTask:
-        for tasks in self._tasks_groups.values():
-            if task_id in tasks:
-                if with_task_context and (
-                    tasks[task_id].task_context != with_task_context
-                ):
-                    raise TaskNotFoundError(task_id=task_id)
-                return tasks[task_id]
+        if task_id not in self._tracked_tasks:
+            raise TaskNotFoundError(task_id=task_id)
 
-        raise TaskNotFoundError(task_id=task_id)
+        task = self._tracked_tasks[task_id]
+
+        if with_task_context and task.task_context != with_task_context:
+            raise TaskNotFoundError(task_id=task_id)
+
+        return task
 
     def get_task_status(
         self, task_id: TaskId, with_task_context: TaskContext | None
@@ -321,95 +327,65 @@ class TasksManager:
                 tracked_task.task, task_id, reraise_errors=reraise_errors
             )
         finally:
-            del self._tasks_groups[tracked_task.task_name][task_id]
+            del self._tracked_tasks[task_id]
 
+    def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
+        unique_part = "unique" if is_unique else f"{uuid4()}"
+        return f"{self.namespace}.{task_name}.{unique_part}"
 
-class TaskProtocol(Protocol):
-    async def __call__(
-        self, progress: TaskProgress, *args: Any, **kwargs: Any
-    ) -> Any: ...
+    def start_task(
+        self,
+        registered_task_name: RegisteredTaskName,
+        *,
+        unique: bool,
+        task_context: TaskContext | None,
+        task_name: str | None,
+        fire_and_forget: bool,
+        **task_kwargs: Any,
+    ) -> TaskId:
+        if registered_task_name not in TaskRegistry.REGISTERED_TASKS:
+            raise TaskNotRegisteredError(task_name=registered_task_name)
 
-    @property
-    def __name__(self) -> str: ...
+        task = TaskRegistry.REGISTERED_TASKS[registered_task_name]
 
+        # NOTE: If not task name is given, it will be composed of the handler's module and it's name
+        # to keep the urls shorter and more meaningful.
+        handler_module = inspect.getmodule(task)
+        handler_module_name = handler_module.__name__ if handler_module else ""
+        task_name = task_name or f"{handler_module_name}.{task.__name__}"
+        task_name = urllib.parse.quote(task_name, safe="")
 
-def start_task(
-    tasks_manager: TasksManager,
-    task: TaskProtocol,
-    *,
-    unique: bool = False,
-    task_context: TaskContext | None = None,
-    task_name: str | None = None,
-    fire_and_forget: bool = False,
-    **task_kwargs: Any,
-) -> TaskId:
-    """
-    Creates a background task from an async function.
+        task_id = self._get_task_id(task_name, is_unique=unique)
 
-    An asyncio task will be created out of it by injecting a `TaskProgress` as the first
-    positional argument and adding all `handler_kwargs` as named parameters.
+        # only one unique task can be running
+        if unique and task_id in self._tracked_tasks:
+            raise TaskAlreadyRunningError(
+                task_name=task_name, managed_task=self._tracked_tasks[task_id]
+            )
 
-    NOTE: the progress is automatically bounded between 0 and 1
-    NOTE: the `task` name must be unique in the module, otherwise when using
-        the unique parameter is True, it will not be able to distinguish between
-        them.
+        task_progress = TaskProgress.create(task_id=task_id)
 
-    Args:
-        tasks_manager (TasksManager): the tasks manager
-        task (TaskProtocol): the tasks to be run in the background
-        unique (bool, optional): If True, then only one such named task may be run. Defaults to False.
-        task_context (Optional[TaskContext], optional): a task context storage can be retrieved during the task lifetime. Defaults to None.
-        task_name (Optional[str], optional): optional task name. Defaults to None.
-        fire_and_forget: if True, then the task will not be cancelled if the status is never called
+        # bind the task with progress 0 and 1
+        async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
+            progress.update(message="starting", percent=0)
+            try:
+                return await handler(progress, **task_kwargs)
+            finally:
+                progress.update(message="finished", percent=1)
 
-    Raises:
-        TaskAlreadyRunningError: if unique is True, will raise if more than 1 such named task is started
+        async_task = asyncio.create_task(
+            _progress_task(task_progress, task), name=task_name
+        )
 
-    Returns:
-        TaskId: the task unique identifier
-    """
+        tracked_task = self._add_task(
+            task=async_task,
+            task_progress=task_progress,
+            task_context=task_context or {},
+            fire_and_forget=fire_and_forget,
+            task_id=task_id,
+        )
 
-    # NOTE: If not task name is given, it will be composed of the handler's module and it's name
-    # to keep the urls shorter and more meaningful.
-    handler_module = inspect.getmodule(task)
-    handler_module_name = handler_module.__name__ if handler_module else ""
-    task_name = task_name or f"{handler_module_name}.{task.__name__}"
-    task_name = urllib.parse.quote(task_name, safe="")
-
-    # only one unique task can be running
-    if unique and tasks_manager.is_task_running(task_name):
-        managed_tasks_ids = list(tasks_manager.get_task_group(task_name).keys())
-        assert len(managed_tasks_ids) == 1  # nosec
-        managed_task: TrackedTask = tasks_manager.get_task_group(task_name)[
-            managed_tasks_ids[0]
-        ]
-        raise TaskAlreadyRunningError(task_name=task_name, managed_task=managed_task)
-
-    task_id = tasks_manager.create_task_id(task_name=task_name)
-    task_progress = TaskProgress.create(task_id=task_id)
-
-    # bind the task with progress 0 and 1
-    async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-        progress.update(message="starting", percent=0)
-        try:
-            return await handler(progress, **task_kwargs)
-        finally:
-            progress.update(message="finished", percent=1)
-
-    async_task = asyncio.create_task(
-        _progress_task(task_progress, task), name=f"{task_name}"
-    )
-
-    tracked_task = tasks_manager.add_task(
-        task_name=task_name,
-        task=async_task,
-        task_progress=task_progress,
-        task_context=task_context or {},
-        fire_and_forget=fire_and_forget,
-        task_id=task_id,
-    )
-
-    return tracked_task.task_id
+        return tracked_task.task_id
 
 
 __all__: tuple[str, ...] = (

@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 import yaml
 from pydantic import BaseModel
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from service_integration.compose_spec_model import BuildItem, Service
 from service_integration.osparc_config import (
     DockerComposeOverwriteConfig,
@@ -19,7 +20,13 @@ from service_integration.settings import AppSettings
 
 
 @pytest.fixture
-def settings() -> AppSettings:
+def settings(monkeypatch: pytest.MonkeyPatch) -> AppSettings:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "ENABLE_OOIL_OSPARC_VARIABLE_IDENTIFIER": "true",
+        },
+    )
     return AppSettings()
 
 
