@@ -6,10 +6,12 @@
 
 import logging
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
+import yaml
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -151,3 +153,72 @@ async def test_check_endpoint_in_auth_app(client: TestClient, user: UserInfoDict
 
     response = await client.get("/v0/auth:check")
     await assert_status(response, status.HTTP_401_UNAUTHORIZED)
+
+
+def test_docker_compose_dev_vendors_forwardauth_configuration(
+    services_docker_compose_dev_vendors_file: Path,
+    app_environment_for_wb_authz_service_dict: EnvVarsDict,
+):
+    """Test that manual service forwardauth.address points to correct WB_AUTH_WEBSERVER_HOST and port."""
+
+    # Load docker-compose file
+    compose_config = yaml.safe_load(
+        services_docker_compose_dev_vendors_file.read_text()
+    )
+
+    # Get the manual service configuration
+    manual_service = compose_config.get("services", {}).get("manual")
+    assert (
+        manual_service is not None
+    ), "Manual service not found in docker-compose-dev-vendors.yml"
+
+    # Extract forwardauth.address from deploy labels
+    deploy_labels = manual_service.get("deploy", {}).get("labels", [])
+    forwardauth_address_label = None
+
+    for label in deploy_labels:
+        if "forwardauth.address=" in label:
+            forwardauth_address_label = label
+            break
+
+    assert (
+        forwardauth_address_label is not None
+    ), "forwardauth.address label not found in manual service"
+
+    # Parse the forwardauth address
+    # Expected format: traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.address=http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:check
+    address_part = forwardauth_address_label.split("forwardauth.address=")[1]
+
+    # Verify it contains the expected pattern
+    assert (
+        "${WB_AUTH_WEBSERVER_HOST}" in address_part
+    ), "forwardauth.address should reference WB_AUTH_WEBSERVER_HOST"
+    assert (
+        "${WB_AUTH_WEBSERVER_PORT}" in address_part
+    ), "forwardauth.address should reference WB_AUTH_WEBSERVER_PORT"
+    assert (
+        "/v0/auth:check" in address_part
+    ), "forwardauth.address should point to /v0/auth:check endpoint"
+
+    # Verify the full expected pattern
+    expected_pattern = (
+        "http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:check"
+    )
+    assert (
+        address_part == expected_pattern
+    ), f"forwardauth.address should be '{expected_pattern}', got '{address_part}'"
+
+    # Verify that WB_AUTH_WEBSERVER_HOST and WB_AUTH_WEBSERVER_PORT are configured in the test environment
+    wb_auth_host = app_environment_for_wb_authz_service_dict.get(
+        "WB_AUTH_WEBSERVER_HOST"
+    )
+    wb_auth_port = app_environment_for_wb_authz_service_dict.get(
+        "WB_AUTH_WEBSERVER_PORT"
+    )
+
+    assert (
+        wb_auth_host is not None
+    ), "WB_AUTH_WEBSERVER_HOST should be configured in test environment"
+    assert (
+        wb_auth_port is not None
+    ), "WB_AUTH_WEBSERVER_PORT should be configured in test environment"
