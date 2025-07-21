@@ -1357,9 +1357,6 @@ async def test_open_shared_project_multiple_users(
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
     shared_project: dict,
-    socketio_client_factory: Callable[
-        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
-    ],
     client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocker: MockerFixture,
@@ -1385,7 +1382,6 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
     shared_project: dict,
-    socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected: ExpectedResponse,
@@ -1596,7 +1592,6 @@ async def test_open_shared_project_at_same_time(
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
     shared_project: ProjectDict,
-    socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected: ExpectedResponse,
@@ -1689,7 +1684,6 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     client_session_id_factory: Callable[[], str],
-    socketio_client_factory: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
