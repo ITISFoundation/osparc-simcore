@@ -113,6 +113,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __foldersList: null,
     __loadingFolders: null,
     __loadingWorkspaces: null,
+    __lastUrlParams: null,
 
     // overridden
     initResources: function() {
@@ -296,6 +297,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const contextChanged = this.__didContextChange(resp["params"]["url"]);
           if (contextChanged) {
             return;
+          }
+
+          this.__lastUrlParams = osparc.utils.Utils.deepCloneObject(resp["params"]["url"]);
+          if (this.__lastUrlParams["text"]) {
+            this.__lastUrlParams["text"] = decodeURIComponent(this.__lastUrlParams["text"]);
           }
 
           switch (this.getCurrentContext()) {
@@ -778,12 +784,23 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       delete reqParams["limit"];
       delete reqParams["offset"];
       delete reqParams["filters"];
+      if (reqParams["text"]) {
+        // decodeURIComponent the text to compare it with the currentParams
+        reqParams["text"] = decodeURIComponent(reqParams["text"]);
+      }
 
       const cParams = this.__getRequestParams();
       const currentParams = {};
       Object.entries(cParams).forEach(([snakeKey, value]) => {
         const key = osparc.utils.Utils.snakeToCamel(snakeKey);
-        currentParams[key] = value === "null" ? null : value;
+        if (value === "null") {
+          currentParams[key] = null;
+        } else if (key === "text") {
+          // decodeURIComponent the text to compare it with the reqParams
+          currentParams[key] = decodeURIComponent(value);
+        } else {
+          currentParams[key] = value;
+        }
       });
 
       // check the entries in currentParams are the same as the reqParams
@@ -1288,11 +1305,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return;
       }
 
-      if (context.includes("search")) {
-        const cParams = this.__getRequestParams();
-        const currentSearch = this._searchBarFilter.getTextFilterValue();
-        // OM here
-        console.log("searching for", cParams, currentSearch);
+      if (
+        context.includes("search") &&
+        this.__lastUrlParams &&
+        "text" in this.__lastUrlParams &&
+        this.__lastUrlParams["text"] === this._searchBarFilter.getTextFilterValue()
+      ) {
+        // text search didn't change
+        return;
       }
 
       osparc.store.Store.getInstance().setStudyBrowserContext(context);
