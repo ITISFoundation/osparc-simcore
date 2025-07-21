@@ -868,13 +868,11 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor = "default-button-focus-background";
         }
         if (states.selected || states.checked) {
-          textColor = "default-button-disabled";
+          textColor = "white";
           cursor = "default";
           decorator = "form-button-checked";
-          backgroundColor = "default-button-disabled-background";
+          backgroundColor = "product-color";
         }
-
-        decorator;
 
         return {
           textColor: textColor,
