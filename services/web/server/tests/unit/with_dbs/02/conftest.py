@@ -36,6 +36,15 @@ from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.fixture
+def app_environment(
+    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> dict[str, str]:
+    # NOTE: overrides app_environment
+    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
+    return app_environment | {"WEBSERVER_GARBAGE_COLLECTOR": "null"}
+
+
+@pytest.fixture
 def mock_service_resources() -> ServiceResourcesDict:
     return TypeAdapter(ServiceResourcesDict).validate_python(
         ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],

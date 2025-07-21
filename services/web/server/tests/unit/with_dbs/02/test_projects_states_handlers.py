@@ -76,20 +76,6 @@ API_PREFIX = f"/{API_VTAG}"
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    # disable the garbage collector
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {
-            "WEBSERVER_GARBAGE_COLLECTOR": "null",
-            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
-        },
-    )
-
-
-@pytest.fixture
 def with_disabled_rtx_collaboration(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
@@ -738,7 +724,6 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_project_with_disable_service_auto_start_set_overrides_behavior_collaboration_disabled(
-    with_disabled_rtx_collaboration: EnvVarsDict,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
