@@ -102,13 +102,21 @@ def check_not_null_user(user: UserInfoDict | None) -> UserInfoDict:
     return user
 
 
-async def check_authorized_user_credentials_or_raise(
+async def check_authorized_user_credentials(
     app: web.Application,
     user: UserInfoDict | None,
     *,
     password: str,
     product: Product,
 ) -> UserInfoDict:
+    """
+
+    Raises:
+        web.HTTPUnauthorized: 401
+
+    Returns:
+        user info dict
+    """
 
     user = check_not_null_user(user)
 
@@ -119,22 +127,27 @@ async def check_authorized_user_credentials_or_raise(
     )
 
     repo = UsersRepo(get_asyncpg_engine(app))
-    password_hash = await repo.get_password_hash(user_id=user["id"])
 
-    if not security_service.check_password(password, password_hash):
-        raise web.HTTPUnauthorized(
-            text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
-        )
+    if not security_service.check_password(
+        password, password_hash=await repo.get_password_hash(user_id=user["id"])
+    ):
+        raise web.HTTPUnauthorized(text=MSG_WRONG_PASSWORD)
     return user
 
 
-async def check_authorized_user_in_product_or_raise(
+async def check_authorized_user_in_product(
     app: web.Application,
     *,
     user_email: str,
     product: Product,
 ) -> None:
-    """Checks whether user is registered in this product"""
+    """Checks whether user is registered in this product
+
+
+    Raises:
+        web.HTTPUnauthorized: 401
+    """
+
     product_group_id = product.group_id
     assert product_group_id is not None  # nosec
 
@@ -144,9 +157,7 @@ async def check_authorized_user_in_product_or_raise(
             app, user_email=user_email, group_id=product_group_id
         )
     ):
-        raise web.HTTPUnauthorized(
-            text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)
 
 
 async def update_user_password(
@@ -157,7 +168,15 @@ async def update_user_password(
     new_password: str,
     verify_current_password: bool = True,
 ) -> None:
-    """Updates user password after verifying current password"""
+    """Updates user password after verifying current password
+
+    Keyword Arguments:
+        verify_current_password -- whether to check current_password is valid (default: {True})
+
+    Raises:
+        web.HTTPUnauthorized: 401
+    """
+
     repo = UsersRepo(get_asyncpg_engine(app))
 
     if verify_current_password:
@@ -166,9 +185,7 @@ async def update_user_password(
 
         # Verify current password
         if not security_service.check_password(current_password, current_password_hash):
-            raise web.HTTPUnauthorized(
-                text=MSG_WRONG_PASSWORD, content_type=MIMETYPE_APPLICATION_JSON
-            )
+            raise web.HTTPUnauthorized(text=MSG_WRONG_PASSWORD)
 
     # Encrypt new password and update
     new_password_hash = security_service.encrypt_password(new_password)

@@ -273,7 +273,7 @@ async def change_password(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     user = await _auth_service.get_user_or_none(request.app, user_id=user_id)
 
-    await _auth_service.check_authorized_user_credentials_or_raise(
+    await _auth_service.check_authorized_user_credentials(
         request.app,
         user=user,
         password=passwords.current.get_secret_value(),
@@ -285,6 +285,7 @@ async def change_password(request: web.Request):
         user_id=user_id,
         current_password=passwords.current.get_secret_value(),
         new_password=passwords.new.get_secret_value(),
+        verify_current_password=False,
     )
 
     return flash_response(MSG_PASSWORD_CHANGED)

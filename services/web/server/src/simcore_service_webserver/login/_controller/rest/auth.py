@@ -77,13 +77,13 @@ async def login(request: web.Request):
 
     user = _auth_service.check_not_null_user(user)
 
-    user = await _auth_service.check_authorized_user_credentials_or_raise(
+    user = await _auth_service.check_authorized_user_credentials(
         request.app,
         user,
         password=login_data.password.get_secret_value(),
         product=product,
     )
-    await _auth_service.check_authorized_user_in_product_or_raise(
+    await _auth_service.check_authorized_user_in_product(
         request.app, user_email=user["email"], product=product
     )
 
