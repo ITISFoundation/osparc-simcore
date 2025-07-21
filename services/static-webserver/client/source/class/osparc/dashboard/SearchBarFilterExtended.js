@@ -202,9 +202,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
 
     __filter: function(activatedFilter, filterData) {
       switch (activatedFilter) {
-        case "text":
-          this.__sourceSearchBarFilter.getChildControl("text-field").setValue(textField.getValue());
+        case "text": {
+          const thisTextField = this.getChildControl("search-bar-filter").getChildControl("text-field");
+          const thatTextField = this.__sourceSearchBarFilter.getChildControl("text-field");
+          thatTextField.setValue(thisTextField.getValue());
           break;
+        }
         case "sharedWith":
           this.__sourceSearchBarFilter.setSharedWithActiveFilter(filterData.id, filterData.label);
           break;
