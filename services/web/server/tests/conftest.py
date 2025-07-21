@@ -228,7 +228,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
     created_project_uuids = []
     used_clients = []
 
-    async def _setup(
+    async def _setup(  # noqa: C901
         client: TestClient,
         *,
         project: dict | None = None,
@@ -315,7 +315,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             }
         return url, project_data, expected_data, headers
 
-    async def _creator(
+    async def _creator(  # noqa: PLR0915
         client: TestClient,
         expected_accepted_response: HTTPStatus,
         expected_creation_response: HTTPStatus,
@@ -499,4 +499,16 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
         autospec=True,
+    )
+
+
+@pytest.fixture
+def with_dev_features_enabled(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
     )
