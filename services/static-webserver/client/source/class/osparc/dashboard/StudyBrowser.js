@@ -1278,6 +1278,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _changeContext: function(context, workspaceId = null, folderId = null) {
+      if (context.includes("search")) {
+        const cParams = this.__getRequestParams();
+        const currentSearch = this._searchBarFilter.getChildControl("text-field").getValue();
+        // OM here
+        console.log("searching for", cParams, currentSearch);
+      }
+
       if (
         !context.includes("search") && // load projects if search string changed
         context === this.getCurrentContext() &&
