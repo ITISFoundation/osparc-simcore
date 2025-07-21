@@ -1067,21 +1067,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       textField.addListener("tap", () => {
         const searchBarFilterExtended = searchBarFilter.popUpSearchBarFilter();
-        switch (this.getCurrentContext()) {
-          case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
-            searchBarFilterExtended.getChildControl("my-projects-button").setValue(true);
-            break;
-          case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-            searchBarFilterExtended.getChildControl("templates-button").setValue(true);
-            break;
-          case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-            searchBarFilterExtended.getChildControl("public-projects-button").setValue(true);
-            break;
-        }
+        searchBarFilterExtended.set({
+          currentContext: this.getCurrentContext(),
+        });
       });
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();

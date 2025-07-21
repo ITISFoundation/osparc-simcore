@@ -46,6 +46,26 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     "filterChanged": "qx.event.type.Data"
   },
 
+  properties: {
+    currentContext: {
+      check: [
+        "studiesAndFolders",      // osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,
+        "workspaces",             // osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES,
+        "templates",              // osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES,
+        "publicTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES,
+        "functions",              // osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS,
+        "trash",                  // osparc.dashboard.StudyBrowser.CONTEXT.TRASH,
+        "searchProjects",         // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+        "searchTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
+        "searchPublicTemplates",  // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+      ],
+      init: "studiesAndFolders",
+      nullable: false,
+      event: "changeCurrentContext",
+      apply: "__applyCurrentContext",
+    },
+  },
+
   statics: {
     createToolbarRadioButton: function(label, icon, toolTipText = null, pos = null) {
       const rButton = new qx.ui.toolbar.RadioButton().set({
@@ -200,7 +220,26 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       });
     },
 
+    __applyCurrentContext: function(value, old) {
+      switch (value) {
+        case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
+        case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
+          this.getChildControl("my-projects-button").setValue(true);
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
+          this.getChildControl("templates-button").setValue(true);
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
+          this.getChildControl("public-projects-button").setValue(true);
+          break;
+      }
+    },
+
     __filter: function(activatedFilter, filterData) {
+      // osparc.store.Store.getInstance().setStudyBrowserContext();
       switch (activatedFilter) {
         case "text": {
           const thisTextField = this.getChildControl("search-bar-filter").getChildControl("text-field");
