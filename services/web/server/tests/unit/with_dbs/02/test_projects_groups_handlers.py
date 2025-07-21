@@ -13,10 +13,24 @@ from models_library.api_schemas_webserver.projects_access_rights import (
     ProjectShareAccepted,
 )
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
+
+
+@pytest.fixture
+def with_dev_features_enabled(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
+    )
 
 
 @pytest.mark.acceptance_test(
@@ -237,6 +251,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_share_project(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -303,6 +318,7 @@ async def test_share_project(
     ],
 )
 async def test_share_project_with_roles(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
