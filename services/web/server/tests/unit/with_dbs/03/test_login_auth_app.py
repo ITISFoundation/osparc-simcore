@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import logging
 from collections.abc import Callable
 
 import pytest
@@ -11,20 +12,73 @@ import pytest_asyncio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from faker import Faker
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.application import create_application_auth
+from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.security import security_web
 
 
 @pytest.fixture
+def service_name() -> str:
+    return "wb-authz"
+
+
+@pytest.fixture
+def app_environment_for_wb_authz_service_dict(
+    docker_compose_service_environment_dict: EnvVarsDict,
+    service_name: str,
+    faker: Faker,
+) -> EnvVarsDict:
+    hostname, task_slot = faker.hostname(levels=0), faker.random_int(min=0, max=10)
+
+    assert (
+        docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"]
+        == "WEBSERVER_AUTHZ_APP_FACTORY"
+    )
+
+    return {
+        **docker_compose_service_environment_dict,
+        "HOSTNAME": f"auth-{hostname}-{task_slot}",  # TODO: load from docker-compose
+        # TODO: add everything coming from Dockerfile?
+    }
+
+
+@pytest.fixture
+def app_environment_for_wb_authz_service(
+    monkeypatch: pytest.MonkeyPatch,
+    app_environment_for_wb_authz_service_dict: EnvVarsDict,
+    faker: Faker,
+    service_name: str,
+) -> EnvVarsDict:
+    """Mocks the environment variables for the auth app service (considering docker-compose's environment)."""
+
+    mocked_envs = setenvs_from_dict(
+        monkeypatch, {**app_environment_for_wb_authz_service_dict}
+    )
+
+    # test how service will load
+    settings = ApplicationSettings.create_from_envs()
+
+    logging.info(
+        "Application settings:\n%s",
+        settings.model_dump_json(indent=2),
+    )
+
+    assert service_name == settings.WEBSERVER_HOST
+
+    return mocked_envs
+
+
+@pytest.fixture
 async def auth_app(
-    app_environment: EnvVarsDict,
+    app_environment_for_wb_authz_service: EnvVarsDict,
 ) -> web.Application:
-    # TODO: make sure this goes through wb-authz service
-    assert app_environment
+    assert app_environment_for_wb_authz_service
 
     # creates auth application instead
     app = create_application_auth()
