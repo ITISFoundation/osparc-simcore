@@ -18,6 +18,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionGet,
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
+from pydantic import TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
@@ -50,12 +51,13 @@ def mock_function() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "user_role,add_user_function_api_access_rights,expected_register,expected_get,expected_delete,expected_get2",
+    "user_role,add_user_function_api_access_rights,expected_register,expected_get,expected_list,expected_delete,expected_get2",
     [
         (
             UserRole.USER,
             True,
             status.HTTP_201_CREATED,
+            status.HTTP_200_OK,
             status.HTTP_200_OK,
             status.HTTP_204_NO_CONTENT,
             status.HTTP_404_NOT_FOUND,
@@ -67,16 +69,18 @@ def mock_function() -> dict[str, Any]:
             status.HTTP_403_FORBIDDEN,
             status.HTTP_403_FORBIDDEN,
             status.HTTP_403_FORBIDDEN,
+            status.HTTP_403_FORBIDDEN,
         ),
     ],
     indirect=["add_user_function_api_access_rights"],
 )
-async def test_register_get_delete_function(
+async def test_function_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     mock_function: dict[str, Any],
     expected_register: HTTPStatus,
     expected_get: HTTPStatus,
+    expected_list: HTTPStatus,
     expected_delete: HTTPStatus,
     expected_get2: HTTPStatus,
     add_user_function_api_access_rights: AsyncIterator[None],
@@ -100,6 +104,16 @@ async def test_register_get_delete_function(
     if not error:
         retrieved_function = RegisteredProjectFunctionGet.model_validate(data)
         assert retrieved_function.uid == returned_function.uid
+
+    url = client.app.router["list_functions"].url_for()
+    response = await client.get(url)
+    data, error = await assert_status(response, expected_list)
+    if not error:
+        retrieved_functions = TypeAdapter(
+            list[RegisteredProjectFunctionGet]
+        ).validate_python(data)
+        assert len(retrieved_functions) == 1
+        assert retrieved_functions[0].uid == returned_function_uid
 
     url = client.app.router["delete_function"].url_for(
         function_id=str(returned_function_uid)
