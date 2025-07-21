@@ -28,6 +28,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       padding: 8,
       decorator: "rounded",
     });
+    osparc.utils.Utils.addBorder(this, 1, qx.theme.manager.Color.getInstance().resolve("product-color"));
 
     this.__resourceType = resourceType;
     this.__initFilterData = initFilterData;
