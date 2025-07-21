@@ -37,7 +37,6 @@ from models_library.api_schemas_webserver.projects import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectRunningState,
     ProjectStatus,
@@ -51,6 +50,7 @@ from models_library.services_resources import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
@@ -80,12 +80,26 @@ def app_environment(
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> EnvVarsDict:
     # disable the garbage collector
-    monkeypatch.setenv("WEBSERVER_GARBAGE_COLLECTOR", "null")
-    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
-    return app_environment | {
-        "WEBSERVER_GARBAGE_COLLECTOR": "null",
-        "WEBSERVER_DEV_FEATURES_ENABLED": "1",
-    }
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
+    )
+
+
+@pytest.fixture
+def with_disabled_rtx_collaboration(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> EnvVarsDict:
+    # disable the real-time collaboration settings
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_REALTIME_COLLABORATION": "null",
+        },
+    )
 
 
 def assert_replaced(current_project, update_data):
@@ -723,7 +737,8 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_open_project_with_disable_service_auto_start_set_overrides_behavior(
+async def test_open_project_with_disable_service_auto_start_set_overrides_behavior_collaboration_disabled(
+    with_disabled_rtx_collaboration: EnvVarsDict,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
@@ -1038,7 +1053,8 @@ async def test_close_project(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-async def test_get_active_project(
+async def test_get_active_project_disabled_collaboration(
+    with_disabled_rtx_collaboration: EnvVarsDict,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -1334,6 +1350,7 @@ def clean_redis_table(redis_client) -> None:
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked(
+    with_disabled_rtx_collaboration: EnvVarsDict,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
@@ -1388,16 +1405,18 @@ async def test_open_shared_project_2_users_locked(
         expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
     )
     # now the expected result is that the project is locked and opened by client 1
-    owner1 = Owner(
-        user_id=logged_user["id"],
-        first_name=logged_user.get("first_name"),
-        last_name=logged_user.get("last_name"),
+    expected_project_state_client_1 = expected_project_state_client_1.model_copy(
+        update={
+            "share_state": ProjectShareStateOutputSchema(
+                locked=True,
+                status=ProjectStatus.OPENED,
+                current_user_groupids=[
+                    logged_user["primary_gid"]
+                ],  # this should be the group of that user
+            ),
+        }
     )
-    expected_project_state_client_1.share_state.locked = True
-    expected_project_state_client_1.share_state.status = ProjectStatus.OPENED
-    expected_project_state_client_1.share_state.current_user_groupids = logged_user[
-        "primary_gid"
-    ]
+
     # NOTE: there are 2 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
@@ -1432,8 +1451,15 @@ async def test_open_shared_project_2_users_locked(
         shared_project,
         expected.locked if user_role != UserRole.GUEST else status.HTTP_423_LOCKED,
     )
-    expected_project_state_client_2 = deepcopy(expected_project_state_client_1)
-    expected_project_state_client_2.share_state.status = ProjectStatus.OPENED
+    expected_project_state_client_2 = expected_project_state_client_1.model_copy(
+        update={
+            "share_state": ProjectShareStateOutputSchema(
+                locked=expected_project_state_client_1.share_state.locked,
+                status=ProjectStatus.OPENED,
+                current_user_groupids=expected_project_state_client_1.share_state.current_user_groupids,
+            ),
+        }
+    )
 
     await _state_project(
         client_2,
@@ -1465,9 +1491,7 @@ async def test_open_shared_project_2_users_locked(
                     "share_state": ProjectShareStateOutputSchema(
                         locked=True,
                         status=ProjectStatus.CLOSING,
-                        current_user_groupids=[
-                            owner1.user_id
-                        ],  # this should be the group of that user
+                        current_user_groupids=[logged_user["primary_gid"]],
                     )
                 }
             )
@@ -1499,21 +1523,25 @@ async def test_open_shared_project_2_users_locked(
         expected.ok if user_role != UserRole.GUEST else status.HTTP_423_LOCKED,
     )
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
-        expected_project_state_client_2.share_state.locked = True
-        expected_project_state_client_2.share_state.status = ProjectStatus.OPENED
-        owner2 = Owner(
-            user_id=user_2["id"],
-            first_name=user_2.get("first_name", None),
-            last_name=user_2.get("last_name", None),
+        expected_project_state_client_2 = expected_project_state_client_1.model_copy(
+            update={
+                "share_state": ProjectShareStateOutputSchema(
+                    locked=True,
+                    status=ProjectStatus.OPENED,
+                    current_user_groupids=[int(user_2["primary_gid"])],
+                ),
+            }
         )
-        expected_project_state_client_2.share_state.current_user_groupids = [
-            owner2.user_id
-        ]  # this should be the group of that user
-        expected_project_state_client_1.share_state.locked = True
-        expected_project_state_client_1.share_state.status = ProjectStatus.OPENED
-        expected_project_state_client_1.share_state.current_user_groupids = [
-            owner2.user_id
-        ]  # this should be the group of that user
+        expected_project_state_client_1 = expected_project_state_client_1.model_copy(
+            update={
+                "share_state": ProjectShareStateOutputSchema(
+                    locked=True,
+                    status=ProjectStatus.OPENED,
+                    current_user_groupids=[int(user_2["primary_gid"])],
+                ),
+            }
+        )
+
     # NOTE: there are 3 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
         mock_project_state_updated_handler,
@@ -1535,6 +1563,7 @@ async def test_open_shared_project_2_users_locked(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_at_same_time(
+    with_disabled_rtx_collaboration: EnvVarsDict,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
@@ -1619,9 +1648,10 @@ async def test_open_shared_project_at_same_time(
                 assert data == {k: shared_project[k] for k in data}
                 assert project_status.share_state.locked
                 assert project_status.share_state.current_user_groupids
-                assert project_status.share_state.current_user_groupids in [
-                    c["user"]["first_name"] for c in clients
-                ]  # TODO: this will fail
+                assert len(project_status.share_state.current_user_groupids) == 1
+                assert project_status.share_state.current_user_groupids[0] in [
+                    c["user"]["primary_gid"] for c in clients
+                ]
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS
 

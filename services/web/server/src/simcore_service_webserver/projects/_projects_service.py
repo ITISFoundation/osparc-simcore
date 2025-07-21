@@ -1386,7 +1386,9 @@ async def try_open_project_for_user(
     project_uuid: ProjectID,
     client_session_id: str,
     app: web.Application,
+    *,
     max_number_of_opened_projects_per_user: int | None,
+    allow_multiple_sessions: bool,
     max_number_of_user_sessions_per_project: PositiveInt | None,
 ) -> bool:
     """
@@ -1444,18 +1446,22 @@ async def try_open_project_for_user(
                         project_uuid=project_uuid,
                         client_session_id=client_session_id,
                     )
-                if (
-                    max_number_of_user_sessions_per_project is None
-                    or not sessions_with_project
-                ) or (
-                    len(sessions_with_project) < max_number_of_user_sessions_per_project
+                if not sessions_with_project or (
+                    allow_multiple_sessions
+                    and (
+                        max_number_of_user_sessions_per_project is None
+                        or (
+                            len(sessions_with_project)
+                            < max_number_of_user_sessions_per_project
+                        )
+                    )
                 ):
                     # if there are no sessions with this project, or the number of sessions is less than the maximum allowed
                     await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                     return True
 
                 # NOTE: Special case for backwards compatibility, allow to close a tab and open the project again in a new tab
-                if max_number_of_user_sessions_per_project == 1:
+                if not allow_multiple_sessions:
                     current_session = user_session.get_id()
                     user_ids: set[int] = {s.user_id for s in sessions_with_project}
                     if user_ids.issubset({user_id}):

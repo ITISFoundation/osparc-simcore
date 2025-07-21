@@ -102,10 +102,12 @@ async def open_project(request: web.Request) -> web.Response:
             client_session_id=client_session_id,
             app=request.app,
             max_number_of_opened_projects_per_user=product.max_open_studies_per_user,
+            allow_multiple_sessions=app_settings.WEBSERVER_REALTIME_COLLABORATION
+            is not None,
             max_number_of_user_sessions_per_project=(
-                1
-                if not app_settings.WEBSERVER_REALTIME_COLLABORATION
-                else app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
+                app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
+                if app_settings.WEBSERVER_REALTIME_COLLABORATION
+                else None
             ),
         ):
             raise HTTPLockedError(text="Project is locked, try later")
