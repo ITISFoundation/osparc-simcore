@@ -1290,7 +1290,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (context.includes("search")) {
         const cParams = this.__getRequestParams();
-        const currentSearch = this._searchBarFilter.getChildControl("text-field").getValue();
+        const currentSearch = this._searchBarFilter.getTextFilterValue();
         // OM here
         console.log("searching for", cParams, currentSearch);
       }

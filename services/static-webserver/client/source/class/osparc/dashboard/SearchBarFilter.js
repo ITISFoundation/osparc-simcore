@@ -206,7 +206,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     getTextFilterValue: function() {
-      return this.getChildControl("text-field").getValue();
+      return this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue().trim() : null;
     },
 
     __showFilterMenu: function() {
