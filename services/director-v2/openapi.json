@@ -2852,6 +2852,11 @@
           "paths_mapping": {
             "$ref": "#/components/schemas/PathMappingsLabel"
           },
+          "is_collaborative": {
+            "type": "boolean",
+            "title": "Is Collaborative",
+            "default": false
+          },
           "simcore.service.compose-spec": {
             "anyOf": [
               {
