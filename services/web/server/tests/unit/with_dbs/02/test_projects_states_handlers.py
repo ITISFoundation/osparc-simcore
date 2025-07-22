@@ -22,6 +22,7 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient, TestServer
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -36,6 +37,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectStateOutputSchema,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.projects_state import (
     ProjectRunningState,
@@ -48,12 +50,13 @@ from models_library.services_resources import (
     ServiceResourcesDictHelpers,
 )
 from models_library.utils.fastapi_encoders import jsonable_encoder
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_login import log_client_in
+from pytest_simcore.helpers.webserver_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     standard_role_response,
@@ -99,7 +102,11 @@ def with_enabled_rtc_collaboration(
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
-        {"RTC_MAX_NUMBER_OF_USERS": f"{max_number_of_user_sessions}"},
+        {
+            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
+                {"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions}
+            )
+        },
     )
 
 
@@ -1385,6 +1392,7 @@ async def test_open_shared_project_multiple_users(
     shared_project: dict,
     client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
+    exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection: Callable[
         [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
@@ -1399,20 +1407,17 @@ async def test_open_shared_project_multiple_users(
     )
 
     # current state is closed and unlocked
-    expected_project_state = ProjectStateOutputSchema(
+    closed_project_state = ProjectStateOutputSchema(
         share_state=ProjectShareStateOutputSchema(
             locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
-    await _state_project(
-        base_client, shared_project, expected.ok, expected_project_state
-    )
+    await _state_project(base_client, shared_project, expected.ok, closed_project_state)
 
     # now user 1 opens the shared project
     await _open_project(base_client, base_client_tab_id, shared_project, expected.ok)
-
-    expected_project_state = expected_project_state.model_copy(
+    opened_project_state = closed_project_state.model_copy(
         update={
             "share_state": ProjectShareStateOutputSchema(
                 locked=False,
@@ -1424,11 +1429,56 @@ async def test_open_shared_project_multiple_users(
     await _assert_project_state_updated(
         sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
-        [expected_project_state] * 2,
+        [opened_project_state] * 2,
     )
-    await _state_project(
-        base_client, shared_project, expected.ok, expected_project_state
-    )
+    await _state_project(base_client, shared_project, expected.ok, opened_project_state)
+
+    # now we create more users and open the same project until we reach the maximum number of user sessions
+    for _ in range(1, max_number_of_user_sessions):
+        client_i = client_on_running_server_factory()
+        client_i_tab_id = client_session_id_factory()
+
+        # user i logs in
+        user_i = await exit_stack.enter_async_context(
+            LoggedUser(client_i, {"role": logged_user["role"]})
+        )
+
+        sio_i, sio_i_handlers = await create_socketio_connection(
+            client_i, client_i_tab_id
+        )
+
+        # user i opens the shared project
+        await _open_project(client_i, client_i_tab_id, shared_project, expected.ok)
+        opened_project_state = opened_project_state.model_copy(
+            update={
+                "share_state": ProjectShareStateOutputSchema(
+                    locked=False,
+                    status=ProjectStatus.OPENED,
+                    current_user_groupids=[
+                        *opened_project_state.share_state.current_user_groupids,
+                        TypeAdapter(GroupID).validate_python(user_i["primary_gid"]),
+                    ],
+                ),
+            }
+        )
+        await _assert_project_state_updated(
+            sio_i_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+            shared_project,
+            [opened_project_state]
+            * 1,  # NOTE: only one call per user since they are part of the everyone group
+        )
+        await _assert_project_state_updated(
+            sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+            shared_project,
+            [opened_project_state]
+            * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+        )
+        await _state_project(
+            client_i, shared_project, expected.ok, opened_project_state
+        )
+        await _state_project(
+            base_client, shared_project, expected.ok, opened_project_state
+        )
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
