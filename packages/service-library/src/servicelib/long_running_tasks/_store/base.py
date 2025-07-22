@@ -20,3 +20,11 @@ class BaseStore:
     @abstractmethod
     async def delete(self, key: TaskId) -> None:
         """Delete a tracked task by its key."""
+
+    @abstractmethod
+    async def set_cancelled(self, key: TaskId) -> None:
+        """Mark a tracked task as cancelled."""
+
+    @abstractmethod
+    async def is_cancelled(self, key: TaskId) -> bool:
+        """Check if a tracked task is cancelled."""
