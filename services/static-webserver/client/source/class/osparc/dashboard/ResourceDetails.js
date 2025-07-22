@@ -76,8 +76,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               });
             break;
           case "function": {
-            addPages = () => {
-              this.__resourceModel = new osparc.data.model.Function(latestResourceData, templateData);
+            addPages = (functionData, templateData = null) => {
+              this.__resourceModel = new osparc.data.model.Function(functionData, templateData);
               this.__resourceModel["resourceType"] = resourceData["resourceType"];
               this.__addPages();
             }
@@ -89,11 +89,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
                   osparc.store.Services.getStudyServicesMetadata(templateData)
                     .finally(() => {
                       this.__resourceData["services"] = resourceData["services"];
-                      addPages();
+                      addPages(latestResourceData, templateData);
                     });
                 });
             } else {
-              addPages();
+              addPages(latestResourceData);
             }
             break;
           }
