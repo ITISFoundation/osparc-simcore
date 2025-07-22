@@ -16035,9 +16035,9 @@ components:
           const: PROJECT
           title: Functionclass
           default: PROJECT
-        name:
+        title:
           type: string
-          title: Name
+          title: Title
           default: ''
         description:
           type: string
