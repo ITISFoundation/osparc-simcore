@@ -35,7 +35,7 @@ async def get_and_increment_project_document_version(
     """
     version_key = PROJECT_DOCUMENT_VERSION_KEY.format(project_uuid)
     # If key doesn't exist, it's created with value 0 and then incremented to 1
-    return await redis_client.redis.incr(version_key)
+    return await int(redis_client.redis.incr(version_key))
 
 
 async def get_project_document_version(
