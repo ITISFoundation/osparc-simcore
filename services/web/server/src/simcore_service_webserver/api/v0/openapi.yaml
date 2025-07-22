@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.72.0
+  version: 0.73.1
 servers:
 - url: ''
   description: webserver
@@ -1560,7 +1560,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreRegisteredUserGet'
+              $ref: '#/components/schemas/UserAccountRestPreRegister'
         required: true
       responses:
         '200':
@@ -3354,19 +3354,19 @@ paths:
       summary: Register Function
       operationId: register_function
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               oneOf:
               - $ref: '#/components/schemas/ProjectFunctionToRegister'
               - $ref: '#/components/schemas/SolverFunctionToRegister'
-              title: ' Body'
               discriminator:
                 propertyName: functionClass
                 mapping:
                   PROJECT: '#/components/schemas/ProjectFunctionToRegister'
                   SOLVER: '#/components/schemas/SolverFunctionToRegister'
-        required: true
+              title: ' Body'
       responses:
         '200':
           description: Successful Response
@@ -3374,6 +3374,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    get:
+      tags:
+      - functions
+      summary: List Functions
+      operationId: list_functions
+      parameters:
+      - name: include_extras
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Extras
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____'
   /v0/functions/{function_id}:
     get:
       tags:
@@ -3388,6 +3422,39 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      - name: include_extras
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Extras
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    patch:
+      tags:
+      - functions
+      summary: Update Function
+      operationId: update_function
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisteredFunctionUpdate'
       responses:
         '200':
           description: Successful Response
@@ -8574,14 +8641,14 @@ components:
           application: Antenna_Design
           city: Washington
           company: EM Com
-          country: USA
+          country: Switzerland
           description: Description of something
           email: maxwel@email.com
           eula: true
           firstName: James
           hear: Search_Engine
           lastName: Maxwel
-          phone: +1 123456789
+          phone: +41 44 245 96 96
           postalCode: '98001'
           privacyPolicy: true
     AccountRequestStatus:
@@ -11239,6 +11306,30 @@ components:
           title: Error
       type: object
       title: Envelope[dict[str, Any]]
+    ? Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____
+    : properties:
+        data:
+          anyOf:
+          - items:
+              oneOf:
+              - $ref: '#/components/schemas/RegisteredProjectFunctionGet'
+              - $ref: '#/components/schemas/RegisteredSolverFunctionGet'
+              discriminator:
+                propertyName: functionClass
+                mapping:
+                  PROJECT: '#/components/schemas/RegisteredProjectFunctionGet'
+                  SOLVER: '#/components/schemas/RegisteredSolverFunctionGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[Annotated[Union[RegisteredProjectFunctionGet, RegisteredSolverFunctionGet],
+        FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]]
     Envelope_list_Annotated_str__StringConstraints___:
       properties:
         data:
@@ -12233,6 +12324,23 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
+    FunctionAccessRights:
+      properties:
+        read:
+          type: boolean
+          title: Read
+          default: false
+        write:
+          type: boolean
+          title: Write
+          default: false
+        execute:
+          type: boolean
+          title: Execute
+          default: false
+      additionalProperties: false
+      type: object
+      title: FunctionAccessRights
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -13023,11 +13131,15 @@ components:
       title: MarkerUI
     MyFunctionPermissionsGet:
       properties:
+        readFunctions:
+          type: boolean
+          title: Readfunctions
         writeFunctions:
           type: boolean
           title: Writefunctions
       type: object
       required:
+      - readFunctions
       - writeFunctions
       title: MyFunctionPermissionsGet
     MyGroupsGet:
@@ -13113,7 +13225,7 @@ components:
       properties:
         phone:
           type: string
-          minLength: 1
+          format: phone
           title: Phone
           description: Phone number to register
       type: object
@@ -14653,62 +14765,6 @@ components:
       - x
       - y
       title: Position
-    PreRegisteredUserGet:
-      properties:
-        firstName:
-          type: string
-          title: Firstname
-        lastName:
-          type: string
-          title: Lastname
-        email:
-          type: string
-          format: email
-          title: Email
-        institution:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Institution
-          description: company, university, ...
-        phone:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Phone
-        address:
-          type: string
-          title: Address
-        city:
-          type: string
-          title: City
-        state:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: State
-        postalCode:
-          type: string
-          title: Postalcode
-        country:
-          type: string
-          title: Country
-        extras:
-          additionalProperties: true
-          type: object
-          title: Extras
-          description: Keeps extra information provided in the request form.
-      type: object
-      required:
-      - firstName
-      - lastName
-      - email
-      - phone
-      - address
-      - city
-      - postalCode
-      - country
-      title: PreRegisteredUserGet
     Preference:
       properties:
         defaultValue:
@@ -15935,6 +15991,7 @@ components:
           title: Email
         phone:
           type: string
+          format: phone
           title: Phone
           description: Phone number E.164, needed on the deployments with 2FA
       additionalProperties: false
@@ -15974,6 +16031,20 @@ components:
       - name
       - message
       title: RegisterPhoneNextPage
+    RegisteredFunctionUpdate:
+      properties:
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      title: RegisteredFunctionUpdate
     RegisteredProjectFunctionGet:
       properties:
         functionClass:
@@ -16011,26 +16082,40 @@ components:
             type: object
           - type: 'null'
           title: Defaultinputs
-        uid:
+        uuid:
           type: string
           format: uuid
-          title: Uid
-        createdAt:
+          title: Uuid
+        creationDate:
           type: string
           format: date-time
-          title: Createdat
-        projectId:
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          format: date-time
+          title: Lastchangedate
+        templateId:
           type: string
           format: uuid
-          title: Projectid
+          title: Templateid
+        accessRights:
+          anyOf:
+          - $ref: '#/components/schemas/FunctionAccessRights'
+          - type: 'null'
+        thumbnail:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thumbnail
       type: object
       required:
       - inputSchema
       - outputSchema
       - defaultInputs
-      - uid
-      - createdAt
-      - projectId
+      - uuid
+      - creationDate
+      - lastChangeDate
+      - templateId
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
@@ -16077,6 +16162,10 @@ components:
           type: string
           format: date-time
           title: Createdat
+        modifiedAt:
+          type: string
+          format: date-time
+          title: Modifiedat
         solverKey:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -16092,6 +16181,7 @@ components:
       - defaultInputs
       - uid
       - createdAt
+      - modifiedAt
       - solverKey
       - solverVersion
       title: RegisteredSolverFunctionGet
@@ -17727,6 +17817,63 @@ components:
       required:
       - email
       title: UserAccountReject
+    UserAccountRestPreRegister:
+      properties:
+        firstName:
+          type: string
+          title: Firstname
+        lastName:
+          type: string
+          title: Lastname
+        email:
+          type: string
+          format: email
+          title: Email
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+          description: company, university, ...
+        phone:
+          anyOf:
+          - type: string
+            format: phone
+          - type: 'null'
+          title: Phone
+        address:
+          type: string
+          title: Address
+        city:
+          type: string
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+        postalCode:
+          type: string
+          title: Postalcode
+        country:
+          type: string
+          title: Country
+        extras:
+          additionalProperties: true
+          type: object
+          title: Extras
+          description: Keeps extra information provided in the request form.
+      type: object
+      required:
+      - firstName
+      - lastName
+      - email
+      - phone
+      - address
+      - city
+      - postalCode
+      - country
+      title: UserAccountRestPreRegister
     UserGet:
       properties:
         userId:

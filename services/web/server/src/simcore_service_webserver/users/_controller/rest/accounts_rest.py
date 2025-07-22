@@ -30,7 +30,7 @@ from ....security.decorators import permission_required
 from ....utils_aiohttp import create_json_response_from_page, envelope_json_response
 from ... import _accounts_service
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._rest_schemas import PreRegisteredUserGet, UsersRequestContext
+from ._rest_schemas import UserAccountRestPreRegister, UsersRequestContext
 
 _logger = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ async def search_user_accounts(request: web.Request) -> web.Response:
 @handle_rest_requests_exceptions
 async def pre_register_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
-    pre_user_profile = await parse_request_body_as(PreRegisteredUserGet, request)
+    pre_user_profile = await parse_request_body_as(UserAccountRestPreRegister, request)
 
     user_profile = await _accounts_service.pre_register_user(
         request.app,

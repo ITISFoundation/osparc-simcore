@@ -27,7 +27,6 @@ def app_environment(
             # exclude
             "WEBSERVER_ACTIVITY": "null",
             "WEBSERVER_CATALOG": "null",
-            "WEBSERVER_CLUSTERS": "null",
             "WEBSERVER_COMPUTATION": "null",
             "WEBSERVER_DIAGNOSTICS": "null",
             "WEBSERVER_EMAIL": "null",

@@ -142,16 +142,12 @@ qx.Class.define("osparc.data.Resources", {
           getPageSearch: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&tag_ids={tagIds}&order_by={orderBy}&type=user"
+            url: statics.API + "/projects:search?offset={offset}&limit={limit}&text={text}&order_by={orderBy}&type=user"
           },
           getPageTrashed: {
             useCache: false,
             method: "GET",
             url: statics.API + "/projects:search?filters={%22trashed%22:%22true%22}&offset={offset}&limit={limit}&order_by={orderBy}&type=user"
-          },
-          open: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:open"
           },
           getWallet: {
             useCache: false,
@@ -165,14 +161,6 @@ qx.Class.define("osparc.data.Resources", {
           payDebt: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/wallet/{walletId}:pay-debt"
-          },
-          openDisableAutoStart: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
-          },
-          close: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:close"
           },
           duplicate: {
             method: "POST",
@@ -196,14 +184,6 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}"
-          },
-          trash: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:trash"
-          },
-          untrash: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:untrash"
           },
           delete: {
             method: "DELETE",
@@ -252,11 +232,6 @@ qx.Class.define("osparc.data.Resources", {
             method: "PUT",
             url: statics.API + "/projects/{studyId}/nodes/{nodeId}/pricing-plan/{pricingPlanId}/pricing-unit/{pricingUnitId}"
           },
-          checkShareePermissions: {
-            useCache: false,
-            method: "GET",
-            url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
-          },
           postAccessRights: {
             useCache: false,
             method: "POST",
@@ -271,10 +246,6 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "PUT",
             url: statics.API + "/projects/{studyId}/groups/{gId}"
-          },
-          shareWithEmail: {
-            method: "POST",
-            url: statics.API + "/projects/{studyId}:share"
           },
           addTag: {
             useCache: false,
@@ -302,6 +273,35 @@ qx.Class.define("osparc.data.Resources", {
           updateMetadata: {
             method: "PATCH",
             url: statics.API + "/projects/{studyId}/metadata"
+          },
+          open: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:open"
+          },
+          openDisableAutoStart: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:open?disable_service_auto_start={disableServiceAutoStart}"
+          },
+          close: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:close"
+          },
+          shareWithEmail: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:share"
+          },
+          checkShareePermissions: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/nodes/-/services:access?for_gid={gid}"
+          },
+          trash: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:trash"
+          },
+          untrash: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}:untrash"
           },
         }
       },
@@ -631,6 +631,14 @@ qx.Class.define("osparc.data.Resources", {
           create: {
             method: "POST",
             url: statics.API + "/functions"
+          },
+          getOne: {
+            method: "GET",
+            url: statics.API + "/functions/{functionId}?include_extras=true"
+          },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/functions?include_extras=true"
           }
         }
       },

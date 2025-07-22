@@ -164,7 +164,7 @@ from .exceptions import (
     ProjectTooManyProjectOpenedError,
     ProjectTypeAndTemplateIncompatibilityError,
 )
-from .models import ProjectDict, ProjectPatchInternalExtended
+from .models import ProjectDBGet, ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -357,6 +357,17 @@ async def batch_get_project_name(
         projects_uuids=projects_uuids,
     )
     return [name if name else "Unknown" for name in get_project_names]
+
+
+async def batch_get_projects(
+    app: web.Application,
+    *,
+    project_uuids: list[ProjectID],
+) -> list[ProjectDBGet]:
+    return await _projects_repository.batch_get_projects(
+        app=app,
+        project_uuids=project_uuids,
+    )
 
 
 #

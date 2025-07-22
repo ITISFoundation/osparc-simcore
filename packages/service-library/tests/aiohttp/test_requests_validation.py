@@ -13,6 +13,7 @@ from aiohttp.test_utils import TestClient, make_mocked_request
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.rest_error import EnvelopedError
 from models_library.rest_ordering import (
     OrderBy,
     OrderDirection,
@@ -116,18 +117,10 @@ async def client(aiohttp_client: Callable, faker: Faker) -> TestClient:
             {**dict(request.app), **dict(request)}
         )
 
-        path_params = parse_request_path_parameters_as(
-            MyRequestPathParams, request, use_enveloped_error_v1=False
-        )
-        query_params = parse_request_query_parameters_as(
-            MyRequestQueryParams, request, use_enveloped_error_v1=False
-        )
-        headers_params = parse_request_headers_as(
-            MyRequestHeadersParams, request, use_enveloped_error_v1=False
-        )
-        body = await parse_request_body_as(
-            MyBody, request, use_enveloped_error_v1=False
-        )
+        path_params = parse_request_path_parameters_as(MyRequestPathParams, request)
+        query_params = parse_request_query_parameters_as(MyRequestQueryParams, request)
+        headers_params = parse_request_headers_as(MyRequestHeadersParams, request)
+        body = await parse_request_body_as(MyBody, request)
         # ---------------------------
 
         return web.json_response(
@@ -230,19 +223,12 @@ async def test_parse_request_with_invalid_path_params(
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
-    assert response_body["error"].pop("resource")
-    assert response_body == {
-        "error": {
-            "msg": "Invalid parameter/s 'project_uuid' in request path",
-            "details": [
-                {
-                    "loc": "project_uuid",
-                    "msg": "Input should be a valid UUID, invalid character: expected an optional prefix of `urn:uuid:` followed by [0-9a-fA-F-], found `i` at 1",
-                    "type": "uuid_parsing",
-                }
-            ],
-        }
-    }
+
+    error_model = EnvelopedError.model_validate(response_body).error
+    assert error_model.message == "Invalid parameter/s 'project_uuid' in request path"
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.errors[0].field == "project_uuid"
+    assert error_model.errors[0].code == "uuid_parsing"
 
 
 async def test_parse_request_with_invalid_query_params(
@@ -261,19 +247,11 @@ async def test_parse_request_with_invalid_query_params(
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
-    assert response_body["error"].pop("resource")
-    assert response_body == {
-        "error": {
-            "msg": "Invalid parameter/s 'label' in request query",
-            "details": [
-                {
-                    "loc": "label",
-                    "msg": "Field required",
-                    "type": "missing",
-                }
-            ],
-        }
-    }
+    error_model = EnvelopedError.model_validate(response_body).error
+    assert error_model.message == "Invalid parameter/s 'label' in request query"
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.errors[0].field == "label"
+    assert error_model.errors[0].code == "missing"
 
 
 async def test_parse_request_with_invalid_body(
@@ -293,25 +271,11 @@ async def test_parse_request_with_invalid_body(
 
     response_body = await r.json()
 
-    assert response_body["error"].pop("resource")
-
-    assert response_body == {
-        "error": {
-            "msg": "Invalid field/s 'x, z' in request body",
-            "details": [
-                {
-                    "loc": "x",
-                    "msg": "Field required",
-                    "type": "missing",
-                },
-                {
-                    "loc": "z",
-                    "msg": "Field required",
-                    "type": "missing",
-                },
-            ],
-        }
-    }
+    error_model = EnvelopedError.model_validate(response_body).error
+    assert error_model.message == "Invalid field/s 'x, z' in request body"
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.errors[0].field == "x"
+    assert error_model.errors[0].code == "missing"
 
 
 async def test_parse_request_with_invalid_json_body(
@@ -349,19 +313,15 @@ async def test_parse_request_with_invalid_headers_params(
     assert r.status == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{await r.text()}"
 
     response_body = await r.json()
-    assert response_body["error"].pop("resource")
-    assert response_body == {
-        "error": {
-            "msg": "Invalid parameter/s 'X-Simcore-User-Agent' in request headers",
-            "details": [
-                {
-                    "loc": "X-Simcore-User-Agent",
-                    "msg": "Field required",
-                    "type": "missing",
-                }
-            ],
-        }
-    }
+
+    error_model = EnvelopedError.model_validate(response_body).error
+    assert (
+        error_model.message
+        == "Invalid parameter/s 'X-Simcore-User-Agent' in request headers"
+    )
+    assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert error_model.errors[0].field == "X-Simcore-User-Agent"
+    assert error_model.errors[0].code == "missing"
 
 
 def test_parse_request_query_parameters_as_with_order_by_query_models():

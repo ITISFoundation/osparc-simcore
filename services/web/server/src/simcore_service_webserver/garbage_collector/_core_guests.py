@@ -159,7 +159,7 @@ async def remove_guest_user_with_all_its_resources(
             "Deleting user %s because it is a GUEST",
             f"{user_id=}",
         )
-        await users_service.delete_user_without_projects(app, user_id)
+        await users_service.delete_user_without_projects(app, user_id=user_id)
 
     except (
         DatabaseError,

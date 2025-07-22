@@ -77,11 +77,6 @@ def app_environment(
 
 
 @pytest.fixture
-def user_phone_number(faker: Faker) -> str:
-    return faker.phone_number()
-
-
-@pytest.fixture
 def fake_weak_password(faker: Faker) -> str:
     return faker.password(
         length=8, special_chars=True, digits=True, upper_case=True, lower_case=True
