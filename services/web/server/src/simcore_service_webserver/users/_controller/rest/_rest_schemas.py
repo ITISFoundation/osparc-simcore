@@ -14,7 +14,9 @@ from common_library.basic_types import DEFAULT_FACTORY
 from models_library.api_schemas_webserver._base import InputSchema
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
+from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from pydantic import (
+    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -64,7 +66,9 @@ class UserAccountRestPreRegister(InputSchema):
     institution: Annotated[
         str | None, Field(description="company, university, ...")
     ] = None
-    phone: PhoneNumberStr | None
+    phone: Annotated[
+        PhoneNumberStr | None, BeforeValidator(empty_str_to_none_pre_validator)
+    ]
 
     # billing details
     address: str

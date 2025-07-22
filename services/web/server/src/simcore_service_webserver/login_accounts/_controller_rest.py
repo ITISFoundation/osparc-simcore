@@ -135,11 +135,13 @@ async def unregister_account(request: web.Request):
     credentials = await users_service.get_user_credentials(
         request.app, user_id=req_ctx.user_id
     )
-    if body.email != credentials.email.lower() or not security_service.check_password(
+    if body.email != credentials.email or not security_service.check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):
         raise web.HTTPConflict(
-            text="Wrong email or password. Please try again to delete this account"
+            text=user_message(
+                "Wrong email or password. Please try again to delete this account"
+            )
         )
 
     with log_context(

@@ -372,13 +372,10 @@ async def get_user_billing_details(
     Raises:
         BillingDetailsNotFoundError
     """
-    async with pass_or_acquire_connection(engine, connection) as conn:
-        query = UsersRepo.get_billing_details_query(user_id=user_id)
-        result = await conn.execute(query)
-        row = result.first()
-        if not row:
-            raise BillingDetailsNotFoundError(user_id=user_id)
-        return UserBillingDetails.model_validate(row)
+    row = await UsersRepo(engine).get_billing_details(connection, user_id=user_id)
+    if not row:
+        raise BillingDetailsNotFoundError(user_id=user_id)
+    return UserBillingDetails.model_validate(row)
 
 
 async def delete_user_by_id(
