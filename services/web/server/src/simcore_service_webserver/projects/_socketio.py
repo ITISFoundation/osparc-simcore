@@ -26,6 +26,7 @@ class BaseEvent(BaseModel):
 
 class ProjectDocumentEvent(BaseEvent):
     project_id: ProjectID
+    user_primary_gid: int
     version: int
     document: ProjectDocument
 
@@ -61,6 +62,7 @@ async def notify_project_document_updated(
     app: web.Application,
     *,
     project_id: ProjectID,
+    user_primary_gid: int,
     version: int,
     document: ProjectDocument,
 ) -> None:
@@ -69,6 +71,7 @@ async def notify_project_document_updated(
         data={
             **ProjectDocumentEvent(
                 project_id=project_id,
+                user_primary_gid=user_primary_gid,
                 version=version,
                 document=document,
             ).model_dump(mode="json", by_alias=True),

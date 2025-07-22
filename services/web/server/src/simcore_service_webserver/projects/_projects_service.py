@@ -37,7 +37,6 @@ from models_library.products import ProductName
 from models_library.projects import (
     Project,
     ProjectID,
-    ProjectIDStr,
     ProjectTemplateType,
 )
 from models_library.projects import ProjectType as ProjectTypeAPI
@@ -169,8 +168,8 @@ from .utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
 
-PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 PROJECT_DOCUMENT_VERSION_KEY: str = "projects:{}:version"
+PROJECT_DB_UPDATE_REDIS_LOCK_KEY: str = "project_db_update:{}"
 
 
 async def _get_and_increment_project_document_version(
@@ -195,6 +194,80 @@ async def _get_and_increment_project_document_version(
     # Redis INCR is atomic and returns the new value
     # If key doesn't exist, it's created with value 0 and then incremented to 1
     return await redis_client_sdk.redis.incr(version_key)
+
+
+async def patch_project_and_notify_users(
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    patch_project_data: dict[str, Any],
+    user_primary_gid: GroupID,
+) -> None:
+    """
+    Patches a project and notifies users involved in the project with version control.
+
+    This function performs the following operations atomically:
+    1. Patches the project in the database
+    2. Retrieves the updated project with workbench
+    3. Creates a project document
+    4. Increments the document version
+    5. Notifies users about the project update
+
+    Args:
+        app: The web application instance
+        project_uuid: The project UUID to patch
+        patch_project_data: Dictionary containing the project data to patch
+        user_primary_gid: Primary group ID of the user making the change
+
+    Note:
+        This function is decorated with Redis exclusive lock to ensure
+        thread-safe operations on the project document.
+    """
+
+    @exclusive(
+        get_redis_lock_manager_client_sdk(app),
+        lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
+        blocking=True,
+        blocking_timeout=datetime.timedelta(seconds=30),
+    )
+    async def _patch_and_notify() -> None:
+        await _projects_repository.patch_project(
+            app=app,
+            project_uuid=project_uuid,
+            new_partial_project_data=patch_project_data,
+        )
+        project_with_workbench = await _projects_repository.get_project_with_workbench(
+            app=app, project_uuid=project_uuid
+        )
+        project_document = ProjectDocument(
+            uuid=project_with_workbench.uuid,
+            workspace_id=project_with_workbench.workspace_id,
+            name=project_with_workbench.name,
+            description=project_with_workbench.description,
+            thumbnail=project_with_workbench.thumbnail,
+            last_change_date=project_with_workbench.last_change_date,
+            classifiers=project_with_workbench.classifiers,
+            dev=project_with_workbench.dev,
+            quality=project_with_workbench.quality,
+            workbench=project_with_workbench.workbench,
+            ui=project_with_workbench.ui,
+            type=cast(ProjectTypeAPI, project_with_workbench.type),
+            template_type=cast(
+                ProjectTemplateType, project_with_workbench.template_type
+            ),
+        )
+        document_version = await _get_and_increment_project_document_version(
+            app=app, project_uuid=project_uuid
+        )
+        await notify_project_document_updated(
+            app=app,
+            project_id=project_uuid,
+            user_primary_gid=user_primary_gid,
+            version=document_version,
+            document=project_document,
+        )
+
+    await _patch_and_notify()
 
 
 def _is_node_dynamic(node_key: str) -> bool:
@@ -318,12 +391,14 @@ async def batch_get_project_name(
 async def update_project_last_change_timestamp(
     app: web.Application, project_uuid: ProjectID
 ):
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    assert db  # nosec
-    await db.update_project_last_change_timestamp(ProjectIDStr(f"{project_uuid}"))
+    await _projects_repository.patch_project(
+        app=app,
+        project_uuid=project_uuid,
+        new_partial_project_data={},  # <-- no changes, just update timestamp
+    )
 
 
-async def patch_project(
+async def patch_project_for_user(
     app: web.Application,
     *,
     user_id: UserID,
@@ -384,39 +459,15 @@ async def patch_project(
                 project_template=new_template_type,
             )
 
-    # 5. Patch the project
-    await _projects_repository.patch_project(
-        app=app,
+    # 5. Get user primary group ID (for frontend)
+    user: dict = await users_service.get_user(app, user_id)
+
+    # 6. Patch the project & Notify users involved in the project
+    await patch_project_and_notify_users(
+        app,
         project_uuid=project_uuid,
-        new_partial_project_data=patch_project_data,
-    )
-    # 6. Notify users involved in the project
-    project_with_workbench = await _projects_repository.get_project_with_workbench(
-        app=app, project_uuid=project_uuid
-    )
-    project_document = ProjectDocument(
-        uuid=project_with_workbench.uuid,
-        workspace_id=project_with_workbench.workspace_id,
-        name=project_with_workbench.name,
-        description=project_with_workbench.description,
-        thumbnail=project_with_workbench.thumbnail,
-        last_change_date=project_with_workbench.last_change_date,
-        classifiers=project_with_workbench.classifiers,
-        dev=project_with_workbench.dev,
-        quality=project_with_workbench.quality,
-        workbench=project_with_workbench.workbench,
-        ui=project_with_workbench.ui,
-        type=cast(ProjectTypeAPI, project_with_workbench.type),
-        template_type=cast(ProjectTemplateType, project_with_workbench.template_type),
-    )
-    document_version = await _get_and_increment_project_document_version(
-        app=app, project_uuid=project_uuid
-    )
-    await notify_project_document_updated(
-        app=app,
-        project_id=project_uuid,
-        version=document_version,
-        document=project_document,
+        patch_project_data=patch_project_data,
+        user_primary_gid=user["primary_gid"],
     )
 
 

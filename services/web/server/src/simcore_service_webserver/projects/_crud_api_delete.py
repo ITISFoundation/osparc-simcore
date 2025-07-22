@@ -17,6 +17,7 @@ from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
 from ..users.exceptions import UserNotFoundError
 from ..users.users_service import FullNameDict
+from . import _projects_repository
 from ._access_rights_service import check_user_project_permission
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
@@ -70,7 +71,11 @@ async def mark_project_as_deleted(
     # NOTE: if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
     # be able to detect that and resolve it.
-    await db.set_hidden_flag(project_uuid, hidden=True)
+    await _projects_repository.patch_project(
+        app,
+        project_uuid=project_uuid,
+        new_partial_project_data={"hidden": True},
+    )
 
 
 async def delete_project(

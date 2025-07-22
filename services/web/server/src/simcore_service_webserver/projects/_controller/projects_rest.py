@@ -314,7 +314,7 @@ async def patch_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
-    await _projects_service.patch_project(
+    await _projects_service.patch_project_for_user(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,

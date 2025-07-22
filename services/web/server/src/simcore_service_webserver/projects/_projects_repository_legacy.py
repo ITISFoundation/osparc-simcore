@@ -21,7 +21,6 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import (
     ProjectID,
-    ProjectIDStr,
     ProjectListAtDB,
 )
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
@@ -93,7 +92,6 @@ from ._projects_repository_legacy_utils import (
     convert_to_schema_names,
     create_project_access_rights,
     patch_workbench,
-    update_workbench,
 )
 from .exceptions import (
     ProjectDeleteError,
@@ -809,86 +807,6 @@ class ProjectDBAPI(BaseProjectDB):
                 )
             return UserProjectAccessRightsDB.model_validate(row)
 
-    async def replace_project(
-        self,
-        new_project_data: ProjectDict,
-        user_id: UserID,
-        *,
-        product_name: str,
-        project_uuid: str,
-    ) -> ProjectDict:
-        """
-        replaces a project from a user
-        this method completely replaces a user project with new_project_data only keeping
-        the old entries from the project workbench if they exists in the new project workbench.
-        NOTE: This method does not allow to add or remove nodes. use add_project_node
-        or remove_project_node to achieve this.
-
-        Raises:
-          ProjectInvalidRightsError
-          ProjectInvalidUsageError in case nodes are added/removed, use add_project_node/remove_project_node
-        """
-
-        async with AsyncExitStack() as stack:
-            stack.enter_context(
-                log_context(
-                    _logger,
-                    logging.DEBUG,
-                    msg=f"Replace {project_uuid=} for {user_id=}",
-                    extra=get_log_record_extra(user_id=user_id),
-                )
-            )
-            db_connection = await stack.enter_async_context(self.engine.acquire())
-            await stack.enter_async_context(db_connection.begin())
-
-            current_project: dict = await self._get_project(
-                db_connection,
-                project_uuid,
-                exclude_foreign=["tags"],
-                for_update=True,
-            )
-
-            # uuid can ONLY be set upon creation
-            if current_project["uuid"] != new_project_data["uuid"]:
-                raise ProjectInvalidRightsError(
-                    user_id=user_id, project_uuid=new_project_data["uuid"]
-                )
-            # ensure the prj owner is always in the access rights
-            owner_primary_gid = await self._get_user_primary_group_gid(
-                db_connection, current_project[projects.c.prj_owner.key]
-            )
-            new_project_data.setdefault("accessRights", {}).update(
-                create_project_access_rights(
-                    owner_primary_gid, ProjectAccessRights.OWNER
-                )
-            )
-            new_project_data = update_workbench(current_project, new_project_data)
-            # update timestamps
-            new_project_data["lastChangeDate"] = now_str()
-
-            # now update it
-            result = await db_connection.execute(
-                # pylint: disable=no-value-for-parameter
-                projects.update()
-                .values(**convert_to_db_names(new_project_data))
-                .where(projects.c.id == current_project[projects.c.id.key])
-                .returning(literal_column("*"))
-            )
-            project = await result.fetchone()
-            assert project  # nosec
-            await self.upsert_project_linked_product(
-                ProjectID(project_uuid), product_name, conn=db_connection
-            )
-
-            user_email = await self._get_user_email(db_connection, project.prj_owner)
-
-            tags = await self._get_tags_by_project(
-                db_connection, project_id=project[projects.c.id]
-            )
-            return convert_to_schema_names(project, user_email, tags=tags)
-        msg = "linter unhappy without this"
-        raise RuntimeError(msg)
-
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
@@ -901,40 +819,12 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return cast(str, row[0])
 
-    async def update_project_owner_without_checking_permissions(
-        self,
-        project_uuid: ProjectIDStr,
-        *,
-        new_project_owner: UserID,
-        new_project_access_rights: dict,
-    ) -> None:
-        """The garbage collector needs to alter the row without passing through the
-        permissions layer (sic)."""
-        async with self.engine.acquire() as conn:
-            # now update it
-            result: ResultProxy = await conn.execute(
-                projects.update()
-                .values(
-                    prj_owner=new_project_owner,
-                    access_rights=new_project_access_rights,
-                    last_change_date=now_str(),
-                )
-                .where(projects.c.uuid == project_uuid)
-            )
-            result_row_count: int = result.rowcount
-            assert result_row_count == 1  # nosec
-
-    async def update_project_last_change_timestamp(self, project_uuid: ProjectIDStr):
-        async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                # pylint: disable=no-value-for-parameter
-                projects.update()
-                .values(last_change_date=now_str())
-                .where(projects.c.uuid == f"{project_uuid}")
-            )
-            if result.rowcount == 0:
-                raise ProjectNotFoundError(project_uuid=project_uuid)
-
+    # @exclusive(
+    #     get_redis_lock_manager_client_sdk(app),
+    #     lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
+    #     blocking=True,
+    #     blocking_timeout=datetime.timedelta(seconds=30),
+    # )
     async def delete_project(self, user_id: int, project_uuid: str):
         _logger.info(
             "Deleting project with %s for user with %s",
@@ -1371,15 +1261,6 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(projects.c.hidden).where(projects.c.uuid == f"{project_uuid}")
             )
         return bool(result)
-
-    async def set_hidden_flag(self, project_uuid: ProjectID, *, hidden: bool):
-        async with self.engine.acquire() as conn:
-            stmt = (
-                projects.update()
-                .values(hidden=hidden)
-                .where(projects.c.uuid == f"{project_uuid}")
-            )
-            await conn.execute(stmt)
 
     #
     # Project TYPE column
