@@ -170,19 +170,17 @@ class _SocketHandlers(TypedDict):
 
 @pytest.fixture
 async def create_socketio_connection_with_handlers(
-    socketio_client_factory: Callable[
+    create_socketio_connection: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     mocker: MockerFixture,
 ) -> Callable[
     [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
 ]:
-    connected_sockets = []
-
     async def _(
         client: TestClient, client_id: str
     ) -> tuple[socketio.AsyncClient, _SocketHandlers]:
-        sio = await socketio_client_factory(client_id, client)
+        sio = await create_socketio_connection(client_id, client)
         assert sio.sid
 
         event_handlers = _SocketHandlers(
@@ -191,7 +189,6 @@ async def create_socketio_connection_with_handlers(
 
         for event, handler in event_handlers.items():
             sio.on(event, handler=handler)
-        connected_sockets.append(sio)
         return sio, event_handlers
 
     return _
@@ -1091,7 +1088,7 @@ async def test_get_active_project(
     user_project: ProjectDict,
     client_session_id_factory: Callable[[], str],
     expected: int,
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     mocked_notifications_plugin: dict[str, mock.Mock],
@@ -1100,7 +1097,7 @@ async def test_get_active_project(
     client_id1 = client_session_id_factory()
     sio = None
     try:
-        sio = await socketio_client_factory(client_id1)
+        sio = await create_socketio_connection(client_id1)
         assert sio.sid
     except SocketConnectionError:
         if expected == status.HTTP_200_OK:
@@ -1146,7 +1143,7 @@ async def test_get_active_project(
     # login with socket using client session id2
     client_id2 = client_session_id_factory()
     try:
-        sio = await socketio_client_factory(client_id2)
+        sio = await create_socketio_connection(client_id2)
         assert sio.sid
     except SocketConnectionError:
         if expected == status.HTTP_200_OK:

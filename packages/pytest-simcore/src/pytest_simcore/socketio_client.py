@@ -51,7 +51,7 @@ async def security_cookie_factory(
 
 
 @pytest.fixture
-async def socketio_client_factory(
+async def create_socketio_connection(
     socketio_url_factory: Callable[[TestClient | None], str],
     security_cookie_factory: Callable[[TestClient | None], Awaitable[str]],
     client_session_id_factory: Callable[[], str],
