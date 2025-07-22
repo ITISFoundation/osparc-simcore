@@ -152,13 +152,14 @@ async def create_socketio_connection(
     socketio_client_factory: Callable,
     mocker: MockerFixture,
 ) -> AsyncIterator[
-    Callable[..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]]
+    Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+    ]
 ]:
     connected_sockets = []
 
     async def _(
-        client: TestClient,
-        client_id: str,
+        client: TestClient, client_id: str
     ) -> tuple[socketio.AsyncClient, dict[str, mock.Mock]]:
         sio = await socketio_client_factory(client_id, client)
         assert sio.sid
@@ -1359,7 +1360,7 @@ async def test_open_shared_project_multiple_users(
     expected: ExpectedResponse,
     mocker: MockerFixture,
     create_socketio_connection: Callable[
-        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
     ],
 ):
     base_client = client
@@ -1388,7 +1389,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection: Callable[
-        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
     ],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -1624,18 +1625,14 @@ async def test_open_shared_project_at_same_time(
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection: Callable[
-        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
     ],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10
     # log client 1
     client_1 = client
     client_id1 = client_session_id_factory()
-    sio_1 = await create_socketio_connection(
-        user_role != UserRole.ANONYMOUS,
-        client_1,
-        client_id1,
-    )
+    sio_1 = await create_socketio_connection(client_1, client_id1)
     clients = [
         {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
     ]
@@ -1649,11 +1646,7 @@ async def test_open_shared_project_at_same_time(
             exit_stack=exit_stack,
         )
         client_id = client_session_id_factory()
-        sio = await create_socketio_connection(
-            user_role != UserRole.ANONYMOUS,
-            new_client,
-            client_id,
-        )
+        sio = await create_socketio_connection(new_client, client_id)
         clients.append(
             {"client": new_client, "user": user, "client_id": client_id, "sio": sio}
         )
@@ -1715,7 +1708,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     clean_redis_table,
     mocked_notifications_plugin: dict[str, mock.Mock],
     create_socketio_connection: Callable[
-        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
     ],
 ):
     """Simulating a refresh goes as follows:
@@ -1725,11 +1718,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     """
 
     client_session_id = client_session_id_factory()
-    sio = await create_socketio_connection(
-        user_role != UserRole.ANONYMOUS,
-        client,
-        client_session_id,
-    )
+    sio, _ = await create_socketio_connection(client, client_session_id)
     assert client.app
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id)
@@ -1745,11 +1734,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     # give some time
     await asyncio.sleep(1)
     # re-connect using the same client session id
-    sio2 = await create_socketio_connection(
-        user_role != UserRole.ANONYMOUS,
-        client,
-        client_session_id,
-    )
+    sio2, _ = await create_socketio_connection(client, client_session_id)
     assert sio2
     # re-open the project
     resp = await client.post(f"{url}", json=client_session_id)
