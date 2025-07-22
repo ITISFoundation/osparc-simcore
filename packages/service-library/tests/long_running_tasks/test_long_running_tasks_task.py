@@ -102,7 +102,7 @@ async def test_task_is_auto_removed(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             if (
-                await tasks_manager._tracked_tasks.get(task_id)  # noqa: SLF001
+                await tasks_manager._tracked_tasks.get_task(task_id)  # noqa: SLF001
                 is not None
             ):
                 msg = "wait till no element is found any longer"
@@ -330,6 +330,23 @@ async def test_cancel_task_with_task_context(tasks_manager: TasksManager):
             task_id, with_task_context={"wrong_task_context": 12}
         )
     await tasks_manager.cancel_task(task_id, with_task_context=TASK_CONTEXT)
+
+
+async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_different_process(
+    tasks_manager: TasksManager,
+):
+    task_id = await lrt_api.start_task(
+        tasks_manager,
+        a_background_task.__name__,
+        raise_when_finished=False,
+        total_sleep=10,
+    )
+    await tasks_manager._tracked_tasks.set_as_cancelled(task_id)
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            with pytest.raises(TaskNotFoundError):
+                assert await tasks_manager.get_task_status(task_id, None) is None
 
 
 async def test_list_tasks(tasks_manager: TasksManager):

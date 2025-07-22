@@ -38,6 +38,8 @@ _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1
 ).total_seconds()
 
+_CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
+
 RegisteredTaskName: TypeAlias = str
 Namespace: TypeAlias = str
 TaskContext: TypeAlias = dict[str, Any]
@@ -77,7 +79,7 @@ async def _get_tasks_to_remove(
 
     tasks_to_remove: list[TaskId] = []
 
-    for tracked_task in await tracked_tasks.list():
+    for tracked_task in await tracked_tasks.list_tasks():
         if tracked_task.fire_and_forget:
             continue
 
@@ -116,6 +118,7 @@ class TasksManager:
         )
 
         self._stale_tasks_monitor_task: asyncio.Task | None = None
+        self._cancelled_tasks_removal_task: asyncio.Task | None = None
 
     async def setup(self) -> None:
         self._stale_tasks_monitor_task = create_periodic_task(
@@ -123,11 +126,16 @@ class TasksManager:
             interval=self.stale_task_check_interval,
             task_name=f"{__name__}.{self._stale_tasks_monitor_worker.__name__}",
         )
+        self._cancelled_tasks_removal_task = create_periodic_task(
+            task=self._cancelled_tasks_removal_worker,
+            interval=_CANCEL_TASKS_CHECK_INTERVAL,
+            task_name=f"{__name__}.{self._cancelled_tasks_removal_worker.__name__}",
+        )
 
     async def teardown(self) -> None:
         task_ids_to_remove: deque[TaskId] = deque()
 
-        for tracked_task in await self._tracked_tasks.list():
+        for tracked_task in await self._tracked_tasks.list_tasks():
             task_ids_to_remove.append(tracked_task.task_id)
 
         for task_id in task_ids_to_remove:
@@ -138,6 +146,12 @@ class TasksManager:
             with log_catch(_logger, reraise=False):
                 await cancel_wait_task(
                     self._stale_tasks_monitor_task, max_delay=_CANCEL_TASK_TIMEOUT
+                )
+
+        if self._cancelled_tasks_removal_task:
+            with log_catch(_logger, reraise=False):
+                await cancel_wait_task(
+                    self._cancelled_tasks_removal_task, max_delay=_CANCEL_TASK_TIMEOUT
                 )
 
     async def _stale_tasks_monitor_worker(self) -> None:
@@ -179,16 +193,25 @@ class TasksManager:
                 task_id, with_task_context=None, reraise_errors=False
             )
 
+    async def _cancelled_tasks_removal_worker(self) -> None:
+        """
+        tasks can be cancelled by the client, but they can run in differente processes
+        once there is an entry in the cancelled store, attempt to cancel the task
+        """
+
+        for task_id in await self._tracked_tasks.get_cancelled():
+            await self.remove_task(task_id, with_task_context=None)
+
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
             return [
                 TaskBase(task_id=task.task_id)
-                for task in (await self._tracked_tasks.list())
+                for task in (await self._tracked_tasks.list_tasks())
             ]
 
         return [
             TaskBase(task_id=task.task_id)
-            for task in (await self._tracked_tasks.list())
+            for task in (await self._tracked_tasks.list_tasks())
             if task.task_context == with_task_context
         ]
 
@@ -209,14 +232,14 @@ class TasksManager:
             task_context=task_context,
             fire_and_forget=fire_and_forget,
         )
-        await self._tracked_tasks.set(task_id, tracked_task)
+        await self._tracked_tasks.set_task(task_id, tracked_task)
 
         return tracked_task
 
     async def _get_tracked_task(
         self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> TrackedTask:
-        task = await self._tracked_tasks.get(task_id)
+        task = await self._tracked_tasks.get_task(task_id)
 
         if task is None:
             raise TaskNotFoundError(task_id=task_id)
@@ -280,6 +303,7 @@ class TasksManager:
 
         raises TaskNotFoundError if the task cannot be found
         """
+        await self._tracked_tasks.set_as_cancelled(task_id)
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
         await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
 
@@ -334,7 +358,7 @@ class TasksManager:
                 tracked_task.task, task_id, reraise_errors=reraise_errors
             )
         finally:
-            await self._tracked_tasks.delete(task_id)
+            await self._tracked_tasks.delete_task(task_id)
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         unique_part = "unique" if is_unique else f"{uuid4()}"
@@ -365,7 +389,7 @@ class TasksManager:
         task_id = self._get_task_id(task_name, is_unique=unique)
 
         # only one unique task can be running
-        queried_task = await self._tracked_tasks.get(task_id)
+        queried_task = await self._tracked_tasks.get_task(task_id)
         if unique and queried_task is not None:
             raise TaskAlreadyRunningError(
                 task_name=task_name, managed_task=queried_task
