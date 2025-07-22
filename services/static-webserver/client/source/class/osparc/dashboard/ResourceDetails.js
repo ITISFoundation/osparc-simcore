@@ -399,7 +399,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       } else if (this.__resourceData["resourceType"] === "function") {
         this.__addInfoPage();
         // to build the preview page we need the underlying template data
-        // this.__addPreviewPage();
+        this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
       }
@@ -576,12 +576,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addToolbarButtons(page);
 
-      const studyData = this.__resourceData;
+      const studyData = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate().serialize() : this.__resourceData;
       const enabled = osparc.study.Utils.canShowPreview(studyData);
       page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
-        const resourceModel = this.__resourceModel;
+        const resourceModel = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate() : this.__resourceData;
         const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
         this.__widgets.push(preview);
