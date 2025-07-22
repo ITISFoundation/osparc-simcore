@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.model.Function", {
 
     this.set({
       uuid: functionData.uuid,
-      functionType: functionData.functionClass,
+      functionClass: functionData.functionClass,
       name: functionData.title,
       description: functionData.description,
       inputSchema: functionData.inputSchema || this.getInputSchema(),
@@ -57,10 +57,10 @@ qx.Class.define("osparc.data.model.Function", {
       init: ""
     },
 
-    functionType: {
-      check: ["PROJECT"],
+    functionClass: {
+      check: ["PROJECT", "SOLVER", "PYTHON_CODE"],
       nullable: false,
-      event: "changeFunctionType",
+      event: "changeFunctionClass",
       init: null
     },
 

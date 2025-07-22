@@ -66,6 +66,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               const studyStore = osparc.store.Study.getInstance();
               this.__resourceData["debt"] = studyStore.getStudyDebt(this.__resourceData["uuid"]);
             }
+            // prefetch project's services metadata
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
@@ -75,16 +76,25 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               });
             break;
           case "function": {
-            osparc.store.Templates.fetchTemplate(resourceData["templateId"])
-              .then(templateData => {
-                osparc.store.Services.getStudyServicesMetadata(templateData)
-                  .finally(() => {
-                    this.__resourceModel = new osparc.data.model.Function(latestResourceData, templateData);
-                    this.__resourceModel["resourceType"] = resourceData["resourceType"];
-                    this.__resourceData["services"] = resourceData["services"];
-                    this.__addPages();
-                  });
-              });
+            addPages = () => {
+              this.__resourceModel = new osparc.data.model.Function(latestResourceData, templateData);
+              this.__resourceModel["resourceType"] = resourceData["resourceType"];
+              this.__addPages();
+            }
+            if (resourceData["functionClass"] === "PROJECT") {
+              // this is only required for functions that have a template linked
+              osparc.store.Templates.fetchTemplate(resourceData["templateId"])
+                .then(templateData => {
+                  // prefetch function's underlying template's services metadata
+                  osparc.store.Services.getStudyServicesMetadata(templateData)
+                    .finally(() => {
+                      this.__resourceData["services"] = resourceData["services"];
+                      addPages();
+                    });
+                });
+            } else {
+              addPages();
+            }
             break;
           }
           case "service": {
@@ -174,7 +184,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __addToolbarButtons: function(page) {
       const resourceData = this.__resourceData;
 
-      if (this.__resourceData["resourceType"] === "function") {
+      if (osparc.utils.Resources.isFunction(this.__resourceData)) {
         return; // no toolbar buttons for functions
       }
 
@@ -396,10 +406,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
-      } else if (this.__resourceData["resourceType"] === "function") {
+      } else if (osparc.utils.Resources.isFunction(this.__resourceData)) {
         this.__addInfoPage();
-        // to build the preview page we need the underlying template data
-        this.__addPreviewPage();
+        if (this.__resourceModel.getFunctionClass() === "PROJECT") {
+          this.__addPreviewPage();
+        }
         this.fireEvent("pagesAdded");
         return;
       }
