@@ -104,7 +104,7 @@ async def _set_user_in_group_rooms(
 
 
 @register_socketio_handler
-async def connect(  # <- MD: here the frontend connects to the socket.io server
+async def connect(
     socket_id: SocketID, environ: EnvironDict, app: web.Application
 ) -> bool:
     """socketio reserved handler for when the fontend connects through socket.io

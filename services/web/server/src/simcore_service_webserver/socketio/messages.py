@@ -30,7 +30,6 @@ SOCKET_IO_LOG_EVENT: Final[str] = "logger"
 SOCKET_IO_NODE_UPDATED_EVENT: Final[str] = "nodeUpdated"
 
 SOCKET_IO_PROJECT_UPDATED_EVENT: Final[str] = "projectStateUpdated"
-# SOCKET_IO_PROJECT_STORE_UPDATED_EVENT: Final[str] = "projectStoreUpdated"
 
 SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT: Final[str] = "walletOsparcCreditsUpdated"
 

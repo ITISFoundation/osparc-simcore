@@ -39,3 +39,5 @@ __all__: tuple[str, ...] = (
     "RedisManagerDBConfig",
     "with_project_locked",
 )
+
+# nopycln: file
