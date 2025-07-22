@@ -7,14 +7,6 @@
 """
 Tests for patch_project_and_notify_users function focusing on the Redis locking mechanism
 and concurrent access patterns.
-
-These tests verify that:
-1. Sequential operations work correctly
-2. Concurrent operations are properly serialized by Redis locks
-3. Version increments are consistent and atomic
-4. Different projects don't interfere with each other
-5. Mixed concurrent operations (patches + version checks) maintain consistency
-6. Error handling during concurrent access is robust
 """
 
 import asyncio
