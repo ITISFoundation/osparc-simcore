@@ -45,19 +45,15 @@ async def security_cookie_factory(
         assert data
         assert not error
 
-        return (
-            resp.request_info.headers["Cookie"]
-            if "Cookie" in resp.request_info.headers
-            else ""
-        )
+        return resp.request_info.headers.get("Cookie", "")
 
     return _create
 
 
 @pytest.fixture
 async def socketio_client_factory(
-    socketio_url_factory: Callable,
-    security_cookie_factory: Callable,
+    socketio_url_factory: Callable[[TestClient | None], str],
+    security_cookie_factory: Callable[[TestClient | None], Awaitable[str]],
     client_session_id_factory: Callable[[], str],
 ) -> AsyncIterable[
     Callable[[str | None, TestClient | None], Awaitable[socketio.AsyncClient]]

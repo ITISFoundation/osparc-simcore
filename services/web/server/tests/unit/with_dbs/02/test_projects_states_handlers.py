@@ -169,11 +169,13 @@ class _SocketHandlers(TypedDict):
 
 
 @pytest.fixture
-async def create_socketio_connection(
-    socketio_client_factory: Callable,
+async def create_socketio_connection_with_handlers(
+    socketio_client_factory: Callable[
+        [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
+    ],
     mocker: MockerFixture,
-) -> AsyncIterator[
-    Callable[[TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]]
+) -> Callable[
+    [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
 ]:
     connected_sockets = []
 
@@ -192,12 +194,7 @@ async def create_socketio_connection(
         connected_sockets.append(sio)
         return sio, event_handlers
 
-    yield _
-
-    # cleanup
-    with log_context(logging.INFO, "disconnecting sockets"):
-        await asyncio.gather(*(socket.disconnect() for socket in connected_sockets))
-        await asyncio.sleep(0.1)  # give time to properly disconnect
+    return _
 
 
 async def _open_project(
@@ -1393,7 +1390,7 @@ async def test_open_shared_project_multiple_users(
     client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     exit_stack: contextlib.AsyncExitStack,
-    create_socketio_connection: Callable[
+    create_socketio_connection_with_handlers: Callable[
         [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -1401,7 +1398,7 @@ async def test_open_shared_project_multiple_users(
 ):
     base_client = client
     base_client_tab_id = client_session_id_factory()
-    sio_base, sio_base_handlers = await create_socketio_connection(
+    sio_base, sio_base_handlers = await create_socketio_connection_with_handlers(
         base_client,
         base_client_tab_id,
     )
@@ -1443,7 +1440,7 @@ async def test_open_shared_project_multiple_users(
             LoggedUser(client_i, {"role": logged_user["role"]})
         )
 
-        sio_i, sio_i_handlers = await create_socketio_connection(
+        sio_i, sio_i_handlers = await create_socketio_connection_with_handlers(
             client_i, client_i_tab_id
         )
 
@@ -1497,7 +1494,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
-    create_socketio_connection: Callable[
+    create_socketio_connection_with_handlers: Callable[
         [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
 ):
@@ -1509,7 +1506,9 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
-    sio1, sio1_handlers = await create_socketio_connection(client_1, client_id1)
+    sio1, sio1_handlers = await create_socketio_connection_with_handlers(
+        client_1, client_id1
+    )
     # expected is that the project is closed and unlocked
     expected_project_state_client_1 = ProjectStateOutputSchema(
         share_state=ProjectShareStateOutputSchema(
@@ -1564,7 +1563,9 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         enable_check=user_role != UserRole.ANONYMOUS,
         exit_stack=exit_stack,
     )
-    sio2, sio2_handlers = await create_socketio_connection(client_2, client_id2)
+    sio2, sio2_handlers = await create_socketio_connection_with_handlers(
+        client_2, client_id2
+    )
     await _open_project(
         client_2,
         client_id2,
@@ -1733,7 +1734,7 @@ async def test_open_shared_project_at_same_time(
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
-    create_socketio_connection: Callable[
+    create_socketio_connection_with_handlers: Callable[
         [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
 ):
@@ -1741,7 +1742,7 @@ async def test_open_shared_project_at_same_time(
     # log client 1
     client_1 = client
     client_id1 = client_session_id_factory()
-    sio_1 = await create_socketio_connection(client_1, client_id1)
+    sio_1 = await create_socketio_connection_with_handlers(client_1, client_id1)
     clients = [
         {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
     ]
@@ -1755,7 +1756,7 @@ async def test_open_shared_project_at_same_time(
             exit_stack=exit_stack,
         )
         client_id = client_session_id_factory()
-        sio = await create_socketio_connection(new_client, client_id)
+        sio = await create_socketio_connection_with_handlers(new_client, client_id)
         clients.append(
             {"client": new_client, "user": user, "client_id": client_id, "sio": sio}
         )
@@ -1816,7 +1817,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
     mocked_notifications_plugin: dict[str, mock.Mock],
-    create_socketio_connection: Callable[
+    create_socketio_connection_with_handlers: Callable[
         [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
 ):
@@ -1827,7 +1828,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     """
 
     client_session_id = client_session_id_factory()
-    sio, _ = await create_socketio_connection(client, client_session_id)
+    sio, _ = await create_socketio_connection_with_handlers(client, client_session_id)
     assert client.app
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id)
@@ -1843,7 +1844,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     # give some time
     await asyncio.sleep(1)
     # re-connect using the same client session id
-    sio2, _ = await create_socketio_connection(client, client_session_id)
+    sio2, _ = await create_socketio_connection_with_handlers(client, client_session_id)
     assert sio2
     # re-open the project
     resp = await client.post(f"{url}", json=client_session_id)
