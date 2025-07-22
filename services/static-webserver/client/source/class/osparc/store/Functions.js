@@ -92,7 +92,7 @@ qx.Class.define("osparc.store.Functions", {
     },
 
     fetchFunctionsPaginated: function(params, options) {
-      const isBackendReady = false;
+      const isBackendReady = true;
       if (!isBackendReady) {
         return new Promise(resolve => {
           const response = this.__dummyResponse();
@@ -110,7 +110,7 @@ qx.Class.define("osparc.store.Functions", {
     },
 
     fetchFunction: function(functionId) {
-      const isBackendReady = false;
+      const isBackendReady = true;
       if (!isBackendReady) {
         return new Promise(resolve => {
           const response = this.__dummyResponse();
