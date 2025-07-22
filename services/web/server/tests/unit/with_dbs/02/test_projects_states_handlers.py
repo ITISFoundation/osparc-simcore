@@ -159,7 +159,6 @@ async def create_socketio_connection(
         client_id: str,
         events: dict[str, Callable] | None = None,
     ) -> socketio.AsyncClient | None:
-
         try:
             sio = await socketio_client_factory(client_id, client)
             assert sio.sid
@@ -1377,7 +1376,6 @@ async def test_open_shared_project_multiple_users(
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
-    with_enabled_rtc_collaboration: None,
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
     logged_user: dict,
