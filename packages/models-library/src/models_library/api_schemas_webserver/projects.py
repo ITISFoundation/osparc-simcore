@@ -267,6 +267,25 @@ class ProjectPatch(InputSchema):
         return self.model_dump(exclude_unset=True, by_alias=False)
 
 
+class ProjectDocument(OutputSchema):
+    uuid: ProjectID
+    workspace_id: WorkspaceID | None
+    name: str
+    description: str
+    thumbnail: HttpUrl | None
+    last_change_date: datetime
+    classifiers: list[ClassifierID]
+    dev: dict | None
+    quality: dict[str, Any]
+    workbench: NodesDict
+    ui: StudyUI | None
+    type: ProjectType
+    template_type: ProjectTemplateType | None
+
+    # config
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
 __all__: tuple[str, ...] = (
     "EmptyModel",
     "ProjectCopyOverride",

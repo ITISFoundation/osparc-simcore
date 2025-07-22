@@ -47,7 +47,9 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
 
     # injects healthcheck
     healthcheck: HealthCheck = app[HealthCheck.__name__]
-    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
+    healthcheck.on_healthcheck.append(
+        _on_healthcheck_async_adapter
+    )  # <-- MD: check here!
 
     yield
 

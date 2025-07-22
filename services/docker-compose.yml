@@ -1379,7 +1379,7 @@ services:
       # also aof (append only) is also enabled such that we get full durability at the expense
       # of backup size. The backup is written into /data.
       # https://redis.io/topics/persistence
-      [ "redis-server", "--save", "60 1", "--loglevel", "verbose", "--databases", "10", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
+      [ "redis-server", "--save", "60 1", "--loglevel", "verbose", "--databases", "11", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
     networks:
       - default
       - autoscaling_subnet

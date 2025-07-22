@@ -92,10 +92,9 @@ async def _set_user_in_group_rooms(
 
     sio = get_socket_server(app)
     for gid in group_ids:
-        # NOTE socketio need to be upgraded that's why enter_room is not an awaitable
-        sio.enter_room(socket_id, SocketIORoomStr.from_group_id(gid))
+        await sio.enter_room(socket_id, SocketIORoomStr.from_group_id(gid))
 
-    sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
+    await sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
 
 
 #
@@ -104,7 +103,7 @@ async def _set_user_in_group_rooms(
 
 
 @register_socketio_handler
-async def connect(
+async def connect(  # <- MD: here the frontend connects to the socket.io server
     socket_id: SocketID, environ: EnvironDict, app: web.Application
 ) -> bool:
     """socketio reserved handler for when the fontend connects through socket.io

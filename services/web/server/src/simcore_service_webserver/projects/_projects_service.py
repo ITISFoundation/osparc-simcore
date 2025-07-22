@@ -29,12 +29,18 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects import ProjectPatch
+from models_library.api_schemas_webserver.projects import ProjectDocument, ProjectPatch
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.projects import Project, ProjectID, ProjectIDStr
+from models_library.projects import (
+    Project,
+    ProjectID,
+    ProjectIDStr,
+    ProjectTemplateType,
+)
+from models_library.projects import ProjectType as ProjectTypeAPI
 from models_library.projects_access import Owner
 from models_library.projects_nodes import Node, NodeState, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
@@ -98,7 +104,10 @@ from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..redis import get_redis_lock_manager_client_sdk
+from ..redis import (
+    get_redis_document_manager_client_sdk,
+    get_redis_lock_manager_client_sdk,
+)
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -136,6 +145,7 @@ from ._access_rights_service import (
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
+from ._socketio import notify_project_document_updated
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
@@ -160,6 +170,31 @@ from .utils import extract_dns_without_default_port
 log = logging.getLogger(__name__)
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
+PROJECT_DOCUMENT_VERSION_KEY: str = "projects:{}:version"
+
+
+async def _get_and_increment_project_document_version(
+    app: web.Application, project_uuid: ProjectID
+) -> int:
+    """
+    Atomically gets and increments the project document version using Redis.
+
+    This function ensures thread-safe version incrementing by using Redis INCR command
+    which is atomic. The version starts at 1 for the first call.
+
+    Args:
+        app: The web application instance
+        project_uuid: The project UUID
+
+    Returns:
+        The new incremented version number
+    """
+    redis_client_sdk = get_redis_document_manager_client_sdk(app)
+    version_key = PROJECT_DOCUMENT_VERSION_KEY.format(project_uuid)
+
+    # Redis INCR is atomic and returns the new value
+    # If key doesn't exist, it's created with value 0 and then incremented to 1
+    return await redis_client_sdk.redis.incr(version_key)
 
 
 def _is_node_dynamic(node_key: str) -> bool:
@@ -354,6 +389,34 @@ async def patch_project(
         app=app,
         project_uuid=project_uuid,
         new_partial_project_data=patch_project_data,
+    )
+    # 6. Notify users involved in the project
+    project_with_workbench = await _projects_repository.get_project_with_workbench(
+        app=app, project_uuid=project_uuid
+    )
+    project_document = ProjectDocument(
+        uuid=project_with_workbench.uuid,
+        workspace_id=project_with_workbench.workspace_id,
+        name=project_with_workbench.name,
+        description=project_with_workbench.description,
+        thumbnail=project_with_workbench.thumbnail,
+        last_change_date=project_with_workbench.last_change_date,
+        classifiers=project_with_workbench.classifiers,
+        dev=project_with_workbench.dev,
+        quality=project_with_workbench.quality,
+        workbench=project_with_workbench.workbench,
+        ui=project_with_workbench.ui,
+        type=ProjectTypeAPI(project_with_workbench.type),
+        template_type=ProjectTemplateType(project_with_workbench.template_type),
+    )
+    document_version = await _get_and_increment_project_document_version(
+        app=app, project_uuid=project_uuid
+    )
+    await notify_project_document_updated(
+        app=app,
+        project_id=project_uuid,
+        version=document_version,
+        document=project_document,
     )
 
 

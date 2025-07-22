@@ -19,6 +19,7 @@ class RedisDatabase(IntEnum):
     DEFERRED_TASKS = 7
     DYNAMIC_SERVICES = 8
     CELERY_TASKS = 9
+    DOCUMENTS = 10
 
 
 class RedisSettings(BaseCustomSettings):

@@ -1,0 +1,98 @@
+from typing import Final
+
+from aiohttp import web
+from models_library.api_schemas_webserver.projects import ProjectDocument
+from models_library.projects import ProjectID
+from models_library.socketio import SocketMessageDict
+from pydantic import AliasGenerator, BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
+
+from ..socketio.messages import send_message_to_project_room
+
+# SOCKET_IO_PROJECT_CREATED_EVENT: Final[str] = "projectDocument:created"
+# SOCKET_IO_PROJECT_DELETED_EVENT: Final[str] = "projectDocument:deleted"
+SOCKET_IO_PROJECT_DOCUMENT_UPDATED_EVENT: Final[str] = "projectDocument:updated"
+
+
+class BaseEvent(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        alias_generator=AliasGenerator(
+            serialization_alias=to_camel,
+        ),
+    )
+
+
+class ProjectDocumentEvent(BaseEvent):
+    project_id: ProjectID
+    version: int
+    document: ProjectDocument
+
+
+# async def notify_project_created(
+#     app: web.Application,
+#     *,
+#     project_id: ProjectID,
+#     product_name: ProductName,
+#     user_group_id: GroupID,
+#     project_name: str,
+#     created: datetime.datetime,
+#     modified: datetime.datetime,
+# ) -> None:
+#     notification_message = SocketMessageDict(
+#         event_type=SOCKET_IO_PROJECT_CREATED_EVENT,
+#         data={
+#             **ProjectCreatedOrUpdatedEvent(
+#                 product_name=product_name,
+#                 project_id=project_id,
+#                 user_group_id=user_group_id,
+#                 name=project_name,
+#                 created=created,
+#                 modified=modified,
+#             ).model_dump(mode="json", by_alias=True),
+#         },
+#     )
+
+#     await send_message_to_project_room(app, project_id, notification_message)
+
+
+async def notify_project_document_updated(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    version: int,
+    document: ProjectDocument,
+) -> None:
+    notification_message = SocketMessageDict(
+        event_type=SOCKET_IO_PROJECT_DOCUMENT_UPDATED_EVENT,
+        data={
+            **ProjectDocumentEvent(
+                project_id=project_id,
+                version=version,
+                document=document,
+            ).model_dump(mode="json", by_alias=True),
+        },
+    )
+    await send_message_to_project_room(app, project_id, notification_message)
+
+
+# async def notify_project_deleted(
+#     app: web.Application,
+#     *,
+#     project_id: ProjectID,
+#     product_name: ProductName,
+#     user_group_id: GroupID,
+# ) -> None:
+#     notification_message = SocketMessageDict(
+#         event_type=SOCKET_IO_PROJECT_DELETED_EVENT,
+#         data={
+#             **ProjectDeletedEvent(
+#                 product_name=product_name,
+#                 project_id=project_id,
+#                 user_group_id=user_group_id,
+#             ).model_dump(mode="json", by_alias=True),
+#         },
+#     )
+
+#     await send_message_to_project_room(app, project_id, notification_message)
