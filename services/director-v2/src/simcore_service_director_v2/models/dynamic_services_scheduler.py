@@ -406,7 +406,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     paths_mapping: PathMappingsLabel  # overwrites in DynamicSidecarServiceLabels
 
-    is_collaborative: bool
+    is_collaborative: bool = False
 
     user_preferences_path: Path | None = None
     callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
