@@ -10623,6 +10623,11 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified At"
+          },
           "project_id": {
             "type": "string",
             "format": "uuid",
@@ -10636,6 +10641,7 @@
           "default_inputs",
           "uid",
           "created_at",
+          "modified_at",
           "project_id"
         ],
         "title": "RegisteredProjectFunction"
@@ -10782,6 +10788,11 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified At"
+          },
           "code_url": {
             "type": "string",
             "title": "Code Url"
@@ -10794,6 +10805,7 @@
           "default_inputs",
           "uid",
           "created_at",
+          "modified_at",
           "code_url"
         ],
         "title": "RegisteredPythonCodeFunction"
@@ -10934,6 +10946,11 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "modified_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Modified At"
+          },
           "solver_key": {
             "type": "string",
             "pattern": "^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
@@ -10952,6 +10969,7 @@
           "default_inputs",
           "uid",
           "created_at",
+          "modified_at",
           "solver_key",
           "solver_version"
         ],
