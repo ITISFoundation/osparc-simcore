@@ -25,6 +25,7 @@ from models_library.api_schemas_api_server.functions import (
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.functions import (
     FunctionJobStatus,
+    FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
 )
@@ -485,6 +486,52 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             product_name=product_name,
             function_job_id=function_job_id,
+        )
+
+    async def get_function_job_outputs(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
+    ) -> FunctionOutputs:
+        return await functions_rpc_interface.get_function_job_outputs(
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_job_id=function_job_id,
+        )
+
+    async def update_function_job_status(
+        self,
+        *,
+        function_job_id: FunctionJobID,
+        user_id: UserID,
+        product_name: ProductName,
+        job_status: FunctionJobStatus,
+    ) -> FunctionJobStatus:
+        return await functions_rpc_interface.update_function_job_status(
+            self._client,
+            function_job_id=function_job_id,
+            user_id=user_id,
+            product_name=product_name,
+            job_status=job_status,
+        )
+
+    async def update_function_job_outputs(
+        self,
+        *,
+        function_job_id: FunctionJobID,
+        user_id: UserID,
+        product_name: ProductName,
+        outputs: FunctionOutputs,
+    ) -> FunctionOutputs:
+        return await functions_rpc_interface.update_function_job_outputs(
+            self._client,
+            function_job_id=function_job_id,
+            user_id=user_id,
+            product_name=product_name,
+            outputs=outputs,
         )
 
     async def find_cached_function_jobs(

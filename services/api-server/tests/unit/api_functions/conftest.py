@@ -232,3 +232,24 @@ def mock_handler_in_functions_rpc_interface(
         )
 
     return _mock
+
+
+@pytest.fixture()
+def mock_handler_in_study_jobs_rest_interface(
+    mock_wb_api_server_rpc: MockerFixture,
+) -> Callable[[str, Any, Exception | None], None]:
+    def _mock(
+        handler_name: str = "",
+        return_value: Any = None,
+        exception: Exception | None = None,
+    ) -> None:
+        from simcore_service_api_server.api.routes.functions_routes import studies_jobs
+
+        mock_wb_api_server_rpc.patch.object(
+            studies_jobs,
+            handler_name,
+            return_value=return_value,
+            side_effect=exception,
+        )
+
+    return _mock

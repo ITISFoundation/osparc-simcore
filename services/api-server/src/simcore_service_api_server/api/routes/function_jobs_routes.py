@@ -199,9 +199,7 @@ async def function_job_status(
             user_id=user_id,
             director2_api=director2_api,
         )
-        job_status = FunctionJobStatus(status=job_status.state)
-
-    if (function.function_class == FunctionClass.SOLVER) and (
+    elif (function.function_class == FunctionClass.SOLVER) and (
         function_job.function_class == FunctionClass.SOLVER
     ):
         job_status = await solvers_jobs.inspect_job(
@@ -211,13 +209,20 @@ async def function_job_status(
             user_id=user_id,
             director2_api=director2_api,
         )
-        job_status = FunctionJobStatus(status=job_status.state)
     else:
         raise UnsupportedFunctionFunctionJobClassCombinationError(
             function_class=function.function_class,
             function_job_class=function_job.function_class,
         )
-    return job_status
+
+    new_job_status = FunctionJobStatus(status=job_status.state)
+
+    return await wb_api_rpc.update_function_job_status(
+        function_job_id=function_job.uid,
+        user_id=user_id,
+        product_name=product_name,
+        job_status=new_job_status,
+    )
 
 
 async def get_function_from_functionjobid(
@@ -255,7 +260,7 @@ async def get_function_from_functionjobid(
         changelog=CHANGE_LOGS["function_job_outputs"],
     ),
 )
-async def function_job_outputs(
+async def get_function_job_outputs(
     function_job_id: FunctionJobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
@@ -271,11 +276,18 @@ async def function_job_outputs(
         product_name=product_name,
     )
 
+    old_job_outputs = await wb_api_rpc.get_function_job_outputs(
+        function_job_id=function_job.uid, user_id=user_id, product_name=product_name
+    )
+
+    if old_job_outputs is not None:
+        return old_job_outputs
+
     if (
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
-        return dict(
+        new_outputs = dict(
             (
                 await studies_jobs.get_study_job_outputs(
                     study_id=function.project_id,
@@ -286,12 +298,11 @@ async def function_job_outputs(
                 )
             ).results
         )
-
-    if (
+    elif (
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
-        return dict(
+        new_outputs = dict(
             (
                 await solvers_jobs_read.get_job_outputs(
                     solver_key=function.solver_key,
@@ -304,4 +315,12 @@ async def function_job_outputs(
                 )
             ).results
         )
-    raise UnsupportedFunctionClassError(function_class=function.function_class)
+    else:
+        raise UnsupportedFunctionClassError(function_class=function.function_class)
+
+    return await wb_api_rpc.update_function_job_outputs(
+        function_job_id=function_job.uid,
+        user_id=user_id,
+        product_name=product_name,
+        outputs=new_outputs,
+    )

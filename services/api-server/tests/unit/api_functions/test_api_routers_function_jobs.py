@@ -1,3 +1,5 @@
+# pylint: disable=unused-argument
+
 import uuid
 from collections.abc import Callable
 from datetime import datetime
@@ -108,12 +110,13 @@ async def test_list_function_jobs(
     )
 
 
-@pytest.mark.parametrize("job_status", ["SUCCESS", "FAILED", "RUNNING"])
+@pytest.mark.parametrize("job_status", ["SUCCESS", "FAILED", "STARTED"])
 async def test_get_function_job_status(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
+    mock_handler_in_study_jobs_rest_interface: Callable[[str, Any], None],
     auth: httpx.BasicAuth,
     job_status: str,
 ) -> None:
@@ -128,15 +131,19 @@ async def test_get_function_job_status(
         "get_function_job_status",
         FunctionJobStatus(status=job_status),
     )
-    mock_handler_in_functions_rpc_interface(
+    mock_handler_in_study_jobs_rest_interface(
         "inspect_study_job",
         JobStatus(
             job_id=uuid.uuid4(),
             submitted_at=datetime.fromisoformat("2023-01-01T00:00:00"),
             started_at=datetime.fromisoformat("2023-01-01T01:00:00"),
             stopped_at=datetime.fromisoformat("2023-01-01T02:00:00"),
-            state=RunningState(job_status),
+            state=RunningState(value=job_status),
         ),
+    )
+    mock_handler_in_functions_rpc_interface(
+        "update_function_job_status",
+        FunctionJobStatus(status=job_status),
     )
 
     response = await client.get(
@@ -146,3 +153,30 @@ async def test_get_function_job_status(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["status"] == job_status
+
+
+@pytest.mark.parametrize("job_outputs", [{"X+Y": 42, "X-Y": 10}])
+async def test_get_function_job_outputs(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_function_job: RegisteredProjectFunctionJob,
+    mock_registered_project_function: RegisteredProjectFunction,
+    auth: httpx.BasicAuth,
+    job_outputs: dict[str, Any],
+) -> None:
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function_job", mock_registered_function_job
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function
+    )
+    mock_handler_in_functions_rpc_interface("get_function_job_outputs", job_outputs)
+
+    response = await client.get(
+        f"{API_VTAG}/function_jobs/{mock_registered_function_job.uid}/outputs",
+        auth=auth,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data == job_outputs
