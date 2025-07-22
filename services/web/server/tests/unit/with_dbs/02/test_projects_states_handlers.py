@@ -7,7 +7,6 @@
 
 import asyncio
 import contextlib
-import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -70,6 +69,13 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    retry_never,
+    stop_after_delay,
+    wait_fixed,
+)
 
 RESOURCE_NAME = "projects"
 API_PREFIX = f"/{API_VTAG}"
@@ -237,34 +243,39 @@ async def _assert_project_state_updated(
     shared_project: dict,
     expected_project_state_updates: list[ProjectStateOutputSchema],
 ) -> None:
-    if not expected_project_state_updates:
-        handler.assert_not_called()
-    else:
-        # wait for the calls
-        now = time.monotonic()
-        MAX_WAITING_TIME = 15
-        while time.monotonic() - now < MAX_WAITING_TIME:
-            await asyncio.sleep(1)
-            if handler.call_count == len(expected_project_state_updates):
-                break
-        if time.monotonic() - now > MAX_WAITING_TIME:
-            pytest.fail(
-                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{len(expected_project_state_updates)} calls"
-            )
-
-        calls = [
-            call(
-                jsonable_encoder(
-                    {
-                        "project_uuid": shared_project["uuid"],
-                        "data": p_state.model_dump(by_alias=True, exclude_unset=True),
-                    }
+    @retry(
+        wait=wait_fixed(1),
+        stop=stop_after_delay(15),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    )
+    async def _received_project_update_event() -> None:
+        assert handler.call_count == len(
+            expected_project_state_updates
+        ), f"got only {handler.call_count}/{len(expected_project_state_updates)} expected calls"
+        if expected_project_state_updates:
+            calls = [
+                call(
+                    jsonable_encoder(
+                        {
+                            "project_uuid": shared_project["uuid"],
+                            "data": p_state.model_dump(
+                                by_alias=True, exclude_unset=True
+                            ),
+                        }
+                    )
                 )
-            )
-            for p_state in expected_project_state_updates
-        ]
-        handler.assert_has_calls(calls)
-        handler.reset_mock()
+                for p_state in expected_project_state_updates
+            ]
+            handler.assert_has_calls(calls)
+            handler.reset_mock()
+
+    if not expected_project_state_updates:
+        await _received_project_update_event.retry_with(
+            stop=stop_after_delay(3), retry=retry_never
+        )()
+    else:
+        await _received_project_update_event()
 
 
 async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
