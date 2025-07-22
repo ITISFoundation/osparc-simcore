@@ -31,7 +31,7 @@ qx.Class.define("osparc.data.model.Function", {
     this.set({
       uuid: functionData.uuid,
       functionType: functionData.functionClass,
-      name: functionData.name,
+      name: functionData.title,
       description: functionData.description,
       inputSchema: functionData.inputSchema || this.getInputSchema(),
       outputSchema: functionData.outputSchema || this.getOutputSchema(),

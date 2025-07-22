@@ -1,3 +1,4 @@
+import datetime
 from typing import Annotated, TypeAlias
 
 from pydantic import Field
@@ -23,6 +24,7 @@ from ..functions import (
     FunctionOutputs,
     FunctionOutputSchema,
     FunctionSchemaClass,
+    FunctionUpdate,
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
     ProjectFunction,
@@ -46,6 +48,7 @@ from ..functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
+from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema
 
 __all__ = [
@@ -113,7 +116,12 @@ __all__ = [
 class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema): ...
 
 
-class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema): ...
+class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
+    uid: Annotated[FunctionID, Field(alias="uuid")]
+    project_id: Annotated[ProjectID, Field(alias="templateId")]
+    created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
+    modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
+    thumbnail: str | None = None
 
 
 class SolverFunctionToRegister(SolverFunction, InputSchema): ...
@@ -131,3 +139,6 @@ RegisteredFunctionGet: TypeAlias = Annotated[
     RegisteredProjectFunctionGet | RegisteredSolverFunctionGet,
     Field(discriminator="function_class"),
 ]
+
+
+class RegisteredFunctionUpdate(FunctionUpdate, InputSchema): ...
