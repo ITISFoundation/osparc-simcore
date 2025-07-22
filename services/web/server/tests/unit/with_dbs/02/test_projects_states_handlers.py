@@ -1474,6 +1474,21 @@ async def test_open_shared_project_multiple_users(
             base_client, shared_project, expected.ok, opened_project_state
         )
 
+    # create an additional user, opening the project again shall raise
+    client_n = client_on_running_server_factory()
+    client_n_tab_id = client_session_id_factory()
+
+    user_n = await exit_stack.enter_async_context(
+        LoggedUser(client_n, {"role": logged_user["role"]})
+    )
+
+    sio_n, sio_n_handlers = await create_socketio_connection_with_handlers(
+        client_n, client_n_tab_id
+    )
+
+    # user i opens the shared project
+    await _open_project(client_n, client_n_tab_id, shared_project, expected.conflict)
+
 
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
