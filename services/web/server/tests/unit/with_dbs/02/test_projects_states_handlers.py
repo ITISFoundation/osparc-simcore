@@ -176,7 +176,9 @@ async def create_socketio_connection(
         sio = await socketio_client_factory(client_id, client)
         assert sio.sid
 
-        event_handlers = _SocketHandlers(SOCKET_IO_PROJECT_UPDATED_EVENT=mocker.Mock())
+        event_handlers = _SocketHandlers(
+            **{SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()}
+        )
 
         for event, handler in event_handlers.items():
             sio.on(event, handler=handler)
