@@ -46,6 +46,7 @@ async def test_workflow(
 ) -> None:
     # task data
     assert await store.list_tasks_data() == []
+    assert await store.get_task_data("missing") is None
 
     task_data = get_task_data()
     await store.set_task_data(task_data.task_id, task_data)
