@@ -16099,7 +16099,9 @@ components:
           format: uuid
           title: Templateid
         accessRights:
-          $ref: '#/components/schemas/FunctionAccessRights'
+          anyOf:
+          - $ref: '#/components/schemas/FunctionAccessRights'
+          - type: 'null'
         thumbnail:
           anyOf:
           - type: string
@@ -16114,7 +16116,6 @@ components:
       - creationDate
       - lastChangeDate
       - templateId
-      - accessRights
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
