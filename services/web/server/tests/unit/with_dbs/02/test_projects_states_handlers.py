@@ -7,6 +7,7 @@
 
 import asyncio
 import contextlib
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -49,6 +50,7 @@ from models_library.services_resources import (
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import log_client_in
@@ -70,9 +72,11 @@ from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATE
 from simcore_service_webserver.utils import to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
 from tenacity import (
+    RetryError,
+    before_sleep_log,
     retry,
     retry_if_exception_type,
-    retry_never,
+    retry_unless_exception_type,
     stop_after_delay,
     wait_fixed,
 )
@@ -243,39 +247,44 @@ async def _assert_project_state_updated(
     shared_project: dict,
     expected_project_state_updates: list[ProjectStateOutputSchema],
 ) -> None:
-    @retry(
-        wait=wait_fixed(1),
-        stop=stop_after_delay(15),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    )
-    async def _received_project_update_event() -> None:
-        assert handler.call_count == len(
-            expected_project_state_updates
-        ), f"got only {handler.call_count}/{len(expected_project_state_updates)} expected calls"
-        if expected_project_state_updates:
-            calls = [
-                call(
-                    jsonable_encoder(
-                        {
-                            "project_uuid": shared_project["uuid"],
-                            "data": p_state.model_dump(
-                                by_alias=True, exclude_unset=True
-                            ),
-                        }
-                    )
-                )
-                for p_state in expected_project_state_updates
-            ]
-            handler.assert_has_calls(calls)
-            handler.reset_mock()
+    with log_context(logging.INFO, "assert_project_state_updated") as ctx:
 
-    if not expected_project_state_updates:
-        await _received_project_update_event.retry_with(
-            stop=stop_after_delay(3), retry=retry_never
-        )()
-    else:
-        await _received_project_update_event()
+        @retry(
+            wait=wait_fixed(1),
+            stop=stop_after_delay(15),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+            before_sleep=before_sleep_log(ctx.logger, logging.INFO),
+        )
+        async def _received_project_update_event() -> None:
+            assert handler.call_count == len(
+                expected_project_state_updates
+            ), f"got only {handler.call_count}/{len(expected_project_state_updates)} expected calls"
+            if expected_project_state_updates:
+                calls = [
+                    call(
+                        jsonable_encoder(
+                            {
+                                "project_uuid": shared_project["uuid"],
+                                "data": p_state.model_dump(
+                                    by_alias=True, exclude_unset=True
+                                ),
+                            }
+                        )
+                    )
+                    for p_state in expected_project_state_updates
+                ]
+                handler.assert_has_calls(calls)
+                handler.reset_mock()
+
+        if not expected_project_state_updates:
+            with contextlib.suppress(RetryError):
+                await _received_project_update_event.retry_with(
+                    stop=stop_after_delay(3),
+                    retry=retry_unless_exception_type(AssertionError),
+                )()
+        else:
+            await _received_project_update_event()
 
 
 async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
@@ -1381,6 +1390,9 @@ async def test_open_shared_project_multiple_users(
     sio, socket_handlers = await create_socketio_connection(
         base_client,
         base_client_tab_id,
+    )
+    await _assert_project_state_updated(
+        socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT], shared_project, []
     )
 
 
