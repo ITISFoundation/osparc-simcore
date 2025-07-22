@@ -531,6 +531,7 @@ def wallets_clean_db(postgres_db: sa.engine.Engine) -> Iterator[None]:
     ],
 )
 async def test_open_project__in_debt(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
