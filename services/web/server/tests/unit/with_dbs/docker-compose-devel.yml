@@ -63,7 +63,7 @@ services:
         "--loglevel",
         "verbose",
         "--databases",
-        "8",
+        "11",
         "--appendonly",
         "yes",
         "--requirepass",
