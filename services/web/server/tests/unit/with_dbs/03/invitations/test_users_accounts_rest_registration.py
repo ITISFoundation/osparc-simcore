@@ -252,7 +252,7 @@ async def test_search_and_pre_registration(
     got = UserAccountGet(**found[0], state=None)
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
-        "status": new_user["status"].name,
+        "status": new_user["status"],
     }
 
 
@@ -327,6 +327,7 @@ async def test_list_users_accounts(
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,
     )
+    assert new_user["status"] == UserStatus.ACTIVE
 
     # 3. Test filtering by status
     # a. Check PENDING filter (should exclude the registered user)

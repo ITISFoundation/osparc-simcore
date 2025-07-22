@@ -18,11 +18,10 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from faker import Faker
-from pytest_simcore.helpers import postgres_tools
+from pytest_simcore.helpers import postgres_tools, postgres_users
 from pytest_simcore.helpers.faker_factories import (
     random_group,
     random_project,
-    random_user,
 )
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
@@ -268,10 +267,11 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
     async def _creator(
         conn: SAConnection, group: RowProxy | None = None, **overrides
     ) -> RowProxy:
-        user_id = await conn.scalar(
-            users.insert().values(**random_user(**overrides)).returning(users.c.id)
+
+        user_id = await postgres_users.insert_user_and_secrets(
+            conn,
+            **overrides,
         )
-        assert user_id is not None
 
         # This is done in two executions instead of one (e.g. returning(literal_column("*")) )
         # to allow triggering function in db that

@@ -361,13 +361,13 @@ async def test_exception_in_handler_returns_500(
 ):
     """Test that exceptions in the handler functions are caught and return 500."""
 
-    # Mock _handle_http_successful to raise an exception
+    # Mock _handle_aiohttp_web_http_successful to raise an exception
     def mocked_handler(*args, **kwargs):
         msg = "Simulated error in handler"
         raise ValueError(msg)
 
     mocker.patch(
-        "servicelib.aiohttp.rest_middlewares._handle_http_successful",
+        "servicelib.aiohttp.rest_middlewares._handle_aiohttp_web_http_successful",
         side_effect=mocked_handler,
     )
 

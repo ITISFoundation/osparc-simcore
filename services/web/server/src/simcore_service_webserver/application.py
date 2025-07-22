@@ -2,6 +2,7 @@
 """Main application"""
 
 import logging
+from collections.abc import Callable
 from pprint import pformat
 from typing import Any
 
@@ -11,7 +12,13 @@ from simcore_service_webserver.collaboration.bootstrap import (
     setup_realtime_collaboration,
 )
 
-from ._meta import WELCOME_DB_LISTENER_MSG, WELCOME_GC_MSG, WELCOME_MSG, info
+from ._meta import (
+    WELCOME_AUTH_APP_MSG,
+    WELCOME_DB_LISTENER_MSG,
+    WELCOME_GC_MSG,
+    WELCOME_MSG,
+    info,
+)
 from .activity.plugin import setup_activity
 from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
@@ -62,18 +69,29 @@ from .workspaces.plugin import setup_workspaces
 _logger = logging.getLogger(__name__)
 
 
-async def _welcome_banner(app: web.Application):
-    settings = get_application_settings(app)
-    print(WELCOME_MSG, flush=True)  # noqa: T201
-    if settings.WEBSERVER_GARBAGE_COLLECTOR:
-        print("with", WELCOME_GC_MSG, flush=True)  # noqa: T201
-    if settings.WEBSERVER_DB_LISTENER:
-        print("with", WELCOME_DB_LISTENER_MSG, flush=True)  # noqa: T201
+def _create_welcome_banner(banner_msg: str) -> Callable:
+    """Creates a welcome banner function with optional GC and DB listener messages"""
+
+    async def _welcome_banner(app: web.Application):
+        settings = get_application_settings(app)
+
+        print(banner_msg, flush=True)  # noqa: T201
+        if settings.WEBSERVER_GARBAGE_COLLECTOR:
+            print("with", WELCOME_GC_MSG, flush=True)  # noqa: T201
+        if settings.WEBSERVER_DB_LISTENER:
+            print("with", WELCOME_DB_LISTENER_MSG, flush=True)  # noqa: T201
+
+    return _welcome_banner
 
 
-async def _finished_banner(app: web.Application):
-    assert app  # nosec
-    print(info.get_finished_banner(), flush=True)  # noqa: T201
+def _create_finished_banner() -> Callable:
+    """Creates a finished banner function"""
+
+    async def _finished_banner(app: web.Application):
+        assert app  # nosec
+        print(info.get_finished_banner(), flush=True)  # noqa: T201
+
+    return _finished_banner
 
 
 def create_application() -> web.Application:
@@ -166,8 +184,8 @@ def create_application() -> web.Application:
     setup_realtime_collaboration(app)
 
     # NOTE: *last* events
-    app.on_startup.append(_welcome_banner)
-    app.on_shutdown.append(_finished_banner)
+    app.on_startup.append(_create_welcome_banner(WELCOME_MSG))
+    app.on_shutdown.append(_create_finished_banner())
 
     _logger.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
@@ -183,8 +201,8 @@ def create_application_auth() -> web.Application:
     setup_login_auth(app)
 
     # NOTE: *last* events
-    app.on_startup.append(_welcome_banner)
-    app.on_shutdown.append(_finished_banner)
+    app.on_startup.append(_create_welcome_banner(WELCOME_AUTH_APP_MSG))
+    app.on_shutdown.append(_create_finished_banner())
 
     _logger.debug(
         "Routes in application-auth: \n %s", pformat(app.router.named_resources())

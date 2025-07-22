@@ -185,9 +185,10 @@ async def register(request: web.Request):
             ).replace(tzinfo=None)
 
     #  get authorized user or create new
-    user = await _auth_service.get_user_by_email(request.app, email=registration.email)
+    user = await _auth_service.get_user_or_none(request.app, email=registration.email)
     if user:
-        await _auth_service.check_authorized_user_credentials_or_raise(
+        await _auth_service.check_authorized_user_credentials(
+            request.app,
             user,
             password=registration.password.get_secret_value(),
             product=product,
@@ -204,6 +205,8 @@ async def register(request: web.Request):
             ),
             expires_at=expires_at,
         )
+
+    assert user is not None  # nosec
 
     # setup user groups
     assert (  # nosec
@@ -267,7 +270,7 @@ async def register(request: web.Request):
                 )
             )
 
-            await db.delete_confirmation_and_user(user, _confirmation)
+            await db.delete_confirmation_and_user(user["id"], _confirmation)
 
             raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 

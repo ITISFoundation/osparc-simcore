@@ -10,3 +10,7 @@ class SendingVerificationSmsError(LoginError):
 
 class SendingVerificationEmailError(LoginError):
     msg_template = "Sending verification email failed. {reason}"
+
+
+class WrongPasswordError(LoginError):
+    msg_template = "Invalid password provided"
