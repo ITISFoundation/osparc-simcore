@@ -44,7 +44,11 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.redis import exclusive
+from servicelib.redis import (
+    PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
+    exclusive,
+    get_and_increment_project_document_version,
+)
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
@@ -78,7 +82,10 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
-from ..redis import get_redis_lock_manager_client_sdk
+from ..redis import (
+    get_redis_document_manager_client_sdk,
+    get_redis_lock_manager_client_sdk,
+)
 from ..utils import now_str
 from . import _projects_repository
 from ._comments_repository import (
@@ -121,32 +128,6 @@ ANY_USER = ANY_USER_ID_SENTINEL
 DEFAULT_ORDER_BY = OrderBy(
     field=IDStr("last_change_date"), direction=OrderDirection.DESC
 )
-
-# Project locking and versioning constants
-PROJECT_DOCUMENT_VERSION_KEY: str = "projects:{}:version"
-PROJECT_DB_UPDATE_REDIS_LOCK_KEY: str = "project_db_update:{}"
-
-
-async def _get_and_increment_project_document_version(
-    app: web.Application, project_uuid: ProjectID
-) -> int:
-    """
-    Atomically gets and increments the project document version using Redis.
-    Returns the incremented version number.
-
-    Args:
-        app: The web application instance
-        project_uuid: The project UUID to get/increment version for
-
-    Returns:
-        The new (incremented) version number
-    """
-    from ..redis import get_redis_document_manager_client_sdk
-
-    redis_client_sdk = get_redis_document_manager_client_sdk(app)
-    version_key = PROJECT_DOCUMENT_VERSION_KEY.format(project_uuid)
-    # If key doesn't exist, it's created with value 0 and then incremented to 1
-    return await redis_client_sdk.redis.incr(version_key)
 
 
 # pylint: disable=too-many-public-methods
@@ -995,8 +976,9 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
             # Increment document version and notify users
-            document_version = await _get_and_increment_project_document_version(
-                app=self._app, project_uuid=project_uuid
+            redis_client_sdk = get_redis_document_manager_client_sdk(self._app)
+            document_version = await get_and_increment_project_document_version(
+                redis_client=redis_client_sdk, project_uuid=project_uuid
             )
             await notify_project_document_updated(
                 app=self._app,

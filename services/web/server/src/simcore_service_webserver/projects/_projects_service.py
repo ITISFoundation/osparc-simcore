@@ -84,7 +84,9 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 from servicelib.redis import (
+    PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
     exclusive,
+    get_and_increment_project_document_version,
     get_project_locked_state,
     is_project_locked,
     with_project_locked,
@@ -168,33 +170,6 @@ from .utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
 
-PROJECT_DOCUMENT_VERSION_KEY: str = "projects:{}:version"
-PROJECT_DB_UPDATE_REDIS_LOCK_KEY: str = "project_db_update:{}"
-
-
-async def _get_and_increment_project_document_version(
-    app: web.Application, project_uuid: ProjectID
-) -> int:
-    """
-    Atomically gets and increments the project document version using Redis.
-
-    This function ensures thread-safe version incrementing by using Redis INCR command
-    which is atomic. The version starts at 1 for the first call.
-
-    Args:
-        app: The web application instance
-        project_uuid: The project UUID
-
-    Returns:
-        The new incremented version number
-    """
-    redis_client_sdk = get_redis_document_manager_client_sdk(app)
-    version_key = PROJECT_DOCUMENT_VERSION_KEY.format(project_uuid)
-
-    # Redis INCR is atomic and returns the new value
-    # If key doesn't exist, it's created with value 0 and then incremented to 1
-    return await redis_client_sdk.redis.incr(version_key)
-
 
 async def patch_project_and_notify_users(
     app: web.Application,
@@ -256,8 +231,9 @@ async def patch_project_and_notify_users(
                 ProjectTemplateType, project_with_workbench.template_type
             ),
         )
-        document_version = await _get_and_increment_project_document_version(
-            app=app, project_uuid=project_uuid
+        redis_client_sdk = get_redis_document_manager_client_sdk(app)
+        document_version = await get_and_increment_project_document_version(
+            redis_client=redis_client_sdk, project_uuid=project_uuid
         )
         await notify_project_document_updated(
             app=app,
