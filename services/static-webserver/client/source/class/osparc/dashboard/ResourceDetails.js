@@ -121,7 +121,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     popUpInWindow: function(resourceData) {
       const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
-      const title = resourceData.name;
+      const title = resourceData.name || resourceData.title; // title is used by functions
       const window = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
         layout: new qx.ui.layout.Grow(),
         ...osparc.ui.window.TabbedWindow.DEFAULT_PROPS,
