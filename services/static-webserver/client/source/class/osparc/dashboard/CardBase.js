@@ -553,7 +553,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.set({
         resourceType: resourceData.resourceType,
         uuid,
-        title: resourceData.name,
+        title: resourceData.name || resourceData.title, // title is used by functions
         description: resourceData.description,
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
