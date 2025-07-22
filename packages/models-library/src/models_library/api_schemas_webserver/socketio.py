@@ -1,7 +1,6 @@
-from models_library.projects import ProjectID
-
 from ..basic_types import IDStr
 from ..groups import GroupID
+from ..projects import ProjectID
 from ..users import UserID
 
 
