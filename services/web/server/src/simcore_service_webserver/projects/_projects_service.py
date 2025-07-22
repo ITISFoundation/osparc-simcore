@@ -406,8 +406,8 @@ async def patch_project(
         quality=project_with_workbench.quality,
         workbench=project_with_workbench.workbench,
         ui=project_with_workbench.ui,
-        type=ProjectTypeAPI(project_with_workbench.type),
-        template_type=ProjectTemplateType(project_with_workbench.template_type),
+        type=cast(ProjectTypeAPI, project_with_workbench.type),
+        template_type=cast(ProjectTemplateType, project_with_workbench.template_type),
     )
     document_version = await _get_and_increment_project_document_version(
         app=app, project_uuid=project_uuid

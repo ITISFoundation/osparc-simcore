@@ -116,7 +116,7 @@ async def open_project(request: web.Request) -> web.Response:
                 text="Cannot open project without a socket_id, please refresh the page"
             )
         sio = get_socket_server(request.app)
-        await sio.enter_room(
+        sio.enter_room(
             _socket_id, SocketIORoomStr.from_project_id(path_params.project_id)
         )
 

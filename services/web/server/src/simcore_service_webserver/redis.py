@@ -42,6 +42,7 @@ async def setup_redis_client(app: web.Application):
                 RedisDatabase.SCHEDULED_MAINTENANCE,
                 RedisDatabase.USER_NOTIFICATIONS,
                 RedisDatabase.ANNOUNCEMENTS,
+                RedisDatabase.DOCUMENTS,
             )
         },
         settings=redis_settings,
