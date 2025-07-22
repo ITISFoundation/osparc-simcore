@@ -52,12 +52,12 @@ SIMCORE_SERVICE_EXAMPLES = {
     ),
     "dynamic-service": _Parametrization(
         example=SimcoreServiceLabels.model_json_schema()["examples"][1],
-        items=5,
+        items=6,
         uses_dynamic_sidecar=True,
     ),
     "dynamic-service-with-compose-spec": _Parametrization(
         example=SimcoreServiceLabels.model_json_schema()["examples"][2],
-        items=6,
+        items=7,
         uses_dynamic_sidecar=True,
     ),
 }
