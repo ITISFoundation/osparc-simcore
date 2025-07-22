@@ -9,8 +9,10 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from models_library.functions import FunctionClass, RegisteredProjectFunction
+from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
+from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -35,6 +37,32 @@ from ._functions_rest_schemas import (
 )
 
 routes = web.RouteTableDef()
+
+
+async def _add_extras_to_project_function(
+    function: RegisteredProjectFunction,
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+) -> dict:
+    assert isinstance(function, RegisteredProjectFunction)  # nosec
+
+    project_dict = await _projects_service.get_project_for_user(
+        app=app,
+        project_uuid=f"{function.project_id}",
+        user_id=user_id,
+    )
+
+    function_with_extras = function.model_dump(mode="json") | {
+        "access_rights": await _functions_service.get_function_user_permissions(
+            app,
+            user_id=user_id,
+            product_name=product_name,
+            function_id=function.uid,
+        ),
+        "thumbnail": project_dict.get("thumbnail", None),
+    }
+    return function_with_extras
 
 
 @routes.post(f"/{VTAG}/functions", name="register_function")
@@ -177,26 +205,16 @@ async def get_function(request: web.Request) -> web.Response:
         query_params.include_extras
         and registered_function.function_class == FunctionClass.PROJECT
     ):
-        assert isinstance(registered_function, RegisteredProjectFunctionGet)  # nosec
-
-        project_dict = await _projects_service.get_project_for_user(
+        function_with_extras = await _add_extras_to_project_function(
+            function=registered_function,
             app=request.app,
-            project_uuid=f"{registered_function.project_id}",
             user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
         )
 
         return envelope_json_response(
             TypeAdapter(RegisteredProjectFunctionGet).validate_python(
-                registered_function.model_dump(mode="json")
-                | {
-                    "access_rights": await _functions_service.get_function_user_permissions(
-                        request.app,
-                        user_id=req_ctx.user_id,
-                        product_name=req_ctx.product_name,
-                        function_id=function_id,
-                    ),
-                    "thumbnail": project_dict.get("thumbnail", None),
-                }
+                function_with_extras
             )
         )
 
@@ -230,6 +248,20 @@ async def update_function(request: web.Request) -> web.Response:
         function_id=function_id,
         function=function_update,
     )
+
+    if updated_function.function_class == FunctionClass.PROJECT:
+        function_with_extras = await _add_extras_to_project_function(
+            function=updated_function,
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+        )
+
+        return envelope_json_response(
+            TypeAdapter(RegisteredProjectFunctionGet).validate_python(
+                function_with_extras
+            )
+        )
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
