@@ -41,6 +41,7 @@ qx.Class.define("osparc.data.model.Function", {
       creationDate: functionData.creationDate ? new Date(functionData.creationDate) : this.getCreationDate(),
       lastChangeDate: functionData.lastChangeDate ? new Date(functionData.lastChangeDate) : this.getLastChangeDate(),
       thumbnail: functionData.thumbnail || this.getThumbnail(),
+      templateId: functionData.templateId || this.getTemplateId(),
     });
 
     if (templateData) {
@@ -127,6 +128,12 @@ qx.Class.define("osparc.data.model.Function", {
       init: null
     },
 
+    templateId: {
+      check: "String",
+      nullable: true,
+      init: null,
+    },
+
     template: {
       check: "osparc.data.model.Study",
       nullable: true,
@@ -158,19 +165,7 @@ qx.Class.define("osparc.data.model.Function", {
     },
 
     patchFunction: function(functionChanges) {
-      return osparc.store.Functions.patchFunction(this.getUuid(), functionChanges)
-        .then(() => {
-          Object.keys(functionChanges).forEach(fieldKey => {
-            const upKey = qx.lang.String.firstUp(fieldKey);
-            const setter = "set" + upKey;
-            this[setter](functionChanges[fieldKey]);
-          })
-          this.set({
-            lastChangeDate: new Date()
-          });
-          const functionData = this.serialize();
-          return functionData;
-        });
+      return osparc.store.Functions.patchFunction(this.getUuid(), functionChanges);
     },
   }
 });
