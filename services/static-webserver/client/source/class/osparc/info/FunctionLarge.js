@@ -45,10 +45,6 @@ qx.Class.define("osparc.info.FunctionLarge", {
   },
 
   members: {
-    __canIWrite: function() {
-      return this.getFunction().getMyAccessRights()["write"];
-    },
-
     _rebuildLayout: function() {
       this._removeAll();
 
@@ -95,7 +91,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
     },
 
     __infoElements: function() {
-      const canIWrite = this.__canIWrite();
+      const canIWrite = this.getFunction().canIWrite();
 
       const infoLayout = {
         "TITLE": {

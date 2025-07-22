@@ -37,7 +37,7 @@ qx.Class.define("osparc.data.model.Function", {
       inputSchema: functionData.inputSchema || this.getInputSchema(),
       outputSchema: functionData.outputSchema || this.getOutputSchema(),
       defaultInputs: functionData.defaultInputs || this.getDefaultInputs(),
-      myAccessRights: functionData.accessRights || this.getMyAccessRights(),
+      accessRights: functionData.accessRights || this.getAccessRights(),
       creationDate: functionData.creationDate ? new Date(functionData.creationDate) : this.getCreationDate(),
       lastChangeDate: functionData.lastChangeDate ? new Date(functionData.lastChangeDate) : this.getLastChangeDate(),
       thumbnail: functionData.thumbnail || this.getThumbnail(),
@@ -99,10 +99,10 @@ qx.Class.define("osparc.data.model.Function", {
       init: {}
     },
 
-    myAccessRights: {
+    accessRights: {
       check: "Object",
       nullable: false,
-      event: "changeMyAccessRights",
+      event: "changeAccessRights",
       init: {}
     },
 
@@ -151,6 +151,10 @@ qx.Class.define("osparc.data.model.Function", {
         jsonObject[key] = this.get(key);
       });
       return jsonObject;
+    },
+
+    canIWrite: function() {
+      return Boolean(this.getAccessRights()["write"]);
     },
 
     patchFunction: function(functionChanges) {

@@ -51,7 +51,7 @@ qx.Class.define("osparc.info.FunctionUtils", {
       */
     createOwner: function(func) {
       const owner = new qx.ui.basic.Label();
-      const canIWrite = func.getMyAccessRights()["write"];
+      const canIWrite = func.canIWrite();
       owner.setValue(canIWrite ? "My Function" : "Read Only");
       return owner;
     },
