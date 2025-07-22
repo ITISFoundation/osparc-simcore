@@ -13,7 +13,7 @@ from pydantic import (
 
 from ..basic_types import IDStr
 from ..projects import ProjectID
-from ..projects_nodes_io import NodeID
+from ..projects_nodes_io import NodeID, SimcoreS3FileID
 from ..projects_pipeline import ComputationTask
 from ..users import UserID
 from ..wallets import WalletInfo
@@ -124,6 +124,30 @@ class TaskLogFileGet(BaseModel):
         AnyUrl | None,
         Field(description="Presigned link for log file or None if still not available"),
     ] = None
+
+
+class TaskLogFileIdGet(BaseModel):
+    task_id: NodeID
+    file_id: SimcoreS3FileID | None
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "task_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/3fa85f64-5717-4562-b3fc-2c963f66afa6/logs/task_logs.txt",
+                },
+                {
+                    "task_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/6ba7b810-9dad-11d1-80b4-00c04fd430c8/logs/debug.log",
+                },
+                {
+                    "task_id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+                    "file_id": None,
+                },
+            ]
+        }
+    )
 
 
 class TasksSelection(BaseModel):

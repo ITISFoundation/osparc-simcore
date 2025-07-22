@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "simcore_service_storage",
+    "title": "simcore-service-storage",
     "description": "Service that manages osparc storage backend",
     "version": "0.7.1"
   },

@@ -1,24 +1,21 @@
+import os
 from copy import deepcopy
-from typing import Any, TypeVar
+from typing import Annotated, Any, Final, TypeVar
 
 from common_library.errors_classes import OsparcErrorMixin
 from models_library.basic_types import ConstrainedStr
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Discriminator, PositiveInt, Tag
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
+from .utils.types import get_types_from_annotated_union
 
 T = TypeVar("T")
 
 
-class OsparcVariableIdentifier(ConstrainedStr):
+class _BaseOsparcVariableIdentifier(ConstrainedStr):
     # NOTE: To allow parametrized value, set the type to Union[OsparcVariableIdentifier, ...]
     # NOTE: When dealing with str types, to avoid unexpected behavior, the following
     # order is suggested `OsparcVariableIdentifier | str`
-    # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
-    pattern = (
-        rf"^\${{1,2}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$"
-    )
 
     def _get_without_template_markers(self) -> str:
         # $VAR
@@ -42,6 +39,40 @@ class OsparcVariableIdentifier(ConstrainedStr):
         parts = self._get_without_template_markers().split(":-")
         return parts[1] if len(parts) > 1 else None
 
+    @staticmethod
+    def get_pattern(max_dollars: PositiveInt) -> str:
+        # NOTE: in below regex `{`` and `}` are respectively escaped with `{{` and `}}`
+        return rf"^\${{1,{max_dollars}}}(?:\{{)?{OSPARC_IDENTIFIER_PREFIX}[A-Za-z0-9_]+(?:\}})?(:-.+)?$"
+
+
+class PlatformOsparcVariableIdentifier(_BaseOsparcVariableIdentifier):
+    pattern = _BaseOsparcVariableIdentifier.get_pattern(max_dollars=2)
+
+
+class OoilOsparcVariableIdentifier(_BaseOsparcVariableIdentifier):
+    pattern = _BaseOsparcVariableIdentifier.get_pattern(max_dollars=4)
+
+
+_PLATFORM: Final[str] = "platform"
+_OOIL_VERSION: Final[str] = "ooil-version"
+
+
+def _get_discriminator_value(v: Any) -> str:
+    _ = v
+    if os.environ.get("ENABLE_OOIL_OSPARC_VARIABLE_IDENTIFIER", None):
+        return _OOIL_VERSION
+
+    return _PLATFORM
+
+
+OsparcVariableIdentifier = Annotated[
+    (
+        Annotated[PlatformOsparcVariableIdentifier, Tag(_PLATFORM)]
+        | Annotated[OoilOsparcVariableIdentifier, Tag(_OOIL_VERSION)]
+    ),
+    Discriminator(_get_discriminator_value),
+]
+
 
 class UnresolvedOsparcVariableIdentifierError(OsparcErrorMixin, TypeError):
     msg_template = "Provided argument is unresolved: value={value}"
@@ -59,9 +90,9 @@ def raise_if_unresolved(var: OsparcVariableIdentifier | T) -> T:
     Raises:
         TypeError: if the the OsparcVariableIdentifier was unresolved
     """
-    if isinstance(var, OsparcVariableIdentifier):
+    if isinstance(var, get_types_from_annotated_union(OsparcVariableIdentifier)):
         raise UnresolvedOsparcVariableIdentifierError(value=var)
-    return var
+    return var  # type: ignore[return-value]
 
 
 def replace_osparc_variable_identifier(  # noqa: C901
@@ -86,11 +117,11 @@ def replace_osparc_variable_identifier(  # noqa: C901
     ```
     """
 
-    if isinstance(obj, OsparcVariableIdentifier):
-        if obj.name in osparc_variables:
-            return deepcopy(osparc_variables[obj.name])  # type: ignore
-        if obj.default_value is not None:
-            return deepcopy(obj.default_value)  # type: ignore
+    if isinstance(obj, get_types_from_annotated_union(OsparcVariableIdentifier)):
+        if obj.name in osparc_variables:  # type: ignore[attr-defined]
+            return deepcopy(osparc_variables[obj.name])  # type: ignore[no-any-return,attr-defined]
+        if obj.default_value is not None:  # type: ignore[attr-defined]
+            return deepcopy(obj.default_value)  # type: ignore[no-any-return,attr-defined]
     elif isinstance(obj, dict):
         for key, value in obj.items():
             obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
@@ -124,7 +155,7 @@ def raise_if_unresolved_osparc_variable_identifier_found(obj: Any) -> None:
         UnresolvedOsparcVariableIdentifierError: if not all instances of
         `OsparcVariableIdentifier` were replaced
     """
-    if isinstance(obj, OsparcVariableIdentifier):
+    if isinstance(obj, get_types_from_annotated_union(OsparcVariableIdentifier)):
         raise_if_unresolved(obj)
     elif isinstance(obj, dict):
         for key, value in obj.items():

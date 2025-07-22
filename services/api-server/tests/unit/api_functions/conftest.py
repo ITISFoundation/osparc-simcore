@@ -29,6 +29,8 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.functions import (
     RegisteredFunctionJobCollection,
     RegisteredSolverFunction,
+    RegisteredSolverFunctionJob,
+    SolverFunctionJob,
 )
 from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.projects import ProjectID
@@ -125,9 +127,10 @@ def mock_function(
 def mock_registered_project_function(mock_function: Function) -> RegisteredFunction:
     return RegisteredProjectFunction(
         **{
-            **mock_function.dict(),
-            "uid": str(uuid4()),
+            **mock_function.model_dump(),
+            "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
+            "modified_at": datetime.datetime.now(datetime.UTC),
         }
     )
 
@@ -146,8 +149,9 @@ def mock_registered_solver_function(
             "input_schema": sample_input_schema,
             "output_schema": sample_output_schema,
             "default_inputs": None,
-            "uid": str(uuid4()),
+            "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
+            "modified_at": datetime.datetime.now(datetime.UTC),
             "solver_key": "simcore/services/comp/ans-model",
             "solver_version": "1.0.1",
         }
@@ -155,7 +159,7 @@ def mock_registered_solver_function(
 
 
 @pytest.fixture
-def mock_function_job(
+def mock_project_function_job(
     mock_registered_project_function: RegisteredFunction,
 ) -> FunctionJob:
     mock_function_job = {
@@ -164,20 +168,48 @@ def mock_function_job(
         "description": "A test function job",
         "inputs": {"key": "value"},
         "outputs": None,
-        "project_job_id": str(uuid4()),
+        "project_job_id": f"{uuid4()}",
         "function_class": FunctionClass.PROJECT,
     }
     return ProjectFunctionJob(**mock_function_job)
 
 
 @pytest.fixture
-def mock_registered_function_job(
-    mock_function_job: FunctionJob,
+def mock_registered_project_function_job(
+    mock_project_function_job: FunctionJob,
 ) -> RegisteredFunctionJob:
     return RegisteredProjectFunctionJob(
         **{
-            **mock_function_job.dict(),
-            "uid": str(uuid4()),
+            **mock_project_function_job.model_dump(),
+            "uid": f"{uuid4()}",
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
+    )
+
+
+@pytest.fixture
+def mock_solver_function_job(
+    mock_registered_solver_function: RegisteredFunction,
+) -> FunctionJob:
+    return SolverFunctionJob(
+        title="Test Function Job",
+        description="A test function job",
+        function_uid=mock_registered_solver_function.uid,
+        inputs={"key": "value"},
+        outputs=None,
+        function_class=FunctionClass.SOLVER,
+        solver_job_id=ProjectID(f"{uuid4()}"),
+    )
+
+
+@pytest.fixture
+def mock_registered_solver_function_job(
+    mock_solver_function_job: FunctionJob,
+) -> RegisteredFunctionJob:
+    return RegisteredSolverFunctionJob(
+        **{
+            **mock_solver_function_job.model_dump(),
+            "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
         }
     )
@@ -185,15 +217,17 @@ def mock_registered_function_job(
 
 @pytest.fixture
 def mock_function_job_collection(
-    mock_registered_function_job: RegisteredFunctionJob,
+    mock_registered_project_function_job: RegisteredFunctionJob,
 ) -> FunctionJobCollection:
     mock_function_job_collection = {
         "title": "Test Function Job Collection",
         "description": "A test function job collection",
-        "function_uid": mock_registered_function_job.function_uid,
+        "function_uid": mock_registered_project_function_job.function_uid,
         "function_class": FunctionClass.PROJECT,
-        "project_id": str(uuid4()),
-        "function_job_ids": [mock_registered_function_job.uid for _ in range(5)],
+        "project_id": f"{uuid4()}",
+        "function_job_ids": [
+            mock_registered_project_function_job.uid for _ in range(5)
+        ],
     }
     return FunctionJobCollection(**mock_function_job_collection)
 
@@ -205,7 +239,7 @@ def mock_registered_function_job_collection(
     return RegisteredFunctionJobCollection(
         **{
             **mock_function_job_collection.model_dump(),
-            "uid": str(uuid4()),
+            "uid": f"{uuid4()}",
             "created_at": datetime.datetime.now(datetime.UTC),
         }
     )

@@ -1,6 +1,5 @@
-""" Current version of the simcore_service_webserver application and its API
+"""Current version of the simcore_service_webserver application and its API"""
 
-"""
 from typing import Final
 
 from models_library.basic_types import VersionStr
@@ -19,11 +18,10 @@ SUMMARY: Final[str] = info.get_summary()
 
 
 # legacy consts
-APP_NAME: str = __name__.split(".")[0]
+APP_NAME: Final[str] = info.app_name
+PROMETHEUS_FRIENDLY_APP_NAME: Final[str] = info.prometheus_friendly_app_name
 api_version_prefix: str = API_VTAG
 
-
-# kids drawings :-)
 
 WELCOME_MSG = r"""
  _    _        _
@@ -45,6 +43,7 @@ WELCOME_GC_MSG = r"""
    (_)) __((/ __|
      | (_ || (__
       \___| \___|
+
 """
 
 WELCOME_DB_LISTENER_MSG = r"""
@@ -54,5 +53,17 @@ WELCOME_DB_LISTENER_MSG = r"""
 |  |  |  _  <___|  |--|   |___  \-  -|   __|  |  |   __|  _  <
 |_____\_____/   \_____\___<_____/|__|\_____\__|__\_____\__|\_/
 
-
 """
+
+# SEE https://patorjk.com/software/taag/#p=display&f=BlurVision%20ASCII&t=Auth%0A
+WELCOME_AUTH_APP_MSG = r"""
+ ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░
+░▒▓████████▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓████████▓▒░
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░
+░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░
+░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░   ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░    {}
+""".format(
+    f"v{__version__}"
+)

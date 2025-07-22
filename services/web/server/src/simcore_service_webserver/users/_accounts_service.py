@@ -18,7 +18,7 @@ from .exceptions import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
 )
-from .schemas import PreRegisteredUserGet
+from .schemas import UserAccountRestPreRegister
 
 _logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 async def pre_register_user(
     app: web.Application,
     *,
-    profile: PreRegisteredUserGet,
+    profile: UserAccountRestPreRegister,
     creator_user_id: UserID | None,
     product_name: ProductName,
 ) -> UserAccountGet:

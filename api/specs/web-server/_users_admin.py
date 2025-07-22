@@ -19,7 +19,7 @@ from models_library.api_schemas_webserver.users import (
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.users.schemas import PreRegisteredUserGet
+from simcore_service_webserver.users.schemas import UserAccountRestPreRegister
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])
 
@@ -69,4 +69,4 @@ async def search_user_accounts(
     response_model=Envelope[UserAccountGet],
     tags=_extra_tags,
 )
-async def pre_register_user_account(_body: PreRegisteredUserGet): ...
+async def pre_register_user_account(_body: UserAccountRestPreRegister): ...

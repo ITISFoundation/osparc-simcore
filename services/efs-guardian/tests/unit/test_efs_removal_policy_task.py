@@ -17,9 +17,11 @@ from fastapi import FastAPI
 from models_library.users import UserID
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import transaction_context
 from simcore_service_efs_guardian.core.settings import (
     ApplicationSettings,
@@ -71,12 +73,9 @@ async def user_in_db(
     injects a user in db
     """
     assert user_id == user["id"]
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+    async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         app.state.engine,
-        table=users,
-        values=user,
-        pk_col=users.c.id,
-        pk_value=user["id"],
+        **user,
     ) as row:
         yield row
 

@@ -16,24 +16,28 @@ class RefActions:
     NO_ACTION: Final[str] = "NO ACTION"
 
 
-def column_created_datetime(*, timezone: bool = True) -> sa.Column:
+def column_created_datetime(
+    *, timezone: bool = True, doc="Timestamp auto-generated upon creation"
+) -> sa.Column:
     return sa.Column(
         "created",
         sa.DateTime(timezone=timezone),
         nullable=False,
         server_default=sa.sql.func.now(),
-        doc="Timestamp auto-generated upon creation",
+        doc=doc,
     )
 
 
-def column_modified_datetime(*, timezone: bool = True) -> sa.Column:
+def column_modified_datetime(
+    *, timezone: bool = True, doc="Timestamp with last row update"
+) -> sa.Column:
     return sa.Column(
         "modified",
         sa.DateTime(timezone=timezone),
         nullable=False,
         server_default=sa.sql.func.now(),
         onupdate=sa.sql.func.now(),
-        doc="Timestamp with last row update",
+        doc=doc,
     )
 
 

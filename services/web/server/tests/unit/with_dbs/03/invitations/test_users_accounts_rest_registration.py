@@ -42,6 +42,7 @@ from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
 from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from simcore_service_webserver.models import PhoneNumberStr
 
 
 @pytest.fixture
@@ -115,13 +116,16 @@ async def test_access_rights_on_search_users_only_product_owners_can_access(
 
 
 @pytest.fixture
-def account_request_form(faker: Faker) -> dict[str, Any]:
+def account_request_form(
+    faker: Faker,
+    user_phone_number: PhoneNumberStr,
+) -> dict[str, Any]:
     # This is AccountRequestInfo.form
     form = {
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": faker.email(),
-        "phone": faker.phone_number(),
+        "phone": user_phone_number,
         "company": faker.company(),
         # billing info
         "address": faker.address().replace("\n", ", "),
@@ -248,7 +252,7 @@ async def test_search_and_pre_registration(
     got = UserAccountGet(**found[0], state=None)
     assert got.model_dump(include={"registered", "status"}) == {
         "registered": True,
-        "status": new_user["status"].name,
+        "status": new_user["status"],
     }
 
 
@@ -323,6 +327,7 @@ async def test_list_users_accounts(
         status_upon_creation=UserStatus.ACTIVE,
         expires_at=None,
     )
+    assert new_user["status"] == UserStatus.ACTIVE
 
     # 3. Test filtering by status
     # a. Check PENDING filter (should exclude the registered user)

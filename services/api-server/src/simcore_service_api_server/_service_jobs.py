@@ -1,8 +1,10 @@
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 
 from common_library.exclude import as_dict_exclude_none
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
 from models_library.products import ProductName
 from models_library.projects import ProjectID
@@ -15,9 +17,9 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.models.basic_types import NameValueTuple
 
-from .models.schemas.jobs import Job, JobInputs
+from .models.basic_types import NameValueTuple
+from .models.schemas.jobs import Job, JobID, JobInputs
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver
 from .services_http.solver_job_models_converters import (
@@ -26,6 +28,8 @@ from .services_http.solver_job_models_converters import (
     create_new_project_for_job,
 )
 from .services_http.webserver import AuthSession
+from .services_rpc.director_v2 import DirectorV2Service
+from .services_rpc.storage import StorageService
 from .services_rpc.wb_api_server import WbApiRpcClient
 
 _logger = logging.getLogger(__name__)
@@ -35,6 +39,8 @@ _logger = logging.getLogger(__name__)
 class JobService:
     _web_rest_client: AuthSession
     _web_rpc_client: WbApiRpcClient
+    _storage_rpc_client: StorageService
+    _directorv2_rpc_client: DirectorV2Service
     user_id: UserID
     product_name: ProductName
 
@@ -147,3 +153,17 @@ class JobService:
             job_id=job.id,
         )
         return job, new_project
+
+    async def start_log_export(
+        self,
+        job_id: JobID,
+    ) -> AsyncJobGet:
+        file_ids = await self._directorv2_rpc_client.get_computation_task_log_file_ids(
+            project_id=job_id
+        )
+        async_job_get = await self._storage_rpc_client.start_data_export(
+            paths_to_export=[
+                Path(elm.file_id) for elm in file_ids if elm.file_id is not None
+            ],
+        )
+        return async_job_get
