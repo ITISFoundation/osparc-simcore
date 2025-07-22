@@ -122,7 +122,7 @@ class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
     project_id: Annotated[ProjectID, Field(alias="templateId")]
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
-    access_rights: FunctionAccessRights
+    access_rights: FunctionAccessRights | None = None
     thumbnail: str | None = None
 
 
