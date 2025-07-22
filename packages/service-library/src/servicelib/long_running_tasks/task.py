@@ -25,7 +25,7 @@ from .errors import (
     TaskNotFoundError,
     TaskNotRegisteredError,
 )
-from .models import TaskBase, TaskId, TaskStatus, TrackedTask
+from .models import TaskBase, TaskData, TaskId, TaskStatus
 
 _logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ async def _get_tasks_to_remove(
 
     tasks_to_remove: list[TaskId] = []
 
-    for tracked_task in await tracked_tasks.list_tasks():
+    for tracked_task in await tracked_tasks.list_tasks_data():
         if tracked_task.fire_and_forget:
             continue
 
@@ -103,24 +103,28 @@ class TasksManager:
 
     def __init__(
         self,
+        # redis_settings: RedisSettings,
         stale_task_check_interval: datetime.timedelta,
         stale_task_detect_timeout: datetime.timedelta,
         namespace: Namespace = _DEFAULT_NAMESPACE,
         # TODO: inject a Redis connection
     ):
-        self.namespace = namespace
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
-        self._tracked_tasks: BaseStore = InMemoryStore()
+        self._tasks_data: BaseStore = InMemoryStore()
+        self._created_tasks: dict[TaskId, asyncio.Task] = {}
 
+        # self.redis_settings = redis_settings
         self.stale_task_check_interval = stale_task_check_interval
         self.stale_task_detect_timeout_s: PositiveFloat = (
             stale_task_detect_timeout.total_seconds()
         )
+        self.namespace = namespace
 
         self._stale_tasks_monitor_task: asyncio.Task | None = None
         self._cancelled_tasks_removal_task: asyncio.Task | None = None
 
     async def setup(self) -> None:
+        # TODO: this one needs to be exclusive redis locked
         self._stale_tasks_monitor_task = create_periodic_task(
             task=self._stale_tasks_monitor_worker,
             interval=self.stale_task_check_interval,
@@ -135,7 +139,7 @@ class TasksManager:
     async def teardown(self) -> None:
         task_ids_to_remove: deque[TaskId] = deque()
 
-        for tracked_task in await self._tracked_tasks.list_tasks():
+        for tracked_task in await self._tasks_data.list_tasks_data():
             task_ids_to_remove.append(tracked_task.task_id)
 
         for task_id in task_ids_to_remove:
@@ -172,7 +176,7 @@ class TasksManager:
         # will not be the case.
 
         tasks_to_remove = await _get_tasks_to_remove(
-            self._tracked_tasks, self.stale_task_detect_timeout_s
+            self._tasks_data, self.stale_task_detect_timeout_s
         )
 
         # finally remove tasks and warn
@@ -199,19 +203,19 @@ class TasksManager:
         once there is an entry in the cancelled store, attempt to cancel the task
         """
 
-        for task_id in await self._tracked_tasks.get_cancelled():
+        for task_id in await self._tasks_data.get_cancelled():
             await self.remove_task(task_id, with_task_context=None)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
             return [
                 TaskBase(task_id=task.task_id)
-                for task in (await self._tracked_tasks.list_tasks())
+                for task in (await self._tasks_data.list_tasks_data())
             ]
 
         return [
             TaskBase(task_id=task.task_id)
-            for task in (await self._tracked_tasks.list_tasks())
+            for task in (await self._tasks_data.list_tasks_data())
             if task.task_context == with_task_context
         ]
 
@@ -223,31 +227,31 @@ class TasksManager:
         task_id: TaskId,
         *,
         fire_and_forget: bool,
-    ) -> TrackedTask:
+    ) -> TaskData:
 
-        tracked_task = TrackedTask(
+        task_data = TaskData(
             task_id=task_id,
-            task=task,
             task_progress=task_progress,
             task_context=task_context,
             fire_and_forget=fire_and_forget,
         )
-        await self._tracked_tasks.set_task(task_id, tracked_task)
+        await self._tasks_data.set_task_data(task_id, task_data)
+        self._created_tasks[task_id] = task
 
-        return tracked_task
+        return task_data
 
     async def _get_tracked_task(
         self, task_id: TaskId, with_task_context: TaskContext | None
-    ) -> TrackedTask:
-        task = await self._tracked_tasks.get_task(task_id)
+    ) -> TaskData:
+        task_data = await self._tasks_data.get_task_data(task_id)
 
-        if task is None:
+        if task_data is None:
             raise TaskNotFoundError(task_id=task_id)
 
-        if with_task_context and task.task_context != with_task_context:
+        if with_task_context and task_data.task_context != with_task_context:
             raise TaskNotFoundError(task_id=task_id)
 
-        return task
+        return task_data
 
     async def get_task_status(
         self, task_id: TaskId, with_task_context: TaskContext | None
@@ -258,19 +262,17 @@ class TasksManager:
 
         raises TaskNotFoundError if the task cannot be found
         """
-        tracked_task: TrackedTask = await self._get_tracked_task(
-            task_id, with_task_context
-        )
-        tracked_task.last_status_check = datetime.datetime.now(tz=datetime.UTC)
+        task_data: TaskData = await self._get_tracked_task(task_id, with_task_context)
+        task_data.last_status_check = datetime.datetime.now(tz=datetime.UTC)
 
-        task = tracked_task.task
+        task = self._created_tasks[task_id]
         done = task.done()
 
         return TaskStatus.model_validate(
             {
-                "task_progress": tracked_task.task_progress,
+                "task_progress": task_data.task_progress,
                 "done": done,
-                "started": tracked_task.started,
+                "started": task_data.started,
             }
         )
 
@@ -287,7 +289,7 @@ class TasksManager:
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
 
         try:
-            return tracked_task.task.result()
+            return self._created_tasks[tracked_task.task_id].result()
         except asyncio.InvalidStateError as exc:
             # the task is not ready
             raise TaskNotCompletedError(task_id=task_id) from exc
@@ -303,9 +305,11 @@ class TasksManager:
 
         raises TaskNotFoundError if the task cannot be found
         """
-        await self._tracked_tasks.set_as_cancelled(task_id)
+        await self._tasks_data.set_as_cancelled(task_id)
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
-        await self._cancel_tracked_task(tracked_task.task, task_id, reraise_errors=True)
+        await self._cancel_tracked_task(
+            self._created_tasks[tracked_task.task_id], task_id, reraise_errors=True
+        )
 
     @staticmethod
     async def _cancel_asyncio_task(
@@ -355,10 +359,13 @@ class TasksManager:
             return
         try:
             await self._cancel_tracked_task(
-                tracked_task.task, task_id, reraise_errors=reraise_errors
+                self._created_tasks[tracked_task.task_id],
+                task_id,
+                reraise_errors=reraise_errors,
             )
         finally:
-            await self._tracked_tasks.delete_task(task_id)
+            await self._tasks_data.delete_task_data(task_id)
+            del self._created_tasks[tracked_task.task_id]
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         unique_part = "unique" if is_unique else f"{uuid4()}"
@@ -389,7 +396,7 @@ class TasksManager:
         task_id = self._get_task_id(task_name, is_unique=unique)
 
         # only one unique task can be running
-        queried_task = await self._tracked_tasks.get_task(task_id)
+        queried_task = await self._tasks_data.get_task_data(task_id)
         if unique and queried_task is not None:
             raise TaskAlreadyRunningError(
                 task_name=task_name, managed_task=queried_task
@@ -428,5 +435,5 @@ __all__: tuple[str, ...] = (
     "TaskProtocol",
     "TaskStatus",
     "TasksManager",
-    "TrackedTask",
+    "TaskData",
 )

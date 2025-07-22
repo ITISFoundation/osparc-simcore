@@ -28,9 +28,8 @@ ProgressCallback: TypeAlias = Callable[
 RequestBody: TypeAlias = Any
 
 
-class TrackedTask(BaseModel):
+class TaskData(BaseModel):
     task_id: str
-    task: Task
     task_progress: TaskProgress
     # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
     task_context: dict[str, Any]

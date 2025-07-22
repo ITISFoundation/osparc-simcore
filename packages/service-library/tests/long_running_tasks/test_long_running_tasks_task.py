@@ -102,7 +102,7 @@ async def test_task_is_auto_removed(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             if (
-                await tasks_manager._tracked_tasks.get_task(task_id)  # noqa: SLF001
+                await tasks_manager._tasks_data.get_task_data(task_id)  # noqa: SLF001
                 is not None
             ):
                 msg = "wait till no element is found any longer"
@@ -341,7 +341,7 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
         raise_when_finished=False,
         total_sleep=10,
     )
-    await tasks_manager._tracked_tasks.set_as_cancelled(task_id)
+    await tasks_manager._tasks_data.set_as_cancelled(task_id)
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
@@ -427,10 +427,6 @@ async def test_define_task_name(tasks_manager: TasksManager, faker: Faker):
 async def test_start_not_registered_task(tasks_manager: TasksManager):
     with pytest.raises(TaskNotRegisteredError):
         await lrt_api.start_task(tasks_manager, "not_registered_task")
-
-
-# TODO: add tests for concurrent access to tasks manager like delete while reading/listing
-# methods should be alterred to not fail in case they are modified on the fly
 
 
 # TODO: make background checking an exclusive lock thing like in the
