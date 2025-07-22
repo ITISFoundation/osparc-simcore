@@ -5,6 +5,7 @@
 
 """
 
+import datetime
 import logging
 from contextlib import AsyncExitStack
 from typing import Any, Self, cast
@@ -15,6 +16,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from models_library.api_schemas_webserver.projects import ProjectDocument
 from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
 from models_library.groups import GroupID
@@ -22,7 +24,9 @@ from models_library.products import ProductName
 from models_library.projects import (
     ProjectID,
     ProjectListAtDB,
+    ProjectTemplateType,
 )
+from models_library.projects import ProjectType as ProjectTypeAPI
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -40,6 +44,7 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.redis import exclusive
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
@@ -61,7 +66,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
 )
 from simcore_postgres_database.webserver_models import (
-    ProjectTemplateType,
     ProjectType,
     projects,
     users,
@@ -74,7 +78,9 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
+from ..redis import get_redis_lock_manager_client_sdk
 from ..utils import now_str
+from . import _projects_repository
 from ._comments_repository import (
     create_project_comment,
     delete_project_comment,
@@ -93,6 +99,7 @@ from ._projects_repository_legacy_utils import (
     create_project_access_rights,
     patch_workbench,
 )
+from ._socketio import notify_project_document_updated
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
@@ -114,6 +121,33 @@ ANY_USER = ANY_USER_ID_SENTINEL
 DEFAULT_ORDER_BY = OrderBy(
     field=IDStr("last_change_date"), direction=OrderDirection.DESC
 )
+
+# Project locking and versioning constants
+PROJECT_DOCUMENT_VERSION_KEY: str = "projects:{}:version"
+PROJECT_DB_UPDATE_REDIS_LOCK_KEY: str = "project_db_update:{}"
+
+
+async def _get_and_increment_project_document_version(
+    app: web.Application, project_uuid: ProjectID
+) -> int:
+    """
+    Atomically gets and increments the project document version using Redis.
+    Returns the incremented version number.
+
+    Args:
+        app: The web application instance
+        project_uuid: The project UUID to get/increment version for
+
+    Returns:
+        The new (incremented) version number
+    """
+    from ..redis import get_redis_document_manager_client_sdk
+
+    redis_client_sdk = get_redis_document_manager_client_sdk(app)
+    version_key = PROJECT_DOCUMENT_VERSION_KEY.format(project_uuid)
+    # If key doesn't exist, it's created with value 0 and then incremented to 1
+    return await redis_client_sdk.redis.incr(version_key)
+
 
 # pylint: disable=too-many-public-methods
 # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3516
@@ -819,12 +853,6 @@ class ProjectDBAPI(BaseProjectDB):
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return cast(str, row[0])
 
-    # @exclusive(
-    #     get_redis_lock_manager_client_sdk(app),
-    #     lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
-    #     blocking=True,
-    #     blocking_timeout=datetime.timedelta(seconds=30),
-    # )
     async def delete_project(self, user_id: int, project_uuid: str):
         _logger.info(
             "Deleting project with %s for user with %s",
@@ -860,10 +888,10 @@ class ProjectDBAPI(BaseProjectDB):
             partial_workbench_data: dict[NodeIDStr, Any] = {
                 NodeIDStr(f"{node_id}"): new_node_data,
             }
-            return await self._update_project_workbench(
+            return await self._update_project_workbench_with_lock_and_notify(
                 partial_workbench_data,
                 user_id=user_id,
-                project_uuid=f"{project_uuid}",
+                project_uuid=project_uuid,
                 product_name=product_name,
                 allow_workbench_changes=False,
             )
@@ -886,13 +914,101 @@ class ProjectDBAPI(BaseProjectDB):
             msg=f"update multiple nodes on {project_uuid=} for {user_id=}",
             extra=get_log_record_extra(user_id=user_id),
         ):
-            return await self._update_project_workbench(
+            return await self._update_project_workbench_with_lock_and_notify(
+                partial_workbench_data,
+                user_id=user_id,
+                project_uuid=project_uuid,
+                product_name=product_name,
+                allow_workbench_changes=False,
+            )
+
+    async def _update_project_workbench_with_lock_and_notify(
+        self,
+        partial_workbench_data: dict[NodeIDStr, Any],
+        *,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        product_name: str | None = None,
+        allow_workbench_changes: bool,
+    ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
+        """
+        Updates project workbench with Redis lock and user notification.
+
+        This method performs the following operations atomically:
+        1. Updates the project workbench in the database
+        2. Retrieves the updated project with workbench
+        3. Creates a project document
+        4. Increments the document version
+        5. Notifies users about the project update
+
+        Note:
+            This function is decorated with Redis exclusive lock to ensure
+            thread-safe operations on the project document.
+        """
+
+        @exclusive(
+            get_redis_lock_manager_client_sdk(self._app),
+            lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
+            blocking=True,
+            blocking_timeout=datetime.timedelta(seconds=30),
+        )
+        async def _update_workbench_and_notify() -> (
+            tuple[ProjectDict, dict[NodeIDStr, Any]]
+        ):
+            # Update the workbench
+            updated_project, changed_entries = await self._update_project_workbench(
                 partial_workbench_data,
                 user_id=user_id,
                 project_uuid=f"{project_uuid}",
                 product_name=product_name,
-                allow_workbench_changes=False,
+                allow_workbench_changes=allow_workbench_changes,
             )
+
+            # Get user's primary group ID for notification
+            async with self.engine.acquire() as conn:
+                user_primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+
+            # Get the full project with workbench for document creation
+            project_with_workbench = (
+                await _projects_repository.get_project_with_workbench(
+                    app=self._app, project_uuid=project_uuid
+                )
+            )
+
+            # Create project document
+            project_document = ProjectDocument(
+                uuid=project_with_workbench.uuid,
+                workspace_id=project_with_workbench.workspace_id,
+                name=project_with_workbench.name,
+                description=project_with_workbench.description,
+                thumbnail=project_with_workbench.thumbnail,
+                last_change_date=project_with_workbench.last_change_date,
+                classifiers=project_with_workbench.classifiers,
+                dev=project_with_workbench.dev,
+                quality=project_with_workbench.quality,
+                workbench=project_with_workbench.workbench,
+                ui=project_with_workbench.ui,
+                type=cast(ProjectTypeAPI, project_with_workbench.type),
+                template_type=cast(
+                    ProjectTemplateType, project_with_workbench.template_type
+                ),
+            )
+
+            # Increment document version and notify users
+            document_version = await _get_and_increment_project_document_version(
+                app=self._app, project_uuid=project_uuid
+            )
+            await notify_project_document_updated(
+                app=self._app,
+                project_id=project_uuid,
+                user_primary_gid=user_primary_gid,
+                version=document_version,
+                document=project_document,
+            )
+
+            return updated_project, changed_entries
+
+        return await _update_workbench_and_notify()
 
     async def _update_project_workbench(
         self,
@@ -980,10 +1096,10 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_unset=True,
             ),
         }
-        await self._update_project_workbench(
+        await self._update_project_workbench_with_lock_and_notify(
             partial_workbench_data,
             user_id=user_id,
-            project_uuid=f"{project_id}",
+            project_uuid=project_id,
             product_name=product_name,
             allow_workbench_changes=True,
         )
@@ -998,10 +1114,10 @@ class ProjectDBAPI(BaseProjectDB):
         partial_workbench_data: dict[NodeIDStr, Any] = {
             NodeIDStr(f"{node_id}"): None,
         }
-        await self._update_project_workbench(
+        await self._update_project_workbench_with_lock_and_notify(
             partial_workbench_data,
             user_id=user_id,
-            project_uuid=f"{project_id}",
+            project_uuid=project_id,
             allow_workbench_changes=True,
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
