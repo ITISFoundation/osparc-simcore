@@ -119,7 +119,7 @@ async def list_functions(request: web.Request) -> web.Response:
                     TypeAdapter(RegisteredProjectFunctionGet).validate_python(
                         function.model_dump(mode="json")
                         | {
-                            "accessRights": await _functions_service.get_function_user_permissions(
+                            "access_rights": await _functions_service.get_function_user_permissions(
                                 request.app,
                                 user_id=req_ctx.user_id,
                                 function_id=function.uid,
