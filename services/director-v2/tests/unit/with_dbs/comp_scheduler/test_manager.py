@@ -48,6 +48,8 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     retry_unless_exception_type,
+    stop_after_delay,
+    wait_fixed,
 )
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
@@ -151,8 +153,8 @@ async def test_schedule_all_pipelines_concurently_runs_exclusively_and_raises(
 
 @retry(
     retry=retry_if_exception_type(AssertionError),
-    stop=retry.stop_after_attempt(3),
-    wait=retry.wait_fixed(0.5),
+    stop=stop_after_delay(3),
+    wait=wait_fixed(0.5),
     reraise=True,
 )
 def _assert_scheduler_client_called_once_with(
@@ -167,8 +169,8 @@ def _assert_scheduler_client_not_called(
 ):
     @retry(
         retry=retry_unless_exception_type(AssertionError),
-        stop=retry.stop_after_attempt(2),
-        wait=retry.wait_fixed(1),
+        stop=stop_after_delay(3),
+        wait=wait_fixed(1),
         reraise=True,
     )  # pylint: disable=unused-variable
     def _():
