@@ -341,7 +341,7 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
         raise_when_finished=False,
         total_sleep=10,
     )
-    await tasks_manager._tasks_data.set_as_cancelled(task_id)
+    await tasks_manager._tasks_data.set_as_cancelled(task_id, with_task_context=None)
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:

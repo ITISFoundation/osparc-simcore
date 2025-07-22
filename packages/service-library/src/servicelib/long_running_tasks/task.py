@@ -25,7 +25,7 @@ from .errors import (
     TaskNotFoundError,
     TaskNotRegisteredError,
 )
-from .models import TaskBase, TaskData, TaskId, TaskStatus
+from .models import TaskBase, TaskContext, TaskData, TaskId, TaskStatus
 
 _logger = logging.getLogger(__name__)
 
@@ -42,7 +42,6 @@ _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(sec
 
 RegisteredTaskName: TypeAlias = str
 Namespace: TypeAlias = str
-TaskContext: TypeAlias = dict[str, Any]
 
 
 class TaskProtocol(Protocol):
@@ -74,10 +73,10 @@ async def _await_task(task: asyncio.Task) -> None:
 async def _get_tasks_to_remove(
     tracked_tasks: BaseStore,
     stale_task_detect_timeout_s: PositiveFloat,
-) -> list[TaskId]:
+) -> list[tuple[TaskId, TaskContext | None]]:
     utc_now = datetime.datetime.now(tz=datetime.UTC)
 
-    tasks_to_remove: list[TaskId] = []
+    tasks_to_remove: list[tuple[TaskId, TaskContext | None]] = []
 
     for tracked_task in await tracked_tasks.list_tasks_data():
         if tracked_task.fire_and_forget:
@@ -87,12 +86,16 @@ async def _get_tasks_to_remove(
             # the task just added or never received a poll request
             elapsed_from_start = (utc_now - tracked_task.started).seconds
             if elapsed_from_start > stale_task_detect_timeout_s:
-                tasks_to_remove.append(tracked_task.task_id)
+                tasks_to_remove.append(
+                    (tracked_task.task_id, tracked_task.task_context)
+                )
         else:
             # the task status was already queried by the client
             elapsed_from_last_poll = (utc_now - tracked_task.last_status_check).seconds
             if elapsed_from_last_poll > stale_task_detect_timeout_s:
-                tasks_to_remove.append(tracked_task.task_id)
+                tasks_to_remove.append(
+                    (tracked_task.task_id, tracked_task.task_context)
+                )
     return tasks_to_remove
 
 
@@ -107,13 +110,13 @@ class TasksManager:
         stale_task_check_interval: datetime.timedelta,
         stale_task_detect_timeout: datetime.timedelta,
         namespace: Namespace = _DEFAULT_NAMESPACE,
-        # TODO: inject a Redis connection
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
         self._tasks_data: BaseStore = InMemoryStore()
         self._created_tasks: dict[TaskId, asyncio.Task] = {}
 
         # self.redis_settings = redis_settings
+        # TODO: setup redis here
         self.stale_task_check_interval = stale_task_check_interval
         self.stale_task_detect_timeout_s: PositiveFloat = (
             stale_task_detect_timeout.total_seconds()
@@ -180,7 +183,7 @@ class TasksManager:
         )
 
         # finally remove tasks and warn
-        for task_id in tasks_to_remove:
+        for task_id, task_context in tasks_to_remove:
             # NOTE: task can be in the following cases:
             # - still ongoing
             # - finished with a result
@@ -190,11 +193,11 @@ class TasksManager:
                 "Removing stale task '%s' with status '%s'",
                 task_id,
                 (
-                    await self.get_task_status(task_id, with_task_context=None)
+                    await self.get_task_status(task_id, with_task_context=task_context)
                 ).model_dump_json(),
             )
             await self.remove_task(
-                task_id, with_task_context=None, reraise_errors=False
+                task_id, with_task_context=task_context, reraise_errors=False
             )
 
     async def _cancelled_tasks_removal_worker(self) -> None:
@@ -203,8 +206,8 @@ class TasksManager:
         once there is an entry in the cancelled store, attempt to cancel the task
         """
 
-        for task_id in await self._tasks_data.get_cancelled():
-            await self.remove_task(task_id, with_task_context=None)
+        for task_id, task_context in (await self._tasks_data.get_cancelled()).items():
+            await self.remove_task(task_id, task_context)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
@@ -305,7 +308,7 @@ class TasksManager:
 
         raises TaskNotFoundError if the task cannot be found
         """
-        await self._tasks_data.set_as_cancelled(task_id)
+        await self._tasks_data.set_as_cancelled(task_id, with_task_context)
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
         await self._cancel_tracked_task(
             self._created_tasks[tracked_task.task_id], task_id, reraise_errors=True

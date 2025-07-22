@@ -26,6 +26,7 @@ ProgressCallback: TypeAlias = Callable[
 ]
 
 RequestBody: TypeAlias = Any
+TaskContext: TypeAlias = dict[str, Any]
 
 
 class TaskData(BaseModel):
