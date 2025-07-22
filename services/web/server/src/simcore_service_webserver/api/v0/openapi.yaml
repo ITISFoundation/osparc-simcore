@@ -12324,6 +12324,23 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
+    FunctionAccessRights:
+      properties:
+        read:
+          type: boolean
+          title: Read
+          default: false
+        write:
+          type: boolean
+          title: Write
+          default: false
+        execute:
+          type: boolean
+          title: Execute
+          default: false
+      additionalProperties: false
+      type: object
+      title: FunctionAccessRights
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -16081,6 +16098,8 @@ components:
           type: string
           format: uuid
           title: Templateid
+        accessRights:
+          $ref: '#/components/schemas/FunctionAccessRights'
         thumbnail:
           anyOf:
           - type: string
@@ -16095,6 +16114,7 @@ components:
       - creationDate
       - lastChangeDate
       - templateId
+      - accessRights
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
