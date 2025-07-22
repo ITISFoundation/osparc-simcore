@@ -46,7 +46,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
 
   members: {
     __canIWrite: function() {
-      return osparc.data.model.Function.canIWrite(this.getFunction().getAccessRights());
+      return this.getFunction().getMyAccessRights()["write"];
     },
 
     _rebuildLayout: function() {
@@ -119,8 +119,8 @@ qx.Class.define("osparc.info.FunctionLarge", {
           }
         },
         "ACCESS_RIGHTS": {
-          label: this.tr("Access"),
-          view: osparc.info.StudyUtils.createAccessRights(this.getFunction()),
+          label: this.tr("Permissions"),
+          view: new qx.ui.basic.Label(canIWrite ? "Owner" : "Read Only"),
           action: null
         },
         "CREATED": {

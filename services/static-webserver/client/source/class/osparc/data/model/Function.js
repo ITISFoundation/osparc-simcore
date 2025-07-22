@@ -37,7 +37,7 @@ qx.Class.define("osparc.data.model.Function", {
       inputSchema: functionData.inputSchema || this.getInputSchema(),
       outputSchema: functionData.outputSchema || this.getOutputSchema(),
       defaultInputs: functionData.defaultInputs || this.getDefaultInputs(),
-      accessRights: functionData.accessRights || this.getAccessRights(),
+      myAccessRights: functionData.accessRights || this.getMyAccessRights(),
       creationDate: functionData.creationDate ? new Date(functionData.creationDate) : this.getCreationDate(),
       lastChangeDate: functionData.lastChangeDate ? new Date(functionData.lastChangeDate) : this.getLastChangeDate(),
       thumbnail: functionData.thumbnail || this.getThumbnail(),
@@ -99,10 +99,10 @@ qx.Class.define("osparc.data.model.Function", {
       init: {}
     },
 
-    accessRights: {
+    myAccessRights: {
       check: "Object",
       nullable: false,
-      event: "changeAccessRights",
+      event: "changeMyAccessRights",
       init: {}
     },
 
@@ -131,20 +131,6 @@ qx.Class.define("osparc.data.model.Function", {
       check: "osparc.data.model.Study",
       nullable: true,
       init: null,
-    },
-  },
-
-  statics: {
-    canIWrite: function(accessRights) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const gIds = groupsStore.getOrganizationIds();
-      gIds.push(groupsStore.getMyGroupId());
-      let canWrite = false;
-      for (let i=0; i<gIds.length && !canWrite; i++) {
-        const gid = gIds[i];
-        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
-      }
-      return canWrite;
     },
   },
 
