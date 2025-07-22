@@ -97,8 +97,7 @@ qx.Class.define("osparc.store.Functions", {
           const functions = response["data"];
           functions.forEach(func => func["resourceType"] = "function");
           return response;
-        })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        });
     },
 
     fetchFunction: function(functionId) {
@@ -111,8 +110,17 @@ qx.Class.define("osparc.store.Functions", {
         .then(func => {
           func["resourceType"] = "function";
           return func;
-        })
-        .catch(err => osparc.FlashMessenger.logError(err));
+        });
+    },
+
+    patchFunction: function(functionId, functionChanges) {
+      const params = {
+        url: {
+          functionId
+        },
+        data: functionChanges
+      };
+      return osparc.data.Resources.fetch("functions", "patch", params);
     },
 
     invalidateFunctions: function() {

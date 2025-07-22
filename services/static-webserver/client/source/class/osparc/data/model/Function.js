@@ -32,7 +32,7 @@ qx.Class.define("osparc.data.model.Function", {
     this.set({
       uuid: functionData.uuid,
       functionClass: functionData.functionClass,
-      name: functionData.title,
+      title: functionData.title,
       description: functionData.description,
       inputSchema: functionData.inputSchema || this.getInputSchema(),
       outputSchema: functionData.outputSchema || this.getOutputSchema(),
@@ -64,11 +64,11 @@ qx.Class.define("osparc.data.model.Function", {
       init: null
     },
 
-    name: {
+    title: {
       check: "String",
       nullable: false,
-      event: "changeName",
-      init: "New Study"
+      event: "changeTitle",
+      init: "Function"
     },
 
     description: {
@@ -134,18 +134,27 @@ qx.Class.define("osparc.data.model.Function", {
     },
   },
 
+  statics: {
+    getProperties: function() {
+      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Function));
+    }
+  },
+
   members: {
-    serialize: function(clean = true) {
+    serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
+        if (key === "template") {
+          return; // template is not serialized
+        }
         jsonObject[key] = this.get(key);
       });
       return jsonObject;
     },
 
     patchFunction: function(functionChanges) {
-      return osparc.store.Study.getInstance().patchStudy(this.getUuid(), functionChanges)
+      return osparc.store.Functions.patchFunction(this.getUuid(), functionChanges)
         .then(() => {
           Object.keys(functionChanges).forEach(fieldKey => {
             const upKey = qx.lang.String.firstUp(fieldKey);
@@ -156,9 +165,8 @@ qx.Class.define("osparc.data.model.Function", {
             lastChangeDate: new Date()
           });
           const functionData = this.serialize();
-          resolve(functionData);
-        })
-        .catch(err => reject(err));
+          return functionData;
+        });
     },
   }
 });
