@@ -150,26 +150,25 @@ async def _replace_project(
 @pytest.fixture
 async def create_socketio_connection(
     socketio_client_factory: Callable,
-) -> AsyncIterator[Callable[..., Awaitable[socketio.AsyncClient | None]]]:
+    mocker: MockerFixture,
+) -> AsyncIterator[
+    Callable[..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]]
+]:
     connected_sockets = []
 
     async def _(
-        check_connection: bool,
         client: TestClient,
         client_id: str,
-        events: dict[str, Callable] | None = None,
-    ) -> socketio.AsyncClient | None:
-        try:
-            sio = await socketio_client_factory(client_id, client)
-            assert sio.sid
-            if events:
-                for event, handler in events.items():
-                    sio.on(event, handler=handler)
-            connected_sockets.append(sio)
-            return sio
-        except SocketConnectionError:
-            if check_connection:
-                pytest.fail("socket io connection should not fail")
+    ) -> tuple[socketio.AsyncClient, dict[str, mock.Mock]]:
+        sio = await socketio_client_factory(client_id, client)
+        assert sio.sid
+
+        event_handlers = {SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()}
+
+        for event, handler in event_handlers.items():
+            sio.on(event, handler=handler)
+        connected_sockets.append(sio)
+        return sio, event_handlers
 
     yield _
 
@@ -1359,18 +1358,16 @@ async def test_open_shared_project_multiple_users(
     client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
     mocker: MockerFixture,
-    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
+    create_socketio_connection: Callable[
+        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+    ],
 ):
-    mock_project_state_updated_handler = mocker.Mock()
-
     base_client = client
     base_client_tab_id = client_session_id_factory()
     # 1. user 1 opens project
-    await create_socketio_connection(
-        True,
+    sio, socket_handlers = await create_socketio_connection(
         base_client,
         base_client_tab_id,
-        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
     )
 
 
@@ -1383,7 +1380,6 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected: ExpectedResponse,
-    mocker: MockerFixture,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_orphaned_services,
     mock_catalog_api: dict[str, mock.Mock],
@@ -1391,10 +1387,11 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
-    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
+    create_socketio_connection: Callable[
+        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+    ],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
-    mock_project_state_updated_handler = mocker.Mock()
 
     client_1 = client
     client_id1 = client_session_id_factory()
@@ -1402,12 +1399,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
-    await create_socketio_connection(
-        user_role != UserRole.ANONYMOUS,
-        client_1,
-        client_id1,
-        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
-    )
+    sio1, sio1_handlers = await create_socketio_connection(client_1, client_id1)
     # expected is that the project is closed and unlocked
     expected_project_state_client_1 = ProjectStateOutputSchema(
         share_state=ProjectShareStateOutputSchema(
@@ -1443,7 +1435,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
 
     # NOTE: there are 2 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
-        mock_project_state_updated_handler,
+        sio1_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [expected_project_state_client_1]
         * (0 if user_role == UserRole.ANONYMOUS else 2),
@@ -1462,12 +1454,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         enable_check=user_role != UserRole.ANONYMOUS,
         exit_stack=exit_stack,
     )
-    await create_socketio_connection(
-        user_role != UserRole.ANONYMOUS,
-        client_2,
-        client_id2,
-        {SOCKET_IO_PROJECT_UPDATED_EVENT: mock_project_state_updated_handler},
-    )
+    sio2, sio2_handlers = await create_socketio_connection(client_2, client_id2)
     await _open_project(
         client_2,
         client_id2,
@@ -1503,10 +1490,10 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         )
 
     # we should receive an event that the project lock state changed
-    # NOTE: there are 2x3 calls since we are part of the primary group and the all group and user 2 is part of the all group
-    # first CLOSING, then CLOSED
+    # NOTE: there are a total of 2x3 calls since we are part of the primary group and the all group and user 2 is part of the all group
+    # first CLOSING, then CLOSED (so 2 calls for user1 and 1 call for user2)
     await _assert_project_state_updated(
-        mock_project_state_updated_handler,
+        sio1_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [
             expected_project_state_client_1.model_copy(
@@ -1522,13 +1509,39 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         * (
             0
             if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 3
+            else 2
         )
         + [expected_project_state_client_1]
         * (
             0
             if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 3
+            else 2
+        ),
+    )
+    await _assert_project_state_updated(
+        sio2_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [
+            expected_project_state_client_1.model_copy(
+                update={
+                    "share_state": ProjectShareStateOutputSchema(
+                        locked=True,
+                        status=ProjectStatus.CLOSING,
+                        current_user_groupids=[logged_user["primary_gid"]],
+                    )
+                }
+            )
+        ]
+        * (
+            0
+            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+            else 1
+        )
+        + [expected_project_state_client_1]
+        * (
+            0
+            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+            else 1
         ),
     )
     await _state_project(
@@ -1567,13 +1580,23 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
 
     # NOTE: there are 3 calls since we are part of the primary group and the all group
     await _assert_project_state_updated(
-        mock_project_state_updated_handler,
+        sio1_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [expected_project_state_client_1]
         * (
             0
             if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 3
+            else 2
+        ),
+    )
+    await _assert_project_state_updated(
+        sio2_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [expected_project_state_client_1]
+        * (
+            0
+            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
+            else 1
         ),
     )
     await _state_project(
@@ -1600,7 +1623,9 @@ async def test_open_shared_project_at_same_time(
     mock_dynamic_scheduler_rabbitmq: None,
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
-    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
+    create_socketio_connection: Callable[
+        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+    ],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10
     # log client 1
@@ -1689,7 +1714,9 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
     mocked_notifications_plugin: dict[str, mock.Mock],
-    create_socketio_connection: Callable[..., Awaitable[socketio.AsyncClient | None]],
+    create_socketio_connection: Callable[
+        ..., Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+    ],
 ):
     """Simulating a refresh goes as follows:
     The user opens a project, then hit the F5 refresh page.
