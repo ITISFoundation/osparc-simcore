@@ -86,6 +86,14 @@ def services_docker_compose_file(services_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def services_docker_compose_dev_vendors_file(osparc_simcore_services_dir: Path) -> Path:
+    """Path to osparc-simcore/services/docker-compose-dev-vendors.yml file"""
+    dcpath = osparc_simcore_services_dir / "docker-compose-dev-vendors.yml"
+    assert dcpath.exists()
+    return dcpath
+
+
+@pytest.fixture(scope="session")
 def pylintrc(osparc_simcore_root_dir: Path) -> Path:
     pylintrc = osparc_simcore_root_dir / ".pylintrc"
     assert pylintrc.exists()

@@ -166,6 +166,13 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=9
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@swarm, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@swarm, ${SWARM_STACK_NAME}_webserver_retry
 
+  wb-auth:
+    environment:
+      <<: *webserver_environment_local
+    ports:
+      - "8080"
+      - "3024:3000"
+
   wb-api-server:
     environment:
       <<: *webserver_environment_local

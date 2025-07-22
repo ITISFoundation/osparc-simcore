@@ -5,6 +5,7 @@ from pydantic import Field
 
 from ..functions import (
     Function,
+    FunctionAccessRights,
     FunctionBase,
     FunctionClass,
     FunctionClassSpecificData,
@@ -121,6 +122,7 @@ class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
     project_id: Annotated[ProjectID, Field(alias="templateId")]
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
+    access_rights: FunctionAccessRights
     thumbnail: str | None = None
 
 

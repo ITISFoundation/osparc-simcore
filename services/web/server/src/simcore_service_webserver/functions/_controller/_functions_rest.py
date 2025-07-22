@@ -119,6 +119,12 @@ async def list_functions(request: web.Request) -> web.Response:
                     TypeAdapter(RegisteredProjectFunctionGet).validate_python(
                         function.model_dump(mode="json")
                         | {
+                            "accessRights": await _functions_service.get_function_user_permissions(
+                                request.app,
+                                user_id=req_ctx.user_id,
+                                function_id=function.uid,
+                                product_name=req_ctx.product_name,
+                            ),
                             "thumbnail": (
                                 f"{project.thumbnail}" if project.thumbnail else None
                             ),
