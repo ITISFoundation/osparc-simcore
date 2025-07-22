@@ -524,6 +524,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyResourceData: function(resourceData) {
       let uuid = null;
+      let title = "";
       let owner = null;
       let workbench = null;
       let defaultHits = null;
@@ -534,16 +535,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "tutorial":
         case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.name,
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "function":
           uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.title,
           owner = "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
+          title = resourceData.name,
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           icon = resourceData["icon"] || osparc.dashboard.CardBase.PRODUCT_ICON;
           defaultHits = 0;
@@ -553,7 +557,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.set({
         resourceType: resourceData.resourceType,
         uuid,
-        title: resourceData.name || resourceData.title, // title is used by functions
+        title,
         description: resourceData.description,
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
