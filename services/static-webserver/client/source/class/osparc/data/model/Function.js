@@ -40,8 +40,6 @@ qx.Class.define("osparc.data.model.Function", {
       creationDate: functionData.creationDate ? new Date(functionData.creationDate) : this.getCreationDate(),
       lastChangeDate: functionData.lastChangeDate ? new Date(functionData.lastChangeDate) : this.getLastChangeDate(),
       thumbnail: functionData.thumbnail || this.getThumbnail(),
-      workbenchData: functionData.workbench || this.getWorkbenchData(),
-      functionUIData: functionData.ui || this.getFunctionUIData(),
     });
   },
 
@@ -123,16 +121,10 @@ qx.Class.define("osparc.data.model.Function", {
       init: null
     },
 
-    workbenchData: {
-      check: "Object",
-      nullable: false,
-      init: {},
-    },
-
-    functionUIData: {
-      check: "Object",
-      nullable: false,
-      init: {},
+    template: {
+      check: "osparc.data.model.Study",
+      nullable: true,
+      init: null,
     },
   },
 
