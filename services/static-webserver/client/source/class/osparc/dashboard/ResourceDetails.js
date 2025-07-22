@@ -79,10 +79,8 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               .then(templateData => {
                 osparc.store.Services.getStudyServicesMetadata(templateData)
                   .finally(() => {
-                    this.__resourceModel = new osparc.data.model.Function(latestResourceData);
+                    this.__resourceModel = new osparc.data.model.Function(latestResourceData, templateData);
                     this.__resourceModel["resourceType"] = resourceData["resourceType"];
-                    const template = new osparc.data.model.Study(templateData);
-                    this.__resourceModel.setTemplate(template);
                     this.__resourceData["services"] = resourceData["services"];
                     this.__addPages();
                   });

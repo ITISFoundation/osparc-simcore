@@ -24,8 +24,9 @@ qx.Class.define("osparc.data.model.Function", {
 
   /**
    * @param functionData {Object} Object containing the serialized Function Data
+   * @param templateData {Object} Object containing the underlying serialized Template Data
    */
-  construct: function(functionData) {
+  construct: function(functionData, templateData = null) {
     this.base(arguments);
 
     this.set({
@@ -41,6 +42,11 @@ qx.Class.define("osparc.data.model.Function", {
       lastChangeDate: functionData.lastChangeDate ? new Date(functionData.lastChangeDate) : this.getLastChangeDate(),
       thumbnail: functionData.thumbnail || this.getThumbnail(),
     });
+
+    if (templateData) {
+      const template = new osparc.data.model.Study(templateData);
+      this.setTemplate(template);
+    }
   },
 
   properties: {
