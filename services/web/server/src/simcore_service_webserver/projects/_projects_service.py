@@ -419,17 +419,19 @@ async def patch_project_for_user(
             "write": True,
             "delete": True,
         }
-        user: dict = await users_service.get_user(app, project_db.prj_owner)
-        _prj_owner_primary_group = f"{user['primary_gid']}"
+        prj_owner_user: dict = await users_service.get_user(app, project_db.prj_owner)
+        _prj_owner_primary_group = f"{prj_owner_user['primary_gid']}"
         if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
         if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
 
-    # 4. If patching template type
+    # 4. Get user primary group ID
+    current_user: dict = await users_service.get_user(app, user_id)
+
+    # 5. If patching template type
     if new_template_type := patch_project_data.get("template_type"):
         # 4.1 Check if user is a tester
-        current_user: dict = await users_service.get_user(app, user_id)
         if UserRole(current_user["role"]) < UserRole.TESTER:
             raise InsufficientRoleForProjectTemplateTypeUpdateError
         # 4.2 Check the compatibility of the template type with the project
@@ -446,15 +448,12 @@ async def patch_project_for_user(
                 project_template=new_template_type,
             )
 
-    # 5. Get user primary group ID (for frontend)
-    user: dict = await users_service.get_user(app, user_id)
-
     # 6. Patch the project & Notify users involved in the project
     await patch_project_and_notify_users(
         app,
         project_uuid=project_uuid,
         patch_project_data=patch_project_data,
-        user_primary_gid=user["primary_gid"],
+        user_primary_gid=current_user["primary_gid"],
     )
 
 
