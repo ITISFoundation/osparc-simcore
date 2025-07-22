@@ -122,8 +122,8 @@ async def list_functions(request: web.Request) -> web.Response:
                             "access_rights": await _functions_service.get_function_user_permissions(
                                 request.app,
                                 user_id=req_ctx.user_id,
-                                function_id=function.uid,
                                 product_name=req_ctx.product_name,
+                                function_id=function.uid,
                             ),
                             "thumbnail": (
                                 f"{project.thumbnail}" if project.thumbnail else None
