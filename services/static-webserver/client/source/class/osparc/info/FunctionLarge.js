@@ -120,7 +120,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
         },
         "ACCESS_RIGHTS": {
           label: this.tr("Permissions"),
-          view: new qx.ui.basic.Label(canIWrite ? "Owner" : "Read Only"),
+          view: new qx.ui.basic.Label(canIWrite ? "My Function" : "Read Only"),
           action: null
         },
         "CREATED": {

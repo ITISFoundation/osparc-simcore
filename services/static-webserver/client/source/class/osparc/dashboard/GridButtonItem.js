@@ -249,9 +249,14 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     // overridden
     _applyOwner: function(value, old) {
       const label = this.getChildControl("subtitle-text");
-      const user = this.__createOwner(value);
-      label.setValue(user);
-      label.setVisibility(value ? "visible" : "excluded");
+      if (osparc.utils.Resources.isFunction(this.getResourceData())) {
+        const canIWrite = Boolean(this.getResourceData()["accessRights"]["write"]);
+        label.setValue(canIWrite ? "My Function" : "Read Only");
+      } else {
+        const user = this.__createOwner(value);
+        label.setValue(user);
+        label.setVisibility(value ? "visible" : "excluded");
+      }
     },
 
     _applyAccessRights: function(value) {

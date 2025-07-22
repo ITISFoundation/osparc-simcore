@@ -243,8 +243,13 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
     _applyOwner: function(value, old) {
       const label = this.getChildControl("owner");
-      const user = this.__createOwner(value);
-      label.setValue(user);
+      if (osparc.utils.Resources.isFunction(this.getResourceData())) {
+        const canIWrite = Boolean(this.getResourceData()["accessRights"]["write"]);
+        label.setValue(canIWrite ? "My Function" : "Read Only");
+      } else {
+        const user = this.__createOwner(value);
+        label.setValue(user);
+      }
 
       this.__makeItemResponsive(label);
     },
