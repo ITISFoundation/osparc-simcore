@@ -13,7 +13,7 @@ from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from http import HTTPStatus
-from typing import Any
+from typing import Any, TypedDict
 from unittest import mock
 from unittest.mock import call
 
@@ -157,24 +157,26 @@ async def _replace_project(
     return data
 
 
+class _SocketHandlers(TypedDict):
+    SOCKET_IO_PROJECT_UPDATED_EVENT: mock.Mock
+
+
 @pytest.fixture
 async def create_socketio_connection(
     socketio_client_factory: Callable,
     mocker: MockerFixture,
 ) -> AsyncIterator[
-    Callable[
-        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
-    ]
+    Callable[[TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]]
 ]:
     connected_sockets = []
 
     async def _(
         client: TestClient, client_id: str
-    ) -> tuple[socketio.AsyncClient, dict[str, mock.Mock]]:
+    ) -> tuple[socketio.AsyncClient, _SocketHandlers]:
         sio = await socketio_client_factory(client_id, client)
         assert sio.sid
 
-        event_handlers = {SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()}
+        event_handlers = _SocketHandlers(SOCKET_IO_PROJECT_UPDATED_EVENT=mocker.Mock())
 
         for event, handler in event_handlers.items():
             sio.on(event, handler=handler)
@@ -184,7 +186,9 @@ async def create_socketio_connection(
     yield _
 
     # cleanup
-    await asyncio.gather(*(socket.disconnect() for socket in connected_sockets))
+    with log_context(logging.INFO, "disconnecting sockets"):
+        await asyncio.gather(*(socket.disconnect() for socket in connected_sockets))
+        await asyncio.sleep(0.1)  # give time to properly disconnect
 
 
 async def _open_project(
@@ -1379,20 +1383,49 @@ async def test_open_shared_project_multiple_users(
     shared_project: dict,
     client_session_id_factory: Callable[[], str],
     expected: ExpectedResponse,
-    mocker: MockerFixture,
     create_socketio_connection: Callable[
-        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
+    mocked_dynamic_services_interface: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
 ):
     base_client = client
     base_client_tab_id = client_session_id_factory()
-    # 1. user 1 opens project
-    sio, socket_handlers = await create_socketio_connection(
+    sio_base, sio_base_handlers = await create_socketio_connection(
         base_client,
         base_client_tab_id,
     )
+
+    # current state is closed and unlocked
+    expected_project_state = ProjectStateOutputSchema(
+        share_state=ProjectShareStateOutputSchema(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
+    )
+    await _state_project(
+        base_client, shared_project, expected.ok, expected_project_state
+    )
+
+    # now user 1 opens the shared project
+    await _open_project(base_client, base_client_tab_id, shared_project, expected.ok)
+
+    expected_project_state = expected_project_state.model_copy(
+        update={
+            "share_state": ProjectShareStateOutputSchema(
+                locked=False,
+                status=ProjectStatus.OPENED,
+                current_user_groupids=[logged_user["primary_gid"]],
+            ),
+        }
+    )
     await _assert_project_state_updated(
-        socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT], shared_project, []
+        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [expected_project_state] * 2,
+    )
+    await _state_project(
+        base_client, shared_project, expected.ok, expected_project_state
     )
 
 
@@ -1413,7 +1446,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection: Callable[
-        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -1649,7 +1682,7 @@ async def test_open_shared_project_at_same_time(
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection: Callable[
-        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10
@@ -1732,7 +1765,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     clean_redis_table,
     mocked_notifications_plugin: dict[str, mock.Mock],
     create_socketio_connection: Callable[
-        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, dict[str, mock.Mock]]]
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
     ],
 ):
     """Simulating a refresh goes as follows:
