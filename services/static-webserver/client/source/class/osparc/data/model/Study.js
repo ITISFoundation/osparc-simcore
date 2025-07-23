@@ -551,8 +551,8 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     isLocked: function() {
-      if (this.getState() && "locked" in this.getState()) {
-        return this.getState()["locked"]["value"];
+      if (this.getState() && "shareState" in this.getState()) {
+        return this.getState()["shareState"]["locked"];
       }
       return false;
     },

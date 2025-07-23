@@ -142,8 +142,8 @@ async def test_delete_multiple_opened_project_forbidden(
     user_project: ProjectDict,
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    socketio_client_factory: Callable,
-    client_session_id_factory: Callable,
+    create_socketio_connection: Callable,
+    client_session_id_factory: Callable[[], str],
     user_role: UserRole,
     expected_ok: HTTPStatus,
     expected_forbidden: HTTPStatus,
@@ -157,7 +157,7 @@ async def test_delete_multiple_opened_project_forbidden(
     # open project in tab1
     client_session_id1 = client_session_id_factory()
     try:
-        await socketio_client_factory(client_session_id1)
+        await create_socketio_connection(client_session_id1)
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
@@ -176,7 +176,7 @@ async def test_delete_multiple_opened_project_forbidden(
     # delete project in tab2
     client_session_id2 = client_session_id_factory()
     try:
-        await socketio_client_factory(client_session_id2)
+        await create_socketio_connection(client_session_id2)
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")

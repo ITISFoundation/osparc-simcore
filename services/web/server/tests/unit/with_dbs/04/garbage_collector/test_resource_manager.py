@@ -263,11 +263,11 @@ async def test_anonymous_websocket_connection(
 async def test_websocket_resource_management(
     logged_user,
     socket_registry: RedisResourceRegistry,
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     client_session_id_factory: Callable[[], str],
 ):
     cur_client_session_id = client_session_id_factory()
-    sio = await socketio_client_factory(cur_client_session_id)
+    sio = await create_socketio_connection(cur_client_session_id)
     sid = sio.get_sid()
     resource_key = UserSessionDict(
         user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
@@ -308,7 +308,7 @@ async def test_websocket_resource_management(
 async def test_websocket_multiple_connections(
     socket_registry: RedisResourceRegistry,
     logged_user,
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     client_session_id_factory: Callable[[], str],
 ):
     NUMBER_OF_SOCKETS = 5
@@ -318,7 +318,7 @@ async def test_websocket_multiple_connections(
     clients = []
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         cur_client_session_id = client_session_id_factory()
-        sio = await socketio_client_factory(cur_client_session_id)
+        sio = await create_socketio_connection(cur_client_session_id)
         resource_key = UserSessionDict(
             user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
         )
@@ -378,9 +378,9 @@ _TENACITY_ASSERT_RETRY = {
 async def test_asyncio_task_pending_on_close(
     client: TestClient,
     logged_user: dict[str, Any],
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
 ):
-    sio = await socketio_client_factory()
+    sio = await create_socketio_connection()
     assert sio
     # this test generates warnings on its own
 
@@ -397,7 +397,7 @@ async def test_asyncio_task_pending_on_close(
 async def test_websocket_disconnected_after_logout(
     client: TestClient,
     logged_user: dict[str, Any],
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     client_session_id_factory: Callable[[], str],
     expected,
     mocker: MockerFixture,
@@ -409,19 +409,19 @@ async def test_websocket_disconnected_after_logout(
 
     # connect first socket
     cur_client_session_id1 = client_session_id_factory()
-    sio = await socketio_client_factory(cur_client_session_id1)
+    sio = await create_socketio_connection(cur_client_session_id1)
     socket_logout_mock_callable = mocker.Mock()
     sio.on("logout", handler=socket_logout_mock_callable)
 
     # connect second socket
     cur_client_session_id2 = client_session_id_factory()
-    sio2 = await socketio_client_factory(cur_client_session_id2)
+    sio2 = await create_socketio_connection(cur_client_session_id2)
     socket_logout_mock_callable2 = mocker.Mock()
     sio2.on("logout", handler=socket_logout_mock_callable2)
 
     # connect third socket
     cur_client_session_id3 = client_session_id_factory()
-    sio3 = await socketio_client_factory(cur_client_session_id3)
+    sio3 = await create_socketio_connection(cur_client_session_id3)
     socket_logout_mock_callable3 = mocker.Mock()
     sio3.on("logout", handler=socket_logout_mock_callable3)
 
@@ -465,7 +465,7 @@ async def test_interactive_services_removed_after_logout(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     client_session_id_factory: Callable[[], str],
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     storage_subsystem_mock: MockedStorageSubsystem,  # when guest user logs out garbage is collected
     director_v2_service_mock: aioresponses,
     expected_save_state: bool,
@@ -479,7 +479,7 @@ async def test_interactive_services_removed_after_logout(
     )
     # create websocket
     client_session_id1 = client_session_id_factory()
-    sio = await socketio_client_factory(client_session_id1)
+    sio = await create_socketio_connection(client_session_id1)
     assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
@@ -531,7 +531,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     empty_user_project,
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     client_session_id_factory: Callable[[], str],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
@@ -546,13 +546,13 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     )
     # create first websocket
     client_session_id1 = client_session_id_factory()
-    sio = await socketio_client_factory(client_session_id1)
+    sio = await create_socketio_connection(client_session_id1)
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
 
     # create second websocket
     client_session_id2 = client_session_id_factory()
-    sio2 = await socketio_client_factory(client_session_id2)
+    sio2 = await create_socketio_connection(client_session_id2)
     assert sio.sid != sio2.sid
     socket_project_state_update_mock_callable = mocker.Mock()
     sio2.on(
@@ -573,13 +573,9 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
                     {
                         "project_uuid": empty_user_project["uuid"],
                         "data": {
-                            "locked": {
-                                "value": False,
-                                "owner": {
-                                    "user_id": user_id,
-                                    "first_name": logged_user.get("first_name", None),
-                                    "last_name": logged_user.get("last_name", None),
-                                },
+                            "shareState": {
+                                "locked": False,
+                                "currentUserGroupids": [logged_user["primary_gid"]],
                                 "status": "OPENED",
                             },
                             "state": {"value": "NOT_STARTED"},
@@ -605,7 +601,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
         "dynamic_scheduler.api.stop_dynamic_service"
     ].assert_not_called()
     # reconnect websocket
-    sio2 = await socketio_client_factory(client_session_id2)
+    sio2 = await create_socketio_connection(client_session_id2)
     # it should still be there even after waiting for auto deletion from garbage collector
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(client.app)
@@ -671,7 +667,7 @@ async def test_interactive_services_removed_per_project(
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     mocked_notification_system,
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     client_session_id_factory: Callable[[], str],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
@@ -691,11 +687,11 @@ async def test_interactive_services_removed_per_project(
     )
     # create websocket1 from tab1
     client_session_id1 = client_session_id_factory()
-    sio1 = await socketio_client_factory(client_session_id1)
+    sio1 = await create_socketio_connection(client_session_id1)
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # create websocket2 from tab2
     client_session_id2 = client_session_id_factory()
-    sio2 = await socketio_client_factory(client_session_id2)
+    sio2 = await create_socketio_connection(client_session_id2)
     await open_project(client, empty_user_project2["uuid"], client_session_id2)
     # disconnect websocket1
     await sio1.disconnect()
@@ -791,7 +787,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     empty_user_project2,
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     client_session_id_factory: Callable[[], str],
     expected_save_state: bool,
     open_project: Callable,
@@ -802,12 +798,12 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     )
     # open project in tab1
     client_session_id1 = client_session_id_factory()
-    sio1 = await socketio_client_factory(client_session_id1)
+    sio1 = await create_socketio_connection(client_session_id1)
     assert sio1
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # open project in tab2
     client_session_id2 = client_session_id_factory()
-    sio2 = await socketio_client_factory(client_session_id2)
+    sio2 = await create_socketio_connection(client_session_id2)
     assert sio2
     await open_project(client, empty_user_project["uuid"], client_session_id2)
     # close project in tab1
@@ -847,7 +843,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
     client_session_id_factory: Callable[[], str],
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     # asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expect_call: bool,
@@ -861,7 +857,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     )
     # create websocket
     client_session_id1 = client_session_id_factory()
-    sio: socketio.AsyncClient = await socketio_client_factory(client_session_id1)
+    sio: socketio.AsyncClient = await create_socketio_connection(client_session_id1)
     assert sio
     # open project in client 1
     await open_project(client, empty_user_project["uuid"], client_session_id1)

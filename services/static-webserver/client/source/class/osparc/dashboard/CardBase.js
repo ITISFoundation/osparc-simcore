@@ -228,6 +228,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.addHintFromGids(shareIcon, gids);
     },
 
+    populateMyAccessRightsIcon: function(shareIcon, myAccessRights) {
+      const canIWrite = Boolean(myAccessRights["write"]);
+      shareIcon.set({
+        source: canIWrite ? osparc.dashboard.CardBase.SHARE_ICON : osparc.dashboard.CardBase.SHARED_USER,
+        toolTipText: canIWrite ? "" : qx.locale.Manager.tr("Shared"),
+      });
+    },
+
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
       const groupEveryone = groupsStore.getEveryoneGroup();
@@ -524,6 +532,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyResourceData: function(resourceData) {
       let uuid = null;
+      let title = "";
       let owner = null;
       let workbench = null;
       let defaultHits = null;
@@ -534,16 +543,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "tutorial":
         case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.name,
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "function":
           uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.title,
           owner = "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
+          title = resourceData.name,
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           icon = resourceData["icon"] || osparc.dashboard.CardBase.PRODUCT_ICON;
           defaultHits = 0;
@@ -553,7 +565,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.set({
         resourceType: resourceData.resourceType,
         uuid,
-        title: resourceData.name,
+        title,
         description: resourceData.description,
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
@@ -593,7 +605,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         }
         case "function":
-          this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+            this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          } else {
+            this.setIcon(osparc.dashboard.CardBase.PRODUCT_ICON);
+          }
           break;
       }
     },
@@ -789,20 +805,20 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyState: function(state) {
       let projectInUse = false;
-      if ("locked" in state && "value" in state["locked"]) {
-        projectInUse = state["locked"]["value"];
+      if ("shareState" in state && "locked" in state["shareState"]) {
+        projectInUse = state["shareState"]["locked"];
       }
 
       if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
-        if (projectInUse && state["locked"]["status"] === "OPENED") {
-          this.__showWhoIsIn(state["locked"]["owner"]);
+        if (projectInUse && state["shareState"]["status"] === "OPENED") {
+          this.__showWhoIsIn(state["shareState"]["currentUserGroupids"]);
         } else {
           this.__showWhoIsIn(null);
         }
       } else {
         this.setBlocked(projectInUse ? "IN_USE" : false);
         if (projectInUse) {
-          this.__showBlockedCardFromStatus("IN_USE", state["locked"]);
+          this.__showBlockedCardFromStatus("IN_USE", state["shareState"]);
         }
       }
 
@@ -920,8 +936,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __blockedInUse: function(lockedStatus) {
       const status = lockedStatus["status"];
-      const owner = lockedStatus["owner"];
-      let toolTip = osparc.utils.Utils.firstsUp(owner["first_name"] || this.tr("A user"), owner["last_name"] || ""); // it will be replaced by "userName"
+      const userGroupIDs = lockedStatus["currentUserGroupids"];
+      let toolTip = userGroupIDs[0]
+      //  osparc.utils.Utils.firstsUp(userGroupIDs[0]["first_name"] || this.tr("A user"), userGroupIDs[0]["last_name"] || ""); // it will be replaced by "userName"
       let image = null;
       switch (status) {
         case "CLOSING":

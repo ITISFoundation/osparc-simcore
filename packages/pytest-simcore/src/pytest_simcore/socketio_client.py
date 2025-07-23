@@ -9,9 +9,10 @@ from uuid import uuid4
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from yarl import URL
+
+from .helpers.assert_checks import assert_status
 
 logger = logging.getLogger(__name__)
 
@@ -44,20 +45,16 @@ async def security_cookie_factory(
         assert data
         assert not error
 
-        return (
-            resp.request_info.headers["Cookie"]
-            if "Cookie" in resp.request_info.headers
-            else ""
-        )
+        return resp.request_info.headers.get("Cookie", "")
 
     return _create
 
 
 @pytest.fixture
-async def socketio_client_factory(
-    socketio_url_factory: Callable,
-    security_cookie_factory: Callable,
-    client_session_id_factory: Callable,
+async def create_socketio_connection(
+    socketio_url_factory: Callable[[TestClient | None], str],
+    security_cookie_factory: Callable[[TestClient | None], Awaitable[str]],
+    client_session_id_factory: Callable[[], str],
 ) -> AsyncIterable[
     Callable[[str | None, TestClient | None], Awaitable[socketio.AsyncClient]]
 ]:
