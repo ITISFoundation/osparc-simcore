@@ -48,8 +48,8 @@ def get_dynamic_proxy_spec(
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         dynamic_services_settings.DYNAMIC_SCHEDULER
     )
-    webserver_settings: webserver.WebServerSettings = (
-        dynamic_services_settings.WEBSERVER_SETTINGS
+    wb_auth_settings: webserver.WebServerSettings = (
+        dynamic_services_settings.WEBSERVER_AUTH_SETTINGS
     )
 
     mounts = [
@@ -99,7 +99,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
             # auth
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{webserver_settings.api_base_url}/auth:check",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{wb_auth_settings.api_base_url}/auth:check",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}",
             # routing
