@@ -21,10 +21,6 @@ from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,
 )
 from simcore_service_webserver.login._confirmation_service import ConfirmationService
-from simcore_service_webserver.login._login_repository_legacy import (
-    AsyncpgStorage,
-    get_plugin_storage,
-)
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 
 
@@ -85,15 +81,6 @@ def fake_weak_password(faker: Faker) -> str:
     return faker.password(
         length=8, special_chars=True, digits=True, upper_case=True, lower_case=True
     )
-
-
-@pytest.fixture
-def db_storage_deprecated(client: TestClient) -> AsyncpgStorage:
-    """login database repository instance"""
-    assert client.app
-    db: AsyncpgStorage = get_plugin_storage(client.app)
-    assert db
-    return db
 
 
 @pytest.fixture

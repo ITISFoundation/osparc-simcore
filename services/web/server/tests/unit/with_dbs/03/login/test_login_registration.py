@@ -24,7 +24,6 @@ from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,
 )
 from simcore_service_webserver.login._confirmation_web import _url_for_confirmation
-from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login.constants import (
     MSG_EMAIL_ALREADY_REGISTERED,
     MSG_LOGGED_IN,
@@ -243,7 +242,6 @@ async def test_registration_with_weak_password_fails(
 async def test_registration_with_invalid_confirmation_code(
     client: TestClient,
     login_options: LoginOptions,
-    db_storage_deprecated: AsyncpgStorage,
     mocker: MockerFixture,
     cleanup_db_tables: None,
 ):

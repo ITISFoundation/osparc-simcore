@@ -4,8 +4,6 @@ from aiohttp import web
 from servicelib.logging_utils import set_parent_module_log_level
 
 from ..application_settings import get_application_settings
-from ..application_setup import ModuleCategory, app_setup_func
-from ..login.plugin import setup_login_storage
 from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
 from ..redis import setup_redis
@@ -34,8 +32,6 @@ def setup_garbage_collector(app: web.Application) -> None:
 
     # - project needs access to socketio via notify_project_state_update
     setup_socketio(app)
-    # - project needs access to user-api that is connected to login plugin
-    setup_login_storage(app)
 
     settings = get_plugin_settings(app)
 
