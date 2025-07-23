@@ -14,9 +14,10 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch
+from settings_library.redis import RedisSettings
 
 from ._store.base import BaseStore
-from ._store.in_memory import InMemoryStore
+from ._store.redis import RedisStore
 from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -29,10 +30,6 @@ from .models import TaskBase, TaskContext, TaskData, TaskId, TaskStatus
 
 _logger = logging.getLogger(__name__)
 
-
-# NOTE: for now only this one is used, in future it will be unqiue per service
-# and this default will be removed and become mandatory
-_DEFAULT_NAMESPACE: Final[str] = "lrt"
 
 _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
     seconds=1
@@ -106,17 +103,15 @@ class TasksManager:
 
     def __init__(
         self,
-        # redis_settings: RedisSettings,
+        redis_settings: RedisSettings,
         stale_task_check_interval: datetime.timedelta,
         stale_task_detect_timeout: datetime.timedelta,
-        namespace: Namespace = _DEFAULT_NAMESPACE,
+        namespace: Namespace,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
-        self._tasks_data: BaseStore = InMemoryStore()
+        self._tasks_data: BaseStore = RedisStore(redis_settings, namespace)
         self._created_tasks: dict[TaskId, asyncio.Task] = {}
 
-        # self.redis_settings = redis_settings
-        # TODO: setup redis here
         self.stale_task_check_interval = stale_task_check_interval
         self.stale_task_detect_timeout_s: PositiveFloat = (
             stale_task_detect_timeout.total_seconds()
@@ -127,6 +122,8 @@ class TasksManager:
         self._cancelled_tasks_removal_task: asyncio.Task | None = None
 
     async def setup(self) -> None:
+        await self._tasks_data.setup()
+
         # TODO: this one needs to be exclusive redis locked
         self._stale_tasks_monitor_task = create_periodic_task(
             task=self._stale_tasks_monitor_worker,
@@ -160,6 +157,8 @@ class TasksManager:
                 await cancel_wait_task(
                     self._cancelled_tasks_removal_task, max_delay=_CANCEL_TASK_TIMEOUT
                 )
+
+        await self._tasks_data.teardown()
 
     async def _stale_tasks_monitor_worker(self) -> None:
         """

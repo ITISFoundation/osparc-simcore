@@ -6,7 +6,8 @@
 
 import asyncio
 import urllib.parse
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager
 from datetime import datetime, timedelta
 from typing import Any, Final
 
@@ -22,11 +23,17 @@ from servicelib.long_running_tasks.errors import (
 )
 from servicelib.long_running_tasks.models import TaskProgress, TaskStatus
 from servicelib.long_running_tasks.task import TaskRegistry, TasksManager
+from servicelib.redis._client import RedisClientSDK
+from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+
+pytest_simcore_core_services_selection = [
+    "redis",
+]
 
 _RETRY_PARAMS: dict[str, Any] = {
     "reraise": True,
@@ -71,14 +78,25 @@ TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
 
 
 @pytest.fixture
-async def tasks_manager() -> AsyncIterator[TasksManager]:
+async def tasks_manager(
+    redis_service: RedisSettings,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+) -> AsyncIterator[TasksManager]:
     tasks_manager = TasksManager(
         stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
         stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
+        redis_settings=redis_service,
+        namespace="test",
     )
     await tasks_manager.setup()
     yield tasks_manager
     await tasks_manager.teardown()
+
+    # triggers cleanup of all redis data
+    async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):
+        pass
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
