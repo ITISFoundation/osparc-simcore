@@ -628,18 +628,22 @@ qx.Class.define("osparc.data.Resources", {
       "functions": {
         useCache: false,
         endpoints: {
-          create: {
-            method: "POST",
-            url: statics.API + "/functions"
-          },
           getOne: {
             method: "GET",
             url: statics.API + "/functions/{functionId}?include_extras=true"
           },
           getPage: {
             method: "GET",
-            url: statics.API + "/functions?include_extras=true"
-          }
+            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}"
+          },
+          create: {
+            method: "POST",
+            url: statics.API + "/functions"
+          },
+          patch: {
+            method: "PATCH",
+            url: statics.API + "/functions/{functionId}?include_extras=true"
+          },
         }
       },
       /*
