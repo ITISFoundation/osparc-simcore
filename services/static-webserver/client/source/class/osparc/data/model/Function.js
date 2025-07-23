@@ -172,6 +172,9 @@ qx.Class.define("osparc.data.model.Function", {
             const setter = "set" + upKey;
             this[setter](functionChanges[fieldKey]);
           });
+          this.set({
+            lastChangeDate: new Date(functionData.lastChangeDate)
+          });
           return functionData;
         });
     },
