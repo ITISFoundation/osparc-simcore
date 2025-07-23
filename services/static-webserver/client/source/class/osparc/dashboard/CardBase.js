@@ -877,19 +877,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __showCurrentUserGroupIds: function(currentUserGroupIds) {
       const avatarGroup = this.getChildControl("avatar-group");
-      const usersStore = osparc.store.Users.getInstance();
-      const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
-      const users = [];
-      Promise.all(userPromises)
-        .then(usersResult => {
-          usersResult.forEach(user => {
-            users.push({
-              name: user.getUsername(),
-              avatar: user.getThumbnail(),
-            });
-          });
-          avatarGroup.setUsers(users);
-        });
+      avatarGroup.setUserGroupIds(currentUserGroupIds);
     },
 
     __showBlockedCardFromStatus: function(reason, shareState) {
