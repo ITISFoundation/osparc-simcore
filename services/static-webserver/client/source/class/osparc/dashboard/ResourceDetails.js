@@ -66,6 +66,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               const studyStore = osparc.store.Study.getInstance();
               this.__resourceData["debt"] = studyStore.getStudyDebt(this.__resourceData["uuid"]);
             }
+            // prefetch project's services metadata
             osparc.store.Services.getStudyServicesMetadata(latestResourceData)
               .finally(() => {
                 this.__resourceModel = new osparc.data.model.Study(latestResourceData);
@@ -75,15 +76,25 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               });
             break;
           case "function": {
-            // use function's underlying template info to fetch services metadata
-            // osparc.store.Templates.fetchTemplate(resourceData["uuid"]);
-            osparc.store.Services.getStudyServicesMetadata(latestResourceData)
-              .finally(() => {
-                this.__resourceModel = new osparc.data.model.Function(latestResourceData);
-                this.__resourceModel["resourceType"] = resourceData["resourceType"];
-                this.__resourceData["services"] = resourceData["services"];
-                this.__addPages();
-              });
+            addPages = (functionData, templateData = null) => {
+              this.__resourceModel = new osparc.data.model.Function(functionData, templateData);
+              this.__resourceModel["resourceType"] = resourceData["resourceType"];
+              this.__addPages();
+            }
+            if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+              // this is only required for functions that have a template linked
+              osparc.store.Templates.fetchTemplate(resourceData["templateId"])
+                .then(templateData => {
+                  // prefetch function's underlying template's services metadata
+                  osparc.store.Services.getStudyServicesMetadata(templateData)
+                    .finally(() => {
+                      this.__resourceData["services"] = resourceData["services"];
+                      addPages(latestResourceData, templateData);
+                    });
+                });
+            } else {
+              addPages(latestResourceData);
+            }
             break;
           }
           case "service": {
@@ -121,7 +132,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
     popUpInWindow: function(resourceData) {
       const resourceDetails = new osparc.dashboard.ResourceDetails(resourceData);
-      const title = resourceData.name;
+      const title = resourceData.name || resourceData.title; // title is used by functions
       const window = osparc.ui.window.Window.popUpInWindow(resourceDetails, title, this.WIDTH, this.HEIGHT).set({
         layout: new qx.ui.layout.Grow(),
         ...osparc.ui.window.TabbedWindow.DEFAULT_PROPS,
@@ -173,7 +184,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     __addToolbarButtons: function(page) {
       const resourceData = this.__resourceData;
 
-      if (this.__resourceData["resourceType"] === "function") {
+      if (osparc.utils.Resources.isFunction(this.__resourceData)) {
         return; // no toolbar buttons for functions
       }
 
@@ -395,10 +406,11 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         this.__addPreviewPage();
         this.fireEvent("pagesAdded");
         return;
-      } else if (this.__resourceData["resourceType"] === "function") {
+      } else if (osparc.utils.Resources.isFunction(this.__resourceData)) {
         this.__addInfoPage();
-        // to build the preview page we need the underlying template data
-        // this.__addPreviewPage();
+        if (this.__resourceModel.getFunctionClass() === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+          this.__addPreviewPage();
+        }
         this.fireEvent("pagesAdded");
         return;
       }
@@ -575,12 +587,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const page = new osparc.dashboard.resources.pages.BasePage(title, iconSrc, id);
       this.__addToolbarButtons(page);
 
-      const studyData = this.__resourceData;
+      const studyData = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate().serialize() : this.__resourceData;
       const enabled = osparc.study.Utils.canShowPreview(studyData);
       page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
-        const resourceModel = this.__resourceModel;
+        const resourceModel = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate() : this.__resourceData;
         const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
         this.__widgets.push(preview);

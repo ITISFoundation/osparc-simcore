@@ -228,6 +228,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.addHintFromGids(shareIcon, gids);
     },
 
+    populateMyAccessRightsIcon: function(shareIcon, myAccessRights) {
+      const canIWrite = Boolean(myAccessRights["write"]);
+      shareIcon.set({
+        source: canIWrite ? osparc.dashboard.CardBase.SHARE_ICON : osparc.dashboard.CardBase.SHARED_USER,
+        toolTipText: canIWrite ? "" : qx.locale.Manager.tr("Shared"),
+      });
+    },
+
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
       const groupEveryone = groupsStore.getEveryoneGroup();
@@ -524,6 +532,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyResourceData: function(resourceData) {
       let uuid = null;
+      let title = "";
       let owner = null;
       let workbench = null;
       let defaultHits = null;
@@ -534,16 +543,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
         case "tutorial":
         case "hypertool":
           uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.name,
           owner = resourceData.prjOwner ? resourceData.prjOwner : "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "function":
           uuid = resourceData.uuid ? resourceData.uuid : null;
+          title = resourceData.title,
           owner = "";
           workbench = resourceData.workbench ? resourceData.workbench : {};
           break;
         case "service":
           uuid = resourceData.key ? resourceData.key : null;
+          title = resourceData.name,
           owner = resourceData.owner ? resourceData.owner : resourceData.contact;
           icon = resourceData["icon"] || osparc.dashboard.CardBase.PRODUCT_ICON;
           defaultHits = 0;
@@ -553,7 +565,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.set({
         resourceType: resourceData.resourceType,
         uuid,
-        title: resourceData.name,
+        title,
         description: resourceData.description,
         owner,
         accessRights: resourceData.accessRights ? resourceData.accessRights : {},
@@ -593,7 +605,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         }
         case "function":
-          this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+            this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          } else {
+            this.setIcon(osparc.dashboard.CardBase.PRODUCT_ICON);
+          }
           break;
       }
     },
