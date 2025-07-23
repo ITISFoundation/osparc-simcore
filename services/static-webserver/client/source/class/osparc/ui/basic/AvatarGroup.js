@@ -52,6 +52,9 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __onGlobalPointerMove: null,
 
     setUserGroupIds: function(userGroupIds) {
+      if (userGroupIds === this.__userGroupIds) {
+        return;
+      }
       this.__userGroupIds = userGroupIds || [];
       const usersStore = osparc.store.Users.getInstance();
       const userPromises = userGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
