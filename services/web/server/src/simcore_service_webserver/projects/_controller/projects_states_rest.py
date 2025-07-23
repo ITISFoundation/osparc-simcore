@@ -3,6 +3,7 @@ import json
 import logging
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from pydantic import BaseModel
@@ -121,8 +122,11 @@ async def open_project(request: web.Request) -> web.Response:
         ) as resource_registry:
             _socket_id = await resource_registry.get_socket_id()
         if _socket_id is None:
-            raise web.HTTPBadRequest(
-                text="Cannot open project without a socket_id, please refresh the page"
+            raise web.HTTPUnprocessableEntity(
+                text=user_message(
+                    "Data corruption detected: unable to identify your session (socket_id missing). "
+                    "Please refresh the page and try again. If the problem persists, contact support."
+                )
             )
         sio = get_socket_server(request.app)
         sio.enter_room(
