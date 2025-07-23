@@ -266,6 +266,7 @@ class TasksManager:
         """
         task_data: TaskData = await self._get_tracked_task(task_id, with_task_context)
         task_data.last_status_check = datetime.datetime.now(tz=datetime.UTC)
+        await self._tasks_data.set_task_data(task_id, task_data)
 
         task = self._created_tasks[task_id]
         done = task.done()
