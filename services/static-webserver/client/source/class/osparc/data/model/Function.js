@@ -165,7 +165,15 @@ qx.Class.define("osparc.data.model.Function", {
     },
 
     patchFunction: function(functionChanges) {
-      return osparc.store.Functions.patchFunction(this.getUuid(), functionChanges);
+      return osparc.store.Functions.patchFunction(this.getUuid(), functionChanges)
+        .then(functionData => {
+          Object.keys(functionChanges).forEach(fieldKey => {
+            const upKey = qx.lang.String.firstUp(fieldKey);
+            const setter = "set" + upKey;
+            this[setter](functionChanges[fieldKey]);
+          });
+          return functionData;
+        });
     },
   }
 });
