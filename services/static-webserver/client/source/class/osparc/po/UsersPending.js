@@ -179,7 +179,7 @@ qx.Class.define("osparc.po.UsersPending", {
             date = pendingUser.accountRequestReviewedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.accountRequestReviewedAt)) : "-";
             break;
         }
-        pendingUsersLayout.add(date, {
+        pendingUsersLayout.add(new qx.ui.basic.Label(date), {
           row,
           column: 2,
         });
@@ -248,13 +248,13 @@ qx.Class.define("osparc.po.UsersPending", {
           const sortByDate = (a, b) => {
             let dateA = new Date(0); // default to epoch if no date is available
             if (a.accountRequestStatus === "PENDING" && a.preRegistrationRequestedAt) {
-              dateA = new Date(a.preRegistrationRequestedAt)
+              dateA = new Date(a.preRegistrationRequestedAt);
             } else if (a.accountRequestReviewedAt) {
               dateA = new Date(a.accountRequestReviewedAt);
             }
             let dateB = new Date(0); // default to epoch if no date is available
             if (b.accountRequestStatus === "PENDING" && b.preRegistrationRequestedAt) {
-              dateB = new Date(b.preRegistrationRequestedAt)
+              dateB = new Date(b.preRegistrationRequestedAt);
             } else if (b.accountRequestReviewedAt) {
               dateB = new Date(b.accountRequestReviewedAt);
             }
