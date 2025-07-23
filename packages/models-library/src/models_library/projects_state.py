@@ -170,7 +170,7 @@ class ProjectShareState(BaseModel):
         elif not self.current_user_groupids and (
             self.status is not ProjectStatus.MAINTAINING
         ):
-            msg = f"If the project is {self.status=}, the current_users list must not be None"
+            msg = f"If the project is {self.status=}, the current_users list must not be empty"
             raise ValueError(msg)
 
         return self
