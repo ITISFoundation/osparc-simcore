@@ -68,6 +68,9 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
             });
           });
           this.__buildAvatars(users);
+        })
+        .catch(error => {
+          console.error("Failed to fetch user data for avatars:", error);
         });
     },
 

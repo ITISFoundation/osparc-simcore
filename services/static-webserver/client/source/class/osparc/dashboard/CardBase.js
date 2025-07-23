@@ -921,6 +921,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
             usernames.push(user.getUsername());
           });
         })
+        .catch(error => {
+          console.error("Failed to fetch user data for avatars:", error);
+        })
         .finally(() => {
           switch (status) {
             case "CLOSING":
