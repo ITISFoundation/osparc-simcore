@@ -7,6 +7,8 @@ from typing import Any
 from aiohttp import web
 from common_library.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, TypeAdapter
+from servicelib.long_running_tasks.task import Namespace
+from settings_library.redis import RedisSettings
 
 from ...aiohttp import status
 from ...long_running_tasks import lrt_api
@@ -118,6 +120,8 @@ def setup(
     app: web.Application,
     *,
     router_prefix: str,
+    redis_settings: RedisSettings,
+    namespace: Namespace,
     handler_check_decorator: Callable = _no_ops_decorator,
     task_request_context_decorator: Callable = _no_task_context_decorator,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
@@ -143,6 +147,8 @@ def setup(
                 app=app,
                 stale_task_check_interval=stale_task_check_interval,
                 stale_task_detect_timeout=stale_task_detect_timeout,
+                redis_settings=redis_settings,
+                namespace=namespace,
             )
         )
 
