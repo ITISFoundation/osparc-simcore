@@ -5,8 +5,8 @@ from common_library.error_codes import create_error_code
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from .errors import TaskNotCompletedError, TaskNotFoundError
-from .models import TaskBase, TaskId, TaskStatus
-from .task import RegisteredTaskName, TaskContext, TasksManager
+from .models import TaskBase, TaskContext, TaskId, TaskStatus
+from .task import RegisteredTaskName, TasksManager
 
 _logger = logging.getLogger(__name__)
 

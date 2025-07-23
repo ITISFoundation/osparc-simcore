@@ -16,8 +16,8 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_CHECK_INTERVAL,
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
-from ...long_running_tasks.models import TaskGet
-from ...long_running_tasks.task import RegisteredTaskName, TaskContext
+from ...long_running_tasks.models import TaskContext, TaskGet
+from ...long_running_tasks.task import RegisteredTaskName
 from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
