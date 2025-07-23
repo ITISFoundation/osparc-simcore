@@ -2,6 +2,7 @@ from typing import Final
 
 from aiohttp import web
 from models_library.api_schemas_webserver.projects import ProjectDocument
+from models_library.groups import GroupID
 from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
 from pydantic import AliasGenerator, BaseModel, ConfigDict
@@ -24,7 +25,7 @@ class BaseEvent(BaseModel):
 
 class ProjectDocumentEvent(BaseEvent):
     project_id: ProjectID
-    user_primary_gid: int
+    user_primary_gid: GroupID
     version: int
     document: ProjectDocument
 
@@ -33,7 +34,7 @@ async def notify_project_document_updated(
     app: web.Application,
     *,
     project_id: ProjectID,
-    user_primary_gid: int,
+    user_primary_gid: GroupID,
     version: int,
     document: ProjectDocument,
 ) -> None:

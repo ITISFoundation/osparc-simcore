@@ -164,7 +164,7 @@ class Node(BaseModel):
             ge=0,
             le=100,
             description="the node progress value (deprecated in DB, still used for API only)",
-            deprecated=True,  # <-- I think this is not true, it is still used by the File Picker (frontend node)
+            deprecated=True,  # <-- Think this is not true, it is still used by the File Picker (frontend nodes)
         ),
     ] = None
 
