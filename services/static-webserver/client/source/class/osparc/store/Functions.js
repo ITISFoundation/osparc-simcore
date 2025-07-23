@@ -110,6 +110,10 @@ qx.Class.define("osparc.store.Functions", {
         .then(func => {
           func["resourceType"] = "function";
           return func;
+        })
+        .catch(error => {
+          console.error("Error fetching function:", error);
+          throw error; // Rethrow the error to propagate it to the caller
         });
     },
 
@@ -120,7 +124,11 @@ qx.Class.define("osparc.store.Functions", {
         },
         data: functionChanges
       };
-      return osparc.data.Resources.fetch("functions", "patch", params);
+      return osparc.data.Resources.fetch("functions", "patch", params)
+        .catch(error => {
+          console.error("Error patching function:", error);
+          throw error; // Rethrow the error to propagate it to the caller
+        });
     },
 
     invalidateFunctions: function() {
