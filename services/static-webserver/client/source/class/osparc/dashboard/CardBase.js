@@ -228,6 +228,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.addHintFromGids(shareIcon, gids);
     },
 
+    populateMyAccessRightsIcon: function(shareIcon, myAccessRights) {
+      const canIWrite = Boolean(myAccessRights["write"]);
+      shareIcon.set({
+        source: canIWrite ? osparc.dashboard.CardBase.SHARE_ICON : osparc.dashboard.CardBase.SHARED_USER,
+        toolTipText: canIWrite ? "" : qx.locale.Manager.tr("Shared"),
+      });
+    },
+
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
       const groupEveryone = groupsStore.getEveryoneGroup();
