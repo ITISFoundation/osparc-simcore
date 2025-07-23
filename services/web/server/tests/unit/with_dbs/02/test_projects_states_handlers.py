@@ -357,6 +357,7 @@ async def test_open_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     client_session_id_factory: Callable[[], str],
+    socketio_client_factory: Callable,
     expected: HTTPStatus,
     save_state: bool,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -370,8 +371,15 @@ async def test_open_project(
     # POST /v0/projects/{project_id}:open
     # open project
     assert client.app
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        expected != status.HTTP_401_UNAUTHORIZED,
+        client,
+        client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
 
     await assert_status(resp, expected)
 
@@ -440,6 +448,7 @@ async def test_open_project__in_debt(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     client_session_id_factory: Callable[[], str],
+    socketio_client_factory: Callable,
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -477,8 +486,15 @@ async def test_open_project__in_debt(
 
     # POST /v0/projects/{project_id}:open
     assert client.app
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        check_connection=True,  # USER role always connects
+        client=client,
+        client_id=client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
 
     assert mock_get_project_wallet_total_credits.assert_called_once
@@ -498,6 +514,7 @@ async def test_open_template_project_for_edition(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    socketio_client_factory: Callable,
     expected: HTTPStatus,
     save_state: bool,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -517,8 +534,15 @@ async def test_open_template_project_for_edition(
             logged_user["primary_gid"]: {"read": True, "write": True, "delete": False}
         }
     )
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        check_connection=expected != status.HTTP_401_UNAUTHORIZED,
+        client=client,
+        client_id=client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
 
     if resp.status == status.HTTP_200_OK:
@@ -579,6 +603,7 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    socketio_client_factory: Callable,
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -594,8 +619,15 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
             logged_user["primary_gid"]: {"read": True, "write": False, "delete": True}
         }
     )
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        check_connection=expected != status.HTTP_401_UNAUTHORIZED,
+        client=client,
+        client_id=client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
 
 
@@ -611,6 +643,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable,
+    socketio_client_factory: Callable,
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -636,8 +669,15 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
         for service_id in range(num_service_already_running)
     ]
 
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        check_connection=True,  # standard_user_role is always USER or TESTER
+        client=client,
+        client_id=client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(project["uuid"])
@@ -657,6 +697,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable,
+    socketio_client_factory: Callable,
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -678,14 +719,22 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
             for service_id in range(num_service_already_running)
         ]
 
+        client_id = client_session_id_factory()
+        sio = await _connect_websocket(
+            socketio_client_factory,
+            check_connection=True,  # standard_user_role is always USER or TESTER
+            client=client,
+            client_id=client_id,
+        )
         url = (
             client.app.router["open_project"]
             .url_for(project_id=project["uuid"])
             .with_query(disable_service_auto_start=f"{True}")
         )
 
-        resp = await client.post(f"{url}", json=client_session_id_factory())
+        resp = await client.post(f"{url}", json=client_id)
         await assert_status(resp, expected.ok)
+        await sio.disconnect()
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(project["uuid"])
         )
@@ -701,6 +750,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable,
+    socketio_client_factory: Callable,
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -728,8 +778,15 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
         for service_id in range(num_service_already_running)
     ]
 
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        check_connection=True,  # standard_user_role is always USER or TESTER
+        client=client,
+        client_id=client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(project["uuid"])
@@ -748,6 +805,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable,
+    socketio_client_factory: Callable,
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -778,8 +836,15 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
         for service_id in range(num_service_already_running)
     ]
 
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        check_connection=True,  # standard_user_role is always USER or TESTER
+        client=client,
+        client_id=client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(project["uuid"])
@@ -796,6 +861,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     logged_user,
     user_project,
     client_session_id_factory: Callable,
+    socketio_client_factory: Callable,
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -806,8 +872,15 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mock_catalog_api["get_service"].return_value["deprecated"] = (
         datetime.now(UTC) - timedelta(days=1)
     ).isoformat()
+    client_id = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        check_connection=True,  # standard_user_role is always USER or TESTER
+        client=client,
+        client_id=client_id,
+    )
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id_factory())
+    resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(user_project["uuid"])
