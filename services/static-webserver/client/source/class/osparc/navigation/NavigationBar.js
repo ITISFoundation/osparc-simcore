@@ -244,7 +244,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "avatar-group": {
           const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 80 : 150;
-          control = new osparc.ui.basic.AvatarGroup(32, "right", maxWidth);
+          control = new osparc.ui.basic.AvatarGroup(28, "right", maxWidth).set({
+            alignY: "middle",
+          });;
           this.getChildControl("right-items").add(control);
           break;
         }

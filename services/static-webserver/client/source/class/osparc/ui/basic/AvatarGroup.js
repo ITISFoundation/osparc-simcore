@@ -28,6 +28,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
       backgroundColor: null,
       width: maxWidth,
       maxWidth: maxWidth,
+      allowGrowY: false,
     });
     this._setLayout(new qx.ui.layout.Canvas());
 
