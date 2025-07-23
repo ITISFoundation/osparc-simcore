@@ -416,6 +416,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         savingStudyIcon.exclude();
         readOnlyInfo.exclude();
         avatarGroup.exclude();
+        avatarGroup.setUserGroupIds([]);
       }
     },
 
