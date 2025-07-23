@@ -10,7 +10,6 @@ from models_library.api_schemas_webserver.projects import (
     ProjectPatch,
 )
 from models_library.generics import Envelope
-from models_library.projects_state import ProjectLocked
 from models_library.rest_ordering import OrderBy
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.aiohttp import status
@@ -375,7 +374,6 @@ async def delete_project(request: web.Request):
             "It cannot be deleted until the project is closed."
         )
 
-    project_locked_state: ProjectLocked | None
     if project_locked_state := await get_project_locked_state(
         get_redis_lock_manager_client_sdk(request.app),
         project_uuid=path_params.project_id,

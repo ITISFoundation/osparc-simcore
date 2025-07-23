@@ -9,9 +9,9 @@ from typing import Any, Final, ParamSpec, TypeVar
 import arrow
 import redis.exceptions
 from redis.asyncio.lock import Lock
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..background_task import periodic
+from ..logging_errors import create_troubleshootting_log_kwargs
 from ._client import RedisClientSDK
 from ._constants import DEFAULT_LOCK_TTL
 from ._errors import CouldNotAcquireLockError, LockLostError

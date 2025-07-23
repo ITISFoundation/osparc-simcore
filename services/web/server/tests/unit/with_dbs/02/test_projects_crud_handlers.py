@@ -18,8 +18,8 @@ from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
+from models_library.api_schemas_webserver.projects import ProjectStateOutputSchema
 from models_library.products import ProductName
-from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -171,7 +171,7 @@ async def _assert_get_same_project(
         assert data == {k: project[k] for k in data}
 
         if project_state:
-            assert ProjectState.model_validate(project_state)
+            assert ProjectStateOutputSchema.model_validate(project_state)
 
         if project_permalink:
             assert ProjectPermalink.model_validate(project_permalink)
@@ -209,9 +209,9 @@ async def test_list_projects(
 
         assert got == {k: template_project[k] for k in got}
 
-        assert not ProjectState(
+        assert not ProjectStateOutputSchema(
             **project_state
-        ).locked.value, "Templates are not locked"
+        ).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
         # standard project
@@ -222,7 +222,7 @@ async def test_list_projects(
 
         assert got == {k: user_project[k] for k in got}
 
-        assert ProjectState(**project_state)
+        assert ProjectStateOutputSchema(**project_state)
         assert project_permalink is None
         assert folder_id is None
 
@@ -238,9 +238,9 @@ async def test_list_projects(
         folder_id = got.pop("folderId")
 
         assert got == {k: user_project[k] for k in got}
-        assert not ProjectState(
+        assert not ProjectStateOutputSchema(
             **project_state
-        ).locked.value, "Single user does not lock"
+        ).share_state.locked, "Single user does not lock"
         assert project_permalink is None
 
     # GET /v0/projects?type=template
@@ -256,9 +256,9 @@ async def test_list_projects(
         folder_id = got.pop("folderId")
 
         assert got == {k: template_project[k] for k in got}
-        assert not ProjectState(
+        assert not ProjectStateOutputSchema(
             **project_state
-        ).locked.value, "Templates are not locked"
+        ).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
 

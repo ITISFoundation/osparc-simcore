@@ -516,7 +516,7 @@ async def assert_one_owner_for_project(
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
     disable_garbage_collector_task: None,
     client: TestClient,
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -535,7 +535,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     await assert_users_count(aiopg_engine, 1)
     await assert_projects_count(aiopg_engine, 1)
 
-    await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
+    await connect_to_socketio(client, logged_guest_user, create_socketio_connection)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(app=client.app)
 
@@ -547,7 +547,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     client: TestClient,
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -567,7 +567,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     await assert_projects_count(aiopg_engine, 1)
 
     sio_connection_data = await connect_to_socketio(
-        client, logged_guest_user, socketio_client_factory
+        client, logged_guest_user, create_socketio_connection
     )
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(app=client.app)
@@ -600,7 +600,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     client: TestClient,
-    socketio_client_factory: Callable,
+    create_socketio_connection: Callable,
     aiopg_engine: aiopg.sa.engine.Engine,
     fake_project: dict,
     tests_data_dir: Path,
@@ -642,7 +642,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
     # connect the user and wait for gc
     sio_connection_data = await connect_to_socketio(
-        client, logged_user, socketio_client_factory
+        client, logged_user, create_socketio_connection
     )
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
