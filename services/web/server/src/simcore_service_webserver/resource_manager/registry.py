@@ -18,6 +18,7 @@ import logging
 import redis.asyncio as aioredis
 from aiohttp import web
 from models_library.basic_types import UUIDStr
+from models_library.users import UserID
 from servicelib.redis import handle_redis_returns_union_types
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
@@ -38,7 +39,7 @@ _RESOURCE_SUFFIX = "resources"  # points to a hash (like a dict) type
 
 
 class _UserRequired(TypedDict, total=True):
-    user_id: str | int
+    user_id: str | UserID
 
 
 class UserSessionDict(_UserRequired):

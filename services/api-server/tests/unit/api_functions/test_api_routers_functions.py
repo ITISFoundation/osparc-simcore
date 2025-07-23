@@ -156,7 +156,6 @@ async def test_list_functions(
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "list_functions",
         (
@@ -180,7 +179,6 @@ async def test_update_function_title(
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "update_function_title",
         RegisteredProjectFunction(
@@ -237,7 +235,6 @@ async def test_get_function_input_schema(
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
     )
@@ -261,7 +258,6 @@ async def test_get_function_output_schema(
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
     )
@@ -285,7 +281,6 @@ async def test_validate_function_inputs(
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
     )
@@ -349,7 +344,6 @@ async def test_get_function_job(
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "get_function_job", mock_registered_project_function_job
     )
@@ -372,7 +366,6 @@ async def test_list_function_jobs(
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "list_function_jobs",
         (
@@ -399,7 +392,6 @@ async def test_list_function_jobs_with_function_filter(
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "list_function_jobs",
         (
@@ -428,7 +420,6 @@ async def test_delete_function_job(
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface("delete_function_job", None)
 
     # Now, delete the function job
@@ -553,7 +544,6 @@ async def test_delete_function_job_collection(
     mock_registered_function_job_collection: RegisteredFunctionJobCollection,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface("delete_function_job_collection", None)
 
     # Now, delete the function job collection
@@ -572,7 +562,6 @@ async def test_get_function_job_collection_jobs(
     mock_registered_function_job_collection: RegisteredFunctionJobCollection,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "get_function_job_collection", mock_registered_function_job_collection
     )
@@ -593,7 +582,6 @@ async def test_list_function_job_collections_with_function_filter(
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "list_function_job_collections",
         (
@@ -711,7 +699,6 @@ async def test_run_project_function_parent_info(
     expected_status_code: int,
     capture: str,
 ) -> None:
-
     def _default_side_effect(
         request: httpx.Request,
         path_params: dict[str, Any],
@@ -760,7 +747,7 @@ async def test_run_project_function_parent_info(
         ),
     )
 
-    headers = dict()
+    headers = {}
     if parent_project_uuid:
         headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
     if parent_node_uuid:
@@ -803,8 +790,7 @@ async def test_map_function_parent_info(
     expected_status_code: int,
     capture: str,
 ) -> None:
-
-    side_effect_checks = dict()
+    side_effect_checks = {}
 
     def _default_side_effect(
         side_effect_checks: dict,
@@ -866,7 +852,7 @@ async def test_map_function_parent_info(
         ),
     )
 
-    headers = dict()
+    headers = {}
     if parent_project_uuid:
         headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
     if parent_node_uuid:
@@ -879,7 +865,7 @@ async def test_map_function_parent_info(
         headers=headers,
     )
     if expected_status_code == status.HTTP_200_OK:
-        assert side_effect_checks["headers_checked"] == True
+        assert side_effect_checks["headers_checked"] is True
     assert response.status_code == expected_status_code
 
 
