@@ -20,6 +20,9 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
 from simcore_service_webserver.login import _auth_service
+from simcore_service_webserver.login._confirmation_repository import (
+    ConfirmationRepository,
+)
 from simcore_service_webserver.login._confirmation_web import _url_for_confirmation
 from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login.constants import (
@@ -144,7 +147,7 @@ async def test_registration_with_registered_user(
 async def test_registration_invitation_stays_valid_if_once_tried_with_weak_password(
     client: TestClient,
     login_options: LoginOptions,
-    db: AsyncpgStorage,
+    confirmation_repository: ConfirmationRepository,
     mocker: MockerFixture,
     user_email: str,
     user_password: str,
@@ -157,9 +160,12 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
+            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
+            LOGIN_2FA_REQUIRED=False,
+            LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
     )
 
@@ -201,7 +207,9 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
                 "invitation": confirmation["code"],
             },
         )
-        assert not await db.get_confirmation(confirmation)
+        assert not await confirmation_repository.get_confirmation(
+            filter_dict={"code": confirmation["code"]}
+        )
 
 
 async def test_registration_with_weak_password_fails(
@@ -235,7 +243,7 @@ async def test_registration_with_weak_password_fails(
 async def test_registration_with_invalid_confirmation_code(
     client: TestClient,
     login_options: LoginOptions,
-    db: AsyncpgStorage,
+    db_storage_deprecated: AsyncpgStorage,
     mocker: MockerFixture,
     cleanup_db_tables: None,
 ):
@@ -245,9 +253,12 @@ async def test_registration_with_invalid_confirmation_code(
         "simcore_service_webserver.login.settings.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
+            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,  # <----- NO invitation
             LOGIN_TWILIO=None,
+            LOGIN_2FA_REQUIRED=False,
+            LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
     )
 
@@ -274,9 +285,12 @@ async def test_registration_without_confirmation(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
+            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
+            LOGIN_2FA_REQUIRED=False,
+            LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
     )
 
@@ -311,9 +325,12 @@ async def test_registration_with_confirmation(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
+            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
             LOGIN_TWILIO=None,
+            LOGIN_2FA_REQUIRED=False,
+            LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
     )
 
@@ -367,7 +384,7 @@ async def test_registration_with_confirmation(
 async def test_registration_with_invitation(
     client: TestClient,
     login_options: LoginOptions,
-    db: AsyncpgStorage,
+    confirmation_repository: ConfirmationRepository,
     is_invitation_required: bool,
     has_valid_invitation: bool,
     expected_response: HTTPStatus,
@@ -381,9 +398,12 @@ async def test_registration_with_invitation(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
+            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
             LOGIN_TWILIO=None,
+            LOGIN_2FA_REQUIRED=False,
+            LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
     )
 
@@ -424,7 +444,9 @@ async def test_registration_with_invitation(
             await assert_status(response, expected_response)
 
         if is_invitation_required and has_valid_invitation:
-            assert not await db.get_confirmation(confirmation)
+            assert not await confirmation_repository.get_confirmation(
+                filter_dict={"code": confirmation["code"]}
+            )
 
 
 async def test_registraton_with_invitation_for_trial_account(
@@ -441,9 +463,12 @@ async def test_registraton_with_invitation_for_trial_account(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,
         return_value=LoginSettingsForProduct(
+            LOGIN_ACCOUNT_DELETION_RETENTION_DAYS=30,
             LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
             LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
             LOGIN_TWILIO=None,
+            LOGIN_2FA_REQUIRED=False,
+            LOGIN_PASSWORD_MIN_LENGTH=12,
         ),
     )
 
@@ -498,6 +523,9 @@ async def test_registraton_with_invitation_for_trial_account(
         data, _ = await assert_status(response, status.HTTP_200_OK)
         profile = MyProfileRestGet.model_validate(data)
 
-        expected = invitation.user["created_at"] + timedelta(days=TRIAL_DAYS)
+        from datetime import UTC, datetime
+
+        created_at = invitation.user.get("created_at") or datetime.now(UTC)
+        expected = created_at + timedelta(days=TRIAL_DAYS)
         assert profile.expiration_date
         assert profile.expiration_date == expected.date()

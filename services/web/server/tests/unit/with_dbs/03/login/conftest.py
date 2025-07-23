@@ -17,6 +17,10 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.wallets import wallets
+from simcore_service_webserver.login._confirmation_repository import (
+    ConfirmationRepository,
+)
+from simcore_service_webserver.login._confirmation_service import ConfirmationService
 from simcore_service_webserver.login._login_repository_legacy import (
     AsyncpgStorage,
     get_plugin_storage,
@@ -84,12 +88,33 @@ def fake_weak_password(faker: Faker) -> str:
 
 
 @pytest.fixture
-def db(client: TestClient) -> AsyncpgStorage:
+def db_storage_deprecated(client: TestClient) -> AsyncpgStorage:
     """login database repository instance"""
     assert client.app
     db: AsyncpgStorage = get_plugin_storage(client.app)
     assert db
     return db
+
+
+@pytest.fixture
+def confirmation_repository(client: TestClient) -> ConfirmationRepository:
+    """Modern confirmation repository instance"""
+    assert client.app
+    # Get the async engine from the application
+    engine = client.app["postgres_db_engine"]
+    return ConfirmationRepository(engine)
+
+
+@pytest.fixture
+def confirmation_service(
+    confirmation_repository: ConfirmationRepository, login_options: LoginOptions
+) -> ConfirmationService:
+    """Confirmation service instance"""
+    from simcore_service_webserver.login._confirmation_service import (
+        ConfirmationService,
+    )
+
+    return ConfirmationService(confirmation_repository, login_options)
 
 
 @pytest.fixture
