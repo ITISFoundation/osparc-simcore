@@ -3,7 +3,9 @@ from .base import BaseStore
 
 
 class InMemoryStore(BaseStore):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        _ = args
+        _ = kwargs
         self._tasks_data: dict[TaskId, TaskData] = {}
         self._cancelled_tasks: dict[TaskId, TaskContext | None] = {}
 

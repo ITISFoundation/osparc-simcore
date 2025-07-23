@@ -41,6 +41,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.logging",
+    "pytest_simcore.long_running_tasks",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
@@ -209,6 +210,7 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
+    uese_in_memory_lonng_running_tasks_storage: None,
     mock_storage_check: None,
     mock_postgres_check: None,
     mock_rabbit_check: None,
