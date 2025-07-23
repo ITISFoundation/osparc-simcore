@@ -789,10 +789,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __applyState: function(state) {
       const projectLocked = osparc.study.Utils.state.getProjectLocked(state);
-      const currentUserGroupids = osparc.study.Utils.state.getCurrentGroupIds(state);
+      const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
       const pipelineState = osparc.study.Utils.state.getPipelineState(state);
 
-      this.__showCurrentUserGroupids(currentUserGroupids);
+      this.__showCurrentUserGroupIds(currentUserGroupIds);
 
       this.setBlocked(projectLocked ? "IN_USE" : false);
       if (projectLocked) {
@@ -875,10 +875,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
     },
 
-    __showCurrentUserGroupids: function(currentUserGroupids) {
+    __showCurrentUserGroupIds: function(currentUserGroupIds) {
       const avatarGroup = this.getChildControl("avatar-group");
       const usersStore = osparc.store.Users.getInstance();
-      const userPromises = currentUserGroupids.map(userGroupId => usersStore.getUser(userGroupId));
+      const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
       const users = [];
       Promise.all(userPromises)
         .then(usersResult => {
@@ -905,9 +905,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __blockedInUse: function(shareState) {
       const status = shareState["status"];
-      const currentUserGroupids = shareState["currentUserGroupids"];
+      const currentUserGroupIds = shareState["currentUserGroupids"];
       const usersStore = osparc.store.Users.getInstance();
-      const userPromises = currentUserGroupids.map(userGroupId => usersStore.getUser(userGroupId));
+      const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
       const usernames = [];
       let toolTip = "";
       let image = null;

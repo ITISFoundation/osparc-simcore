@@ -19,7 +19,7 @@
 qx.Class.define("osparc.ui.basic.AvatarGroup", {
   extend: qx.ui.core.Widget,
 
-  construct: function(size = 30, orientation = "left", maxWidth = 150) {
+  construct: function(size = 32, orientation = "right", maxWidth = 150) {
     this.base(arguments);
 
     this.set({
