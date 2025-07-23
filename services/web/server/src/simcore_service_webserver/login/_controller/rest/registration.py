@@ -39,10 +39,6 @@ from ..._invitations_service import (
     check_other_registrations,
     extract_email_from_invitation,
 )
-from ..._login_repository_legacy import (
-    AsyncpgStorage,
-    get_plugin_storage,
-)
 from ..._login_service import (
     notify_user_confirmation,
 )
@@ -57,7 +53,6 @@ from ...constants import (
     MSG_WEAK_PASSWORD,
 )
 from ...settings import (
-    LoginOptions,
     LoginSettingsForProduct,
     get_plugin_options,
     get_plugin_settings,
@@ -129,13 +124,11 @@ async def register(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
 
     registration = await parse_request_body_as(RegisterBody, request)
 
     await check_other_registrations(
-        request.app, email=registration.email, current_product=product, db=db, cfg=cfg
+        request.app, email=registration.email, current_product=product
     )
 
     # Check for weak passwords
@@ -184,8 +177,6 @@ async def register(request: web.Request):
             invitation_code,
             product=product,
             guest_email=registration.email,
-            db=db,
-            cfg=cfg,
             app=request.app,
         )
         if invitation.trial_account_days:
