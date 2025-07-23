@@ -380,9 +380,8 @@ qx.Class.define("osparc.study.Utils", {
         content &&
         "data" in content &&
         "shareState" in content["data"] &&
-        "owner" in content["data"]["shareState"] &&
-        "user_id" in content["data"]["shareState"]["currentUserGroupids"] &&
-        content["data"]["shareState"]["currentUserGroupids"]["user_id"] === osparc.auth.Data.getInstance().getUserId()
+        "currentUserGroupids" in content["data"]["shareState"] &&
+        content["data"]["shareState"]["currentUserGroupids"].includes(osparc.auth.Data.getInstance().getGroupId())
       ) {
         return (
           content["data"]["state"] &&
