@@ -45,10 +45,6 @@ qx.Class.define("osparc.info.FunctionLarge", {
   },
 
   members: {
-    __canIWrite: function() {
-      return osparc.data.model.Function.canIWrite(this.getFunction().getAccessRights());
-    },
-
     _rebuildLayout: function() {
       this._removeAll();
 
@@ -95,11 +91,11 @@ qx.Class.define("osparc.info.FunctionLarge", {
     },
 
     __infoElements: function() {
-      const canIWrite = this.__canIWrite();
+      const canIWrite = this.getFunction().canIWrite();
 
       const infoLayout = {
         "TITLE": {
-          view: osparc.info.StudyUtils.createTitle(this.getFunction()),
+          view: osparc.info.FunctionUtils.createTitle(this.getFunction()),
           action: {
             button: osparc.utils.Utils.getEditButton(canIWrite),
             callback: canIWrite ? this.__openTitleEditor : null,
@@ -111,7 +107,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
           action: null
         },
         "DESCRIPTION": {
-          view: osparc.info.StudyUtils.createDescription(this.getFunction()),
+          view: osparc.info.FunctionUtils.createDescription(this.getFunction()),
           action: {
             button: osparc.utils.Utils.getEditButton(canIWrite),
             callback: canIWrite ? this.__openDescriptionEditor : null,
@@ -119,18 +115,18 @@ qx.Class.define("osparc.info.FunctionLarge", {
           }
         },
         "ACCESS_RIGHTS": {
-          label: this.tr("Access"),
-          view: osparc.info.StudyUtils.createAccessRights(this.getFunction()),
+          label: this.tr("Permissions"),
+          view: osparc.info.FunctionUtils.createOwner(this.getFunction()),
           action: null
         },
         "CREATED": {
           label: this.tr("Created"),
-          view: osparc.info.StudyUtils.createCreationDate(this.getFunction()),
+          view: osparc.info.FunctionUtils.createCreationDate(this.getFunction()),
           action: null
         },
         "MODIFIED": {
           label: this.tr("Modified"),
-          view: osparc.info.StudyUtils.createLastChangeDate(this.getFunction()),
+          view: osparc.info.FunctionUtils.createLastChangeDate(this.getFunction()),
           action: null
         },
       };
@@ -140,7 +136,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
     __createThumbnail: function() {
       const maxWidth = 190;
       const maxHeight = 220;
-      const thumb = osparc.info.StudyUtils.createThumbnail(this.getFunction(), maxWidth, maxHeight);
+      const thumb = osparc.info.FunctionUtils.createThumbnail(this.getFunction(), maxWidth, maxHeight);
       thumb.set({
         maxWidth: 120,
         maxHeight: 139
@@ -156,11 +152,11 @@ qx.Class.define("osparc.info.FunctionLarge", {
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.widget.Renamer(this.getFunction().getName(), null, title);
+      const titleEditor = new osparc.widget.Renamer(this.getFunction().getTitle(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__patchFunction("name", newLabel);
+        this.__patchFunction("title", newLabel);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -187,10 +183,7 @@ qx.Class.define("osparc.info.FunctionLarge", {
           this.fireDataEvent("updateFunction", functionData);
           qx.event.message.Bus.getInstance().dispatchByName("updateFunction", functionData);
         })
-        .catch(err => {
-          const msg = this.tr("An issue occurred while updating the information.");
-          osparc.FlashMessenger.logError(err, msg);
-        });
+        .catch(err => osparc.FlashMessenger.logError(err));
     }
   }
 });
