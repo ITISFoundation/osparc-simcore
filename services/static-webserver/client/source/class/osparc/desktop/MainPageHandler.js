@@ -83,17 +83,15 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
       const studyAlias = osparc.product.Utils.getStudyAlias({firstUpperCase: true});
       // check if it's locked
       let locked = false;
-      let lockedBy = false;
-      if ("state" in studyData && "shareState" in studyData["state"]) {
-        locked = studyData["state"]["shareState"]["locked"];
-        lockedBy = studyData["state"]["shareState"]["currentUserGroupids"];
+      let lockedBy = [];
+      if ("state" in studyData) {
+        const state = studyData["state"];
+        locked = osparc.study.Utils.state.isProjectLocked(state);
+        const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
+        lockedBy = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
       }
-      if (locked && lockedBy["user_id"] !== osparc.auth.Data.getInstance().getUserId()) {
-        const msg = `${studyAlias} ${qx.locale.Manager.tr("is already open by")} ${ // it will be replaced "userName"
-          "first_name" in lockedBy && lockedBy["first_name"] != null ?
-            lockedBy["first_name"] :
-            qx.locale.Manager.tr("another user.")
-        }`;
+      if (locked && lockedBy.length) {
+        const msg = `${studyAlias} ${qx.locale.Manager.tr("is already open by another user.")}`;
         throw new Error(msg);
       }
 
