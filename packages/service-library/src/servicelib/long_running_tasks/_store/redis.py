@@ -1,7 +1,7 @@
-import json
 from typing import Any, Final
 
 import redis.asyncio as aioredis
+from common_library.json_serialization import json_dumps, json_loads
 from pydantic import TypeAdapter
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -66,10 +66,10 @@ class RedisStore(BaseStore):
     async def set_as_cancelled(
         self, task_id: TaskId, with_task_context: TaskContext | None
     ) -> None:
-
-        value = None if with_task_context is None else json.dumps(with_task_context)
         await self.redis.hset(
-            self._get_redis_hash_key(STORE_TYPE_CANCELLED_TASKS), task_id, value
+            self._get_redis_hash_key(STORE_TYPE_CANCELLED_TASKS),
+            task_id,
+            json_dumps(with_task_context),
         )
 
     async def get_cancelled(self) -> dict[TaskId, TaskContext | None]:
@@ -77,6 +77,6 @@ class RedisStore(BaseStore):
             self._get_redis_hash_key(STORE_TYPE_CANCELLED_TASKS)
         )
         return {
-            task_id: (json.loads(context) if context else None)
+            task_id: (json_loads(context) if context else None)
             for task_id, context in result.items()
         }
