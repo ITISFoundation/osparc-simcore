@@ -147,7 +147,7 @@ from ._access_rights_service import (
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
-from ._socketio import notify_project_document_updated
+from ._socketio_service import notify_project_document_updated
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,

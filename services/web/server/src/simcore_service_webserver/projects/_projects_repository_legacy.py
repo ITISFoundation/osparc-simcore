@@ -107,7 +107,7 @@ from ._projects_repository_legacy_utils import (
     create_project_access_rights,
     patch_workbench,
 )
-from ._socketio import notify_project_document_updated
+from ._socketio_service import notify_project_document_updated
 from .exceptions import (
     ProjectDeleteError,
     ProjectInvalidRightsError,
