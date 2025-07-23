@@ -1,6 +1,7 @@
 # pylint:disable=redefined-outer-name
 
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
+from contextlib import AbstractAsyncContextManager
 
 import pytest
 from faker import Faker
@@ -8,7 +9,17 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks._store.base import BaseStore
 from servicelib.long_running_tasks._store.in_memory import InMemoryStore
+from servicelib.long_running_tasks._store.redis import RedisStore
 from servicelib.long_running_tasks.models import TaskData
+from servicelib.redis._client import RedisClientSDK
+from settings_library.redis import RedisDatabase, RedisSettings
+
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
 
 
 @pytest.fixture
@@ -23,7 +34,7 @@ def get_task_data(faker: Faker) -> Callable[[], TaskData]:
                     elements=("running", "completed", "failed")
                 ),
                 "task_progress": TaskProgress.create(task_id),
-                "task_context": faker.pydict(),
+                "task_context": {"key": "value"},
                 "fire_and_forget": faker.boolean(),
             }
         )
@@ -31,14 +42,33 @@ def get_task_data(faker: Faker) -> Callable[[], TaskData]:
     return _
 
 
-@pytest.fixture(params=[InMemoryStore.__name__])
-async def store(request: pytest.FixtureRequest) -> BaseStore:
-    match request.param:
+@pytest.fixture(params=[InMemoryStore, RedisStore])
+async def store(
+    redis_service: RedisSettings,
+    request: pytest.FixtureRequest,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+) -> AsyncIterable[BaseStore]:
+    store: BaseStore | None = None
+    match request.param.__name__:
         case InMemoryStore.__name__:
-            return InMemoryStore()
+            store = InMemoryStore()
 
-    msg = f"Unsupported store type: {request.param}"
-    raise ValueError(msg)
+        case RedisStore.__name__:
+            store = RedisStore(redis_settings=redis_service, namespace="test")
+
+    if store is None:
+        msg = f"Unsupported store type: {request.param}"
+        raise ValueError(msg)
+
+    await store.setup()
+    yield store
+    await store.teardown()
+
+    # triggers cleanup of all redis data
+    async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):
+        pass
 
 
 async def test_workflow(

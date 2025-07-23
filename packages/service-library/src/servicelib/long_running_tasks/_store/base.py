@@ -30,3 +30,11 @@ class BaseStore:
     @abstractmethod
     async def get_cancelled(self) -> dict[TaskId, TaskContext | None]:
         """Get cancelled tasks."""
+
+    @abstractmethod
+    async def setup(self) -> None:
+        """Setup the store, if needed."""
+
+    @abstractmethod
+    async def teardown(self) -> None:
+        """Teardown the store, if needed."""
