@@ -20,7 +20,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from servicelib.redis import get_and_increment_project_document_version
+from servicelib.redis import increment_and_return_project_document_version
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._projects_service import (
     patch_project_and_notify_users,
@@ -73,7 +73,7 @@ async def test_patch_project_and_notify_users_sequential(
 
     # Get version after first patch
     redis_client = get_redis_document_manager_client_sdk(client.app)
-    version_1 = await get_and_increment_project_document_version(
+    version_1 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid
     )
 
@@ -86,7 +86,7 @@ async def test_patch_project_and_notify_users_sequential(
     )
 
     # Get version after second patch
-    version_2 = await get_and_increment_project_document_version(
+    version_2 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid
     )
 
@@ -115,7 +115,7 @@ async def test_patch_project_and_notify_users_concurrent_locking(
 
     # Get initial version
     redis_client = get_redis_document_manager_client_sdk(client.app)
-    initial_version = await get_and_increment_project_document_version(
+    initial_version = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid
     )
 
@@ -134,7 +134,7 @@ async def test_patch_project_and_notify_users_concurrent_locking(
     await asyncio.gather(*tasks)
 
     # Get final version
-    final_version = await get_and_increment_project_document_version(
+    final_version = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid
     )
 
@@ -169,13 +169,13 @@ async def test_patch_project_and_notify_users_concurrent_different_projects(
     redis_client = get_redis_document_manager_client_sdk(client.app)
 
     # Get initial versions
-    initial_version_1 = await get_and_increment_project_document_version(
+    initial_version_1 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid_1
     )
-    initial_version_2 = await get_and_increment_project_document_version(
+    initial_version_2 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid_2
     )
-    initial_version_3 = await get_and_increment_project_document_version(
+    initial_version_3 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid_3
     )
 
@@ -192,13 +192,13 @@ async def test_patch_project_and_notify_users_concurrent_different_projects(
     )
 
     # Get final versions
-    final_version_1 = await get_and_increment_project_document_version(
+    final_version_1 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid_1
     )
-    final_version_2 = await get_and_increment_project_document_version(
+    final_version_2 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid_2
     )
-    final_version_3 = await get_and_increment_project_document_version(
+    final_version_3 = await increment_and_return_project_document_version(
         redis_client=redis_client, project_uuid=project_uuid_3
     )
 

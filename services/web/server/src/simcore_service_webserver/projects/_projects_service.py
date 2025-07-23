@@ -86,8 +86,8 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
 from servicelib.redis import (
     PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
     exclusive,
-    get_and_increment_project_document_version,
     get_project_locked_state,
+    increment_and_return_project_document_version,
     is_project_locked,
     with_project_locked,
 )
@@ -232,7 +232,7 @@ async def patch_project_and_notify_users(
             ),
         )
         redis_client_sdk = get_redis_document_manager_client_sdk(app)
-        document_version = await get_and_increment_project_document_version(
+        document_version = await increment_and_return_project_document_version(
             redis_client=redis_client_sdk, project_uuid=project_uuid
         )
         await notify_project_document_updated(

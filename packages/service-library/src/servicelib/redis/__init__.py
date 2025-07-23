@@ -11,8 +11,7 @@ from ._models import RedisManagerDBConfig
 from ._project_document_version import (
     PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
     PROJECT_DOCUMENT_VERSION_KEY,
-    get_and_increment_project_document_version,
-    get_project_document_version,
+    increment_and_return_project_document_version,
 )
 from ._project_lock import (
     get_project_locked_state,
@@ -25,8 +24,7 @@ __all__: tuple[str, ...] = (
     "CouldNotAcquireLockError",
     "CouldNotConnectToRedisError",
     "exclusive",
-    "get_and_increment_project_document_version",
-    "get_project_document_version",
+    "increment_and_return_project_document_version",
     "get_project_locked_state",
     "handle_redis_returns_union_types",
     "is_project_locked",
