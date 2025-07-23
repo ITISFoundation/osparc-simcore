@@ -90,3 +90,51 @@ async def test_workflow(
     await store.set_as_cancelled(task_data.task_id, task_data.task_context)
 
     assert await store.get_cancelled() == {task_data.task_id: task_data.task_context}
+
+
+@pytest.fixture
+async def redis_stores(
+    redis_service: RedisSettings,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+) -> AsyncIterable[list[RedisStore]]:
+    stores: list[RedisStore] = [
+        RedisStore(redis_settings=redis_service, namespace=f"test-{i}")
+        for i in range(5)
+    ]
+    for store in stores:
+        await store.setup()
+
+    yield stores
+
+    for store in stores:
+        await store.teardown()
+
+    # triggers cleanup of all redis data
+    async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):
+        pass
+
+
+async def test_workflow_multiple_redis_stores_with_different_namespaces(
+    redis_stores: list[RedisStore], get_task_data: Callable[[], TaskData]
+):
+    task_data = get_task_data()
+
+    for store in redis_stores:
+        assert await store.list_tasks_data() == []
+        assert await store.get_cancelled() == {}
+
+    for store in redis_stores:
+        await store.set_task_data(task_data.task_id, task_data)
+        await store.set_as_cancelled(task_data.task_id, None)
+
+    for store in redis_stores:
+        assert await store.list_tasks_data() == [task_data]
+        assert await store.get_cancelled() == {task_data.task_id: None}
+
+    for store in redis_stores:
+        await store.delete_task_data(task_data.task_id)
+
+    for store in redis_stores:
+        assert await store.list_tasks_data() == []
