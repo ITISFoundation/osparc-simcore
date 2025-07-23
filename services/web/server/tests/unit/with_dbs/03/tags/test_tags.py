@@ -11,13 +11,15 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.api_schemas_webserver.projects import (
+    ProjectShareStateOutputSchema,
+    ProjectStateOutputSchema,
+)
 from models_library.basic_types import IdInt
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.products import ProductName
 from models_library.projects_state import (
-    ProjectLocked,
     ProjectRunningState,
-    ProjectState,
     ProjectStatus,
     RunningState,
 )
@@ -80,8 +82,10 @@ async def test_tags_to_studies(
     # check the tags are in
     user_project["tags"] = [tag["id"] for tag in added_tags]
     user_project["state"] = jsonable_encoder(
-        ProjectState(
-            locked=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+        ProjectStateOutputSchema(
+            share_state=ProjectShareStateOutputSchema(
+                locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+            ),
             state=ProjectRunningState(value=RunningState.UNKNOWN),
         ),
         exclude_unset=True,

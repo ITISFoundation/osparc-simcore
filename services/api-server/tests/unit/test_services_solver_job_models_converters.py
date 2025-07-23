@@ -182,9 +182,10 @@ def test_create_job_from_project(faker: Faker):
             "quality": {},
             "tags": [],
             "state": {
-                "locked": {
-                    "value": False,
+                "share_state": {
                     "status": "CLOSED",
+                    "locked": False,
+                    "current_user_groupids": [],
                 },
                 "state": {"value": "SUCCESS"},
             },
