@@ -788,25 +788,17 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      let projectInUse = false;
-      if ("shareState" in state && "locked" in state["shareState"]) {
-        projectInUse = state["shareState"]["locked"];
+      const projectLocked = osparc.study.Utils.state.getProjectLocked(state);
+      const currentUserGroupids = osparc.study.Utils.state.getCurrentGroupIds(state);
+      const pipelineState = osparc.study.Utils.state.getPipelineState(state);
+
+      this.__showWhoIsIn(currentUserGroupids);
+
+      this.setBlocked(projectLocked ? "IN_USE" : false);
+      if (projectLocked) {
+        this.__showBlockedCardFromStatus("IN_USE", state["shareState"]);
       }
 
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
-        if (projectInUse && state["shareState"]["status"] === "OPENED") {
-          this.__showWhoIsIn(state["shareState"]["currentUserGroupids"]);
-        } else {
-          this.__showWhoIsIn(null);
-        }
-      } else {
-        this.setBlocked(projectInUse ? "IN_USE" : false);
-        if (projectInUse) {
-          this.__showBlockedCardFromStatus("IN_USE", state["shareState"]);
-        }
-      }
-
-      const pipelineState = ("state" in state) ? state["state"]["value"] : undefined;
       if (pipelineState) {
         this.__applyPipelineState(state["state"]["value"]);
       }

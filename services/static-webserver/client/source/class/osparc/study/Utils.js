@@ -374,6 +374,42 @@ qx.Class.define("osparc.study.Utils", {
       return null;
     },
 
+    state: {
+      getProjectLocked: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "locked" in state["shareState"]
+        ) {
+          return state["shareState"]["locked"];
+        }
+        return false;
+      },
+
+      getCurrentGroupIds: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "currentUserGroupids" in state["shareState"]
+        ) {
+          return state["shareState"]["currentUserGroupids"];
+        }
+
+        return [];
+      },
+
+      getPipelineState: function(state) {
+        if (
+          state &&
+          "state" in state &&
+          "value" in state["state"]
+        ) {
+          return state["state"]["value"];
+        }
+        return undefined;
+      },
+    },
+
     // used in the "projectStateUpdated" socket event
     amIRunningTheStudy: function(content) {
       if (
