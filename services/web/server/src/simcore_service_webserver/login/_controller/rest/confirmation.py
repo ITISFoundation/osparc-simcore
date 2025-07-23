@@ -30,9 +30,6 @@ from ... import (
     _security_service,
     _twofa_service,
 )
-from ..._login_repository_legacy import (
-    ConfirmationTokenDict,
-)
 from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
@@ -40,7 +37,10 @@ from ..._login_service import (
     RESET_PASSWORD,
     notify_user_confirmation,
 )
-from ..._models import Confirmation
+from ..._models import (
+    Confirmation,
+    ConfirmationTokenDict,
+)
 from ...constants import (
     MSG_PASSWORD_CHANGE_NOT_ALLOWED,
     MSG_PASSWORD_CHANGED,
