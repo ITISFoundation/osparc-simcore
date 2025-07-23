@@ -448,7 +448,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeOpened: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);
@@ -476,7 +476,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowPreview: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);

@@ -135,7 +135,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
-      this.getChildControl("avatar-group");
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        this.getChildControl("avatar-group");
+      }
       this.getChildControl("tasks-button");
       if (osparc.product.Utils.showComputationalActivity()) {
         this.getChildControl("jobs-button");
@@ -348,14 +350,16 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __listenToProjectStateUpdated: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       socket.on("projectStateUpdated", data => {
-        if (this.getStudy() && data["project_uuid"] === this.getStudy().getUuid()) {
-          const projectState = data["data"];
-          const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
-          // remove myself from the list of users
-          const filteredUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
-          // show the rest of the users in the avatar group
-          const avatarGroup = this.getChildControl("avatar-group");
-          avatarGroup.setUserGroupIds(filteredUserGroupIds);
+        if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+          if (this.getStudy() && data["project_uuid"] === this.getStudy().getUuid()) {
+            const projectState = data["data"];
+            const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
+            // remove myself from the list of users
+            const filteredUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
+            // show the rest of the users in the avatar group
+            const avatarGroup = this.getChildControl("avatar-group");
+            avatarGroup.setUserGroupIds(filteredUserGroupIds);
+          }
         }
       }, this);
     },
@@ -402,7 +406,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __applyStudy: function(study) {
       const savingStudyIcon = this.getChildControl("saving-study-icon");
       const readOnlyInfo = this.getChildControl("read-only-info");
-      const avatarGroup = this.getChildControl("avatar-group");
       if (study) {
         this.getChildControl("study-title-options").setStudy(study);
         study.bind("savePending", savingStudyIcon, "visibility", {
@@ -411,12 +414,19 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", readOnlyInfo, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        avatarGroup.show();
       } else {
         savingStudyIcon.exclude();
         readOnlyInfo.exclude();
-        avatarGroup.exclude();
-        avatarGroup.setUserGroupIds([]);
+      }
+
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        const avatarGroup = this.getChildControl("avatar-group");
+        if (study) {
+          avatarGroup.show();
+        } else {
+          avatarGroup.exclude();
+          avatarGroup.setUserGroupIds([]);
+        }
       }
     },
 

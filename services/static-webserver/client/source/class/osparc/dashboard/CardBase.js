@@ -24,7 +24,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
   construct: function() {
     this.base(arguments);
 
-    if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+    if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
       // "IN_USE" is not a blocker anymore
       const inUseIdx = qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.indexOf("IN_USE");
       if (inUseIdx > -1) {
