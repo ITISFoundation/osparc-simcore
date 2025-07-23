@@ -8,6 +8,7 @@ Codes have expiration date (duration time is configurable)
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 from models_library.users import UserID
 
@@ -85,3 +86,42 @@ class ConfirmationService:
             )
             return None
         return confirmation
+
+    async def delete_confirmation(self, confirmation: Confirmation) -> None:
+        """Delete a confirmation token."""
+        await self._repository.delete_confirmation(confirmation=confirmation)
+
+    async def delete_confirmation_and_update_user(
+        self,
+        confirmation: Confirmation,
+        user_id: UserID,
+        updates: dict[str, Any],
+    ) -> None:
+        """Atomically delete confirmation and update user."""
+        await self._repository.delete_confirmation_and_update_user(
+            confirmation=confirmation,
+            user_id=user_id,
+            updates=updates,
+        )
+
+    async def get_confirmation(
+        self, filter_dict: dict[str, Any]
+    ) -> Confirmation | None:
+        """Get a confirmation by filter criteria."""
+        return await self._repository.get_confirmation(filter_dict=filter_dict)
+
+    async def create_confirmation(
+        self, user_id: UserID, action: ActionLiteralStr, data: str | None = None
+    ) -> Confirmation:
+        """Create a new confirmation token for a user action."""
+        return await self._repository.create_confirmation(
+            user_id=user_id, action=action, data=data
+        )
+
+    async def delete_confirmation_and_user(
+        self, user_id: UserID, confirmation: Confirmation
+    ) -> None:
+        """Atomically delete confirmation and user."""
+        await self._repository.delete_confirmation_and_user(
+            user_id=user_id, confirmation=confirmation
+        )

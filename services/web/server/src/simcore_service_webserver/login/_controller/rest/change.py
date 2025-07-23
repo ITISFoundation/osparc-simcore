@@ -15,9 +15,10 @@ from ....users import users_service
 from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
-from ... import _auth_service, _confirmation_service, _confirmation_web
+from ... import _auth_service, _confirmation_web
+from ..._confirmation_repository import ConfirmationRepository
+from ..._confirmation_service import ConfirmationService
 from ..._emails_service import get_template_path, send_email_from_template
-from ..._login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..._login_service import (
     ACTIVE,
     CHANGE_EMAIL,
@@ -33,10 +34,18 @@ from ...constants import (
 )
 from ...decorators import login_required
 from ...errors import WrongPasswordError
-from ...settings import LoginOptions, get_plugin_options
+from ...settings import get_plugin_options
 from .change_schemas import ChangeEmailBody, ChangePasswordBody, ResetPasswordBody
 
 _logger = logging.getLogger(__name__)
+
+
+def _get_confirmation_service(app: web.Application) -> ConfirmationService:
+    """Get confirmation service instance from app."""
+    engine = app["postgres_db_engine"]
+    repository = ConfirmationRepository(engine)
+    options = get_plugin_options(app)
+    return ConfirmationService(repository, options)
 
 
 routes = RouteTableDef()
@@ -82,8 +91,6 @@ async def initiate_reset_password(request: web.Request):
      - 4. Who requested the reset?
     """
 
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = products_web.get_current_product(request)
 
     request_body = await parse_request_body_as(ResetPasswordBody, request)
@@ -177,16 +184,15 @@ async def initiate_reset_password(request: web.Request):
         try:
             # Confirmation token that includes code to `complete_reset_password`.
             # Recreated if non-existent or expired  (Guideline #2)
+            confirmation_service = _get_confirmation_service(request.app)
             confirmation = (
-                await _confirmation_service.get_or_create_confirmation_without_data(
-                    cfg, db, user_id=user["id"], action="RESET_PASSWORD"
+                await confirmation_service.get_or_create_confirmation_without_data(
+                    user_id=user["id"], action="RESET_PASSWORD"
                 )
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
-            link = _confirmation_web.make_confirmation_link(
-                request, confirmation["code"]
-            )
+            link = _confirmation_web.make_confirmation_link(request, confirmation.code)
 
             # primary reset email with a URL and the normal instructions.
             await send_email_from_template(
@@ -220,8 +226,8 @@ async def initiate_reset_password(request: web.Request):
 
 async def initiate_change_email(request: web.Request):
     # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
-    db: AsyncpgStorage = get_plugin_storage(request.app)
     product: Product = products_web.get_current_product(request)
+    confirmation_service = _get_confirmation_service(request.app)
 
     request_body = await parse_request_body_as(ChangeEmailBody, request)
 
@@ -238,15 +244,17 @@ async def initiate_change_email(request: web.Request):
         raise web.HTTPUnprocessableEntity(text="This email cannot be used")
 
     # Reset if previously requested
-    confirmation = await db.get_confirmation({"user": user, "action": CHANGE_EMAIL})
-    if confirmation:
-        await db.delete_confirmation(confirmation)
+    existing_confirmation = await confirmation_service.get_confirmation(
+        filter_dict={"user_id": user["id"], "action": CHANGE_EMAIL}
+    )
+    if existing_confirmation:
+        await confirmation_service.delete_confirmation(existing_confirmation)
 
     # create new confirmation to ensure email is actually valid
-    confirmation = await db.create_confirmation(
+    confirmation = await confirmation_service.create_confirmation(
         user_id=user["id"], action="CHANGE_EMAIL", data=request_body.email
     )
-    link = _confirmation_web.make_confirmation_link(request, confirmation["code"])
+    link = _confirmation_web.make_confirmation_link(request, confirmation.code)
     try:
         await send_email_from_template(
             request,
@@ -261,7 +269,7 @@ async def initiate_change_email(request: web.Request):
         )
     except Exception as err:  # pylint: disable=broad-except
         _logger.exception("Can not send change_email_email")
-        await db.delete_confirmation(confirmation)
+        await confirmation_service.delete_confirmation(confirmation)
         raise web.HTTPServiceUnavailable(text=MSG_CANT_SEND_MAIL) from err
 
     return flash_response(MSG_CHANGE_EMAIL_REQUESTED)
