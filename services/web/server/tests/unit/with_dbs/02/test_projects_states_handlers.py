@@ -848,6 +848,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     client: TestClient,
     logged_user,
     client_session_id_factory: Callable,
+    socketio_client_factory: Callable,
     user_project: ProjectDict,
     shared_project: ProjectDict,
     expected: ExpectedResponse,
@@ -857,19 +858,35 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     client_id_1 = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        user_role != UserRole.ANONYMOUS,
+        client,
+        client_id_1,
+    )
     await _open_project(
         client,
         client_id_1,
         user_project,
-        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
+        HTTPStatus(expected.ok) if user_role != UserRole.GUEST else HTTPStatus.OK,
     )
 
     client_id_2 = client_session_id_factory()
+    await _connect_websocket(
+        socketio_client_factory,
+        user_role != UserRole.ANONYMOUS,
+        client,
+        client_id_2,
+    )
     await _open_project(
         client,
         client_id_2,
         shared_project,
-        expected.conflict if user_role != UserRole.GUEST else status.HTTP_409_CONFLICT,
+        (
+            HTTPStatus(expected.conflict)
+            if user_role != UserRole.GUEST
+            else HTTPStatus.CONFLICT
+        ),
     )
 
 
