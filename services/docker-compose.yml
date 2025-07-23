@@ -1164,6 +1164,8 @@ services:
       WEBSERVER_STUDIES_DISPATCHER: "null"
       WEBSERVER_TAGS: 0
       WEBSERVER_USERS: "null"
+    networks:
+      - default
 
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
