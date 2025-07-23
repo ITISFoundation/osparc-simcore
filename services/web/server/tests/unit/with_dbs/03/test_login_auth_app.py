@@ -159,7 +159,11 @@ def test_docker_compose_dev_vendors_forwardauth_configuration(
     services_docker_compose_dev_vendors_file: Path,
     env_devel_dict: EnvVarsDict,
 ):
-    """Test that manual service forwardauth.address points to correct WB_AUTH_WEBSERVER_HOST and port."""
+    """Test that manual service forwardauth.address points to correct WB_AUTH_WEBSERVER_HOST and port.
+
+    NOTE: traefik's `forwardauth` labels are also used in
+        `services/director-v2/src/simcore_service_director_v2/modules/dynamic_sidecar/docker_service_specs/proxy.py`
+    """
 
     # Load docker-compose file
     compose_config = yaml.safe_load(
