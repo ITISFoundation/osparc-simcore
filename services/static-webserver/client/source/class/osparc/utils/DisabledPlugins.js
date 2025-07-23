@@ -54,8 +54,8 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return this.__isPluginDisabled(this.FUNCTIONS);
     },
 
-    isLicensesDisabled: function() {
-      return this.__isPluginDisabled(this.LICENSES);
+    isLicensesEnabled: function() {
+      return !this.__isPluginDisabled(this.LICENSES);
     },
 
     isRTCEnabled: function() {
