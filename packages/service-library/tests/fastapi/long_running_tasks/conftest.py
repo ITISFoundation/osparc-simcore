@@ -9,13 +9,16 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from servicelib.fastapi import long_running_tasks
+from settings_library.redis import RedisSettings
 
 
 @pytest.fixture
-async def bg_task_app(router_prefix: str) -> FastAPI:
+async def bg_task_app(router_prefix: str, redis_service: RedisSettings) -> FastAPI:
     app = FastAPI()
 
-    long_running_tasks.server.setup(app, router_prefix=router_prefix)
+    long_running_tasks.server.setup(
+        app, redis_settings=redis_service, namespace="test", router_prefix=router_prefix
+    )
     return app
 
 

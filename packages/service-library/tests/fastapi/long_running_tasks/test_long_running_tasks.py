@@ -33,11 +33,16 @@ from servicelib.long_running_tasks.models import (
     TaskStatus,
 )
 from servicelib.long_running_tasks.task import TaskContext, TaskRegistry
+from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
+
+pytest_simcore_core_services_selection = [
+    "redis",
+]
 
 ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
@@ -91,11 +96,13 @@ def server_routes() -> APIRouter:
 
 
 @pytest.fixture
-async def app(server_routes: APIRouter) -> AsyncIterator[FastAPI]:
+async def app(
+    server_routes: APIRouter, redis_service: RedisSettings
+) -> AsyncIterator[FastAPI]:
     # overrides fastapi/conftest.py:app
     app = FastAPI(title="test app")
     app.include_router(server_routes)
-    setup_server(app)
+    setup_server(app, redis_settings=redis_service, namespace="test")
     setup_client(app)
     async with LifespanManager(app):
         yield app
