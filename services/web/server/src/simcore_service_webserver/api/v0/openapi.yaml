@@ -17161,6 +17161,17 @@ components:
             const: hypertool
           - type: 'null'
           title: Templatetype
+        mode:
+          anyOf:
+          - type: string
+            enum:
+            - workbench
+            - app
+            - guided
+            - standalone
+            - pipeline
+          - type: 'null'
+          title: Mode
       additionalProperties: true
       type: object
       title: StudyUI
@@ -17201,6 +17212,17 @@ components:
             const: hypertool
           - type: 'null'
           title: Templatetype
+        mode:
+          anyOf:
+          - type: string
+            enum:
+            - workbench
+            - app
+            - guided
+            - standalone
+            - pipeline
+          - type: 'null'
+          title: Mode
       additionalProperties: true
       type: object
       title: StudyUI
