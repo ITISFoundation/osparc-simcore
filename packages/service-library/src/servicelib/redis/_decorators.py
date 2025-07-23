@@ -53,6 +53,10 @@ def exclusive(
         lock_key -- a string as the name of the lock (good practice: app_name:lock_name)
         lock_value -- some additional data that can be retrieved by another client if None,
                     it will be automatically filled with the current time and the client name
+        blocking -- If ``blocking`` is False, always return immediately. If the lock
+                was acquired, return True, otherwise return False.
+        blocking_timeout -- specifies the maximum number of seconds to
+                wait trying to acquire the lock.
 
     Raises:
         - ValueError if used incorrectly
@@ -85,6 +89,13 @@ def exclusive(
                 lock_value = f"locked since {arrow.utcnow().format()} by {client.client_name} on {socket.gethostname()}"
 
             lock = client.create_lock(redis_lock_key, ttl=DEFAULT_LOCK_TTL)
+            _logger.debug(
+                "Acquiring lock '%s' with value '%s' for coroutine '%s'",
+                redis_lock_key,
+                lock_value,
+                coro.__name__,
+                stacklevel=3,
+            )
             if not await lock.acquire(
                 token=lock_value,
                 blocking=blocking,
@@ -92,7 +103,7 @@ def exclusive(
                     blocking_timeout.total_seconds() if blocking_timeout else None
                 ),
             ):
-                raise CouldNotAcquireLockError(lock=lock)
+                raise CouldNotAcquireLockError(lock=lock)  # <-- HERE
 
             try:
                 async with asyncio.TaskGroup() as tg:

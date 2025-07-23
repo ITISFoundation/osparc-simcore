@@ -175,6 +175,7 @@ _run-test-ci: _check_venv_active
 		--log-date-format="%Y-%m-%d %H:%M:%S" \
 		--log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \
+		--log-cli-level=DEBUG \
 		-m "not heavy_load" \
 		$(PYTEST_ADDITIONAL_PARAMETERS) \
 		$(TEST_TARGET)

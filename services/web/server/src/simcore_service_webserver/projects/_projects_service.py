@@ -1060,7 +1060,7 @@ async def _remove_service_and_its_data_folders(
         )
 
     # remove the node's data if any
-    await storage_service.delete_data_folders_of_project_node(
+    await storage_service.delete_data_folders_of_project_node(  # <-- MD: this one
         app, f"{project_uuid}", node_uuid, user_id
     )
 

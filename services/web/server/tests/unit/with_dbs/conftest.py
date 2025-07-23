@@ -417,7 +417,12 @@ async def storage_subsystem_mock(
         return_value=TypeAdapter(ByteSize).validate_python("1Gib"),
     )
 
-    return MockedStorageSubsystem(mock, mock1, mock2, mock3)
+    return MockedStorageSubsystem(
+        copy_data_folders_from_project=mock,
+        delete_project=mock1,
+        delete_node=mock2,
+        get_project_total_size_simcore_s3=mock3,
+    )
 
 
 @pytest.fixture
