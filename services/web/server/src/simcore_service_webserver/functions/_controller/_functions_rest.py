@@ -236,6 +236,10 @@ async def update_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
+    query_params: FunctionGetQueryParams = parse_request_query_parameters_as(
+        FunctionGetQueryParams, request
+    )
+
     function_update = TypeAdapter(RegisteredFunctionUpdate).validate_python(
         await request.json()
     )
@@ -249,7 +253,10 @@ async def update_function(request: web.Request) -> web.Response:
         function=function_update,
     )
 
-    if updated_function.function_class == FunctionClass.PROJECT:
+    if (
+        query_params.include_extras
+        and updated_function.function_class == FunctionClass.PROJECT
+    ):
         function_with_extras = await _add_extras_to_project_function(
             function=updated_function,
             app=request.app,
