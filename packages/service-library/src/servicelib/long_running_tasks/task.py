@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import functools
 import inspect
 import logging
 import traceback
@@ -378,6 +379,16 @@ class TasksManager:
         unique_part = "unique" if is_unique else f"{uuid4()}"
         return f"{self.namespace}.{task_name}.{unique_part}"
 
+    async def _update_progress(
+        self,
+        task_id: TaskId,
+        task_context: TaskContext | None,
+        task_progress: TaskProgress,
+    ) -> None:
+        tracked_data = await self._get_tracked_task(task_id, task_context)
+        tracked_data.task_progress = task_progress
+        await self._tasks_data.set_task_data(task_id=task_id, value=tracked_data)
+
     async def start_task(
         self,
         registered_task_name: RegisteredTaskName,
@@ -410,14 +421,18 @@ class TasksManager:
             )
 
         task_progress = TaskProgress.create(task_id=task_id)
+        # set update callback
+        task_progress.set_update_callback(
+            functools.partial(self._update_progress, task_id, task_context)
+        )
 
         # bind the task with progress 0 and 1
         async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
-            progress.update(message="starting", percent=0)
+            await progress.update(message="starting", percent=0)
             try:
                 return await handler(progress, **task_kwargs)
             finally:
-                progress.update(message="finished", percent=1)
+                await progress.update(message="finished", percent=1)
 
         async_task = asyncio.create_task(
             _progress_task(task_progress, task), name=task_name

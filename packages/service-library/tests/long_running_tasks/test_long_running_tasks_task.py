@@ -51,7 +51,7 @@ async def a_background_task(
     """sleeps and raises an error or returns 42"""
     for i in range(total_sleep):
         await asyncio.sleep(1)
-        progress.update(percent=(i + 1) / total_sleep)
+        await progress.update(percent=(i + 1) / total_sleep)
     if raise_when_finished:
         msg = "raised this error as instructed"
         raise RuntimeError(msg)

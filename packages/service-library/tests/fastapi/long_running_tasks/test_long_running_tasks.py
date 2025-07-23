@@ -52,7 +52,7 @@ async def _string_list_task(
     for index in range(num_strings):
         generated_strings.append(f"{index}")
         await asyncio.sleep(sleep_time)
-        progress.update(message="generated item", percent=index / num_strings)
+        await progress.update(message="generated item", percent=index / num_strings)
         if fail:
             msg = "We were asked to fail!!"
             raise RuntimeError(msg)
