@@ -207,7 +207,7 @@ async def test_log_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     subscribe_to_logs: bool,
-    socketio_client_factory: Callable[
+    create_socketio_connection: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     # user
@@ -223,7 +223,7 @@ async def test_log_workflow(
     RabbitMQ (TOPIC) --> Webserver --> Redis --> webclient (socketio)
 
     """
-    socket_io_conn = await socketio_client_factory(None, client)
+    socket_io_conn = await create_socketio_connection(None, client)
 
     mock_log_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_LOG_EVENT, handler=mock_log_handler)
@@ -315,7 +315,7 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
 async def test_progress_non_computational_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    socketio_client_factory: Callable[
+    create_socketio_connection: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     subscribe_to_logs: bool,
@@ -332,7 +332,7 @@ async def test_progress_non_computational_workflow(
     RabbitMQ (TOPIC) --> Webserver -->  Redis --> webclient (socketio)
 
     """
-    socket_io_conn = await socketio_client_factory(None, client)
+    socket_io_conn = await create_socketio_connection(None, client)
 
     mock_progress_handler = mocker.MagicMock()
     socket_io_conn.on(
@@ -373,7 +373,7 @@ async def test_progress_computational_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     user_project: ProjectDict,
-    socketio_client_factory: Callable[
+    create_socketio_connection: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     mocker: MockerFixture,
@@ -391,7 +391,7 @@ async def test_progress_computational_workflow(
                                         Redis --> webclient (socketio)
 
     """
-    socket_io_conn = await socketio_client_factory(None, client)
+    socket_io_conn = await create_socketio_connection(None, client)
 
     mock_progress_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_progress_handler)
@@ -498,7 +498,7 @@ async def test_event_workflow(
     mocker: MockerFixture,
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    socketio_client_factory: Callable[
+    create_socketio_connection: Callable[
         [str | None, TestClient | None], Awaitable[socketio.AsyncClient]
     ],
     # user
@@ -512,7 +512,7 @@ async def test_event_workflow(
     RabbitMQ --> Webserver --> Redis --> webclient (socketio)
 
     """
-    socket_io_conn = await socketio_client_factory(None, client)
+    socket_io_conn = await create_socketio_connection(None, client)
     mock_event_handler = mocker.MagicMock()
     socket_io_conn.on(SOCKET_IO_EVENT, handler=mock_event_handler)
 

@@ -18,10 +18,12 @@ import simcore_service_webserver
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
-from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectGet,
+    ProjectStateOutputSchema,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -226,7 +228,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
     created_project_uuids = []
     used_clients = []
 
-    async def _setup(
+    async def _setup(  # noqa: C901
         client: TestClient,
         *,
         project: dict | None = None,
@@ -313,7 +315,7 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
             }
         return url, project_data, expected_data, headers
 
-    async def _creator(
+    async def _creator(  # noqa: PLR0915
         client: TestClient,
         expected_accepted_response: HTTPStatus,
         expected_creation_response: HTTPStatus,
@@ -427,9 +429,9 @@ async def request_create_project() -> (  # noqa: C901, PLR0915
         # now check returned is as expected
         if new_project:
             # has project state
-            assert not ProjectState(
+            assert not ProjectStateOutputSchema(
                 **new_project.get("state", {})
-            ).locked.value, "Newly created projects should be unlocked"
+            ).share_state.locked, "Newly created projects should be unlocked"
 
             # updated fields
             assert expected_data["uuid"] != new_project["uuid"]
@@ -497,4 +499,16 @@ def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
         autospec=True,
+    )
+
+
+@pytest.fixture
+def with_dev_features_enabled(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
     )

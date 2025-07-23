@@ -379,10 +379,9 @@ qx.Class.define("osparc.study.Utils", {
       if (
         content &&
         "data" in content &&
-        "locked" in content["data"] &&
-        "owner" in content["data"]["locked"] &&
-        "user_id" in content["data"]["locked"]["owner"] &&
-        content["data"]["locked"]["owner"]["user_id"] === osparc.auth.Data.getInstance().getUserId()
+        "shareState" in content["data"] &&
+        "currentUserGroupids" in content["data"]["shareState"] &&
+        content["data"]["shareState"]["currentUserGroupids"].includes(osparc.auth.Data.getInstance().getGroupId())
       ) {
         return (
           content["data"]["state"] &&
@@ -407,7 +406,7 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
+      if (studyData["state"] && studyData["state"]["shareState"] && studyData["state"]["shareState"]["locked"]) {
         return "IN_USE";
       }
       if (this.isInDebt(studyData)) {
