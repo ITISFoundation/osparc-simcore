@@ -25,12 +25,6 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
     osparc.utils.Utils.setIdToWidget(this, "notificationsButton");
 
-    this.set({
-      width: 30,
-      alignX: "center",
-      cursor: "pointer"
-    });
-
     this._createChildControlImpl("icon");
     this._createChildControlImpl("number");
 
