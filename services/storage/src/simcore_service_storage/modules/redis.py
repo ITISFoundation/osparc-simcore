@@ -15,7 +15,6 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.redis_client_sdk = None
         redis_settings = get_application_settings(app).STORAGE_REDIS
-        assert redis_settings  # nosec
         redis_locks_dsn = redis_settings.build_redis_dsn(RedisDatabase.LOCKS)
         app.state.redis_client_sdk = RedisClientSDK(
             redis_locks_dsn, client_name=APP_NAME
