@@ -125,6 +125,9 @@ class AsyncpgStorage:
                 conn, self.user_tbl, {"id": user_id}, updates
             )
 
+    # NOTE: This class is deprecated. Use ConfirmationRepository instead.
+    # Keeping for backwards compatibility during migration.
+
 
 def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
     storage = cast(AsyncpgStorage, app.get(APP_LOGIN_STORAGE_KEY))

@@ -1,8 +1,25 @@
 from collections.abc import Callable
+from datetime import datetime
+from typing import Literal
 
+from models_library.users import UserID
 from pydantic import BaseModel, ConfigDict, SecretStr, ValidationInfo
 
 from .constants import MSG_PASSWORD_MISMATCH
+
+ActionLiteralStr = Literal[
+    "REGISTRATION", "INVITATION", "RESET_PASSWORD", "CHANGE_EMAIL"
+]
+
+
+class Confirmation(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    code: str
+    user_id: UserID
+    action: ActionLiteralStr
+    data: str | None
+    created_at: datetime
 
 
 class InputSchema(BaseModel):
