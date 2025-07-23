@@ -89,6 +89,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       minWidth: 30,
       minHeight: 30
     },
+
+    RIGHT_BUTTON_OPTS: {
+      cursor: "pointer",
+      alignX: "center",
+      alignY: "middle",
+      allowGrowX: false,
+      allowGrowY: false,
+      padding: 4,
+    },
   },
 
   members: {
@@ -161,7 +170,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           break;
         case "right-items":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
             alignY: "middle",
             alignX: "right"
           }));
@@ -244,22 +253,29 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         }
         case "avatar-group": {
           const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 80 : 150;
-          control = new osparc.ui.basic.AvatarGroup(28, "right", maxWidth).set({
+          control = new osparc.ui.basic.AvatarGroup(26, "right", maxWidth).set({
             alignY: "middle",
           });;
           this.getChildControl("right-items").add(control);
           break;
         }
         case "tasks-button":
-          control = new osparc.task.TasksButton();
+          control = new osparc.task.TasksButton().set({
+            visibility: "excluded",
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "jobs-button":
-          control = new osparc.jobs.JobsButton();
+          control = new osparc.jobs.JobsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "notifications-button":
-          control = new osparc.notification.NotificationsButton();
+          control = new osparc.notification.NotificationsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "expiration-icon": {
@@ -289,13 +305,16 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "help":
-          control = this.__createHelpMenuBtn();
-          control.set(this.self().BUTTON_OPTIONS);
+          control = this.__createHelpMenuBtn().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;
         case "credits-button":
-          control = new osparc.desktop.credits.CreditsIndicatorButton();
+          control = new osparc.desktop.credits.CreditsIndicatorButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "log-in-button": {

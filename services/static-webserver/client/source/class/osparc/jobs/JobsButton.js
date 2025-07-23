@@ -26,9 +26,6 @@ qx.Class.define("osparc.jobs.JobsButton", {
     osparc.utils.Utils.setIdToWidget(this, "jobsButton");
 
     this.set({
-      width: 30,
-      alignX: "center",
-      cursor: "pointer",
       toolTipText: this.tr("Activity Center"),
     });
 
@@ -53,12 +50,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
       switch (id) {
         case "icon": {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/tasks/22");
-
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
-          }));
+          })).set({
+            paddingLeft: 5,
+          });
           logoContainer.add(control);
-
           this._add(logoContainer, {
             height: "100%"
           });
