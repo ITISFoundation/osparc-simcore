@@ -43,7 +43,7 @@ from ..products.models import Product
 from ..users import users_service
 from . import _auth_service
 from ._controller.rest._rest_dependencies import get_confirmation_service
-from ._login_repository_legacy import (
+from ._models import (
     BaseConfirmationTokenDict,
     ConfirmationTokenDict,
 )
