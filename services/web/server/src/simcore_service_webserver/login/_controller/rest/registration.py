@@ -30,8 +30,6 @@ from ... import (
     _security_service,
     _twofa_service,
 )
-from ..._confirmation_repository import ConfirmationRepository
-from ..._confirmation_service import ConfirmationService
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._invitations_service import (
     ConfirmedInvitationData,
@@ -54,9 +52,9 @@ from ...constants import (
 )
 from ...settings import (
     LoginSettingsForProduct,
-    get_plugin_options,
     get_plugin_settings,
 )
+from ._rest_dependencies import get_confirmation_service
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
@@ -65,14 +63,6 @@ from .registration_schemas import (
 )
 
 _logger = logging.getLogger(__name__)
-
-
-def _get_confirmation_service(app: web.Application) -> ConfirmationService:
-    """Get confirmation service instance from app."""
-    engine = app["postgres_db_engine"]
-    repository = ConfirmationRepository(engine)
-    options = get_plugin_options(app)
-    return ConfirmationService(repository, options)
 
 
 routes = RouteTableDef()
@@ -225,7 +215,7 @@ async def register(request: web.Request):
 
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
-        confirmation_service = _get_confirmation_service(request.app)
+        confirmation_service = get_confirmation_service(request.app)
         _confirmation: Confirmation = await confirmation_service.create_confirmation(
             user_id=user["id"],
             action="REGISTRATION",
