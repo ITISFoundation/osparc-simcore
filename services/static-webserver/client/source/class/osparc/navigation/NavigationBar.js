@@ -54,6 +54,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     });
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
+
+    this.__listenToProjectStateUpdated();
   },
 
   events: {
@@ -234,6 +236,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
+        case "avatar-group": {
+          const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 150 : 300;
+          control = new osparc.ui.basic.AvatarGroup(32, "right", maxWidth);
+          this.getChildControl("right-items").addAt(control);
+          break;
+        }
         case "tasks-button":
           control = new osparc.task.TasksButton();
           this.getChildControl("right-items").add(control);
@@ -310,6 +318,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return control || this.base(arguments, id);
     },
 
+    __listenToProjectStateUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      socket.on("projectStateUpdated", data => {
+        if (this.getStudy() && data["project_uuid"] === this.getStudy().getUuid()) {
+          const projectState = data["data"];
+          const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
+          // remove myself from the list of users
+          currentUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
+          // show the rest of the users in the avatar group
+          const avatarGroup = this.getChildControl("avatar-group");
+          avatarGroup.setUserGroupIds(currentUserGroupIds);
+        }
+      }, this);
+    },
+
     __createHelpMenuBtn: function() {
       const menu = new qx.ui.menu.Menu().set({
         position: "top-right",
@@ -351,7 +374,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __applyStudy: function(study) {
       const savingStudyIcon = this.getChildControl("saving-study-icon");
-      const readOnlyInfo = this.getChildControl("read-only-info")
+      const readOnlyInfo = this.getChildControl("read-only-info");
+      const avatarGroup = this.getChildControl("avatar-group");
       if (study) {
         this.getChildControl("study-title-options").setStudy(study);
         study.bind("savePending", savingStudyIcon, "visibility", {
@@ -360,9 +384,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", readOnlyInfo, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
+        avatarGroup.show();
       } else {
         savingStudyIcon.exclude();
         readOnlyInfo.exclude();
+        avatarGroup.exclude();
       }
     },
 
