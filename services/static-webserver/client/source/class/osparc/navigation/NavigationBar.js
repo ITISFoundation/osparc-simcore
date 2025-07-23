@@ -121,6 +121,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
+      this.getChildControl("avatar-group");
       this.getChildControl("tasks-button");
       if (osparc.product.Utils.showComputationalActivity()) {
         this.getChildControl("jobs-button");
@@ -237,9 +238,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "avatar-group": {
-          const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 150 : 300;
+          const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 80 : 150;
           control = new osparc.ui.basic.AvatarGroup(32, "right", maxWidth);
-          this.getChildControl("right-items").addAt(control);
+          this.getChildControl("right-items").add(control);
           break;
         }
         case "tasks-button":
