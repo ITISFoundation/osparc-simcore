@@ -30,6 +30,8 @@ from ... import (
     _security_service,
     _twofa_service,
 )
+from ..._confirmation_repository import ConfirmationRepository
+from ..._confirmation_service import ConfirmationService
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._invitations_service import (
     ConfirmedInvitationData,
@@ -39,12 +41,12 @@ from ..._invitations_service import (
 )
 from ..._login_repository_legacy import (
     AsyncpgStorage,
-    ConfirmationTokenDict,
     get_plugin_storage,
 )
 from ..._login_service import (
     notify_user_confirmation,
 )
+from ..._models import Confirmation
 from ...constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
@@ -68,6 +70,14 @@ from .registration_schemas import (
 )
 
 _logger = logging.getLogger(__name__)
+
+
+def _get_confirmation_service(app: web.Application) -> ConfirmationService:
+    """Get confirmation service instance from app."""
+    engine = app["postgres_db_engine"]
+    repository = ConfirmationRepository(engine)
+    options = get_plugin_options(app)
+    return ConfirmationService(repository, options)
 
 
 routes = RouteTableDef()
@@ -224,7 +234,8 @@ async def register(request: web.Request):
 
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
-        _confirmation: ConfirmationTokenDict = await db.create_confirmation(
+        confirmation_service = _get_confirmation_service(request.app)
+        _confirmation: Confirmation = await confirmation_service.create_confirmation(
             user_id=user["id"],
             action="REGISTRATION",
             data=invitation.model_dump_json() if invitation else None,
@@ -232,7 +243,7 @@ async def register(request: web.Request):
 
         try:
             email_confirmation_url = _confirmation_web.make_confirmation_link(
-                request, _confirmation["code"]
+                request, _confirmation.code
             )
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
@@ -270,7 +281,9 @@ async def register(request: web.Request):
                 )
             )
 
-            await db.delete_confirmation_and_user(user["id"], _confirmation)
+            await confirmation_service.delete_confirmation_and_user(
+                user_id=user["id"], confirmation=_confirmation
+            )
 
             raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
