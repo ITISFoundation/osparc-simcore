@@ -58,6 +58,7 @@ async def _update_project_state(
     await _projects_service.notify_project_node_update(
         app, project, node_uuid, node_errors
     )
+
     await _projects_service.notify_project_state_update(app, project)
 
 
