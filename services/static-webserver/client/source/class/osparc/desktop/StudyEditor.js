@@ -625,17 +625,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__reloadSnapshotsAndIterations();
         }
         this.getStudyLogger().info(null, "Pipeline started");
-        /* If no projectStateUpdated comes in 60 seconds, client must
-        check state of pipeline and update button accordingly. */
-        const timer = setTimeout(() => {
-          osparc.store.Study.getInstance().getStudyState(pipelineId);
-        }, 60000);
-        const socket = osparc.wrapper.WebSocket.getInstance();
-        socket.getSocket().once("projectStateUpdated", ({ "project_uuid": projectUuid }) => {
-          if (projectUuid === pipelineId) {
-            clearTimeout(timer);
-          }
-        });
       }
     },
 
