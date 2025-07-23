@@ -905,36 +905,49 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __blockedInUse: function(shareState) {
       const status = shareState["status"];
-      const userGroupIDs = shareState["currentUserGroupids"];
-      let toolTip = userGroupIDs[0]
-      //  osparc.utils.Utils.firstsUp(userGroupIDs[0]["first_name"] || this.tr("A user"), userGroupIDs[0]["last_name"] || ""); // it will be replaced by "userName"
+      const currentUserGroupids = shareState["currentUserGroupids"];
+      const usersStore = osparc.store.Users.getInstance();
+      const userPromises = currentUserGroupids.map(userGroupId => usersStore.getUser(userGroupId));
+      const usernames = [];
+      let toolTip = "";
       let image = null;
-      switch (status) {
-        case "CLOSING":
-          image = "@FontAwesome5Solid/key/";
-          toolTip += this.tr(" is closing it...");
-          break;
-        case "CLONING":
-          image = "@FontAwesome5Solid/clone/";
-          toolTip += this.tr(" is cloning it...");
-          break;
-        case "EXPORTING":
-          image = osparc.task.Export.ICON+"/";
-          toolTip += this.tr(" is exporting it...");
-          break;
-        case "OPENING":
-          image = "@FontAwesome5Solid/key/";
-          toolTip += this.tr(" is opening it...");
-          break;
-        case "OPENED":
-          image = "@FontAwesome5Solid/lock/";
-          toolTip += this.tr(" is using it.");
-          break;
-        default:
-          image = "@FontAwesome5Solid/lock/";
-          break;
-      }
-      this.__showBlockedCard(image, toolTip);
+      Promise.all(userPromises)
+        .then(usersResult => {
+          usersResult.forEach(user => {
+            usernames.push(user.getUsername());
+          });
+        })
+        .finally(() => {
+          switch (status) {
+            case "CLOSING":
+              image = "@FontAwesome5Solid/key/";
+              toolTip += this.tr("Closing...");
+              break;
+            case "CLONING":
+              image = "@FontAwesome5Solid/clone/";
+              toolTip += this.tr("Cloning...");
+              break;
+            case "EXPORTING":
+              image = osparc.task.Export.ICON+"/";
+              toolTip += this.tr("Exporting...");
+              break;
+            case "OPENING":
+              image = "@FontAwesome5Solid/key/";
+              toolTip += this.tr("Opening...");
+              break;
+            case "OPENED":
+              image = "@FontAwesome5Solid/lock/";
+              toolTip += this.tr("In use...");
+              break;
+            default:
+              image = "@FontAwesome5Solid/lock/";
+              break;
+          }
+          usernames.forEach(username => {
+            toolTip += "<br>" + username;
+          });
+          this.__showBlockedCard(image, toolTip);
+        });
     },
 
     __blockedInDebt: function() {
