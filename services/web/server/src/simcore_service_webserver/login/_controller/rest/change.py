@@ -16,8 +16,6 @@ from ....utils import HOUR
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
 from ... import _auth_service, _confirmation_web
-from ..._confirmation_repository import ConfirmationRepository
-from ..._confirmation_service import ConfirmationService
 from ..._emails_service import get_template_path, send_email_from_template
 from ..._login_service import (
     ACTIVE,
@@ -34,18 +32,10 @@ from ...constants import (
 )
 from ...decorators import login_required
 from ...errors import WrongPasswordError
-from ...settings import get_plugin_options
+from ._rest_dependencies import get_confirmation_service
 from .change_schemas import ChangeEmailBody, ChangePasswordBody, ResetPasswordBody
 
 _logger = logging.getLogger(__name__)
-
-
-def _get_confirmation_service(app: web.Application) -> ConfirmationService:
-    """Get confirmation service instance from app."""
-    engine = app["postgres_db_engine"]
-    repository = ConfirmationRepository(engine)
-    options = get_plugin_options(app)
-    return ConfirmationService(repository, options)
 
 
 routes = RouteTableDef()
@@ -184,7 +174,7 @@ async def initiate_reset_password(request: web.Request):
         try:
             # Confirmation token that includes code to `complete_reset_password`.
             # Recreated if non-existent or expired  (Guideline #2)
-            confirmation_service = _get_confirmation_service(request.app)
+            confirmation_service = get_confirmation_service(request.app)
             confirmation = (
                 await confirmation_service.get_or_create_confirmation_without_data(
                     user_id=user["id"], action="RESET_PASSWORD"
@@ -227,7 +217,7 @@ async def initiate_reset_password(request: web.Request):
 async def initiate_change_email(request: web.Request):
     # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     product: Product = products_web.get_current_product(request)
-    confirmation_service = _get_confirmation_service(request.app)
+    confirmation_service = get_confirmation_service(request.app)
 
     request_body = await parse_request_body_as(ChangeEmailBody, request)
 

@@ -30,8 +30,6 @@ from ... import (
     _security_service,
     _twofa_service,
 )
-from ..._confirmation_repository import ConfirmationRepository
-from ..._confirmation_service import ConfirmationService
 from ..._login_repository_legacy import (
     ConfirmationTokenDict,
 )
@@ -54,6 +52,7 @@ from ...settings import (
     get_plugin_options,
     get_plugin_settings,
 )
+from ._rest_dependencies import get_confirmation_service
 from .confirmation_schemas import (
     CodePathParam,
     PhoneConfirmationBody,
@@ -62,14 +61,6 @@ from .confirmation_schemas import (
 )
 
 _logger = logging.getLogger(__name__)
-
-
-def _get_confirmation_service(app: web.Application) -> ConfirmationService:
-    """Get confirmation service instance from app."""
-    engine = app["postgres_db_engine"]
-    repository = ConfirmationRepository(engine)
-    options = get_plugin_options(app)
-    return ConfirmationService(repository, options)
 
 
 def _confirmation_to_legacy_dict(confirmation: Confirmation) -> ConfirmationTokenDict:
@@ -91,7 +82,7 @@ async def _handle_confirm_registration(
     product_name: ProductName,
     confirmation: Confirmation,
 ):
-    confirmation_service = _get_confirmation_service(app)
+    confirmation_service = get_confirmation_service(app)
     user_id = confirmation.user_id
 
     # activate user and consume confirmation token
@@ -114,7 +105,7 @@ async def _handle_confirm_registration(
 async def _handle_confirm_change_email(
     app: web.Application, confirmation: Confirmation
 ):
-    confirmation_service = _get_confirmation_service(app)
+    confirmation_service = get_confirmation_service(app)
     user_id = confirmation.user_id
 
     # update and consume confirmation token
@@ -146,7 +137,7 @@ async def validate_confirmation_and_redirect(request: web.Request):
     """
     cfg: LoginOptions = get_plugin_options(request.app)
     product: Product = products_web.get_current_product(request)
-    confirmation_service = _get_confirmation_service(request.app)
+    confirmation_service = get_confirmation_service(request.app)
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
 
@@ -267,7 +258,7 @@ async def complete_reset_password(request: web.Request):
     - Code is provided via email by calling first initiate_reset_password
     """
     product: Product = products_web.get_current_product(request)
-    confirmation_service = _get_confirmation_service(request.app)
+    confirmation_service = get_confirmation_service(request.app)
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
     request_body = await parse_request_body_as(ResetPasswordConfirmation, request)
