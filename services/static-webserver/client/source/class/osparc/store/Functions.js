@@ -27,7 +27,7 @@ qx.Class.define("osparc.store.Functions", {
         "projectId": templateData["uuid"],
         "title": name,
         "description": description,
-        "function_class": "PROJECT",
+        "function_class": osparc.data.model.Function.FUNCTION_CLASS.PROJECT,
         "inputSchema": {
           "schema_class": "application/schema+json",
           "schema_content": {

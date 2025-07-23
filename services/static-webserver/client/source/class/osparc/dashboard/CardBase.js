@@ -597,7 +597,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
           break;
         }
         case "function":
-          this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+            this.setIcon(osparc.data.model.StudyUI.PIPELINE_ICON);
+          } else {
+            this.setIcon(osparc.dashboard.CardBase.PRODUCT_ICON);
+          }
           break;
       }
     },

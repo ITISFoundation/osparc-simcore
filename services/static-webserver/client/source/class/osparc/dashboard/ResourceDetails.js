@@ -81,7 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               this.__resourceModel["resourceType"] = resourceData["resourceType"];
               this.__addPages();
             }
-            if (resourceData["functionClass"] === "PROJECT") {
+            if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
               // this is only required for functions that have a template linked
               osparc.store.Templates.fetchTemplate(resourceData["templateId"])
                 .then(templateData => {
@@ -408,7 +408,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       } else if (osparc.utils.Resources.isFunction(this.__resourceData)) {
         this.__addInfoPage();
-        if (this.__resourceModel.getFunctionClass() === "PROJECT") {
+        if (this.__resourceModel.getFunctionClass() === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
           this.__addPreviewPage();
         }
         this.fireEvent("pagesAdded");

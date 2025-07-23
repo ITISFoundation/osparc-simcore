@@ -59,7 +59,11 @@ qx.Class.define("osparc.data.model.Function", {
     },
 
     functionClass: {
-      check: ["PROJECT", "SOLVER", "PYTHON_CODE"],
+      check: [
+        "PROJECT",     // osparc.data.model.Function.FUNCTION_CLASS.PROJECT
+        "SOLVER",      // osparc.data.model.Function.FUNCTION_CLASS.SOLVER
+        "PYTHON_CODE", // osparc.data.model.Function.FUNCTION_CLASS.PYTHON
+      ],
       nullable: false,
       event: "changeFunctionClass",
       init: null
@@ -142,9 +146,15 @@ qx.Class.define("osparc.data.model.Function", {
   },
 
   statics: {
+    FUNCTION_CLASS: {
+      PROJECT: "PROJECT",
+      SOLVER: "SOLVER",
+      PYTHON_CODE: "PYTHON_CODE"
+    },
+
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Function));
-    }
+    },
   },
 
   members: {
