@@ -1067,7 +1067,7 @@ async def update_project_node_state(
 
     # Delete this once workbench is removed from the projects table
     # See: https://github.com/ITISFoundation/osparc-simcore/issues/7046
-    updated_project, _ = await db.update_project_node_data(
+    await db.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
