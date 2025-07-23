@@ -13,12 +13,10 @@ ActionLiteralStr = Literal[
 
 
 class Confirmation(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     code: str
     user_id: UserID
     action: ActionLiteralStr
-    data: str | None
+    data: str | None = None
     created_at: datetime
 
 
