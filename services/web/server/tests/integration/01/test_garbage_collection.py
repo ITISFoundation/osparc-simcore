@@ -1172,7 +1172,8 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     await assert_projects_count(aiopg_engine, 1)
     await assert_user_is_owner_of_project(aiopg_engine, u1, project)
 
-    await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
+    await gc_core.collect_garbage(app=client.app)
 
-    await assert_users_count(aiopg_engine, 0)
+    await assert_users_count(aiopg_engine, 0)  # <-- MD: this is where the test fails
     await assert_projects_count(aiopg_engine, 0)
