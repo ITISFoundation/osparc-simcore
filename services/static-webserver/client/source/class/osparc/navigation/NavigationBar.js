@@ -55,7 +55,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
 
-    this.__listenToProjectStateUpdated();
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    if (socket.isConnected()) {
+      this.__listenToProjectStateUpdated();
+    } else {
+      socket.addListener("connect", () => this.__listenToProjectStateUpdated());
+    }
   },
 
   events: {
@@ -326,10 +331,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           const projectState = data["data"];
           const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
           // remove myself from the list of users
-          currentUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
+          const filteredUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
           // show the rest of the users in the avatar group
           const avatarGroup = this.getChildControl("avatar-group");
-          avatarGroup.setUserGroupIds(currentUserGroupIds);
+          avatarGroup.setUserGroupIds(filteredUserGroupIds);
         }
       }, this);
     },
