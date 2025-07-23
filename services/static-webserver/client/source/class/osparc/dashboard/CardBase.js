@@ -792,7 +792,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const currentUserGroupids = osparc.study.Utils.state.getCurrentGroupIds(state);
       const pipelineState = osparc.study.Utils.state.getPipelineState(state);
 
-      this.__showWhoIsIn(currentUserGroupids);
+      this.__showCurrentUserGroupids(currentUserGroupids);
 
       this.setBlocked(projectLocked ? "IN_USE" : false);
       if (projectLocked) {
@@ -800,14 +800,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
 
       if (pipelineState) {
-        this.__applyPipelineState(state["state"]["value"]);
+        this.__applyPipelineState(pipelineState);
       }
     },
 
     __applyDebt: function(debt) {
       this.setBlocked(debt ? "IN_DEBT" : false);
       if (debt) {
-        this.__showBlockedCardFromStatus("IN_DEBT", debt);
+        this.__showBlockedCardFromStatus("IN_DEBT");
       }
     },
 
@@ -875,44 +875,37 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
     },
 
-    __showWhoIsIn: function(whoIsIn) {
-      let users = [];
-      if (whoIsIn) {
-        // replace this once the backend returns a list of group__ids
-        const allUsers = [
-          { name: "Alice", avatar: "https://i.pravatar.cc/150?img=1" },
-          { name: "Bob", avatar: "https://i.pravatar.cc/150?img=2" },
-          { name: "Charlie", avatar: "https://i.pravatar.cc/150?img=3" },
-          { name: "Dana", avatar: "https://i.pravatar.cc/150?img=4" },
-          { name: "Eve", avatar: "https://i.pravatar.cc/150?img=5" },
-          { name: "Frank", avatar: "https://i.pravatar.cc/150?img=6" },
-        ];
-        // Random number of users between 1 and 6
-        const randomCount = Math.floor(Math.random() * 6) + 1;
-        // Shuffle the array and take the first randomCount users
-        const shuffled = allUsers.sort(() => 0.5 - Math.random());
-        users = shuffled.slice(0, randomCount);
-      }
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled() && this.getResourceType() === "study") {
-        const avatarGroup = this.getChildControl("avatar-group");
-        avatarGroup.setUsers(users);
-      }
+    __showCurrentUserGroupids: function(currentUserGroupids) {
+      const avatarGroup = this.getChildControl("avatar-group");
+      const usersStore = osparc.store.Users.getInstance();
+      const userPromises = currentUserGroupids.map(userGroupId => usersStore.getUser(userGroupId));
+      const users = [];
+      Promise.all(userPromises)
+        .then(usersResult => {
+          usersResult.forEach(user => {
+            users.push({
+              name: user.getUsername(),
+              avatar: user.getThumbnail(),
+            });
+          });
+          avatarGroup.setUsers(users);
+        });
     },
 
-    __showBlockedCardFromStatus: function(reason, moreInfo) {
+    __showBlockedCardFromStatus: function(reason, shareState) {
       switch (reason) {
         case "IN_USE":
-          this.__blockedInUse(moreInfo);
+          this.__blockedInUse(shareState);
           break;
         case "IN_DEBT":
-          this.__blockedInDebt(moreInfo);
+          this.__blockedInDebt();
           break;
       }
     },
 
-    __blockedInUse: function(lockedStatus) {
-      const status = lockedStatus["status"];
-      const userGroupIDs = lockedStatus["currentUserGroupids"];
+    __blockedInUse: function(shareState) {
+      const status = shareState["status"];
+      const userGroupIDs = shareState["currentUserGroupids"];
       let toolTip = userGroupIDs[0]
       //  osparc.utils.Utils.firstsUp(userGroupIDs[0]["first_name"] || this.tr("A user"), userGroupIDs[0]["last_name"] || ""); // it will be replaced by "userName"
       let image = null;
