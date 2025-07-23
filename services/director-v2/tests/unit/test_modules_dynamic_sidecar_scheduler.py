@@ -23,6 +23,7 @@ from pydantic import NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DynamicSidecarStatus,
@@ -56,8 +57,13 @@ _TEST_SCHEDULER_INTERVAL_SECONDS: Final[NonNegativeFloat] = 0.1
 log = logging.getLogger(__name__)
 
 
-pytest_simcore_core_services_selection = ["postgres"]
-pytest_simcore_ops_services_selection = ["adminer"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "redis",
+]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+]
 
 
 def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
@@ -128,6 +134,7 @@ def mock_env(
     disable_postgres: None,
     disable_rabbitmq: None,
     mock_env: EnvVarsDict,
+    redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,
     mock_docker_api: None,

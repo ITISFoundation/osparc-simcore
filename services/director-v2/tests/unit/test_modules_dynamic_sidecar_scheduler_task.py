@@ -20,6 +20,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
@@ -38,6 +39,10 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task import 
     DynamicSidecarsScheduler,
 )
 
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+
 SCHEDULER_INTERVAL_SECONDS: Final[float] = 0.1
 
 
@@ -46,6 +51,7 @@ def mock_env(
     disable_postgres: None,
     disable_rabbitmq: None,
     mock_env: EnvVarsDict,
+    redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,
     docker_swarm: None,
