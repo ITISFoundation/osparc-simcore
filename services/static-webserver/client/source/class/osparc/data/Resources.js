@@ -642,7 +642,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/functions/{functionId}"
+            url: statics.API + "/functions/{functionId}?include_extras=true"
           },
         }
       },
