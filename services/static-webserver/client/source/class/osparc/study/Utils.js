@@ -374,24 +374,66 @@ qx.Class.define("osparc.study.Utils", {
       return null;
     },
 
+    state: {
+      getProjectStatus: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "status" in state["shareState"]
+        ) {
+          return state["shareState"]["status"];
+        }
+        return null;
+      },
+
+      isProjectLocked: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "locked" in state["shareState"]
+        ) {
+          return state["shareState"]["locked"];
+        }
+        return false;
+      },
+
+      getCurrentGroupIds: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "currentUserGroupids" in state["shareState"]
+        ) {
+          return state["shareState"]["currentUserGroupids"];
+        }
+
+        return [];
+      },
+
+      getPipelineState: function(state) {
+        if (
+          state &&
+          "state" in state &&
+          "value" in state["state"]
+        ) {
+          return state["state"]["value"];
+        }
+        return undefined;
+      },
+    },
+
     // used in the "projectStateUpdated" socket event
     amIRunningTheStudy: function(content) {
-      if (
-        content &&
-        "data" in content &&
-        "shareState" in content["data"] &&
-        "currentUserGroupids" in content["data"]["shareState"] &&
-        content["data"]["shareState"]["currentUserGroupids"].includes(osparc.auth.Data.getInstance().getGroupId())
-      ) {
-        return (
-          content["data"]["state"] &&
-          content["data"]["state"]["value"] &&
-          [
+      if (content && "data" in content) {
+        const state = content["data"];
+        const currentGroupIds = this.state.getCurrentGroupIds(state);
+        if (currentGroupIds.includes(osparc.auth.Data.getInstance().getGroupId())) {
+          const pipelineState = this.state.getPipelineState(state);
+          return [
             "PUBLISHED",
             "STARTED",
             "STOPPING",
-          ].includes(content["data"]["state"]["value"])
-        );
+          ].includes(pipelineState);
+        }
       }
       return false;
     },
@@ -417,7 +459,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeOpened: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);
@@ -445,7 +487,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowPreview: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);
