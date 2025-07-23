@@ -44,6 +44,7 @@ from ..exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
+    ProjectTooManyUserSessionsError,
     ProjectTypeAndTemplateIncompatibilityError,
     ProjectWalletPendingTransactionError,
     WrongTagIdsInQueryError,
@@ -145,6 +146,13 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
         status.HTTP_409_CONFLICT,
         user_message(
             "This project has pending transactions. Changing the wallet is currently not allowed.",
+            _version=1,
+        ),
+    ),
+    ProjectTooManyUserSessionsError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "You cannot open more than {max_num_sessions} session(s) for the same project at once. Please close another session and retry.",
             _version=1,
         ),
     ),
