@@ -23,6 +23,7 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import (
     ProjectID,
+    ProjectIDStr,
     ProjectListAtDB,
     ProjectTemplateType,
 )
@@ -833,6 +834,29 @@ class ProjectDBAPI(BaseProjectDB):
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
             return cast(str, row[0])
+
+    async def update_project_owner_without_checking_permissions(  # <-- Used by Garbage Collector
+        self,
+        project_uuid: ProjectIDStr,
+        *,
+        new_project_owner: UserID,
+        new_project_access_rights: dict,
+    ) -> None:
+        """The garbage collector needs to alter the row without passing through the
+        permissions layer (sic)."""
+        async with self.engine.acquire() as conn:
+            # now update it
+            result: ResultProxy = await conn.execute(
+                projects.update()
+                .values(
+                    prj_owner=new_project_owner,
+                    access_rights=new_project_access_rights,
+                    last_change_date=now_str(),
+                )
+                .where(projects.c.uuid == project_uuid)
+            )
+            result_row_count: int = result.rowcount
+            assert result_row_count == 1  # nosec
 
     async def delete_project(self, user_id: int, project_uuid: str):
         _logger.info(
