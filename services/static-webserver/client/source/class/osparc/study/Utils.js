@@ -375,7 +375,7 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     state: {
-      getProjectLocked: function(state) {
+      isProjectLocked: function(state) {
         if (
           state &&
           "shareState" in state &&

@@ -804,7 +804,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     __applyState: function(state) {
-      const projectLocked = osparc.study.Utils.state.getProjectLocked(state);
+      const projectLocked = osparc.study.Utils.state.isProjectLocked(state);
       const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
       const pipelineState = osparc.study.Utils.state.getPipelineState(state);
 
