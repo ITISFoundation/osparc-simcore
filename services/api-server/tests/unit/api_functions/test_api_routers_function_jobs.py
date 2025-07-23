@@ -23,7 +23,7 @@ from simcore_service_api_server.models.schemas.jobs import JobStatus
 async def test_delete_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_function_job: RegisteredProjectFunctionJob,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
 
@@ -31,7 +31,8 @@ async def test_delete_function_job(
 
     # Now, delete the function job
     response = await client.delete(
-        f"{API_VTAG}/function_jobs/{mock_registered_function_job.uid}", auth=auth
+        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}",
+        auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -39,62 +40,63 @@ async def test_delete_function_job(
 async def test_register_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_function_job: ProjectFunctionJob,
-    mock_registered_function_job: RegisteredProjectFunctionJob,
+    mock_project_function_job: ProjectFunctionJob,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
     """Test the register_function_job endpoint."""
 
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", mock_registered_function_job
+        "register_function_job", mock_registered_project_function_job
     )
 
     response = await client.post(
         f"{API_VTAG}/function_jobs",
-        json=mock_function_job.model_dump(mode="json"),
+        json=mock_project_function_job.model_dump(mode="json"),
         auth=auth,
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert (
         RegisteredProjectFunctionJob.model_validate(response.json())
-        == mock_registered_function_job
+        == mock_registered_project_function_job
     )
 
 
 async def test_get_function_job(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_function_job: RegisteredProjectFunctionJob,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
 
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_function_job
+        "get_function_job", mock_registered_project_function_job
     )
 
     # Now, get the function job
     response = await client.get(
-        f"{API_VTAG}/function_jobs/{mock_registered_function_job.uid}", auth=auth
+        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}",
+        auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
     assert (
         RegisteredProjectFunctionJob.model_validate(response.json())
-        == mock_registered_function_job
+        == mock_registered_project_function_job
     )
 
 
 async def test_list_function_jobs(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_function_job: RegisteredProjectFunctionJob,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
 
     mock_handler_in_functions_rpc_interface(
         "list_function_jobs",
         (
-            [mock_registered_function_job for _ in range(5)],
+            [mock_registered_project_function_job for _ in range(5)],
             PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
         ),
     )
@@ -106,7 +108,7 @@ async def test_list_function_jobs(
     assert len(data) == 5
     assert (
         RegisteredProjectFunctionJob.model_validate(data[0])
-        == mock_registered_function_job
+        == mock_registered_project_function_job
     )
 
 
@@ -114,7 +116,7 @@ async def test_list_function_jobs(
 async def test_get_function_job_status(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_function_job: RegisteredProjectFunctionJob,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
     mock_handler_in_study_jobs_rest_interface: Callable[[str, Any], None],
     auth: httpx.BasicAuth,
@@ -122,7 +124,7 @@ async def test_get_function_job_status(
 ) -> None:
 
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_function_job
+        "get_function_job", mock_registered_project_function_job
     )
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
@@ -147,7 +149,7 @@ async def test_get_function_job_status(
     )
 
     response = await client.get(
-        f"{API_VTAG}/function_jobs/{mock_registered_function_job.uid}/status",
+        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/status",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
@@ -159,14 +161,14 @@ async def test_get_function_job_status(
 async def test_get_function_job_outputs(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
-    mock_registered_function_job: RegisteredProjectFunctionJob,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
     job_outputs: dict[str, Any],
 ) -> None:
 
     mock_handler_in_functions_rpc_interface(
-        "get_function_job", mock_registered_function_job
+        "get_function_job", mock_registered_project_function_job
     )
     mock_handler_in_functions_rpc_interface(
         "get_function", mock_registered_project_function
@@ -174,7 +176,7 @@ async def test_get_function_job_outputs(
     mock_handler_in_functions_rpc_interface("get_function_job_outputs", job_outputs)
 
     response = await client.get(
-        f"{API_VTAG}/function_jobs/{mock_registered_function_job.uid}/outputs",
+        f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}/outputs",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK

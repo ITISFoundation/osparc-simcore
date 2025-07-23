@@ -20,6 +20,12 @@ from models_library.products import ProductName
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
+from simcore_service_api_server.api.dependencies.functions import (
+    get_function_from_functionjob,
+    get_function_job_dependency,
+    get_stored_job_outputs,
+    get_stored_job_status,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_jobs import JobService
@@ -172,25 +178,19 @@ async def delete_function_job(
     ),
 )
 async def function_job_status(
-    function_job_id: FunctionJobID,
+    function_job: Annotated[
+        RegisteredFunctionJob, Depends(get_function_job_dependency)
+    ],
+    function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
+    stored_job_status: Annotated[FunctionJobStatus, Depends(get_stored_job_status)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
 ) -> FunctionJobStatus:
 
-    function, function_job = await get_function_from_functionjobid(
-        wb_api_rpc=wb_api_rpc,
-        function_job_id=function_job_id,
-        user_id=user_id,
-        product_name=product_name,
-    )
-    old_job_status = await wb_api_rpc.get_function_job_status(
-        function_job_id=function_job.uid, user_id=user_id, product_name=product_name
-    )
-
-    if old_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
-        return old_job_status
+    if stored_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
+        return stored_job_status
 
     if (
         function.function_class == FunctionClass.PROJECT
@@ -264,27 +264,20 @@ async def get_function_from_functionjobid(
     ),
 )
 async def get_function_job_outputs(
-    function_job_id: FunctionJobID,
+    function_job: Annotated[
+        RegisteredFunctionJob, Depends(get_function_job_dependency)
+    ],
+    function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
+    stored_job_outputs: Annotated[FunctionOutputs, Depends(get_stored_job_outputs)],
 ) -> FunctionOutputs:
-    function, function_job = await get_function_from_functionjobid(
-        wb_api_rpc=wb_api_rpc,
-        function_job_id=function_job_id,
-        user_id=user_id,
-        product_name=product_name,
-    )
-
-    old_job_outputs = await wb_api_rpc.get_function_job_outputs(
-        function_job_id=function_job.uid, user_id=user_id, product_name=product_name
-    )
-
-    if old_job_outputs is not None:
-        return old_job_outputs
+    if stored_job_outputs is not None:
+        return stored_job_outputs
 
     if (
         function.function_class == FunctionClass.PROJECT

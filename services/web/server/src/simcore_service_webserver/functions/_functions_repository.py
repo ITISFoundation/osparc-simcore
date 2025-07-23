@@ -490,13 +490,6 @@ async def get_function_job_status(
     function_job_id: FunctionJobID,
 ) -> FunctionJobStatus:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
-        )
         await check_user_permissions(
             app,
             connection=conn,
@@ -505,6 +498,13 @@ async def get_function_job_status(
             object_type="function_job",
             object_id=function_job_id,
             permissions=["read"],
+        )
+        await check_user_api_access_rights(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
         )
 
         result = await conn.execute(
@@ -529,13 +529,6 @@ async def get_function_job_outputs(
     function_job_id: FunctionJobID,
 ) -> FunctionOutputs:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
-        )
         await check_user_permissions(
             app,
             connection=conn,
@@ -544,6 +537,13 @@ async def get_function_job_outputs(
             object_type="function_job",
             object_id=function_job_id,
             permissions=["read"],
+        )
+        await check_user_api_access_rights(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
         )
 
         result = await conn.execute(
@@ -569,13 +569,6 @@ async def update_function_job_status(
     job_status: FunctionJobStatus,
 ) -> FunctionJobStatus:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTION_JOBS],
-        )
         await check_user_permissions(
             app,
             connection=transaction,
@@ -584,6 +577,14 @@ async def update_function_job_status(
             object_type="function_job",
             object_id=function_job_id,
             permissions=["write"],
+        )
+
+        await check_user_api_access_rights(
+            app,
+            connection=transaction,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTION_JOBS],
         )
 
         result = await transaction.execute(
@@ -610,13 +611,6 @@ async def update_function_job_outputs(
     outputs: FunctionOutputs,
 ) -> FunctionOutputs:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTION_JOBS],
-        )
         await check_user_permissions(
             app,
             connection=transaction,
@@ -625,6 +619,14 @@ async def update_function_job_outputs(
             object_type="function_job",
             object_id=function_job_id,
             permissions=["write"],
+        )
+
+        await check_user_api_access_rights(
+            app,
+            connection=transaction,
+            user_id=user_id,
+            product_name=product_name,
+            api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTION_JOBS],
         )
 
         result = await transaction.execute(
