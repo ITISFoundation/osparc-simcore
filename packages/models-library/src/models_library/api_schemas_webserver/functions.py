@@ -116,6 +116,10 @@ __all__ = [
 
 class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema):
     uid: Annotated[FunctionID, Field(alias="uuid")]
+    created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
+    modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
+    access_rights: FunctionAccessRights | None = None
+    thumbnail: str | None = None
 
 
 class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
