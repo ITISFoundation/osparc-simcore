@@ -5641,9 +5641,9 @@
         "tags": [
           "function_jobs"
         ],
-        "summary": "Function Job Outputs",
+        "summary": "Get Function Job Outputs",
         "description": "Get function job outputs\n\nNew in *version 0.8.0*",
-        "operationId": "function_job_outputs",
+        "operationId": "get_function_job_outputs",
         "security": [
           {
             "HTTPBasic": []
@@ -5676,7 +5676,7 @@
                       "type": "null"
                     }
                   ],
-                  "title": "Response Function Job Outputs V0 Function Jobs  Function Job Id  Outputs Get"
+                  "title": "Response Get Function Job Outputs V0 Function Jobs  Function Job Id  Outputs Get"
                 }
               }
             }
