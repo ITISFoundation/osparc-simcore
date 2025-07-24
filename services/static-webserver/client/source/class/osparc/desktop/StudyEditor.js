@@ -246,8 +246,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
-
-
       if (osparc.utils.Utils.eventDrivenPatch()) {
         study.listenToChanges(); // this includes the listener on the workbench and ui
         study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
