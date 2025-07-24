@@ -533,9 +533,9 @@ def wait_for_pipeline_state(
         with log_context(
             logging.INFO,
             msg=ContextMessages(
-                starting=f"--> Start wait for one of {expected_states=}",
-                done=lambda: f"<-- End wait for one of {expected_states=}, pipeline reached {current_state=}",
-                raised=lambda: f"❌ Error: pipeline timed out with {current_state}. Expected one of {expected_states=} ❌",
+                starting=f"wait for one of {expected_states=}",
+                done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
+                raised=lambda: f"pipeline timed out with {current_state}. Expected one of {expected_states=}",
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
