@@ -16127,10 +16127,10 @@ components:
             type: object
           - type: 'null'
           title: Defaultinputs
-        uid:
+        uuid:
           type: string
           format: uuid
-          title: Uid
+          title: Uuid
         createdAt:
           type: string
           format: date-time
@@ -16152,7 +16152,7 @@ components:
       - inputSchema
       - outputSchema
       - defaultInputs
-      - uid
+      - uuid
       - createdAt
       - modifiedAt
       - solverKey
