@@ -374,25 +374,66 @@ qx.Class.define("osparc.study.Utils", {
       return null;
     },
 
+    state: {
+      getProjectStatus: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "status" in state["shareState"]
+        ) {
+          return state["shareState"]["status"];
+        }
+        return null;
+      },
+
+      isProjectLocked: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "locked" in state["shareState"]
+        ) {
+          return state["shareState"]["locked"];
+        }
+        return false;
+      },
+
+      getCurrentGroupIds: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "currentUserGroupids" in state["shareState"]
+        ) {
+          return state["shareState"]["currentUserGroupids"];
+        }
+
+        return [];
+      },
+
+      getPipelineState: function(state) {
+        if (
+          state &&
+          "state" in state &&
+          "value" in state["state"]
+        ) {
+          return state["state"]["value"];
+        }
+        return undefined;
+      },
+    },
+
     // used in the "projectStateUpdated" socket event
     amIRunningTheStudy: function(content) {
-      if (
-        content &&
-        "data" in content &&
-        "locked" in content["data"] &&
-        "owner" in content["data"]["locked"] &&
-        "user_id" in content["data"]["locked"]["owner"] &&
-        content["data"]["locked"]["owner"]["user_id"] === osparc.auth.Data.getInstance().getUserId()
-      ) {
-        return (
-          content["data"]["state"] &&
-          content["data"]["state"]["value"] &&
-          [
+      if (content && "data" in content) {
+        const state = content["data"];
+        const currentGroupIds = this.state.getCurrentGroupIds(state);
+        if (currentGroupIds.includes(osparc.auth.Data.getInstance().getGroupId())) {
+          const pipelineState = this.state.getPipelineState(state);
+          return [
             "PUBLISHED",
             "STARTED",
             "STOPPING",
-          ].includes(content["data"]["state"]["value"])
-        );
+          ].includes(pipelineState);
+        }
       }
       return false;
     },
@@ -407,7 +448,7 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
+      if (studyData["state"] && studyData["state"]["shareState"] && studyData["state"]["shareState"]["locked"]) {
         return "IN_USE";
       }
       if (this.isInDebt(studyData)) {
@@ -418,7 +459,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeOpened: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);
@@ -446,7 +487,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowPreview: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);

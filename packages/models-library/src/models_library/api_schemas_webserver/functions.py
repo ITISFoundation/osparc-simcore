@@ -114,7 +114,8 @@ __all__ = [
 ]
 
 
-class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema): ...
+class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema):
+    uid: Annotated[FunctionID, Field(alias="uuid")]
 
 
 class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):

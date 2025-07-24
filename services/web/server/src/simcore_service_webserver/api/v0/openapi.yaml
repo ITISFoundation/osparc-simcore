@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.73.1
+  version: 0.74.0
 servers:
 - url: ''
   description: webserver
@@ -6371,7 +6371,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProjectState_'
+                $ref: '#/components/schemas/Envelope_ProjectStateOutputSchema_'
   /v0/projects/{project_uuid}/tags/{tag_id}:add:
     post:
       tags:
@@ -10897,11 +10897,11 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectShareAccepted]
-    Envelope_ProjectState_:
+    Envelope_ProjectStateOutputSchema_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         error:
           anyOf:
@@ -10909,7 +10909,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[ProjectState]
+      title: Envelope[ProjectStateOutputSchema]
     Envelope_ProjectsCommentsAPI_:
       properties:
         data:
@@ -14043,35 +14043,6 @@ components:
       - service_key
       - running_time_in_hours
       title: OsparcCreditsAggregatedByServiceGet
-    Owner:
-      properties:
-        user_id:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          description: Owner's user id
-          minimum: 0
-        first_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: First Name
-          description: Owner's first name
-        last_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Last Name
-          description: Owner's last name
-      additionalProperties: false
-      type: object
-      required:
-      - user_id
-      - first_name
-      - last_name
-      title: Owner
     PageLinks:
       properties:
         self:
@@ -15292,7 +15263,7 @@ components:
           title: Lastchangedate
         state:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         trashedAt:
           anyOf:
@@ -15495,7 +15466,7 @@ components:
           title: Lastchangedate
         state:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         trashedAt:
           anyOf:
@@ -15577,26 +15548,6 @@ components:
       - workspaceId
       - folderId
       title: ProjectListItem
-    ProjectLocked:
-      properties:
-        value:
-          type: boolean
-          title: Value
-          description: True if the project is locked
-        status:
-          $ref: '#/components/schemas/ProjectStatus'
-          description: The status of the project
-        owner:
-          anyOf:
-          - $ref: '#/components/schemas/Owner'
-          - type: 'null'
-          description: If locked, the user that owns the lock
-      additionalProperties: false
-      type: object
-      required:
-      - value
-      - status
-      title: ProjectLocked
     ProjectMetadataGet:
       properties:
         projectUuid:
@@ -15824,20 +15775,42 @@ components:
       - shareeEmail
       - confirmationLink
       title: ProjectShareAccepted
-    ProjectState:
+    ProjectShareStateOutputSchema:
       properties:
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+          description: The status of the project
         locked:
-          $ref: '#/components/schemas/ProjectLocked'
-          description: The project lock state
+          type: boolean
+          title: Locked
+          description: True if the project is locked
+        currentUserGroupids:
+          items:
+            type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          type: array
+          title: Currentusergroupids
+          description: Current users in the project (if the project is locked, the
+            list contains only the lock owner)
+      type: object
+      required:
+      - status
+      - locked
+      - currentUserGroupids
+      title: ProjectShareStateOutputSchema
+    ProjectStateOutputSchema:
+      properties:
+        shareState:
+          $ref: '#/components/schemas/ProjectShareStateOutputSchema'
         state:
           $ref: '#/components/schemas/ProjectRunningState'
           description: The project running state
-      additionalProperties: false
       type: object
       required:
-      - locked
+      - shareState
       - state
-      title: ProjectState
+      title: ProjectStateOutputSchema
     ProjectStatus:
       type: string
       enum:
@@ -16154,10 +16127,10 @@ components:
             type: object
           - type: 'null'
           title: Defaultinputs
-        uid:
+        uuid:
           type: string
           format: uuid
-          title: Uid
+          title: Uuid
         createdAt:
           type: string
           format: date-time
@@ -16179,7 +16152,7 @@ components:
       - inputSchema
       - outputSchema
       - defaultInputs
-      - uid
+      - uuid
       - createdAt
       - modifiedAt
       - solverKey

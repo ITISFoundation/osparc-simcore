@@ -147,11 +147,19 @@ class ProjectStartsTooManyDynamicNodesError(BaseProjectError):
 
 
 class ProjectTooManyProjectOpenedError(BaseProjectError):
-    msg_template = "You cannot open more than {max_num_projects} study/ies at once. Please close another study and retry."
+    msg_template = "You cannot open more than {max_num_projects} project/s at once. Please close another project and retry."
 
     def __init__(self, *, max_num_projects: int, **ctx):
         super().__init__(**ctx)
         self.max_num_projects = max_num_projects
+
+
+class ProjectTooManyUserSessionsError(BaseProjectError):
+    msg_template = "You cannot open more than {max_num_sessions} session(s) for the same project at once. Please close another session and retry."
+
+    def __init__(self, *, max_num_sessions: int, **ctx):
+        super().__init__(**ctx)
+        self.max_num_sessions = max_num_sessions
 
 
 class PermalinkNotAllowedError(BaseProjectError): ...

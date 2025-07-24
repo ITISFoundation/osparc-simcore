@@ -69,11 +69,6 @@ qx.Class.define("osparc.store.StaticInfo", {
       return null;
     },
 
-    areLicensesEnabled: function() {
-      const isDisabled = osparc.utils.DisabledPlugins.isLicensesDisabled();
-      return !isDisabled;
-    },
-
     getTrashRetentionDays: function() {
       const staticKey = "webserverTrash";
       const wsStaticData = this.getValue(staticKey);
