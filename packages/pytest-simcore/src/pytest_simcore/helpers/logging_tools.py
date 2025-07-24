@@ -157,8 +157,8 @@ def log_context(
     if isinstance(msg, str):
         ctx_msg = ContextMessages(
             starting=f"-> {msg} starting ...",
-            done=f"<- {msg} done",
-            raised=f"! {msg} raised",
+            done=f"<- {msg} done ",
+            raised=f"❌ {msg} raised!! ❌",
         )
     elif isinstance(msg, tuple):
         ctx_msg = ContextMessages(*msg)
