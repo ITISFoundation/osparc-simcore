@@ -57,13 +57,13 @@ async def start_task(
 
 
 async def list_tasks(
-    tasks_manager: TasksManager, task_context: TaskContext | None
+    tasks_manager: TasksManager, task_context: TaskContext
 ) -> list[TaskBase]:
     return await tasks_manager.list_tasks(with_task_context=task_context)
 
 
 async def get_task_status(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> TaskStatus:
     """returns the status of a task"""
     return await tasks_manager.get_task_status(
@@ -72,7 +72,7 @@ async def get_task_status(
 
 
 async def get_task_result(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> Any:
     try:
         task_result = await tasks_manager.get_task_result(
@@ -101,14 +101,14 @@ async def get_task_result(
 
 
 async def remove_task(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> None:
     """removes / cancels a task"""
     await tasks_manager.remove_task(task_id, with_task_context=task_context)
 
 
 async def cancel_task(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> None:
     """cancels a task"""
     await tasks_manager.cancel_task(task_id, with_task_context=task_context)
