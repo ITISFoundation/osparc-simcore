@@ -14,8 +14,9 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 
+from ..redis import RedisClientSDK, exclusive
 from ._store.base import BaseStore
 from ._store.redis import RedisStore
 from .errors import (
@@ -121,16 +122,25 @@ class TasksManager:
             stale_task_detect_timeout.total_seconds()
         )
         self.namespace = namespace
+        self.redis_settings = redis_settings
 
         self._stale_tasks_monitor_task: asyncio.Task | None = None
         self._cancelled_tasks_removal_task: asyncio.Task | None = None
+        self.redis_client_sdk: RedisClientSDK | None = None
 
     async def setup(self) -> None:
         await self._tasks_data.setup()
 
-        # TODO: this one needs to be exclusive redis locked
+        self.redis_client_sdk = RedisClientSDK(
+            self.redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
+            client_name="pytest",
+        )
+
         self._stale_tasks_monitor_task = create_periodic_task(
-            task=self._stale_tasks_monitor_worker,
+            task=exclusive(
+                self.redis_client_sdk,
+                lock_key=f"{__name__}_{self.namespace}_stale_tasks_monitor",
+            )(self._stale_tasks_monitor_worker),
             interval=self.stale_task_check_interval,
             task_name=f"{__name__}.{self._stale_tasks_monitor_worker.__name__}",
         )
@@ -161,6 +171,9 @@ class TasksManager:
                 )
 
         await self._tasks_data.teardown()
+
+        if self.redis_client_sdk:
+            await self.redis_client_sdk.shutdown()
 
     async def _stale_tasks_monitor_worker(self) -> None:
         """
