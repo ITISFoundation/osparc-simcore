@@ -64,7 +64,7 @@ def product_name() -> ProductName:
 
 
 @pytest.fixture
-def mock_environment(  # pylint:disable=too-many-arguments
+def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     mock_rabbit_check: None,
     mock_storage_check: None,
     redis_service: RedisSettings,
