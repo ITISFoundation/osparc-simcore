@@ -1,7 +1,7 @@
 import datetime
 from typing import Annotated, TypeAlias
 
-from pydantic import Field
+from pydantic import Field, HttpUrl
 
 from ..functions import (
     Function,
@@ -119,7 +119,7 @@ class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema):
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
     access_rights: FunctionAccessRights | None = None
-    thumbnail: str | None = None
+    thumbnail: HttpUrl | None = None
 
 
 class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
@@ -128,7 +128,7 @@ class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
     access_rights: FunctionAccessRights | None = None
-    thumbnail: str | None = None
+    thumbnail: HttpUrl | None = None
 
 
 class SolverFunctionToRegister(SolverFunction, InputSchema): ...

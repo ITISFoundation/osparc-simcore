@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from aiohttp import web
@@ -50,6 +51,9 @@ from ._functions_rest_schemas import (
 routes = web.RouteTableDef()
 
 
+logger = logging.getLogger(__name__)
+
+
 async def _build_function_access_rights(
     app: web.Application,
     user_id: UserID,
@@ -83,7 +87,7 @@ async def _build_project_function_extras_dict(
     )
 
     return {
-        "thumbnail": project_dict.get("thumbnail", None),
+        "thumbnail": project_dict.get("thumbnail") or None,
     }
 
 
@@ -198,11 +202,11 @@ async def list_functions(request: web.Request) -> web.Response:
         if any(
             function.function_class == FunctionClass.SOLVER for function in functions
         ):
-            service_keys_and_versions = [
+            service_keys_and_versions = {
                 (function.solver_key, function.solver_version)
                 for function in functions
                 if function.function_class == FunctionClass.SOLVER
-            ]
+            }
             service_metadata_cache |= (
                 await _services_metadata_service.batch_get_service_metadata(
                     app=request.app, keys_and_versions=service_keys_and_versions
@@ -217,28 +221,13 @@ async def list_functions(request: web.Request) -> web.Response:
             function_id=function.uid,
         )
 
-        extras: dict[str, Any] = {}
-        if query_params.include_extras:
-            if function.function_class == FunctionClass.PROJECT:
-                assert isinstance(function, RegisteredProjectFunction)  # nosec
-                if project := projects_cache.get(function.project_id):
-                    extras = {
-                        "thumbnail": (
-                            f"{project.thumbnail}" if project.thumbnail else None
-                        ),
-                    }
-            elif function.function_class == FunctionClass.SOLVER:
-                assert isinstance(function, RegisteredSolverFunction)
-                if service_metadata := service_metadata_cache.get(
-                    (function.solver_key, function.solver_version)
-                ):
-                    extras = {
-                        "thumbnail": (
-                            f"{service_metadata.thumbnail}"
-                            if service_metadata.thumbnail
-                            else None
-                        ),
-                    }
+        extras = (
+            await _build_function_extras(
+                request.app, req_ctx.user_id, function=function
+            )
+            if query_params.include_extras
+            else {}
+        )
 
         chunk.append(
             TypeAdapter(RegisteredFunctionGet).validate_python(
