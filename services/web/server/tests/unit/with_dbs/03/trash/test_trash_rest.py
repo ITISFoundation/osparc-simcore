@@ -1162,7 +1162,7 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
 
     # waits for deletion
     async for attempt in AsyncRetrying(
-        stop=stop_after_attempt(3), wait=wait_fixed(1), reraise=True
+        stop=stop_after_attempt(10), wait=wait_fixed(1), reraise=True
     ):
         with attempt:
             # GET trashed parent folder

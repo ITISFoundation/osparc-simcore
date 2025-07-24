@@ -3,7 +3,9 @@ import json
 import logging
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.projects import ProjectGet
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -26,7 +28,9 @@ from ...login.decorators import login_required
 from ...notifications import project_logs
 from ...products import products_web
 from ...products.models import Product
+from ...resource_manager.user_sessions import managed_resource
 from ...security.decorators import permission_required
+from ...socketio.server import get_socket_server
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
@@ -111,6 +115,23 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         ):
             raise HTTPLockedError(text="Project is locked, try later")
+
+        # Connect the socket_id to a project room
+        with managed_resource(
+            req_ctx.user_id, client_session_id, request.app
+        ) as resource_registry:
+            _socket_id = await resource_registry.get_socket_id()
+        if _socket_id is None:
+            raise web.HTTPUnprocessableEntity(
+                text=user_message(
+                    "Data corruption detected: unable to identify your session (socket_id missing). "
+                    "Please refresh the page and try again. If the problem persists, contact support."
+                )
+            )
+        sio = get_socket_server(request.app)
+        sio.enter_room(
+            _socket_id, SocketIORoomStr.from_project_id(path_params.project_id)
+        )
 
         # the project can be opened, let's update its product links
         await _projects_service.update_project_linked_product(
