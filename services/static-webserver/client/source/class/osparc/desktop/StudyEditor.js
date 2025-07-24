@@ -152,11 +152,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .then(studyData => {
           this.__setStudyDataInBackend(studyData);
 
-          if (osparc.utils.Utils.eventDrivenPatch()) {
-            study.listenToChanges();
-            study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
-          }
-
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
 
@@ -251,8 +246,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
-      // listener already added in __applyStudy
-      // workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
+
+
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        study.listenToChanges(); // this includes the listener on the workbench
+        study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
+      } else {
+        workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
+      }
+
       workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
     },
 
