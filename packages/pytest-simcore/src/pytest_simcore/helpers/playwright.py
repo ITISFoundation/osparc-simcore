@@ -535,7 +535,7 @@ def wait_for_pipeline_state(
             msg=ContextMessages(
                 starting=f"wait for one of {expected_states=}",
                 done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
-                raised=lambda: f"pipeline timed out with {current_state}. Expected one of {expected_states=}",
+                raised=lambda: f"pipeline failed or timed out with {current_state}. Expected one of {expected_states=}",
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
@@ -552,7 +552,7 @@ def wait_for_pipeline_state(
                 and current_state not in expected_states
             ):
                 pytest.fail(
-                    f"❌ Pipeline failed with state {current_state}. Expected one of {expected_states} ❌"
+                    f"❌ Pipeline failed fast with state {current_state}. Expected one of {expected_states} ❌"
                 )
     return current_state
 

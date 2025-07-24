@@ -51,7 +51,7 @@ def _resolve(val: str | Callable[[], str], context: str) -> str:
             UserWarning,
             stacklevel=3,
         )
-        return f"[{context} message generation failed]"
+        return f"❌❌❌ [{context} message generation failed TIP: Check how the {context} message is generated!] ❌❌❌"
 
 
 class DynamicIndentFormatter(logging.Formatter):
@@ -104,7 +104,7 @@ _STARTING_PREFIX = "--> "
 _STARTING_SUFFIX = " ⏳"
 _DONE_PREFIX = "<-- "
 _DONE_SUFFIX = " ✅"
-_RAISED_PREFIX = "❌❌❌ Error "
+_RAISED_PREFIX = "❌❌❌ Error: "
 _RAISED_SUFFIX = " ❌❌❌"
 
 
@@ -115,11 +115,15 @@ class ContextMessages:
     raised: str | Callable[[], str] = field(default="")
 
     def __post_init__(self):
+        # Store original callables before processing
+        original_starting = self.starting
+        original_done = self.done
+        original_raised = self.raised
+
         # Apply formatting to starting message
         if isinstance(self.starting, str):
             self.starting = f"{_STARTING_PREFIX}{self.starting}{_STARTING_SUFFIX}"
         else:
-            original_starting = self.starting
             self.starting = (
                 lambda: f"{_STARTING_PREFIX}{_resolve(original_starting, 'starting')}{_STARTING_SUFFIX}"
             )
@@ -128,26 +132,21 @@ class ContextMessages:
         if isinstance(self.done, str):
             self.done = f"{_DONE_PREFIX}{self.done}{_DONE_SUFFIX}"
         else:
-            original_done = self.done
             self.done = (
                 lambda: f"{_DONE_PREFIX}{_resolve(original_done, 'done')}{_DONE_SUFFIX}"
             )
 
         # Apply formatting to raised message or create default
         if not self.raised:
-            if isinstance(self.done, str):
-                # Extract base message from formatted done message
-                base_msg = self.done.replace(_DONE_PREFIX, "").replace(_DONE_SUFFIX, "")
-                self.raised = f"{_RAISED_PREFIX}{base_msg}{_RAISED_SUFFIX}"
+            if isinstance(original_done, str):
+                # Extract base message from original done message (before formatting)
+                self.raised = f"{_RAISED_PREFIX}{original_done}{_RAISED_SUFFIX}"
             else:
-                original_done = self.done
-                self.raised = (
-                    lambda: f"{_RAISED_PREFIX}{_resolve(original_done, 'done')}{_RAISED_SUFFIX}"
-                )
+                # For callable done, create a simple error message
+                self.raised = f"{_RAISED_PREFIX}operation failed{_RAISED_SUFFIX}"
         elif isinstance(self.raised, str):
             self.raised = f"{_RAISED_PREFIX}{self.raised}{_RAISED_SUFFIX}"
         else:
-            original_raised = self.raised
             self.raised = (
                 lambda: f"{_RAISED_PREFIX}{_resolve(original_raised, 'raised')}{_RAISED_SUFFIX}"
             )
