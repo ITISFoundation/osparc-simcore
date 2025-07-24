@@ -1307,6 +1307,19 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       return filteredNodeEntry;
-    }
+    },
+
+    serializeUI: function() {
+      const uiInfo = {
+        "position": this.getPosition(),
+      };
+      const marker = this.getMarker();
+      if (marker) {
+        uiInfo["marker"] = {
+          "color": marker.getColor()
+        };
+      }
+      return uiInfo;
+    },
   }
 });

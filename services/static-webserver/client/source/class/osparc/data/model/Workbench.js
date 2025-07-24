@@ -743,9 +743,8 @@ qx.Class.define("osparc.data.model.Workbench", {
         // workbench is not initialized
         return this.__workbenchInitData;
       }
-      let workbench = {};
-      const allModels = this.getNodes();
-      const nodes = Object.values(allModels);
+      const workbench = {};
+      const nodes = Object.values(this.getNodes());
       for (const node of nodes) {
         const data = node.serialize(clean);
         if (data) {
@@ -760,17 +759,12 @@ qx.Class.define("osparc.data.model.Workbench", {
         // workbenchUI is not initialized
         return this.__workbenchUIInitData;
       }
-      let workbenchUI = {};
-      const nodes = this.getNodes();
-      for (const nodeId in nodes) {
-        const node = nodes[nodeId];
-        workbenchUI[nodeId] = {};
-        workbenchUI[nodeId]["position"] = node.getPosition();
-        const marker = node.getMarker();
-        if (marker) {
-          workbenchUI[nodeId]["marker"] = {
-            color: marker.getColor()
-          };
+      const workbenchUI = {};
+      const nodes = Object.values(this.getNodes());
+      for (const node of nodes) {
+        const data = node.serializeUI(clean);
+        if (data) {
+          workbench[node.getNodeId()] = data;
         }
       }
       return workbenchUI;
