@@ -44,6 +44,13 @@ def app_environment_for_wb_authz_service_dict(
         == "WEBSERVER_AUTHZ_APP_FACTORY"
     )
 
+    # expected tracing in the docker-environ BUT we will disable it for tests
+    assert "WEBSERVER_TRACING" in docker_compose_service_environment_dict
+    assert (
+        "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"
+        in docker_compose_service_environment_dict
+    )
+
     return {
         **docker_compose_service_environment_dict,
         # NOTE: TEST-stack uses different env-vars
@@ -55,7 +62,7 @@ def app_environment_for_wb_authz_service_dict(
         "POSTGRES_USER": postgres_cfg["user"],
         "POSTGRES_PASSWORD": postgres_cfg["password"],
         "HOSTNAME": docker_compose_service_hostname,
-        # TODO: add everything coming from Dockerfile?
+        "WEBSERVER_TRACING": "null",  # BUT we will disable it for tests
     }
 
 
@@ -83,6 +90,7 @@ def app_environment_for_wb_authz_service(
     assert settings.WEBSERVER_DB is not None
     assert settings.WEBSERVER_SESSION is not None
     assert settings.WEBSERVER_SECURITY is not None
+    assert settings.WEBSERVER_TRACING is None, "No tracing for tests"
 
     return mocked_envs
 
