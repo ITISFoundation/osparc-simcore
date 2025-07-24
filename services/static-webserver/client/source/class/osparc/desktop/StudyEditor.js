@@ -815,6 +815,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return studyDiffs;
     },
 
+    // this takes around 0.5ms
+    didStudyChange: function() {
+      const studyDiffs = this.__getStudyDiffs();
+      const changed = Boolean(Object.keys(studyDiffs.delta).length);
+      this.getStudy().setSavePending(changed);
+      return changed;
+    },
+
     __checkStudyChanges: function() {
       if (this.didStudyChange()) {
         if (this.__updatingStudy > 0) {
@@ -824,14 +832,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.updateStudyDocument();
         }
       }
-    },
-
-    // this takes around 0.5ms
-    didStudyChange: function() {
-      const studyDiffs = this.__getStudyDiffs();
-      const changed = Boolean(Object.keys(studyDiffs.delta).length);
-      this.getStudy().setSavePending(changed);
-      return changed;
     },
 
     updateStudyDocument: function(data = null) {
