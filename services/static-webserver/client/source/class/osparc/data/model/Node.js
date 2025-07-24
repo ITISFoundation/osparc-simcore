@@ -685,19 +685,20 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __applyMarker: function(marker, oldMarker) {
-      if (marker && oldMarker) {
-        this.fireDataEvent("updateStudyDocument", {
-          "op": "replace",
-          "path": `/ui/workbench/${this.getNodeId()}/marker`,
-          "value": marker.getColor(),
-          "osparc-resource": "ui",
-        });
-      } else if (marker && oldMarker === null) {
+      if (marker) {
         this.fireDataEvent("updateStudyDocument", {
           "op": "add",
           "path": `/ui/workbench/${this.getNodeId()}/marker`,
           "value": marker.getColor(),
           "osparc-resource": "ui",
+        });
+        marker.addListener("changeColor", e => {
+          this.fireDataEvent("updateStudyDocument", {
+            "op": "replace",
+            "path": `/ui/workbench/${this.getNodeId()}/marker`,
+            "value": e.getData(),
+            "osparc-resource": "ui",
+          });
         });
       } else {
         this.fireDataEvent("updateStudyDocument", {
