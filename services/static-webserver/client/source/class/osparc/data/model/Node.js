@@ -171,7 +171,8 @@ qx.Class.define("osparc.data.model.Node", {
       check: "qx.core.Object",
       init: null,
       nullable: true,
-      event: "changeMarker"
+      event: "changeMarker",
+      apply: "__applyMarker",
     },
 
     inputConnected: {
@@ -681,6 +682,30 @@ qx.Class.define("osparc.data.model.Node", {
 
     __removeMarker: function() {
       this.setMarker(null);
+    },
+
+    __applyMarker: function(marker, oldMarker) {
+      if (marker && oldMarker) {
+        this.fireDataEvent("updateStudyDocument", {
+          "op": "replace",
+          "path": `/ui/workbench/${this.getNodeId()}/marker`,
+          "value": marker.getColor(),
+          "osparc-resource": "ui",
+        });
+      } else if (marker && oldMarker === null) {
+        this.fireDataEvent("updateStudyDocument", {
+          "op": "add",
+          "path": `/ui/workbench/${this.getNodeId()}/marker`,
+          "value": marker.getColor(),
+          "osparc-resource": "ui",
+        });
+      } else {
+        this.fireDataEvent("updateStudyDocument", {
+          "op": "delete",
+          "path": `/ui/workbench/${this.getNodeId()}/marker`,
+          "osparc-resource": "ui",
+        });
+      }
     },
 
     __setInputData: function(inputs) {
@@ -1207,6 +1232,17 @@ qx.Class.define("osparc.data.model.Node", {
       // keep positions positive
       this.__posX = parseInt(x) < 0 ? 0 : parseInt(x);
       this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);
+
+      const nodeId = this.getNodeId();
+      this.fireDataEvent("updateStudyDocument", {
+        "op": "replace",
+        "path": `/ui/workbench/${nodeId}/position`,
+        "value": {
+          "x": this.__posX,
+          "y": this.__posY,
+        },
+        "osparc-resource": "ui",
+      });
     },
 
     getPosition: function() {
@@ -1311,9 +1347,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     serializeUI: function() {
-      const uiInfo = {
-        "position": this.getPosition(),
-      };
+      const uiInfo = {}
+      uiInfo["position"] = this.getPosition();
       const marker = this.getMarker();
       if (marker) {
         uiInfo["marker"] = {
