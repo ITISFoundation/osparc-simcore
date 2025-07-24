@@ -465,7 +465,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.getSelectedAnnotations().forEach(selectedAnnotation => delete selectedAnnotation["initPos"]);
 
       if (nodeUI && osparc.Preferences.getInstance().isSnapNodeToGrid()) {
-        nodeUI.snapToGrid();
+        this.getSelectedNodeUIs().forEach(selectedNodeUI => selectedNodeUI.snapToGrid());
         // make sure nodeUI is moved, then update edges
         setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
       }
@@ -495,12 +495,13 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__itemStartedMoving();
       }, this);
 
-      nodeUI.addListener("nodeMoving", () => {
+      nodeUI.addListener("nodeMoving", e => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
           // multi node move
-          const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
-          const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
+          const coords = e.getData();
+          const xDiff = coords.x - nodeUI.initPos.x;
+          const yDiff = coords.y - nodeUI.initPos.y;
           this.__itemMoving(nodeUI.getNodeId(), xDiff, yDiff);
         }
       }, this);

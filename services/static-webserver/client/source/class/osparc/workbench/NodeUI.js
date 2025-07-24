@@ -163,7 +163,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     "edgeDrop": "qx.event.type.Data",
     "edgeDragEnd": "qx.event.type.Data",
     "nodeMovingStart": "qx.event.type.Event",
-    "nodeMoving": "qx.event.type.Event",
+    "nodeMoving": "qx.event.type.Data",
     "nodeMovingStop": "qx.event.type.Event",
     "updateNodeDecorator": "qx.event.type.Event",
     "requestOpenLogger": "qx.event.type.Event",
@@ -897,13 +897,12 @@ qx.Class.define("osparc.workbench.NodeUI", {
         return;
       }
       const coords = this.__setPositionFromEvent(e);
-      this.getNode().setPosition(coords);
       e.stopPropagation();
       if (this.__nodeMoving === false) {
         this.__nodeMoving = true;
         this.fireEvent("nodeMovingStart");
       }
-      this.fireEvent("nodeMoving");
+      this.fireDataEvent("nodeMoving", coords);
     },
 
     // override qx.ui.core.MMovable
@@ -920,6 +919,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
       this._onMovePointerMove(e);
 
       this.__nodeMoving = false;
+
+      // Only consolidate position when it stops moving
+      const coords = this.__setPositionFromEvent(e);
+      this.getNode().setPosition(coords);
+
       this.fireEvent("nodeMovingStop");
 
       // Remove drag state
