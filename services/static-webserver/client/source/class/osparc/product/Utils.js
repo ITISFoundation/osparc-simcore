@@ -335,7 +335,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showS4LStore: function() {
-      const licensesEnabled = osparc.store.StaticInfo.getInstance().areLicensesEnabled();
+      const licensesEnabled = osparc.utils.DisabledPlugins.isLicensesEnabled();
       return this.isS4LProduct() && licensesEnabled;
     },
 
