@@ -51,7 +51,7 @@ def _resolve(val: str | Callable[[], str], context: str) -> str:
             UserWarning,
             stacklevel=3,
         )
-        return f"❌ Error [{context} message generation failed]"
+        return f"[{context} message generation failed]"
 
 
 class DynamicIndentFormatter(logging.Formatter):
