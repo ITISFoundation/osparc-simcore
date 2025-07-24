@@ -395,6 +395,7 @@ qx.Class.define("osparc.data.model.Study", {
       });
 
       this.getWorkbench().addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
+      this.getUi().addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
     },
 
     serialize: function(clean = true) {
