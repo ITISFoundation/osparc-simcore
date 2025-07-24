@@ -496,6 +496,10 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
+    eventDrivenPatch: function() {
+      return true;
+    },
+
     getEditButton: function(isVisible = true) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         appearance: "form-button-outlined",

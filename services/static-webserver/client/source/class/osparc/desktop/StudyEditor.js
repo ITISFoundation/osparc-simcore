@@ -152,8 +152,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .then(studyData => {
           this.__setStudyDataInBackend(studyData);
 
-          study.listenToChanges();
-          study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
+          if (osparc.utils.Utils.eventDrivenPatch()) {
+            study.listenToChanges();
+            study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
+          }
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -806,6 +808,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     // ------------------ AUTO SAVER ------------------
     __startAutoSaveTimer: function() {
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        // If event driven patch is enabled, auto save is not needed
+        return;
+      }
+
       // Save every 3 seconds
       const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
       timer.addListener("interval", () => {
@@ -833,6 +840,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     // ---------------- SAVING TIMER ------------------
     __startSavingTimer: function() {
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        // If event driven patch is enabled, saving timer indicator is not needed
+        return;
+      }
+
       const timer = this.__savingTimer = new qx.event.Timer(this.self().DIFF_CHECK_INTERVAL);
       timer.addListener("interval", () => {
         if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
@@ -903,7 +915,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        console.log("updateStudyDocument", data); // For debugging purposes
+        console.log("updateStudyDocument", data || "forced"); // For debugging purposes
       }
 
       this.__updatingStudy++;
