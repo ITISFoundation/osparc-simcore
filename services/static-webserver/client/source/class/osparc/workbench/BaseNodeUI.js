@@ -256,6 +256,7 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
     },
 
     _setPositionFromEvent: function(e) {
+      // this.__dragRange is defined in qx.ui.core.MMovable
       const sideBarWidth = this.__dragRange.left;
       const navigationBarHeight = this.__dragRange.top;
       const native = e.getNativeEvent();
@@ -273,6 +274,8 @@ qx.Class.define("osparc.workbench.BaseNodeUI", {
       if (!this.hasState("move") || !this.getIsMovable()) {
         return;
       }
+      const coords = this._setPositionFromEvent(e);
+      this.getNode().setPosition(coords);
       e.stopPropagation();
       if (this.__nodeMoving === false) {
         this.__nodeMoving = true;
