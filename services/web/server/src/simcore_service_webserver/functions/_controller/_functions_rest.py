@@ -39,8 +39,8 @@ from ...projects.models import ProjectDBGet
 from ...security.decorators import permission_required
 from ...utils_aiohttp import create_json_response_from_page, envelope_json_response
 from .. import _functions_service
-from .._services_metadata import service as _services_metadata_service
-from .._services_metadata.service import ServiceMetadata
+from .._services_metadata import proxy as _services_metadata_proxy
+from .._services_metadata.proxy import ServiceMetadata
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import (
     FunctionGetQueryParams,
@@ -96,7 +96,7 @@ async def _build_solver_function_extras_dict(
     *,
     function: RegisteredSolverFunction,
 ) -> dict[str, Any]:
-    services_metadata = await _services_metadata_service.get_service_metadata(
+    services_metadata = await _services_metadata_proxy.get_service_metadata(
         app,
         key=function.solver_key,
         version=function.solver_version,
@@ -208,7 +208,7 @@ async def list_functions(request: web.Request) -> web.Response:
                 if function.function_class == FunctionClass.SOLVER
             }
             service_metadata_cache |= (
-                await _services_metadata_service.batch_get_service_metadata(
+                await _services_metadata_proxy.batch_get_service_metadata(
                     app=request.app, keys_and_versions=service_keys_and_versions
                 )
             )
