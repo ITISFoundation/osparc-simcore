@@ -263,7 +263,7 @@ async def get_function_from_functionjobid(
         changelog=CHANGE_LOGS["function_job_outputs"],
     ),
 )
-async def get_function_job_outputs(
+async def function_job_outputs(
     function_job: Annotated[
         RegisteredFunctionJob, Depends(get_function_job_dependency)
     ],
