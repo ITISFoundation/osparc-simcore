@@ -768,9 +768,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       const workbenchUI = {};
       const nodes = Object.values(this.getNodes());
       for (const node of nodes) {
-        const data = node.serializeUI(clean);
+        const data = node.serializeUI();
         if (data) {
-          workbench[node.getNodeId()] = data;
+          workbenchUI[node.getNodeId()] = data;
         }
       }
       return workbenchUI;
