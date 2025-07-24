@@ -50,8 +50,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Event",
-    "restartAutoSaveTimer": "qx.event.type.Event",
+    "updateStudyDocument": "qx.event.type.Data",
     "pipelineChanged": "qx.event.type.Event",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -276,7 +275,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
-      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
+      node.addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
       osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       return node;
     },
@@ -292,7 +291,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
-      this.fireEvent("restartAutoSaveTimer");
       // create the node in the backend first
       const params = {
         url: {
@@ -309,7 +307,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         const resp = await osparc.data.Resources.fetch("studies", "addNode", params);
         const nodeId = resp["node_id"];
 
-        this.fireEvent("restartAutoSaveTimer");
         const node = this.__createNode(this.getStudy(), metadata, nodeId);
         this.__initNodeSignals(node);
         this.__addNode(node);
@@ -543,12 +540,9 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       let node = this.getNode(nodeId);
       if (node) {
-        this.fireEvent("restartAutoSaveTimer");
         // remove the node in the backend first
         const removed = await node.removeNode();
         if (removed) {
-          this.fireEvent("restartAutoSaveTimer");
-
           delete this.__nodes[nodeId];
 
           // remove first the connected edges

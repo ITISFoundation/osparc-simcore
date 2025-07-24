@@ -197,7 +197,7 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Event",
+    "updateStudyDocument": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",

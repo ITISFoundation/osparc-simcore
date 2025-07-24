@@ -117,7 +117,15 @@ qx.Class.define("osparc.node.LifeCycleView", {
         if (node.getVersion() !== latestCompatible["version"]) {
           node.setVersion(latestCompatible["version"]);
         }
-        node.fireEvent("updateStudyDocument");
+        node.fireDataEvent("updateStudyDocument", [{
+          "op": "replace",
+          "path": `/workbench/${nodeId}/key`,
+          "value": latestCompatible["key"],
+        }, {
+          "op": "replace",
+          "path": `/workbench/${nodeId}/version`,
+          "value": latestCompatible["version"],
+        }]);
         // add timeout to make sure the node is saved before starting it
         setTimeout(() => {
           updateButton.setFetching(false);
