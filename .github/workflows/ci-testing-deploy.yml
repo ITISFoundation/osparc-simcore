@@ -1890,7 +1890,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v4.1.0
+      - uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
