@@ -20,8 +20,6 @@ from servicelib.common_headers import (
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
-from simcore_service_webserver.resource_manager.user_sessions import managed_resource
-from simcore_service_webserver.socketio.server import get_socket_server
 
 from ..._meta import API_VTAG as VTAG
 from ...application_settings import get_application_settings
@@ -30,7 +28,9 @@ from ...login.decorators import login_required
 from ...notifications import project_logs
 from ...products import products_web
 from ...products.models import Product
+from ...resource_manager.user_sessions import managed_resource
 from ...security.decorators import permission_required
+from ...socketio.server import get_socket_server
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
