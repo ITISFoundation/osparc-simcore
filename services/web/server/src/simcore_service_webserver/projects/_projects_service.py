@@ -207,9 +207,12 @@ async def patch_project_and_notify_users(
         get_redis_lock_manager_client_sdk(app),
         lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
         blocking=True,
-        blocking_timeout=datetime.timedelta(seconds=30),
+        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
     )
-    async def _patch_and_notify() -> None:
+    async def _patch_and_create_project_document() -> tuple[ProjectDocument, int]:
+        """This function is protected because
+        - the project document and its version must be kept in sync
+        """
         await _projects_repository.patch_project(
             app=app,
             project_uuid=project_uuid,
@@ -239,15 +242,16 @@ async def patch_project_and_notify_users(
         document_version = await increment_and_return_project_document_version(
             redis_client=redis_client_sdk, project_uuid=project_uuid
         )
-        await notify_project_document_updated(
-            app=app,
-            project_id=project_uuid,
-            user_primary_gid=user_primary_gid,
-            version=document_version,
-            document=project_document,
-        )
+        return project_document, document_version
 
-    await _patch_and_notify()
+    project_document, document_version = await _patch_and_create_project_document()
+    await notify_project_document_updated(
+        app=app,
+        project_id=project_uuid,
+        user_primary_gid=user_primary_gid,
+        version=document_version,
+        document=project_document,
+    )
 
 
 def _is_node_dynamic(node_key: str) -> bool:

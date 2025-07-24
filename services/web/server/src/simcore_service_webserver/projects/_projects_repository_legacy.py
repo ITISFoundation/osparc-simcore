@@ -5,7 +5,6 @@
 
 """
 
-import datetime
 import logging
 from contextlib import AsyncExitStack
 from typing import Any, Self, cast
@@ -449,7 +448,6 @@ class ProjectDBAPI(BaseProjectDB):
         is_search_by_multi_columns: bool,
         user_groups: list[GroupID],
     ) -> sql.Select | None:
-
         if workspace_query.workspace_scope is not WorkspaceScope.PRIVATE:
             assert workspace_query.workspace_scope in (  # nosec
                 WorkspaceScope.SHARED,
@@ -951,16 +949,24 @@ class ProjectDBAPI(BaseProjectDB):
             thread-safe operations on the project document.
         """
 
+        # Get user's primary group ID for notification
+        async with self.engine.acquire() as conn:
+            user_primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+
+        # 10 concurrent calls
         @exclusive(
             get_redis_lock_manager_client_sdk(self._app),
             lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
             blocking=True,
-            blocking_timeout=datetime.timedelta(seconds=30),
+            blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
         )
         async def _update_workbench_and_notify() -> (
-            tuple[ProjectDict, dict[NodeIDStr, Any]]
+            tuple[ProjectDict, dict[NodeIDStr, Any], ProjectDocument, int]
         ):
-            # Update the workbench
+            """This function is protected because
+            - the project document and its version must be kept in sync
+            """
+            # Update the workbench work since it's atomic
             updated_project, changed_entries = await self._update_project_workbench(
                 partial_workbench_data,
                 user_id=user_id,
@@ -968,10 +974,7 @@ class ProjectDBAPI(BaseProjectDB):
                 product_name=product_name,
                 allow_workbench_changes=allow_workbench_changes,
             )
-
-            # Get user's primary group ID for notification
-            async with self.engine.acquire() as conn:
-                user_primary_gid = await self._get_user_primary_group_gid(conn, user_id)
+            # the update project with last_modified timestamp latest is the last
 
             # Get the full project with workbench for document creation
             project_with_workbench = (
@@ -1004,17 +1007,23 @@ class ProjectDBAPI(BaseProjectDB):
             document_version = await increment_and_return_project_document_version(
                 redis_client=redis_client_sdk, project_uuid=project_uuid
             )
-            await notify_project_document_updated(
-                app=self._app,
-                project_id=project_uuid,
-                user_primary_gid=user_primary_gid,
-                version=document_version,
-                document=project_document,
-            )
 
-            return updated_project, changed_entries
+            return updated_project, changed_entries, project_document, document_version
 
-        return await _update_workbench_and_notify()
+        (
+            updated_project,
+            changed_entries,
+            project_document,
+            document_version,
+        ) = await _update_workbench_and_notify()
+        await notify_project_document_updated(
+            app=self._app,
+            project_id=project_uuid,
+            user_primary_gid=user_primary_gid,
+            version=document_version,
+            document=project_document,
+        )
+        return updated_project, changed_entries
 
     async def _update_project_workbench(
         self,
