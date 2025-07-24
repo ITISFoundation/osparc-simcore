@@ -241,8 +241,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const nodeId = e.getData();
         this.nodeSelected(nodeId);
       }, this);
-
-      workbench.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
     },
 
     __setStudyDataInBackend: function(studyData) {
