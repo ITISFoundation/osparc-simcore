@@ -7,7 +7,7 @@ class InMemoryStore(BaseStore):
         _ = args
         _ = kwargs
         self._tasks_data: dict[TaskId, TaskData] = {}
-        self._cancelled_tasks: dict[TaskId, TaskContext | None] = {}
+        self._cancelled_tasks: dict[TaskId, TaskContext] = {}
 
     async def setup(self) -> None:
         pass
@@ -28,9 +28,9 @@ class InMemoryStore(BaseStore):
         self._tasks_data.pop(task_id, None)
 
     async def set_as_cancelled(
-        self, task_id: TaskId, with_task_context: TaskContext | None
+        self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
         self._cancelled_tasks[task_id] = with_task_context
 
-    async def get_cancelled(self) -> dict[TaskId, TaskContext | None]:
+    async def get_cancelled(self) -> dict[TaskId, TaskContext]:
         return self._cancelled_tasks

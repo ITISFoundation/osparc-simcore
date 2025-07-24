@@ -5,7 +5,6 @@ import inspect
 import logging
 import traceback
 import urllib.parse
-from collections import deque
 from contextlib import suppress
 from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
@@ -73,10 +72,10 @@ async def _await_task(task: asyncio.Task) -> None:
 async def _get_tasks_to_remove(
     tracked_tasks: BaseStore,
     stale_task_detect_timeout_s: PositiveFloat,
-) -> list[tuple[TaskId, TaskContext | None]]:
+) -> list[tuple[TaskId, TaskContext]]:
     utc_now = datetime.datetime.now(tz=datetime.UTC)
 
-    tasks_to_remove: list[tuple[TaskId, TaskContext | None]] = []
+    tasks_to_remove: list[tuple[TaskId, TaskContext]] = []
 
     for tracked_task in await tracked_tasks.list_tasks_data():
         if tracked_task.fire_and_forget:
@@ -142,14 +141,12 @@ class TasksManager:
         )
 
     async def teardown(self) -> None:
-        task_ids_to_remove: deque[TaskId] = deque()
 
         for tracked_task in await self._tasks_data.list_tasks_data():
-            task_ids_to_remove.append(tracked_task.task_id)
-
-        for task_id in task_ids_to_remove:
             # when closing we do not care about pending errors
-            await self.remove_task(task_id, None, reraise_errors=False)
+            await self.remove_task(
+                tracked_task.task_id, tracked_task.task_context, reraise_errors=False
+            )
 
         if self._stale_tasks_monitor_task:
             with log_catch(_logger, reraise=False):
@@ -248,7 +245,7 @@ class TasksManager:
         return task_data
 
     async def _get_tracked_task(
-        self, task_id: TaskId, with_task_context: TaskContext | None
+        self, task_id: TaskId, with_task_context: TaskContext
     ) -> TaskData:
         task_data = await self._tasks_data.get_task_data(task_id)
 
@@ -261,7 +258,7 @@ class TasksManager:
         return task_data
 
     async def get_task_status(
-        self, task_id: TaskId, with_task_context: TaskContext | None
+        self, task_id: TaskId, with_task_context: TaskContext
     ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
@@ -285,7 +282,7 @@ class TasksManager:
         )
 
     async def get_task_result(
-        self, task_id: TaskId, with_task_context: TaskContext | None
+        self, task_id: TaskId, with_task_context: TaskContext
     ) -> Any:
         """
         returns: the result of the task
@@ -306,7 +303,7 @@ class TasksManager:
             raise TaskCancelledError(task_id=task_id) from exc
 
     async def cancel_task(
-        self, task_id: TaskId, with_task_context: TaskContext | None
+        self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
         """
         cancels the task
@@ -354,7 +351,7 @@ class TasksManager:
     async def remove_task(
         self,
         task_id: TaskId,
-        with_task_context: TaskContext | None,
+        with_task_context: TaskContext,
         *,
         reraise_errors: bool = True,
     ) -> None:
@@ -382,7 +379,7 @@ class TasksManager:
     async def _update_progress(
         self,
         task_id: TaskId,
-        task_context: TaskContext | None,
+        task_context: TaskContext,
         task_progress: TaskProgress,
     ) -> None:
         tracked_data = await self._get_tracked_task(task_id, task_context)
@@ -420,10 +417,11 @@ class TasksManager:
                 task_name=task_name, managed_task=queried_task
             )
 
+        context_to_use = task_context or {}
         task_progress = TaskProgress.create(task_id=task_id)
         # set update callback
         task_progress.set_update_callback(
-            functools.partial(self._update_progress, task_id, task_context)
+            functools.partial(self._update_progress, task_id, context_to_use)
         )
 
         # bind the task with progress 0 and 1
@@ -441,7 +439,7 @@ class TasksManager:
         tracked_task = await self._add_task(
             task=async_task,
             task_progress=task_progress,
-            task_context=task_context or {},
+            task_context=context_to_use,
             fire_and_forget=fire_and_forget,
             task_id=task_id,
         )
@@ -452,10 +450,10 @@ class TasksManager:
 __all__: tuple[str, ...] = (
     "TaskAlreadyRunningError",
     "TaskCancelledError",
+    "TaskData",
     "TaskId",
     "TaskProgress",
     "TaskProtocol",
     "TaskStatus",
     "TasksManager",
-    "TaskData",
 )

@@ -64,7 +64,7 @@ class RedisStore(BaseStore):
         await self.redis.hdel(self._get_redis_hash_key(STORE_TYPE_TASK_DATA), task_id)  # type: ignore[misc]
 
     async def set_as_cancelled(
-        self, task_id: TaskId, with_task_context: TaskContext | None
+        self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
         await self.redis.hset(
             self._get_redis_hash_key(STORE_TYPE_CANCELLED_TASKS),
@@ -72,11 +72,8 @@ class RedisStore(BaseStore):
             json_dumps(with_task_context),
         )  # type: ignore[misc]
 
-    async def get_cancelled(self) -> dict[TaskId, TaskContext | None]:
+    async def get_cancelled(self) -> dict[TaskId, TaskContext]:
         result: dict[str, str | None] = await self.redis.hgetall(
             self._get_redis_hash_key(STORE_TYPE_CANCELLED_TASKS)
         )  # type: ignore[misc]
-        return {
-            task_id: (json_loads(context) if context else None)
-            for task_id, context in result.items()
-        }
+        return {task_id: json_loads(context) for task_id, context in result.items()}

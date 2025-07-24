@@ -23,12 +23,12 @@ class BaseStore:
 
     @abstractmethod
     async def set_as_cancelled(
-        self, task_id: TaskId, with_task_context: TaskContext | None
+        self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
         """Mark a tracked task as cancelled."""
 
     @abstractmethod
-    async def get_cancelled(self) -> dict[TaskId, TaskContext | None]:
+    async def get_cancelled(self) -> dict[TaskId, TaskContext]:
         """Get cancelled tasks."""
 
     @abstractmethod
