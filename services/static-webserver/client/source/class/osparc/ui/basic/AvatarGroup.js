@@ -36,6 +36,7 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     this.__orientation = orientation;
     this.__maxVisible = Math.max(1, Math.floor(maxWidth/size) - 1); // Ensure at least 1 visible avatar
     this.__userGroupIds = [];
+    this.__avatars = [];
 
     this.__isPointerInside = false;
     this.__onGlobalPointerMove = this.__onGlobalPointerMove.bind(this);
