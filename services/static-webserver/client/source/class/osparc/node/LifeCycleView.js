@@ -118,10 +118,11 @@ qx.Class.define("osparc.node.LifeCycleView", {
           node.setVersion(latestCompatible["version"]);
         }
         node.fireEvent("updateStudyDocument");
+        // add timeout to make sure the node is saved before starting it
         setTimeout(() => {
           updateButton.setFetching(false);
           node.requestStartNode();
-        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
+        }, 2000);
       });
 
       buttonsLayout.add(updateButton);

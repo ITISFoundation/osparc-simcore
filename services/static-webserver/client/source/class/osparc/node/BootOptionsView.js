@@ -54,10 +54,11 @@ qx.Class.define("osparc.node.BootOptionsView", {
             "boot_mode": newBootModeId
           });
           node.fireEvent("updateStudyDocument");
+          // add timeout to make sure the node is saved before starting it
           setTimeout(() => {
             buttonsLayout.setEnabled(true);
             node.requestStartNode();
-          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
+          }, 2000);
         }
       }, this);
       buttonsLayout.add(bootModeSB);
