@@ -832,6 +832,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    /**
+     * @param {JSON Patch} data It will soon be used to patch the study document https://datatracker.ietf.org/doc/html/rfc6902
+     */
     updateStudyDocument: function(data = null) {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
@@ -839,7 +842,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
       }
 
-      console.log("updateStudyDocument", data);
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        console.log("updateStudyDocument", data); // For debugging purposes
+      }
 
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();
