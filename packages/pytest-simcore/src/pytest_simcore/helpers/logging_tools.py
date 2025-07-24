@@ -51,7 +51,7 @@ def _resolve(val: str | Callable[[], str], context: str) -> str:
             UserWarning,
             stacklevel=3,
         )
-        return f"❌ [{context} message generation failed] ❌ TIP: This needs to be a callable that returns a string without raising exceptions!!! Adjust code here! ❌"
+        return f"❌ Error [{context} message generation failed]"
 
 
 class DynamicIndentFormatter(logging.Formatter):
@@ -99,6 +99,15 @@ test_logger = logging.getLogger(__name__)
 DynamicIndentFormatter.setup(test_logger)
 
 
+# Message formatting constants
+_STARTING_PREFIX = "--> "
+_STARTING_SUFFIX = " ⏳"
+_DONE_PREFIX = "<-- "
+_DONE_SUFFIX = " ✅"
+_RAISED_PREFIX = "❌❌❌ Error "
+_RAISED_SUFFIX = " ❌❌❌"
+
+
 @dataclass
 class ContextMessages:
     starting: str | Callable[[], str]
@@ -106,12 +115,42 @@ class ContextMessages:
     raised: str | Callable[[], str] = field(default="")
 
     def __post_init__(self):
+        # Apply formatting to starting message
+        if isinstance(self.starting, str):
+            self.starting = f"{_STARTING_PREFIX}{self.starting}{_STARTING_SUFFIX}"
+        else:
+            original_starting = self.starting
+            self.starting = (
+                lambda: f"{_STARTING_PREFIX}{_resolve(original_starting, 'starting')}{_STARTING_SUFFIX}"
+            )
+
+        # Apply formatting to done message
+        if isinstance(self.done, str):
+            self.done = f"{_DONE_PREFIX}{self.done}{_DONE_SUFFIX}"
+        else:
+            original_done = self.done
+            self.done = (
+                lambda: f"{_DONE_PREFIX}{_resolve(original_done, 'done')}{_DONE_SUFFIX}"
+            )
+
+        # Apply formatting to raised message or create default
         if not self.raised:
             if isinstance(self.done, str):
-                self.raised = f"{self.done} [with error]"
+                # Extract base message from formatted done message
+                base_msg = self.done.replace(_DONE_PREFIX, "").replace(_DONE_SUFFIX, "")
+                self.raised = f"{_RAISED_PREFIX}{base_msg}{_RAISED_SUFFIX}"
             else:
-                # If done is a callable, create a callable for raised too
-                self.raised = lambda: f"{_resolve(self.done, 'done')} [with error]"
+                original_done = self.done
+                self.raised = (
+                    lambda: f"{_RAISED_PREFIX}{_resolve(original_done, 'done')}{_RAISED_SUFFIX}"
+                )
+        elif isinstance(self.raised, str):
+            self.raised = f"{_RAISED_PREFIX}{self.raised}{_RAISED_SUFFIX}"
+        else:
+            original_raised = self.raised
+            self.raised = (
+                lambda: f"{_RAISED_PREFIX}{_resolve(original_raised, 'raised')}{_RAISED_SUFFIX}"
+            )
 
 
 LogLevelInt: TypeAlias = int
@@ -156,9 +195,9 @@ def log_context(
 
     if isinstance(msg, str):
         ctx_msg = ContextMessages(
-            starting=f"-> {msg} starting ...",
-            done=f"<- {msg} done ",
-            raised=f"❌ {msg} raised!! ❌",
+            starting=f"{msg}",
+            done=f"{msg}",
+            raised=f"{msg}",
         )
     elif isinstance(msg, tuple):
         ctx_msg = ContextMessages(*msg)
