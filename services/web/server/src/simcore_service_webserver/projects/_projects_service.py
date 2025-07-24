@@ -478,7 +478,7 @@ async def delete_project_by_user(
         await task
 
 
-def get_delete_project_task(
+def _get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
     if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
@@ -509,7 +509,7 @@ async def submit_delete_project_task(
     await _crud_api_delete.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
-    task = get_delete_project_task(project_uuid, user_id)
+    task = _get_delete_project_task(project_uuid, user_id)
     if not task:
         task = _crud_api_delete.schedule_task(
             app,
