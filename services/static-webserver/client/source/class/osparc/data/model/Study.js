@@ -265,6 +265,7 @@ qx.Class.define("osparc.data.model.Study", {
 
   statics: {
     IgnoreSerializationProps: [
+      "lastChangeDate",
       "permalink",
       "state",
       "pipelineRunning",
