@@ -326,23 +326,6 @@ async def get_function(
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTIONS],
-        )
-
-        result = await conn.execute(
-            functions_table.select().where(functions_table.c.uuid == function_id)
-        )
-        row = result.one_or_none()
-
-        if row is None:
-            raise FunctionIDNotFoundError(function_id=function_id)
-        registered_function = RegisteredFunctionDB.model_validate(row)
-
         await check_user_permissions(
             app,
             connection=conn,
@@ -353,7 +336,14 @@ async def get_function(
             permissions=["read"],
         )
 
-    return registered_function
+        result = await conn.execute(
+            functions_table.select().where(functions_table.c.uuid == function_id)
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionIDNotFoundError(function_id=function_id)
+        return RegisteredFunctionDB.model_validate(row)
 
 
 async def list_functions(
@@ -499,13 +489,6 @@ async def get_function_job_status(
             object_id=function_job_id,
             permissions=["read"],
         )
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
-        )
 
         result = await conn.execute(
             function_jobs_table.select().where(
@@ -537,13 +520,6 @@ async def get_function_job_outputs(
             object_type="function_job",
             object_id=function_job_id,
             permissions=["read"],
-        )
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
         )
 
         result = await conn.execute(
@@ -579,14 +555,6 @@ async def update_function_job_status(
             permissions=["write"],
         )
 
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTION_JOBS],
-        )
-
         result = await transaction.execute(
             function_jobs_table.update()
             .where(function_jobs_table.c.uuid == function_job_id)
@@ -619,14 +587,6 @@ async def update_function_job_outputs(
             object_type="function_job",
             object_id=function_job_id,
             permissions=["write"],
-        )
-
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.WRITE_FUNCTION_JOBS],
         )
 
         result = await transaction.execute(
@@ -761,17 +721,6 @@ async def delete_function(
     function_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTIONS,
-                FunctionsApiAccessRights.WRITE_FUNCTIONS,
-            ],
-        )
-
         await check_user_permissions(
             app,
             connection=transaction,
@@ -807,17 +756,6 @@ async def update_function(
     function: FunctionUpdate,
 ) -> RegisteredFunctionDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTIONS,
-                FunctionsApiAccessRights.WRITE_FUNCTIONS,
-            ],
-        )
-
         await check_user_permissions(
             app,
             transaction,
@@ -825,7 +763,7 @@ async def update_function(
             product_name=product_name,
             object_id=function_id,
             object_type="function",
-            permissions=["write"],
+            permissions=["read", "write"],
         )
 
         result = await transaction.execute(
@@ -851,13 +789,6 @@ async def get_function_job(
     function_job_id: FunctionID,
 ) -> RegisteredFunctionJobDB:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
-        )
         await check_user_permissions(
             app,
             connection=conn,
@@ -890,16 +821,6 @@ async def delete_function_job(
     function_job_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTION_JOBS,
-                FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
-            ],
-        )
         await check_user_permissions(
             app,
             connection=transaction,
@@ -938,14 +859,6 @@ async def find_cached_function_jobs(
     inputs: FunctionInputs,
 ) -> list[RegisteredFunctionJobDB] | None:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
-        )
-
         jobs: list[RegisteredFunctionJobDB] = []
         async for row in await conn.stream(
             function_jobs_table.select().where(
@@ -984,13 +897,6 @@ async def get_function_job_collection(
     function_job_collection_id: FunctionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOB_COLLECTIONS],
-        )
         await check_user_permissions(
             app,
             connection=conn,
@@ -1038,16 +944,6 @@ async def delete_function_job_collection(
     function_job_collection_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTION_JOB_COLLECTIONS,
-                FunctionsApiAccessRights.WRITE_FUNCTION_JOB_COLLECTIONS,
-            ],
-        )
         await check_user_permissions(
             app,
             connection=transaction,
@@ -1304,6 +1200,21 @@ async def check_user_permissions(
     object_type: Literal["function", "function_job", "function_job_collection"],
     permissions: list[Literal["read", "write", "execute"]],
 ) -> bool:
+
+    api_access_rights = [
+        getattr(
+            FunctionsApiAccessRights, f"{permission.upper()}_{object_type.upper()}S"
+        )
+        for permission in permissions
+    ]
+    await check_user_api_access_rights(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        api_access_rights=api_access_rights,
+    )
+
     user_permissions = await get_user_permissions(
         app,
         connection=connection,
@@ -1390,6 +1301,6 @@ async def check_user_api_access_rights(
 
     for api_access_right in api_access_rights:
         if not getattr(user_api_access_rights, api_access_right):
-            raise _ERRORS_MAP[api_access_right]
+            raise _ERRORS_MAP[api_access_right](user_id=user_id)
 
     return True
