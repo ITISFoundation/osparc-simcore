@@ -15,7 +15,7 @@ from ._meta import API_VTAG
 from .login.decorators import login_required
 from .models import AuthenticatedRequestContext
 
-_LONG_RUNNING_TASKS_NAMESPACE: Final[Namespace] = "webserver"
+_LONG_RUNNING_TASKS_NAMESPACE: Final[Namespace] = "webserver-legacy"
 
 
 def webserver_request_context_decorator(handler: Handler):
