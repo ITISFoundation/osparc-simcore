@@ -10,8 +10,8 @@ from simcore_postgres_database.utils_repos import transaction_context
 from ..db.plugin import get_asyncpg_engine
 from ..projects import _folders_repository as projects_folders_repository
 from ..projects import _groups_repository as projects_groups_repository
-from ..projects import _projects_repository as _projects_repository
 from ..projects._access_rights_service import check_user_project_permission
+from ..projects.api import patch_project_and_notify_users
 from ..users import users_service
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository
@@ -75,14 +75,15 @@ async def move_folder_into_workspace(
 
     # ⬆️ Here we have already guaranties that user has all the right permissions to do this operation ⬆️
 
+    user: dict = await users_service.get_user(app, user_id)
     async with transaction_context(get_asyncpg_engine(app)) as conn:
         # 4. Update workspace ID on the project resource
         for project_id in project_ids:
-            await _projects_repository.patch_project(
+            await patch_project_and_notify_users(
                 app=app,
-                connection=conn,
                 project_uuid=project_id,
-                new_partial_project_data={"workspace_id": workspace_id},
+                patch_project_data={"workspace_id": workspace_id},
+                user_primary_gid=user["primary_gid"],
             )
 
         # 5. BATCH update of folders with workspace_id
@@ -122,7 +123,6 @@ async def move_folder_into_workspace(
         )
 
         # 9. Remove all project permissions, leave only the user who moved the project
-        user = await users_service.get_user(app, user_id=user_id)
         for project_id in project_ids:
             await projects_groups_repository.delete_all_project_groups(
                 app, connection=conn, project_id=project_id

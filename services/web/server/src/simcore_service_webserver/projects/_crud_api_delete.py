@@ -12,11 +12,14 @@ from typing import Protocol
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
+from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
+from servicelib.utils import fire_and_forget_task
 
 from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
 from ..users.exceptions import UserNotFoundError
 from ..users.users_service import FullNameDict
+from . import _projects_repository
 from ._access_rights_service import check_user_project_permission
 from ._projects_repository_legacy import ProjectDBAPI
 from .exceptions import (
@@ -70,7 +73,11 @@ async def mark_project_as_deleted(
     # NOTE: if any of the steps below fail, it might results in a
     # services/projects/data that might be incosistent. The GC should
     # be able to detect that and resolve it.
-    await db.set_hidden_flag(project_uuid, hidden=True)
+    await _projects_repository.patch_project(
+        app,
+        project_uuid=project_uuid,
+        new_partial_project_data={"hidden": True},
+    )
 
 
 async def delete_project(
@@ -184,8 +191,7 @@ def schedule_task(
             )
 
     # ------
-
-    task = asyncio.create_task(
+    task = fire_and_forget_task(
         delete_project(
             app,
             project_uuid,
@@ -193,12 +199,11 @@ def schedule_task(
             simcore_user_agent,
             remove_project_dynamic_services,
         ),
-        name=_DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
+        task_suffix_name=_DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
+        fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
-    assert task.get_name() == _DELETE_PROJECT_TASK_NAME.format(  # nosec
-        project_uuid, user_id
-    )
+    assert task in get_scheduled_tasks(project_uuid, user_id)  # nosec
 
     task.add_done_callback(_log_state_when_done)
     return task
@@ -209,5 +214,7 @@ def get_scheduled_tasks(project_uuid: ProjectID, user_id: UserID) -> list[asynci
     return [
         task
         for task in asyncio.all_tasks()
-        if task.get_name() == _DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
+        if task.get_name().endswith(
+            _DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
+        )
     ]
