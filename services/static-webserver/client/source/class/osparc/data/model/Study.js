@@ -259,6 +259,10 @@ qx.Class.define("osparc.data.model.Study", {
     // ------ ignore for serializing ------
   },
 
+  events: {
+    "updateStudyDocument": "qx.event.type.Data",
+  },
+
   statics: {
     IgnoreSerializationProps: [
       "permalink",
@@ -375,6 +379,22 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   members: {
+    listenToStudyChanges: function() {
+      const propertyKeys = this.self().getProperties();
+      propertyKeys.forEach(key => {
+        if (!this.self().IgnoreSerializationProps.includes(key)) {
+          this.addListener("change" + qx.lang.String.firstUp(key), e => {
+            const data = e.getData();
+            this.fireDataEvent("updateStudyDocument", {
+              "op": "replace",
+              "path": "/" + key,
+              "value": data
+            });
+          }, this);
+        }
+      });
+    },
+
     serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();

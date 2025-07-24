@@ -146,6 +146,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(studyData => {
+          study.listenToStudyChanges();
+
           this.__setStudyDataInBackend(studyData);
 
           this.__workbenchView.setStudy(study);
