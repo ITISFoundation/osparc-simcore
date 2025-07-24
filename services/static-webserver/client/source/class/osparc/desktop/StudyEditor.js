@@ -146,9 +146,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(studyData => {
-          study.listenToStudyChanges();
-
           this.__setStudyDataInBackend(studyData);
+
+          study.listenToChanges();
+          study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -833,12 +834,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return changed;
     },
 
-    updateStudyDocument: function() {
+    updateStudyDocument: function(data = null) {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
           resolve();
         });
       }
+
+      console.log("updateStudyDocument", data);
 
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();

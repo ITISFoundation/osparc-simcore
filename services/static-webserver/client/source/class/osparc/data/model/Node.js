@@ -1241,6 +1241,23 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    listenToChanges: function() {
+      const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node))
+      propertyKeys.forEach(key => {
+        this.addListener("change" + qx.lang.String.firstUp(key), e => {
+          const nodeId = this.getNodeId();
+          const data = e.getData();
+          this.fireDataEvent("updateStudyDocument", {
+            "op": "replace",
+            "path": `/workbench/${nodeId}/` + key,
+            "value": data
+          });
+        }, this);
+      });
+
+      this.getWorkbench().addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
+    },
+
     serialize: function(clean = true) {
       // node generic
       let nodeEntry = {
