@@ -249,13 +249,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
 
       if (osparc.utils.Utils.eventDrivenPatch()) {
-        study.listenToChanges(); // this includes the listener on the workbench
+        study.listenToChanges(); // this includes the listener on the workbench and ui
         study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
       } else {
         workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
+        workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
       }
-
-      workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
     },
 
     __setStudyDataInBackend: function(studyData) {
