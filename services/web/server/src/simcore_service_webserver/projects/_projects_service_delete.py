@@ -67,6 +67,7 @@ async def delete_project_as_admin(
     try:
         # 1. hide
         with _monitor_step(state, name="hide"):
+            # NOTE: We do not need to use PROJECT_DB_UPDATE_REDIS_LOCK_KEY lock, as hidden field is not passed to frontend
             project = await _projects_repository.patch_project(
                 app,
                 project_uuid=project_uuid,
