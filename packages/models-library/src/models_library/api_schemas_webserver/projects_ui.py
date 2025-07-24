@@ -91,13 +91,14 @@ class AnnotationUI(BaseModel):
 
 class StudyUI(OutputSchema):
     # Model fully controlled by the UI and stored under `projects.ui`
-    icon: HttpUrl | None = None
+    icon: HttpUrl | None = None  # <-- Deprecated
 
     workbench: dict[NodeIDStr, WorkbenchUI] | None = None
     slideshow: dict[NodeIDStr, SlideshowUI] | None = None
     current_node_id: NodeID | None = None
     annotations: dict[NodeIDStr, AnnotationUI] | None = None
-    template_type: Literal["hypertool"] | None = None
+    template_type: Literal["hypertool"] | None = None  # <-- Deprecated
+    mode: Literal["workbench", "app", "guided", "standalone", "pipeline"] | None = None
 
     _empty_is_none = field_validator("*", mode="before")(
         empty_str_to_none_pre_validator

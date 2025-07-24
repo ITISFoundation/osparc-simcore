@@ -41,7 +41,7 @@ from ..storage.api import (
 from ..users import users_service
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
-from . import _folders_repository, _projects_service
+from . import _folders_repository, _projects_repository, _projects_service
 from ._metadata_service import set_project_ancestors
 from ._permalink_service import update_or_pop_permalink_in_project
 from ._projects_repository_legacy import ProjectDBAPI
@@ -162,10 +162,10 @@ async def _copy_files_from_source_project(
     product_name: str,
     task_progress: TaskProgress,
 ):
-    _projects_repository = ProjectDBAPI.get_from_app_context(app)
+    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(app)
 
     needs_lock_source_project: bool = (
-        await _projects_repository.get_project_type(
+        await _projects_repository_legacy.get_project_type(
             TypeAdapter(ProjectID).validate_python(source_project["uuid"])
         )
         != ProjectTypeDB.TEMPLATE
@@ -294,7 +294,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         f"{from_study=}",
     )
 
-    _projects_repository = ProjectDBAPI.get_from_app_context(request.app)
+    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(request.app)
 
     new_project: ProjectDict = {}
     copy_file_coro = None
@@ -372,7 +372,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
 
         # 3.1 save new project in DB
-        new_project = await _projects_repository.insert_project(
+        new_project = await _projects_repository_legacy.insert_project(
             project=jsonable_encoder(new_project),
             user_id=user_id,
             product_name=product_name,
@@ -408,8 +408,10 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # 5. unhide the project if needed since it is now complete
         if not new_project_was_hidden_before_data_was_copied:
-            await _projects_repository.set_hidden_flag(
-                new_project["uuid"], hidden=False
+            await _projects_repository.patch_project(
+                request.app,
+                project_uuid=new_project["uuid"],
+                new_partial_project_data={"hidden": False},
             )
 
         # update the network information in director-v2
@@ -427,7 +429,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             product_api_base_url,
         )
         # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await _projects_repository.get_project_dict_and_type(
+        new_project, _ = await _projects_repository_legacy.get_project_dict_and_type(
             project_uuid=new_project["uuid"]
         )
         # Appends state
@@ -444,7 +446,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
         # Adds folderId
         user_specific_project_data_db = (
-            await _projects_repository.get_user_specific_project_data_db(
+            await _projects_repository_legacy.get_user_specific_project_data_db(
                 project_uuid=new_project["uuid"],
                 private_workspace_user_id_or_none=(
                     user_id if workspace_id is None else None
@@ -467,7 +469,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 for gid, access in workspace.access_rights.items()
             }
 
-        _project_product_name = await _projects_repository.get_project_product(
+        _project_product_name = await _projects_repository_legacy.get_project_product(
             project_uuid=new_project["uuid"]
         )
         assert (
