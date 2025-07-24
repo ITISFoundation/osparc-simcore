@@ -1265,7 +1265,8 @@ qx.Class.define("osparc.data.model.Node", {
             this.fireDataEvent("updateStudyDocument", {
               "op": "replace",
               "path": `/workbench/${nodeId}/` + key,
-              "value": data
+              "value": data,
+              "osparc-resource": "node",
             });
           }, this);
         }

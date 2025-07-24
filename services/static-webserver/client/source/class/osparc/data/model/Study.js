@@ -304,8 +304,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     // deep clones object with study-only properties
     deepCloneStudyObject: function(obj, ignoreExtra = false) {
-      const studyPropKeys = osparc.data.model.Study.getProperties();
       const studyObject = osparc.utils.Utils.deepCloneObject(obj);
+      const studyPropKeys = osparc.data.model.Study.getProperties();
       Object.keys(studyObject).forEach(key => {
         if (!studyPropKeys.includes(key)) {
           delete studyObject[key];
@@ -388,7 +388,8 @@ qx.Class.define("osparc.data.model.Study", {
             this.fireDataEvent("updateStudyDocument", {
               "op": "replace",
               "path": "/" + key,
-              "value": data
+              "value": data,
+              "osparc-resource": "study",
             });
           }, this);
         }
