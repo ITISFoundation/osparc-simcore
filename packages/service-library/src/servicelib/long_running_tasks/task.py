@@ -38,7 +38,6 @@ _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
 
 _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 
-_StorageClass: Final[type[BaseStore]] = RedisStore
 
 RegisteredTaskName: TypeAlias = str
 Namespace: TypeAlias = str
@@ -112,7 +111,7 @@ class TasksManager:
         namespace: Namespace,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
-        self._tasks_data: BaseStore = _StorageClass(
+        self._tasks_data: BaseStore = RedisStore(
             redis_settings, namespace
         )  # type:ignore[call-arg]
         self._created_tasks: dict[TaskId, asyncio.Task] = {}
