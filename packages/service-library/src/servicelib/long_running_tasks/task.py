@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 
 
 _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
-    seconds=1
+    seconds=10  # NOTE: 1 second is too short to cleanup a task
 ).total_seconds()
 
 _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
