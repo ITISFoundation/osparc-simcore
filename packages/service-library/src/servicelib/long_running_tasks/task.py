@@ -111,9 +111,7 @@ class TasksManager:
         namespace: Namespace,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
-        self._tasks_data: BaseStore = RedisStore(
-            redis_settings, namespace
-        )  # type:ignore[call-arg]
+        self._tasks_data: BaseStore = RedisStore(redis_settings, namespace)
         self._created_tasks: dict[TaskId, asyncio.Task] = {}
 
         self.stale_task_check_interval = stale_task_check_interval
