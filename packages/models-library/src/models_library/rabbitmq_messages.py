@@ -325,4 +325,4 @@ class ComputationalPipelineStatusMessage(RabbitMessageBase, ProjectMessageBase):
     run_result: RunningState
 
     def routing_key(self) -> str | None:
-        return f"{self.project_id}"
+        return f"{self.project_id}.all_nodes"
