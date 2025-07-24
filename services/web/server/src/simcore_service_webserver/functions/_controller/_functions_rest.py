@@ -10,6 +10,7 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from models_library.functions import (
+    FunctionAccessRights,
     FunctionClass,
     FunctionID,
     RegisteredProjectFunction,
@@ -49,12 +50,12 @@ from ._functions_rest_schemas import (
 routes = web.RouteTableDef()
 
 
-async def _build_function_access_rights_dict(
+async def _build_function_access_rights(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-) -> dict[str, Any]:
+) -> FunctionAccessRights:
     access_rights = await _functions_service.get_function_user_permissions(
         app=app,
         user_id=user_id,
@@ -62,9 +63,11 @@ async def _build_function_access_rights_dict(
         function_id=function_id,
     )
 
-    return {
-        "access_rights": access_rights.model_dump(),
-    }
+    return FunctionAccessRights(
+        read=access_rights.read,
+        write=access_rights.write,
+        execute=access_rights.execute,
+    )
 
 
 async def _build_project_function_extras_dict(
@@ -81,6 +84,23 @@ async def _build_project_function_extras_dict(
 
     return {
         "thumbnail": project_dict.get("thumbnail", None),
+    }
+
+
+async def _build_solver_function_extras_dict(
+    app: web.Application,
+    *,
+    function: RegisteredSolverFunction,
+) -> dict[str, Any]:
+    services_metadata = await _services_metadata_service.get_service_metadata(
+        app,
+        key=function.solver_key,
+        version=function.solver_version,
+    )
+    return {
+        "thumbnail": (
+            f"{services_metadata.thumbnail}" if services_metadata.thumbnail else None
+        ),
     }
 
 
@@ -102,23 +122,6 @@ async def _build_function_extras(
             function=function,
         )
     return extras
-
-
-async def _build_solver_function_extras_dict(
-    app: web.Application,
-    *,
-    function: RegisteredSolverFunction,
-) -> dict[str, Any]:
-    services_metadata = await _services_metadata_service.get_service_metadata(
-        app,
-        key=function.solver_key,
-        version=function.solver_version,
-    )
-    return {
-        "thumbnail": (
-            f"{services_metadata.thumbnail}" if services_metadata.thumbnail else None
-        ),
-    }
 
 
 @routes.post(f"/{VTAG}/functions", name="register_function")
@@ -188,7 +191,7 @@ async def list_functions(request: web.Request) -> web.Response:
                 for function in functions
                 if function.function_class == FunctionClass.PROJECT
             ]
-            projects_cache = await _projects_service.batch_get_projects(
+            projects_cache |= await _projects_service.batch_get_projects(
                 request.app,
                 project_uuids=project_uuids,
             )
@@ -200,14 +203,14 @@ async def list_functions(request: web.Request) -> web.Response:
                 for function in functions
                 if function.function_class == FunctionClass.SOLVER
             ]
-            service_metadata_cache = (
+            service_metadata_cache |= (
                 await _services_metadata_service.batch_get_service_metadata(
                     app=request.app, keys_and_versions=service_keys_and_versions
                 )
             )
 
     for function in functions:
-        access_rights = await _build_function_access_rights_dict(
+        access_rights = await _build_function_access_rights(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -239,7 +242,7 @@ async def list_functions(request: web.Request) -> web.Response:
 
         chunk.append(
             TypeAdapter(RegisteredFunctionGet).validate_python(
-                function.model_dump() | access_rights | extras
+                function.model_dump() | {"access_rights": access_rights, **extras}
             )
         )
 
@@ -278,7 +281,7 @@ async def get_function(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
     )
 
-    access_rights = await _build_function_access_rights_dict(
+    access_rights = await _build_function_access_rights(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -293,7 +296,7 @@ async def get_function(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
-            function.model_dump() | access_rights | extras
+            function.model_dump() | {"access_rights": access_rights, **extras}
         )
     )
 
@@ -326,7 +329,7 @@ async def update_function(request: web.Request) -> web.Response:
         function=function_update,
     )
 
-    access_rights = await _build_function_access_rights_dict(
+    access_rights = await _build_function_access_rights(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -341,7 +344,7 @@ async def update_function(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
-            function.model_dump() | access_rights | extras
+            function.model_dump() | {"access_rights": access_rights, **extras}
         )
     )
 
