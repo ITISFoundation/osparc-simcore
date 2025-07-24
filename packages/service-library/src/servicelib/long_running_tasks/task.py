@@ -12,9 +12,9 @@ from uuid import uuid4
 from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
-from servicelib.background_task import create_periodic_task
-from servicelib.logging_utils import log_catch
 
+from ..background_task import create_periodic_task
+from ..logging_utils import log_catch
 from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_NAMESPACE: Final[str] = "lrt"
 
 _CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
-    seconds=1
+    seconds=10  # NOTE: 1 second is too short to cleanup a task
 ).total_seconds()
 
 RegisteredTaskName: TypeAlias = str
@@ -196,7 +196,6 @@ class TasksManager:
         *,
         fire_and_forget: bool,
     ) -> TrackedTask:
-
         tracked_task = TrackedTask(
             task_id=task_id,
             task=task,
