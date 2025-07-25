@@ -50,6 +50,7 @@ class MockKeys(StrAutoEnum):
 
 @pytest.fixture
 async def redis_client_sdk(
+    mock_redis_socket_timeout: None,
     redis_service: RedisSettings,
 ) -> AsyncIterable[RedisClientSDK]:
     sdk = RedisClientSDK(
