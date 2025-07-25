@@ -99,11 +99,8 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            try:
-                await self._client.ping()
-                return True
-            except (redis.exceptions.TimeoutError, redis.exceptions.ConnectionError):
-                pass
+            await self._client.ping()
+            return True
 
         return False
 
