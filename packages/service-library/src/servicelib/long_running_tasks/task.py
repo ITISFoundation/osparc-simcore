@@ -130,7 +130,7 @@ class TasksManager:
 
         self.redis_client_sdk = RedisClientSDK(
             self.redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
-            client_name="pytest",
+            client_name=f"long_running_tasks_store_{self.namespace}_lock",
         )
 
         self._stale_tasks_monitor_task = create_periodic_task(
