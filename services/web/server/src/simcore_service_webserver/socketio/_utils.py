@@ -1,7 +1,8 @@
 import inspect
+from collections.abc import Awaitable, Callable
 from functools import wraps
 from types import ModuleType
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from aiohttp import web
 from socketio import AsyncServer  # type: ignore[import-untyped]
@@ -103,7 +104,6 @@ def register_socketio_handler(func: Callable) -> Callable:
     if is_handler:
         _socketio_handlers_registry.append(func)
     else:
-        raise SyntaxError(
-            "the function shall be of type fct(*args, app: web.Application"
-        )
+        msg = "the function shall be of type fct(*args, app: web.Application"
+        raise SyntaxError(msg)
     return func
