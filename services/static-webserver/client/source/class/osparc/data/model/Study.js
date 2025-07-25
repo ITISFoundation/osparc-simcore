@@ -274,8 +274,8 @@ qx.Class.define("osparc.data.model.Study", {
       // "creationDate", // immutable
       // "lastChangeDate", // backend sets it
       "thumbnail",
-      // "workbench", // own patch
-      // "ui", // own patch
+      "workbench",
+      "ui",
       // "tags", // own patch
       // "classifiers", // own patch
       // "quality", // own patch
@@ -398,20 +398,33 @@ qx.Class.define("osparc.data.model.Study", {
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
         if (this.self().ListenChangesProps.includes(key)) {
-          this.addListener("change" + qx.lang.String.firstUp(key), e => {
-            const data = e.getData();
-            this.fireDataEvent("updateStudyDocument", {
-              "op": "replace",
-              "path": "/" + key,
-              "value": data,
-              "osparc-resource": "study",
-            });
-          }, this);
+          switch (key) {
+            case "workbench":
+              this.getWorkbench().addListener("updateStudyDocument", e => {
+                const data = e.getData();
+                this.fireDataEvent("updateStudyDocument", data);
+              }, this);
+              break;
+            case "ui":
+              this.getUi().addListener("updateStudyDocument", e => {
+                const data = e.getData();
+                this.fireDataEvent("updateStudyDocument", data);
+              }, this);
+              break;
+            default:
+              this.addListener("change" + qx.lang.String.firstUp(key), e => {
+                const data = e.getData();
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": "/" + key,
+                  "value": data,
+                  "osparc-resource": "study",
+                });
+              }, this);
+              break;
+          }
         }
       });
-
-      this.getWorkbench().addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
-      this.getUi().addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
     },
 
     serialize: function() {
