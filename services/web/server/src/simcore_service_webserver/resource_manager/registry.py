@@ -14,6 +14,7 @@ This key can have a timeout value. When the key times out then the key disappear
 """
 
 import logging
+from typing import TypeAlias
 
 import redis.asyncio as aioredis
 from aiohttp import web
@@ -53,6 +54,10 @@ class ResourcesDict(TypedDict, total=False):
 
     project_id: UUIDStr
     socket_id: str
+
+
+AliveSessions: TypeAlias = list[UserSessionDict]
+DeadSessions: TypeAlias = list[UserSessionDict]
 
 
 class RedisResourceRegistry:
@@ -158,9 +163,7 @@ class RedisResourceRegistry:
             f"{self._hash_key(key)}:{_ALIVE_SUFFIX}",
         )
 
-    async def get_all_resource_keys(
-        self,
-    ) -> tuple[list[UserSessionDict], list[UserSessionDict]]:
+    async def get_all_resource_keys(self) -> tuple[AliveSessions, DeadSessions]:
         alive_keys = [
             self._decode_hash_key(hash_key)
             async for hash_key in self.client.scan_iter(match=f"*:{_ALIVE_SUFFIX}")

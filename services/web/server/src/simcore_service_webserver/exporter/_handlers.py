@@ -18,7 +18,6 @@ from ..login.decorators import login_required
 from ..projects._projects_service import create_user_notification_cb
 from ..redis import get_redis_lock_manager_client_sdk
 from ..security.decorators import permission_required
-from ..users import users_service
 from ._formatter.archive import get_sds_archive_path
 from .exceptions import SDSException
 from .utils import CleanupFileResponse
@@ -51,10 +50,7 @@ async def export_project(request: web.Request):
         get_redis_lock_manager_client_sdk(request.app),
         project_uuid=project_uuid,
         status=ProjectStatus.EXPORTING,
-        owner=Owner(
-            user_id=user_id,
-            **await users_service.get_user_fullname(request.app, user_id=user_id),
-        ),
+        owner=Owner(user_id=user_id),
         notification_cb=create_user_notification_cb(
             user_id, ProjectID(f"{project_uuid}"), request.app
         ),

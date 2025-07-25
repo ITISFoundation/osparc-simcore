@@ -48,7 +48,7 @@ async def batch_stop_services_in_project(
         ),
         _projects_service.remove_project_dynamic_services(
             user_id=user_id,
-            project_uuid=f"{project_uuid}",
+            project_uuid=project_uuid,
             app=app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             notify_users=False,
