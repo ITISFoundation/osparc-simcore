@@ -274,8 +274,8 @@ qx.Class.define("osparc.data.model.Study", {
       // "creationDate", // immutable
       // "lastChangeDate", // backend sets it
       "thumbnail",
-      "workbench",
-      "ui",
+      "workbench", // own listener
+      "ui", // own listener
       // "tags", // own patch
       // "classifiers", // own patch
       // "quality", // own patch

@@ -221,11 +221,11 @@ qx.Class.define("osparc.data.model.Node", {
       "version",
       // "nodeId", // immutable
       "label",
+      "inputs", // own listener
       "inputAccess",
       // "dynamicV2", // frontend only
       // "serviceUrl", // frontend only
       // "portsConnected", // frontend only
-      "inputs",
       "outputs", // listen to changes only if this is a frontend node. Alias to "state"
       "status", // listen to changes only if this is a frontend node. Alias to "state"
       // "errors", // frontend only
@@ -438,15 +438,19 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__metaData;
     },
 
+    hasPropsForm: function() {
+      return this.isPropertyInitialized("propsForm") && this.getPropsForm();
+    },
+
     __getInputData: function() {
-      if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
+      if (this.hasPropsForm()) {
         return this.getPropsForm().getValues();
       }
       return {};
     },
 
     __getInputUnits: function() {
-      if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
+      if (this.hasPropsForm()) {
         const changedUnits = this.getPropsForm().getChangedXUnits();
         if (Object.keys(changedUnits).length) {
           return changedUnits;
@@ -1311,19 +1315,36 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     listenToChanges: function() {
+      const nodeId = this.getNodeId();
       const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
       propertyKeys.forEach(key => {
         if (this.self().ListenChangesProps.includes(key)) {
-          this.addListener("change" + qx.lang.String.firstUp(key), e => {
-            const nodeId = this.getNodeId();
-            const data = e.getData();
-            this.fireDataEvent("updateStudyDocument", {
-              "op": "replace",
-              "path": `/workbench/${nodeId}/` + key,
-              "value": data,
-              "osparc-resource": "node",
-            });
-          }, this);
+          switch (key) {
+            case "inputs":
+              if (this.hasPropsForm()) {
+                this.getPropsForm().addListener("changeInputs", () => {
+                  const data = this.__getInputData();
+                  this.fireDataEvent("updateStudyDocument", {
+                    "op": "replace",
+                    "path": `/workbench/${nodeId}/inputs`,
+                    "value": data,
+                    "osparc-resource": "node",
+                  });
+                });
+              }
+              break;
+            default:
+              this.addListener("change" + qx.lang.String.firstUp(key), e => {
+              const data = e.getData();
+              this.fireDataEvent("updateStudyDocument", {
+                "op": "replace",
+                "path": `/workbench/${nodeId}/` + key,
+                "value": data,
+                "osparc-resource": "node",
+              });
+            }, this);
+            break;
+          }
         }
       });
     },
