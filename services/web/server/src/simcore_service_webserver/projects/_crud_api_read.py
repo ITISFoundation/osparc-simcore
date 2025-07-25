@@ -16,9 +16,6 @@ from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
-from simcore_postgres_database.webserver_models import (
-    ProjectTemplateType as ProjectTemplateTypeDB,
-)
 
 from ..folders import _folders_repository
 from ..users import users_service
@@ -174,9 +171,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         ),
         # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
-        filter_by_template_type=(
-            ProjectTemplateTypeDB(template_type) if template_type else None
-        ),
+        filter_by_template_type=template_type,
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
@@ -228,11 +223,7 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(
             filter_by_project_type
         ),
-        filter_by_template_type=(
-            ProjectTemplateTypeDB(filter_by_template_type)
-            if filter_by_template_type
-            else None
-        ),
+        filter_by_template_type=filter_by_template_type,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,

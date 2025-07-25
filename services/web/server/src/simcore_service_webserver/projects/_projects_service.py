@@ -29,12 +29,17 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStart,
     DynamicServiceStop,
 )
-from models_library.api_schemas_webserver.projects import ProjectGet, ProjectPatch
+from models_library.api_schemas_webserver.projects import (
+    ProjectDocument,
+    ProjectGet,
+    ProjectPatch,
+)
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
 from models_library.products import ProductName
-from models_library.projects import Project, ProjectID
+from models_library.projects import Project, ProjectID, ProjectTemplateType
+from models_library.projects import ProjectType as ProjectTypeAPI
 from models_library.projects_access import Owner
 from models_library.projects_nodes import Node, NodeState, PartialNode
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
@@ -79,8 +84,10 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWasNotFoundError,
 )
 from servicelib.redis import (
+    PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
     exclusive,
     get_project_locked_state,
+    increment_and_return_project_document_version,
     is_project_locked,
     with_project_locked,
 )
@@ -99,7 +106,10 @@ from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..redis import get_redis_lock_manager_client_sdk
+from ..redis import (
+    get_redis_document_manager_client_sdk,
+    get_redis_lock_manager_client_sdk,
+)
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
     UserSessionID,
@@ -137,6 +147,7 @@ from ._access_rights_service import (
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
+from ._socketio_service import notify_project_document_updated
 from .exceptions import (
     ClustersKeeperNotAvailableError,
     DefaultPricingUnitNotFoundError,
@@ -162,6 +173,85 @@ from .utils import extract_dns_without_default_port
 log = logging.getLogger(__name__)
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
+
+
+async def patch_project_and_notify_users(
+    app: web.Application,
+    *,
+    project_uuid: ProjectID,
+    patch_project_data: dict[str, Any],
+    user_primary_gid: GroupID,
+) -> None:
+    """
+    Patches a project and notifies users involved in the project with version control.
+
+    This function performs the following operations atomically:
+    1. Patches the project in the database
+    2. Retrieves the updated project with workbench
+    3. Creates a project document
+    4. Increments the document version
+    5. Notifies users about the project update
+
+    Args:
+        app: The web application instance
+        project_uuid: The project UUID to patch
+        patch_project_data: Dictionary containing the project data to patch
+        user_primary_gid: Primary group ID of the user making the change
+
+    Note:
+        This function is decorated with Redis exclusive lock to ensure
+        thread-safe operations on the project document.
+    """
+
+    @exclusive(
+        get_redis_lock_manager_client_sdk(app),
+        lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
+        blocking=True,
+        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
+    )
+    async def _patch_and_create_project_document() -> tuple[ProjectDocument, int]:
+        """This function is protected because
+        - the project document and its version must be kept in sync
+        """
+        await _projects_repository.patch_project(
+            app=app,
+            project_uuid=project_uuid,
+            new_partial_project_data=patch_project_data,
+        )
+        project_with_workbench = await _projects_repository.get_project_with_workbench(
+            app=app, project_uuid=project_uuid
+        )
+        project_document = ProjectDocument(
+            uuid=project_with_workbench.uuid,
+            workspace_id=project_with_workbench.workspace_id,
+            name=project_with_workbench.name,
+            description=project_with_workbench.description,
+            thumbnail=project_with_workbench.thumbnail,
+            last_change_date=project_with_workbench.last_change_date,
+            classifiers=project_with_workbench.classifiers,
+            dev=project_with_workbench.dev,
+            quality=project_with_workbench.quality,
+            workbench=project_with_workbench.workbench,
+            ui=project_with_workbench.ui,
+            type=cast(ProjectTypeAPI, project_with_workbench.type),
+            template_type=cast(
+                ProjectTemplateType, project_with_workbench.template_type
+            ),
+        )
+        redis_client_sdk = get_redis_document_manager_client_sdk(app)
+        document_version = await increment_and_return_project_document_version(
+            redis_client=redis_client_sdk, project_uuid=project_uuid
+        )
+        return project_document, document_version
+
+    project_document, document_version = await _patch_and_create_project_document()
+    await notify_project_document_updated(
+        app=app,
+        project_id=project_uuid,
+        user_primary_gid=user_primary_gid,
+        version=document_version,
+        document=project_document,
+    )
 
 
 def _is_node_dynamic(node_key: str) -> bool:
@@ -291,12 +381,14 @@ async def batch_get_projects(
 async def update_project_last_change_timestamp(
     app: web.Application, project_uuid: ProjectID
 ):
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    assert db  # nosec
-    await db.update_project_last_change_timestamp(f"{project_uuid}")
+    await _projects_repository.patch_project(
+        app=app,
+        project_uuid=project_uuid,
+        new_partial_project_data={},  # <-- no changes, just update timestamp
+    )
 
 
-async def patch_project(
+async def patch_project_for_user(
     app: web.Application,
     *,
     user_id: UserID,
@@ -330,20 +422,22 @@ async def patch_project(
             "write": True,
             "delete": True,
         }
-        user: dict = await users_service.get_user(app, project_db.prj_owner)
-        _prj_owner_primary_group = f"{user['primary_gid']}"
+        prj_owner_user: dict = await users_service.get_user(app, project_db.prj_owner)
+        _prj_owner_primary_group = f"{prj_owner_user['primary_gid']}"
         if _prj_owner_primary_group not in new_prj_access_rights:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
         if new_prj_access_rights[_prj_owner_primary_group] != _prj_required_permissions:
             raise ProjectOwnerNotFoundInTheProjectAccessRightsError
 
-    # 4. If patching template type
+    # 4. Get user primary group ID
+    current_user: dict = await users_service.get_user(app, user_id)
+
+    # 5. If patching template type
     if new_template_type := patch_project_data.get("template_type"):
-        # 4.1 Check if user is a tester
-        current_user: dict = await users_service.get_user(app, user_id)
+        # 5.1 Check if user is a tester
         if UserRole(current_user["role"]) < UserRole.TESTER:
             raise InsufficientRoleForProjectTemplateTypeUpdateError
-        # 4.2 Check the compatibility of the template type with the project
+        # 5.2 Check the compatibility of the template type with the project
         if project_db.type == ProjectType.STANDARD and new_template_type is not None:
             raise ProjectTypeAndTemplateIncompatibilityError(
                 project_uuid=project_uuid,
@@ -357,11 +451,12 @@ async def patch_project(
                 project_template=new_template_type,
             )
 
-    # 5. Patch the project
-    await _projects_repository.patch_project(
-        app=app,
+    # 6. Patch the project & Notify users involved in the project
+    await patch_project_and_notify_users(
+        app,
         project_uuid=project_uuid,
-        new_partial_project_data=patch_project_data,
+        patch_project_data=patch_project_data,
+        user_primary_gid=current_user["primary_gid"],
     )
 
 
@@ -383,7 +478,7 @@ async def delete_project_by_user(
         await task
 
 
-def get_delete_project_task(
+def _get_delete_project_task(
     project_uuid: ProjectID, user_id: UserID
 ) -> asyncio.Task | None:
     if tasks := _crud_api_delete.get_scheduled_tasks(project_uuid, user_id):
@@ -414,7 +509,7 @@ async def submit_delete_project_task(
     await _crud_api_delete.mark_project_as_deleted(app, project_uuid, user_id)
 
     # Ensures ONE delete task per (project,user) pair
-    task = get_delete_project_task(project_uuid, user_id)
+    task = _get_delete_project_task(project_uuid, user_id)
     if not task:
         task = _crud_api_delete.schedule_task(
             app,
