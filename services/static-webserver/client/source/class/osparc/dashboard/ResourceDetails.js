@@ -81,9 +81,9 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               this.__resourceModel["resourceType"] = resourceData["resourceType"];
               this.__addPages();
             }
-            if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+            if (latestResourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
               // this is only required for functions that have a template linked
-              osparc.store.Templates.fetchTemplate(resourceData["templateId"])
+              osparc.store.Templates.fetchTemplate(latestResourceData["templateId"])
                 .then(templateData => {
                   // prefetch function's underlying template's services metadata
                   osparc.store.Services.getStudyServicesMetadata(templateData)
