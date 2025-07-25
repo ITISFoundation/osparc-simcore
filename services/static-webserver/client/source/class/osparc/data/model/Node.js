@@ -1299,93 +1299,97 @@ qx.Class.define("osparc.data.model.Node", {
     listenToChanges: function() {
       const nodeId = this.getNodeId();
       const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
-      propertyKeys.forEach(key => {
-        if (this.self().ListenChangesProps.includes(key)) {
-          switch (key) {
-            case "inputs":
-              if (this.hasPropsForm()) {
-                // listen to changes in the props form
-                this.getPropsForm()._form.addListener("changeData", () => {
-                  const data = this.__getInputData();
-                  this.fireDataEvent("updateStudyDocument", {
-                    "op": "replace",
-                    "path": `/workbench/${nodeId}/inputs`,
-                    "value": data,
-                    "osparc-resource": "node",
-                  });
+      this.self().ListenChangesProps.forEach(key => {
+        switch (key) {
+          case "inputs":
+            if (this.hasPropsForm()) {
+              // listen to changes in the props form
+              this.getPropsForm()._form.addListener("changeData", () => {
+                const data = this.__getInputData();
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/inputs`,
+                  "value": data,
+                  "osparc-resource": "node",
                 });
-                // listen to changes in link and unlink of ports
-                this.getPropsForm().addListener("linkFieldModified", () => {
-                  const data = this.__getInputData();
-                  this.fireDataEvent("updateStudyDocument", {
-                    "op": "replace",
-                    "path": `/workbench/${nodeId}/inputs`,
-                    "value": data,
-                    "osparc-resource": "node",
-                  });
+              });
+              // listen to changes in link and unlink of ports
+              this.getPropsForm().addListener("linkFieldModified", () => {
+                const data = this.__getInputData();
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/inputs`,
+                  "value": data,
+                  "osparc-resource": "node",
                 });
-              }
-              break;
-            case "inputsUnits":
-              if (this.hasPropsForm()) {
-                this.getPropsForm().addListener("unitChanged", () => {
-                  const data = this.__getInputUnits();
-                  this.fireDataEvent("updateStudyDocument", {
-                    "op": "replace",
-                    "path": `/workbench/${nodeId}/inputsUnits`,
-                    "value": data,
-                    "osparc-resource": "node",
-                  });
+              });
+            }
+            break;
+          case "inputsUnits":
+            if (this.hasPropsForm()) {
+              this.getPropsForm().addListener("unitChanged", () => {
+                const data = this.__getInputUnits();
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/inputsUnits`,
+                  "value": data,
+                  "osparc-resource": "node",
                 });
-              }
-              break;
-            default:
-              this.addListener("change" + qx.lang.String.firstUp(key), e => {
-              const data = e.getData();
+              });
+            }
+            break;
+          case "inputNodes":
+            this.addListener("changeInputNodes", () => {
+              const data = this.getInputNodes();
               this.fireDataEvent("updateStudyDocument", {
                 "op": "replace",
-                "path": `/workbench/${nodeId}/` + key,
+                "path": `/workbench/${nodeId}/inputNodes`,
                 "value": data,
                 "osparc-resource": "node",
               });
             }, this);
             break;
-          }
+          case "inputsRequired":
+            this.addListener("changeInputsRequired", () => {
+              const data = this.getInputsRequired();
+              this.fireDataEvent("updateStudyDocument", {
+                "op": "replace",
+                "path": `/workbench/${nodeId}/inputsRequired`,
+                "value": data,
+                "osparc-resource": "node",
+              });
+            }, this);
+            break;
+          case "progress":
+            if (this.isFilePicker()) {
+              this.getStatus().addListener("changeProgress", e => {
+                const data = e.getData();
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/progress`,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              });
+            }
+            break;
+          default:
+            if (propertyKeys.includes(key)) {
+              this.addListener("change" + qx.lang.String.firstUp(key), e => {
+                const data = e.getData();
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/` + key,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              }, this);
+            } else {
+              console.error(`Property "${key}" is not a valid property of osparc.data.model.Node`);
+            }
+            break;
         }
       });
-
-      // extra listeners
-      this.addListener("changeInputNodes", () => {
-        const data = this.getInputNodes();
-        this.fireDataEvent("updateStudyDocument", {
-          "op": "replace",
-          "path": `/workbench/${nodeId}/inputNodes`,
-          "value": data,
-          "osparc-resource": "node",
-        });
-      }, this);
-
-      this.addListener("changeInputsRequired", () => {
-        const data = this.getInputsRequired();
-        this.fireDataEvent("updateStudyDocument", {
-          "op": "replace",
-          "path": `/workbench/${nodeId}/inputsRequired`,
-          "value": data,
-          "osparc-resource": "node",
-        });
-      }, this);
-
-      if (this.isFilePicker()) {
-        this.getStatus().addListener("changeProgress", e => {
-          const data = e.getData();
-          this.fireDataEvent("updateStudyDocument", {
-            "op": "replace",
-            "path": `/workbench/${nodeId}/progress`,
-            "value": data,
-            "osparc-resource": "node",
-          });
-        });
-      }
     },
 
     serialize: function() {

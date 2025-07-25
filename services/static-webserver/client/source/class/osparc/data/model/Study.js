@@ -396,22 +396,22 @@ qx.Class.define("osparc.data.model.Study", {
   members: {
     listenToChanges: function() {
       const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (this.self().ListenChangesProps.includes(key)) {
-          switch (key) {
-            case "workbench":
-              this.getWorkbench().addListener("updateStudyDocument", e => {
-                const data = e.getData();
-                this.fireDataEvent("updateStudyDocument", data);
-              }, this);
-              break;
-            case "ui":
-              this.getUi().addListener("updateStudyDocument", e => {
-                const data = e.getData();
-                this.fireDataEvent("updateStudyDocument", data);
-              }, this);
-              break;
-            default:
+      this.self().ListenChangesProps.forEach(key => {
+        switch (key) {
+          case "workbench":
+            this.getWorkbench().addListener("updateStudyDocument", e => {
+              const data = e.getData();
+              this.fireDataEvent("updateStudyDocument", data);
+            }, this);
+            break;
+          case "ui":
+            this.getUi().addListener("updateStudyDocument", e => {
+              const data = e.getData();
+              this.fireDataEvent("updateStudyDocument", data);
+            }, this);
+            break;
+          default:
+            if (propertyKeys.includes(key)) {
               this.addListener("change" + qx.lang.String.firstUp(key), e => {
                 const data = e.getData();
                 this.fireDataEvent("updateStudyDocument", {
@@ -421,8 +421,10 @@ qx.Class.define("osparc.data.model.Study", {
                   "osparc-resource": "study",
                 });
               }, this);
-              break;
-          }
+            } else {
+              console.error(`Property "${key}" is not a valid property of osparc.data.model.Study`);
+            }
+            break;
         }
       });
     },
