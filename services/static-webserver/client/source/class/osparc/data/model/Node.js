@@ -1373,6 +1373,24 @@ qx.Class.define("osparc.data.model.Node", {
               });
             }
             break;
+          case "outputs":
+            if (this.isFilePicker() || this.isParameter()) {
+              this.addListener("changeOutputs", e => {
+                let data = e.getData();
+                if (this.isFilePicker()) {
+                  data = osparc.file.FilePicker.serializeOutput(this.getOutputs());
+                } else if (this.isParameter()) {
+                  data = this.__getOutputsData();
+                }
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/outputs`,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              }, this);
+            }
+            break;
           default:
             if (propertyKeys.includes(key)) {
               this.addListener("change" + qx.lang.String.firstUp(key), e => {
