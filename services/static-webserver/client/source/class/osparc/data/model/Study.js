@@ -215,7 +215,6 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeTemplateType"
     },
 
-    // ------ ignore for serializing ------
     state: {
       check: "Object",
       nullable: true,
@@ -256,7 +255,6 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeSavePending",
       init: false
     },
-    // ------ ignore for serializing ------
   },
 
   events: {
@@ -264,6 +262,30 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   statics: {
+    // Properties of the Study class that should not be listened to
+    IgnoreChangesProps: [
+      "uuid", // immutable
+      "workspaceId", // own patch
+      "folderId", // own patch
+      "prjOwner", // immutable
+      "accessRights", // own patch
+      "creationDate", // immutable
+      "lastChangeDate", // backend sets it
+      "workbench", // own patch
+      "ui", // own patch
+      "tags", // own patch
+      "classifiers", // own patch
+      "quality", // own patch
+      "permalink", // backend sets it
+      "pipelineRunning", // backend sets it
+      "readOnly", // frontend only
+      "trashedAt", // backend sets it
+      "trashedBy", // backend sets it
+      "savePending", // frontend only
+    ],
+
+    // Properties of the Study class that should not be serialized
+    // when serializing the study object to send it to the backend
     IgnoreSerializationProps: [
       "lastChangeDate",
       "permalink",
@@ -379,7 +401,7 @@ qx.Class.define("osparc.data.model.Study", {
     listenToChanges: function() {
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        if (!this.self().IgnoreSerializationProps.includes(key)) {
+        if (!this.self().IgnoreChangesProps.includes(key)) {
           this.addListener("change" + qx.lang.String.firstUp(key), e => {
             const data = e.getData();
             this.fireDataEvent("updateStudyDocument", {
