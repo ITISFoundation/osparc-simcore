@@ -70,7 +70,7 @@ async def web_server(
 
 @pytest.fixture
 async def server_url(web_server: URL) -> str:
-    return f'{web_server.with_path("/")}'
+    return f"{web_server.with_path('/')}"
 
 
 @pytest.fixture
@@ -106,14 +106,14 @@ def socketio_server_events(
     # handlers
     async def connect(sid: str, environ):
         print("connecting", sid)
-        await socketio_server.enter_room(sid, room_name)
+        socketio_server.enter_room(sid, room_name)
 
     async def on_check(sid, data):
         print("check", sid, data)
 
     async def disconnect(sid: str):
         print("disconnecting", sid)
-        await socketio_server.leave_room(sid, room_name)
+        socketio_server.leave_room(sid, room_name)
 
     # spies
     spy_connect = mocker.AsyncMock(wraps=connect)
