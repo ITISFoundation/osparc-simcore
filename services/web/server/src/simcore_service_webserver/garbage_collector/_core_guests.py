@@ -240,8 +240,3 @@ async def remove_users_manually_marked_as_guests(
             app=app,
             user_id=guest_user_id,
         )
-
-        await remove_guest_user_with_all_its_resources(
-            app=app,
-            user_id=guest_user_id,
-        )
