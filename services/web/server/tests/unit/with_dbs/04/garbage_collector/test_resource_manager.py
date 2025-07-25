@@ -938,7 +938,6 @@ async def test_regression_removing_unexisting_user(
         user_id=user_id,
         project_uuid=empty_user_project["uuid"],
         app=client.app,
-        user_name={"first_name": "my name is", "last_name": "pytest"},
         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     )
     # since the call to delete is happening as fire and forget task, let's wait until it is done
