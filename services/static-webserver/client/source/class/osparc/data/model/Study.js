@@ -281,7 +281,7 @@ qx.Class.define("osparc.data.model.Study", {
       // "quality", // own patch
       // "permalink", // backend sets it
       "dev",
-      "type",
+      // "type", // immutable
       "templateType",
       // "state", // backend sets it
       // "pipelineRunning", // backend sets it
