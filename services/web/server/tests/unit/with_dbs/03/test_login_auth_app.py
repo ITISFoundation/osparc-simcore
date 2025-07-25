@@ -42,17 +42,19 @@ def app_environment_for_wb_authz_service_dict(
 
     postgres_cfg = default_app_cfg["db"]["postgres"]
 
+    # Checks that docker-compose service environment is correct
     assert (
         docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"]
         == "WEBSERVER_AUTHZ_APP_FACTORY"
     )
-
     # expected tracing in the docker-environ BUT we will disable it for tests
     assert "WEBSERVER_TRACING" in docker_compose_service_environment_dict
     assert (
         "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"
         in docker_compose_service_environment_dict
     )
+    assert "WEBSERVER_DIAGNOSTICS" in docker_compose_service_environment_dict
+    assert "WEBSERVER_PROFILING" in docker_compose_service_environment_dict
 
     return {
         **docker_compose_service_environment_dict,
@@ -121,7 +123,7 @@ async def wb_auth_app(
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def web_server(
     postgres_db: sa.engine.Engine,  # sets up postgres database
-    auth_app: web.Application,
+    wb_auth_app: web.Application,
     webserver_test_server_port: int,
     # tools
     aiohttp_server: Callable,
@@ -141,10 +143,10 @@ async def web_server(
         await security_web.forget_identity(request, response)
         return response
 
-    auth_app.router.add_post("/v0/test/login", test_login)
-    auth_app.router.add_post("/v0/test/logout", test_logout)
+    wb_auth_app.router.add_post("/v0/test/login", test_login)
+    wb_auth_app.router.add_post("/v0/test/logout", test_logout)
 
-    return await aiohttp_server(auth_app, port=webserver_test_server_port)
+    return await aiohttp_server(wb_auth_app, port=webserver_test_server_port)
 
 
 # @pytest.mark.parametrize(
