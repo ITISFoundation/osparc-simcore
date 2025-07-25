@@ -776,7 +776,8 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setModified(false);
         }
 
-        this.fireDataEvent("changeOutputs", this.getOutputs());
+        // event was fired in the outputs setter
+        // this.fireDataEvent("changeOutputs", this.getOutputs());
       }
     },
 
