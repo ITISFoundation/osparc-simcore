@@ -744,7 +744,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    serialize: function(clean = true) {
+    serialize: function() {
       if (this.__workbenchInitData !== null) {
         // workbench is not initialized
         return this.__workbenchInitData;
@@ -752,7 +752,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const workbench = {};
       const nodes = Object.values(this.getNodes());
       for (const node of nodes) {
-        const data = node.serialize(clean);
+        const data = node.serialize();
         if (data) {
           workbench[node.getNodeId()] = data;
         }

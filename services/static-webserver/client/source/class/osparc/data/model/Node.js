@@ -1328,7 +1328,7 @@ qx.Class.define("osparc.data.model.Node", {
       });
     },
 
-    serialize: function(clean = true) {
+    serialize: function() {
       // node generic
       let nodeEntry = {
         key: this.getKey(),
@@ -1341,11 +1341,6 @@ qx.Class.define("osparc.data.model.Node", {
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()
       };
-      if (!clean) {
-        nodeEntry.progress = this.getStatus().getProgress();
-        nodeEntry.outputs = this.__getOutputsData();
-        nodeEntry.state = this.getStatus().serialize();
-      }
 
       if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());

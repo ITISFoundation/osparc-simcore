@@ -414,7 +414,7 @@ qx.Class.define("osparc.data.model.Study", {
       this.getUi().addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
     },
 
-    serialize: function(clean = true) {
+    serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
@@ -422,7 +422,7 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize(clean);
+          jsonObject[key] = this.getWorkbench().serialize();
           return;
         }
         if (key === "ui") {
