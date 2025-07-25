@@ -222,7 +222,8 @@ qx.Class.define("osparc.data.model.Node", {
       // "nodeId", // immutable
       "label",
       "inputs", // own listener
-      "inputAccess",
+      "inputsUnits", // own listener
+      "inputAccess", // own listener
       // "dynamicV2", // frontend only
       // "serviceUrl", // frontend only
       // "portsConnected", // frontend only
@@ -239,8 +240,6 @@ qx.Class.define("osparc.data.model.Node", {
       /*
       "progress", // TODO
       "inputsRequired", // TODO
-      "inputsUnits", // TODO
-      "inputAccess", // TODO
       "inputNodes", // TODO
       */
     ],
@@ -1338,6 +1337,19 @@ qx.Class.define("osparc.data.model.Node", {
                   this.fireDataEvent("updateStudyDocument", {
                     "op": "replace",
                     "path": `/workbench/${nodeId}/inputs`,
+                    "value": data,
+                    "osparc-resource": "node",
+                  });
+                });
+              }
+              break;
+            case "inputsUnits":
+              if (this.hasPropsForm()) {
+                this.getPropsForm().addListener("unitChanged", () => {
+                  const data = this.__getInputUnits();
+                  this.fireDataEvent("updateStudyDocument", {
+                    "op": "replace",
+                    "path": `/workbench/${nodeId}/inputsUnits`,
                     "value": data,
                     "osparc-resource": "node",
                   });
