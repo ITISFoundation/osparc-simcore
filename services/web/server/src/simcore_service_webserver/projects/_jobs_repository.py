@@ -190,7 +190,7 @@ class ProjectJobsRepository(BaseRepository):
             .offset(pagination_offset)
         )
 
-        # Step 5: Execute queries
+        # Step 7: Execute queries
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             total_count = await conn.scalar(total_query)
             assert isinstance(total_count, int)  # nosec

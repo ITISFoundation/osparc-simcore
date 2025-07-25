@@ -88,7 +88,7 @@ async def trash_project(
             product_name=product_name,
         )
 
-    await _projects_service.patch_project(
+    await _projects_service.patch_project_for_user(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -109,7 +109,7 @@ async def untrash_project(
     project_id: ProjectID,
 ) -> None:
     # NOTE: check_user_project_permission is inside projects_api.patch_project
-    await _projects_service.patch_project(
+    await _projects_service.patch_project_for_user(
         app,
         user_id=user_id,
         product_name=product_name,

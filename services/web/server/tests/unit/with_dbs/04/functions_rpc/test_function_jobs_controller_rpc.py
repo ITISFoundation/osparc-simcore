@@ -11,6 +11,7 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunction,
     ProjectFunctionJob,
 )
+from models_library.functions import FunctionJobStatus
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
@@ -357,3 +358,133 @@ async def test_find_cached_function_jobs(
 
     # Assert the cached jobs does not contain the registered job for the other user
     assert cached_jobs is None
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_update_function_job_status(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    add_user_function_api_access_rights: None,
+    logged_user: UserInfoDict,
+    mock_function: ProjectFunction,
+    osparc_product_name: ProductName,
+):
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=uuid4(),
+        inputs={"input1": "value1"},
+        outputs={"output1": "result1"},
+    )
+
+    # Register the function job
+    registered_job = await functions_rpc.register_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    old_job_status = await functions_rpc.get_function_job_status(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+    assert old_job_status.status == "created"
+
+    # Update the function job status
+    new_status = FunctionJobStatus(status="COMPLETED")
+    updated_job_status = await functions_rpc.update_function_job_status(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        job_status=new_status,
+    )
+
+    # Assert the updated job status matches the new status
+    assert updated_job_status == new_status
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_update_function_job_outputs(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    add_user_function_api_access_rights: None,
+    logged_user: UserInfoDict,
+    mock_function: ProjectFunction,
+    osparc_product_name: ProductName,
+):
+    # Register the function first
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=uuid4(),
+        inputs={"input1": "value1"},
+        outputs=None,
+    )
+
+    # Register the function job
+    registered_job = await functions_rpc.register_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    received_outputs = await functions_rpc.get_function_job_outputs(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    assert received_outputs is None
+
+    new_outputs = {"output1": "new_result1", "output2": "new_result2"}
+
+    # Update the function job outputs
+    updated_outputs = await functions_rpc.update_function_job_outputs(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        outputs=new_outputs,
+    )
+
+    # Assert the updated outputs match the new outputs
+    assert updated_outputs == new_outputs
+
+    # Update the function job outputs
+    received_outputs = await functions_rpc.get_function_job_outputs(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_id=registered_job.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    assert received_outputs == new_outputs

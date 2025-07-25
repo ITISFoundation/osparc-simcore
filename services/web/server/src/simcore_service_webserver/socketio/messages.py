@@ -8,6 +8,7 @@ from typing import Final
 from aiohttp.web import Application
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.groups import GroupID
+from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -98,5 +99,20 @@ async def send_message_to_standard_group(
         message=message,
         # NOTE: A standard group refers to different users
         # that might be connected to different replicas
+        ignore_queue=False,
+    )
+
+
+async def send_message_to_project_room(
+    app: Application,
+    project_id: ProjectID,
+    message: SocketMessageDict,
+) -> None:
+    sio: AsyncServer = get_socket_server(app)
+
+    await _safe_emit(
+        sio,
+        room=SocketIORoomStr.from_project_id(project_id),
+        message=message,
         ignore_queue=False,
     )

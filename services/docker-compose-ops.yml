@@ -94,8 +94,9 @@ services:
         announcements:${REDIS_HOST}:${REDIS_PORT}:5:${REDIS_PASSWORD},
         distributed_identifiers:${REDIS_HOST}:${REDIS_PORT}:6:${REDIS_PASSWORD},
         deferred_tasks:${REDIS_HOST}:${REDIS_PORT}:7:${REDIS_PASSWORD},
-        dynamic_services:${REDIS_HOST}:${REDIS_PORT}:8:${REDIS_PASSWORD}
-        celery_tasks:${REDIS_HOST}:${REDIS_PORT}:9:${REDIS_PASSWORD}
+        dynamic_services:${REDIS_HOST}:${REDIS_PORT}:8:${REDIS_PASSWORD},
+        celery_tasks:${REDIS_HOST}:${REDIS_PORT}:9:${REDIS_PASSWORD},
+        documents:${REDIS_HOST}:${REDIS_PORT}:10:${REDIS_PASSWORD}
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"

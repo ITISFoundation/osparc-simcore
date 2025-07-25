@@ -1890,7 +1890,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v4.1.0
+      - uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1903,20 +1903,27 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
+      - name: wait before dumping logs
+        if: ${{ failure() }}
+        run: sleep 5
       - name: dump docker logs
+        if: ${{ failure() }}
         id: docker_logs_dump
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload screenshots
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_logs
@@ -1955,15 +1962,21 @@ jobs:
       - name: test
         run: |
           ./ci/github/system-testing/e2e-playwright.bash test
+      - name: wait before dumping logs
+        if: ${{ failure() }}
+        run: sleep 5
       - name: dump docker logs
+        if: ${{ failure() }}
         id: docker_logs_dump
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_tracing
