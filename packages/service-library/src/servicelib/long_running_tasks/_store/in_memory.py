@@ -12,7 +12,7 @@ class InMemoryStore(BaseStore):
     async def setup(self) -> None:
         pass
 
-    async def teardown(self) -> None:
+    async def shutdown(self) -> None:
         pass
 
     async def get_task_data(self, task_id: TaskId) -> TaskData | None:

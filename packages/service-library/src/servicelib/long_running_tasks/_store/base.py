@@ -36,5 +36,5 @@ class BaseStore:
         """Setup the store, if needed."""
 
     @abstractmethod
-    async def teardown(self) -> None:
-        """Teardown the store, if needed."""
+    async def shutdown(self) -> None:
+        """Shutdown the store, if needed."""

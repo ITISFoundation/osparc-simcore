@@ -61,7 +61,7 @@ async def store(
 
     await store.setup()
     yield store
-    await store.teardown()
+    await store.shutdown()
 
     # triggers cleanup of all redis data
     async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):
@@ -109,7 +109,7 @@ async def redis_stores(
     yield stores
 
     for store in stores:
-        await store.teardown()
+        await store.shutdown()
 
     # triggers cleanup of all redis data
     async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):

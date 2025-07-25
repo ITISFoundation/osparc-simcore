@@ -25,8 +25,9 @@ class RedisStore(BaseStore):
             self.redis_settings.build_redis_dsn(RedisDatabase.LONG_RUNNING_TASKS),
             client_name=f"long_running_tasks_store_{self.namespace}",
         )
+        await self._client.setup()
 
-    async def teardown(self) -> None:
+    async def shutdown(self) -> None:
         if self._client:
             await self._client.shutdown()
 

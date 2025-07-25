@@ -132,6 +132,7 @@ class TasksManager:
             self.redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
             client_name=f"long_running_tasks_store_{self.namespace}_lock",
         )
+        await self.redis_client_sdk.setup()
 
         self._stale_tasks_monitor_task = create_periodic_task(
             task=exclusive(
@@ -148,7 +149,6 @@ class TasksManager:
         )
 
     async def teardown(self) -> None:
-
         for tracked_task in await self._tasks_data.list_tasks_data():
             # when closing we do not care about pending errors
             await self.remove_task(
@@ -167,10 +167,10 @@ class TasksManager:
                     self._cancelled_tasks_removal_task, max_delay=_CANCEL_TASK_TIMEOUT
                 )
 
-        await self._tasks_data.teardown()
-
-        if self.redis_client_sdk:
+        if self.redis_client_sdk is not None:
             await self.redis_client_sdk.shutdown()
+
+        await self._tasks_data.shutdown()
 
     async def _stale_tasks_monitor_worker(self) -> None:
         """

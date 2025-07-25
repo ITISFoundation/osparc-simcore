@@ -63,6 +63,7 @@ class RedisClientSDK:
         self._is_healthy = False
         self._health_check_task_started_event = asyncio.Event()
 
+    async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
             assert self._health_check_task_started_event  # nosec
@@ -73,6 +74,9 @@ class RedisClientSDK:
             _periodic_check_health(),
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
+
+        assert self._health_check_task_started_event  # nosec
+        await self._health_check_task_started_event.wait()
 
         _logger.info(
             "Connection to %s succeeded with %s",

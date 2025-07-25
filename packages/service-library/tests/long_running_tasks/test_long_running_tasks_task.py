@@ -13,6 +13,7 @@ from typing import Any, Final
 
 import pytest
 from faker import Faker
+from models_library.api_schemas_long_running_tasks.base import ProgressMessage
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
@@ -244,7 +245,7 @@ async def test_start_multiple_not_unique_tasks(
 
 
 @pytest.mark.parametrize("is_unique", [True, False])
-def test_get_task_id(tasks_manager: TasksManager, faker: Faker, is_unique: bool):
+async def test_get_task_id(tasks_manager: TasksManager, faker: Faker, is_unique: bool):
     obj1 = tasks_manager._get_task_id(faker.word(), is_unique=is_unique)  # noqa: SLF001
     obj2 = tasks_manager._get_task_id(faker.word(), is_unique=is_unique)  # noqa: SLF001
     assert obj1 != obj2
@@ -262,7 +263,7 @@ async def test_get_status(tasks_manager: TasksManager, empty_context: TaskContex
         task_id, with_task_context=empty_context
     )
     assert isinstance(task_status, TaskStatus)
-    assert task_status.task_progress.message == ""
+    assert isinstance(task_status.task_progress.message, ProgressMessage)
     assert task_status.task_progress.percent == 0.0
     assert task_status.done is False
     assert isinstance(task_status.started, datetime)
@@ -519,6 +520,3 @@ async def test_define_task_name(tasks_manager: TasksManager, faker: Faker):
 async def test_start_not_registered_task(tasks_manager: TasksManager):
     with pytest.raises(TaskNotRegisteredError):
         await lrt_api.start_task(tasks_manager, "not_registered_task")
-
-
-# TODO: make background checking an exclusive lock thing like in the
