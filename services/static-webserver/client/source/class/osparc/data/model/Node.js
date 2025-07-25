@@ -214,18 +214,35 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   statics: {
-    IgnoreSerializationProps: [
-      "study",
-      "nodeId",
-      "dynamicV2",
-      "serviceUrl",
-      "errors",
-      "propsForm",
-      "outputsForm",
-      "marker",
-      "inputConnected",
-      "outputConnected",
-      "logger",
+    // Properties of the Node class that should not be listened to
+    ListenChangesProps: [
+      // "study", // immutable
+      "key", // listen to changes
+      "version", // listen to changes
+      // "nodeId", // immutable
+      "label", // listen to changes
+      "inputAccess", // listen to changes
+      // "dynamicV2", // frontend only
+      // "serviceUrl", // frontend only
+      // "portsConnected", // frontend only
+      "inputs", // listen to changes
+      "outputs", // listen to changes
+      "status", // listen to changes if this is a frontend node. Alias to "state"
+      // "errors", // frontend only
+      "bootOptions", // listen to changes
+      // "propsForm", // frontend only
+      // "outputsForm", // frontend only
+      // "marker", // own listener
+      // "inputConnected", // frontend only
+      // "outputConnected", // frontend only
+      // "logger", // frontend only
+      /*
+      "progress", // TODO
+      "inputs_required", // TODO
+      "inputs_units", // TODO
+      "input_access", // TODO
+      "input_nodes", // TODO
+      */
     ],
 
     isFrontend: function(metadata) {
@@ -684,7 +701,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setMarker(null);
     },
 
-    __applyMarker: function(marker, oldMarker) {
+    __applyMarker: function(marker) {
       if (marker) {
         this.fireDataEvent("updateStudyDocument", {
           "op": "add",
@@ -1296,7 +1313,7 @@ qx.Class.define("osparc.data.model.Node", {
     listenToChanges: function() {
       const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
       propertyKeys.forEach(key => {
-        if (!this.self().IgnoreSerializationProps.includes(key)) {
+        if (this.self().ListenChangesProps.includes(key)) {
           this.addListener("change" + qx.lang.String.firstUp(key), e => {
             const nodeId = this.getNodeId();
             const data = e.getData();
