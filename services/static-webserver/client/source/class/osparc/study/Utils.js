@@ -431,9 +431,9 @@ qx.Class.define("osparc.study.Utils", {
       ],
 
       isPipelineRunning: function(state) {
-        const pipelineState = this.self.getPipelineState(state);
+        const pipelineState = this.getPipelineState(state);
         if (pipelineState) {
-          return this.state.PIPELINE_RUNNING_STATES.includes(pipelineState);
+          return this.PIPELINE_RUNNING_STATES.includes(pipelineState);
         }
         return false;
       },
@@ -534,7 +534,7 @@ qx.Class.define("osparc.study.Utils", {
           resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
           const productIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
-          const wbServices = this.self().getNonFrontendNodes(studyData);
+          const wbServices = this.getNonFrontendNodes(studyData);
           if (wbServices.length === 1) {
             const wbService = wbServices[0];
             osparc.store.Services.getService(wbService.key, wbService.version)
