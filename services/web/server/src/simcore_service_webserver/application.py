@@ -194,10 +194,16 @@ def create_application() -> web.Application:
 
 def create_application_auth() -> web.Application:
     app = create_safe_application()
-    setup_settings(app, app_name="simcore-service-webserver-auth")
+    settings = setup_settings(app, app_name="simcore_service_wb_auth")
 
-    # NOTE: uses settings.APP_NAME
-    setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
+    assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
+    assert settings.APP_NAME == "simcore_service_wb_auth"  # nosec
+
+    setup_app_tracing(
+        # NOTE: uses settings.APP_NAME
+        # WARNING: must be UPPERMOST middleware
+        app
+    )
 
     setup_rest(app)
     setup_db(app)
@@ -209,7 +215,8 @@ def create_application_auth() -> web.Application:
     app.on_shutdown.append(_create_finished_banner())
 
     _logger.debug(
-        "Routes in application-auth: \n %s", pformat(app.router.named_resources())
+        "Routes in application-auth: \n %s",
+        lambda: pformat(app.router.named_resources()),
     )
 
     return app

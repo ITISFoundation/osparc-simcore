@@ -99,7 +99,7 @@ def app_environment_for_wb_authz_service(
 
 
 @pytest.fixture
-async def auth_app(
+async def wb_auth_app(
     app_environment_for_wb_authz_service: EnvVarsDict,
 ) -> web.Application:
     assert app_environment_for_wb_authz_service
@@ -109,7 +109,7 @@ async def auth_app(
 
     settings = get_application_settings(app)
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"
-    assert settings.APP_NAME == "simcore-service-webserver-auth"
+    assert settings.APP_NAME == "simcore_service_wb_auth"
 
     # checks endpoint exposed
     url = app.router["check_auth"].url_for()
