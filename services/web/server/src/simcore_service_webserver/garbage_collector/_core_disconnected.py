@@ -10,7 +10,6 @@ from ..redis import get_redis_lock_manager_client
 from ..resource_manager.registry import (
     RedisResourceRegistry,
 )
-from ._core_guests import remove_guest_user_with_all_its_resources
 from .settings import GUEST_USER_RC_LOCK_FORMAT
 
 _logger = logging.getLogger(__name__)
@@ -32,15 +31,12 @@ async def remove_disconnected_user_resources(
     #     - "resources" is a hash toto keep project and websocket ids
     #
 
-    _, all_sessions_dead = await registry.get_all_resource_keys()
-    _logger.debug("potential dead keys: %s", all_sessions_dead)
+    _, dead_user_sessions = await registry.get_all_resource_keys()
+    _logger.debug("potential dead keys: %s", dead_user_sessions)
 
     # clean up all resources of expired keys
-    for dead_session in all_sessions_dead:
-        try:
-            user_id = int(dead_session["user_id"])
-        except (KeyError, ValueError):
-            continue
+    for dead_session in dead_user_sessions:
+        user_id = int(dead_session["user_id"])
 
         if await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user_id)
@@ -107,13 +103,6 @@ async def remove_disconnected_user_resources(
                         resource_value,
                         err,
                     )
-
-                # ONLY GUESTS: if this user was a GUEST also remove it from the database
-                # with the only associated project owned
-                await remove_guest_user_with_all_its_resources(
-                    app=app,
-                    user_id=user_id,
-                )
 
             # (2) remove resource field in collected keys since (1) is completed
             _logger.info(
