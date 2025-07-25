@@ -1366,6 +1366,16 @@ qx.Class.define("osparc.data.model.Node", {
           "osparc-resource": "node",
         });
       }, this);
+
+      this.addListener("changeInputsRequired", () => {
+        const data = this.getInputsRequired();
+        this.fireDataEvent("updateStudyDocument", {
+          "op": "replace",
+          "path": `/workbench/${nodeId}/inputsRequired`,
+          "value": data,
+          "osparc-resource": "node",
+        });
+      }, this);
     },
 
     serialize: function() {
