@@ -33,9 +33,7 @@ async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     settings_name="WEBSERVER_DIAGNOSTICS",
     logger=_logger,
 )
-def setup_diagnostics(
-    app: web.Application,
-) -> None:
+def setup_diagnostics(app: web.Application) -> None:
     setup_rest(app)
 
     settings: DiagnosticsSettings = get_plugin_settings(app)
