@@ -1580,9 +1580,9 @@ async def try_open_project_for_user(
         return False
 
 
-async def try_close_project_for_user(
-    user_id: int,
-    project_uuid: str,
+async def close_project_for_user(
+    user_id: UserID,
+    project_uuid: ProjectID,
     client_session_id: str,
     app: web.Application,
     simcore_user_agent: str,
@@ -1592,18 +1592,12 @@ async def try_close_project_for_user(
     with managed_resource(user_id, client_session_id, app) as user_session:
         current_user_session = user_session.get_id()
         all_user_sessions_with_project = await user_session.find_users_of_resource(
-            app, key=PROJECT_ID_KEY, value=project_uuid
+            app, key=PROJECT_ID_KEY, value=f"{project_uuid}"
         )
 
         # first check whether other sessions registered this project
         if current_user_session not in all_user_sessions_with_project:
             # nothing to do, I do not have this project registered
-            log.warning(
-                "%s is not registered as resource of %s. Skipping close project",
-                f"{project_uuid=}",
-                f"{user_id}",
-                extra=get_log_record_extra(user_id=user_id),
-            )
             return
 
         # remove the project from our list of opened ones
@@ -1629,7 +1623,7 @@ async def try_close_project_for_user(
     # notify users that project is now closed
     project = await get_project_for_user(
         app,
-        project_uuid,
+        f"{project_uuid}",
         user_id,
         include_state=True,
     )
@@ -1973,8 +1967,8 @@ async def run_project_dynamic_services(
 
 
 async def remove_project_dynamic_services(
-    user_id: int,
-    project_uuid: str,
+    user_id: UserID,
+    project_uuid: ProjectID,
     app: web.Application,
     simcore_user_agent: str,
     *,
@@ -2001,7 +1995,7 @@ async def remove_project_dynamic_services(
         user_role = None
 
     save_state = await has_user_project_access_rights(
-        app, project_id=ProjectID(project_uuid), user_id=user_id, permission="write"
+        app, project_id=project_uuid, user_id=user_id, permission="write"
     )
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
@@ -2013,7 +2007,7 @@ async def remove_project_dynamic_services(
         status=ProjectStatus.CLOSING,
         owner=Owner(user_id=user_id),
         notification_cb=(
-            create_user_notification_cb(user_id, ProjectID(project_uuid), app)
+            create_user_notification_cb(user_id, project_uuid, app)
             if notify_users
             else None
         ),

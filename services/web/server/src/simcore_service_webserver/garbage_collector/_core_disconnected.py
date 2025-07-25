@@ -1,6 +1,8 @@
 import logging
 
 from aiohttp import web
+from models_library.projects import ProjectID
+from pydantic import TypeAdapter
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import logged_gather
 
@@ -84,9 +86,9 @@ async def remove_disconnected_user_resources(
                     _logger.info(
                         "Closing project '%s' of user %s", resource_value, user_id
                     )
-                    await _projects_service.try_close_project_for_user(
+                    await _projects_service.close_project_for_user(
                         user_id,
-                        f"{resource_value}",
+                        TypeAdapter(ProjectID).validate_python(f"{resource_value}"),
                         dead_session["client_session_id"],
                         app,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
