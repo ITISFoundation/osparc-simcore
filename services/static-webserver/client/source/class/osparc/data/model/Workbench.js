@@ -273,11 +273,13 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __createNode: function(study, metadata, uuid) {
       const node = new osparc.data.model.Node(study, metadata, uuid);
-      node.listenToChanges();
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        node.listenToChanges();
+      }
+      node.addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
-      node.addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
       osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       return node;
     },

@@ -85,12 +85,24 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
   },
 
+  events: {
+    "updateStudyDocument": "qx.event.type.Data",
+  },
+
   statics: {
     TEMPLATE_TYPE: "TEMPLATE",
     TUTORIAL_TYPE: "TUTORIAL",
     HYPERTOOL_TYPE: "HYPERTOOL",
     HYPERTOOL_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/hypertool.png",
     PIPELINE_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/diagram.png",
+
+    ListenChangesProps: [
+      // "workbench", it's handled by osparc.data.model.Workbench
+      "slideshow",
+      "currentNodeId", // eventually don't patch it, it is personal, only the last closing sets it
+      "mode", // eventually don't patch it, it is personal, only the last closing sets it
+      "annotations", // TODO
+    ],
   },
 
   members: {
@@ -113,6 +125,29 @@ qx.Class.define("osparc.data.model.StudyUI", {
     removeNode: function(nodeId) {
       // remove it from slideshow
       this.getSlideshow().removeNode(nodeId);
+    },
+
+    listenToChanges: function() {
+      const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.StudyUI));
+      this.self().ListenChangesProps.forEach(key => {
+        switch (key) {
+          default:
+            if (propertyKeys.includes(key)) {
+              this.addListener(`change${qx.lang.String.firstUp(key)}`, () => {
+                const data = this.serialize();
+                this.fireDataEvent("updateStudyDocument", {
+                  "op": "replace",
+                  "path": `/ui/${key}`,
+                  "value": data,
+                  "osparc-resource": "study-ui",
+                });
+              }, this);
+            } else {
+              console.error(`Property "${key}" is not a valid property of osparc.data.model.StudyUI`);
+            }
+            break;
+        }
+      });
     },
 
     serialize: function() {

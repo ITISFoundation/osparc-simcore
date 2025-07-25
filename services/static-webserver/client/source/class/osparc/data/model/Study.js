@@ -405,6 +405,7 @@ qx.Class.define("osparc.data.model.Study", {
             }, this);
             break;
           case "ui":
+            this.getUi().listenToChanges();
             this.getUi().addListener("updateStudyDocument", e => {
               const data = e.getData();
               this.fireDataEvent("updateStudyDocument", data);
