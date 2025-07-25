@@ -23,6 +23,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.utils import logged_gather
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.notifier import (
     publish_shutdown_no_more_credits,
@@ -34,6 +35,7 @@ from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
+    "redis",
 ]
 
 
@@ -127,6 +129,7 @@ async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
 
 
 async def test_notifier_publish_message(
+    redis_service: RedisSettings,
     socketio_server_events: dict[str, AsyncMock],
     initialized_app: FastAPI,
     user_id: UserID,

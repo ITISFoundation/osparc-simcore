@@ -91,6 +91,7 @@ def _get_environment_variables(
     telemetry_enabled: bool,
 ) -> dict[str, str]:
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
+    redis_settings = app_settings.REDIS
     r_clone_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
@@ -163,6 +164,11 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
+        "REDIS_HOST": f"{redis_settings.REDIS_HOST}",
+        "REDIS_PASSWORD": f"{None if redis_settings.REDIS_PASSWORD is None else redis_settings.REDIS_PASSWORD.get_secret_value()}",
+        "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
+        "REDIS_SECURE": f"{redis_settings.REDIS_SECURE}",
+        "REDIS_USER": f"{redis_settings.REDIS_USER}",
         "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
             json_dumps(
                 model_dump_with_secrets(

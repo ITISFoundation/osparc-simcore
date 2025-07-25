@@ -27,6 +27,7 @@ class RedisClientsManager:
                 health_check_interval=config.health_check_interval,
                 client_name=f"{self.client_name}",
             )
+            await self._client_sdks[config.database].setup()
 
     async def shutdown(self) -> None:
         await asyncio.gather(
