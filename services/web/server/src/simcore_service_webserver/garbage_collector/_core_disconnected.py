@@ -73,57 +73,40 @@ async def remove_disconnected_user_resources(
                 dead_session,
             ]
 
-            # Every resource might be SHARED with other keys.
-            # In that case, the resource is released by THE LAST DYING KEY
-            # (we could call this the "last-standing-man" pattern! :-) )
-            #
-            other_sessions_with_this_resource = [
-                k
-                for k in await registry.find_keys((resource_name, f"{resource_value}"))
-                if k != dead_session
-            ]
-            is_resource_still_in_use: bool = any(
-                k in all_session_alive for k in other_sessions_with_this_resource
+            # (1) releasing acquired resources
+            _logger.info(
+                "(1) Releasing resource %s:%s acquired by expired %s",
+                f"{resource_name=}",
+                f"{resource_value=}",
+                f"{dead_session!r}",
             )
 
-            if not is_resource_still_in_use:
-                # adds the remaining resource entries for (2)
-                keys_to_update.extend(other_sessions_with_this_resource)
+            if resource_name == "project_id":
+                # inform that the project can be closed on the backend side
+                #
+                try:
+                    _logger.info(
+                        "Closing project '%s' of user %s", resource_value, user_id
+                    )
+                    await _projects_service.try_close_project_for_user(
+                        user_id,
+                        f"{resource_value}",
+                        dead_session["client_session_id"],
+                        app,
+                        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                        wait_for_service_closed=True,
+                    )
 
-                # (1) releasing acquired resources
-                _logger.info(
-                    "(1) Releasing resource %s:%s acquired by expired %s",
-                    f"{resource_name=}",
-                    f"{resource_value=}",
-                    f"{dead_session!r}",
-                )
-
-                if resource_name == "project_id":
-                    # inform that the project can be closed on the backend side
-                    #
-                    try:
-                        _logger.info(
-                            "Closing project '%s' of user %s", resource_value, user_id
-                        )
-                        await _projects_service.try_close_project_for_user(
-                            user_id,
-                            f"{resource_value}",
-                            dead_session["client_session_id"],
-                            app,
-                            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                            wait_for_service_closed=True,
-                        )
-
-                    except (ProjectNotFoundError, ProjectLockError) as err:
-                        _logger.warning(
-                            (
-                                "Could not remove project interactive services user_id=%s "
-                                "project_uuid=%s. Check the logs above for details [%s]"
-                            ),
-                            user_id,
-                            resource_value,
-                            err,
-                        )
+                except (ProjectNotFoundError, ProjectLockError) as err:
+                    _logger.warning(
+                        (
+                            "Could not remove project interactive services user_id=%s "
+                            "project_uuid=%s. Check the logs above for details [%s]"
+                        ),
+                        user_id,
+                        resource_value,
+                        err,
+                    )
 
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
