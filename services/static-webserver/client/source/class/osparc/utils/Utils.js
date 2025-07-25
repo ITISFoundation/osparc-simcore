@@ -497,6 +497,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     eventDrivenPatch: function() {
+      // Make it depend on the
+      // return osparc.utils.DisabledPlugins.isRTCEnabled();
       return true;
     },
 
