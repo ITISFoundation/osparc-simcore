@@ -57,6 +57,10 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     }
   },
 
+  events: {
+    "unitChanged": "qx.event.type.Data"
+  },
+
   statics: {
     GRID_POS: {
       LABEL: 0,
@@ -376,6 +380,10 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
       item.setValue(newValue);
       this.self().updateUnitLabelPrefix(item);
+      this.fireDataEvent("unitChanged", {
+        portId: item.key,
+        prefix: newPrefix,
+      });
     },
 
     _getLayoutChild: function(portId, column) {
