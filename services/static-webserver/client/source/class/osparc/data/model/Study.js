@@ -274,10 +274,6 @@ qx.Class.define("osparc.data.model.Study", {
       "savePending",
     ],
 
-    IgnoreModelizationProps: [
-      "dev"
-    ],
-
     OwnPatch: [
       "accessRights",
       "workbench"
