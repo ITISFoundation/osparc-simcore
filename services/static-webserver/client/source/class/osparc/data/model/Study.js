@@ -263,25 +263,32 @@ qx.Class.define("osparc.data.model.Study", {
 
   statics: {
     // Properties of the Study class that should not be listened to
-    IgnoreChangesProps: [
-      "uuid", // immutable
-      "workspaceId", // own patch
-      "folderId", // own patch
-      "prjOwner", // immutable
-      "accessRights", // own patch
-      "creationDate", // immutable
-      "lastChangeDate", // backend sets it
-      "workbench", // own patch
-      "ui", // own patch
-      "tags", // own patch
-      "classifiers", // own patch
-      "quality", // own patch
-      "permalink", // backend sets it
-      "pipelineRunning", // backend sets it
-      "readOnly", // frontend only
-      "trashedAt", // backend sets it
-      "trashedBy", // backend sets it
-      "savePending", // frontend only
+    ListenChangesProps: [
+      // "uuid", // immutable
+      // "workspaceId", // own patch
+      // "folderId", // own patch
+      "name",
+      "description",
+      // "prjOwner", // immutable
+      // "accessRights", // own patch
+      // "creationDate", // immutable
+      // "lastChangeDate", // backend sets it
+      "thumbnail",
+      // "workbench", // own patch
+      // "ui", // own patch
+      // "tags", // own patch
+      // "classifiers", // own patch
+      // "quality", // own patch
+      // "permalink", // backend sets it
+      "dev",
+      "type",
+      "templateType",
+      // "state", // backend sets it
+      // "pipelineRunning", // backend sets it
+      // "readOnly", // frontend only
+      // "trashedAt", // backend sets it
+      // "trashedBy", // backend sets it
+      // "savePending", // frontend only
     ],
 
     // Properties of the Study class that should not be serialized
@@ -390,7 +397,7 @@ qx.Class.define("osparc.data.model.Study", {
     listenToChanges: function() {
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        if (!this.self().IgnoreChangesProps.includes(key)) {
+        if (this.self().ListenChangesProps.includes(key)) {
           this.addListener("change" + qx.lang.String.firstUp(key), e => {
             const data = e.getData();
             this.fireDataEvent("updateStudyDocument", {

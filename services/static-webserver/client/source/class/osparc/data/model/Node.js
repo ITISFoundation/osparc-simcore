@@ -217,19 +217,19 @@ qx.Class.define("osparc.data.model.Node", {
     // Properties of the Node class that should not be listened to
     ListenChangesProps: [
       // "study", // immutable
-      "key", // listen to changes
-      "version", // listen to changes
+      "key",
+      "version",
       // "nodeId", // immutable
-      "label", // listen to changes
-      "inputAccess", // listen to changes
+      "label",
+      "inputAccess",
       // "dynamicV2", // frontend only
       // "serviceUrl", // frontend only
       // "portsConnected", // frontend only
-      "inputs", // listen to changes
-      "outputs", // listen to changes
-      "status", // listen to changes if this is a frontend node. Alias to "state"
+      "inputs",
+      "outputs",
+      "status", // listen to changes only if this is a frontend node. Alias to "state"
       // "errors", // frontend only
-      "bootOptions", // listen to changes
+      "bootOptions",
       // "propsForm", // frontend only
       // "outputsForm", // frontend only
       // "marker", // own listener
