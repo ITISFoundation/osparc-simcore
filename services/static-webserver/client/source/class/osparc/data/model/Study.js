@@ -384,17 +384,6 @@ qx.Class.define("osparc.data.model.Study", {
       }
       return overallProgress/nCompNodes;
     },
-
-    isRunning: function(state) {
-      return [
-        "PUBLISHED",
-        "PENDING",
-        "WAITING_FOR_RESOURCES",
-        "WAITING_FOR_CLUSTER",
-        "STARTED",
-        "RETRY"
-      ].includes(state);
-    },
   },
 
   members: {
@@ -618,12 +607,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __applyState: function(value) {
-      if (value && "state" in value) {
-        const isRunning = this.self().isRunning(value["state"]["value"]);
-        this.setPipelineRunning(isRunning);
-      } else {
-        this.setPipelineRunning(false);
-      }
+      this.setPipelineRunning(osparc.study.Utils.state.isPipelineRunning(value));
     },
 
     getDisableServiceAutoStart: function() {
