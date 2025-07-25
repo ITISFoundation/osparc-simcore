@@ -234,8 +234,8 @@ qx.Class.define("osparc.data.model.Node", {
       /*
       "progress", // TODO
       "inputsRequired", // TODO
-      "inputNodes", // TODO
       */
+      "inputNodes", // !! not a property but goes into the model
     ],
 
     isFrontend: function(metadata) {
@@ -925,7 +925,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (index > -1) {
         // remove node connection
         this.__inputNodes.splice(index, 1);
-        this.fireDataEvent("changeInputNodes");
+        this.fireEvent("changeInputNodes");
         return true;
       }
       return false;
@@ -1355,6 +1355,17 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
       });
+
+      // extra listeners
+      this.addListener("changeInputNodes", () => {
+        const data = this.getInputNodes();
+        this.fireDataEvent("updateStudyDocument", {
+          "op": "replace",
+          "path": `/workbench/${nodeId}/inputNodes`,
+          "value": data,
+          "osparc-resource": "node",
+        });
+      }, this);
     },
 
     serialize: function() {
