@@ -3,7 +3,7 @@ import os
 from datetime import timedelta
 from typing import Final
 
-from aiodocker.exceptions import DockerError
+from aiodocker import DockerError
 from models_library.callbacks_mapping import UserServiceCommand
 from servicelib.logging_utils import log_context
 
