@@ -5,9 +5,8 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
 from asyncio import Future
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Any
 from unittest import mock
@@ -15,116 +14,30 @@ from unittest import mock
 import pytest
 import socketio
 import socketio.exceptions
-import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_projects import NewProject
-from redis.asyncio import Redis
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.application_setup import is_setup_completed
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.db.plugin import setup_db
-from simcore_service_webserver.director_v2.plugin import setup_director_v2
-from simcore_service_webserver.login.plugin import setup_login
-from simcore_service_webserver.notifications.plugin import setup_notifications
-from simcore_service_webserver.products.plugin import setup_products
 from simcore_service_webserver.projects._projects_service import (
     remove_project_dynamic_services,
     submit_delete_project_task,
 )
-from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.rabbitmq import setup_rabbitmq
-from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     UserSessionDict,
     get_registry,
 )
-from simcore_service_webserver.rest.plugin import setup_rest
-from simcore_service_webserver.security.plugin import setup_security
-from simcore_service_webserver.session.plugin import setup_session
-from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.exceptions import UserNotFoundError
-from simcore_service_webserver.users.plugin import setup_users
 from simcore_service_webserver.users.users_service import delete_user_without_projects
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
-
-
-async def close_project(client, project_uuid: str, client_session_id: str) -> None:
-    url = client.app.router["close_project"].url_for(project_id=project_uuid)
-    resp = await client.post(url, json=client_session_id)
-    await assert_status(resp, status.HTTP_204_NO_CONTENT)
-
-
-@pytest.fixture
-async def open_project() -> AsyncIterator[Callable[..., Awaitable[None]]]:
-    _opened_projects = []
-
-    async def _open_project(client, project_uuid: str, client_session_id: str) -> None:
-        url = client.app.router["open_project"].url_for(project_id=project_uuid)
-        resp = await client.post(url, json=client_session_id)
-        await assert_status(resp, status.HTTP_200_OK)
-        _opened_projects.append((client, project_uuid, client_session_id))
-
-    yield _open_project
-    # cleanup, if we cannot close that is because the user_role might not allow it
-    await asyncio.gather(
-        *(
-            close_project(client, project_uuid, client_session_id)
-            for client, project_uuid, client_session_id in _opened_projects
-        ),
-        return_exceptions=True,
-    )
-
-
-@pytest.fixture
-async def client(
-    aiohttp_client: Callable,
-    app_environment: EnvVarsDict,
-    postgres_db: sa.engine.Engine,
-    mock_orphaned_services,
-    redis_client: Redis,
-    mock_dynamic_scheduler_rabbitmq: None,
-) -> TestClient:
-    app = create_safe_application()
-
-    assert "WEBSERVER_GARBAGE_COLLECTOR" not in app_environment
-
-    settings = setup_settings(app)
-    assert settings.WEBSERVER_GARBAGE_COLLECTOR is not None
-    assert settings.WEBSERVER_PROJECTS is not None
-
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)
-    setup_users(app)
-    setup_socketio(app)
-    assert setup_projects(app)
-    setup_director_v2(app)
-    assert setup_resource_manager(app)
-    setup_rabbitmq(app)
-    setup_notifications(app)
-    setup_products(app)
-
-    assert is_setup_completed("simcore_service_webserver.resource_manager", app)
-
-    # NOTE: garbage_collector is disabled and instead explicitly called using
-    # garbage_collectorgc_core.collect_garbage
-    assert not is_setup_completed("simcore_service_webserver.garbage_collector", app)
-
-    return await aiohttp_client(app)
 
 
 @pytest.fixture
