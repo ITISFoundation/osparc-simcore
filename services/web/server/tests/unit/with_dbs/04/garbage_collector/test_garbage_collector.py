@@ -1,3 +1,9 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -13,6 +19,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
+from models_library.projects import ProjectID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
@@ -368,7 +375,8 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     create_socketio_connection: Callable,
     client_session_id_factory: Callable[[], str],
     expected_save_state: bool,
-    open_project: Callable,
+    open_project: Callable[[TestClient, ProjectID, str], Awaitable[None]],
+    close_project: Callable[[TestClient, ProjectID, str], Awaitable[None]],
 ):
     # create server with delay set to DELAY
     service = await create_dynamic_service_mock(
@@ -414,6 +422,7 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     ],
 )
 async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
+    fast_service_deletion_delay: int,
     director_v2_service_mock: aioresponses,
     client,
     logged_user,
@@ -426,7 +435,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expect_call: bool,
     expected_save_state: bool,
-    open_project: Callable,
+    open_project: Callable[[TestClient, ProjectID, str], Awaitable[None]],
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     user_id = logged_user["id"]
@@ -446,7 +455,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     await assert_status(r, status.HTTP_200_OK)
 
     # ensure sufficient time is wasted here
-    await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
+    await asyncio.sleep(fast_service_deletion_delay + 1)
     await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is removed
