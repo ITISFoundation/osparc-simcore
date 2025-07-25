@@ -232,6 +232,6 @@ async def test_delete_project_while_it_is_locked_raises_error(
         get_redis_lock_manager_client_sdk(client.app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
-        owner=Owner(user_id=user_id, first_name=faker.name(), last_name=faker.name()),
+        owner=Owner(user_id=user_id),
         notification_cb=None,
     )(_request_delete_project)(client, user_project, expected.conflict)

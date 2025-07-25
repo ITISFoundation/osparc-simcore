@@ -129,7 +129,6 @@ from ..user_preferences.user_preferences_service import (
 )
 from ..users import users_service
 from ..users.exceptions import UserDefaultWalletNotFoundError, UserNotFoundError
-from ..users.users_service import FullNameDict
 from ..wallets import api as wallets_service
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
@@ -1498,10 +1497,7 @@ async def try_open_project_for_user(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
-            owner=Owner(
-                user_id=user_id,
-                **await users_service.get_user_fullname(app, user_id=user_id),
-            ),
+            owner=Owner(user_id=user_id),
             notification_cb=None,
         )
         async def _open_project() -> bool:
@@ -1983,7 +1979,6 @@ async def remove_project_dynamic_services(
     simcore_user_agent: str,
     *,
     notify_users: bool = True,
-    user_name: FullNameDict | None = None,
 ) -> None:
     """
 
@@ -1997,10 +1992,6 @@ async def remove_project_dynamic_services(
         "removing project interactive services for project [%s] and user [%s]",
         project_uuid,
         user_id,
-    )
-
-    user_name_data: FullNameDict = user_name or await users_service.get_user_fullname(
-        app, user_id=user_id
     )
 
     user_role: UserRole | None = None
@@ -2020,7 +2011,7 @@ async def remove_project_dynamic_services(
         get_redis_lock_manager_client_sdk(app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
-        owner=Owner(user_id=user_id, **user_name_data),
+        owner=Owner(user_id=user_id),
         notification_cb=(
             create_user_notification_cb(user_id, ProjectID(project_uuid), app)
             if notify_users
