@@ -12,6 +12,13 @@ x-tracing-open-telemetry: &tracing_open_telemetry_environs
   TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
   TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}
 
+x-webserver-diagnostics: &webserver_diagnostics_environs
+  DIAGNOSTICS_HEALTHCHECK_ENABLED: ${DIAGNOSTICS_HEALTHCHECK_ENABLED}
+  DIAGNOSTICS_MAX_AVG_LATENCY: ${DIAGNOSTICS_MAX_AVG_LATENCY}
+  DIAGNOSTICS_MAX_TASK_DELAY: ${DIAGNOSTICS_MAX_TASK_DELAY}
+  DIAGNOSTICS_SLOW_DURATION_SECS: ${DIAGNOSTICS_SLOW_DURATION_SECS}
+
+
 
 services:
   api-server:
@@ -19,6 +26,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
+      <<: *tracing_open_telemetry_environs
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
       API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       API_SERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
@@ -50,7 +58,6 @@ services:
       WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
       WEBSERVER_SESSION_SECRET_KEY: ${WEBSERVER_SESSION_SECRET_KEY}
       API_SERVER_TRACING: ${API_SERVER_TRACING}
-      <<: *tracing_open_telemetry_environs
 
     deploy:
       labels:
@@ -78,6 +85,7 @@ services:
     networks:
       - autoscaling_subnet
     environment:
+      <<: *tracing_open_telemetry_environs
       AUTOSCALING_LOGLEVEL: ${AUTOSCALING_LOGLEVEL}
       AUTOSCALING_POLL_INTERVAL: ${AUTOSCALING_POLL_INTERVAL}
       AUTOSCALING_DRAIN_NODES_WITH_LABELS: ${AUTOSCALING_DRAIN_NODES_WITH_LABELS}
@@ -136,7 +144,6 @@ services:
       REGISTRY_SSL: ${REGISTRY_SSL}
       REGISTRY_AUTH: ${REGISTRY_AUTH}
       AUTOSCALING_TRACING: ${AUTOSCALING_TRACING}
-      <<: *tracing_open_telemetry_environs
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
@@ -156,6 +163,7 @@ services:
     init: true
     hostname: "cat-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
+      <<: *tracing_open_telemetry_environs
       CATALOG_BACKGROUND_TASK_REST_TIME: ${CATALOG_BACKGROUND_TASK_REST_TIME}
       CATALOG_DEV_FEATURES_ENABLED: ${CATALOG_DEV_FEATURES_ENABLED}
       CATALOG_LOGLEVEL: ${CATALOG_LOGLEVEL}
@@ -179,7 +187,6 @@ services:
       RABBIT_SECURE: ${RABBIT_SECURE}
       RABBIT_USER: ${RABBIT_USER}
       CATALOG_TRACING: ${CATALOG_TRACING}
-      <<: *tracing_open_telemetry_environs
     networks:
       - default
 
@@ -190,6 +197,7 @@ services:
     networks:
       - default
     environment:
+      <<: *tracing_open_telemetry_environs
       CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DOCKER_IMAGE_TAG}
       CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: ${CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH}
       CLUSTERS_KEEPER_DASK_NTHREADS: ${CLUSTERS_KEEPER_DASK_NTHREADS}
@@ -248,7 +256,6 @@ services:
       WORKERS_EC2_INSTANCES_SUBNET_ID: ${WORKERS_EC2_INSTANCES_SUBNET_ID}
       WORKERS_EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
       CLUSTERS_KEEPER_TRACING: ${CLUSTERS_KEEPER_TRACING}
-      <<: *tracing_open_telemetry_environs
     secrets: *dask_tls_secrets
 
   director:
@@ -256,6 +263,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
+      <<: *tracing_open_telemetry_environs
       DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: ${DIRECTOR_DEFAULT_MAX_NANO_CPUS}
       DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: ${DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS}
@@ -285,7 +293,6 @@ services:
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
 
-      <<: *tracing_open_telemetry_environs
       TRAEFIK_SIMCORE_ZONE: ${TRAEFIK_SIMCORE_ZONE}
 
     volumes:
@@ -303,6 +310,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
+      <<: *tracing_open_telemetry_environs
       AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
 
       CATALOG_HOST: ${CATALOG_HOST}
@@ -390,7 +398,6 @@ services:
       TRAEFIK_SIMCORE_ZONE: ${TRAEFIK_SIMCORE_ZONE}
 
       DIRECTOR_V2_TRACING: ${DIRECTOR_V2_TRACING}
-      <<: *tracing_open_telemetry_environs
 
       # WEBSERVER_AUTH_SETTINGS
       WEBSERVER_HOST: ${WB_AUTH_WEBSERVER_HOST}
@@ -415,6 +422,7 @@ services:
     networks:
       - default
     environment:
+      <<: *tracing_open_telemetry_environs
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       RABBIT_HOST: ${RABBIT_HOST}
@@ -443,7 +451,6 @@ services:
       EFS_MOUNTED_PATH: ${EFS_MOUNTED_PATH}
       EFS_PROJECT_SPECIFIC_DATA_DIRECTORY: ${EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}
       EFS_GUARDIAN_TRACING: ${EFS_GUARDIAN_TRACING}
-      <<: *tracing_open_telemetry_environs
 
   invitations:
     image: ${DOCKER_REGISTRY:-itisfoundation}/invitations:${DOCKER_IMAGE_TAG:-latest}
@@ -452,17 +459,17 @@ services:
     networks:
       - default
     environment:
+      <<: *tracing_open_telemetry_environs
       INVITATIONS_DEFAULT_PRODUCT: ${INVITATIONS_DEFAULT_PRODUCT}
       INVITATIONS_LOGLEVEL: ${INVITATIONS_LOGLEVEL}
       INVITATIONS_OSPARC_URL: ${INVITATIONS_OSPARC_URL}
       INVITATIONS_PASSWORD: ${INVITATIONS_PASSWORD}
       INVITATIONS_SECRET_KEY: ${INVITATIONS_SECRET_KEY}
       INVITATIONS_SWAGGER_API_DOC_ENABLED: ${INVITATIONS_SWAGGER_API_DOC_ENABLED}
+      INVITATIONS_TRACING: ${INVITATIONS_TRACING}
       INVITATIONS_USERNAME: ${INVITATIONS_USERNAME}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
-      INVITATIONS_TRACING: ${INVITATIONS_TRACING}
-      <<: *tracing_open_telemetry_environs
 
   payments:
     image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
@@ -471,8 +478,10 @@ services:
     networks:
       - default
     environment:
-      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
+      <<: *tracing_open_telemetry_environs
+
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
+      LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES: ${PAYMENTS_ACCESS_TOKEN_EXPIRE_MINUTES}
       PAYMENTS_ACCESS_TOKEN_SECRET_KEY: ${PAYMENTS_ACCESS_TOKEN_SECRET_KEY}
       PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: ${PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT}
@@ -480,13 +489,15 @@ services:
       PAYMENTS_AUTORECHARGE_ENABLED: ${PAYMENTS_AUTORECHARGE_ENABLED}
       PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS: ${PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS}
       PAYMENTS_BCC_EMAIL: ${PAYMENTS_BCC_EMAIL}
+      PAYMENTS_EMAIL: ${PAYMENTS_EMAIL}
       PAYMENTS_GATEWAY_API_SECRET: ${PAYMENTS_GATEWAY_API_SECRET}
       PAYMENTS_GATEWAY_URL: ${PAYMENTS_GATEWAY_URL}
       PAYMENTS_LOGLEVEL: ${PAYMENTS_LOGLEVEL}
       PAYMENTS_PASSWORD: ${PAYMENTS_PASSWORD}
-      PAYMENTS_STRIPE_URL: ${PAYMENTS_STRIPE_URL}
       PAYMENTS_STRIPE_API_SECRET: ${PAYMENTS_STRIPE_API_SECRET}
+      PAYMENTS_STRIPE_URL: ${PAYMENTS_STRIPE_URL}
       PAYMENTS_SWAGGER_API_DOC_ENABLED: ${PAYMENTS_SWAGGER_API_DOC_ENABLED}
+      PAYMENTS_TRACING: ${PAYMENTS_TRACING}
       PAYMENTS_USERNAME: ${PAYMENTS_USERNAME}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_HOST: ${POSTGRES_HOST}
@@ -500,14 +511,12 @@ services:
       RABBIT_USER: ${RABBIT_USER}
       RESOURCE_USAGE_TRACKER_HOST: ${RESOURCE_USAGE_TRACKER_HOST}
       RESOURCE_USAGE_TRACKER_PORT: ${RESOURCE_USAGE_TRACKER_EXTERNAL_PORT}
-      PAYMENTS_EMAIL: ${PAYMENTS_EMAIL}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_PROTOCOL: ${SMTP_PROTOCOL}
       SMTP_USERNAME: ${SMTP_USERNAME}
-      PAYMENTS_TRACING: ${PAYMENTS_TRACING}
-      <<: *tracing_open_telemetry_environs
+
 
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
@@ -516,6 +525,8 @@ services:
     networks:
       - default
     environment:
+      <<: *tracing_open_telemetry_environs
+
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -544,7 +555,7 @@ services:
       RESOURCE_USAGE_TRACKER_S3: ${RESOURCE_USAGE_TRACKER_S3}
       RESOURCE_USAGE_TRACKER_TRACING: ${RESOURCE_USAGE_TRACKER_TRACING}
       RESOURCE_USAGE_TRACKER_PORT: ${RESOURCE_USAGE_TRACKER_PORT}
-      <<: *tracing_open_telemetry_environs
+
 
   dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
@@ -554,6 +565,8 @@ services:
       - default
       - docker-api-network
     environment:
+      <<: *tracing_open_telemetry_environs
+
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
@@ -594,7 +607,6 @@ services:
       REDIS_SECURE: ${REDIS_SECURE}
       REDIS_USER: ${REDIS_USER}
 
-      <<: *tracing_open_telemetry_environs
 
   docker-api-proxy:
     image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
@@ -670,6 +682,10 @@ services:
     init: true
     hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment: &webserver_environment
+      <<:
+        - *tracing_open_telemetry_environs
+        - *webserver_diagnostics_environs
+
       AIODEBUG_SLOW_DURATION_SECS: ${AIODEBUG_SLOW_DURATION_SECS}
 
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
@@ -714,10 +730,6 @@ services:
 
       # WEBSERVER_DIAGNOSTICS
       WEBSERVER_DIAGNOSTICS: ${WEBSERVER_DIAGNOSTICS}
-      DIAGNOSTICS_HEALTHCHECK_ENABLED: ${DIAGNOSTICS_HEALTHCHECK_ENABLED}
-      DIAGNOSTICS_MAX_AVG_LATENCY: ${DIAGNOSTICS_MAX_AVG_LATENCY}
-      DIAGNOSTICS_MAX_TASK_DELAY: ${DIAGNOSTICS_MAX_TASK_DELAY}
-      DIAGNOSTICS_SLOW_DURATION_SECS: ${DIAGNOSTICS_SLOW_DURATION_SECS}
 
       # WEBSERVER_DIRECTOR_V2
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
@@ -819,7 +831,6 @@ services:
       STUDIES_DEFAULT_SERVICE_THUMBNAIL: ${STUDIES_DEFAULT_SERVICE_THUMBNAIL}
 
       WEBSERVER_TRACING: ${WEBSERVER_TRACING}
-      <<: *tracing_open_telemetry_environs
 
       # WEBSERVER_PROJECTS
       WEBSERVER_PROJECTS: ${WEBSERVER_PROJECTS}
@@ -1009,6 +1020,8 @@ services:
     init: true
     hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
+      <<:
+        - *tracing_open_telemetry_environs
 
       # WEBSERVER_DIRECTOR_V2
       DIRECTOR_V2_HOST: ${DIRECTOR_V2_HOST}
@@ -1091,7 +1104,6 @@ services:
       WEBSERVER_STUDIES_DISPATCHER: ${WB_GC_STUDIES_DISPATCHER}
       WEBSERVER_TAGS: ${WB_GC_TAGS}
       WEBSERVER_TRACING: ${WB_GC_TRACING}
-      <<: *tracing_open_telemetry_environs
       WEBSERVER_USERS: ${WB_GC_USERS}
       WEBSERVER_WALLETS: ${WB_GC_WALLETS}
 
@@ -1104,9 +1116,12 @@ services:
     init: true
     hostname: "auth-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
+      <<:
+        - *webserver_diagnostics_environs
+        - *tracing_open_telemetry_environs
+
       WEBSERVER_APP_FACTORY_NAME: WEBSERVER_AUTHZ_APP_FACTORY
       WEBSERVER_LOGLEVEL: ${WB_AUTH_LOGLEVEL}
-      WEBSERVER_PROFILING: ${WB_AUTH_PROFILING}
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 
@@ -1117,6 +1132,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_USER: ${POSTGRES_USER}
+
+      # WEBSERVER_DIAGNOSTICS
+      WEBSERVER_DIAGNOSTICS: ${WB_AUTH_DIAGNOSTICS}
 
       # WEBSERVER_REST
       REST_SWAGGER_API_DOC_ENABLED: 0
@@ -1150,6 +1168,7 @@ services:
       WEBSERVER_LOGIN: "null"
       WEBSERVER_NOTIFICATIONS: 0
       WEBSERVER_PAYMENTS: "null"
+      WEBSERVER_PROFILING: ${WB_AUTH_PROFILING}
       WEBSERVER_PRODUCTS: 1
       WEBSERVER_PROJECTS: "null"
       WEBSERVER_PUBLICATIONS: 0
@@ -1164,7 +1183,6 @@ services:
       WEBSERVER_STUDIES_DISPATCHER: "null"
       WEBSERVER_TAGS: 0
       WEBSERVER_TRACING: ${WB_AUTH_TRACING}
-      <<: *tracing_open_telemetry_environs
       WEBSERVER_USERS: "null"
     networks:
       - default
