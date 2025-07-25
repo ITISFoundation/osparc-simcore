@@ -15,7 +15,7 @@ from models_library.api_schemas_webserver.functions import (
     FunctionClass,
     JSONFunctionInputSchema,
     JSONFunctionOutputSchema,
-    RegisteredProjectFunctionGet,
+    RegisteredFunctionGet,
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from pydantic import TypeAdapter
@@ -27,11 +27,11 @@ from simcore_service_webserver.db.models import UserRole
 pytest_simcore_core_services_selection = ["rabbit"]
 
 
-@pytest.fixture
-def mock_function() -> dict[str, Any]:
-    return {
-        "title": "Test Function",
-        "description": "A test function",
+@pytest.fixture(params=[FunctionClass.PROJECT, FunctionClass.SOLVER])
+def mocked_function(request) -> dict[str, Any]:
+    function_dict = {
+        "title": f"Test {request.param} Function",
+        "description": f"A test {request.param} function",
         "inputSchema": JSONFunctionInputSchema(
             schema_content={
                 "type": "object",
@@ -44,10 +44,18 @@ def mock_function() -> dict[str, Any]:
                 "properties": {"output1": {"type": "string"}},
             },
         ).model_dump(mode="json"),
-        "projectId": str(uuid4()),
-        "functionClass": FunctionClass.PROJECT,
+        "functionClass": request.param,
         "defaultInputs": None,
     }
+
+    match request.param:
+        case FunctionClass.PROJECT:
+            function_dict["projectId"] = f"{uuid4()}"
+        case FunctionClass.SOLVER:
+            function_dict["solverKey"] = "simcore/services/dynamic/test"
+            function_dict["solverVersion"] = "1.0.0"
+
+    return function_dict
 
 
 @pytest.mark.parametrize(
@@ -79,7 +87,7 @@ def mock_function() -> dict[str, Any]:
 async def test_function_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
-    mock_function: dict[str, Any],
+    mocked_function: dict[str, Any],
     expected_register: HTTPStatus,
     expected_get: HTTPStatus,
     expected_list: HTTPStatus,
@@ -91,12 +99,12 @@ async def test_function_workflow(
 ) -> None:
     # Register a new function
     url = client.app.router["register_function"].url_for()
-    response = await client.post(url, json=mock_function)
+    response = await client.post(url, json=mocked_function)
     data, error = await assert_status(response, expected_status_code=expected_register)
     if error:
         returned_function_uid = uuid4()
     else:
-        returned_function = RegisteredProjectFunctionGet.model_validate(data)
+        returned_function = TypeAdapter(RegisteredFunctionGet).validate_python(data)
         assert returned_function.uid is not None
         returned_function_uid = returned_function.uid
 
@@ -107,7 +115,7 @@ async def test_function_workflow(
     response = await client.get(url)
     data, error = await assert_status(response, expected_get)
     if not error:
-        retrieved_function = RegisteredProjectFunctionGet.model_validate(data)
+        retrieved_function = TypeAdapter(RegisteredFunctionGet).validate_python(data)
         assert retrieved_function.uid == returned_function.uid
 
     # List existing functions
@@ -115,9 +123,9 @@ async def test_function_workflow(
     response = await client.get(url)
     data, error = await assert_status(response, expected_list)
     if not error:
-        retrieved_functions = TypeAdapter(
-            list[RegisteredProjectFunctionGet]
-        ).validate_python(data)
+        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
+            data
+        )
         assert len(retrieved_functions) == 1
         assert retrieved_functions[0].uid == returned_function_uid
 
@@ -132,7 +140,7 @@ async def test_function_workflow(
     )
     data, error = await assert_status(response, expected_update)
     if not error:
-        updated_function = RegisteredProjectFunctionGet.model_validate(data)
+        updated_function = TypeAdapter(RegisteredFunctionGet).validate_python(data)
         assert updated_function.title == new_title
         assert updated_function.description == new_description
 
