@@ -10,6 +10,8 @@ from models_library.functions import (
     FunctionJobCollection,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobStatus,
+    FunctionOutputs,
     FunctionOutputSchema,
     FunctionUpdate,
     FunctionUserApiAccessRights,
@@ -383,6 +385,74 @@ async def get_function_input_schema(
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def get_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionJobStatus:
+    return await _functions_service.get_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def get_function_job_outputs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionOutputs:
+    return await _functions_service.get_function_job_outputs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def update_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    job_status: FunctionJobStatus,
+) -> FunctionJobStatus:
+    return await _functions_service.update_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+        job_status=job_status,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def update_function_job_outputs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    outputs: FunctionOutputs,
+) -> FunctionOutputs:
+    return await _functions_service.update_function_job_outputs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+        outputs=outputs,
     )
 
 
