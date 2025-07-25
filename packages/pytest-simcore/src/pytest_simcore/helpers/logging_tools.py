@@ -1,10 +1,11 @@
 import datetime
 import logging
-from collections.abc import Iterator
+import warnings
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from types import SimpleNamespace
-from typing import TypeAlias
+from typing import Final, TypeAlias
 
 
 def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
@@ -27,6 +28,19 @@ def _timedelta_as_minute_second_ms(delta: datetime.timedelta) -> str:
     sign = "-" if total_seconds < 0 else ""
 
     return f"{sign}{result.strip()}"
+
+
+def _resolve(val: str | Callable[[], str], prefix: str, suffix: str) -> str:
+    try:
+        return f"{prefix}{val if isinstance(val, str) else val()}{suffix}"
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        warnings.warn(
+            f"Failed to generate {val} message: {exc!r}. "
+            f"Fix the callable to return a string without raising exceptions.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return f"❌❌❌ [{val} message generation failed TIP: Check how the {val} message is generated!] ❌❌❌"
 
 
 class DynamicIndentFormatter(logging.Formatter):
@@ -74,15 +88,26 @@ test_logger = logging.getLogger(__name__)
 DynamicIndentFormatter.setup(test_logger)
 
 
+# Message formatting constants
+_STARTING_PREFIX: Final[str] = "--> "
+_STARTING_SUFFIX: Final[str] = " ⏳"
+_DONE_PREFIX: Final[str] = "<-- "
+_DONE_SUFFIX: Final[str] = " ✅"
+_RAISED_PREFIX: Final[str] = "❌❌❌ Error: "
+_RAISED_SUFFIX: Final[str] = " ❌❌❌"
+
+
 @dataclass
 class ContextMessages:
-    starting: str
-    done: str
-    raised: str = field(default="")
+    starting: str | Callable[[], str]
+    done: str | Callable[[], str]
+    raised: str | Callable[[], str] = field(default="")
 
     def __post_init__(self):
         if not self.raised:
-            self.raised = f"{self.done} [with error]"
+            self.raised = (
+                lambda: f"{self.done if isinstance(self.done, str) else self.done()} [with raised error]"
+            )
 
 
 LogLevelInt: TypeAlias = int
@@ -127,9 +152,9 @@ def log_context(
 
     if isinstance(msg, str):
         ctx_msg = ContextMessages(
-            starting=f"-> {msg} starting ...",
-            done=f"<- {msg} done",
-            raised=f"! {msg} raised",
+            starting=f"{msg}",
+            done=f"{msg}",
+            raised=f"{msg}",
         )
     elif isinstance(msg, tuple):
         ctx_msg = ContextMessages(*msg)
@@ -140,13 +165,16 @@ def log_context(
     try:
         DynamicIndentFormatter.cls_increase_indent()
 
-        logger.log(level, ctx_msg.starting, *args, **kwargs)
+        logger.log(
+            level,
+            _resolve(ctx_msg.starting, _STARTING_PREFIX, _STARTING_SUFFIX),
+            *args,
+            **kwargs,
+        )
         with _increased_logger_indent(logger):
             yield SimpleNamespace(logger=logger, messages=ctx_msg)
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        done_message = (
-            f"{ctx_msg.done} ({_timedelta_as_minute_second_ms(elapsed_time)})"
-        )
+        done_message = f"{_resolve(ctx_msg.done, _DONE_PREFIX, _DONE_SUFFIX)} ({_timedelta_as_minute_second_ms(elapsed_time)})"
         logger.log(
             level,
             done_message,
@@ -156,9 +184,7 @@ def log_context(
 
     except:
         elapsed_time = datetime.datetime.now(tz=datetime.UTC) - started_time
-        error_message = (
-            f"{ctx_msg.raised} ({_timedelta_as_minute_second_ms(elapsed_time)})"
-        )
+        error_message = f"{_resolve(ctx_msg.raised, _RAISED_PREFIX, _RAISED_SUFFIX)} ({_timedelta_as_minute_second_ms(elapsed_time)})"
         logger.exception(
             error_message,
             *args,
