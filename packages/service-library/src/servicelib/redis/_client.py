@@ -89,9 +89,6 @@ class RedisClientSDK:
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
             if self._health_check_task:
-                assert self._health_check_task_started_event  # nosec
-                # NOTE: wait for the health check task to have started once before we can cancel it
-                await self._health_check_task_started_event.wait()
                 await cancel_wait_task(
                     self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
                 )
@@ -101,8 +98,12 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            await self._client.ping()
-            return True
+            try:
+                await self._client.ping()
+                return True
+            except (redis.exceptions.TimeoutError, redis.exceptions.ConnectionError):
+                pass
+
         return False
 
     @property
