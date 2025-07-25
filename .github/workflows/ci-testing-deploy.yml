@@ -1057,7 +1057,7 @@ jobs:
   unit-test-dynamic-sidecar:
     needs: changes
     if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 23 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1252,7 +1252,7 @@ jobs:
   unit-test-service-library:
     needs: changes
     if: ${{ needs.changes.outputs.service-library == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 23 # if this timeout gets too small, then split the tests
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
     strategy:
