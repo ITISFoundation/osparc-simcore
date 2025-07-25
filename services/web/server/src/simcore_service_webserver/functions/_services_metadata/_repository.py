@@ -41,7 +41,10 @@ async def batch_service_metadata(
         rows = result.fetchall()
 
         return {
-            (row.key, row.version): ServiceMetadata.model_validate(row) for row in rows
+            (row.key, row.version): ServiceMetadata.model_validate(
+                row, from_attributes=True
+            )
+            for row in rows
         }
 
 
@@ -66,4 +69,4 @@ async def get_service_metadata(
         if row is None:
             raise ServiceMetadataNotFoundError(key=key, version=version)
 
-        return ServiceMetadata.model_validate(row)
+        return ServiceMetadata.model_validate(row, from_attributes=True)
