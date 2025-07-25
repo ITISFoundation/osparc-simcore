@@ -4,6 +4,7 @@ from typing import Annotated, Any, Final, Literal
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.exclude import Unset, is_unset
 from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.utils.change_case import snake_to_camel
@@ -587,8 +588,23 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return {snake_to_camel(k): v for k, v in data.items()}
 
 
-def setup_settings(app: web.Application) -> ApplicationSettings:
-    settings: ApplicationSettings = ApplicationSettings.create_from_envs()
+_unset = Unset.VALUE
+
+
+def setup_settings(
+    app: web.Application,
+    *,
+    # these are setting fields that can be overridden programmatically
+    app_name: str | Unset = _unset,  # noqa: N803
+) -> ApplicationSettings:
+
+    settings_overrides = {}
+    if not is_unset(app_name):
+        settings_overrides["APP_NAME"] = app_name
+
+    settings: ApplicationSettings = ApplicationSettings.create_from_envs(
+        **settings_overrides
+    )
     app[APP_SETTINGS_KEY] = settings
     _logger.debug(
         "Captured app settings:\n%s",

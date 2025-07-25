@@ -20,7 +20,10 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.application import create_application_auth
-from simcore_service_webserver.application_settings import ApplicationSettings
+from simcore_service_webserver.application_settings import (
+    ApplicationSettings,
+    get_application_settings,
+)
 from simcore_service_webserver.application_settings_utils import AppConfigDict
 from simcore_service_webserver.security import security_web
 
@@ -103,6 +106,10 @@ async def auth_app(
 
     # creates auth application instead
     app = create_application_auth()
+
+    settings = get_application_settings(app)
+    assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"
+    assert settings.APP_NAME == "simcore-service-webserver-auth"
 
     # checks endpoint exposed
     url = app.router["check_auth"].url_for()

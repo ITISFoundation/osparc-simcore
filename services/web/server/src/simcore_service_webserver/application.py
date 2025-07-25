@@ -194,7 +194,9 @@ def create_application() -> web.Application:
 
 def create_application_auth() -> web.Application:
     app = create_safe_application()
-    setup_settings(app)
+    setup_settings(app, app_name="simcore-service-webserver-auth")
+
+    # NOTE: uses settings.APP_NAME
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
 
     setup_rest(app)
