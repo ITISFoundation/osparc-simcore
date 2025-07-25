@@ -62,13 +62,10 @@ class RedisClientSDK:
         )
         # NOTE: connection is done here already
         self._is_healthy = False
-        self._health_check_task_started_event = asyncio.Event()
 
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
-            assert self._health_check_task_started_event  # nosec
-            self._health_check_task_started_event.set()
             self._is_healthy = await self.ping()
 
         self._health_check_task = asyncio.create_task(
@@ -87,8 +84,6 @@ class RedisClientSDK:
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
             if self._health_check_task:
-                assert self._health_check_task_started_event  # nosec
-                await self._health_check_task_started_event.wait()
                 with suppress(TimeoutError):
                     await cancel_wait_task(
                         self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
@@ -99,7 +94,7 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            await self._client.ping()
+            await asyncio.wait_for(self._client.ping(), timeout=1)
             return True
 
         return False
