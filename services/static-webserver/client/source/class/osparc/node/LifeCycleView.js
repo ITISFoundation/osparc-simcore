@@ -121,10 +121,12 @@ qx.Class.define("osparc.node.LifeCycleView", {
           "op": "replace",
           "path": `/workbench/${nodeId}/key`,
           "value": latestCompatible["key"],
+          "osparc-resource": "node",
         }, {
           "op": "replace",
           "path": `/workbench/${nodeId}/version`,
           "value": latestCompatible["version"],
+          "osparc-resource": "node",
         }]);
         // add timeout to make sure the node is saved before starting it
         setTimeout(() => {

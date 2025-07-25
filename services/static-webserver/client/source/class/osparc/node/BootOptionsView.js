@@ -50,13 +50,15 @@ qx.Class.define("osparc.node.BootOptionsView", {
         if (selection.length) {
           buttonsLayout.setEnabled(false);
           const newBootModeId = selection[0].bootModeId;
-          node.setBootOptions({
+          const data = {
             "boot_mode": newBootModeId
-          });
+          };
+          node.setBootOptions(data);
           node.fireDataEvent("updateStudyDocument", {
             "op": "replace",
-            "path": `/workbench/${nodeId}/bootOptions/boot_mode`,
-            "value": newBootModeId,
+            "path": `/workbench/${nodeId}/bootOptions`,
+            "value": data,
+            "osparc-resource": "node",
           });
           // add timeout to make sure the node is saved before starting it
           setTimeout(() => {
