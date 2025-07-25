@@ -1120,6 +1120,7 @@ services:
         - *webserver_diagnostics_environs
         - *tracing_open_telemetry_environs
 
+      APP_NAME: "simcore_service_wb_auth"
       WEBSERVER_APP_FACTORY_NAME: WEBSERVER_AUTHZ_APP_FACTORY
       WEBSERVER_LOGLEVEL: ${WB_AUTH_LOGLEVEL}
 

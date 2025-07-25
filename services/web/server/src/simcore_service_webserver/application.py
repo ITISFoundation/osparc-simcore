@@ -195,9 +195,8 @@ def create_application() -> web.Application:
 def create_application_auth() -> web.Application:
     app = create_safe_application()
 
-    settings = setup_settings(app, app_name="simcore_service_wb_auth")
+    settings = setup_settings(app)
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
-    assert settings.APP_NAME == "simcore_service_wb_auth"  # nosec
 
     # Monitoring and diagnostics
     setup_app_tracing(
