@@ -119,8 +119,8 @@ async def open_project(request: web.Request) -> web.Response:
         # Connect the socket_id to a project room
         with managed_resource(
             req_ctx.user_id, client_session_id, request.app
-        ) as resource_registry:
-            _socket_id = await resource_registry.get_socket_id()
+        ) as user_session:
+            _socket_id = await user_session.get_socket_id()
         if _socket_id is None:
             raise web.HTTPUnprocessableEntity(
                 text=user_message(
