@@ -671,6 +671,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
 					echo restarting engine... &&\
 					sudo service docker restart &&\
+					sleep 5 &&\
 					echo done)
 
 	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
