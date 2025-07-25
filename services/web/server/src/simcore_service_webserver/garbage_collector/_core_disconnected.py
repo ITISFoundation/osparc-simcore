@@ -32,7 +32,7 @@ async def remove_disconnected_user_resources(
     #     - "resources" is a hash toto keep project and websocket ids
     #
 
-    all_session_alive, all_sessions_dead = await registry.get_all_resource_keys()
+    _, all_sessions_dead = await registry.get_all_resource_keys()
     _logger.debug("potential dead keys: %s", all_sessions_dead)
 
     # clean up all resources of expired keys
