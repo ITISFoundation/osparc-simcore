@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import logging
 from asyncio import Task
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Final
 from uuid import uuid4
@@ -89,9 +90,10 @@ class RedisClientSDK:
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
             if self._health_check_task:
-                await cancel_wait_task(
-                    self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
-                )
+                with suppress(TimeoutError):
+                    await cancel_wait_task(
+                        self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
+                    )
 
             await self._client.aclose(close_connection_pool=True)
 
