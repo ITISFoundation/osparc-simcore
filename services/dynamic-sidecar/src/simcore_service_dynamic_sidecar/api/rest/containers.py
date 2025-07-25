@@ -4,6 +4,7 @@ import logging
 from asyncio import Lock
 from typing import Annotated, Any, Final
 
+from aiodocker import DockerError
 from common_library.json_serialization import json_loads
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
@@ -166,6 +167,7 @@ async def get_containers_activity(
         ContainerExecContainerNotFoundError,
         ContainerExecCommandFailedError,
         ContainerExecTimeoutError,
+        DockerError,
     ):
         _logger.warning(
             "Could not run inactivity command '%s' in container '%s'",

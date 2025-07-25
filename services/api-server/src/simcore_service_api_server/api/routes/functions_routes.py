@@ -36,6 +36,7 @@ from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from simcore_service_api_server._service_jobs import JobService
+from simcore_service_api_server.api.dependencies.functions import get_stored_job_status
 
 from ..._service_solvers import SolverService
 from ...models.pagination import Page, PaginationParams
@@ -365,11 +366,12 @@ async def validate_function_inputs(
 )
 async def run_function(  # noqa: PLR0913
     request: Request,
+    function_id: FunctionID,
+    to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    function_id: FunctionID,
     function_inputs: FunctionInputs,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
@@ -378,7 +380,6 @@ async def run_function(  # noqa: PLR0913
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
-
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)
@@ -390,8 +391,6 @@ async def run_function(  # noqa: PLR0913
         else None
     )
 
-    # Make sure the user is allowed to execute any function
-    # (read/write right is checked in the other endpoint called in this method)
     user_api_access_rights = await wb_api_rpc.get_functions_user_api_access_rights(
         user_id=user_id, product_name=product_name
     )
@@ -400,8 +399,7 @@ async def run_function(  # noqa: PLR0913
             user_id=user_id,
             function_id=function_id,
         )
-    # Make sure the user is allowed to execute this particular function
-    # (read/write right is checked in the other endpoint called in this method)
+
     user_permissions: FunctionUserAccessRights = (
         await wb_api_rpc.get_function_user_permissions(
             function_id=function_id, user_id=user_id, product_name=product_name
@@ -414,10 +412,6 @@ async def run_function(  # noqa: PLR0913
         )
 
     from .function_jobs_routes import function_job_status
-
-    to_run_function = await wb_api_rpc.get_function(
-        function_id=function_id, user_id=user_id, product_name=product_name
-    )
 
     joined_inputs = _join_inputs(
         to_run_function.default_inputs,
@@ -443,10 +437,17 @@ async def run_function(  # noqa: PLR0913
     ):
         for cached_function_job in cached_function_jobs:
             job_status = await function_job_status(
+                function=to_run_function,
+                function_job=cached_function_job,
+                stored_job_status=await get_stored_job_status(
+                    function_job_id=cached_function_job.uid,
+                    user_id=user_id,
+                    product_name=product_name,
+                    wb_api_rpc=wb_api_rpc,
+                ),
                 wb_api_rpc=wb_api_rpc,
-                director2_api=director2_api,
-                function_job_id=cached_function_job.uid,
                 user_id=user_id,
+                director2_api=director2_api,
                 product_name=product_name,
             )
             if job_status.status == RunningState.SUCCESS:
@@ -563,9 +564,10 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
     ),
 )
 async def map_function(  # noqa: PLR0913
-    function_id: FunctionID,
-    function_inputs_list: FunctionInputsList,
     request: Request,
+    function_id: FunctionID,
+    to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
+    function_inputs_list: FunctionInputsList,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
@@ -577,11 +579,11 @@ async def map_function(  # noqa: PLR0913
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
-    function_jobs = []
     function_jobs = [
         await run_function(
             wb_api_rpc=wb_api_rpc,
             function_id=function_id,
+            to_run_function=to_run_function,
             function_inputs=function_inputs,
             product_name=product_name,
             user_id=user_id,

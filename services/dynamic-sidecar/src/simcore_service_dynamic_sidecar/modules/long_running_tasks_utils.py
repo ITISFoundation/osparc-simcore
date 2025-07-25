@@ -3,6 +3,7 @@ import os
 from datetime import timedelta
 from typing import Final
 
+from aiodocker import DockerError
 from models_library.callbacks_mapping import UserServiceCommand
 from servicelib.logging_utils import log_context
 
@@ -39,6 +40,7 @@ async def run_before_shutdown_actions(
                 ContainerExecContainerNotFoundError,
                 ContainerExecCommandFailedError,
                 ContainerExecTimeoutError,
+                DockerError,
             ):
                 _logger.warning(
                     "Could not run before_shutdown command %s in container %s",

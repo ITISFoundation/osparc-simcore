@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import ProjectNotFoundError
-from .models import ProjectDBGet
+from .models import ProjectDBGet, ProjectWithWorkbenchDBGet
 
 _logger = logging.getLogger(__name__)
 
@@ -113,6 +113,23 @@ async def get_project(
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         return ProjectDBGet.model_validate(row)
+
+
+async def get_project_with_workbench(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: ProjectID,
+) -> ProjectWithWorkbenchDBGet:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        query = sql.select(*PROJECT_DB_COLS, projects.c.workbench).where(
+            projects.c.uuid == f"{project_uuid}"
+        )
+        result = await conn.execute(query)
+        row = result.one_or_none()
+        if row is None:
+            raise ProjectNotFoundError(project_uuid=project_uuid)
+        return ProjectWithWorkbenchDBGet.model_validate(row)
 
 
 async def batch_get_project_name(

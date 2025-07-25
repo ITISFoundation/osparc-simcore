@@ -378,8 +378,8 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
@@ -389,8 +389,8 @@ ifeq ($(target),)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@$(MAKE) .deploy-vendors
 	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 else
 	# deploys ONLY $(target) service
 	@docker compose --file $< up --detach $(target)
@@ -671,6 +671,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 					sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
 					echo restarting engine... &&\
 					sudo service docker restart &&\
+					sleep 5 &&\
 					echo done)
 
 	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\

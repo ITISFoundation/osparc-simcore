@@ -479,6 +479,9 @@ async def test_open_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: HTTPStatus,
     save_state: bool,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -492,8 +495,14 @@ async def test_open_project(
     # POST /v0/projects/{project_id}:open
     # open project
     assert client.app
+    client_id = client_session_id_factory()
+
+    # Only create socketio connection for non-anonymous users
+    if expected != status.HTTP_401_UNAUTHORIZED:
+        await create_socketio_connection_with_handlers(client, client_id)
+
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
 
     await assert_status(resp, expected)
 
@@ -563,6 +572,10 @@ async def test_open_project__in_debt(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     client_session_id_factory: Callable[[], str],
+    # socketio_client_factory: Callable,
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -600,8 +613,12 @@ async def test_open_project__in_debt(
 
     # POST /v0/projects/{project_id}:open
     assert client.app
+    client_id = client_session_id_factory()
+
+    await create_socketio_connection_with_handlers(client, client_id)
+
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
 
     assert mock_get_project_wallet_total_credits.assert_called_once
@@ -621,6 +638,9 @@ async def test_open_template_project_for_edition(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: HTTPStatus,
     save_state: bool,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -640,8 +660,13 @@ async def test_open_template_project_for_edition(
             logged_user["primary_gid"]: {"read": True, "write": True, "delete": False}
         }
     )
+    client_id = client_session_id_factory()
+
+    # Only create socketio connection for non-anonymous users
+    if expected != status.HTTP_401_UNAUTHORIZED:
+        await create_socketio_connection_with_handlers(client, client_id)
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
 
     if resp.status == status.HTTP_200_OK:
@@ -700,6 +725,9 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -715,8 +743,13 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
             logged_user["primary_gid"]: {"read": True, "write": False, "delete": True}
         }
     )
+    client_id = client_session_id_factory()
+
+    # Only create socketio connection for non-anonymous users
+    if expected != status.HTTP_401_UNAUTHORIZED:
+        await create_socketio_connection_with_handlers(client, client_id)
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
 
 
@@ -726,6 +759,9 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -751,8 +787,12 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
         for service_id in range(num_service_already_running)
     ]
 
+    client_id = client_session_id_factory()
+    # Only create socketio connection for non-anonymous users
+    if expected.ok:
+        await create_socketio_connection_with_handlers(client, client_id)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(project["uuid"])
@@ -772,6 +812,9 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -791,14 +834,20 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
             for service_id in range(num_service_already_running)
         ]
 
+        client_id = client_session_id_factory()
+        # Only create socketio connection for non-anonymous users
+        if expected.ok:
+            sio = await create_socketio_connection_with_handlers(client, client_id)
         url = (
             client.app.router["open_project"]
             .url_for(project_id=project["uuid"])
             .with_query(disable_service_auto_start=f"{True}")
         )
 
-        resp = await client.post(f"{url}", json=client_session_id_factory())
+        resp = await client.post(f"{url}", json=client_id)
         await assert_status(resp, expected.ok)
+        if expected.ok:
+            await sio[0].disconnect()
         mocked_notifications_plugin["subscribe"].assert_called_once_with(
             client.app, ProjectID(project["uuid"])
         )
@@ -814,6 +863,9 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -841,8 +893,12 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
         for service_id in range(num_service_already_running)
     ]
 
+    client_id = client_session_id_factory()
+    # Only create socketio connection for non-anonymous users
+    if expected.ok:
+        await create_socketio_connection_with_handlers(client, client_id)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(project["uuid"])
@@ -861,6 +917,9 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -891,8 +950,12 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
         for service_id in range(num_service_already_running)
     ]
 
+    client_id = client_session_id_factory()
+    # Only create socketio connection for non-anonymous users
+    if expected.ok:
+        await create_socketio_connection_with_handlers(client, client_id)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(f"{url}", json=client_session_id_factory())
+    resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(project["uuid"])
@@ -909,6 +972,9 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     logged_user,
     user_project,
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_service_resources: ServiceResourcesDict,
@@ -919,8 +985,12 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mock_catalog_api["get_service"].return_value["deprecated"] = (
         datetime.now(UTC) - timedelta(days=1)
     ).isoformat()
+    client_id = client_session_id_factory()
+    # Only create socketio connection for non-anonymous users
+    if expected.ok:
+        await create_socketio_connection_with_handlers(client, client_id)
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id_factory())
+    resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.ok)
     mocked_notifications_plugin["subscribe"].assert_called_once_with(
         client.app, ProjectID(user_project["uuid"])
@@ -961,6 +1031,9 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     client: TestClient,
     logged_user,
     client_session_id_factory: Callable[[], str],
+    create_socketio_connection_with_handlers: Callable[
+        [TestClient, str], Awaitable[tuple[socketio.AsyncClient, _SocketHandlers]]
+    ],
     user_project: ProjectDict,
     shared_project: ProjectDict,
     expected: ExpectedResponse,
@@ -970,19 +1043,35 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     client_id_1 = client_session_id_factory()
+    # Only create socketio connection for non-anonymous users
+    if user_role != UserRole.ANONYMOUS:
+        await create_socketio_connection_with_handlers(
+            client,
+            client_id_1,
+        )
     await _open_project(
         client,
         client_id_1,
         user_project,
-        expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
+        HTTPStatus(expected.ok) if user_role != UserRole.GUEST else HTTPStatus.OK,
     )
 
     client_id_2 = client_session_id_factory()
+    # Only create socketio connection for non-anonymous users
+    if user_role != UserRole.ANONYMOUS:
+        await create_socketio_connection_with_handlers(
+            client,
+            client_id_2,
+        )
     await _open_project(
         client,
         client_id_2,
         shared_project,
-        expected.conflict if user_role != UserRole.GUEST else status.HTTP_409_CONFLICT,
+        (
+            HTTPStatus(expected.conflict)
+            if user_role != UserRole.GUEST
+            else HTTPStatus.CONFLICT
+        ),
     )
 
 
