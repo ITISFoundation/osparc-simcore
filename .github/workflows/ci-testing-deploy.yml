@@ -1903,6 +1903,9 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
+      - name: wait before dumping logs
+        if: ${{ failure() }}
+        run: sleep 5
       - name: dump docker logs
         if: ${{ failure() }}
         id: docker_logs_dump
@@ -1959,6 +1962,9 @@ jobs:
       - name: test
         run: |
           ./ci/github/system-testing/e2e-playwright.bash test
+      - name: wait before dumping logs
+        if: ${{ failure() }}
+        run: sleep 5
       - name: dump docker logs
         if: ${{ failure() }}
         id: docker_logs_dump

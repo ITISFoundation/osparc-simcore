@@ -441,7 +441,7 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-python-engineio==4.10.1
+python-engineio==4.12.2
     # via python-socketio
 python-jose==3.3.0
     # via -r requirements/_base.in
@@ -449,7 +449,7 @@ python-multipart==0.0.20
     # via
     #   -r requirements/_base.in
     #   fastapi
-python-socketio==5.11.4
+python-socketio==5.13.0
     # via -r requirements/_base.in
 pyyaml==6.0.2
     # via
