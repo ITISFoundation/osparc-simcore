@@ -226,7 +226,7 @@ qx.Class.define("osparc.data.model.Node", {
       // "serviceUrl", // frontend only
       // "portsConnected", // frontend only
       "inputs",
-      "outputs",
+      "outputs", // listen to changes only if this is a frontend node. Alias to "state"
       "status", // listen to changes only if this is a frontend node. Alias to "state"
       // "errors", // frontend only
       "bootOptions",
@@ -238,10 +238,10 @@ qx.Class.define("osparc.data.model.Node", {
       // "logger", // frontend only
       /*
       "progress", // TODO
-      "inputs_required", // TODO
-      "inputs_units", // TODO
-      "input_access", // TODO
-      "input_nodes", // TODO
+      "inputsRequired", // TODO
+      "inputsUnits", // TODO
+      "inputAccess", // TODO
+      "inputNodes", // TODO
       */
     ],
 
