@@ -231,11 +231,9 @@ qx.Class.define("osparc.data.model.Node", {
       // "inputConnected", // frontend only
       // "outputConnected", // frontend only
       // "logger", // frontend only
-      /*
-      "progress", // TODO
-      */
-      "inputNodes", // !! not a property but goes into the model
-      "inputsRequired", // !! not a property but goes into the model
+     "inputNodes", // !! not a property but goes into the model
+     "inputsRequired", // !! not a property but goes into the model
+     "progress", // !! not a property but goes into the model
     ],
 
     isFrontend: function(metadata) {
@@ -1376,6 +1374,18 @@ qx.Class.define("osparc.data.model.Node", {
           "osparc-resource": "node",
         });
       }, this);
+
+      if (this.isFilePicker()) {
+        this.getStatus().addListener("changeProgress", e => {
+          const data = e.getData();
+          this.fireDataEvent("updateStudyDocument", {
+            "op": "replace",
+            "path": `/workbench/${nodeId}/progress`,
+            "value": data,
+            "osparc-resource": "node",
+          });
+        });
+      }
     },
 
     serialize: function() {
