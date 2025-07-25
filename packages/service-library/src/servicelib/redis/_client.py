@@ -76,9 +76,6 @@ class RedisClientSDK:
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
 
-        assert self._health_check_task_started_event  # nosec
-        await self._health_check_task_started_event.wait()
-
         _logger.info(
             "Connection to %s succeeded with %s",
             f"redis at {self.redis_dsn=}",
@@ -90,6 +87,8 @@ class RedisClientSDK:
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
             if self._health_check_task:
+                assert self._health_check_task_started_event  # nosec
+                await self._health_check_task_started_event.wait()
                 with suppress(TimeoutError):
                     await cancel_wait_task(
                         self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
