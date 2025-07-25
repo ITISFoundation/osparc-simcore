@@ -98,11 +98,6 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeLabel"
     },
 
-    inputAccess: {
-      check: "Object",
-      nullable: true
-    },
-
     dynamicV2: {
       check: "Boolean",
       init: false,
@@ -223,7 +218,6 @@ qx.Class.define("osparc.data.model.Node", {
       "label",
       "inputs", // own listener
       "inputsUnits", // own listener
-      "inputAccess", // own listener
       // "dynamicV2", // frontend only
       // "serviceUrl", // frontend only
       // "portsConnected", // frontend only
@@ -538,8 +532,11 @@ qx.Class.define("osparc.data.model.Node", {
     populateInputOutputData: function(nodeData) {
       this.__setInputData(nodeData.inputs);
       this.__setInputUnits(nodeData.inputsUnits);
-      this.__setInputDataAccess(nodeData.inputAccess);
       if (this.getPropsForm()) {
+        const study = this.getStudy();
+        if (study && study.isReadOnly()) {
+          this.getPropsForm().setEnabled(false);
+        }
         this.getPropsForm().makeInputsDynamic();
       }
       this.setOutputData(nodeData.outputs);
@@ -749,18 +746,6 @@ qx.Class.define("osparc.data.model.Node", {
     __setInputUnits: function(inputsUnits) {
       if (this.__settingsForm && inputsUnits) {
         this.getPropsForm().setInputsUnits(inputsUnits);
-      }
-    },
-
-    __setInputDataAccess: function(inputAccess) {
-      if (inputAccess) {
-        this.setInputAccess(inputAccess);
-        this.getPropsForm().setAccessLevel(inputAccess);
-      }
-
-      const study = this.getStudy();
-      if (study && study.isReadOnly() && this.getPropsForm()) {
-        this.getPropsForm().setEnabled(false);
       }
     },
 
@@ -1380,7 +1365,6 @@ qx.Class.define("osparc.data.model.Node", {
         label: this.getLabel(),
         inputs: this.__getInputData(),
         inputsUnits: this.__getInputUnits(),
-        inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()

@@ -72,13 +72,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
     ROW_HEIGHT: 28,
 
-    getDisableables: function() {
-      return [
-        this.GRID_POS.LABEL,
-        this.GRID_POS.CTRL_FIELD
-      ];
-    },
-
     updateUnitLabelPrefix: function(item) {
       const {
         unitShort,
@@ -321,13 +314,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         }
       }
       return false;
-    },
-
-    /**
-      * @abstract
-      */
-    setAccessLevel: function() {
-      throw new Error("Abstract method called!");
     },
 
     __createInfoWHint: function(hint) {
