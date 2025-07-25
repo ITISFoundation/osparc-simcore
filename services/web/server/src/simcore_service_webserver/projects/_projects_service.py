@@ -1590,6 +1590,8 @@ async def try_close_project_for_user(
     client_session_id: str,
     app: web.Application,
     simcore_user_agent: str,
+    *,
+    wait_for_service_closed: bool = False,
 ):
     with managed_resource(user_id, client_session_id, app) as user_session:
         current_user_session = user_session.get_id()
@@ -1609,23 +1611,33 @@ async def try_close_project_for_user(
             return
 
         # remove the project from our list of opened ones
-        with log_context(
-            log, logging.DEBUG, f"removing {user_id=} session for {project_uuid=}"
-        ):
-            await user_session.remove(key=PROJECT_ID_KEY)
+        await user_session.remove(key=PROJECT_ID_KEY)
 
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)
     log.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
     if not all_user_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
-        fire_and_forget_task(
-            remove_project_dynamic_services(
-                user_id, project_uuid, app, simcore_user_agent
-            ),
-            task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
-            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        remove_services_task = remove_project_dynamic_services(
+            user_id, project_uuid, app, simcore_user_agent
         )
+        if wait_for_service_closed:
+            # wait for the task to finish
+            await remove_services_task
+        else:
+            fire_and_forget_task(
+                remove_services_task,
+                task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
+                fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+            )
+    # notify users that project is now closed
+    project = await get_project_for_user(
+        app,
+        project_uuid,
+        user_id,
+        include_state=True,
+    )
+    await notify_project_state_update(app, project)
 
 
 async def _get_project_share_state(

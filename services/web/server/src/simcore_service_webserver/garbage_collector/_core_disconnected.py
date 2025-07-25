@@ -1,17 +1,14 @@
 import logging
 
 from aiohttp import web
-from redis.asyncio import Redis
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.utils import logged_gather
 
-from ..projects._projects_service import remove_project_dynamic_services
+from ..projects import _projects_service
 from ..projects.exceptions import ProjectLockError, ProjectNotFoundError
 from ..redis import get_redis_lock_manager_client
 from ..resource_manager.registry import (
     RedisResourceRegistry,
-    ResourcesDict,
-    UserSessionDict,
 )
 from ._core_guests import remove_guest_user_with_all_its_resources
 from .settings import GUEST_USER_RC_LOCK_FORMAT
@@ -22,7 +19,7 @@ _logger = logging.getLogger(__name__)
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    lock_manager: Redis = get_redis_lock_manager_client(app)
+    lock_manager = get_redis_lock_manager_client(app)
 
     #
     # In redis jargon, every entry is denoted as "key"
@@ -40,10 +37,9 @@ async def remove_disconnected_user_resources(
 
     # clean up all resources of expired keys
     for dead_session in all_sessions_dead:
-
         try:
             user_id = int(dead_session["user_id"])
-        except (KeyError, ValueError):  # noqa: PERF203
+        except (KeyError, ValueError):
             continue
 
         if await lock_manager.lock(
@@ -56,7 +52,7 @@ async def remove_disconnected_user_resources(
             continue
 
         # (0) If key has no resources => remove from registry and continue
-        resources: ResourcesDict = await registry.get_resources(dead_session)
+        resources = await registry.get_resources(dead_session)
         if not resources:
             await registry.remove_key(dead_session)
             continue
@@ -81,7 +77,7 @@ async def remove_disconnected_user_resources(
             # In that case, the resource is released by THE LAST DYING KEY
             # (we could call this the "last-standing-man" pattern! :-) )
             #
-            other_sessions_with_this_resource: list[UserSessionDict] = [
+            other_sessions_with_this_resource = [
                 k
                 for k in await registry.find_keys((resource_name, f"{resource_value}"))
                 if k != dead_session
@@ -107,17 +103,15 @@ async def remove_disconnected_user_resources(
                     #
                     try:
                         _logger.info(
-                            "Closing services for project '%s'", resource_value
+                            "Closing project '%s' of user %s", resource_value, user_id
                         )
-                        await remove_project_dynamic_services(
-                            user_id=user_id,
-                            project_uuid=f"{resource_value}",
-                            app=app,
+                        await _projects_service.try_close_project_for_user(
+                            user_id,
+                            f"{resource_value}",
+                            dead_session["client_session_id"],
+                            app,
                             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-                            user_name={
-                                "first_name": "garbage",
-                                "last_name": "collector",
-                            },
+                            wait_for_service_closed=True,
                         )
 
                     except (ProjectNotFoundError, ProjectLockError) as err:
