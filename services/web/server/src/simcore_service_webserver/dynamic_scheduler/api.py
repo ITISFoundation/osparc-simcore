@@ -24,7 +24,6 @@ from models_library.rabbitmq_messages import ProgressRabbitMessageProject, Progr
 from models_library.services import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from pydantic.types import PositiveInt
 from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
@@ -94,13 +93,13 @@ async def stop_dynamic_service(
 
 async def _post_progress_message(
     rabbitmq_client: RabbitMQClient,
-    user_id: PositiveInt,
-    project_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
     report: ProgressReport,
 ) -> None:
     progress_message = ProgressRabbitMessageProject(
         user_id=user_id,
-        project_id=ProjectID(project_id),
+        project_id=project_id,
         progress_type=ProgressType.PROJECT_CLOSING,
         report=report,
     )
@@ -111,14 +110,14 @@ async def _post_progress_message(
 async def stop_dynamic_services_in_project(
     app: web.Application,
     *,
-    user_id: PositiveInt,
-    project_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
     simcore_user_agent: str,
     save_state: bool,
 ) -> None:
     """Stops all dynamic services in the project"""
     running_dynamic_services = await list_dynamic_services(
-        app, user_id=user_id, project_id=ProjectID(project_id)
+        app, user_id=user_id, project_id=project_id
     )
 
     async with AsyncExitStack() as stack:
