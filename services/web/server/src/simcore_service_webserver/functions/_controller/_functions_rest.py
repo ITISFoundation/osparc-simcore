@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 from aiohttp import web
@@ -49,9 +48,6 @@ from ._functions_rest_schemas import (
 )
 
 routes = web.RouteTableDef()
-
-
-logger = logging.getLogger(__name__)
 
 
 async def _build_function_access_rights(
