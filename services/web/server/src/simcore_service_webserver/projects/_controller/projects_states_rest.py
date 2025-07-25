@@ -129,7 +129,7 @@ async def open_project(request: web.Request) -> web.Response:
                 )
             )
         sio = get_socket_server(request.app)
-        sio.enter_room(
+        await sio.enter_room(
             _socket_id, SocketIORoomStr.from_project_id(path_params.project_id)
         )
 

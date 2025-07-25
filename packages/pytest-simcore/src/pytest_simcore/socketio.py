@@ -106,14 +106,14 @@ def socketio_server_events(
     # handlers
     async def connect(sid: str, environ):
         print("connecting", sid)
-        socketio_server.enter_room(sid, room_name)
+        await socketio_server.enter_room(sid, room_name)
 
     async def on_check(sid, data):
         print("check", sid, data)
 
     async def disconnect(sid: str):
         print("disconnecting", sid)
-        socketio_server.leave_room(sid, room_name)
+        await socketio_server.leave_room(sid, room_name)
 
     # spies
     spy_connect = mocker.AsyncMock(wraps=connect)
