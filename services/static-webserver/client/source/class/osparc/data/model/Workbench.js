@@ -622,8 +622,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         const rightNode = this.getNode(rightNodeId);
         if (rightNode) {
           // no need to make any changes to a just removed node (it would trigger a patch call)
-          rightNode.removeInputNode(leftNodeId);
+          // remove first the port connections
           rightNode.removeNodePortConnections(leftNodeId);
+          // then the node connection
+          rightNode.removeInputNode(leftNodeId);
         }
 
         delete this.__edges[edgeId];
