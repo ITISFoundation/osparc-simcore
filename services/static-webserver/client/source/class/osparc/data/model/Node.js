@@ -1322,7 +1322,18 @@ qx.Class.define("osparc.data.model.Node", {
           switch (key) {
             case "inputs":
               if (this.hasPropsForm()) {
-                this.getPropsForm().addListener("changeInputs", () => {
+                // listen to changes in the props form
+                this.getPropsForm()._form.addListener("changeData", () => {
+                  const data = this.__getInputData();
+                  this.fireDataEvent("updateStudyDocument", {
+                    "op": "replace",
+                    "path": `/workbench/${nodeId}/inputs`,
+                    "value": data,
+                    "osparc-resource": "node",
+                  });
+                });
+                // listen to changes in link and unlink of ports
+                this.getPropsForm().addListener("linkFieldModified", () => {
                   const data = this.__getInputData();
                   this.fireDataEvent("updateStudyDocument", {
                     "op": "replace",
