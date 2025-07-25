@@ -233,9 +233,9 @@ qx.Class.define("osparc.data.model.Node", {
       // "logger", // frontend only
       /*
       "progress", // TODO
-      "inputsRequired", // TODO
       */
       "inputNodes", // !! not a property but goes into the model
+      "inputsRequired", // !! not a property but goes into the model
     ],
 
     isFrontend: function(metadata) {
