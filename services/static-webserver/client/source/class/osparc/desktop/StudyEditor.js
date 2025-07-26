@@ -293,6 +293,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (data["projectId"] === this.getStudy().getUuid()) {
             const myStudy = this.getStudy().serialize();
             const updatedStudy = data["document"];
+
             // the updatedStudy model doesn't contain the following properties
             [
               "accessRights",
@@ -304,11 +305,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             ].forEach(prop => {
               delete myStudy[prop];
             });
+
             // ignore the ``state`` property, it has its own channel
             [
               "state",
             ].forEach(prop => {
               delete updatedStudy[prop];
+            });
+            // in order to pair it the with frontend's node serialization
+            // remove null entries
+            // remove state entries
+            Object.keys(updatedStudy["workbench"]).forEach(nodeId => {
+              const node = updatedStudy["workbench"][nodeId];
+              Object.keys(node).forEach(nodeProp => {
+                if (nodeProp === "state") {
+                  delete node[nodeProp];
+                }
+                if (node[nodeProp] === null) {
+                  delete node[nodeProp];
+                }
+              });
             });
 
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
