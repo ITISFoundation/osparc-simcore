@@ -36,7 +36,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       annotations: {},
     });
 
-    if ("annotations" in studyDataUI) {
+    if (studyDataUI["annotations"]) {
       Object.entries(studyDataUI["annotations"]).forEach(([annotationId, annotationData]) => {
         const annotation = new osparc.workbench.Annotation(annotationData, annotationId);
         this.addAnnotation(annotation);
