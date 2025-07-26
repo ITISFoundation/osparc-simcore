@@ -81,8 +81,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
 
     this.__updatingStudy = 0;
-    this.__lastPatchTime = 0;
-    this.__throttledPendingUpdate = false;
+    this.__throttledPatchPending = false;
   },
 
   events: {
@@ -124,8 +123,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
-    __lastPatchTime: null,
-    __throttledPendingUpdate: null,
+    __throttledPatchPending: null,
 
     setStudyData: function(studyData) {
       if (this.__settingStudy) {
@@ -919,20 +917,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.getStudy().setSavePending(true);
       // throttling: do not update study document right after a change, wait for THROTTLE_PATCH_TIME
-      const throttlePatchTime = this.self().THROTTLE_PATCH_TIME;
-      const now = Date.now();
-      const timeSinceLastUpdate = now - this.__lastPatchTime;
-      if (timeSinceLastUpdate >= throttlePatchTime) {
-        this.updateStudyDocument();
-        this.__lastPatchTime = now;
-      } else if (!this.__throttledPendingUpdate) {
-        // Otherwise, schedule a call after remaining time
-        this.__throttledPendingUpdate = true;
+      if (!this.__throttledPatchPending) {
+        this.__throttledPatchPending = true;
+
         setTimeout(() => {
           this.updateStudyDocument();
-          this.__lastPatchTime = Date.now();
-          this.__throttledPendingUpdate = false;
-        }, throttlePatchTime - timeSinceLastUpdate);
+          this.__throttledPatchPending = false;
+        }, this.self().THROTTLE_PATCH_TIME);
       }
     },
 
