@@ -54,7 +54,9 @@ qx.Class.define("osparc.node.BootOptionsView", {
             "boot_mode": newBootModeId
           };
           node.setBootOptions(data);
-          node.fireDataEvent("updateStudyDocument", {
+          node.fireEvent("updateStudyDocument");
+          // OM not sure it's needed
+          node.fireDataEvent("projectDocumentChanged", {
             "op": "replace",
             "path": `/workbench/${nodeId}/bootOptions`,
             "value": data,

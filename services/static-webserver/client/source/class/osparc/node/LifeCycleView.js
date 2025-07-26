@@ -111,13 +111,17 @@ qx.Class.define("osparc.node.LifeCycleView", {
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
         const latestCompatible = osparc.store.Services.getLatestCompatible(node.getKey(), node.getVersion());
+        const newData = {};
         if (node.getKey() !== latestCompatible["key"]) {
-          node.setKey(latestCompatible["key"]);
+          newData["key"] = latestCompatible["key"];
         }
         if (node.getVersion() !== latestCompatible["version"]) {
-          node.setVersion(latestCompatible["version"]);
+          newData["version"] = latestCompatible["version"];
         }
-        node.fireDataEvent("updateStudyDocument", [{
+        node.set(newData);
+        node.fireEvent("updateStudyDocument");
+        // OM not sure it's needed
+        node.fireDataEvent("projectDocumentChanged", [{
           "op": "replace",
           "path": `/workbench/${nodeId}/key`,
           "value": latestCompatible["key"],

@@ -86,7 +86,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Data",
+    "projectDocumentChanged": "qx.event.type.Data",
   },
 
   statics: {
@@ -135,7 +135,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
             if (propertyKeys.includes(key)) {
               this.addListener(`change${qx.lang.String.firstUp(key)}`, () => {
                 const data = this.serialize();
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/ui/${key}`,
                   "value": data,

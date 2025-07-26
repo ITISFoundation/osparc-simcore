@@ -193,7 +193,8 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Data",
+    "updateStudyDocument": "qx.event.type.Event",
+    "projectDocumentChanged": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",
@@ -701,14 +702,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     __applyMarker: function(marker) {
       if (marker) {
-        this.fireDataEvent("updateStudyDocument", {
+        this.fireDataEvent("projectDocumentChanged", {
           "op": "add",
           "path": `/ui/workbench/${this.getNodeId()}/marker`,
           "value": marker.getColor(),
           "osparc-resource": "ui",
         });
         marker.addListener("changeColor", e => {
-          this.fireDataEvent("updateStudyDocument", {
+          this.fireDataEvent("projectDocumentChanged", {
             "op": "replace",
             "path": `/ui/workbench/${this.getNodeId()}/marker`,
             "value": e.getData(),
@@ -716,7 +717,7 @@ qx.Class.define("osparc.data.model.Node", {
           });
         });
       } else {
-        this.fireDataEvent("updateStudyDocument", {
+        this.fireDataEvent("projectDocumentChanged", {
           "op": "delete",
           "path": `/ui/workbench/${this.getNodeId()}/marker`,
           "osparc-resource": "ui",
@@ -1240,7 +1241,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);
 
       const nodeId = this.getNodeId();
-      this.fireDataEvent("updateStudyDocument", {
+      this.fireDataEvent("projectDocumentChanged", {
         "op": "replace",
         "path": `/ui/workbench/${nodeId}/position`,
         "value": {
@@ -1307,7 +1308,7 @@ qx.Class.define("osparc.data.model.Node", {
               // listen to changes in the props form
               this.getPropsForm()._form.addListener("changeData", () => {
                 const data = this.__getInputData();
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/inputs`,
                   "value": data,
@@ -1317,7 +1318,7 @@ qx.Class.define("osparc.data.model.Node", {
               // listen to changes in link and unlink of ports
               this.getPropsForm().addListener("linkFieldModified", () => {
                 const data = this.__getInputData();
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/inputs`,
                   "value": data,
@@ -1330,7 +1331,7 @@ qx.Class.define("osparc.data.model.Node", {
             if (this.hasPropsForm()) {
               this.getPropsForm().addListener("unitChanged", () => {
                 const data = this.__getInputUnits();
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/inputsUnits`,
                   "value": data,
@@ -1342,7 +1343,7 @@ qx.Class.define("osparc.data.model.Node", {
           case "inputNodes":
             this.addListener("changeInputNodes", () => {
               const data = this.getInputNodes();
-              this.fireDataEvent("updateStudyDocument", {
+              this.fireDataEvent("projectDocumentChanged", {
                 "op": "replace",
                 "path": `/workbench/${nodeId}/inputNodes`,
                 "value": data,
@@ -1353,7 +1354,7 @@ qx.Class.define("osparc.data.model.Node", {
           case "inputsRequired":
             this.addListener("changeInputsRequired", () => {
               const data = this.getInputsRequired();
-              this.fireDataEvent("updateStudyDocument", {
+              this.fireDataEvent("projectDocumentChanged", {
                 "op": "replace",
                 "path": `/workbench/${nodeId}/inputsRequired`,
                 "value": data,
@@ -1365,7 +1366,7 @@ qx.Class.define("osparc.data.model.Node", {
             if (this.isFilePicker()) {
               this.getStatus().addListener("changeProgress", e => {
                 const data = e.getData();
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/progress`,
                   "value": data,
@@ -1383,7 +1384,7 @@ qx.Class.define("osparc.data.model.Node", {
                 } else if (this.isParameter()) {
                   data = this.__getOutputsData();
                 }
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/outputs`,
                   "value": data,
@@ -1396,7 +1397,7 @@ qx.Class.define("osparc.data.model.Node", {
             if (propertyKeys.includes(key)) {
               this.addListener("change" + qx.lang.String.firstUp(key), e => {
                 const data = e.getData();
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/` + key,
                   "value": data,

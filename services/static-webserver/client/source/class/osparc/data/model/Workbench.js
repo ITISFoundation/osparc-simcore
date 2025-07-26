@@ -50,7 +50,8 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Data",
+    "updateStudyDocument": "qx.event.type.Event",
+    "projectDocumentChanged": "qx.event.type.Data",
     "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
     "reloadModel": "qx.event.type.Event",
@@ -275,11 +276,12 @@ qx.Class.define("osparc.data.model.Workbench", {
       const node = new osparc.data.model.Node(study, metadata, uuid);
       if (osparc.utils.Utils.eventDrivenPatch()) {
         node.listenToChanges();
+        node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
       }
-      node.addListener("updateStudyDocument", e => this.fireDataEvent("updateStudyDocument", e.getData()), this);
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
+      node.addListener("updateStudyDocument", e => this.fireEvent("updateStudyDocument"), this);
       osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       return node;
     },

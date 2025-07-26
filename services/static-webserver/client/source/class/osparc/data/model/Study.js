@@ -258,7 +258,8 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Data",
+    "updateStudyDocument": "qx.event.type.Event",
+    "projectDocumentChanged": "qx.event.type.Data",
   },
 
   statics: {
@@ -399,23 +400,23 @@ qx.Class.define("osparc.data.model.Study", {
       this.self().ListenChangesProps.forEach(key => {
         switch (key) {
           case "workbench":
-            this.getWorkbench().addListener("updateStudyDocument", e => {
+            this.getWorkbench().addListener("projectDocumentChanged", e => {
               const data = e.getData();
-              this.fireDataEvent("updateStudyDocument", data);
+              this.fireDataEvent("projectDocumentChanged", data);
             }, this);
             break;
           case "ui":
             this.getUi().listenToChanges();
-            this.getUi().addListener("updateStudyDocument", e => {
+            this.getUi().addListener("projectDocumentChanged", e => {
               const data = e.getData();
-              this.fireDataEvent("updateStudyDocument", data);
+              this.fireDataEvent("projectDocumentChanged", data);
             }, this);
             break;
           default:
             if (propertyKeys.includes(key)) {
               this.addListener("change" + qx.lang.String.firstUp(key), e => {
                 const data = e.getData();
-                this.fireDataEvent("updateStudyDocument", {
+                this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": "/" + key,
                   "value": data,

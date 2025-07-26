@@ -248,7 +248,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (osparc.utils.Utils.eventDrivenPatch()) {
         study.listenToChanges(); // this includes the listener on the workbench and ui
-        study.addListener("updateStudyDocument", e => this.updateStudyDocument(e.getData()), this);
+        study.addListener("projectDocumentChanged", e => this.projectDocumentChanged(e.getData()), this);
       } else {
         workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
         workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
@@ -906,15 +906,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     /**
      * @param {JSON Patch} data It will soon be used to patch the study document https://datatracker.ietf.org/doc/html/rfc6902
      */
-    updateStudyDocument: function(data = null) {
+    projectDocumentChanged: function(data) {
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        console.log("projectDocumentChanged", data);
+      }
+
+      this.updateStudyDocument();
+    },
+
+    updateStudyDocument: function() {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
           resolve();
         });
-      }
-
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        console.log("updateStudyDocument", data || "forced"); // For debugging purposes
       }
 
       this.__updatingStudy++;
