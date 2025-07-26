@@ -917,6 +917,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         console.log("projectDocumentChanged", data);
       }
 
+      this.getStudy().setSavePending(true);
       // throttling: do not update study document right after a change, wait for THROTTLE_PATCH_TIME
       const throttlePatchTime = this.self().THROTTLE_PATCH_TIME;
       const now = Date.now();
@@ -942,6 +943,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
       }
 
+      this.getStudy().setSavePending(true);
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();
       return this.getStudy().patchStudyDelayed(studyDiffs.delta, studyDiffs.sourceStudy)
@@ -957,6 +959,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           throw error;
         })
         .finally(() => {
+          this.getStudy().setSavePending(false);
           this.__updatingStudy--;
           if (this.__updateThrottled && this.__updatingStudy === 0) {
             this.__updateThrottled = false;
