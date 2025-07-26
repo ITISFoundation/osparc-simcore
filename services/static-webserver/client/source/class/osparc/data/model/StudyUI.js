@@ -114,10 +114,30 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     addAnnotation: function(annotation) {
       this.getAnnotations()[annotation.getId()] = annotation;
+      this.fireDataEvent("projectDocumentChanged", {
+        "op": "add",
+        "path": `/ui/annotations/${annotation.getId()}`,
+        "value": annotation.serialize(),
+        "osparc-resource": "study-ui",
+      });
+      annotation.addListener("annotationChanged", () => {
+        this.fireDataEvent("projectDocumentChanged", {
+          "op": "replace",
+          "path": `/ui/annotations/${annotation.getId()}`,
+          "value": annotation.serialize(),
+          "osparc-resource": "study-ui",
+        });
+      }, this);
     },
 
     removeAnnotation: function(annotationId) {
       if (annotationId in this.getAnnotations()) {
+        const annotation = this.getAnnotations()[annotationId]
+        this.fireDataEvent("projectDocumentChanged", {
+          "op": "delete",
+          "path": `/ui/annotations/${annotation.getId()}`,
+          "osparc-resource": "study-ui",
+        });
         delete this.getAnnotations()[annotationId];
       }
     },
