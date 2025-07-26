@@ -223,7 +223,7 @@ qx.Class.define("osparc.data.model.Node", {
       // "serviceUrl", // frontend only
       // "portsConnected", // frontend only
       "outputs", // listen to changes only if this is a frontend node
-      "status", // listen to changes only if this is a frontend node. Alias to "state"
+      // "status", // backend driven
       // "errors", // frontend only
       "bootOptions",
       // "propsForm", // frontend only
