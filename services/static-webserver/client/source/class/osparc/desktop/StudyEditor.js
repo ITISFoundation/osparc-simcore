@@ -290,7 +290,23 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       if (!socket.slotExists("projectDocument:updated")) {
         socket.on("projectDocument:updated", data => {
-          console.log("projectDocument:updated", data);
+          if (data["projectId"] === this.getStudy().getUuid()) {
+            console.log("projectDocument:updated", data);
+            const currentStudy = this.getStudy().serialize();
+            // the projectDocument doesn't contain the following properties
+            [
+              "accessRights",
+              "creationDate",
+              "folderId",
+              "prjOwner",
+              "tags",
+              "trashedBy",
+            ].forEach(prop => {
+              delete currentStudy[prop];
+            });
+            const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(currentStudy, data["document"]);
+            console.log("projectDocument:updated delta", delta);
+          }
         }, this);
       }
     },
