@@ -44,8 +44,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     this.set({
       uuid: studyData.uuid || this.getUuid(),
-      workspaceId: studyData.workspaceId || null,
-      folderId: studyData.folderId || null,
+      workspaceId: studyData.workspaceId || this.getWorkspaceId(),
+      folderId: studyData.folderId || this.getFolderId(),
       name: studyData.name || this.getName(),
       description: studyData.description || this.getDescription(),
       thumbnail: studyData.thumbnail || this.getThumbnail(),
@@ -60,9 +60,9 @@ qx.Class.define("osparc.data.model.Study", {
       permalink: studyData.permalink || this.getPermalink(),
       dev: studyData.dev || this.getDev(),
       trashedAt: studyData.trashedAt ? new Date(studyData.trashedAt) : this.getTrashedAt(),
-      trashedBy: studyData.trashedBy || null,
-      type: studyData.type,
-      templateType: studyData.templateType,
+      trashedBy: studyData.trashedBy || this.getTrashedBy(),
+      type: studyData.type || this.getType(),
+      templateType: studyData.templateType || this.getTemplateType(),
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
