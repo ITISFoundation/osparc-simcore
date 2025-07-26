@@ -198,6 +198,7 @@ qx.Class.define("osparc.data.model.Node", {
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",
+    "changePosition": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
@@ -1249,6 +1250,11 @@ qx.Class.define("osparc.data.model.Node", {
           "y": this.__posY,
         },
         "osparc-resource": "ui",
+      });
+
+      this.fireDataEvent("changePosition", {
+        x: this.__posX,
+        y: this.__posY
       });
     },
 
