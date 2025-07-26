@@ -162,20 +162,46 @@ qx.Class.define("osparc.data.model.StudyUI", {
         if (currentStudy) {
           Object.keys(uiDiff["workbench"]).forEach(nodeId => {
             const node = currentStudy.getWorkbench().getNode(nodeId);
-            if (node) {
-              if ("position" in uiDiff["workbench"][nodeId]) {
-                const position = uiDiff["workbench"][nodeId]["position"];
-                const newPos = node.getPosition();
-                if ("x" in position) {
-                  newPos.x = position["x"][1];
-                }
-                if ("y" in position) {
-                  newPos.y = position["y"][1];
-                }
-                node.setPosition(newPos);
-              }
+            if ("position" in uiDiff["workbench"][nodeId]) {
+              const positionDiff = uiDiff["workbench"][nodeId]["position"];
+              this.__updatePositionFromDiff(node, positionDiff);
+            }
+            if ("marker" in uiDiff["workbench"][nodeId]) {
+              const markerDiff = uiDiff["workbench"][nodeId]["marker"];
+              this.__updateMarkerFromDiff(node, markerDiff);
             }
           });
+        }
+      }
+    },
+
+    __updatePositionFromDiff: function(node, positionDiff) {
+      if (node) {
+        const newPos = node.getPosition();
+        if ("x" in positionDiff) {
+          newPos.x = positionDiff["x"][1];
+        }
+        if ("y" in positionDiff) {
+          newPos.y = positionDiff["y"][1];
+        }
+        node.setPosition(newPos);
+      }
+    },
+
+    __updateMarkerFromDiff: function(node, markerDiff) {
+      if (node) {
+        if (markerDiff instanceof Array) {
+          if (markerDiff.length === 1) {
+            // it was added
+            node.addMarker(markerDiff[0]);
+          } else if (markerDiff.length === 2 && markerDiff[1] === null) {
+            // it was removed
+            node.setMarker(null);
+          }
+        } else if ("color" in markerDiff && markerDiff["color"] instanceof Array) {
+          // it was updated
+          const newColor = markerDiff["color"][1];
+          node.getMarker().setColor(newColor);
         }
       }
     },

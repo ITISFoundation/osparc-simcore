@@ -525,7 +525,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.setPosition(nodeUIData.position);
       }
       if ("marker" in nodeUIData) {
-        this.__addMarker(nodeUIData.marker);
+        this.addMarker(nodeUIData.marker);
       }
     },
 
@@ -683,11 +683,11 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.getMarker()) {
         this.__removeMarker();
       } else {
-        this.__addMarker();
+        this.addMarker();
       }
     },
 
-    __addMarker: function(marker) {
+    addMarker: function(marker) {
       if (marker === undefined) {
         marker = {
           color: osparc.utils.Utils.getRandomColor()
