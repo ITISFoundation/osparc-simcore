@@ -43,11 +43,11 @@ qx.Class.define("osparc.data.model.StudyUI", {
       });
     }
 
-    slideshow.addListener("changeSlideshow", () => {
+    this.getSlideshow().addListener("changeSlideshow", () => {
       this.fireDataEvent("projectDocumentChanged", {
         "op": "replace",
         "path": "/ui/slideshow",
-        "value": slideshow.serialize(),
+        "value": this.getSlideshow().serialize(),
         "osparc-resource": "study-ui",
       });
     }, this);
