@@ -186,6 +186,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       jsonObject["slideshow"] = this.getSlideshow().serialize();
       jsonObject["currentNodeId"] = this.getCurrentNodeId() || "";
       jsonObject["mode"] = this.getMode();
+      jsonObject["annotations"] = null;
       const annotations = this.getAnnotations();
       if (Object.keys(annotations).length) {
         jsonObject["annotations"] = {};
