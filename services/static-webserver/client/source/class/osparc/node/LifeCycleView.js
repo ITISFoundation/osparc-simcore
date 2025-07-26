@@ -134,7 +134,9 @@ qx.Class.define("osparc.node.LifeCycleView", {
         // add timeout to make sure the node is saved before starting it
         setTimeout(() => {
           updateButton.setFetching(false);
-          node.requestStartNode();
+          if (!node.getStudy().getDisableServiceAutoStart()) {
+            node.requestStartNode();
+          }
         }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
       });
 

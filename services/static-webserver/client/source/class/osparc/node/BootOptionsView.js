@@ -64,7 +64,9 @@ qx.Class.define("osparc.node.BootOptionsView", {
           // add timeout to make sure the node is saved before starting it
           setTimeout(() => {
             buttonsLayout.setEnabled(true);
-            // node.requestStartNode();
+            if (!node.getStudy().getDisableServiceAutoStart()) {
+              node.requestStartNode();
+            }
           }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
         }
       }, this);
