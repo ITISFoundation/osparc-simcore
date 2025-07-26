@@ -48,6 +48,8 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     grid.setColumnFlex(this.self().GRID_POS.FIELD_LINK_UNLINK, 0);
     grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
     Object.keys(this.self().GRID_POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
+
+    form.addListener("changeData", e => this.fireDataEvent("changeData", e.getData()), this);
   },
 
   properties: {
@@ -58,6 +60,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
   },
 
   events: {
+    "changeData": "qx.event.type.Data",
     "unitChanged": "qx.event.type.Data"
   },
 

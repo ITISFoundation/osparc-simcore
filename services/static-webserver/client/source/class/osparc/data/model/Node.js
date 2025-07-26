@@ -1306,7 +1306,7 @@ qx.Class.define("osparc.data.model.Node", {
           case "inputs":
             if (this.hasPropsForm()) {
               // listen to changes in the props form
-              this.getPropsForm()._form.addListener("changeData", () => {
+              this.getPropsForm().addListener("changeData", () => {
                 const data = this.__getInputData();
                 this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
