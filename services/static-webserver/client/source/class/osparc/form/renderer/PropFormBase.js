@@ -61,7 +61,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
 
   events: {
     "changeData": "qx.event.type.Data",
-    "unitChanged": "qx.event.type.Data"
+    "unitChanged": "qx.event.type.Data",
   },
 
   statics: {
