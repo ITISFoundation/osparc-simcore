@@ -136,7 +136,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
         setTimeout(() => {
           updateButton.setFetching(false);
           node.requestStartNode();
-        }, 2000);
+        }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
       });
 
       buttonsLayout.add(updateButton);

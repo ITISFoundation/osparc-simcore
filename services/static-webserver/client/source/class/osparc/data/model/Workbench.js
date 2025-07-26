@@ -281,7 +281,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
-      node.addListener("updateStudyDocument", e => this.fireEvent("updateStudyDocument"), this);
+      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
       osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
       return node;
     },
@@ -626,7 +626,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const rightNode = this.getNode(rightNodeId);
         if (rightNode) {
           // no need to make any changes to a just removed node (it would trigger a patch call)
-          // remove first the port connections
+          // first remove the port connections
           rightNode.removeNodePortConnections(leftNodeId);
           // then the node connection
           rightNode.removeInputNode(leftNodeId);

@@ -258,7 +258,6 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Event",
     "projectDocumentChanged": "qx.event.type.Data",
   },
 

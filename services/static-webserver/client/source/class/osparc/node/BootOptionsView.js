@@ -66,7 +66,7 @@ qx.Class.define("osparc.node.BootOptionsView", {
           setTimeout(() => {
             buttonsLayout.setEnabled(true);
             node.requestStartNode();
-          }, 2000);
+          }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
         }
       }, this);
       buttonsLayout.add(bootModeSB);
