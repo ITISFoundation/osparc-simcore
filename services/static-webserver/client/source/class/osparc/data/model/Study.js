@@ -751,17 +751,17 @@ qx.Class.define("osparc.data.model.Study", {
         promises.push(this.getWorkbench().patchWorkbenchDelayed(studyDiffs["workbench"], studySource["workbench"]));
         delete studyDiffs["workbench"];
       }
-      const fieldKeys = Object.keys(studyDiffs);
-      if (fieldKeys.length) {
-        fieldKeys.forEach(fieldKey => {
+      const changedFields = Object.keys(studyDiffs);
+      if (changedFields.length) {
+        changedFields.forEach(changedField => {
           // OM: can this be called all together?
           const patchData = {};
-          if (fieldKey === "ui") {
-            patchData[fieldKey] = this.getUi().serialize();
+          if (changedField === "ui") {
+            patchData[changedField] = this.getUi().serialize();
           } else {
-            const upKey = qx.lang.String.firstUp(fieldKey);
+            const upKey = qx.lang.String.firstUp(changedField);
             const getter = "get" + upKey;
-            patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
+            patchData[changedField] = this[getter](studyDiffs[changedField]);
           }
           promises.push(osparc.store.Study.getInstance().patchStudy(this.getUuid(), patchData))
         });
