@@ -156,6 +156,30 @@ qx.Class.define("osparc.data.model.StudyUI", {
       this.getSlideshow().removeNode(nodeId);
     },
 
+    updateUiFromDiff: function(uiDiff) {
+      if (uiDiff["workbench"]) {
+        const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+        if (currentStudy) {
+          Object.keys(uiDiff["workbench"]).forEach(nodeId => {
+            const node = currentStudy.getWorkbench().getNode(nodeId);
+            if (node) {
+              if ("position" in uiDiff["workbench"][nodeId]) {
+                const position = uiDiff["workbench"][nodeId]["position"];
+                const newPos = node.getPosition();
+                if ("x" in position) {
+                  newPos.x = position["x"][1];
+                }
+                if ("y" in position) {
+                  newPos.y = position["y"][1];
+                }
+                node.setPosition(newPos);
+              }
+            }
+          });
+        }
+      }
+    },
+
     listenToChanges: function() {
       const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.StudyUI));
       this.self().ListenChangesProps.forEach(key => {

@@ -331,6 +331,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
             console.log("projectDocument:updated delta", myStudy, updatedStudy, delta);
+            if ("ui" in delta) {
+              this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
+              delete delta["ui"];
+            }
           }
         }, this);
       }
