@@ -70,7 +70,7 @@ async def web_server(
 
 @pytest.fixture
 async def server_url(web_server: URL) -> str:
-    return f'{web_server.with_path("/")}'
+    return f"{web_server.with_path('/')}"
 
 
 @pytest.fixture

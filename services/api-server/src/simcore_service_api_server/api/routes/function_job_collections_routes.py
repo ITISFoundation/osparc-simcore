@@ -12,7 +12,13 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.products import ProductName
-from models_library.users import UserID  # Import UserID
+from models_library.users import UserID
+from simcore_service_api_server.api.dependencies.functions import (
+    get_stored_job_status,  # Import UserID
+)
+from simcore_service_api_server.api.dependencies.functions import (
+    get_function_from_functionjobid,
+)
 
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -221,13 +227,30 @@ async def function_job_collection_status(
     job_statuses = await asyncio.gather(
         *[
             function_job_status(
-                job_id,
+                function_job=await get_function_job(
+                    function_job_id=function_job_id,
+                    wb_api_rpc=wb_api_rpc,
+                    user_id=user_id,
+                    product_name=product_name,
+                ),
+                function=await get_function_from_functionjobid(
+                    function_job_id=function_job_id,
+                    wb_api_rpc=wb_api_rpc,
+                    user_id=user_id,
+                    product_name=product_name,
+                ),
+                stored_job_status=await get_stored_job_status(
+                    function_job_id=function_job_id,
+                    user_id=user_id,
+                    product_name=product_name,
+                    wb_api_rpc=wb_api_rpc,
+                ),
                 wb_api_rpc=wb_api_rpc,
                 director2_api=director2_api,
                 user_id=user_id,
                 product_name=product_name,
             )
-            for job_id in function_job_collection.job_ids
+            for function_job_id in function_job_collection.job_ids
         ]
     )
     return FunctionJobCollectionStatus(

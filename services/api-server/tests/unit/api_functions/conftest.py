@@ -142,19 +142,17 @@ def mock_registered_solver_function(
     sample_output_schema: JSONFunctionOutputSchema,
 ) -> RegisteredFunction:
     return RegisteredSolverFunction(
-        **{
-            "title": "test_function",
-            "function_class": FunctionClass.SOLVER,
-            "description": "A test function",
-            "input_schema": sample_input_schema,
-            "output_schema": sample_output_schema,
-            "default_inputs": None,
-            "uid": f"{uuid4()}",
-            "created_at": datetime.datetime.now(datetime.UTC),
-            "modified_at": datetime.datetime.now(datetime.UTC),
-            "solver_key": "simcore/services/comp/ans-model",
-            "solver_version": "1.0.1",
-        }
+        title="test_function",
+        function_class=FunctionClass.SOLVER,
+        description="A test function",
+        input_schema=sample_input_schema,
+        output_schema=sample_output_schema,
+        default_inputs=None,
+        uid=uuid4(),
+        created_at=datetime.datetime.now(datetime.UTC),
+        modified_at=datetime.datetime.now(datetime.UTC),
+        solver_key="simcore/services/comp/ans-model",
+        solver_version="1.0.1",
     )
 
 
@@ -260,6 +258,27 @@ def mock_handler_in_functions_rpc_interface(
 
         mock_wb_api_server_rpc.patch.object(
             functions_rpc_interface,
+            handler_name,
+            return_value=return_value,
+            side_effect=exception,
+        )
+
+    return _mock
+
+
+@pytest.fixture()
+def mock_handler_in_study_jobs_rest_interface(
+    mock_wb_api_server_rpc: MockerFixture,
+) -> Callable[[str, Any, Exception | None], None]:
+    def _mock(
+        handler_name: str = "",
+        return_value: Any = None,
+        exception: Exception | None = None,
+    ) -> None:
+        from simcore_service_api_server.api.routes.functions_routes import studies_jobs
+
+        mock_wb_api_server_rpc.patch.object(
+            studies_jobs,
             handler_name,
             return_value=return_value,
             side_effect=exception,
