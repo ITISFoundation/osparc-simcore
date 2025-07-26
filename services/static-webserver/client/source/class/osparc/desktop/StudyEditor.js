@@ -291,8 +291,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (!socket.slotExists("projectDocument:updated")) {
         socket.on("projectDocument:updated", data => {
           if (data["projectId"] === this.getStudy().getUuid()) {
-            const currentStudy = this.getStudy().serialize();
-            // the projectDocument doesn't contain the following properties
+            const myStudy = this.getStudy().serialize();
+            const updatedStudy = data["document"];
+            // the updatedStudy model doesn't contain the following properties
             [
               "accessRights",
               "creationDate",
@@ -301,10 +302,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               "tags",
               "trashedBy",
             ].forEach(prop => {
-              delete currentStudy[prop];
+              delete myStudy[prop];
             });
-            const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(currentStudy, data["document"]);
-            console.log("projectDocument:updated delta", currentStudy, data["document"], delta);
+            // ignore the ``state`` property, it has its own channel
+            [
+              "state",
+            ].forEach(prop => {
+              delete updatedStudy[prop];
+            });
+
+            const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
+            console.log("projectDocument:updated delta", myStudy, updatedStudy, delta);
           }
         }, this);
       }
