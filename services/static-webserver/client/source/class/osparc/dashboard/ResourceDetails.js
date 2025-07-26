@@ -81,6 +81,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               this.__resourceModel["resourceType"] = resourceData["resourceType"];
               this.__addPages();
             }
+            // use latestResourceData, resourceData doesn't have the functionClass nor the templateId
             if (latestResourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
               // this is only required for functions that have a template linked
               osparc.store.Templates.fetchTemplate(latestResourceData["templateId"])
