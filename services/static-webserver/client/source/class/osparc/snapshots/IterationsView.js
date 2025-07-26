@@ -133,7 +133,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
       const iteration = new osparc.data.model.Study(iterationData);
       iteration.setReadOnly(true);
       iteration.nodeUpdated(dataUpdate);
-      const iterationDataUpdated = iteration.serialize(false);
+      const iterationDataUpdated = iteration.serialize();
       this.__iterations.splice(idx, 1, iterationDataUpdated);
 
       // update maximum once every 2"
@@ -180,7 +180,7 @@ qx.Class.define("osparc.snapshots.IterationsView", {
         this.__iterationsSection.remove(this.__iterationsTable);
       }
 
-      const iterationsTable = this.__iterationsTable = new osparc.snapshots.Iterations(this.__study.serialize(false));
+      const iterationsTable = this.__iterationsTable = new osparc.snapshots.Iterations(this.__study.serialize());
       iterationsTable.populateTable(this.__iterations);
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();

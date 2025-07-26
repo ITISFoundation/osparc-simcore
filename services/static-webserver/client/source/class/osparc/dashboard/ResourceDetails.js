@@ -81,9 +81,10 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               this.__resourceModel["resourceType"] = resourceData["resourceType"];
               this.__addPages();
             }
-            if (resourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
+            // use latestResourceData, resourceData doesn't have the functionClass nor the templateId
+            if (latestResourceData["functionClass"] === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
               // this is only required for functions that have a template linked
-              osparc.store.Templates.fetchTemplate(resourceData["templateId"])
+              osparc.store.Templates.fetchTemplate(latestResourceData["templateId"])
                 .then(templateData => {
                   // prefetch function's underlying template's services metadata
                   osparc.store.Services.getStudyServicesMetadata(templateData)
@@ -592,7 +593,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
-        const resourceModel = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate() : this.__resourceData;
+        const resourceModel = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate() : this.__resourceModel;
         const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
         this.__widgets.push(preview);

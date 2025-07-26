@@ -81,6 +81,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
 
     this.__updatingStudy = 0;
+    this.__throttledPatchPending = false;
   },
 
   events: {
@@ -106,6 +107,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   statics: {
     AUTO_SAVE_INTERVAL: 3000,
     DIFF_CHECK_INTERVAL: 300,
+    THROTTLE_PATCH_TIME: 500,
     READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
   },
 
@@ -121,6 +123,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
+    __throttledPatchPending: null,
 
     setStudyData: function(studyData) {
       if (this.__settingStudy) {
@@ -246,8 +249,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
-      workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
-      workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        study.listenToChanges(); // this includes the listener on the workbench and ui
+        study.addListener("projectDocumentChanged", e => this.projectDocumentChanged(e.getData()), this);
+      } else {
+        workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
+        workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
+      }
     },
 
     __setStudyDataInBackend: function(studyData) {
@@ -802,6 +810,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     // ------------------ AUTO SAVER ------------------
     __startAutoSaveTimer: function() {
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        // If event driven patch is enabled, auto save is not needed
+        return;
+      }
+
       // Save every 3 seconds
       const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
       timer.addListener("interval", () => {
@@ -829,6 +842,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     // ---------------- SAVING TIMER ------------------
     __startSavingTimer: function() {
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        // If event driven patch is enabled, saving timer indicator is not needed
+        return;
+      }
+
       const timer = this.__savingTimer = new qx.event.Timer(this.self().DIFF_CHECK_INTERVAL);
       timer.addListener("interval", () => {
         if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
@@ -872,7 +890,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     // didStudyChange takes around 0.5ms
     didStudyChange: function() {
       const studyDiffs = this.__getStudyDiffs();
-      return Boolean(Object.keys(studyDiffs.delta).length);
+      const changed = Boolean(Object.keys(studyDiffs.delta).length);
+      this.getStudy().setSavePending(changed);
+      return changed;
     },
 
     __checkStudyChanges: function() {
@@ -886,6 +906,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    /**
+     * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
+     */
+    projectDocumentChanged: function(data) {
+      data["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
+      if (osparc.utils.Utils.isDevelopmentPlatform()) {
+        console.log("projectDocumentChanged", data);
+      }
+
+      this.getStudy().setSavePending(true);
+      // throttling: do not update study document right after a change, wait for THROTTLE_PATCH_TIME
+      if (!this.__throttledPatchPending) {
+        this.__throttledPatchPending = true;
+
+        setTimeout(() => {
+          this.updateStudyDocument();
+          this.__throttledPatchPending = false;
+        }, this.self().THROTTLE_PATCH_TIME);
+      }
+    },
+
     updateStudyDocument: function() {
       if (!osparc.data.model.Study.canIWrite(this.getStudy().getAccessRights())) {
         return new Promise(resolve => {
@@ -893,6 +934,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
       }
 
+      this.getStudy().setSavePending(true);
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();
       return this.getStudy().patchStudyDelayed(studyDiffs.delta, studyDiffs.sourceStudy)
@@ -908,6 +950,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           throw error;
         })
         .finally(() => {
+          this.getStudy().setSavePending(false);
           this.__updatingStudy--;
           if (this.__updateThrottled && this.__updatingStudy === 0) {
             this.__updateThrottled = false;
