@@ -593,7 +593,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       page.setEnabled(enabled);
 
       const lazyLoadContent = () => {
-        const resourceModel = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate() : this.__resourceData;
+        const resourceModel = osparc.utils.Resources.isFunction(this.__resourceData) ? this.__resourceModel.getTemplate() : this.__resourceModel;
         const preview = new osparc.study.StudyPreview(resourceModel);
         page.addToContent(preview);
         this.__widgets.push(preview);
