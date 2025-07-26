@@ -294,7 +294,6 @@ qx.Class.define("osparc.data.model.Study", {
     // Properties of the Study class that should not be serialized
     // when serializing the study object to send it to the backend
     IgnoreSerializationProps: [
-      "lastChangeDate",
       "permalink",
       "state",
       "pipelineRunning",
