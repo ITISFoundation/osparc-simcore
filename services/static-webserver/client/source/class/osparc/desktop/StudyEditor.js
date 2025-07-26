@@ -256,6 +256,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
         workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
       }
+
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        this.__listenToProjectDocument();
+      }
     },
 
     __setStudyDataInBackend: function(studyData) {
@@ -279,6 +283,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToEvent();
       this.__listenToServiceStatus();
       this.__listenToStatePorts();
+    },
+
+    __listenToProjectDocument: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      if (!socket.slotExists("projectDocument:updated")) {
+        socket.on("projectDocument:updated", data => {
+          console.log("projectDocument:updated", data);
+        }, this);
+      }
     },
 
     __listenToLogger: function() {
