@@ -50,13 +50,23 @@ qx.Class.define("osparc.node.BootOptionsView", {
         if (selection.length) {
           buttonsLayout.setEnabled(false);
           const newBootModeId = selection[0].bootModeId;
-          node.setBootOptions({
+          const data = {
             "boot_mode": newBootModeId
-          });
+          };
+          node.setBootOptions(data);
           node.fireEvent("updateStudyDocument");
+          node.fireDataEvent("projectDocumentChanged", {
+            "op": "replace",
+            "path": `/workbench/${nodeId}/bootOptions`,
+            "value": data,
+            "osparc-resource": "node",
+          });
+          // add timeout to make sure the node is saved before starting it
           setTimeout(() => {
             buttonsLayout.setEnabled(true);
-            node.requestStartNode();
+            if (!node.getStudy().getDisableServiceAutoStart()) {
+              node.requestStartNode();
+            }
           }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
         }
       }, this);

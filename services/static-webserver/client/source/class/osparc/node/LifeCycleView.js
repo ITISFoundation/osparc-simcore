@@ -111,16 +111,32 @@ qx.Class.define("osparc.node.LifeCycleView", {
       updateButton.addListener("execute", () => {
         updateButton.setFetching(true);
         const latestCompatible = osparc.store.Services.getLatestCompatible(node.getKey(), node.getVersion());
+        const newData = {};
         if (node.getKey() !== latestCompatible["key"]) {
-          node.setKey(latestCompatible["key"]);
+          newData["key"] = latestCompatible["key"];
         }
         if (node.getVersion() !== latestCompatible["version"]) {
-          node.setVersion(latestCompatible["version"]);
+          newData["version"] = latestCompatible["version"];
         }
+        node.set(newData);
         node.fireEvent("updateStudyDocument");
+        node.fireDataEvent("projectDocumentChanged", [{
+          "op": "replace",
+          "path": `/workbench/${nodeId}/key`,
+          "value": latestCompatible["key"],
+          "osparc-resource": "node",
+        }, {
+          "op": "replace",
+          "path": `/workbench/${nodeId}/version`,
+          "value": latestCompatible["version"],
+          "osparc-resource": "node",
+        }]);
+        // add timeout to make sure the node is saved before starting it
         setTimeout(() => {
           updateButton.setFetching(false);
-          node.requestStartNode();
+          if (!node.getStudy().getDisableServiceAutoStart()) {
+            node.requestStartNode();
+          }
         }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
       });
 

@@ -51,6 +51,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   events: {
     "updateStudyDocument": "qx.event.type.Event",
+    "projectDocumentChanged": "qx.event.type.Data",
     "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
     "reloadModel": "qx.event.type.Event",
@@ -273,6 +274,10 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __createNode: function(study, metadata, uuid) {
       const node = new osparc.data.model.Node(study, metadata, uuid);
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        node.listenToChanges();
+        node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
+      }
       node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
@@ -541,9 +546,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         return false;
       }
 
+      this.fireEvent("restartAutoSaveTimer");
       let node = this.getNode(nodeId);
       if (node) {
-        this.fireEvent("restartAutoSaveTimer");
         // remove the node in the backend first
         const removed = await node.removeNode();
         if (removed) {
@@ -621,8 +626,10 @@ qx.Class.define("osparc.data.model.Workbench", {
         const rightNode = this.getNode(rightNodeId);
         if (rightNode) {
           // no need to make any changes to a just removed node (it would trigger a patch call)
-          rightNode.removeInputNode(leftNodeId);
+          // first remove the port connections
           rightNode.removeNodePortConnections(leftNodeId);
+          // then the node connection
+          rightNode.removeInputNode(leftNodeId);
         }
 
         delete this.__edges[edgeId];
@@ -743,16 +750,15 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
     },
 
-    serialize: function(clean = true) {
+    serialize: function() {
       if (this.__workbenchInitData !== null) {
         // workbench is not initialized
         return this.__workbenchInitData;
       }
-      let workbench = {};
-      const allModels = this.getNodes();
-      const nodes = Object.values(allModels);
+      const workbench = {};
+      const nodes = Object.values(this.getNodes());
       for (const node of nodes) {
-        const data = node.serialize(clean);
+        const data = node.serialize();
         if (data) {
           workbench[node.getNodeId()] = data;
         }
@@ -765,17 +771,12 @@ qx.Class.define("osparc.data.model.Workbench", {
         // workbenchUI is not initialized
         return this.__workbenchUIInitData;
       }
-      let workbenchUI = {};
-      const nodes = this.getNodes();
-      for (const nodeId in nodes) {
-        const node = nodes[nodeId];
-        workbenchUI[nodeId] = {};
-        workbenchUI[nodeId]["position"] = node.getPosition();
-        const marker = node.getMarker();
-        if (marker) {
-          workbenchUI[nodeId]["marker"] = {
-            color: marker.getColor()
-          };
+      const workbenchUI = {};
+      const nodes = Object.values(this.getNodes());
+      for (const node of nodes) {
+        const data = node.serializeUI();
+        if (data) {
+          workbenchUI[node.getNodeId()] = data;
         }
       }
       return workbenchUI;

@@ -36,12 +36,21 @@ qx.Class.define("osparc.data.model.StudyUI", {
       annotations: {},
     });
 
-    if ("annotations" in studyDataUI) {
+    if (studyDataUI["annotations"]) {
       Object.entries(studyDataUI["annotations"]).forEach(([annotationId, annotationData]) => {
         const annotation = new osparc.workbench.Annotation(annotationData, annotationId);
         this.addAnnotation(annotation);
       });
     }
+
+    this.getSlideshow().addListener("changeSlideshow", () => {
+      this.fireDataEvent("projectDocumentChanged", {
+        "op": "replace",
+        "path": "/ui/slideshow",
+        "value": this.getSlideshow().serialize(),
+        "osparc-resource": "study-ui",
+      });
+    }, this);
   },
 
   properties: {
@@ -85,12 +94,24 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
   },
 
+  events: {
+    "projectDocumentChanged": "qx.event.type.Data",
+  },
+
   statics: {
     TEMPLATE_TYPE: "TEMPLATE",
     TUTORIAL_TYPE: "TUTORIAL",
     HYPERTOOL_TYPE: "HYPERTOOL",
     HYPERTOOL_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/hypertool.png",
     PIPELINE_ICON: "https://raw.githubusercontent.com/ZurichMedTech/s4l-assets/refs/heads/main/app/icons/diagram.png",
+
+    ListenChangesProps: [
+      // "workbench", it's handled by osparc.data.model.Workbench
+      "slideshow",
+      "currentNodeId", // eventually don't patch it, it is personal, only the last closing sets it
+      "mode", // eventually don't patch it, it is personal, only the last closing sets it
+      "annotations", // TODO
+    ],
   },
 
   members: {
@@ -102,10 +123,30 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     addAnnotation: function(annotation) {
       this.getAnnotations()[annotation.getId()] = annotation;
+      this.fireDataEvent("projectDocumentChanged", {
+        "op": "add",
+        "path": `/ui/annotations/${annotation.getId()}`,
+        "value": annotation.serialize(),
+        "osparc-resource": "study-ui",
+      });
+      annotation.addListener("annotationChanged", () => {
+        this.fireDataEvent("projectDocumentChanged", {
+          "op": "replace",
+          "path": `/ui/annotations/${annotation.getId()}`,
+          "value": annotation.serialize(),
+          "osparc-resource": "study-ui",
+        });
+      }, this);
     },
 
     removeAnnotation: function(annotationId) {
       if (annotationId in this.getAnnotations()) {
+        const annotation = this.getAnnotations()[annotationId]
+        this.fireDataEvent("projectDocumentChanged", {
+          "op": "delete",
+          "path": `/ui/annotations/${annotation.getId()}`,
+          "osparc-resource": "study-ui",
+        });
         delete this.getAnnotations()[annotationId];
       }
     },
@@ -115,6 +156,79 @@ qx.Class.define("osparc.data.model.StudyUI", {
       this.getSlideshow().removeNode(nodeId);
     },
 
+    updateUiFromDiff: function(uiDiff) {
+      if (uiDiff["workbench"]) {
+        const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+        if (currentStudy) {
+          Object.keys(uiDiff["workbench"]).forEach(nodeId => {
+            const node = currentStudy.getWorkbench().getNode(nodeId);
+            if ("position" in uiDiff["workbench"][nodeId]) {
+              const positionDiff = uiDiff["workbench"][nodeId]["position"];
+              this.__updatePositionFromDiff(node, positionDiff);
+            }
+            if ("marker" in uiDiff["workbench"][nodeId]) {
+              const markerDiff = uiDiff["workbench"][nodeId]["marker"];
+              this.__updateMarkerFromDiff(node, markerDiff);
+            }
+          });
+        }
+      }
+    },
+
+    __updatePositionFromDiff: function(node, positionDiff) {
+      if (node) {
+        const newPos = node.getPosition();
+        if ("x" in positionDiff) {
+          newPos.x = positionDiff["x"][1];
+        }
+        if ("y" in positionDiff) {
+          newPos.y = positionDiff["y"][1];
+        }
+        node.setPosition(newPos);
+      }
+    },
+
+    __updateMarkerFromDiff: function(node, markerDiff) {
+      if (node) {
+        if (markerDiff instanceof Array) {
+          if (markerDiff.length === 1) {
+            // it was added
+            node.addMarker(markerDiff[0]);
+          } else if (markerDiff.length === 2 && markerDiff[1] === null) {
+            // it was removed
+            node.setMarker(null);
+          }
+        } else if ("color" in markerDiff && markerDiff["color"] instanceof Array) {
+          // it was updated
+          const newColor = markerDiff["color"][1];
+          node.getMarker().setColor(newColor);
+        }
+      }
+    },
+
+    listenToChanges: function() {
+      const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.StudyUI));
+      this.self().ListenChangesProps.forEach(key => {
+        switch (key) {
+          default:
+            if (propertyKeys.includes(key)) {
+              this.addListener(`change${qx.lang.String.firstUp(key)}`, () => {
+                const data = this.serialize();
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": `/ui/${key}`,
+                  "value": data,
+                  "osparc-resource": "study-ui",
+                });
+              }, this);
+            } else {
+              console.error(`Property "${key}" is not a valid property of osparc.data.model.StudyUI`);
+            }
+            break;
+        }
+      });
+    },
+
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};
@@ -122,6 +236,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       jsonObject["slideshow"] = this.getSlideshow().serialize();
       jsonObject["currentNodeId"] = this.getCurrentNodeId() || "";
       jsonObject["mode"] = this.getMode();
+      jsonObject["annotations"] = null;
       const annotations = this.getAnnotations();
       if (Object.keys(annotations).length) {
         jsonObject["annotations"] = {};

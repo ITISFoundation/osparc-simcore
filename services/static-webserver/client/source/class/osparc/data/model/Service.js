@@ -147,7 +147,6 @@ qx.Class.define("osparc.data.model.Service", {
       nullable: false
     },
 
-    // ------ ignore for serializing ------
     xType: {
       check: "String",
       nullable: true,
@@ -160,30 +159,6 @@ qx.Class.define("osparc.data.model.Service", {
       init: 0,
       event: "changeHits",
       nullable: false
-    }
-    // ------ ignore for serializing ------
-  },
-
-  statics: {
-    IgnoreSerializationProps: [
-      "xType",
-      "hits",
-    ]
-  },
-
-  members: {
-    __serviceData: null,
-
-    serialize: function() {
-      let jsonObject = {};
-      const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (this.self().IgnoreSerializationProps.includes(key)) {
-          return;
-        }
-        jsonObject[key] = this.get(key);
-      });
-      return jsonObject;
     },
-  }
+  },
 });

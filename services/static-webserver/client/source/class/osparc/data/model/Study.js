@@ -44,8 +44,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     this.set({
       uuid: studyData.uuid || this.getUuid(),
-      workspaceId: studyData.workspaceId || null,
-      folderId: studyData.folderId || null,
+      workspaceId: studyData.workspaceId || this.getWorkspaceId(),
+      folderId: studyData.folderId || this.getFolderId(),
       name: studyData.name || this.getName(),
       description: studyData.description || this.getDescription(),
       thumbnail: studyData.thumbnail || this.getThumbnail(),
@@ -60,9 +60,9 @@ qx.Class.define("osparc.data.model.Study", {
       permalink: studyData.permalink || this.getPermalink(),
       dev: studyData.dev || this.getDev(),
       trashedAt: studyData.trashedAt ? new Date(studyData.trashedAt) : this.getTrashedAt(),
-      trashedBy: studyData.trashedBy || null,
-      type: studyData.type,
-      templateType: studyData.templateType,
+      trashedBy: studyData.trashedBy || this.getTrashedBy(),
+      type: studyData.type || this.getType(),
+      templateType: studyData.templateType || this.getTemplateType(),
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
@@ -143,9 +143,9 @@ qx.Class.define("osparc.data.model.Study", {
 
     thumbnail: {
       check: "String",
-      nullable: false,
+      nullable: true,
       event: "changeThumbnail",
-      init: ""
+      init: null
     },
 
     workbench: {
@@ -215,7 +215,6 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeTemplateType"
     },
 
-    // ------ ignore for serializing ------
     state: {
       check: "Object",
       nullable: true,
@@ -256,10 +255,44 @@ qx.Class.define("osparc.data.model.Study", {
       event: "changeSavePending",
       init: false
     },
-    // ------ ignore for serializing ------
+  },
+
+  events: {
+    "projectDocumentChanged": "qx.event.type.Data",
   },
 
   statics: {
+    // Properties of the Study class that should not be listened to
+    ListenChangesProps: [
+      // "uuid", // immutable
+      // "workspaceId", // own patch
+      // "folderId", // own patch
+      "name",
+      "description",
+      // "prjOwner", // immutable
+      // "accessRights", // own patch
+      // "creationDate", // immutable
+      // "lastChangeDate", // backend sets it
+      "thumbnail",
+      "workbench", // own listener
+      "ui", // own listener
+      // "tags", // own patch
+      // "classifiers", // own patch
+      // "quality", // own patch
+      // "permalink", // backend sets it
+      "dev",
+      // "type", // immutable
+      "templateType",
+      // "state", // backend sets it
+      // "pipelineRunning", // backend sets it
+      // "readOnly", // frontend only
+      // "trashedAt", // backend sets it
+      // "trashedBy", // backend sets it
+      // "savePending", // frontend only
+    ],
+
+    // Properties of the Study class that should not be serialized
+    // when serializing the study object to send it to the backend
     IgnoreSerializationProps: [
       "permalink",
       "state",
@@ -267,10 +300,6 @@ qx.Class.define("osparc.data.model.Study", {
       "readOnly",
       "trashedAt",
       "savePending",
-    ],
-
-    IgnoreModelizationProps: [
-      "dev"
     ],
 
     OwnPatch: [
@@ -361,21 +390,46 @@ qx.Class.define("osparc.data.model.Study", {
       }
       return overallProgress/nCompNodes;
     },
-
-    isRunning: function(state) {
-      return [
-        "PUBLISHED",
-        "PENDING",
-        "WAITING_FOR_RESOURCES",
-        "WAITING_FOR_CLUSTER",
-        "STARTED",
-        "RETRY"
-      ].includes(state);
-    },
   },
 
   members: {
-    serialize: function(clean = true) {
+    listenToChanges: function() {
+      const propertyKeys = this.self().getProperties();
+      this.self().ListenChangesProps.forEach(key => {
+        switch (key) {
+          case "workbench":
+            this.getWorkbench().addListener("projectDocumentChanged", e => {
+              const data = e.getData();
+              this.fireDataEvent("projectDocumentChanged", data);
+            }, this);
+            break;
+          case "ui":
+            this.getUi().listenToChanges();
+            this.getUi().addListener("projectDocumentChanged", e => {
+              const data = e.getData();
+              this.fireDataEvent("projectDocumentChanged", data);
+            }, this);
+            break;
+          default:
+            if (propertyKeys.includes(key)) {
+              this.addListener("change" + qx.lang.String.firstUp(key), e => {
+                const data = e.getData();
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": "/" + key,
+                  "value": data,
+                  "osparc-resource": "study",
+                });
+              }, this);
+            } else {
+              console.error(`Property "${key}" is not a valid property of osparc.data.model.Study`);
+            }
+            break;
+        }
+      });
+    },
+
+    serialize: function() {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
@@ -383,7 +437,7 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize(clean);
+          jsonObject[key] = this.getWorkbench().serialize();
           return;
         }
         if (key === "ui") {
@@ -575,12 +629,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __applyState: function(value) {
-      if (value && "state" in value) {
-        const isRunning = this.self().isRunning(value["state"]["value"]);
-        this.setPipelineRunning(isRunning);
-      } else {
-        this.setPipelineRunning(false);
-      }
+      this.setPipelineRunning(osparc.study.Utils.state.isPipelineRunning(value));
     },
 
     getDisableServiceAutoStart: function() {
@@ -702,17 +751,17 @@ qx.Class.define("osparc.data.model.Study", {
         promises.push(this.getWorkbench().patchWorkbenchDelayed(studyDiffs["workbench"], studySource["workbench"]));
         delete studyDiffs["workbench"];
       }
-      const fieldKeys = Object.keys(studyDiffs);
-      if (fieldKeys.length) {
-        fieldKeys.forEach(fieldKey => {
+      const changedFields = Object.keys(studyDiffs);
+      if (changedFields.length) {
+        changedFields.forEach(changedField => {
           // OM: can this be called all together?
           const patchData = {};
-          if (fieldKey === "ui") {
-            patchData[fieldKey] = this.getUi().serialize();
+          if (changedField === "ui") {
+            patchData[changedField] = this.getUi().serialize();
           } else {
-            const upKey = qx.lang.String.firstUp(fieldKey);
+            const upKey = qx.lang.String.firstUp(changedField);
             const getter = "get" + upKey;
-            patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
+            patchData[changedField] = this[getter](studyDiffs[changedField]);
           }
           promises.push(osparc.store.Study.getInstance().patchStudy(this.getUuid(), patchData))
         });

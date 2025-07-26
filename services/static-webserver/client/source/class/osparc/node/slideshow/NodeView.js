@@ -57,7 +57,6 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const node = this.getNode();
       const propsForm = node.getPropsForm();
       if (propsForm && node.hasInputs()) {
-        propsForm.addListener("changeChildVisibility", () => this.__checkSettingsVisibility(), this);
         this._settingsLayout.add(propsForm);
       }
       this.__checkSettingsVisibility();
