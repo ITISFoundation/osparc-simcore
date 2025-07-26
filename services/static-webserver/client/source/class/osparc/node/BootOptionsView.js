@@ -55,7 +55,6 @@ qx.Class.define("osparc.node.BootOptionsView", {
           };
           node.setBootOptions(data);
           node.fireEvent("updateStudyDocument");
-          // OM not sure it's needed
           node.fireDataEvent("projectDocumentChanged", {
             "op": "replace",
             "path": `/workbench/${nodeId}/bootOptions`,
@@ -65,7 +64,7 @@ qx.Class.define("osparc.node.BootOptionsView", {
           // add timeout to make sure the node is saved before starting it
           setTimeout(() => {
             buttonsLayout.setEnabled(true);
-            node.requestStartNode();
+            // node.requestStartNode();
           }, osparc.desktop.StudyEditor.AUTO_SAVE_INTERVAL);
         }
       }, this);

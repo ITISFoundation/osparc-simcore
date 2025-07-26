@@ -120,7 +120,6 @@ qx.Class.define("osparc.node.LifeCycleView", {
         }
         node.set(newData);
         node.fireEvent("updateStudyDocument");
-        // OM not sure it's needed
         node.fireDataEvent("projectDocumentChanged", [{
           "op": "replace",
           "path": `/workbench/${nodeId}/key`,
