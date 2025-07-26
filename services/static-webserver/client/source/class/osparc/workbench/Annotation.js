@@ -77,8 +77,7 @@ qx.Class.define("osparc.workbench.Annotation", {
 
     attributes: {
       check: "Object",
-      nullable: false,
-      apply: "__applyAttributes",
+      nullable: false
     },
 
     svgCanvas: {
@@ -180,13 +179,6 @@ qx.Class.define("osparc.workbench.Annotation", {
       }
     },
 
-    __applyAttributes: function(attrs) {
-      const representation = this.getRepresentation();
-      if (representation) {
-        this.fireEvent("annotationChanged");
-      }
-    },
-
     getRepresentationPosition: function() {
       const representation = this.getRepresentation();
       if (representation) {
@@ -241,6 +233,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         osparc.wrapper.Svg.updateText(representation, newText);
+        this.fireEvent("annotationChanged");
       }
     },
 
@@ -249,6 +242,7 @@ qx.Class.define("osparc.workbench.Annotation", {
       const representation = this.getRepresentation();
       if (representation) {
         osparc.wrapper.Svg.updateTextSize(representation, fontSize);
+        this.fireEvent("annotationChanged");
       }
     },
 
