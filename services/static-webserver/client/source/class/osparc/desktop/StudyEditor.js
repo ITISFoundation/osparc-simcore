@@ -81,6 +81,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
 
     this.__updatingStudy = 0;
+    this.__lastPatchTime = 0;
+    this.__throttledPendingUpdate = false;
   },
 
   events: {
@@ -106,6 +108,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   statics: {
     AUTO_SAVE_INTERVAL: 3000,
     DIFF_CHECK_INTERVAL: 300,
+    THROTTLE_PATCH_TIME: 1000,
     READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
   },
 
@@ -121,6 +124,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
+    __lastPatchTime: null,
+    __throttledPendingUpdate: null,
 
     setStudyData: function(studyData) {
       if (this.__settingStudy) {
@@ -904,14 +909,30 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     /**
-     * @param {JSON Patch} data It will soon be used to patch the study document https://datatracker.ietf.org/doc/html/rfc6902
+     * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
      */
     projectDocumentChanged: function(data) {
+      data["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
         console.log("projectDocumentChanged", data);
       }
 
-      this.updateStudyDocument();
+      // throttling: do not update study document right after a change, wait for THROTTLE_PATCH_TIME
+      const throttlePatchTime = this.self().THROTTLE_PATCH_TIME;
+      const now = Date.now();
+      const timeSinceLastUpdate = now - this.__lastPatchTime;
+      if (timeSinceLastUpdate >= throttlePatchTime) {
+        this.updateStudyDocument();
+        this.__lastPatchTime = now;
+      } else if (!this.__throttledPendingUpdate) {
+        // Otherwise, schedule a call after remaining time
+        this.__throttledPendingUpdate = true;
+        setTimeout(() => {
+          this.updateStudyDocument();
+          this.__lastPatchTime = Date.now();
+          this.__throttledPendingUpdate = false;
+        }, throttlePatchTime - timeSinceLastUpdate);
+      }
     },
 
     updateStudyDocument: function() {
