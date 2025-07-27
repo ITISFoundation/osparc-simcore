@@ -1008,7 +1008,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.getStudy().setSavePending(true);
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();
-      return this.getStudy().patchStudyDelayed(studyDiffs.delta, studyDiffs.sourceStudy)
+      return this.getStudy().patchStudyDiffs(studyDiffs.delta, studyDiffs.sourceStudy)
         .then(studyData => this.__setLastSyncedProjectDocument(studyData))
         .catch(error => {
           if ("status" in error && error.status === 409) {

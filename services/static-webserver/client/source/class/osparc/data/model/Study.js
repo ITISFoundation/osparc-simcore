@@ -745,10 +745,10 @@ qx.Class.define("osparc.data.model.Study", {
      * @param studyDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      * @param studySource {Object} Study object that was used to check the diffs on the frontend.
      */
-    patchStudyDelayed: function(studyDiffs, studySource) {
+    patchStudyDiffs: function(studyDiffs, studySource) {
       const promises = [];
       if ("workbench" in studyDiffs) {
-        promises.push(this.getWorkbench().patchWorkbenchDelayed(studyDiffs["workbench"], studySource["workbench"]));
+        promises.push(this.getWorkbench().patchWorkbenchDiffs(studyDiffs["workbench"], studySource["workbench"]));
         delete studyDiffs["workbench"];
       }
       const changedFields = Object.keys(studyDiffs);

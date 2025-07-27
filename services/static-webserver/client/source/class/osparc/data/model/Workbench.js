@@ -787,7 +787,7 @@ qx.Class.define("osparc.data.model.Workbench", {
      * @param workbenchDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      * @param workbenchSource {Object} Workbench object that was used to check the diffs on the frontend.
      */
-    patchWorkbenchDelayed: function(workbenchDiffs, workbenchSource) {
+    patchWorkbenchDiffs: function(workbenchDiffs, workbenchSource) {
       const promises = [];
       Object.keys(workbenchDiffs).forEach(nodeId => {
         const node = this.getNode(nodeId);
