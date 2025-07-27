@@ -344,7 +344,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
             this.__blockUpdates = true;
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
-            console.log("projectDocument:updated delta", myStudy, updatedStudy, delta);
+            console.log("projectDocument:updated delta", myStudy, updatedStudy, osparc.utils.Utils.deepCloneObject(delta));
             if ("ui" in delta) {
               this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
               delete delta["ui"];
