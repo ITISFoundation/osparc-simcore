@@ -419,23 +419,24 @@ qx.Class.define("osparc.study.Utils", {
         }
         return undefined;
       },
-    },
 
-    // used in the "projectStateUpdated" socket event
-    amIRunningTheStudy: function(content) {
-      if (content && "data" in content) {
-        const state = content["data"];
-        const currentGroupIds = this.state.getCurrentGroupIds(state);
-        if (currentGroupIds.includes(osparc.auth.Data.getInstance().getGroupId())) {
-          const pipelineState = this.state.getPipelineState(state);
-          return [
-            "PUBLISHED",
-            "STARTED",
-            "STOPPING",
-          ].includes(pipelineState);
+      PIPELINE_RUNNING_STATES: [
+        "PUBLISHED",
+        "PENDING",
+        "WAITING_FOR_RESOURCES",
+        "WAITING_FOR_CLUSTER",
+        "STARTED",
+        "STOPPING",
+        "RETRY",
+      ],
+
+      isPipelineRunning: function(state) {
+        const pipelineState = this.getPipelineState(state);
+        if (pipelineState) {
+          return this.PIPELINE_RUNNING_STATES.includes(pipelineState);
         }
-      }
-      return false;
+        return false;
+      },
     },
 
     __getBlockedState: function(studyData) {
@@ -533,7 +534,7 @@ qx.Class.define("osparc.study.Utils", {
           resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
           const productIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
-          const wbServices = this.self().getNonFrontendNodes(studyData);
+          const wbServices = this.getNonFrontendNodes(studyData);
           if (wbServices.length === 1) {
             const wbService = wbServices[0];
             osparc.store.Services.getService(wbService.key, wbService.version)
