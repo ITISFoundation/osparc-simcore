@@ -977,6 +977,27 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
+    __isEchoLoop: function(patchData) {
+      // check if the patchData is an echo loop, i.e. it is the same as the last synced project document
+      // if it is, return true
+      const pathParts = patchData["path"].split("/").slice(1); // remove the first empty part
+      let currentValue = this.__lastSyncedProjectDocument;
+      for (const part of pathParts) {
+        if (currentValue && part in currentValue) {
+          currentValue = currentValue[part];
+        } else {
+          // if the path doesn't exist in the last synced project document, return false
+          return false;
+        }
+      }
+      // values can be any type, so we need to check if they are equal
+      if (JSON.stringify(currentValue) === JSON.stringify(patchData["value"])) {
+        // if both values are null, return true
+        return true;
+      }
+      return false;
+    },
+
     /**
      * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
      */
@@ -984,6 +1005,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       patchData["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
         console.log("projectDocumentChanged", patchData);
+      }
+      // avoid echo loop
+      if (this.__isEchoLoop(patchData)) {
+        console.warn("Echo loop detected, ignoring patchData", patchData);
+        return;
       }
 
       this.getStudy().setSavePending(true);
