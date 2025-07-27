@@ -709,10 +709,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
       };
     },
 
+    moveNodeTo: function(pos) {
+      this.moveTo(pos.x, pos.y);
+    },
+
     setPosition: function(pos) {
       const node = this.getNode();
       node.setPosition(pos);
-      this.moveTo(node.getPosition().x, node.getPosition().y);
+      this.moveNodeTo(pos);
     },
 
     snapToGrid: function() {
@@ -724,11 +728,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const snapGrid = 20;
       const snapX = Math.round(x/snapGrid)*snapGrid;
       const snapY = Math.round(y/snapGrid)*snapGrid;
-      node.setPosition({
+      this.setPosition({
         x: snapX,
         y: snapY
       });
-      this.moveTo(node.getPosition().x, node.getPosition().y);
     },
 
     __applyThumbnail: function(thumbnailSrc) {

@@ -98,11 +98,6 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeLabel"
     },
 
-    inputAccess: {
-      check: "Object",
-      nullable: true
-    },
-
     dynamicV2: {
       check: "Boolean",
       init: false,
@@ -171,7 +166,8 @@ qx.Class.define("osparc.data.model.Node", {
       check: "qx.core.Object",
       init: null,
       nullable: true,
-      event: "changeMarker"
+      event: "changeMarker",
+      apply: "__applyMarker",
     },
 
     inputConnected: {
@@ -198,6 +194,7 @@ qx.Class.define("osparc.data.model.Node", {
 
   events: {
     "updateStudyDocument": "qx.event.type.Event",
+    "projectDocumentChanged": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",
@@ -213,6 +210,33 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   statics: {
+    // Properties of the Node class that should not be listened to
+    ListenChangesProps: [
+      // "study", // immutable
+      "key",
+      "version",
+      // "nodeId", // immutable
+      "label",
+      "inputs", // own listener
+      "inputsUnits", // own listener
+      // "dynamicV2", // frontend only
+      // "serviceUrl", // frontend only
+      // "portsConnected", // frontend only
+      "outputs", // listen to changes only if this is a frontend node
+      // "status", // backend driven
+      // "errors", // frontend only
+      "bootOptions",
+      // "propsForm", // frontend only
+      // "outputsForm", // frontend only
+      // "marker", // own listener
+      // "inputConnected", // frontend only
+      // "outputConnected", // frontend only
+      // "logger", // frontend only
+     "inputNodes", // !! not a property but goes into the model
+     "inputsRequired", // !! not a property but goes into the model
+     "progress", // !! not a property but goes into the model
+    ],
+
     isFrontend: function(metadata) {
       return (metadata && metadata.key && metadata.key.includes("/frontend/"));
     },
@@ -406,15 +430,19 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__metaData;
     },
 
+    hasPropsForm: function() {
+      return this.isPropertyInitialized("propsForm") && this.getPropsForm();
+    },
+
     __getInputData: function() {
-      if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
+      if (this.hasPropsForm()) {
         return this.getPropsForm().getValues();
       }
       return {};
     },
 
     __getInputUnits: function() {
-      if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
+      if (this.hasPropsForm()) {
         const changedUnits = this.getPropsForm().getChangedXUnits();
         if (Object.keys(changedUnits).length) {
           return changedUnits;
@@ -503,8 +531,11 @@ qx.Class.define("osparc.data.model.Node", {
     populateInputOutputData: function(nodeData) {
       this.__setInputData(nodeData.inputs);
       this.__setInputUnits(nodeData.inputsUnits);
-      this.__setInputDataAccess(nodeData.inputAccess);
       if (this.getPropsForm()) {
+        const study = this.getStudy();
+        if (study && study.isReadOnly()) {
+          this.getPropsForm().setEnabled(false);
+        }
         this.getPropsForm().makeInputsDynamic();
       }
       this.setOutputData(nodeData.outputs);
@@ -669,6 +700,31 @@ qx.Class.define("osparc.data.model.Node", {
       this.setMarker(null);
     },
 
+    __applyMarker: function(marker) {
+      if (marker) {
+        this.fireDataEvent("projectDocumentChanged", {
+          "op": "add",
+          "path": `/ui/workbench/${this.getNodeId()}/marker`,
+          "value": marker.getColor(),
+          "osparc-resource": "ui",
+        });
+        marker.addListener("changeColor", e => {
+          this.fireDataEvent("projectDocumentChanged", {
+            "op": "replace",
+            "path": `/ui/workbench/${this.getNodeId()}/marker`,
+            "value": e.getData(),
+            "osparc-resource": "ui",
+          });
+        });
+      } else {
+        this.fireDataEvent("projectDocumentChanged", {
+          "op": "delete",
+          "path": `/ui/workbench/${this.getNodeId()}/marker`,
+          "osparc-resource": "ui",
+        });
+      }
+    },
+
     __setInputData: function(inputs) {
       if (this.__settingsForm && inputs) {
         const inputData = {};
@@ -689,18 +745,6 @@ qx.Class.define("osparc.data.model.Node", {
     __setInputUnits: function(inputsUnits) {
       if (this.__settingsForm && inputsUnits) {
         this.getPropsForm().setInputsUnits(inputsUnits);
-      }
-    },
-
-    __setInputDataAccess: function(inputAccess) {
-      if (inputAccess) {
-        this.setInputAccess(inputAccess);
-        this.getPropsForm().setAccessLevel(inputAccess);
-      }
-
-      const study = this.getStudy();
-      if (study && study.isReadOnly() && this.getPropsForm()) {
-        this.getPropsForm().setEnabled(false);
       }
     },
 
@@ -733,7 +777,8 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setModified(false);
         }
 
-        this.fireDataEvent("changeOutputs", this.getOutputs());
+        // event was fired in the outputs setter
+        // this.fireDataEvent("changeOutputs", this.getOutputs());
       }
     },
 
@@ -880,7 +925,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (index > -1) {
         // remove node connection
         this.__inputNodes.splice(index, 1);
-        this.fireDataEvent("changeInputNodes");
+        this.fireEvent("changeInputNodes");
         return true;
       }
       return false;
@@ -1186,13 +1231,25 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     setPosition: function(pos) {
-      const {
-        x,
-        y
-      } = pos;
+      const {x, y} = pos;
+      if (x === this.__posX && y === this.__posY) {
+        return; // no change
+      }
+
       // keep positions positive
       this.__posX = parseInt(x) < 0 ? 0 : parseInt(x);
       this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);
+
+      const nodeId = this.getNodeId();
+      this.fireDataEvent("projectDocumentChanged", {
+        "op": "replace",
+        "path": `/ui/workbench/${nodeId}/position`,
+        "value": {
+          "x": this.__posX,
+          "y": this.__posY,
+        },
+        "osparc-resource": "ui",
+      });
     },
 
     getPosition: function() {
@@ -1241,7 +1298,121 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    serialize: function(clean = true) {
+    listenToChanges: function() {
+      const nodeId = this.getNodeId();
+      const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
+      this.self().ListenChangesProps.forEach(key => {
+        switch (key) {
+          case "inputs":
+            if (this.hasPropsForm()) {
+              // listen to changes in the props form
+              this.getPropsForm().addListener("changeData", () => {
+                const data = this.__getInputData();
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/inputs`,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              });
+              // listen to changes in link and unlink of ports
+              this.getPropsForm().addListener("linkFieldModified", () => {
+                const data = this.__getInputData();
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/inputs`,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              });
+            }
+            break;
+          case "inputsUnits":
+            if (this.hasPropsForm()) {
+              this.getPropsForm().addListener("unitChanged", () => {
+                const data = this.__getInputUnits();
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/inputsUnits`,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              });
+            }
+            break;
+          case "inputNodes":
+            this.addListener("changeInputNodes", () => {
+              const data = this.getInputNodes();
+              this.fireDataEvent("projectDocumentChanged", {
+                "op": "replace",
+                "path": `/workbench/${nodeId}/inputNodes`,
+                "value": data,
+                "osparc-resource": "node",
+              });
+            }, this);
+            break;
+          case "inputsRequired":
+            this.addListener("changeInputsRequired", () => {
+              const data = this.getInputsRequired();
+              this.fireDataEvent("projectDocumentChanged", {
+                "op": "replace",
+                "path": `/workbench/${nodeId}/inputsRequired`,
+                "value": data,
+                "osparc-resource": "node",
+              });
+            }, this);
+            break;
+          case "progress":
+            if (this.isFilePicker()) {
+              this.getStatus().addListener("changeProgress", e => {
+                const data = e.getData();
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/progress`,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              });
+            }
+            break;
+          case "outputs":
+            if (this.isFilePicker() || this.isParameter()) {
+              this.addListener("changeOutputs", e => {
+                let data = e.getData();
+                if (this.isFilePicker()) {
+                  data = osparc.file.FilePicker.serializeOutput(this.getOutputs());
+                } else if (this.isParameter()) {
+                  data = this.__getOutputsData();
+                }
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/outputs`,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              }, this);
+            }
+            break;
+          default:
+            if (propertyKeys.includes(key)) {
+              this.addListener("change" + qx.lang.String.firstUp(key), e => {
+                const data = e.getData();
+                this.fireDataEvent("projectDocumentChanged", {
+                  "op": "replace",
+                  "path": `/workbench/${nodeId}/` + key,
+                  "value": data,
+                  "osparc-resource": "node",
+                });
+              }, this);
+            } else {
+              console.error(`Property "${key}" is not a valid property of osparc.data.model.Node`);
+            }
+            break;
+        }
+      });
+    },
+
+    serialize: function() {
       // node generic
       let nodeEntry = {
         key: this.getKey(),
@@ -1249,16 +1420,10 @@ qx.Class.define("osparc.data.model.Node", {
         label: this.getLabel(),
         inputs: this.__getInputData(),
         inputsUnits: this.__getInputUnits(),
-        inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()
       };
-      if (!clean) {
-        nodeEntry.progress = this.getStatus().getProgress();
-        nodeEntry.outputs = this.__getOutputsData();
-        nodeEntry.state = this.getStatus().serialize();
-      }
 
       if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
@@ -1276,6 +1441,18 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       return filteredNodeEntry;
-    }
+    },
+
+    serializeUI: function() {
+      const uiInfo = {}
+      uiInfo["position"] = this.getPosition();
+      const marker = this.getMarker();
+      if (marker) {
+        uiInfo["marker"] = {
+          "color": marker.getColor()
+        };
+      }
+      return uiInfo;
+    },
   }
 });
