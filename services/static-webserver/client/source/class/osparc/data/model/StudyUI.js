@@ -198,12 +198,12 @@ qx.Class.define("osparc.data.model.StudyUI", {
     __updateNodeMarkerFromDiff: function(node, markerDiff) {
       if (node) {
         if (markerDiff instanceof Array) {
-          if (markerDiff.length === 1) {
-            // it was added
-            node.addMarker(markerDiff[0]);
-          } else if (markerDiff.length === 2 && markerDiff[1] === null) {
+          if (markerDiff.length === 2 && markerDiff[1] === null) {
             // it was removed
             node.setMarker(null);
+          } else if (markerDiff.length === 1) {
+            // it was added
+            node.addMarker(markerDiff[0]);
           }
         } else if ("color" in markerDiff && markerDiff["color"] instanceof Array) {
           // it was updated
