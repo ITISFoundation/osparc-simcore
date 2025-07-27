@@ -213,16 +213,20 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
-    __updateAnnotationPositionFromDiff: function(annotation, positionDiff) {
+    __updateAnnotationAttributesFromDiff: function(annotation, attributesDiff) {
       if (annotation) {
         const newPos = annotation.getPosition();
-        if ("x" in positionDiff) {
-          newPos.x = positionDiff["x"][1];
+        if ("x" in attributesDiff) {
+          newPos.x = attributesDiff["x"][1];
         }
-        if ("y" in positionDiff) {
-          newPos.y = positionDiff["y"][1];
+        if ("y" in attributesDiff) {
+          newPos.y = attributesDiff["y"][1];
         }
         annotation.setPosition(newPos.x, newPos.y);
+
+        if ("fontSize" in attributesDiff) {
+          annotation.setFontSize(attributesDiff["fontSize"][1]);
+        }
       }
     },
 
@@ -265,7 +269,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
             if (annotationId in annotations) {
               const annotation = annotations[annotationId];
               if ("attributes" in annotationDiff) {
-                this.__updateAnnotationPositionFromDiff(annotation, annotationDiff["attributes"]);
+                this.__updateAnnotationAttributesFromDiff(annotation, annotationDiff["attributes"]);
               }
               if ("color" in annotationDiff) {
                 annotation.setColor(annotationDiff["color"][1]);
