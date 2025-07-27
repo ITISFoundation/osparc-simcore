@@ -360,14 +360,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
                 const newValue = delta[studyPropertyKey][1];
                 if ("lastChangeDate" === studyPropertyKey) {
                   this.getStudy().setLastChangeDate(new Date(newValue));
-                  return;
+                } else {
+                  const upKey = qx.lang.String.firstUp(studyPropertyKey);
+                  const setter = "set" + upKey;
+                  this.getStudy()[setter](newValue);
                 }
-                const upKey = qx.lang.String.firstUp(studyPropertyKey);
-                const setter = "set" + upKey;
-                this.getStudy()[setter](newValue);
                 delete delta[studyPropertyKey];
               }
             });
+
             if(Object.keys(delta).length > 0) {
               console.warn("projectDocument:updated delta has unhandled properties", delta);
             }
