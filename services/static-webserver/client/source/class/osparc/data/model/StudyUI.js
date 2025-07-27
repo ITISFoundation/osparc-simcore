@@ -177,8 +177,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
         }
       }
       if (uiDiff["annotations"]) {
-        const annotationsData = uiDiff["annotations"];
-        this.__updateAnnotationsFromDiff(annotationsData);
+        const annotationsDiff = uiDiff["annotations"];
+        this.__updateAnnotationsFromDiff(annotationsDiff);
       }
     },
 
@@ -226,35 +226,56 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
-    __updateAnnotationsFromDiff: function(annotationsData) {
+    __updateAnnotationsFromDiff: function(annotationsDiff) {
       // check if annotation data is an object or an array
       const annotations = this.getAnnotations();
-      Object.entries(annotationsData).forEach(([annotationId, annotationDiff]) => {
-        if (annotationDiff instanceof Array) {
-          if (annotationDiff.length === 1) {
-            // it was added
-            const annotation = this.addAnnotation(annotationDiff[0], annotationId);
-            this.fireDataEvent("annotationAdded", annotation);
-          } else if (annotationDiff.length === 3 && annotationDiff[1] === 0) {
-            // it was removed
-            this.removeAnnotation(annotationId);
-            this.fireDataEvent("annotationRemoved", annotationId);
-          }
-        } else if (annotationDiff instanceof Object) {
-          // it was updated
-          if (annotationId in annotations) {
-            const annotation = annotations[annotationId];
-            if ("attributes" in annotationDiff) {
-              this.__updateAnnotationPositionFromDiff(annotation, annotationDiff["attributes"]);
-            }
-            if ("color" in annotationDiff) {
-              annotation.setColor(annotationDiff["color"][1]);
-            }
-          } else {
-            console.warn(`Annotation with id ${annotationId} not found`);
+      if (annotationsDiff instanceof Array) {
+        // from or to empty annotations
+        if (annotationsDiff.length === 2) {
+          if (annotationsDiff[0] === null) {
+            // first annotation(s) was added
+            const annotationsData = annotationsDiff[1];
+            Object.entries(annotationsData).forEach(([annotationId, annotationData]) => {
+              const annotation = this.addAnnotation(annotationData, annotationId);
+              this.fireDataEvent("annotationAdded", annotation);
+            });
+          } else if (annotationsDiff[1] === null) {
+            // all annotations were removed
+            const removedAnnotationsData = annotationsDiff[0];
+            Object.keys(removedAnnotationsData).forEach(annotationId => {
+              this.removeAnnotation(annotationId);
+              this.fireDataEvent("annotationRemoved", annotationId);
+            });
           }
         }
-      });
+      } else if (annotationsDiff instanceof Object) {
+        Object.entries(annotationsDiff).forEach(([annotationId, annotationDiff]) => {
+          if (annotationDiff instanceof Array) {
+            if (annotationDiff.length === 1) {
+              // it was added
+              const annotation = this.addAnnotation(annotationDiff[0], annotationId);
+              this.fireDataEvent("annotationAdded", annotation);
+            } else if (annotationDiff.length === 3 && annotationDiff[1] === 0) {
+              // it was removed
+              this.removeAnnotation(annotationId);
+              this.fireDataEvent("annotationRemoved", annotationId);
+            }
+          } else if (annotationDiff instanceof Object) {
+            // it was updated
+            if (annotationId in annotations) {
+              const annotation = annotations[annotationId];
+              if ("attributes" in annotationDiff) {
+                this.__updateAnnotationPositionFromDiff(annotation, annotationDiff["attributes"]);
+              }
+              if ("color" in annotationDiff) {
+                annotation.setColor(annotationDiff["color"][1]);
+              }
+            } else {
+              console.warn(`Annotation with id ${annotationId} not found`);
+            }
+          }
+        });
+      }
     },
 
     listenToChanges: function() {
