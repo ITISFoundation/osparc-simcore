@@ -978,6 +978,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __isEchoLoop: function(patchData) {
+      return false;
       // check if the patchData is an echo loop, i.e. it is the same as the last synced project document
       // if it is, return true
       const pathParts = patchData["path"].split("/").slice(1); // remove the first empty part
