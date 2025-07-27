@@ -167,21 +167,22 @@ qx.Class.define("osparc.data.model.StudyUI", {
             const node = currentStudy.getWorkbench().getNode(nodeId);
             if ("position" in uiDiff["workbench"][nodeId]) {
               const positionDiff = uiDiff["workbench"][nodeId]["position"];
-              this.__updatePositionFromDiff(node, positionDiff);
+              this.__updateNodePositionFromDiff(node, positionDiff);
             }
             if ("marker" in uiDiff["workbench"][nodeId]) {
               const markerDiff = uiDiff["workbench"][nodeId]["marker"];
-              this.__updateMarkerFromDiff(node, markerDiff);
+              this.__updateNodeMarkerFromDiff(node, markerDiff);
             }
           });
         }
-      } else if ("annotations" in uiDiff) {
-        const annotationsDiff = uiDiff["annotations"];
-        this.__updateAnnotationsFromDiff(annotationsDiff);
+      }
+      if (uiDiff["annotations"]) {
+        const annotationsData = uiDiff["annotations"];
+        this.__updateAnnotationsFromDiff(annotationsData);
       }
     },
 
-    __updatePositionFromDiff: function(node, positionDiff) {
+    __updateNodePositionFromDiff: function(node, positionDiff) {
       if (node) {
         const newPos = node.getPosition();
         if ("x" in positionDiff) {
@@ -194,7 +195,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
-    __updateMarkerFromDiff: function(node, markerDiff) {
+    __updateNodeMarkerFromDiff: function(node, markerDiff) {
       if (node) {
         if (markerDiff instanceof Array) {
           if (markerDiff.length === 1) {
@@ -212,21 +213,48 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
+    __updateAnnotationPositionFromDiff: function(annotation, positionDiff) {
+      if (annotation) {
+        const newPos = annotation.getPosition();
+        if ("x" in positionDiff) {
+          newPos.x = positionDiff["x"][1];
+        }
+        if ("y" in positionDiff) {
+          newPos.y = positionDiff["y"][1];
+        }
+        annotation.setPosition(newPos.x, newPos.y);
+      }
+    },
+
     __updateAnnotationsFromDiff: function(annotationsData) {
       // check if annotation data is an object or an array
-      if (annotationsData instanceof Object) {
-        Object.entries(annotationsData).forEach(([annotationId, annotationData]) => {
-          if (annotationData.length === 1) {
+      const annotations = this.getAnnotations();
+      Object.entries(annotationsData).forEach(([annotationId, annotationDiff]) => {
+        if (annotationsData instanceof Array) {
+          if (annotationDiff.length === 1) {
             // it was added
-            const annotation = this.addAnnotation(annotationData[0], annotationId);
+            const annotation = this.addAnnotation(annotationDiff[0], annotationId);
             this.fireDataEvent("annotationAdded", annotation);
-          } else if (annotationData.length === 3 && annotationData[1] === null) {
+          } else if (annotationDiff.length === 3 && annotationDiff[1] === 0) {
             // it was removed
             this.removeAnnotation(annotationId);
             this.fireDataEvent("annotationRemoved", annotationId);
           }
-        });
-      }
+        } else if (annotationsData instanceof Object) {
+          // it was updated
+          if (annotationId in annotations) {
+            const annotation = annotations[annotationId];
+            if ("attributes" in annotationDiff) {
+              this.__updateAnnotationPositionFromDiff(annotation, annotationDiff["attributes"]);
+            }
+            if ("color" in annotationDiff) {
+              annotation.setColor(annotationDiff["color"][1]);
+            }
+          } else {
+            console.warn(`Annotation with id ${annotationId} not found`);
+          }
+        }
+      });
     },
 
     listenToChanges: function() {
