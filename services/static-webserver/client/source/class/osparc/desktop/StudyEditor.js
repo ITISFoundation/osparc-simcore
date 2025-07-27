@@ -302,7 +302,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __setLastSyncedProjectDocument: function(studyData, version) {
+    __setLastSyncedProjectDocument: function(studyData) {
       this.__lastSyncedProjectDocument = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
 
       // remove the runHash, this.__lastSyncedProjectDocument is only used for diff comparison and the frontend doesn't keep it
