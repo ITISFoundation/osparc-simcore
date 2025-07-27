@@ -109,6 +109,45 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     DIFF_CHECK_INTERVAL: 300,
     THROTTLE_PATCH_TIME: 1000,
     READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
+
+    curateBackendProjectDocument: function(projectDocument) {
+      // ignore the ``state`` property, it has its own channel
+      [
+        "state",
+      ].forEach(prop => {
+        delete projectDocument[prop];
+      });
+      // in order to pair it the with frontend's node serialization
+      // remove null entries
+      // remove state entries
+      Object.keys(projectDocument["workbench"]).forEach(nodeId => {
+        const node = projectDocument["workbench"][nodeId];
+        Object.keys(node).forEach(nodeProp => {
+          if (nodeProp === "state") {
+            delete node[nodeProp];
+          }
+          if (node[nodeProp] === null) {
+            delete node[nodeProp];
+          }
+        });
+      });
+      delete projectDocument["ui"]["icon"];
+      delete projectDocument["ui"]["templateType"];
+    },
+
+    curateFrontendProjectDocument: function(myStudy) {
+      // the updatedStudy model doesn't contain the following properties
+      [
+        "accessRights",
+        "creationDate",
+        "folderId",
+        "prjOwner",
+        "tags",
+        "trashedBy",
+      ].forEach(prop => {
+        delete myStudy[prop];
+      });
+    }
   },
 
   members: {
@@ -291,43 +330,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (!socket.slotExists("projectDocument:updated")) {
         socket.on("projectDocument:updated", data => {
           if (data["projectId"] === this.getStudy().getUuid()) {
-            const myStudy = this.getStudy().serialize();
             const updatedStudy = data["document"];
+            // curate projectDocument:updated document
+            this.self().curateBackendProjectDocument(updatedStudy);
 
-            // the updatedStudy model doesn't contain the following properties
-            [
-              "accessRights",
-              "creationDate",
-              "folderId",
-              "prjOwner",
-              "tags",
-              "trashedBy",
-            ].forEach(prop => {
-              delete myStudy[prop];
-            });
-
-            // ignore the ``state`` property, it has its own channel
-            [
-              "state",
-            ].forEach(prop => {
-              delete updatedStudy[prop];
-            });
-            // in order to pair it the with frontend's node serialization
-            // remove null entries
-            // remove state entries
-            Object.keys(updatedStudy["workbench"]).forEach(nodeId => {
-              const node = updatedStudy["workbench"][nodeId];
-              Object.keys(node).forEach(nodeProp => {
-                if (nodeProp === "state") {
-                  delete node[nodeProp];
-                }
-                if (node[nodeProp] === null) {
-                  delete node[nodeProp];
-                }
-              });
-            });
-            delete updatedStudy["ui"]["icon"];
-            delete updatedStudy["ui"]["templateType"];
+            const myStudy = this.getStudy().serialize();
+            // curate myStudy
+            this.self().curateFrontendProjectDocument(myStudy);
 
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
             console.log("projectDocument:updated delta", myStudy, updatedStudy, delta);
