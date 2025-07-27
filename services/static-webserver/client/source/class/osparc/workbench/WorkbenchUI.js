@@ -1207,6 +1207,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       Object.values(annotations).forEach(annotation => {
         this.__renderAnnotation(annotation);
       });
+      studyUI.addListener("annotationAdded", e => {
+        const annotation = e.getData();
+        this.__renderAnnotation(annotation);
+      }, this);
+      studyUI.addListener("annotationRemoved", e => {
+        const annotationId = e.getData();
+        this.__removeAnnotation(annotationId);
+      }, this);
     },
 
     __setSelectedItem: function(newID) {
@@ -2018,9 +2026,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__toolHint.setValue(null);
     },
 
-    __addAnnotation: function(annotationData, id) {
-      const annotation = new osparc.workbench.Annotation(annotationData, id);
-      this.getStudy().getUi().addAnnotation(annotation);
+    __addAnnotation: function(annotationData) {
+      const annotation = this.getStudy().getUi().addAnnotation(annotationData);
 
       this.__renderAnnotation(annotation);
 

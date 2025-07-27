@@ -38,8 +38,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     if (studyDataUI["annotations"]) {
       Object.entries(studyDataUI["annotations"]).forEach(([annotationId, annotationData]) => {
-        const annotation = new osparc.workbench.Annotation(annotationData, annotationId);
-        this.addAnnotation(annotation);
+        this.addAnnotation(annotationData, annotationId);
       });
     }
 
@@ -96,6 +95,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
   events: {
     "projectDocumentChanged": "qx.event.type.Data",
+    "annotationAdded": "qx.event.type.Data",
+    "annotationRemoved": "qx.event.type.Data",
   },
 
   statics: {
@@ -121,7 +122,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
-    addAnnotation: function(annotation) {
+    addAnnotation: function(annotationData, annotationId) {
+      const annotation = new osparc.workbench.Annotation(annotationData, annotationId);
       this.getAnnotations()[annotation.getId()] = annotation;
       this.fireDataEvent("projectDocumentChanged", {
         "op": "add",
@@ -137,6 +139,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
           "osparc-resource": "study-ui",
         });
       }, this);
+      return annotation;
     },
 
     removeAnnotation: function(annotationId) {
@@ -172,6 +175,9 @@ qx.Class.define("osparc.data.model.StudyUI", {
             }
           });
         }
+      } else if ("annotations" in uiDiff) {
+        const annotationsDiff = uiDiff["annotations"];
+        this.__updateAnnotationsFromDiff(annotationsDiff);
       }
     },
 
@@ -203,6 +209,23 @@ qx.Class.define("osparc.data.model.StudyUI", {
           const newColor = markerDiff["color"][1];
           node.getMarker().setColor(newColor);
         }
+      }
+    },
+
+    __updateAnnotationsFromDiff: function(annotationsData) {
+      // check if annotation data is an object or an array
+      if (annotationsData instanceof Object) {
+        Object.entries(annotationsData).forEach(([annotationId, annotationData]) => {
+          if (annotationData.length === 1) {
+            // it was added
+            const annotation = this.addAnnotation(annotationData[0], annotationId);
+            this.fireDataEvent("annotationAdded", annotation);
+          } else if (annotationData.length === 3 && annotationData[1] === null) {
+            // it was removed
+            this.removeAnnotation(annotationId);
+            this.fireDataEvent("annotationRemoved", annotationId);
+          }
+        });
       }
     },
 
