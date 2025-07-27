@@ -227,6 +227,9 @@ qx.Class.define("osparc.data.model.StudyUI", {
         if ("fontSize" in attributesDiff) {
           annotation.setFontSize(attributesDiff["fontSize"][1]);
         }
+        if ("text" in attributesDiff) {
+          annotation.setText(attributesDiff["text"][1]);
+        }
       }
     },
 
