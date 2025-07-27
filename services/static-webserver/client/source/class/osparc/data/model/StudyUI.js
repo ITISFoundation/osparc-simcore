@@ -230,7 +230,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       // check if annotation data is an object or an array
       const annotations = this.getAnnotations();
       Object.entries(annotationsData).forEach(([annotationId, annotationDiff]) => {
-        if (annotationsData instanceof Array) {
+        if (annotationDiff instanceof Array) {
           if (annotationDiff.length === 1) {
             // it was added
             const annotation = this.addAnnotation(annotationDiff[0], annotationId);
@@ -240,7 +240,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
             this.removeAnnotation(annotationId);
             this.fireDataEvent("annotationRemoved", annotationId);
           }
-        } else if (annotationsData instanceof Object) {
+        } else if (annotationDiff instanceof Object) {
           // it was updated
           if (annotationId in annotations) {
             const annotation = annotations[annotationId];
