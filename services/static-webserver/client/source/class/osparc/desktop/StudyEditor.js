@@ -980,10 +980,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     /**
      * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
      */
-    projectDocumentChanged: function(data) {
-      data["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
+    projectDocumentChanged: function(patchData) {
+      patchData["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        console.log("projectDocumentChanged", data);
+        console.log("projectDocumentChanged", patchData);
       }
 
       this.getStudy().setSavePending(true);
