@@ -145,7 +145,7 @@ qx.Class.define("osparc.data.model.Study", {
       check: "String",
       nullable: true,
       event: "changeThumbnail",
-      init: null
+      init: ""
     },
 
     workbench: {

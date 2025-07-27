@@ -345,10 +345,33 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             this.__blockUpdates = true;
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
             console.log("projectDocument:updated delta", myStudy, updatedStudy, osparc.utils.Utils.deepCloneObject(delta));
+            if ("workbench" in delta) {
+              // OM todo
+              // this.getStudy().getWorkbench().updateWorkbenchFromDiff(delta["workbench"]);
+              delete delta["workbench"];
+            }
             if ("ui" in delta) {
               this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
               delete delta["ui"];
             }
+            const studyPropertyKeys = osparc.data.model.Study.getProperties();
+            studyPropertyKeys.forEach(studyPropertyKey => {
+              if (studyPropertyKey in delta) {
+                const newValue = delta[studyPropertyKey][1];
+                if ("lastChangeDate" === studyPropertyKey) {
+                  this.getStudy().setLastChangeDate(new Date(newValue));
+                  return;
+                }
+                const upKey = qx.lang.String.firstUp(studyPropertyKey);
+                const setter = "set" + upKey;
+                this.getStudy()[setter](newValue);
+                delete delta[studyPropertyKey];
+              }
+            });
+            if(Object.keys(delta).length > 0) {
+              console.warn("projectDocument:updated delta has unhandled properties", delta);
+            }
+
             this.__blockUpdates = false;
           }
         }, this);
