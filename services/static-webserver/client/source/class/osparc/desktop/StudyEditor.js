@@ -164,6 +164,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updateThrottled: null,
     __nodesSlidesTree: null,
     __throttledPatchPending: null,
+    __blockUpdates: null,
 
     setStudyData: function(studyData) {
       if (this.__settingStudy) {
@@ -339,14 +340,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             // curate myStudy
             this.self().curateFrontendProjectDocument(myStudy);
 
-            this.__setLastSyncedProjectDocument(updatedStudy);
+            // this.__setLastSyncedProjectDocument(updatedStudy);
 
+            this.__blockUpdates = true;
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
             console.log("projectDocument:updated delta", myStudy, updatedStudy, delta);
             if ("ui" in delta) {
               this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
               delete delta["ui"];
             }
+            this.__blockUpdates = false;
           }
         }, this);
       }
@@ -977,28 +980,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __isEchoLoop: function(patchData) {
-      return false;
-      // check if the patchData is an echo loop, i.e. it is the same as the last synced project document
-      // if it is, return true
-      const pathParts = patchData["path"].split("/").slice(1); // remove the first empty part
-      let currentValue = this.__lastSyncedProjectDocument;
-      for (const part of pathParts) {
-        if (currentValue && part in currentValue) {
-          currentValue = currentValue[part];
-        } else {
-          // if the path doesn't exist in the last synced project document, return false
-          return false;
-        }
-      }
-      // values can be any type, so we need to check if they are equal
-      if (JSON.stringify(currentValue) === JSON.stringify(patchData["value"])) {
-        // if both values are null, return true
-        return true;
-      }
-      return false;
-    },
-
     /**
      * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
      */
@@ -1008,8 +989,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         console.log("projectDocumentChanged", patchData);
       }
       // avoid echo loop
-      if (this.__isEchoLoop(patchData)) {
-        console.warn("Echo loop detected, ignoring patchData", patchData);
+      if (this.__blockUpdates) {
         return;
       }
 
