@@ -81,7 +81,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     });
 
     this.__lastSyncedProjectDocument = null;
-    this.__lastSyncedVersion = null;
     this.__updatingStudy = 0;
     this.__throttledPatchPending = false;
   },
@@ -161,7 +160,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __savingTimer: null,
     __studyEditorIdlingTracker: null,
     __lastSyncedProjectDocument: null,
-    __lastSyncedVersion: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
@@ -306,9 +304,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __setLastSyncedProjectDocument: function(studyData, version) {
       this.__lastSyncedProjectDocument = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
-      if (version !== undefined) {
-        this.__lastSyncedVersion = version;
-      }
 
       // remove the runHash, this.__lastSyncedProjectDocument is only used for diff comparison and the frontend doesn't keep it
       Object.keys(this.__lastSyncedProjectDocument["workbench"]).forEach(nodeId => {
@@ -350,8 +345,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
               delete delta["ui"];
             }
-
-            this.__lastSyncedVersion = data["version"];
           }
         }, this);
       }
