@@ -80,6 +80,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       flex: 1
     });
 
+    this.__lastSyncedProjectDocument = null;
+    this.__lastSyncedVersion = null;
     this.__updatingStudy = 0;
     this.__throttledPatchPending = false;
   },
@@ -158,7 +160,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __autoSaveTimer: null,
     __savingTimer: null,
     __studyEditorIdlingTracker: null,
-    __studyDataInBackend: null,
+    __lastSyncedProjectDocument: null,
+    __lastSyncedVersion: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
@@ -192,7 +195,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       study.openStudy()
         .then(studyData => {
-          this.__setStudyDataInBackend(studyData);
+          this.__setLastSyncedProjectDocument(studyData);
 
           this.__workbenchView.setStudy(study);
           this.__slideshowView.setStudy(study);
@@ -301,13 +304,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __setStudyDataInBackend: function(studyData) {
-      this.__studyDataInBackend = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
+    __setLastSyncedProjectDocument: function(studyData, version) {
+      this.__lastSyncedProjectDocument = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
+      if (version !== undefined) {
+        this.__lastSyncedVersion = version;
+      }
 
-      // remove the runHash, this.__studyDataInBackend is only used for diff comparison and the frontend doesn't keep it
-      Object.keys(this.__studyDataInBackend["workbench"]).forEach(nodeId => {
-        if ("runHash" in this.__studyDataInBackend["workbench"][nodeId]) {
-          delete this.__studyDataInBackend["workbench"][nodeId]["runHash"];
+      // remove the runHash, this.__lastSyncedProjectDocument is only used for diff comparison and the frontend doesn't keep it
+      Object.keys(this.__lastSyncedProjectDocument["workbench"]).forEach(nodeId => {
+        if ("runHash" in this.__lastSyncedProjectDocument["workbench"][nodeId]) {
+          delete this.__lastSyncedProjectDocument["workbench"][nodeId]["runHash"];
         }
       });
     },
@@ -344,6 +350,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
               delete delta["ui"];
             }
+
+            this.__lastSyncedVersion = data["version"];
           }
         }, this);
       }
@@ -945,7 +953,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         sourceStudy,
         delta: {},
       }
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__studyDataInBackend, sourceStudy);
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__lastSyncedProjectDocument, sourceStudy);
       if (delta) {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
@@ -1006,7 +1014,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__updatingStudy++;
       const studyDiffs = this.__getStudyDiffs();
       return this.getStudy().patchStudyDelayed(studyDiffs.delta, studyDiffs.sourceStudy)
-        .then(studyData => this.__setStudyDataInBackend(studyData))
+        .then(studyData => this.__setLastSyncedProjectDocument(studyData))
         .catch(error => {
           if ("status" in error && error.status === 409) {
             console.log("Flash message blocked"); // Workaround for osparc-issues #1189
