@@ -344,6 +344,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
             this.__blockUpdates = true;
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
+            osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatch(delta);
             console.log("projectDocument:updated delta", myStudy, updatedStudy, osparc.utils.Utils.deepCloneObject(delta));
             if ("workbench" in delta) {
               // OM todo
