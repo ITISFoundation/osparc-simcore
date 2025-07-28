@@ -305,7 +305,7 @@ async def current_study(
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(
         async_client,
-        project=project_at_db,
+        project_uuid=project_at_db.uuid,
         user_id=current_user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -993,7 +993,7 @@ async def test_nodeports_integration(
     # STEP 2
     task_out = await create_pipeline(
         async_client,
-        project=current_study,
+        project_uuid=current_study.uuid,
         user_id=current_user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,

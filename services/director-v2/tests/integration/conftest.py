@@ -12,7 +12,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from models_library.api_schemas_directorv2.computations import ComputationGet
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -95,7 +95,7 @@ async def create_pipeline(
     async def _creator(
         client: httpx.AsyncClient,
         *,
-        project: ProjectAtDB,
+        project_uuid: ProjectID,
         user_id: UserID,
         product_name: str,
         product_api_base_url: str,
@@ -106,7 +106,7 @@ async def create_pipeline(
             COMPUTATION_URL,
             json={
                 "user_id": user_id,
-                "project_id": str(project.uuid),
+                "project_id": str(project_uuid),
                 "start_pipeline": start_pipeline,
                 "product_name": product_name,
                 "product_api_base_url": product_api_base_url,

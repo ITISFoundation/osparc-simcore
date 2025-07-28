@@ -457,7 +457,7 @@ async def test_run_partial_computation(
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -503,7 +503,7 @@ async def test_run_partial_computation(
     ):
         await create_pipeline(
             async_client,
-            project=sleepers_project,
+            project_uuid=sleepers_project.uuid,
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
@@ -525,7 +525,7 @@ async def test_run_partial_computation(
     )
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -575,7 +575,7 @@ async def test_run_computation(
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -622,7 +622,7 @@ async def test_run_computation(
     ):
         await create_pipeline(
             async_client,
-            project=sleepers_project,
+            project_uuid=sleepers_project.uuid,
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
@@ -646,7 +646,7 @@ async def test_run_computation(
     expected_pipeline_details_forced.progress = 0
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -699,7 +699,7 @@ async def test_abort_computation(
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -776,7 +776,7 @@ async def test_update_and_delete_computation(
     # send a valid project with sleepers
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -795,7 +795,7 @@ async def test_update_and_delete_computation(
     # update the pipeline
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -814,7 +814,7 @@ async def test_update_and_delete_computation(
     # update the pipeline
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -833,7 +833,7 @@ async def test_update_and_delete_computation(
     # start it now
     task_out = await create_pipeline(
         async_client,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         user_id=user["id"],
         start_pipeline=True,
         product_name=osparc_product_name,
@@ -864,7 +864,7 @@ async def test_update_and_delete_computation(
     with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_409_CONFLICT}"):
         await create_pipeline(
             async_client,
-            project=sleepers_project,
+            project_uuid=sleepers_project.uuid,
             user_id=user["id"],
             start_pipeline=False,
             product_name=osparc_product_name,
@@ -917,7 +917,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     ):
         await create_pipeline(
             async_client,
-            project=project_with_dynamic_node,
+            project_uuid=project_with_dynamic_node.uuid,
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
@@ -927,7 +927,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     # still this pipeline shall be createable if we do not want to start it
     await create_pipeline(
         async_client,
-        project=project_with_dynamic_node,
+        project_uuid=project_with_dynamic_node.uuid,
         user_id=user["id"],
         start_pipeline=False,
         product_name=osparc_product_name,
@@ -1124,7 +1124,7 @@ async def test_burst_create_computations(
             [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project,
+                    project_uuid=sleepers_project.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,
@@ -1135,7 +1135,7 @@ async def test_burst_create_computations(
             + [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project2,
+                    project_uuid=sleepers_project2.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,
@@ -1153,7 +1153,7 @@ async def test_burst_create_computations(
             [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project,
+                    project_uuid=sleepers_project.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,
@@ -1164,7 +1164,7 @@ async def test_burst_create_computations(
             + [
                 create_pipeline(
                     async_client,
-                    project=sleepers_project2,
+                    project_uuid=sleepers_project2.uuid,
                     user_id=user["id"],
                     product_name=osparc_product_name,
                     product_api_base_url=osparc_product_api_base_url,
