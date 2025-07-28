@@ -862,19 +862,20 @@ qx.Class.define("osparc.data.model.Workbench", {
         workbenchPatchesByNode[nodeId].push(workbenchPatch);
       });
 
-      // first remove nodes
+      // first, remove nodes
       nodesRemoved.forEach(nodeId => {
         const node = this.getNode(nodeId);
         if (node) {
           node.nodeRemoved(nodeId);
         }
         this.__nodeRemoved(nodeId);
+        delete workbenchPatchesByNode[nodeId];
       });
 
-      // second add nodes
+      // second, add nodes
       console.log("Adding nodes", nodesAdded);
 
-      // third update nodes
+      // third, update nodes
       Object.keys(workbenchPatchesByNode).forEach(nodeId => {
         const node = this.getNode(nodeId);
         if (node === null) {
