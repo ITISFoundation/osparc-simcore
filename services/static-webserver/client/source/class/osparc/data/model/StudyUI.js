@@ -143,7 +143,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       if (annotationId in this.getAnnotations()) {
         const annotation = this.getAnnotations()[annotationId]
         this.fireDataEvent("projectDocumentChanged", {
-          "op": "delete",
+          "op": "remove",
           "path": `/ui/annotations/${annotation.getId()}`,
           "osparc-resource": "study-ui",
         });
