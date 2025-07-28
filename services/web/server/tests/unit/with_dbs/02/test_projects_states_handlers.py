@@ -1529,6 +1529,7 @@ async def test_open_shared_project_multiple_users(
         sio_i, sio_i_handlers = await create_socketio_connection_with_handlers(
             client_i, client_i_tab_id
         )
+        assert sio_i
 
         # user i opens the shared project
         await _open_project(client_i, client_i_tab_id, shared_project, expected.ok)
@@ -1570,13 +1571,43 @@ async def test_open_shared_project_multiple_users(
     user_n = await exit_stack.enter_async_context(
         LoggedUser(client_n, {"role": logged_user["role"]})
     )
+    assert user_n
 
     sio_n, sio_n_handlers = await create_socketio_connection_with_handlers(
         client_n, client_n_tab_id
     )
+    assert sio_n
+    assert sio_n_handlers
 
-    # user i opens the shared project
+    # user i opens the shared project --> no events since it's blocked
     await _open_project(client_n, client_n_tab_id, shared_project, expected.conflict)
+    await _assert_project_state_updated(
+        sio_n_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT], shared_project, []
+    )
+
+    # close project from a random user shall trigger an event for all the other users
+    await _close_project(
+        base_client, base_client_tab_id, shared_project, expected.no_content
+    )
+    opened_project_state = opened_project_state.model_copy(
+        update={
+            "share_state": ProjectShareStateOutputSchema(
+                locked=False,
+                status=ProjectStatus.OPENED,
+                current_user_groupids=[
+                    gid
+                    for gid in opened_project_state.share_state.current_user_groupids
+                    if gid
+                    != TypeAdapter(GroupID).validate_python(logged_user["primary_gid"])
+                ],
+            ),
+        }
+    )
+    await _assert_project_state_updated(
+        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state] * 2,
+    )
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
