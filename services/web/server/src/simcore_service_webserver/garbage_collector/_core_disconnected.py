@@ -7,7 +7,6 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 
 from ..projects import _projects_service
-from ..redis import get_redis_lock_manager_client
 from ..resource_manager.registry import (
     RedisResourceRegistry,
 )
@@ -18,7 +17,6 @@ _logger = logging.getLogger(__name__)
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-    lock_manager = get_redis_lock_manager_client(app)
 
     # NOTE:
     # Each user session is represented in the redis registry with two keys:
