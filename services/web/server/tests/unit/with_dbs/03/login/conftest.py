@@ -17,6 +17,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.models.wallets import wallets
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.login._confirmation_repository import (
     ConfirmationRepository,
 )
@@ -88,7 +89,7 @@ def confirmation_repository(client: TestClient) -> ConfirmationRepository:
     """Modern confirmation repository instance"""
     assert client.app
     # Get the async engine from the application
-    engine = client.app["postgres_db_engine"]
+    engine = get_asyncpg_engine(client.app)
     return ConfirmationRepository(engine)
 
 

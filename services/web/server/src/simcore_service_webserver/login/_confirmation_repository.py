@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from typing import Any
 
 import sqlalchemy as sa
@@ -21,7 +20,15 @@ _logger = logging.getLogger(__name__)
 
 
 def _to_domain(confirmation_row: Row) -> Confirmation:
-    return Confirmation.model_validate(confirmation_row)
+    return Confirmation.model_validate(
+        {
+            "code": confirmation_row.code,
+            "user_id": confirmation_row.user_id,
+            "action": confirmation_row.action.value,  # conversion to literal string
+            "data": confirmation_row.data,
+            "created_at": confirmation_row.created,  # renames
+        }
+    )
 
 
 class ConfirmationRepository(BaseRepository):
@@ -57,7 +64,6 @@ class ConfirmationRepository(BaseRepository):
                     user_id=user_id,
                     action=action,
                     data=data,
-                    created_at=datetime.utcnow(),
                 )
                 .returning(*confirmations.c)
             )
