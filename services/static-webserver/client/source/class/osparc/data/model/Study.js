@@ -778,7 +778,7 @@ qx.Class.define("osparc.data.model.Study", {
         if (studyPropertyKey in studyDiffs) {
           const newValue = studyDiffs[studyPropertyKey][1];
           if ("lastChangeDate" === studyPropertyKey) {
-            this.getStudy().setLastChangeDate(new Date(newValue));
+            this.setLastChangeDate(new Date(newValue));
           } else {
             const upKey = qx.lang.String.firstUp(studyPropertyKey);
             const setter = "set" + upKey;
