@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import logging
 from asyncio import Task
-from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Final
 from uuid import uuid4
@@ -46,6 +45,7 @@ class RedisClientSDK:
         return self._client
 
     def __post_init__(self) -> None:
+        self._health_check_task_started_event = asyncio.Event()
         self._client = aioredis.from_url(
             self.redis_dsn,
             # Run 3 retries with exponential backoff strategy source: https://redis.readthedocs.io/en/stable/backoff.html
@@ -66,6 +66,8 @@ class RedisClientSDK:
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
+            assert self._health_check_task_started_event  # nosec
+            self._health_check_task_started_event.set()
             self._is_healthy = await self.ping()
 
         self._health_check_task = asyncio.create_task(
@@ -90,7 +92,7 @@ class RedisClientSDK:
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
             if self._health_check_task:
-                with suppress(TimeoutError):
+                with log_catch(_logger, reraise=False):
                     await cancel_wait_task(
                         self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
                     )
@@ -100,7 +102,7 @@ class RedisClientSDK:
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            await asyncio.wait_for(self._client.ping(), timeout=1)
+            await self._client.ping()
             return True
 
         return False
