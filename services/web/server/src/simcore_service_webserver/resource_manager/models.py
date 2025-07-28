@@ -28,7 +28,7 @@ class UserSession(BaseModel):
     def _update_json_schema_extra(schema: JsonDict) -> None:
         schema.update(
             {
-                "exampels": [
+                "examples": [
                     {
                         "user_id": 7,
                         "client_session_id": "c7fc4985-f96a-4be3-a8ed-5a43b1aa15e2",
