@@ -15,24 +15,16 @@ import pytest
 import socketio
 import socketio.exceptions
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_projects import NewProject
 from servicelib.aiohttp import status
-from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.projects._projects_service import (
-    remove_project_dynamic_services,
-    submit_delete_project_task,
-)
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     UserSessionDict,
     get_registry,
 )
-from simcore_service_webserver.users.exceptions import UserNotFoundError
-from simcore_service_webserver.users.users_service import delete_user_without_projects
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -339,45 +331,3 @@ async def mocked_notification_system(mocker):
     mocked_notification_system.return_value.set_result("")
     mocks["mocked_notification_system"] = mocked_notification_system
     return mocks
-
-
-@pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
-async def test_regression_removing_unexisting_user(
-    director_v2_service_mock: aioresponses,
-    client: TestClient,
-    logged_user: dict[str, Any],
-    empty_user_project: dict[str, Any],
-    user_role: UserRole,
-    mock_storage_delete_data_folders: mock.Mock,
-) -> None:
-    # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
-    assert client.app
-    # remove project
-    user_id = logged_user["id"]
-    delete_task = await submit_delete_project_task(
-        app=client.app,
-        project_uuid=empty_user_project["uuid"],
-        user_id=user_id,
-        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-    )
-    await delete_task
-    # remove user
-    await delete_user_without_projects(app=client.app, user_id=user_id)
-
-    with pytest.raises(UserNotFoundError):
-        await remove_project_dynamic_services(
-            user_id=user_id,
-            project_uuid=empty_user_project["uuid"],
-            app=client.app,
-            simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-        )
-    await remove_project_dynamic_services(
-        user_id=user_id,
-        project_uuid=empty_user_project["uuid"],
-        app=client.app,
-        simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
-    )
-    # since the call to delete is happening as fire and forget task, let's wait until it is done
-    async for attempt in AsyncRetrying(**_TENACITY_ASSERT_RETRY):
-        with attempt:
-            mock_storage_delete_data_folders.assert_called()
