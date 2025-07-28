@@ -194,12 +194,22 @@ def create_application() -> web.Application:
 
 def create_application_auth() -> web.Application:
     app = create_safe_application()
-    setup_settings(app)
-    setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
 
+    settings = setup_settings(app)
+    assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
+
+    # Monitoring and diagnostics
+    setup_app_tracing(
+        # WARNING: must be UPPERMOST middleware
+        # NOTE: uses settings.APP_NAME
+        app
+    )
+    setup_diagnostics(app)
+    setup_profiling_middleware(app)
+
+    # Core modules
     setup_rest(app)
     setup_db(app)
-
     setup_login_auth(app)
 
     # NOTE: *last* events
@@ -207,7 +217,8 @@ def create_application_auth() -> web.Application:
     app.on_shutdown.append(_create_finished_banner())
 
     _logger.debug(
-        "Routes in application-auth: \n %s", pformat(app.router.named_resources())
+        "Routes in application-auth: \n %s",
+        lambda: pformat(app.router.named_resources()),
     )
 
     return app
