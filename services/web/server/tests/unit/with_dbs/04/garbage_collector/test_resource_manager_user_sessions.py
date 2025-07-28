@@ -84,7 +84,10 @@ def redis_registry(redis_enabled_app: web.Application) -> RedisResourceRegistry:
 @pytest.fixture
 def create_user_ids(faker: Faker) -> Callable[[int], list[UserID]]:
     def _do(number: int) -> list[UserID]:
-        return list({faker.pyint(min_value=1) for _ in range(number)})
+        unique_ids = set()
+        while len(unique_ids) < number:
+            unique_ids.add(faker.pyint(min_value=1))
+        return list(unique_ids)
 
     return _do
 
