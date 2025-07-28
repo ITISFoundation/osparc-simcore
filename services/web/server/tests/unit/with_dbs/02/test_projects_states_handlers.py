@@ -266,7 +266,7 @@ async def _assert_project_state_updated(
         async def _received_project_update_event() -> None:
             assert handler.call_count == len(
                 expected_project_state_updates
-            ), f"received {handler.call_count} of {len(expected_project_state_updates)} expected calls"
+            ), f"received {handler.call_count}:{handler.call_args_list} of {len(expected_project_state_updates)} expected calls"
             if expected_project_state_updates:
                 calls = [
                     call(
@@ -1486,6 +1486,9 @@ async def test_open_shared_project_multiple_users(
     await _state_project(base_client, shared_project, expected.ok, opened_project_state)
 
     # now we create more users and open the same project until we reach the maximum number of user sessions
+    other_users: list[
+        tuple[UserInfoDict, TestClient, str, socketio.AsyncClient, _SocketHandlers]
+    ] = []
     for _ in range(1, max_number_of_user_sessions):
         client_i = client_on_running_server_factory()
 
@@ -1521,6 +1524,17 @@ async def test_open_shared_project_multiple_users(
             [opened_project_state]
             * 1,  # NOTE: only one call per user since they are part of the everyone group
         )
+        for user_j, client_j, _, sio_j, sio_j_handlers in other_users:
+            # check already opened  by other users which should also notify
+            await _assert_project_state_updated(
+                sio_j_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+                shared_project,
+                [opened_project_state],
+            )
+            await _state_project(
+                client_j, shared_project, expected.ok, opened_project_state
+            )
+
         await _assert_project_state_updated(
             sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
             shared_project,
@@ -1533,6 +1547,7 @@ async def test_open_shared_project_multiple_users(
         await _state_project(
             base_client, shared_project, expected.ok, opened_project_state
         )
+        other_users.append((user_i, client_i, client_i_tab_id, sio_i, sio_i_handlers))
 
     # create an additional user, opening the project again shall raise
     client_n = client_on_running_server_factory()
@@ -1579,6 +1594,16 @@ async def test_open_shared_project_multiple_users(
         shared_project,
         [opened_project_state] * 2,
     )
+    # check all the other users
+    for user_i, client_i, _, sio_i, sio_i_handlers in other_users:
+        await _assert_project_state_updated(
+            sio_i_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+            shared_project,
+            [opened_project_state],
+        )
+        await _state_project(
+            client_i, shared_project, expected.ok, opened_project_state
+        )
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
