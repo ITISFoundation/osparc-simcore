@@ -36,7 +36,7 @@ def project_id(faker: Faker) -> ProjectID:
 
 @pytest.fixture
 def client_session_id(faker: Faker) -> str:
-    return faker.uuid4(cast_to=None)
+    return faker.uuid4(cast_to=str)
 
 
 @pytest.fixture
