@@ -121,7 +121,7 @@ async def test_task_is_auto_removed(
 
     if check_task_presence_before:
         # immediately after starting the task is still there
-        task_status = tasks_manager.get_task_status(
+        task_status = await tasks_manager.get_task_status(
             task_id, with_task_context=empty_context
         )
         assert task_status

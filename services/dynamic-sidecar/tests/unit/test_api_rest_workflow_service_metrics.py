@@ -36,6 +36,7 @@ from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_r
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
+from settings_library.redis import RedisSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.docker_utils import get_container_states
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
@@ -46,6 +47,11 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from tenacity import AsyncRetrying, TryAgain
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+
 
 _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -82,7 +88,10 @@ def backend_url() -> AnyHttpUrl:
 
 @pytest.fixture
 def mock_environment(
-    monkeypatch: pytest.MonkeyPatch, mock_rabbitmq_envs: EnvVarsDict
+    mock_postgres_check: None,
+    redis_service: RedisSettings,
+    monkeypatch: pytest.MonkeyPatch,
+    mock_rabbitmq_envs: EnvVarsDict,
 ) -> EnvVarsDict:
     setenvs_from_dict(
         monkeypatch,
