@@ -284,6 +284,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
       osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
+
+      this.__initNodeSignals(node);
+      this.__addNode(node);
+
       return node;
     },
 
@@ -317,9 +321,6 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         this.fireEvent("restartAutoSaveTimer");
         const node = this.__createNode(this.getStudy(), metadata, nodeId);
-        this.__initNodeSignals(node);
-        this.__addNode(node);
-
         node.populateNodeData();
         this.__giveUniqueNameToNode(node, node.getLabel());
         node.checkState();
@@ -718,9 +719,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           for (let i=0; i<nodeIds.length; i++) {
             const metadata = values[i];
             const nodeId = nodeIds[i];
-            const node = this.__createNode(this.getStudy(), metadata, nodeId);
-            this.__initNodeSignals(node);
-            this.__addNode(node);
+            this.__createNode(this.getStudy(), metadata, nodeId);
           }
 
           // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
