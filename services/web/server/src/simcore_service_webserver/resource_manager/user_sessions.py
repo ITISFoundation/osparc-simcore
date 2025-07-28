@@ -14,7 +14,7 @@ from .registry import (
     RedisResourceRegistry,
     get_registry,
 )
-from .settings import ResourceManagerSettings, get_plugin_settings
+from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ assert PROJECT_ID_KEY in ResourcesDict.__annotations__  # nosec
 
 
 def _get_service_deletion_timeout(app: web.Application) -> int:
-    settings: ResourceManagerSettings = get_plugin_settings(app)
+    settings = get_plugin_settings(app)
     return settings.RESOURCE_MANAGER_RESOURCE_TTL_S
 
 
