@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import json
 from collections.abc import Iterator
 
 import pytest
@@ -14,7 +15,7 @@ from common_library.users_enums import UserRole
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_project, random_user
-from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 
 
@@ -97,7 +98,7 @@ def test_populate_projects_to_jobs_during_migration(
                     "Study associated to solver job:"
                     """{
                     "id": "cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
-                    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.2.1/jobs/cd03450c-4c2c-85fd-0d951d7dcd5a",
+                    "name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.2.1/jobs/cd03450c-4c17-4c2c-85fd-0d951d7dcd5a",
                     "inputs_checksum": "015ba4cd5cf00c511a8217deb65c242e3b15dc6ae4b1ecf94982d693887d9e8a",
                     "created_at": "2025-01-27T13:12:58.676564Z"
                     }
@@ -120,8 +121,37 @@ def test_populate_projects_to_jobs_during_migration(
                 prj_owner=user_id,
             ),
         ]
+
+        default_column_values = {
+            # NOTE: not server_default values are not applied here!
+            "type": ProjectType.STANDARD.value,
+            "workbench": {},
+            "access_rights": {},
+            "published": False,
+            "hidden": False,
+            "workspace_id": None,
+        }
+
+        # NOTE: cannot use `projects` table directly here because it changes
+        # throughout time
         for prj in projects_data:
-            conn.execute(sa.insert(projects).values(prj))
+            for key, value in default_column_values.items():
+                prj.setdefault(key, value)
+
+            for key, value in prj.items():
+                if isinstance(value, dict):
+                    prj[key] = json.dumps(value)
+
+            columns = list(prj.keys())
+            values_clause = ", ".join(f":{col}" for col in columns)
+            columns_clause = ", ".join(columns)
+            stmt = sa.text(
+                f"""
+                INSERT INTO projects ({columns_clause})
+                VALUES ({values_clause})
+                """  # noqa: S608
+            ).bindparams(**prj)
+            conn.execute(stmt)
 
     # MIGRATE UPGRADE: this should populate
     simcore_postgres_database.cli.upgrade.callback("head")
