@@ -217,7 +217,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           const messages = resp["data"];
           messages.forEach(message => this.addMessage(message));
           this.__nextRequestParams = resp["_links"]["next"];
-          if (this.__nextRequestParams === null) {
+          if (this.__nextRequestParams === null && this.__loadMoreMessages) {
             this.__loadMoreMessages.exclude();
           }
         })
