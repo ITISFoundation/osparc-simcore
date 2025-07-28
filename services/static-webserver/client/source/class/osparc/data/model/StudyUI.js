@@ -146,7 +146,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       if (annotationId in this.getAnnotations()) {
         const annotation = this.getAnnotations()[annotationId]
         this.fireDataEvent("projectDocumentChanged", {
-          "op": "delete",
+          "op": "remove",
           "path": `/ui/annotations/${annotation.getId()}`,
           "osparc-resource": "study-ui",
         });
@@ -297,18 +297,23 @@ qx.Class.define("osparc.data.model.StudyUI", {
           if (currentStudy) {
             const node = currentStudy.getWorkbench().getNode(nodeId);
             if (path.includes("/position")) {
-              this.__updateNodePositionFromPatch(node, op, path, value);
+              this.__updateNodePositionFromPatch(node, patch);
             }
             if (path.includes("/marker")) {
-              this.__updateNodeMarkerFromPatch(node, op, path, value);
+              this.__updateNodeMarkerFromPatch(node, patch);
             }
           }
+        } else if (path.startsWith("/ui/annotations/")) {
+          this.__updateAnnotationFromPatch(patch);
         }
       });
     },
 
-    __updateNodePositionFromPatch: function(node, op, path, value) {
+    __updateNodePositionFromPatch: function(node, patch) {
       if (node) {
+        const op = patch.op;
+        const path = patch.path;
+        const value = patch.value;
         if (op === "replace") {
           const newPos = node.getPosition();
           if (path.includes("/position/x")) {
@@ -322,8 +327,11 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
-    __updateNodeMarkerFromPatch: function(node, op, path, value) {
+    __updateNodeMarkerFromPatch: function(node, patch) {
       if (node) {
+        const op = patch.op;
+        const path = patch.path;
+        const value = patch.value;
         if (op === "delete" || value === null) {
           // it was removed
           node.setMarker(null);
@@ -336,6 +344,23 @@ qx.Class.define("osparc.data.model.StudyUI", {
             node.getMarker().setColor(value);
           }
         }
+      }
+    },
+
+    __updateAnnotationFromPatch: function(patch) {
+      const op = patch.op;
+      const path = patch.path;
+      const value = patch.value;
+      const annotationId = path.split("/")[3];
+      console.log("Updating annotation from patch", patch);
+      if (op === "add") {
+        this.addAnnotation(value, annotationId);
+      } else if (op === "remove") {
+        // it was removed
+        this.removeAnnotation(annotationId);
+      } else if (op === "replace" && value) {
+        // it was updated
+        console.log("Updating annotation", annotationId, "with value", value);
       }
     },
 
