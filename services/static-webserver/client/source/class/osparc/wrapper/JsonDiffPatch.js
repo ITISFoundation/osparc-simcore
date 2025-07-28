@@ -81,14 +81,10 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
       return delta;
     },
 
-    patch: function(obj, delta) {
-      this.__diffPatcher.patch(obj, delta);
-      return obj;
+    // format to JSON PATCH (RFC 6902)
+    deltaToJsonPatch: function(delta) {
+      const patch = this.__diffPatcher.formatters.jsonpatch.format(delta);
+      return patch;
     },
-
-    // deep clone
-    clone: function(obj) {
-      return this.__diffPatcher.clone(obj);
-    }
   }
 });
