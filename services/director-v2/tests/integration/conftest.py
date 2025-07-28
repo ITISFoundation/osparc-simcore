@@ -37,7 +37,7 @@ def update_project_workbench_with_comp_tasks(
     postgres_db: sa.engine.Engine,
 ) -> Callable:
     def _updator(project_uuid: str):
-        with postgres_db.connect() as con:
+        with postgres_db.connect() as con, con.begin():
 
             # select all projects_nodes for this project
             result = con.execute(

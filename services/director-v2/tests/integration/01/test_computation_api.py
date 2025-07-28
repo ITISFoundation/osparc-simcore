@@ -416,12 +416,12 @@ async def test_run_partial_computation(
 
     def _convert_to_pipeline_details(
         project: ProjectAtDB,
-        exp_pipeline_adj_list: dict[int, list[int]],
-        exp_node_states: dict[int, dict[str, Any]],
+        expected_pipeline_adj_list: dict[int, list[int]],
+        expected_node_states: dict[int, dict[str, Any]],
     ) -> PipelineDetails:
         workbench_node_uuids = list(project.workbench.keys())
         converted_adj_list: dict[NodeID, list[NodeID]] = {}
-        for node_key, next_nodes in exp_pipeline_adj_list.items():
+        for node_key, next_nodes in expected_pipeline_adj_list.items():
             converted_adj_list[NodeID(workbench_node_uuids[node_key])] = [
                 NodeID(workbench_node_uuids[n]) for n in next_nodes
             ]
@@ -434,7 +434,7 @@ async def test_run_partial_computation(
                 currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
                 progress=s.get("progress"),
             )
-            for n, s in exp_node_states.items()
+            for n, s in expected_node_states.items()
         }
         pipeline_progress = 0
         for node_id in converted_adj_list:
