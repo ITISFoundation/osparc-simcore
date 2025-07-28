@@ -277,7 +277,7 @@ qx.Class.define("osparc.workbench.Annotation", {
         type: this.getType(),
         attributes: this.getAttributes(),
         color: this.getColor(), // TYPES.NOTE and TYPES.CONVERSATION do not need a color but backend expects it
-      }
+      };
       return serializeData;
     }
   }
