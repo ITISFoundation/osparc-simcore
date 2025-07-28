@@ -101,13 +101,10 @@ qx.Class.define("osparc.jobs.JobsButton", {
     __attachSocketListener: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
-      socket.on("projectStateUpdated", content => {
-        // for now, we can only access the activity of my user, not the whole project...
-        if (osparc.study.Utils.amIRunningTheStudy(content)) {
-          // we know that I am running at least one study
+      socket.on("projectStateUpdated", data => {
+        if (osparc.study.Utils.state.isPipelineRunning(data["data"])) {
           this.__updateJobsButton(true);
         }
-        // ...in the next iteration: listen to main store's "studyStateChanged", which will cover all users
       }, this);
     },
 

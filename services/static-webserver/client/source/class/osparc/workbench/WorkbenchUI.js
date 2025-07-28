@@ -443,7 +443,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __itemMoving: function(itemId, xDiff, yDiff) {
       this.getSelectedNodeUIs().forEach(selectedNodeUI => {
         if (itemId !== selectedNodeUI.getNodeId()) {
-          selectedNodeUI.setPosition({
+          // do not touch the position, just move the node, this will happen in __itemStoppedMoving
+          selectedNodeUI.moveNodeTo({
             x: selectedNodeUI.initPos.x + xDiff,
             y: selectedNodeUI.initPos.y + yDiff
           });
@@ -464,10 +465,24 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.getSelectedNodeUIs().forEach(selectedNodeUI => delete selectedNodeUI["initPos"]);
       this.getSelectedAnnotations().forEach(selectedAnnotation => delete selectedAnnotation["initPos"]);
 
-      if (nodeUI && osparc.Preferences.getInstance().isSnapNodeToGrid()) {
-        this.getSelectedNodeUIs().forEach(selectedNodeUI => selectedNodeUI.snapToGrid());
-        // make sure nodeUI is moved, then update edges
-        setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
+        // the moving item could be an annotation, so we need to check if it is a nodeUI
+      if (nodeUI) {
+        this.getSelectedNodeUIs().forEach(selectedNodeUI => {
+          if (nodeUI !== selectedNodeUI) {
+            // now set the position
+            const layoutProps = selectedNodeUI.getLayoutProperties();
+            selectedNodeUI.setPosition({
+              x: layoutProps.left,
+              y: layoutProps.top,
+            });
+          }
+        });
+
+        if (osparc.Preferences.getInstance().isSnapNodeToGrid()) {
+          this.getSelectedNodeUIs().forEach(selectedNodeUI => selectedNodeUI.snapToGrid());
+          // make sure nodeUI is moved, then update edges
+          setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
+        }
       }
 
       this.__updateWorkbenchBounds();
