@@ -57,7 +57,7 @@ async def remove_disconnected_user_resources(
                     log_context(
                         _logger,
                         logging.INFO,
-                        "Closing project {project_id} for user {user_id=}",
+                        f"Closing project {project_id} for user {user_id=}",
                     ),
                 ):
                     await _projects_service.close_project_for_user(
