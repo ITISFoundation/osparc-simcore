@@ -238,6 +238,10 @@ qx.Class.define("osparc.data.model.Node", {
      "progress", // !! not a property but goes into the model
     ],
 
+    getProperties: function() {
+      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
+    },
+
     isFrontend: function(metadata) {
       return (metadata && metadata.key && metadata.key.includes("/frontend/"));
     },
@@ -1306,7 +1310,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     listenToChanges: function() {
       const nodeId = this.getNodeId();
-      const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
+      const nodePropertyKeys = this.self().getProperties();
       this.self().ListenChangesProps.forEach(key => {
         switch (key) {
           case "inputs":
@@ -1400,7 +1404,7 @@ qx.Class.define("osparc.data.model.Node", {
             }
             break;
           default:
-            if (propertyKeys.includes(key)) {
+            if (nodePropertyKeys.includes(key)) {
               this.addListener("change" + qx.lang.String.firstUp(key), e => {
                 const data = e.getData();
                 this.fireDataEvent("projectDocumentChanged", {
@@ -1412,6 +1416,36 @@ qx.Class.define("osparc.data.model.Node", {
               }, this);
             } else {
               console.error(`Property "${key}" is not a valid property of osparc.data.model.Node`);
+            }
+            break;
+        }
+      });
+    },
+
+    updateNodeFromPatch: function(nodePatches) {
+      console.log(nodePatches);
+      const nodePropertyKeys = this.self().getProperties();
+      nodePatches.forEach(patch => {
+        const op = patch.op;
+        const path = patch.path;
+        const value = patch.value;
+        const nodeProperty = path.split("/")[3];
+        switch (nodeProperty) {
+          case "inputs":
+          case "inputsUnits":
+          case "inputNodes":
+          case "inputsRequired":
+          case "outputs":
+          case "progress":
+            console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
+          default:
+            if (nodePropertyKeys.includes(nodeProperty)) {
+              const setter = "set" + qx.lang.String.firstUp(nodeProperty);
+              if (this[setter]) {
+                this[setter](value);
+              } else {
+                console.warn(`Property "${nodeProperty}" does not have a setter in osparc.data.model.Node`);
+              }
             }
             break;
         }

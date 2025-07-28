@@ -830,7 +830,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     updateWorkbenchFromPatches: function(workbenchPatches) {
-      console.log(workbenchPatches);
       // group the patches by nodeId
       const workbenchPatchesByNode = {};
       workbenchPatches.forEach(workbenchPatch => {
@@ -840,7 +839,16 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
         workbenchPatchesByNode[nodeId].push(workbenchPatch);
       });
-      console.log(workbenchPatchesByNode);
+      Object.keys(workbenchPatchesByNode).forEach(nodeId => {
+        const node = this.getNode(nodeId);
+        if (node === null) {
+          console.warn(`Node with id ${nodeId} not found, skipping patch application.`);
+          return;
+        }
+        const nodePatches = workbenchPatchesByNode[nodeId];
+        node.updateNodeFromPatch(nodePatches);
+      });
+      this.getNode()
     },
   }
 });
