@@ -6,6 +6,8 @@ from pydantic import ConfigDict, Field
 from ..access_rights import ExecutableAccessRights
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
 from ..basic_types import PortInt
+from ..groups import GroupID
+from ..projects import ProjectID
 from ..projects_nodes import InputID, InputsDict, PartialNode
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
@@ -13,8 +15,6 @@ from ..services_enums import ServiceState
 from ..services_history import ServiceRelease
 from ..services_resources import ServiceResourcesDict
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
-from .groups import GroupID
-from .projects import ProjectID
 
 assert ServiceResourcesDict  # nosec
 __all__: tuple[str, ...] = ("ServiceResourcesDict",)
