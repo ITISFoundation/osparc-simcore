@@ -90,6 +90,8 @@ async def get_redis_client_sdk(
         assert client.redis_dsn == redis_resources_dns
         assert client.client_name == "pytest"
 
+        await client.setup()
+
         yield client
 
         await client.shutdown()

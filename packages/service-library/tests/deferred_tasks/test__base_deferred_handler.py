@@ -57,6 +57,7 @@ async def redis_client_sdk(
         decode_responses=False,
         client_name="pytest",
     )
+    await sdk.setup()
     yield sdk
     await sdk.shutdown()
 

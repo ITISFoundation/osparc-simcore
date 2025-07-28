@@ -176,6 +176,8 @@ async def redis_client_sdk(
     client = RedisClientSDK(redis_resources_dns, client_name="pytest")
     assert client
     assert client.redis_dsn == redis_resources_dns
+    await client.setup()
+
     # cleanup, previous run's leftovers
     await client.redis.flushall()
 
@@ -328,8 +330,7 @@ async def test_no_redis_key_overlap_when_inheriting(
     redis_client_sdk: RedisClientSDK,
     component_using_random_text: ComponentUsingRandomText,
 ):
-    class ChildRandomTextResourcesManager(RandomTextResourcesManager):
-        ...
+    class ChildRandomTextResourcesManager(RandomTextResourcesManager): ...
 
     parent_manager = RandomTextResourcesManager(
         redis_client_sdk, component_using_random_text

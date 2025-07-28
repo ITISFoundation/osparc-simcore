@@ -115,6 +115,8 @@ async def test_redis_client_sdk_setup_shutdown(
 
     # ensure health check task sets the health to True
     client._is_healthy = False  # noqa: SLF001
+
+    await client.setup()
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),
         stop=stop_after_delay(10),
