@@ -1450,6 +1450,7 @@ qx.Class.define("osparc.data.model.Node", {
           case "outputs":
           case "progress":
             console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
+            break;
           default:
             if (nodePropertyKeys.includes(nodeProperty)) {
               const setter = "set" + qx.lang.String.firstUp(nodeProperty);
