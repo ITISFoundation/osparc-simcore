@@ -82,9 +82,10 @@ async def _build_project_function_extras_dict(
         user_id=user_id,
     )
 
-    return {
-        "thumbnail": project_dict.get("thumbnail") or None,
-    }
+    extras: dict[str, Any] = {}
+    if thumbnail := project_dict["thumbnail"]:
+        extras["thumbnail"] = thumbnail
+    return extras
 
 
 async def _build_solver_function_extras_dict(
@@ -97,30 +98,30 @@ async def _build_solver_function_extras_dict(
         key=function.solver_key,
         version=function.solver_version,
     )
-    return {
-        "thumbnail": (
-            f"{services_metadata.thumbnail}" if services_metadata.thumbnail else None
-        ),
-    }
+    extras: dict[str, Any] = {}
+    if thumbnail := services_metadata.thumbnail:
+        extras["thumbnail"] = thumbnail
+    return extras
 
 
 async def _build_function_extras(
     app: web.Application, user_id: UserID, *, function: RegisteredFunction
 ) -> dict[str, Any]:
     extras: dict[str, Any] = {}
-    if function.function_class == FunctionClass.PROJECT:
-        assert isinstance(function, RegisteredProjectFunction)
-        extras |= await _build_project_function_extras_dict(
-            function=function,
-            app=app,
-            user_id=user_id,
-        )
-    elif function.function_class == FunctionClass.SOLVER:
-        assert isinstance(function, RegisteredSolverFunction)
-        extras |= await _build_solver_function_extras_dict(
-            app,
-            function=function,
-        )
+    match function.function_class:
+        case FunctionClass.PROJECT:
+            assert isinstance(function, RegisteredProjectFunction)
+            extras |= await _build_project_function_extras_dict(
+                function=function,
+                app=app,
+                user_id=user_id,
+            )
+        case FunctionClass.SOLVER:
+            assert isinstance(function, RegisteredSolverFunction)
+            extras |= await _build_solver_function_extras_dict(
+                app,
+                function=function,
+            )
     return extras
 
 
