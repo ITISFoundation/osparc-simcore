@@ -17,7 +17,6 @@ _logger = logging.getLogger(__name__)
 async def remove_disconnected_user_resources(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
-
     # NOTE:
     # Each user session is represented in the redis registry with two keys:
     # - "alive" is a string that keeps a TTL of the user session
@@ -31,7 +30,7 @@ async def remove_disconnected_user_resources(
 
     # clean up all resources of expired keys
     for dead_session in dead_user_sessions:
-        user_id = int(dead_session["user_id"])
+        user_id = dead_session["user_id"]
 
         # (0) If key has no resources => remove from registry and continue
         resources = await registry.get_resources(dead_session)
@@ -53,10 +52,13 @@ async def remove_disconnected_user_resources(
                 # inform that the project can be closed on the backend side
                 #
                 project_id = TypeAdapter(ProjectID).validate_python(resource_value)
-                with log_catch(_logger, reraise=False), log_context(
-                    _logger,
-                    logging.INFO,
-                    "Closing project {project_id} for user {user_id=}",
+                with (
+                    log_catch(_logger, reraise=False),
+                    log_context(
+                        _logger,
+                        logging.INFO,
+                        "Closing project {project_id} for user {user_id=}",
+                    ),
                 ):
                     await _projects_service.close_project_for_user(
                         user_id=user_id,

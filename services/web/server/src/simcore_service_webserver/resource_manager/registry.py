@@ -39,13 +39,10 @@ _ALIVE_SUFFIX = "alive"  # points to a string type
 _RESOURCE_SUFFIX = "resources"  # points to a hash (like a dict) type
 
 
-class _UserRequired(TypedDict, total=True):
-    user_id: str | UserID
-
-
-class UserSessionDict(_UserRequired):
+class UserSessionDict(TypedDict):
     """Parts of the key used in redis for a user-session"""
 
+    user_id: UserID
     client_session_id: str
 
 
