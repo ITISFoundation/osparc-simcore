@@ -266,7 +266,7 @@ async def _assert_project_state_updated(
         async def _received_project_update_event() -> None:
             assert handler.call_count == len(
                 expected_project_state_updates
-            ), f"got only {handler.call_count}/{len(expected_project_state_updates)} expected calls"
+            ), f"received {handler.call_count} of {len(expected_project_state_updates)} expected calls"
             if expected_project_state_updates:
                 calls = [
                     call(
@@ -1702,8 +1702,10 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         )
 
     # we should receive an event that the project lock state changed
-    # NOTE: there are a total of 2x3 calls since we are part of the primary group and the all group and user 2 is part of the all group
-    # first CLOSING, then CLOSED (so 2 calls for user1 and 1 call for user2)
+    # NOTE: user 1 is part of the primary group owning the project, and the all group
+    # there will be an event when the project is CLOSING, then another once the services are removed and the project is CLOSED
+    # user 2 is only part of the all group, therefore only receives 1 event
+
     await _assert_project_state_updated(
         sio1_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,

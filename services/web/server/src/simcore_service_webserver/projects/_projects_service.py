@@ -1620,14 +1620,15 @@ async def close_project_for_user(
                 task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
                 fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
             )
-    # notify users that project is now closed
-    project = await get_project_for_user(
-        app,
-        f"{project_uuid}",
-        user_id,
-        include_state=True,
-    )
-    await notify_project_state_update(app, project)
+    else:
+        # when the project is still opened by other users, we just notify the project state update
+        project = await get_project_for_user(
+            app,
+            f"{project_uuid}",
+            user_id,
+            include_state=True,
+        )
+        await notify_project_state_update(app, project)
 
 
 async def _get_project_share_state(
