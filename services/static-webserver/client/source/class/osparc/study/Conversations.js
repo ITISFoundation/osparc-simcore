@@ -221,6 +221,12 @@ qx.Class.define("osparc.study.Conversations", {
 
     __addToPages: function(conversationPage) {
       const conversationsLayout = this.getChildControl("conversations-layout");
+      if (conversationsLayout.getChildren().length === 1) {
+        // remove the temporary conversation page
+        if (conversationsLayout.getChildren()[0].getConversationId() === null) {
+          conversationsLayout.remove(conversationsLayout.getChildren()[0]);
+        }
+      }
       conversationsLayout.add(conversationPage);
 
       if (this.__newConversationButton === null) {
