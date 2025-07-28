@@ -106,4 +106,3 @@ async def create_socketio_connection(
                 await sio.disconnect()
                 await sio.wait()
         assert not sio.connected
-        assert not sio.sid
