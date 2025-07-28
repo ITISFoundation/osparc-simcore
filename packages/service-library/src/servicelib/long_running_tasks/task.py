@@ -122,7 +122,9 @@ class TasksManager:
         self.redis_settings = redis_settings
 
         self._stale_tasks_monitor_task: asyncio.Task | None = None
+        self._started_event_stale_tasks_monitor_task = asyncio.Event()
         self._cancelled_tasks_removal_task: asyncio.Task | None = None
+        self._started_event_cancelled_tasks_removal_task = asyncio.Event()
         self.redis_client_sdk: RedisClientSDK | None = None
 
     async def setup(self) -> None:
@@ -142,11 +144,13 @@ class TasksManager:
             interval=self.stale_task_check_interval,
             task_name=f"{__name__}.{self._stale_tasks_monitor_worker.__name__}",
         )
+        await self._started_event_stale_tasks_monitor_task.wait()
         self._cancelled_tasks_removal_task = create_periodic_task(
             task=self._cancelled_tasks_removal_worker,
             interval=_CANCEL_TASKS_CHECK_INTERVAL,
             task_name=f"{__name__}.{self._cancelled_tasks_removal_worker.__name__}",
         )
+        await self._started_event_cancelled_tasks_removal_task.wait()
 
     async def teardown(self) -> None:
         for tracked_task in await self._tasks_data.list_tasks_data():
@@ -157,15 +161,11 @@ class TasksManager:
 
         if self._stale_tasks_monitor_task:
             with log_catch(_logger, reraise=False):
-                await cancel_wait_task(
-                    self._stale_tasks_monitor_task, max_delay=_CANCEL_TASK_TIMEOUT
-                )
+                await cancel_wait_task(self._stale_tasks_monitor_task)
 
         if self._cancelled_tasks_removal_task:
             with log_catch(_logger, reraise=False):
-                await cancel_wait_task(
-                    self._cancelled_tasks_removal_task, max_delay=_CANCEL_TASK_TIMEOUT
-                )
+                await cancel_wait_task(self._cancelled_tasks_removal_task)
 
         if self.redis_client_sdk is not None:
             await self.redis_client_sdk.shutdown()
@@ -188,6 +188,8 @@ class TasksManager:
         # an issue with the client.
         # Since we own the client, we assume (for now) this
         # will not be the case.
+
+        self._started_event_stale_tasks_monitor_task.set()
 
         tasks_to_remove = await _get_tasks_to_remove(
             self._tasks_data, self.stale_task_detect_timeout_s
@@ -216,8 +218,10 @@ class TasksManager:
         tasks can be cancelled by the client, but they can run in differente processes
         once there is an entry in the cancelled store, attempt to cancel the task
         """
+        self._started_event_cancelled_tasks_removal_task.set()
 
-        for task_id, task_context in (await self._tasks_data.get_cancelled()).items():
+        cancelled_tasks = await self._tasks_data.get_cancelled()
+        for task_id, task_context in cancelled_tasks.items():
             await self.remove_task(task_id, task_context)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:

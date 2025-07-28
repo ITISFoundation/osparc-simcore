@@ -73,6 +73,12 @@ class RedisClientSDK:
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
 
+        # NOTE: this achieves 2 very important things:
+        # - ensure redis is working
+        # - before shutting down an initialized Redis connection it must
+        #   make at least one call to the servicer, otherwise tests might hang
+        await self.ping()
+
         _logger.info(
             "Connection to %s succeeded with %s",
             f"redis at {self.redis_dsn=}",
