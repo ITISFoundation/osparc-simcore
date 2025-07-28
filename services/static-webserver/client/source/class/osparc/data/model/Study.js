@@ -770,6 +770,23 @@ qx.Class.define("osparc.data.model.Study", {
         .then(() => {
           return studySource;
         });
-    }
+    },
+
+    updateFromDiff: function(studyDiffs) {
+      const studyPropertyKeys = this.self().getProperties();
+      studyPropertyKeys.forEach(studyPropertyKey => {
+        if (studyPropertyKey in studyDiffs) {
+          const newValue = studyDiffs[studyPropertyKey][1];
+          if ("lastChangeDate" === studyPropertyKey) {
+            this.getStudy().setLastChangeDate(new Date(newValue));
+          } else {
+            const upKey = qx.lang.String.firstUp(studyPropertyKey);
+            const setter = "set" + upKey;
+            this[setter](newValue);
+          }
+          delete studyDiffs[studyPropertyKey];
+        }
+      });
+    },
   }
 });
