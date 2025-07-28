@@ -5,6 +5,7 @@ Revises: 16ee7d73b9cc
 Create Date: 2020-04-22 13:42:06.572011+00:00
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -21,7 +22,7 @@ def upgrade():
         """
 CREATE OR REPLACE FUNCTION check_group_uniqueness(name text, type text) RETURNS INT AS $$
 BEGIN
-    IF type = 'EVERYONE' AND (SELECT COUNT(*) FROM groups WHERE groups.type = 'EVERYONE') = 1 THEN
+    IF type = 'EVERYONE' AND (SELECT COUNT(*) FROM public.groups WHERE groups.type = 'EVERYONE') = 1 THEN
         RETURN 127;
     END IF;
     RETURN 0;
