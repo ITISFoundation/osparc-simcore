@@ -1042,7 +1042,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       vBox.add(header);
 
       // INPUTS FORM
-      if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
+      if (node.hasPropsForm()) {
         const inputsForm = node.getPropsForm();
         const inputs = new osparc.desktop.PanelView(this.tr("Inputs"), inputsForm);
         inputs._innerContainer.set({
