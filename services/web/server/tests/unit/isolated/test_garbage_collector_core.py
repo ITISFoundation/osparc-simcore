@@ -46,7 +46,7 @@ def mock_registry(
     async def _fake_get_all_resource_keys() -> (
         tuple[list[UserSession], list[UserSession]]
     ):
-        return ([{"user_id": user_id, "client_session_id": client_session_id}], [])
+        return ([UserSession(user_id=user_id, client_session_id=client_session_id)], [])
 
     registry = mock.AsyncMock()
     registry.get_all_resource_keys = mock.AsyncMock(
