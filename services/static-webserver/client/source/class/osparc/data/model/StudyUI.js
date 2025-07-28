@@ -159,6 +159,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       this.getSlideshow().removeNode(nodeId);
     },
 
+    // unused in favor of updateUiFromPatches
     updateUiFromDiff: function(uiDiff) {
       if (uiDiff["workbench"]) {
         const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
@@ -282,6 +283,59 @@ qx.Class.define("osparc.data.model.StudyUI", {
             }
           }
         });
+      }
+    },
+
+    updateUiFromPatches: function(uiPatches) {
+      uiPatches.forEach(patch => {
+        const op = patch.op;
+        const path = patch.path;
+        const value = patch.value;
+        if (path.startsWith("/ui/workbench/")) {
+          const nodeId = path.split("/")[3];
+          const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+          if (currentStudy) {
+            const node = currentStudy.getWorkbench().getNode(nodeId);
+            if (op === "replace" && value) {
+              if ("position" in value) {
+                this.__updateNodePositionFromPatch(node, path, value);
+              }
+              if ("marker" in value) {
+                this.__updateNodeMarkerFromPatch(node, value["marker"]);
+              }
+            }
+          }
+        }
+      });
+    },
+
+    __updateNodePositionFromPatch: function(node, path, value) {
+      if (node) {
+        const newPos = node.getPosition();
+        if (path.includes("position/x")) {
+          newPos.x = value;
+        }
+        if (path.includes("position/y")) {
+          newPos.y = value;
+        }
+        node.setPosition(newPos);
+      }
+    },
+
+    __updateNodeMarkerFromPatch: function(node, op, marker) {
+      if (node) {
+        if (op === "delete" || marker === null) {
+          // it was removed
+          node.setMarker(null);
+        } else if (op === "add") {
+          // it was added
+          node.addMarker(marker);
+        } else if (op === "replace" && "color" in marker) {
+          // it was updated
+          if (node.getMarker()) {
+            node.getMarker().setColor(marker["color"]);
+          }
+        }
       }
     },
 
