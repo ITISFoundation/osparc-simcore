@@ -3,6 +3,7 @@ Ownership and access rights
 """
 
 from enum import Enum
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -20,15 +21,15 @@ class AccessEnum(str, Enum):
 
 
 class AccessRights(BaseModel):
-    read: bool = Field(..., description="has read access")
-    write: bool = Field(..., description="has write access")
-    delete: bool = Field(..., description="has deletion rights")
+    read: Annotated[bool, Field(description="has read access")]
+    write: Annotated[bool, Field(description="has write access")]
+    delete: Annotated[bool, Field(description="has deletion rights")]
 
     model_config = ConfigDict(extra="forbid")
 
 
 class Owner(BaseModel):
-    user_id: UserID = Field(..., description="Owner's user id")
+    user_id: Annotated[UserID, Field(description="Owner's user id")]
 
     model_config = ConfigDict(
         extra="forbid",
