@@ -657,6 +657,7 @@ async def test_open_template_project_for_edition(
     )
 
     # Only create socketio connection for non-anonymous users
+    client_id = None
     if expected != status.HTTP_401_UNAUTHORIZED:
         _, client_id, _ = await create_socketio_connection_with_handlers(client)
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
@@ -1158,6 +1159,7 @@ async def test_get_active_project(
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # login with socket using client session id
+    client_id1 = ""
     try:
         sio, client_id1 = await create_socketio_connection(None, client)
         assert sio.sid
@@ -1203,6 +1205,7 @@ async def test_get_active_project(
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
     # login with socket using client session id2
+    client_id2 = ""
     try:
         sio, client_id2 = await create_socketio_connection(None, client)
         assert sio.sid

@@ -21,7 +21,7 @@ class UserSession(BaseModel):
 
     @classmethod
     def from_redis_hash_key(cls, hash_key: RedisHashKey) -> Self:
-        key = dict(x.split("=") for x in hash_key.split(":") if "=" in x)
+        key = dict(x.split("=", 1) for x in hash_key.split(":") if "=" in x)
         return cls.model_validate(key)
 
     @staticmethod

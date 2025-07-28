@@ -275,7 +275,7 @@ async def test_users_sessions_resources_registry(
                 user_session_key = UserSession(
                     user_id=user_id, client_session_id=client_session_id
                 )
-                assert rt._resource_key() == user_session_key  # noqa: SLF001
+                assert rt.resource_key() == user_session_key  # noqa: SLF001
 
                 # set the socket id and check it is rightfully there
                 await rt.set_socket_id(socket_id)

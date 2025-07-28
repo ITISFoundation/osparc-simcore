@@ -2,6 +2,7 @@ import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Final
 
 from aiohttp import web
@@ -62,7 +63,8 @@ class UserSessionResourcesRegistry:
     def _registry(self) -> RedisResourceRegistry:
         return get_registry(self.app)
 
-    def _resource_key(self) -> UserSession:
+    @cached_property
+    def resource_key(self) -> UserSession:
         return UserSession(
             user_id=self.user_id,
             client_session_id=self.client_session_id or "*",
@@ -78,14 +80,12 @@ class UserSessionResourcesRegistry:
         )
 
         await self._registry.set_resource(
-            self._resource_key(), (_SOCKET_ID_FIELDNAME, socket_id)
+            self.resource_key, (_SOCKET_ID_FIELDNAME, socket_id)
         )
         # NOTE: hearthbeat is not emulated in tests, make sure that with very small GC intervals
         # the resources do not expire; this value is usually in the order of minutes
         timeout = max(3, _get_service_deletion_timeout(self.app))
-        await self._registry.set_key_alive(
-            self._resource_key(), expiration_time=timeout
-        )
+        await self._registry.set_key_alive(self.resource_key, expiration_time=timeout)
 
     async def get_socket_id(self) -> str | None:
         _logger.debug(
@@ -94,7 +94,7 @@ class UserSessionResourcesRegistry:
             self.client_session_id,
         )
 
-        resources = await self._registry.get_resources(self._resource_key())
+        resources = await self._registry.get_resources(self.resource_key)
         key: str | None = resources.get("socket_id", None)
         return key
 
@@ -102,7 +102,7 @@ class UserSessionResourcesRegistry:
         """When the user disconnects expire as soon as possible the alive key
         to ensure garbage collection will trigger in the next 2 cycles."""
 
-        await self._registry.set_key_alive(self._resource_key(), expiration_time=1)
+        await self._registry.set_key_alive(self.resource_key, expiration_time=1)
 
     async def remove_socket_id(self) -> None:
         _logger.debug(
@@ -112,9 +112,9 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        await self._registry.remove_resource(self._resource_key(), _SOCKET_ID_FIELDNAME)
+        await self._registry.remove_resource(self.resource_key, _SOCKET_ID_FIELDNAME)
         await self._registry.set_key_alive(
-            self._resource_key(),
+            self.resource_key,
             expiration_time=_get_service_deletion_timeout(self.app),
         )
 
@@ -122,7 +122,7 @@ class UserSessionResourcesRegistry:
         """Extends TTL to avoid expiration of all resources under this session"""
 
         await self._registry.set_key_alive(
-            self._resource_key(),
+            self.resource_key,
             expiration_time=_get_service_deletion_timeout(self.app),
         )
 
@@ -160,7 +160,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        return await self._registry.find_resources(self._resource_key(), resource_name)
+        return await self._registry.find_resources(self.resource_key, resource_name)
 
     async def add(self, key: str, value: str) -> None:
         _logger.debug(
@@ -172,7 +172,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        await self._registry.set_resource(self._resource_key(), (key, value))
+        await self._registry.set_resource(self.resource_key, (key, value))
 
     async def remove(self, key: str) -> None:
         _logger.debug(
@@ -183,7 +183,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        await self._registry.remove_resource(self._resource_key(), key)
+        await self._registry.remove_resource(self.resource_key, key)
 
     @staticmethod
     async def find_users_of_resource(

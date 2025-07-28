@@ -1,9 +1,6 @@
 # mypy: disable-error-code=truthy-function
 from typing import Annotated, Any, Literal, TypeAlias
 
-from models_library.groups import GroupID
-from models_library.projects import ProjectID
-from models_library.services_history import ServiceRelease
 from pydantic import ConfigDict, Field
 
 from ..access_rights import ExecutableAccessRights
@@ -13,8 +10,11 @@ from ..projects_nodes import InputID, InputsDict, PartialNode
 from ..projects_nodes_io import NodeID
 from ..services import ServiceKey, ServicePortKey, ServiceVersion
 from ..services_enums import ServiceState
+from ..services_history import ServiceRelease
 from ..services_resources import ServiceResourcesDict
 from ._base import InputSchemaWithoutCamelCase, OutputSchema
+from .groups import GroupID
+from .projects import ProjectID
 
 assert ServiceResourcesDict  # nosec
 __all__: tuple[str, ...] = ("ServiceResourcesDict",)
