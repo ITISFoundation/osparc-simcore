@@ -157,6 +157,7 @@ async def test_delete_multiple_opened_project_forbidden(
         user_id=logged_user["id"], project_id=user_project["uuid"]
     )
     # open project in tab1
+    client_session_id1 = None
     try:
         sio, client_session_id1 = await create_socketio_connection(None, client)
         assert sio
