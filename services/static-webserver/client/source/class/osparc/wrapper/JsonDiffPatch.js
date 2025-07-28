@@ -75,13 +75,14 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
       dynLoader.start();
     },
 
+    // https://github.com/benjamine/jsondiffpatch/blob/master/docs/deltas.md
     diff: function(obj1, obj2) {
-      // https://github.com/benjamine/jsondiffpatch/blob/master/docs/deltas.md
       let delta = this.__diffPatcher.diff(obj1, obj2);
       return delta;
     },
 
     // format to JSON PATCH (RFC 6902)
+    // https://github.com/benjamine/jsondiffpatch/blob/master/docs/formatters.md
     deltaToJsonPatch: function(delta) {
       const patch = this.__diffPatcher.formatters.jsonpatch.format(delta);
       return patch;
