@@ -781,6 +781,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     ]
 
     # Only create socketio connection for non-anonymous users
+    client_id = ""
     if expected.ok:
         _, client_id, _ = await create_socketio_connection_with_handlers(client)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
@@ -826,6 +827,7 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
         ]
 
         # Only create socketio connection for non-anonymous users
+        client_id = ""
         if expected.ok:
             sio, client_id, *_ = await create_socketio_connection_with_handlers(client)
         url = (
@@ -883,6 +885,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     ]
 
     # Only create socketio connection for non-anonymous users
+    client_id = ""
     if expected.ok:
         _, client_id, _ = await create_socketio_connection_with_handlers(client)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
@@ -938,6 +941,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     ]
 
     # Only create socketio connection for non-anonymous users
+    client_id = ""
     if expected.ok:
         _, client_id, _ = await create_socketio_connection_with_handlers(client)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
@@ -971,6 +975,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
         datetime.now(UTC) - timedelta(days=1)
     ).isoformat()
     # Only create socketio connection for non-anonymous users
+    client_id = ""
     if expected.ok:
         _, client_id, _ = await create_socketio_connection_with_handlers(client)
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
@@ -1026,6 +1031,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     # Only create socketio connection for non-anonymous users
+    client_id_1 = ""
     if user_role != UserRole.ANONYMOUS:
         _, client_id_1, _ = await create_socketio_connection_with_handlers(client)
     await _open_project(
@@ -1036,6 +1042,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     )
 
     # Only create socketio connection for non-anonymous users
+    client_id_2 = ""
     if user_role != UserRole.ANONYMOUS:
         _, client_id_2, _ = await create_socketio_connection_with_handlers(client)
     await _open_project(
