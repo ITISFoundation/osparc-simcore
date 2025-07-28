@@ -102,12 +102,17 @@ async def test_redis_registry_hashes(
     # pylint: disable=protected-access
     assert RedisResourceRegistry._hash_key(key) == hash_key  # noqa: SLF001
     assert (
-        RedisResourceRegistry._decode_hash_key(f"{hash_key}:{_RESOURCE_SUFFIX}")
-        == key  # noqa: SLF001
+        RedisResourceRegistry._decode_hash_key(  # noqa: SLF001
+            f"{hash_key}:{_RESOURCE_SUFFIX}"
+        )
+        == key
     )
     assert (
-        RedisResourceRegistry._decode_hash_key(f"{hash_key}:{_ALIVE_SUFFIX}") == key
-    )  # noqa: SLF001
+        RedisResourceRegistry._decode_hash_key(  # noqa: SLF001
+            f"{hash_key}:{_ALIVE_SUFFIX}"
+        )
+        == key
+    )
 
 
 async def test_redis_registry(redis_registry: RedisResourceRegistry):
