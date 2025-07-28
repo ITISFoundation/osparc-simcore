@@ -14,6 +14,7 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from pytest_simcore.helpers.logging_tools import log_context
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
@@ -134,23 +135,27 @@ async def create_project(
                     project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
 
                     for node_id, node_data in project_workbench.items():
+                        # NOTE: workbench node have a lot of camecase fields. We validate with Node and
+                        # export to ProjectNodeCreate with alias=False
+                        node_model = Node.model_validate(node_data)
+
                         # NOTE: currently no resources is passed until it becomes necessary
-                        node_values = {
+                        project_workbench_node = {
                             "required_resources": {},
                             "key": random_service_key(fake=faker),
                             "version": random_service_version(fake=faker),
                             "label": faker.pystr(),
-                            **node_data,
+                            **node_model.model_dump(mode="json", by_alias=False),
                         }
 
                         if project_nodes_overrides:
-                            node_values.update(project_nodes_overrides)
+                            project_workbench_node.update(project_nodes_overrides)
 
                         await project_nodes_repo.add(
                             con,
                             nodes=[
                                 ProjectNodeCreate(
-                                    node_id=NodeID(node_id), **node_values
+                                    node_id=NodeID(node_id), **project_workbench_node
                                 )
                             ],
                         )

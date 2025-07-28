@@ -415,26 +415,27 @@ async def test_run_partial_computation(
     )
 
     def _convert_to_pipeline_details(
-        project: ProjectAtDB,
+        workbench_node_uuids: list[str],
         expected_pipeline_adj_list: dict[int, list[int]],
         expected_node_states: dict[int, dict[str, Any]],
     ) -> PipelineDetails:
-        workbench_node_uuids = list(project.workbench.keys())
+
         converted_adj_list: dict[NodeID, list[NodeID]] = {}
         for node_key, next_nodes in expected_pipeline_adj_list.items():
             converted_adj_list[NodeID(workbench_node_uuids[node_key])] = [
                 NodeID(workbench_node_uuids[n]) for n in next_nodes
             ]
         converted_node_states: dict[NodeID, NodeState] = {
-            NodeID(workbench_node_uuids[n]): NodeState(
-                modified=s["modified"],
+            NodeID(workbench_node_uuids[node_index]): NodeState(
+                modified=node_state["modified"],
                 dependencies={
-                    NodeID(workbench_node_uuids[dep_n]) for dep_n in s["dependencies"]
+                    NodeID(workbench_node_uuids[dep_n])
+                    for dep_n in node_state["dependencies"]
                 },
-                currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
-                progress=s.get("progress"),
+                currentStatus=node_state.get("currentStatus", RunningState.NOT_STARTED),
+                progress=node_state.get("progress"),
             )
-            for n, s in expected_node_states.items()
+            for node_index, node_state in expected_node_states.items()
         }
         pipeline_progress = 0
         for node_id in converted_adj_list:
@@ -448,7 +449,9 @@ async def test_run_partial_computation(
 
     # convert the ids to the node uuids from the project
     expected_pipeline_details = _convert_to_pipeline_details(
-        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states
+        workbench_node_uuids=list(sleepers_project.workbench.keys()),
+        expected_pipeline_adj_list=params.exp_pipeline_adj_list,
+        expected_node_states=params.exp_node_states,
     )
 
     # send a valid project with sleepers
@@ -469,8 +472,8 @@ async def test_run_partial_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=expected_pipeline_details,
         iteration=1,
     )
 
@@ -479,13 +482,15 @@ async def test_run_partial_computation(
         async_client, task_out.url, user["id"], sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
-        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states_after_run
+        workbench_node_uuids=list(sleepers_project.workbench.keys()),
+        expected_pipeline_adj_list=params.exp_pipeline_adj_list,
+        expected_node_states=params.exp_node_states_after_run,
     )
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=expected_pipeline_details_after_run,
+        expected_task_state=RunningState.SUCCESS,
+        expected_pipeline_details=expected_pipeline_details_after_run,
         iteration=1,
     )
 
@@ -537,8 +542,8 @@ async def test_run_partial_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details_forced,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=expected_pipeline_details_forced,
         iteration=2,
     )
 
@@ -582,8 +587,8 @@ async def test_run_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
     )
 
@@ -604,8 +609,8 @@ async def test_run_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
+        expected_task_state=RunningState.SUCCESS,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=1,
     )
 
@@ -652,8 +657,8 @@ async def test_run_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
         iteration=2,
     )
 
@@ -664,8 +669,8 @@ async def test_run_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
+        expected_task_state=RunningState.SUCCESS,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=2,
     )
 
@@ -705,8 +710,8 @@ async def test_abort_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
     )
 
@@ -782,8 +787,8 @@ async def test_update_and_delete_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        expected_task_state=RunningState.NOT_STARTED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
     )
 
@@ -801,8 +806,8 @@ async def test_update_and_delete_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        expected_task_state=RunningState.NOT_STARTED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
     )
 
@@ -820,8 +825,8 @@ async def test_update_and_delete_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
+        expected_task_state=RunningState.NOT_STARTED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
     )
 
@@ -838,8 +843,8 @@ async def test_update_and_delete_computation(
     await assert_computation_task_out_obj(
         task_out,
         project_uuid=sleepers_project.uuid,
-        exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        expected_task_state=RunningState.PUBLISHED,
+        expected_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
     )
 

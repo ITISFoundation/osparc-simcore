@@ -22,14 +22,14 @@ async def assert_computation_task_out_obj(
     task_out: ComputationGet,
     *,
     project_uuid: ProjectID,
-    exp_task_state: RunningState,
-    exp_pipeline_details: PipelineDetails,
+    expected_task_state: RunningState,
+    expected_pipeline_details: PipelineDetails,
     iteration: PositiveInt | None,
 ) -> None:
     assert task_out.id == project_uuid
-    assert task_out.state == exp_task_state
+    assert task_out.state == expected_task_state
     assert task_out.url.path == f"/v2/computations/{project_uuid}"
-    if exp_task_state in [
+    if expected_task_state in [
         RunningState.PUBLISHED,
         RunningState.PENDING,
         RunningState.STARTED,
@@ -41,7 +41,7 @@ async def assert_computation_task_out_obj(
     assert task_out.iteration == iteration
     # check pipeline details contents
     received_task_out_pipeline = task_out.pipeline_details.model_dump()
-    expected_task_out_pipeline = exp_pipeline_details.model_dump()
+    expected_task_out_pipeline = expected_pipeline_details.model_dump()
     assert received_task_out_pipeline == expected_task_out_pipeline
 
 
