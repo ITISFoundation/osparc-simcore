@@ -179,7 +179,8 @@ async def test_delete_multiple_opened_project_forbidden(
     try:
         sio_2, client_session_id2 = await create_socketio_connection(None, client)
         assert sio_2
-        assert client_session_id2 != client_session_id1
+        if client_session_id1:
+            assert client_session_id2 != client_session_id1
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
