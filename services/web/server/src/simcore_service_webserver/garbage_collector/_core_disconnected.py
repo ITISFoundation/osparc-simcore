@@ -30,7 +30,7 @@ async def remove_disconnected_user_resources(
 
     # clean up all resources of expired keys
     for dead_session in dead_user_sessions:
-        user_id = dead_session["user_id"]
+        user_id = dead_session.user_id
 
         # (0) If key has no resources => remove from registry and continue
         resources = await registry.get_resources(dead_session)
@@ -63,7 +63,7 @@ async def remove_disconnected_user_resources(
                     await _projects_service.close_project_for_user(
                         user_id=user_id,
                         project_uuid=project_id,
-                        client_session_id=dead_session["client_session_id"],
+                        client_session_id=dead_session.client_session_id,
                         app=app,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         wait_for_service_closed=True,

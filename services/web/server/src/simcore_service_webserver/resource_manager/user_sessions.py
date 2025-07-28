@@ -8,10 +8,9 @@ from aiohttp import web
 from models_library.users import UserID
 from servicelib.logging_utils import get_log_record_extra, log_context
 
+from .models import ResourcesDict, UserSession
 from .registry import (
     RedisResourceRegistry,
-    ResourcesDict,
-    UserSession,
     get_registry,
 )
 from .settings import ResourceManagerSettings, get_plugin_settings
@@ -29,12 +28,6 @@ assert PROJECT_ID_KEY in ResourcesDict.__annotations__  # nosec
 def _get_service_deletion_timeout(app: web.Application) -> int:
     settings: ResourceManagerSettings = get_plugin_settings(app)
     return settings.RESOURCE_MANAGER_RESOURCE_TTL_S
-
-
-@dataclass(order=True, frozen=True)
-class UserSessionID:
-    user_id: UserID
-    client_session_id: str
 
 
 @dataclass
@@ -61,7 +54,7 @@ class UserSessionResourcesRegistry:
 
     """
 
-    user_id: int
+    user_id: UserID
     client_session_id: str | None  # Every tab that a user opens
     app: web.Application
 
@@ -71,7 +64,7 @@ class UserSessionResourcesRegistry:
 
     def _resource_key(self) -> UserSession:
         return UserSession(
-            user_id=f"{self.user_id}",
+            user_id=self.user_id,
             client_session_id=self.client_session_id or "*",
         )
 
@@ -138,11 +131,10 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        user_sockets: list[str] = await self._registry.find_resources(
-            {"user_id": f"{self.user_id}", "client_session_id": "*"},
+        return await self._registry.find_resources(
+            UserSession(user_id=self.user_id, client_session_id="*"),
             _SOCKET_ID_FIELDNAME,
         )
-        return user_sockets
 
     async def find_all_resources_of_user(self, key: str) -> list[str]:
         with log_context(
@@ -151,10 +143,9 @@ class UserSessionResourcesRegistry:
             msg=f"{self.user_id=} finding all {key} from registry",
             extra=get_log_record_extra(user_id=self.user_id),
         ):
-            resources: list[str] = await get_registry(self.app).find_resources(
-                {"user_id": f"{self.user_id}", "client_session_id": "*"}, key
+            return await get_registry(self.app).find_resources(
+                UserSession(user_id=self.user_id, client_session_id="*"), key
             )
-            return resources
 
     async def find(self, resource_name: str) -> list[str]:
         _logger.debug(
@@ -165,10 +156,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        resource_values: list[str] = await self._registry.find_resources(
-            self._resource_key(), resource_name
-        )
-        return resource_values
+        return await self._registry.find_resources(self._resource_key(), resource_name)
 
     async def add(self, key: str, value: str) -> None:
         _logger.debug(
@@ -196,25 +184,15 @@ class UserSessionResourcesRegistry:
     @staticmethod
     async def find_users_of_resource(
         app: web.Application, key: str, value: str
-    ) -> list[UserSessionID]:
+    ) -> list[UserSession]:
         registry = get_registry(app)
-        registry_keys: list[UserSession] = await registry.find_keys(
-            resource=(key, value)
-        )
-        users_sessions_ids: list[UserSessionID] = [
-            UserSessionID(
-                user_id=int(r["user_id"]),
-                client_session_id=r["client_session_id"],
-            )
-            for r in registry_keys
-        ]
-        return users_sessions_ids
+        return await registry.find_keys(resource=(key, value))
 
-    def get_id(self) -> UserSessionID:
+    def get_id(self) -> UserSession:
         if self.client_session_id is None:
             msg = f"Cannot build UserSessionID with missing {self.client_session_id=}"
             raise ValueError(msg)
-        return UserSessionID(
+        return UserSession(
             user_id=self.user_id, client_session_id=self.client_session_id
         )
 

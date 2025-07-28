@@ -192,7 +192,7 @@ async def remove_users_manually_marked_as_guests(
     ) = await registry.get_all_resource_keys()
 
     skip_users = {
-        int(user_session["user_id"])
+        user_session.user_id
         for user_session in itertools.chain(
             all_user_session_alive, all_user_sessions_dead
         )

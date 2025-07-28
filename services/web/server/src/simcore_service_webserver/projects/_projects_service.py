@@ -110,9 +110,9 @@ from ..redis import (
     get_redis_document_manager_client_sdk,
     get_redis_lock_manager_client_sdk,
 )
+from ..resource_manager.models import UserSession
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
-    UserSessionID,
     managed_resource,
 )
 from ..resource_usage import service as rut_api
@@ -1441,7 +1441,7 @@ async def post_trigger_connected_service_retrieve(
 
 
 async def _user_has_another_active_session(
-    users_sessions_ids: list[UserSessionID], app: web.Application
+    users_sessions_ids: list[UserSession], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
     for u in users_sessions_ids:
@@ -1452,7 +1452,7 @@ async def _user_has_another_active_session(
 
 
 async def _clean_user_disconnected_clients(
-    users_sessions_ids: list[UserSessionID], app: web.Application
+    users_sessions_ids: list[UserSession], app: web.Application
 ):
     for u in users_sessions_ids:
         with managed_resource(u.user_id, u.client_session_id, app) as user_session:
