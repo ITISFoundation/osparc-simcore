@@ -2,6 +2,7 @@
 Models Node as a central element in a project's pipeline
 """
 
+from enum import auto
 from typing import Annotated, Any, TypeAlias, Union
 
 from common_library.basic_types import DEFAULT_FACTORY
@@ -20,6 +21,7 @@ from pydantic import (
 from pydantic.config import JsonDict
 
 from .basic_types import EnvVarKey, KeyIDStr
+from .groups import GroupID
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -31,6 +33,7 @@ from .projects_nodes_io import (
 from .projects_nodes_layout import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
+from .utils.enums import StrAutoEnum
 
 InputTypes = Union[
     # NOTE: WARNING the order in Union[*] below matters!
@@ -69,6 +72,35 @@ OutputsDict: TypeAlias = dict[
 ]
 
 UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
+
+
+class NodeLockStatus(StrAutoEnum):
+    OPENING = auto()
+    OPENED = auto()
+    CLOSING = auto()
+
+
+class NodeLockState(BaseModel):
+    is_locked: Annotated[
+        bool,
+        Field(
+            description="True if the node is locked, False otherwise",
+        ),
+    ]
+
+    locked_by: Annotated[
+        GroupID | None,
+        Field(description="Group that owns locked the node, None if not locked"),
+    ]
+
+    locked_reason: Annotated[
+        NodeLockStatus | None,
+        Field(
+            description="Reason why the node is locked, None if not locked",
+        ),
+    ]
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class NodeState(BaseModel):
