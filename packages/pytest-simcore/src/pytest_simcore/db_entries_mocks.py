@@ -29,6 +29,7 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .helpers.faker_factories import random_service_key, random_service_version
 from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import sync_insert_and_get_user_and_secrets_lifespan
 
@@ -92,6 +93,7 @@ async def create_project(
         project_nodes_overrides: dict[str, Any] | None = None,
         **project_overrides,
     ) -> ProjectAtDB:
+
         project_uuid = uuid4()
         with log_context(
             logging.INFO,
@@ -100,7 +102,7 @@ async def create_project(
             logger=_logger,
         ) as log_ctx:
 
-            default_project_config = {
+            project_values = {
                 "uuid": f"{project_uuid}",
                 "name": faker.name(),
                 "type": ProjectType.STANDARD.name,
@@ -108,14 +110,14 @@ async def create_project(
                 "prj_owner": user["id"],
                 "access_rights": {"1": {"read": True, "write": True, "delete": True}},
                 "thumbnail": "",
+                **project_overrides,
             }
-            default_project_config.update(**project_overrides)
-            project_workbench = default_project_config.pop("workbench", {})
+            project_workbench = project_values.pop("workbench", {})
 
             async with sqlalchemy_async_engine.connect() as con, con.begin():
                 result = await con.execute(
                     projects.insert()
-                    .values(**default_project_config)
+                    .values(**project_values)
                     .returning(sa.literal_column("*"))
                 )
 
@@ -124,25 +126,27 @@ async def create_project(
                 )
 
                 project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
-                # NOTE: currently no resources is passed until it becomes necessary
-                default_node_config = {
-                    "required_resources": {},
-                    "key": faker.pystr(),
-                    "version": faker.pystr(),
-                    "label": faker.pystr(),
-                }
-                if project_nodes_overrides:
-                    default_node_config.update(project_nodes_overrides)
 
-                await project_nodes_repo.add(
-                    con,
-                    nodes=[
-                        ProjectNodeCreate(
-                            node_id=NodeID(node_id), **default_node_config
-                        )
-                        for node_id in inserted_project.workbench
-                    ],
-                )
+                for node_id, node_data in project_workbench.items():
+                    # NOTE: currently no resources is passed until it becomes necessary
+                    node_values = {
+                        "required_resources": {},
+                        "key": random_service_key(fake=faker),
+                        "version": random_service_version(fake=faker),
+                        "label": faker.pystr(),
+                        **node_data,
+                    }
+
+                    if project_nodes_overrides:
+                        node_values.update(project_nodes_overrides)
+
+                    await project_nodes_repo.add(
+                        con,
+                        nodes=[
+                            ProjectNodeCreate(node_id=NodeID(node_id), **node_values)
+                        ],
+                    )
+
                 await con.execute(
                     projects_to_products.insert().values(
                         project_uuid=f"{inserted_project.uuid}",

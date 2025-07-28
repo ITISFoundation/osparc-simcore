@@ -2,8 +2,9 @@ import logging
 
 import sqlalchemy as sa
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
-from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
+from simcore_postgres_database.utils_projects_nodes import ProjectNode, ProjectNodesRepo
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
 from ....core.errors import ProjectNotFoundError
@@ -11,6 +12,21 @@ from ..tables import projects, projects_nodes
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _project_node_to_node(project_node: ProjectNode) -> Node:
+    """Converts a ProjectNode from the database to a Node model for the API.
+
+    Handles field mapping and excludes database-specific fields that are not
+    part of the Node model.
+    """
+    # Get all ProjectNode fields except those that don't belong in Node
+    exclude_fields = {"node_id", "required_resources", "created", "modified"}
+    node_data = project_node.model_dump(
+        exclude=exclude_fields, exclude_none=True, exclude_unset=True
+    )
+
+    return Node.model_validate(node_data)
 
 
 class ProjectsRepository(BaseRepository):
@@ -21,9 +37,17 @@ class ProjectsRepository(BaseRepository):
                     sa.select(projects).where(projects.c.uuid == str(project_id))
                 )
             ).one_or_none()
-        if not row:
-            raise ProjectNotFoundError(project_id=project_id)
-        return ProjectAtDB.model_validate(row)
+            if not row:
+                raise ProjectNotFoundError(project_id=project_id)
+
+            repo = ProjectNodesRepo(project_uuid=project_id)
+            nodes = await repo.list(conn)
+
+        project_workbench = {
+            f"{node.node_id}": _project_node_to_node(node) for node in nodes
+        }
+        data = {**row._asdict(), "workbench": project_workbench}
+        return ProjectAtDB.model_validate(data)
 
     async def is_node_present_in_workbench(
         self, project_id: ProjectID, node_uuid: NodeID
