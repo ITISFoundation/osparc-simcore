@@ -297,10 +297,10 @@ qx.Class.define("osparc.data.model.StudyUI", {
           if (currentStudy) {
             const node = currentStudy.getWorkbench().getNode(nodeId);
             if (op === "replace") {
-              if (path.includes("position")) {
+              if (path.includes("/position")) {
                 this.__updateNodePositionFromPatch(node, op, path, value);
               }
-              if (path.includes("marker")) {
+              if (path.includes("/marker")) {
                 this.__updateNodeMarkerFromPatch(node, op, path, value);
               }
             }
@@ -313,10 +313,10 @@ qx.Class.define("osparc.data.model.StudyUI", {
       if (node) {
         if (op === "replace") {
           const newPos = node.getPosition();
-          if (path.includes("position/x")) {
+          if (path.includes("/position/x")) {
             newPos.x = value;
           }
-          if (path.includes("position/y")) {
+          if (path.includes("/position/y")) {
             newPos.y = value;
           }
           node.setPosition(newPos);
@@ -332,7 +332,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
         } else if (op === "add") {
           // it was added
           node.addMarker(value);
-        } else if (op === "replace" && path.includes("color")) {
+        } else if (op === "replace" && path.includes("/color")) {
           // it was updated
           if (node.getMarker()) {
             node.getMarker().setColor(value);
