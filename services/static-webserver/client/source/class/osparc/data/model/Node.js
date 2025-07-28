@@ -1203,13 +1203,17 @@ qx.Class.define("osparc.data.model.Node", {
         this.__deleteInBackend()
           .then(() => {
             resolve(true);
-            this.removeIFrame();
+            this.nodeRemoved();
           })
           .catch(err => {
             console.error(err);
             resolve(false);
           });
       });
+    },
+
+    nodeRemoved: function() {
+      this.removeIFrame();
     },
 
     __deleteInBackend: function() {

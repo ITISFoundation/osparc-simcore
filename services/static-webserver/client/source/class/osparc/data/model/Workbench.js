@@ -54,6 +54,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     "projectDocumentChanged": "qx.event.type.Data",
     "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
+    "nodeRemoved": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
@@ -539,11 +540,11 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     removeNode: async function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
-        return false;
+        return;
       }
       if (this.getStudy().isPipelineRunning()) {
         osparc.FlashMessenger.logAs(this.self().CANT_DELETE_NODE, "ERROR");
-        return false;
+        return;
       }
 
       this.fireEvent("restartAutoSaveTimer");
@@ -552,26 +553,33 @@ qx.Class.define("osparc.data.model.Workbench", {
         // remove the node in the backend first
         const removed = await node.removeNode();
         if (removed) {
-          this.fireEvent("restartAutoSaveTimer");
-
-          delete this.__nodes[nodeId];
-
-          // remove first the connected edges
-          const connectedEdges = this.getConnectedEdges(nodeId);
-          connectedEdges.forEach(connectedEdgeId => {
-            this.removeEdge(connectedEdgeId);
-          });
-
-          // remove it from ui model
-          if (this.getStudy()) {
-            this.getStudy().getUi().removeNode(nodeId);
-          }
-
-          this.fireEvent("pipelineChanged");
-          return true;
+          this.__nodeRemoved(nodeId);
         }
       }
-      return false;
+    },
+
+    __nodeRemoved: function(nodeId) {
+      this.fireEvent("restartAutoSaveTimer");
+
+      delete this.__nodes[nodeId];
+
+      // remove first the connected edges
+      const connectedEdgeIds = this.getConnectedEdges(nodeId);
+      connectedEdgeIds.forEach(connectedEdgeId => {
+        this.removeEdge(connectedEdgeId);
+      });
+
+      // remove it from ui model
+      if (this.getStudy()) {
+        this.getStudy().getUi().removeNode(nodeId);
+      }
+
+      this.fireEvent("pipelineChanged");
+
+      this.fireDataEvent("nodeRemoved", {
+        nodeId,
+        connectedEdgeIds,
+      });
     },
 
     addServiceBetween: async function(service, leftNodeId, rightNodeId) {
@@ -831,14 +839,42 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     updateWorkbenchFromPatches: function(workbenchPatches) {
       // group the patches by nodeId
+      const nodesAdded = [];
+      const nodesRemoved = [];
       const workbenchPatchesByNode = {};
       workbenchPatches.forEach(workbenchPatch => {
         const nodeId = workbenchPatch.path.split("/")[2];
+
+        const pathParts = workbenchPatch.path.split("/");
+        if (pathParts.length === 3) {
+          if (workbenchPatch.op === "add") {
+            // node was added
+            nodesAdded.push(nodeId);
+          } else if (workbenchPatch.op === "remove") {
+            // node was removed
+            nodesRemoved.push(nodeId);
+          }
+        }
+
         if (!(nodeId in workbenchPatchesByNode)) {
           workbenchPatchesByNode[nodeId] = [];
         }
         workbenchPatchesByNode[nodeId].push(workbenchPatch);
       });
+
+      // first remove nodes
+      nodesRemoved.forEach(nodeId => {
+        const node = this.getNode(nodeId);
+        if (node) {
+          node.nodeRemoved(nodeId);
+        }
+        this.__nodeRemoved(nodeId);
+      });
+
+      // second add nodes
+      console.log("Adding nodes", nodesAdded);
+
+      // third update nodes
       Object.keys(workbenchPatchesByNode).forEach(nodeId => {
         const node = this.getNode(nodeId);
         if (node === null) {
@@ -848,7 +884,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodePatches = workbenchPatchesByNode[nodeId];
         node.updateNodeFromPatch(nodePatches);
       });
-      this.getNode()
     },
   }
 });
