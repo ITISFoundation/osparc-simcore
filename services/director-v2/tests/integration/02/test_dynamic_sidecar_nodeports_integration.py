@@ -1007,7 +1007,7 @@ async def test_nodeports_integration(
 
     await assert_computation_task_out_obj(
         task_out,
-        project=current_study,
+        project_uuid=current_study.uuid,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=PipelineDetails.model_validate(fake_dy_success),
         iteration=1,

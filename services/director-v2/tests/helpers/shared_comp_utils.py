@@ -4,7 +4,7 @@ from uuid import UUID
 
 import httpx
 from models_library.api_schemas_directorv2.computations import ComputationGet
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -21,21 +21,21 @@ from tenacity.wait import wait_fixed
 async def assert_computation_task_out_obj(
     task_out: ComputationGet,
     *,
-    project: ProjectAtDB,
+    project_uuid: ProjectID,
     exp_task_state: RunningState,
     exp_pipeline_details: PipelineDetails,
     iteration: PositiveInt | None,
 ) -> None:
-    assert task_out.id == project.uuid
+    assert task_out.id == project_uuid
     assert task_out.state == exp_task_state
-    assert task_out.url.path == f"/v2/computations/{project.uuid}"
+    assert task_out.url.path == f"/v2/computations/{project_uuid}"
     if exp_task_state in [
         RunningState.PUBLISHED,
         RunningState.PENDING,
         RunningState.STARTED,
     ]:
         assert task_out.stop_url
-        assert task_out.stop_url.path == f"/v2/computations/{project.uuid}:stop"
+        assert task_out.stop_url.path == f"/v2/computations/{project_uuid}:stop"
     else:
         assert task_out.stop_url is None
     assert task_out.iteration == iteration

@@ -468,7 +468,7 @@ async def test_run_partial_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details,
         iteration=1,
@@ -483,7 +483,7 @@ async def test_run_partial_computation(
     )
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=expected_pipeline_details_after_run,
         iteration=1,
@@ -536,7 +536,7 @@ async def test_run_partial_computation(
 
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,
         iteration=2,
@@ -581,7 +581,7 @@ async def test_run_computation(
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
@@ -603,7 +603,7 @@ async def test_run_computation(
 
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=1,
@@ -651,7 +651,7 @@ async def test_run_computation(
     # check the contents is correct
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
         iteration=2,
@@ -663,7 +663,7 @@ async def test_run_computation(
     )
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.SUCCESS,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
         iteration=2,
@@ -704,7 +704,7 @@ async def test_abort_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
@@ -781,7 +781,7 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
@@ -800,7 +800,7 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
@@ -819,7 +819,7 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.NOT_STARTED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
         iteration=None,
@@ -837,7 +837,7 @@ async def test_update_and_delete_computation(
     # check the contents is correctb
     await assert_computation_task_out_obj(
         task_out,
-        project=sleepers_project,
+        project_uuid=sleepers_project.uuid,
         exp_task_state=RunningState.PUBLISHED,
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
         iteration=1,
