@@ -97,10 +97,6 @@ def confirmation_service(
     confirmation_repository: ConfirmationRepository, login_options: LoginOptions
 ) -> ConfirmationService:
     """Confirmation service instance"""
-    from simcore_service_webserver.login._confirmation_service import (
-        ConfirmationService,
-    )
-
     return ConfirmationService(confirmation_repository, login_options)
 
 
