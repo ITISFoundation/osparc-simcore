@@ -33,7 +33,7 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
 
   statics: {
     NAME: "jsondiffpatch",
-    VERSION: "0.3.11",
+    VERSION: "0.7.3",
     URL: "https://github.com/benjamine/jsondiffpatch"
   },
 
@@ -54,8 +54,8 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
 
     init: function() {
       // initialize the script loading
-      let jsondiffpatchPath = "jsondiffpatch/jsondiffpatch.min.js";
-      let dynLoader = new qx.util.DynamicScriptLoader([
+      const jsondiffpatchPath = "jsondiffpatch/jsondiffpatch-0.7.3.min.js"; // own build required for the formatters to work
+      const dynLoader = new qx.util.DynamicScriptLoader([
         jsondiffpatchPath
       ]);
 
