@@ -359,7 +359,7 @@ class SioConnectionData(NamedTuple):
 
 async def connect_to_socketio(
     client: TestClient,
-    user,
+    user: UserInfoDict,
     socketio_client_factory: Callable[
         [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
     ],
@@ -369,10 +369,9 @@ async def connect_to_socketio(
     socket_registry = get_registry(client.app)
     cur_client_session_id = f"{uuid4()}"
     sio, *_ = await socketio_client_factory(cur_client_session_id, client)
-    resource_key: UserSession = {
-        "user_id": str(user["id"]),
-        "client_session_id": cur_client_session_id,
-    }
+    resource_key = UserSession(
+        user_id=user["id"], client_session_id=cur_client_session_id
+    )
     sid = sio.get_sid()
     assert sid
     assert await socket_registry.find_keys(("socket_id", sid)) == [resource_key]

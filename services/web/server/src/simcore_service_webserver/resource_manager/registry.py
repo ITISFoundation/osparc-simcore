@@ -117,11 +117,11 @@ class RedisResourceRegistry:
             == await handle_redis_returns_union_types(self.client.hget(hash_key, field))
         ]
 
-    async def set_key_alive(self, key: UserSession, timeout: int) -> None:
+    async def set_key_alive(self, key: UserSession, *, expiration_time: int) -> None:
         # setting the timeout to always expire, timeout > 0
-        timeout = int(max(1, timeout))
+        expiration_time = int(max(1, expiration_time))
         hash_key = f"{key.to_redis_hash_key()}:{ALIVE_SUFFIX}"
-        await self.client.set(hash_key, 1, ex=timeout)
+        await self.client.set(hash_key, 1, ex=expiration_time)
 
     async def is_key_alive(self, key: UserSession) -> bool:
         hash_key = f"{key.to_redis_hash_key()}:{ALIVE_SUFFIX}"

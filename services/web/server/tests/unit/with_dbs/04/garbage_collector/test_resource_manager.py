@@ -99,7 +99,7 @@ async def test_websocket_resource_management(
     sio, cur_client_session_id = await create_socketio_connection(None, client)
     sid = sio.get_sid()
     resource_key = UserSession(
-        user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
+        user_id=logged_user["id"], client_session_id=cur_client_session_id
     )
 
     assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
@@ -150,7 +150,7 @@ async def test_websocket_multiple_connections(
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         sio, cur_client_session_id = await create_socketio_connection(None, client)
         resource_key = UserSession(
-            user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
+            user_id=logged_user["id"], client_session_id=cur_client_session_id
         )
         assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [
             resource_key
@@ -161,7 +161,7 @@ async def test_websocket_multiple_connections(
         assert (
             len(
                 await socket_registry.find_resources(
-                    {"user_id": str(logged_user["id"]), "client_session_id": "*"},
+                    UserSession(user_id=logged_user["id"], client_session_id="*"),
                     "socket_id",
                 )
             )

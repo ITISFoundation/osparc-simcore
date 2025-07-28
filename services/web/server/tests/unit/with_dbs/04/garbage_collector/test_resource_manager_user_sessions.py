@@ -183,10 +183,12 @@ async def test_redis_registry(
     STILL_ALIVE_KEY_TIMEOUT = DEAD_KEY_TIMEOUT + 1
 
     # create a key which will be alive when testing
-    await redis_registry.set_key_alive(user_session, STILL_ALIVE_KEY_TIMEOUT)
+    await redis_registry.set_key_alive(
+        user_session, expiration_time=STILL_ALIVE_KEY_TIMEOUT
+    )
     assert await redis_registry.is_key_alive(user_session) is True
     # create soon to be dead key
-    await redis_registry.set_key_alive(user_session2, DEAD_KEY_TIMEOUT)
+    await redis_registry.set_key_alive(user_session2, expiration_time=DEAD_KEY_TIMEOUT)
     alive_keys, dead_keys = await redis_registry.get_all_resource_keys()
     assert not dead_keys
     assert all(x in alive_keys for x in [user_session, user_session2])
@@ -225,8 +227,8 @@ async def test_redis_registry_key_will_always_expire(
         await redis_registry.set_resource(first_key, resource)
         await redis_registry.set_resource(second_key, resource)
 
-    await redis_registry.set_key_alive(first_key, 0)
-    await redis_registry.set_key_alive(second_key, -3000)
+    await redis_registry.set_key_alive(first_key, expiration_time=0)
+    await redis_registry.set_key_alive(second_key, expiration_time=-3000)
 
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.1),

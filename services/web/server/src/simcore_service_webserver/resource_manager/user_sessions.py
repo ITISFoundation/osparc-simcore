@@ -83,7 +83,9 @@ class UserSessionResourcesRegistry:
         # NOTE: hearthbeat is not emulated in tests, make sure that with very small GC intervals
         # the resources do not expire; this value is usually in the order of minutes
         timeout = max(3, _get_service_deletion_timeout(self.app))
-        await self._registry.set_key_alive(self._resource_key(), timeout)
+        await self._registry.set_key_alive(
+            self._resource_key(), expiration_time=timeout
+        )
 
     async def get_socket_id(self) -> str | None:
         _logger.debug(
@@ -100,7 +102,7 @@ class UserSessionResourcesRegistry:
         """When the user disconnects expire as soon as possible the alive key
         to ensure garbage collection will trigger in the next 2 cycles."""
 
-        await self._registry.set_key_alive(self._resource_key(), 1)
+        await self._registry.set_key_alive(self._resource_key(), expiration_time=1)
 
     async def remove_socket_id(self) -> None:
         _logger.debug(
@@ -112,14 +114,16 @@ class UserSessionResourcesRegistry:
 
         await self._registry.remove_resource(self._resource_key(), _SOCKET_ID_FIELDNAME)
         await self._registry.set_key_alive(
-            self._resource_key(), _get_service_deletion_timeout(self.app)
+            self._resource_key(),
+            expiration_time=_get_service_deletion_timeout(self.app),
         )
 
     async def set_heartbeat(self) -> None:
         """Extends TTL to avoid expiration of all resources under this session"""
 
         await self._registry.set_key_alive(
-            self._resource_key(), _get_service_deletion_timeout(self.app)
+            self._resource_key(),
+            expiration_time=_get_service_deletion_timeout(self.app),
         )
 
     async def find_socket_ids(self) -> list[str]:
