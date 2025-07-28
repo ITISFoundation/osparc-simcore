@@ -1,7 +1,7 @@
 from datetime import timedelta
 
+from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
-from aiohttp.web import Application, Response
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.login import _confirmation_web
 from simcore_service_webserver.login._confirmation_service import ConfirmationService
@@ -35,10 +35,11 @@ async def test_confirmation_token_workflow(
     assert validated_confirmation.action == action
 
     # Step 4: Create confirmation link
-    app = Application()
+    app = web.Application()
 
-    async def mock_handler(request):
-        return Response()
+    async def mock_handler(request: web.Request):
+        assert request.match_info["code"] == confirmation.code
+        return web.Response()
 
     app.router.add_get(
         "/auth/confirmation/{code}", mock_handler, name="auth_confirmation"
