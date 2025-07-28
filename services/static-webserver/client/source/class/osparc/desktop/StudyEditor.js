@@ -108,7 +108,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   statics: {
     AUTO_SAVE_INTERVAL: 3000,
     DIFF_CHECK_INTERVAL: 300,
-    THROTTLE_PATCH_TIME: 1000,
+    THROTTLE_PATCH_TIME: 500,
     READ_ONLY_TEXT: qx.locale.Manager.tr("You do not have writing permissions.<br>Your changes will not be saved."),
 
     curateBackendProjectDocument: function(projectDocument) {

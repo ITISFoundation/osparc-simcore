@@ -33,9 +33,7 @@ async def _on_healthcheck_async_adapter(app: web.Application) -> None:
     settings_name="WEBSERVER_DIAGNOSTICS",
     logger=_logger,
 )
-def setup_diagnostics(
-    app: web.Application,
-) -> None:
+def setup_diagnostics(app: web.Application):
     setup_rest(app)
 
     settings: DiagnosticsSettings = get_plugin_settings(app)
@@ -60,8 +58,12 @@ def setup_diagnostics(
     app[HEALTH_PLUGIN_START_TIME] = time.time()
 
 
-def setup_profiling_middleware(
-    app: web.Application,
-) -> None:
-    if get_application_settings(app).WEBSERVER_PROFILING:
-        app.middlewares.append(profiling_middleware)
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    settings_name="WEBSERVER_PROFILING",
+    logger=_logger,
+)
+def setup_profiling_middleware(app: web.Application):
+    assert get_application_settings(app).WEBSERVER_PROFILING  # nosec
+    app.middlewares.append(profiling_middleware)
