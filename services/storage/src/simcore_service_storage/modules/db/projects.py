@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from pydantic import ValidationError
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
@@ -54,16 +55,28 @@ class ProjectRepository(BaseRepository):
         connection: AsyncConnection | None = None,
         project_uuids: list[ProjectID],
     ) -> dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]]:
-        mapping = {}
+        names_map = {}
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
-                sa.select(projects.c.uuid, projects.c.name, projects.c.workbench).where(
-                    projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
+                sa.select(projects.c.uuid, projects.c.name).where(
+                    projects.c.uuid.in_(
+                        [f"{project_uuid}" for project_uuid in project_uuids]
+                    )
                 )
             ):
-                mapping[ProjectID(f"{row.uuid}")] = {f"{row.uuid}": row.name} | {
-                    f"{node_id}": node["label"]
-                    for node_id, node in row.workbench.items()
-                }
+                names_map[ProjectID(row.uuid)] = {f"{row.uuid}": row.name}
 
-        return mapping
+            async for row in await conn.stream(
+                sa.select(
+                    projects_nodes.c.node_id,
+                    projects_nodes.c.project_uuid,
+                    projects_nodes.c.label,
+                ).where(
+                    projects_nodes.c.project_uuid.in_(
+                        [f"{project_uuid}" for project_uuid in project_uuids]
+                    )
+                )
+            ):
+                names_map[ProjectID(row.project_uuid)] |= {f"{row.node_id}": row.label}
+
+        return names_map

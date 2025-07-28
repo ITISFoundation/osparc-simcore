@@ -14,6 +14,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
@@ -219,26 +220,19 @@ async def create_project_node(
         project_id: ProjectID, node_id: NodeID | None = None, **kwargs
     ) -> NodeID:
         async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                sa.select(projects.c.workbench).where(
-                    projects.c.uuid == f"{project_id}"
-                )
-            )
-            row = result.fetchone()
-            assert row
-            project_workbench: dict[str, Any] = row.workbench
-            new_node_id = node_id or NodeID(f"{faker.uuid4()}")
-            node_data = {
+            new_node_id = node_id or NodeID(faker.uuid4())
+            node_values = {
                 "key": "simcore/services/frontend/file-picker",
                 "version": "1.0.0",
                 "label": "pytest_fake_node",
             }
-            node_data.update(**kwargs)
-            project_workbench.update({f"{new_node_id}": node_data})
+            node_values.update(**kwargs)
             await conn.execute(
-                projects.update()
-                .where(projects.c.uuid == f"{project_id}")
-                .values(workbench=project_workbench)
+                projects_nodes.insert().values(
+                    node_id=f"{new_node_id}",
+                    project_uuid=f"{project_id}",
+                    **node_values,
+                )
             )
         return new_node_id
 
