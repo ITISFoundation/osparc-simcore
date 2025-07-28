@@ -296,12 +296,12 @@ qx.Class.define("osparc.data.model.StudyUI", {
           const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
           if (currentStudy) {
             const node = currentStudy.getWorkbench().getNode(nodeId);
-            if (op === "replace" && value) {
-              if ("position" in value) {
-                this.__updateNodePositionFromPatch(node, path, value);
+            if (op === "replace") {
+              if (path.includes("position")) {
+                this.__updateNodePositionFromPatch(node, op, path, value);
               }
-              if ("marker" in value) {
-                this.__updateNodeMarkerFromPatch(node, value["marker"]);
+              if (path.includes("marker")) {
+                this.__updateNodeMarkerFromPatch(node, op, path, value);
               }
             }
           }
@@ -309,31 +309,33 @@ qx.Class.define("osparc.data.model.StudyUI", {
       });
     },
 
-    __updateNodePositionFromPatch: function(node, path, value) {
+    __updateNodePositionFromPatch: function(node, op, path, value) {
       if (node) {
-        const newPos = node.getPosition();
-        if (path.includes("position/x")) {
-          newPos.x = value;
+        if (op === "replace") {
+          const newPos = node.getPosition();
+          if (path.includes("position/x")) {
+            newPos.x = value;
+          }
+          if (path.includes("position/y")) {
+            newPos.y = value;
+          }
+          node.setPosition(newPos);
         }
-        if (path.includes("position/y")) {
-          newPos.y = value;
-        }
-        node.setPosition(newPos);
       }
     },
 
-    __updateNodeMarkerFromPatch: function(node, op, marker) {
+    __updateNodeMarkerFromPatch: function(node, op, path, value) {
       if (node) {
-        if (op === "delete" || marker === null) {
+        if (op === "delete" || value === null) {
           // it was removed
           node.setMarker(null);
         } else if (op === "add") {
           // it was added
-          node.addMarker(marker);
-        } else if (op === "replace" && "color" in marker) {
+          node.addMarker(value);
+        } else if (op === "replace" && path.includes("color")) {
           // it was updated
           if (node.getMarker()) {
-            node.getMarker().setColor(marker["color"]);
+            node.getMarker().setColor(value);
           }
         }
       }
