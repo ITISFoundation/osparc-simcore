@@ -87,83 +87,86 @@ async def create_project(
 ) -> AsyncIterator[Callable[..., Awaitable[ProjectAtDB]]]:
     created_project_ids: list[str] = []
 
-    async def _(
-        user: dict[str, Any],
-        *,
-        project_nodes_overrides: dict[str, Any] | None = None,
-        **project_overrides,
-    ) -> ProjectAtDB:
+    async with contextlib.AsyncExitStack() as stack:
 
-        project_uuid = uuid4()
-        with log_context(
-            logging.INFO,
-            "Creating new project with uuid=%s",
-            project_uuid,
-            logger=_logger,
-        ) as log_ctx:
+        async def _(
+            user: dict[str, Any],
+            *,
+            project_nodes_overrides: dict[str, Any] | None = None,
+            **project_overrides,
+        ) -> ProjectAtDB:
 
-            project_values = {
-                "uuid": f"{project_uuid}",
-                "name": faker.name(),
-                "type": ProjectType.STANDARD.name,
-                "description": faker.text(),
-                "prj_owner": user["id"],
-                "access_rights": {"1": {"read": True, "write": True, "delete": True}},
-                "thumbnail": "",
-                **project_overrides,
-            }
-            project_workbench = project_values.pop("workbench", {})
+            project_uuid = uuid4()
+            with log_context(
+                logging.INFO,
+                "Creating new project with uuid=%s",
+                project_uuid,
+                logger=_logger,
+            ) as log_ctx:
 
-            async with sqlalchemy_async_engine.connect() as con, con.begin():
-                result = await con.execute(
-                    projects.insert()
-                    .values(**project_values)
-                    .returning(sa.literal_column("*"))
+                project_values = {
+                    "uuid": f"{project_uuid}",
+                    "name": faker.name(),
+                    "type": ProjectType.STANDARD.name,
+                    "description": faker.text(),
+                    "prj_owner": user["id"],
+                    "access_rights": {
+                        "1": {"read": True, "write": True, "delete": True}
+                    },
+                    "thumbnail": "",
+                    **project_overrides,
+                }
+                project_workbench = project_values.pop("workbench", {})
+
+                project_db_rows = await stack.enter_async_context(
+                    insert_and_get_row_lifespan(
+                        sqlalchemy_async_engine,
+                        table=projects,
+                        values=project_values,
+                        pk_col=projects.c.uuid,
+                    )
                 )
-
                 inserted_project = ProjectAtDB.model_validate(
-                    {**dict(result.one()._asdict()), "workbench": project_workbench}
+                    {**project_db_rows, "workbench": project_workbench}
                 )
 
-                project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+                async with sqlalchemy_async_engine.connect() as con, con.begin():
+                    project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
 
-                for node_id, node_data in project_workbench.items():
-                    # NOTE: currently no resources is passed until it becomes necessary
-                    node_values = {
-                        "required_resources": {},
-                        "key": random_service_key(fake=faker),
-                        "version": random_service_version(fake=faker),
-                        "label": faker.pystr(),
-                        **node_data,
-                    }
+                    for node_id, node_data in project_workbench.items():
+                        # NOTE: currently no resources is passed until it becomes necessary
+                        node_values = {
+                            "required_resources": {},
+                            "key": random_service_key(fake=faker),
+                            "version": random_service_version(fake=faker),
+                            "label": faker.pystr(),
+                            **node_data,
+                        }
 
-                    if project_nodes_overrides:
-                        node_values.update(project_nodes_overrides)
+                        if project_nodes_overrides:
+                            node_values.update(project_nodes_overrides)
 
-                    await project_nodes_repo.add(
-                        con,
-                        nodes=[
-                            ProjectNodeCreate(node_id=NodeID(node_id), **node_values)
-                        ],
+                        await project_nodes_repo.add(
+                            con,
+                            nodes=[
+                                ProjectNodeCreate(
+                                    node_id=NodeID(node_id), **node_values
+                                )
+                            ],
+                        )
+
+                    await con.execute(
+                        projects_to_products.insert().values(
+                            project_uuid=f"{inserted_project.uuid}",
+                            product_name=product_name,
+                        )
                     )
+                log_ctx.logger.info("Created project %s", inserted_project)
+                created_project_ids.append(f"{inserted_project.uuid}")
+                return inserted_project
 
-                await con.execute(
-                    projects_to_products.insert().values(
-                        project_uuid=f"{inserted_project.uuid}",
-                        product_name=product_name,
-                    )
-                )
-            log_ctx.logger.info("Created project %s", inserted_project)
-            created_project_ids.append(f"{inserted_project.uuid}")
-            return inserted_project
+        yield _
 
-    yield _
-
-    # cleanup
-    async with sqlalchemy_async_engine.begin() as con:
-        await con.execute(
-            projects.delete().where(projects.c.uuid.in_(created_project_ids))
-        )
     _logger.info("<-- delete projects %s", created_project_ids)
 
 
