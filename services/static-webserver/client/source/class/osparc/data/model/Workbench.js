@@ -321,7 +321,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         this.__addNode(node);
 
         node.populateNodeData();
-        this.giveUniqueNameToNode(node, node.getLabel());
+        this.__giveUniqueNameToNode(node, node.getLabel());
         node.checkState();
 
         return node;
@@ -661,7 +661,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
-    giveUniqueNameToNode: function(node, label, suffix = 2) {
+    __giveUniqueNameToNode: function(node, label, suffix = 2) {
       const newLabel = label + "_" + suffix;
       const allModels = this.getNodes();
       const nodes = Object.values(allModels);
@@ -669,7 +669,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (node2.getNodeId() !== node.getNodeId() &&
             node2.getLabel().localeCompare(node.getLabel()) === 0) {
           node.setLabel(newLabel);
-          this.giveUniqueNameToNode(node, label, suffix+1);
+          this.__giveUniqueNameToNode(node, label, suffix+1);
         }
       }
     },
@@ -728,7 +728,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
           nodeIds.forEach(nodeId => {
             const node = this.getNode(nodeId);
-            this.giveUniqueNameToNode(node, node.getLabel());
+            this.__giveUniqueNameToNode(node, node.getLabel());
           });
         });
     },

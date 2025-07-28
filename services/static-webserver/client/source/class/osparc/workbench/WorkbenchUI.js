@@ -346,7 +346,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addNode: async function(service, pos) {
       // render temporary node
-      let tempNodeUI = this.__createTemporaryNodeUI(pos);
+      let dashedNodeUI = this.__createTemporaryNodeUI(pos);
 
       let nodeUI = null;
       try {
@@ -359,7 +359,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         console.error(err);
       } finally {
         // remove temporary node
-        this.__removeTemporaryNodeUI(tempNodeUI);
+        this.__removeTemporaryNodeUI(dashedNodeUI);
       }
       return nodeUI;
     },
