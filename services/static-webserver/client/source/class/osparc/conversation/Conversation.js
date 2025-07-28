@@ -197,7 +197,8 @@ qx.Class.define("osparc.conversation.Conversation", {
 
     __reloadMessages: function(removeMessages = true) {
       if (this.getConversationId() === null) {
-        this.__messagesTitle.setValue(this.tr("No messages yet"));
+        // temporary conversation page
+        this.__messagesTitle.setValue(this.tr("No Messages yet"));
         this.__messagesList.hide();
         this.__loadMoreMessages.hide();
         return;
@@ -226,7 +227,9 @@ qx.Class.define("osparc.conversation.Conversation", {
 
     __updateMessagesNumber: function() {
       const nMessages = this.__messages.filter(msg => msg["type"] === "MESSAGE").length;
-      if (nMessages === 1) {
+      if (nMessages === 0) {
+        this.__messagesTitle.setValue(this.tr("No Messages yet"));
+      } else if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));
       } else if (nMessages > 1) {
         this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
