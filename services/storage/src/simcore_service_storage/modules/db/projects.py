@@ -33,22 +33,6 @@ class ProjectRepository(BaseRepository):
                 with suppress(ValidationError):
                     yield ProjectAtDB.model_validate(row)
 
-    async def project_exists(
-        self,
-        *,
-        connection: AsyncConnection | None = None,
-        project_uuid: ProjectID,
-    ) -> bool:
-        async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return bool(
-                await conn.scalar(
-                    sa.select(sa.func.count())
-                    .select_from(projects)
-                    .where(projects.c.uuid == f"{project_uuid}")
-                )
-                == 1
-            )
-
     async def get_project_id_and_node_id_to_names_map(
         self,
         *,
