@@ -6,8 +6,7 @@
 
 
 from asyncio import Future
-from collections.abc import AsyncIterator, Callable
-from pathlib import Path
+from collections.abc import Awaitable, Callable
 from typing import Any
 from unittest import mock
 
@@ -17,7 +16,7 @@ import socketio.exceptions
 from aiohttp.test_utils import TestClient
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.resource_manager.registry import (
@@ -48,48 +47,6 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
 def socket_registry(client: TestClient) -> RedisResourceRegistry:
     app = client.server.app  # type: ignore
     return get_registry(app)
-
-
-@pytest.fixture
-async def empty_user_project(
-    client,
-    empty_project,
-    logged_user,
-    tests_data_dir: Path,
-    osparc_product_name: str,
-) -> AsyncIterator[dict[str, Any]]:
-    project = empty_project()
-    async with NewProject(
-        project,
-        client.app,
-        user_id=logged_user["id"],
-        tests_data_dir=tests_data_dir,
-        product_name=osparc_product_name,
-    ) as project:
-        print("-----> added project", project["name"])
-        yield project
-        print("<----- removed project", project["name"])
-
-
-@pytest.fixture
-async def empty_user_project2(
-    client,
-    empty_project,
-    logged_user,
-    tests_data_dir: Path,
-    osparc_product_name: str,
-) -> AsyncIterator[dict[str, Any]]:
-    project = empty_project()
-    async with NewProject(
-        project,
-        client.app,
-        user_id=logged_user["id"],
-        tests_data_dir=tests_data_dir,
-        product_name=osparc_product_name,
-    ) as project:
-        print("-----> added project", project["name"])
-        yield project
-        print("<----- removed project", project["name"])
 
 
 async def test_anonymous_websocket_connection(
@@ -132,13 +89,14 @@ async def test_anonymous_websocket_connection(
     ],
 )
 async def test_websocket_resource_management(
-    logged_user,
+    logged_user: UserInfoDict,
+    client: TestClient,
     socket_registry: RedisResourceRegistry,
-    create_socketio_connection: Callable,
-    client_session_id_factory: Callable[[], str],
+    create_socketio_connection: Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ],
 ):
-    cur_client_session_id = client_session_id_factory()
-    sio = await create_socketio_connection(cur_client_session_id)
+    sio, cur_client_session_id = await create_socketio_connection(None, client)
     sid = sio.get_sid()
     resource_key = UserSessionDict(
         user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
@@ -178,9 +136,11 @@ async def test_websocket_resource_management(
 )
 async def test_websocket_multiple_connections(
     socket_registry: RedisResourceRegistry,
-    logged_user,
-    create_socketio_connection: Callable,
-    client_session_id_factory: Callable[[], str],
+    logged_user: UserInfoDict,
+    client: TestClient,
+    create_socketio_connection: Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ],
 ):
     NUMBER_OF_SOCKETS = 5
     resource_keys: list[UserSessionDict] = []
@@ -188,8 +148,7 @@ async def test_websocket_multiple_connections(
     # connect multiple clients
     clients = []
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
-        cur_client_session_id = client_session_id_factory()
-        sio = await create_socketio_connection(cur_client_session_id)
+        sio, cur_client_session_id = await create_socketio_connection(None, client)
         resource_key = UserSessionDict(
             user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
         )
@@ -249,9 +208,11 @@ _TENACITY_ASSERT_RETRY = {
 async def test_asyncio_task_pending_on_close(
     client: TestClient,
     logged_user: dict[str, Any],
-    create_socketio_connection: Callable,
+    create_socketio_connection: Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ],
 ):
-    sio = await create_socketio_connection()
+    sio, *_ = await create_socketio_connection(None, client)
     assert sio
     # this test generates warnings on its own
 
@@ -268,8 +229,9 @@ async def test_asyncio_task_pending_on_close(
 async def test_websocket_disconnected_after_logout(
     client: TestClient,
     logged_user: dict[str, Any],
-    create_socketio_connection: Callable,
-    client_session_id_factory: Callable[[], str],
+    create_socketio_connection: Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ],
     expected,
     mocker: MockerFixture,
 ):
@@ -279,20 +241,17 @@ async def test_websocket_disconnected_after_logout(
     assert socket_registry
 
     # connect first socket
-    cur_client_session_id1 = client_session_id_factory()
-    sio = await create_socketio_connection(cur_client_session_id1)
+    sio, *_ = await create_socketio_connection(None, client)
     socket_logout_mock_callable = mocker.Mock()
     sio.on("logout", handler=socket_logout_mock_callable)
 
     # connect second socket
-    cur_client_session_id2 = client_session_id_factory()
-    sio2 = await create_socketio_connection(cur_client_session_id2)
+    sio2, cur_client_session_id2 = await create_socketio_connection(None, client)
     socket_logout_mock_callable2 = mocker.Mock()
     sio2.on("logout", handler=socket_logout_mock_callable2)
 
     # connect third socket
-    cur_client_session_id3 = client_session_id_factory()
-    sio3 = await create_socketio_connection(cur_client_session_id3)
+    sio3, *_ = await create_socketio_connection(None, client)
     socket_logout_mock_callable3 = mocker.Mock()
     sio3.on("logout", handler=socket_logout_mock_callable3)
 

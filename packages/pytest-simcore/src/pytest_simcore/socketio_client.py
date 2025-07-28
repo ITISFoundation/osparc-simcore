@@ -9,6 +9,7 @@ from uuid import uuid4
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
+from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.aiohttp import status
 from yarl import URL
 
@@ -56,18 +57,19 @@ async def create_socketio_connection(
     security_cookie_factory: Callable[[TestClient | None], Awaitable[str]],
     client_session_id_factory: Callable[[], str],
 ) -> AsyncIterable[
-    Callable[[str | None, TestClient | None], Awaitable[socketio.AsyncClient]]
+    Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ]
 ]:
     clients: list[socketio.AsyncClient] = []
 
     async def _connect(
         client_session_id: str | None = None, client: TestClient | None = None
-    ) -> socketio.AsyncClient:
+    ) -> tuple[socketio.AsyncClient, str]:
         if client_session_id is None:
             client_session_id = client_session_id_factory()
 
         sio = socketio.AsyncClient(ssl_verify=False)
-        # enginio 3.10.0 introduced ssl verification
         assert client_session_id
         url = str(
             URL(socketio_url_factory(client)).with_query(
@@ -80,21 +82,28 @@ async def create_socketio_connection(
             # WARNING: engineio fails with empty cookies. Expects "key=value"
             headers.update({"Cookie": cookie})
 
-        print(f"--> Connecting socketio client to {url} ...")
-        await sio.connect(url, headers=headers, wait_timeout=10)
-        assert sio.sid
-        print("... connection done")
+        with log_context(logging.INFO, f"socketio_client: connecting to {url}"):
+            print(f"--> Connecting socketio client to {url} ...")
+            sio.on(
+                "connect",
+                handler=lambda: logger.info("Connected successfully with %s", sio.sid),
+            )
+            sio.on(
+                "disconnect",
+                handler=lambda: logger.info("Disconnected from %s", sio.sid),
+            )
+            await sio.connect(url, headers=headers, wait_timeout=10)
+            assert sio.sid
         clients.append(sio)
-        return sio
+        return sio, client_session_id
 
     yield _connect
 
     # cleans up clients produce by _connect(*) calls
     for sio in clients:
         if sio.connected:
-            print(f"<--Disconnecting socketio client {sio}")
-            await sio.disconnect()
-            await sio.wait()
-            print(f"... disconnection from {sio} done.")
-            assert not sio.connected
+            with log_context(logging.INFO, f"socketio_client: disconnecting {sio}"):
+                await sio.disconnect()
+                await sio.wait()
+        assert not sio.connected
         assert not sio.sid
