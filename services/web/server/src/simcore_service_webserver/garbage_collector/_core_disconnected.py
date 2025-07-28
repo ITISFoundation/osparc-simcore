@@ -49,8 +49,6 @@ async def remove_disconnected_user_resources(
             )
 
             if resource_name == "project_id":
-                # inform that the project can be closed on the backend side
-                #
                 project_id = TypeAdapter(ProjectID).validate_python(resource_value)
                 with (
                     log_catch(_logger, reraise=False),
