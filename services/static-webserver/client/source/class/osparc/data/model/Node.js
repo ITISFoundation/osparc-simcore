@@ -1431,8 +1431,20 @@ qx.Class.define("osparc.data.model.Node", {
         const value = patch.value;
         const nodeProperty = path.split("/")[3];
         switch (nodeProperty) {
-          case "inputs":
+          case "inputs": {
+            const updatedPortKey = path.split("/")[4];
+            const currentInputs = this.__getInputData();
+            currentInputs[updatedPortKey] = value;
+            this.__setInputData(currentInputs);
+            break;
+          }
           case "inputsUnits":
+            // this is never transmitted
+            const updatedPortKey = path.split("/")[4];
+            const currentInputUnits = this.__getInputUnits();
+            currentInputUnits[updatedPortKey] = value;
+            this.__setInputUnits(currentInputUnits);
+            break;
           case "inputNodes":
           case "inputsRequired":
           case "outputs":
@@ -1459,7 +1471,7 @@ qx.Class.define("osparc.data.model.Node", {
         version: this.getVersion(),
         label: this.getLabel(),
         inputs: this.__getInputData(),
-        inputsUnits: this.__getInputUnits(),
+        inputsUnits: this.__getInputUnits(), // this is not working
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()
