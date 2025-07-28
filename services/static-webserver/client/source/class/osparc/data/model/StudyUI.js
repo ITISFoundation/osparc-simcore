@@ -296,13 +296,11 @@ qx.Class.define("osparc.data.model.StudyUI", {
           const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
           if (currentStudy) {
             const node = currentStudy.getWorkbench().getNode(nodeId);
-            if (op === "replace") {
-              if (path.includes("/position")) {
-                this.__updateNodePositionFromPatch(node, op, path, value);
-              }
-              if (path.includes("/marker")) {
-                this.__updateNodeMarkerFromPatch(node, op, path, value);
-              }
+            if (path.includes("/position")) {
+              this.__updateNodePositionFromPatch(node, op, path, value);
+            }
+            if (path.includes("/marker")) {
+              this.__updateNodeMarkerFromPatch(node, op, path, value);
             }
           }
         }
