@@ -344,21 +344,33 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
             this.__blockUpdates = true;
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
-            osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatch(delta);
-            console.log("projectDocument:updated delta", myStudy, updatedStudy, osparc.utils.Utils.deepCloneObject(delta));
-            if ("workbench" in delta) {
+            const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
+            const uiPatches = [];
+            const workbenchPatches = [];
+            const studyPatches = [];
+            for (const jsonPatch of jsonPatches) {
+              if (jsonPatch.path.startsWith('/ui/')) {
+                uiPatches.push(jsonPatch);
+              } else if (jsonPatch.path.startsWith('/workbench/')) {
+                workbenchPatches.push(jsonPatch);
+              } else {
+                studyPatches.push(jsonPatch);
+              }
+            }
+            if (workbenchPatches.length > 0) {
               // OM todo
               // this.getStudy().getWorkbench().updateWorkbenchFromDiff(delta["workbench"]);
-              delete delta["workbench"];
+              // delete delta["workbench"];
+              // this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches);
             }
-            if ("ui" in delta) {
-              this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
-              delete delta["ui"];
+            if (uiPatches.length > 0) {
+              // this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
+              // delete delta["ui"];
+              // this.getStudy().getUi().updateUiFromPatches(uiPatches);
             }
-            this.getStudy().updateStudyFromDiff(delta);
-
-            if(Object.keys(delta).length > 0) {
-              console.warn("projectDocument:updated delta has unhandled properties", delta);
+            if (studyPatches.length > 0) {
+              // this.getStudy().updateStudyFromDiff(delta);
+              this.getStudy().updateStudyFromPatches(studyPatches);
             }
 
             this.__blockUpdates = false;

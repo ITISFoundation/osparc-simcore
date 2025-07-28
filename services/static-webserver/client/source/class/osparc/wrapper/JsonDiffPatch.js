@@ -87,11 +87,12 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
 
     // format to JSON PATCH (RFC 6902)
     // https://github.com/benjamine/jsondiffpatch/blob/master/docs/formatters.md
-    deltaToJsonPatch: function(delta) {
+    deltaToJsonPatches: function(delta) {
       if (this.__deltaToPatch) {
-        const patch = this.__deltaToPatch.format(delta);
-        console.log("(RFC 6902)", patch);
+        const patches = this.__deltaToPatch.format(delta);
+        return patches;
       }
+      return [];
     },
   }
 });

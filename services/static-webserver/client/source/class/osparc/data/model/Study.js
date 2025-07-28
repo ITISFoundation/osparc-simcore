@@ -788,5 +788,34 @@ qx.Class.define("osparc.data.model.Study", {
         }
       });
     },
+
+    // json PATCHES
+    updateStudyFromPatches: function(studyPatches) {
+      const studyPropertyKeys = this.self().getProperties();
+      studyPatches.forEach(patch => {
+        const op = patch.op;
+        const path = patch.path;
+        const value = patch.value;
+        switch (op) {
+          case "replace":
+            const studyProperty = path.substring(1); // remove the leading "/"
+            if (studyPropertyKeys.includes(studyProperty)) {
+              if (path === "/lastChangeDate") {
+                this.setLastChangeDate(new Date(value));
+              } else {
+                const setter = "set" + qx.lang.String.firstUp(studyProperty);
+                if (this[setter]) {
+                  this[setter](value);
+                } else {
+                  console.warn(`Property "${studyProperty}" does not have a setter in osparc.data.model.Study`);
+                }
+              }
+            }
+            break;
+          default:
+            console.warn(`Unhandled patch operation "${op}" for path "${path}" with value "${value}"`);
+        }
+      });
+    },
   }
 });
