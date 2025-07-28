@@ -41,6 +41,7 @@ from servicelib.fastapi.client_session import get_client_session
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import ensure_ends_with, limited_gather
+from simcore_postgres_database.utils_projects import ProjectsRepo
 from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -792,9 +793,9 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             task_progress.description = "Checking study access rights..."
 
             for prj_uuid in [src_project_uuid, dst_project_uuid]:
-                if not await ProjectRepository.instance(
-                    get_db_engine(self.app)
-                ).project_exists(project_uuid=prj_uuid):
+                if not await ProjectsRepo(get_db_engine(self.app)).exists(
+                    project_uuid=prj_uuid
+                ):
                     raise ProjectNotFoundError(project_id=prj_uuid)
             source_access_rights = await AccessLayerRepository.instance(
                 get_db_engine(self.app)

@@ -7,7 +7,7 @@ from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.projects import projects
-from .utils_repos import transaction_context
+from .utils_repos import pass_or_acquire_connection, transaction_context
 
 
 class DBBaseProjectError(OsparcErrorMixin, Exception):
@@ -21,6 +21,23 @@ class DBProjectNotFoundError(DBBaseProjectError):
 class ProjectsRepo:
     def __init__(self, engine):
         self.engine = engine
+
+    async def exists(
+        self,
+        project_uuid: uuid.UUID,
+        *,
+        connection: AsyncConnection | None = None,
+    ) -> bool:
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            return (
+                await conn.scalar(
+                    sa.select(1)
+                    .select_from(projects)
+                    .where(projects.c.uuid == project_uuid)
+                    .limit(1)
+                )
+                is not None
+            )
 
     async def get_project_last_change_date(
         self,
