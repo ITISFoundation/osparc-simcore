@@ -288,9 +288,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     updateUiFromPatches: function(uiPatches) {
       uiPatches.forEach(patch => {
-        const op = patch.op;
         const path = patch.path;
-        const value = patch.value;
         if (path.startsWith("/ui/workbench/")) {
           const nodeId = path.split("/")[3];
           const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
@@ -352,7 +350,6 @@ qx.Class.define("osparc.data.model.StudyUI", {
       const path = patch.path;
       const value = patch.value;
       const annotationId = path.split("/")[3];
-      console.log("Updating annotation from patch", patch);
       switch (op) {
         case "add": {
           const annotation = this.addAnnotation(value, annotationId);
