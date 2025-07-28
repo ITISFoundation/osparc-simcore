@@ -27,7 +27,7 @@ DEFAULT_FAKER: Final = Faker()
 
 def random_service_key(fake: Faker = DEFAULT_FAKER, *, name: str | None = None) -> str:
     suffix = fake.unique.word() if name is None else name
-    return f"simcore/services/{fake.random_element(['dynamic', 'comp', 'frontend'])}/{suffix}"
+    return f"simcore/services/{fake.random_element(['dynamic', 'comp', 'frontend'])}/{suffix.lower()}"
 
 
 def random_service_version(fake: Faker = DEFAULT_FAKER) -> str:
