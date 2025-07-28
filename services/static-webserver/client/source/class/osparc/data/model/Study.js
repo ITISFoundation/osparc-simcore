@@ -772,7 +772,7 @@ qx.Class.define("osparc.data.model.Study", {
         });
     },
 
-    updateFromDiff: function(studyDiffs) {
+    updateStudyFromDiff: function(studyDiffs) {
       const studyPropertyKeys = this.self().getProperties();
       studyPropertyKeys.forEach(studyPropertyKey => {
         if (studyPropertyKey in studyDiffs) {

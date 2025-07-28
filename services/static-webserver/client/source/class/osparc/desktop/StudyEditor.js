@@ -355,7 +355,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               this.getStudy().getUi().updateUiFromDiff(delta["ui"]);
               delete delta["ui"];
             }
-            this.getStudy().updateFromDiff(delta);
+            this.getStudy().updateStudyFromDiff(delta);
 
             if(Object.keys(delta).length > 0) {
               console.warn("projectDocument:updated delta has unhandled properties", delta);
