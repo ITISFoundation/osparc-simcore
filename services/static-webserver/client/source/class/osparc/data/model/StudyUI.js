@@ -353,14 +353,54 @@ qx.Class.define("osparc.data.model.StudyUI", {
       const value = patch.value;
       const annotationId = path.split("/")[3];
       console.log("Updating annotation from patch", patch);
-      if (op === "add") {
-        this.addAnnotation(value, annotationId);
-      } else if (op === "remove") {
-        // it was removed
-        this.removeAnnotation(annotationId);
-      } else if (op === "replace" && value) {
-        // it was updated
-        console.log("Updating annotation", annotationId, "with value", value);
+      switch (op) {
+        case "add": {
+          const annotation = this.addAnnotation(value, annotationId);
+          this.fireDataEvent("annotationAdded", annotation);
+          break;
+        }
+        case "remove":
+          this.removeAnnotation(annotationId);
+          this.fireDataEvent("annotationRemoved", annotationId);
+          break;
+        case "replace":
+          if (annotationId in this.getAnnotations()) {
+            const annotation = this.getAnnotations()[annotationId];
+            if (annotation) {
+              if (path.includes("/color")) {
+                annotation.setColor(value);
+              } else if (path.includes("/attributes")) {
+                this.__updateAnnotationAttributesFromPatch(annotation, path, value);
+              }
+            }
+          }
+          break;
+      }
+    },
+
+    __updateAnnotationAttributesFromPatch: function(annotation, path, value) {
+      if (annotation) {
+        const attribute = path.split("/")[5];
+        switch (attribute) {
+          case "x": {
+            const newPos = annotation.getPosition();
+            newPos.x = value;
+            annotation.setPosition(newPos.x, newPos.y);
+            break;
+          }
+          case "y": {
+            const newPos = annotation.getPosition();
+            newPos.y = value;
+            annotation.setPosition(newPos.x, newPos.y);
+            break;
+          }
+          case "fontSize":
+            annotation.setFontSize(value);
+            break;
+          case "text":
+            annotation.setText(value);
+            break;
+        }
       }
     },
 
