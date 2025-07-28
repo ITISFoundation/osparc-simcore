@@ -1,3 +1,5 @@
+from typing import Any
+
 from aiohttp import web
 from models_library.api_schemas_webserver.functions import (
     Function,
@@ -5,10 +7,15 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunction,
     RegisteredFunctionGet,
     RegisteredFunctionUpdate,
-    RegisteredProjectFunctionGet,
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
-from models_library.functions import FunctionClass, RegisteredProjectFunction
+from models_library.functions import (
+    FunctionAccessRights,
+    FunctionClass,
+    FunctionID,
+    RegisteredProjectFunction,
+    RegisteredSolverFunction,
+)
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
@@ -29,6 +36,8 @@ from ...projects.models import ProjectDBGet
 from ...security.decorators import permission_required
 from ...utils_aiohttp import create_json_response_from_page, envelope_json_response
 from .. import _functions_service
+from .._services_metadata import proxy as _services_metadata_proxy
+from .._services_metadata.proxy import ServiceMetadata
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import (
     FunctionGetQueryParams,
@@ -39,30 +48,71 @@ from ._functions_rest_schemas import (
 routes = web.RouteTableDef()
 
 
-async def _add_extras_to_project_function(
-    function: RegisteredProjectFunction,
+async def _build_function_access_rights(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
-) -> dict:
-    assert isinstance(function, RegisteredProjectFunction)  # nosec
-
-    project_dict = await _projects_service.get_project_for_user(
+    function_id: FunctionID,
+) -> FunctionAccessRights:
+    access_rights = await _functions_service.get_function_user_permissions(
         app=app,
-        project_uuid=f"{function.project_id}",
         user_id=user_id,
+        product_name=product_name,
+        function_id=function_id,
     )
 
-    function_with_extras = function.model_dump(mode="json") | {
-        "access_rights": await _functions_service.get_function_user_permissions(
-            app,
-            user_id=user_id,
-            product_name=product_name,
-            function_id=function.uid,
-        ),
-        "thumbnail": project_dict.get("thumbnail", None),
-    }
-    return function_with_extras
+    return FunctionAccessRights(
+        read=access_rights.read,
+        write=access_rights.write,
+        execute=access_rights.execute,
+    )
+
+
+def _build_project_function_extras_dict(
+    project: ProjectDBGet,
+) -> dict[str, Any]:
+    extras: dict[str, Any] = {}
+    if thumbnail := project.thumbnail:
+        extras["thumbnail"] = thumbnail
+    return extras
+
+
+def _build_solver_function_extras_dict(
+    service_metadata: ServiceMetadata,
+) -> dict[str, Any]:
+
+    extras: dict[str, Any] = {}
+    if thumbnail := service_metadata.thumbnail:
+        extras["thumbnail"] = thumbnail
+    return extras
+
+
+async def _build_function_extras(
+    app: web.Application, *, function: RegisteredFunction
+) -> dict[str, Any]:
+    extras: dict[str, Any] = {}
+    match function.function_class:
+        case FunctionClass.PROJECT:
+            assert isinstance(function, RegisteredProjectFunction)
+            projects = await _projects_service.batch_get_projects(
+                app=app,
+                project_uuids=[function.project_id],
+            )
+            if project := projects.get(function.project_id):
+                extras |= _build_project_function_extras_dict(
+                    project=project,
+                )
+        case FunctionClass.SOLVER:
+            assert isinstance(function, RegisteredSolverFunction)
+            services_metadata = await _services_metadata_proxy.get_service_metadata(
+                app,
+                key=function.solver_key,
+                version=function.solver_version,
+            )
+            extras |= _build_solver_function_extras_dict(
+                service_metadata=services_metadata,
+            )
+    return extras
 
 
 @routes.post(f"/{VTAG}/functions", name="register_function")
@@ -117,54 +167,70 @@ async def list_functions(request: web.Request) -> web.Response:
     )
 
     chunk: list[RegisteredFunctionGet] = []
-    projects_map: dict[str, ProjectDBGet | None] = (
-        {}
-    )  # ProjectDBGet has to be renamed at some point!
+
+    extras_map: dict[FunctionID, dict[str, Any]] = {}
 
     if query_params.include_extras:
-        project_ids = []
-        for function in functions:
-            if function.function_class == FunctionClass.PROJECT:
-                assert isinstance(function, RegisteredProjectFunction)
-                project_ids.append(function.project_id)
-
-        projects_map = {
-            f"{p.uuid}": p
-            for p in await _projects_service.batch_get_projects(
+        if any(
+            function.function_class == FunctionClass.PROJECT for function in functions
+        ):
+            project_uuids = [
+                function.project_id
+                for function in functions
+                if function.function_class == FunctionClass.PROJECT
+            ]
+            projects_cache = await _projects_service.batch_get_projects(
                 request.app,
-                project_uuids=project_ids,
+                project_uuids=project_uuids,
             )
-        }
+            for function in functions:
+                if function.function_class == FunctionClass.PROJECT:
+                    project = projects_cache.get(function.project_id)
+                    if not project:
+                        continue
+                    extras_map[function.uid] = _build_project_function_extras_dict(
+                        project=project
+                    )
+
+        if any(
+            function.function_class == FunctionClass.SOLVER for function in functions
+        ):
+            service_keys_and_versions = {
+                (function.solver_key, function.solver_version)
+                for function in functions
+                if function.function_class == FunctionClass.SOLVER
+            }
+            service_metadata_cache = (
+                await _services_metadata_proxy.batch_get_service_metadata(
+                    app=request.app, keys_and_versions=service_keys_and_versions
+                )
+            )
+            for function in functions:
+                if function.function_class == FunctionClass.SOLVER:
+                    service_metadata = service_metadata_cache.get(
+                        (function.solver_key, function.solver_version)
+                    )
+                    if not service_metadata:
+                        continue
+                    extras_map[function.uid] = _build_solver_function_extras_dict(
+                        service_metadata=service_metadata
+                    )
 
     for function in functions:
-        if (
-            query_params.include_extras
-            and function.function_class == FunctionClass.PROJECT
-        ):
-            assert isinstance(function, RegisteredProjectFunction)  # nosec
-            if project := projects_map.get(f"{function.project_id}"):
-                chunk.append(
-                    TypeAdapter(RegisteredProjectFunctionGet).validate_python(
-                        function.model_dump(mode="json")
-                        | {
-                            "access_rights": await _functions_service.get_function_user_permissions(
-                                request.app,
-                                user_id=req_ctx.user_id,
-                                product_name=req_ctx.product_name,
-                                function_id=function.uid,
-                            ),
-                            "thumbnail": (
-                                f"{project.thumbnail}" if project.thumbnail else None
-                            ),
-                        }
-                    )
-                )
-        else:
-            chunk.append(
-                TypeAdapter(RegisteredFunctionGet).validate_python(
-                    function.model_dump(mode="json")
-                )
+        access_rights = await _build_function_access_rights(
+            request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            function_id=function.uid,
+        )
+
+        extras = extras_map.get(function.uid, {})
+
+        chunk.append(
+            TypeAdapter(RegisteredFunctionGet).validate_python(
+                function.model_dump() | {"access_rights": access_rights, **extras}
             )
+        )
 
     page = Page[RegisteredFunctionGet].model_validate(
         paginate_data(
@@ -194,33 +260,29 @@ async def get_function(request: web.Request) -> web.Response:
     )
 
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    registered_function: RegisteredFunction = await _functions_service.get_function(
+    function = await _functions_service.get_function(
         app=request.app,
         function_id=function_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
     )
 
-    if (
-        query_params.include_extras
-        and registered_function.function_class == FunctionClass.PROJECT
-    ):
-        function_with_extras = await _add_extras_to_project_function(
-            function=registered_function,
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-        )
+    access_rights = await _build_function_access_rights(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+    )
 
-        return envelope_json_response(
-            TypeAdapter(RegisteredProjectFunctionGet).validate_python(
-                function_with_extras
-            )
-        )
+    extras = (
+        await _build_function_extras(request.app, function=function)
+        if query_params.include_extras
+        else {}
+    )
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
-            registered_function.model_dump(mode="json")
+            function.model_dump() | {"access_rights": access_rights, **extras}
         )
     )
 
@@ -245,7 +307,7 @@ async def update_function(request: web.Request) -> web.Response:
     )
     req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    updated_function = await _functions_service.update_function(
+    function = await _functions_service.update_function(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -253,26 +315,22 @@ async def update_function(request: web.Request) -> web.Response:
         function=function_update,
     )
 
-    if (
-        query_params.include_extras
-        and updated_function.function_class == FunctionClass.PROJECT
-    ):
-        function_with_extras = await _add_extras_to_project_function(
-            function=updated_function,
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-        )
+    access_rights = await _build_function_access_rights(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+    )
 
-        return envelope_json_response(
-            TypeAdapter(RegisteredProjectFunctionGet).validate_python(
-                function_with_extras
-            )
-        )
+    extras = (
+        await _build_function_extras(request.app, function=function)
+        if query_params.include_extras
+        else {}
+    )
 
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
-            updated_function.model_dump(mode="json")
+            function.model_dump() | {"access_rights": access_rights, **extras}
         )
     )
 

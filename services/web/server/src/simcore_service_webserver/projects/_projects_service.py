@@ -12,7 +12,7 @@ import collections
 import datetime
 import logging
 from collections import defaultdict
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from contextlib import suppress
 from decimal import Decimal
 from pprint import pformat
@@ -365,8 +365,8 @@ async def batch_get_project_name(
 async def batch_get_projects(
     app: web.Application,
     *,
-    project_uuids: list[ProjectID],
-) -> list[ProjectDBGet]:
+    project_uuids: Iterable[ProjectID],
+) -> dict[ProjectID, ProjectDBGet]:
     return await _projects_repository.batch_get_projects(
         app=app,
         project_uuids=project_uuids,
