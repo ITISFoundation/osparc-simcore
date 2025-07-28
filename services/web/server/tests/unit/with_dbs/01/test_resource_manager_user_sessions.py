@@ -21,7 +21,7 @@ from simcore_service_webserver.resource_manager.registry import (
     _ALIVE_SUFFIX,
     _RESOURCE_SUFFIX,
     RedisResourceRegistry,
-    UserSessionDict,
+    UserSession,
     get_registry,
 )
 from simcore_service_webserver.resource_manager.settings import get_plugin_settings
@@ -97,7 +97,7 @@ def create_user_ids() -> Callable[..., list[int]]:
     ],
 )
 async def test_redis_registry_hashes(
-    redis_enabled_app: web.Application, key: UserSessionDict, hash_key: str
+    redis_enabled_app: web.Application, key: UserSession, hash_key: str
 ):
     # pylint: disable=protected-access
     assert RedisResourceRegistry._hash_key(key) == hash_key  # noqa: SLF001

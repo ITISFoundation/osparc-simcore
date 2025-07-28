@@ -11,7 +11,7 @@ from servicelib.logging_utils import get_log_record_extra, log_context
 from .registry import (
     RedisResourceRegistry,
     ResourcesDict,
-    UserSessionDict,
+    UserSession,
     get_registry,
 )
 from .settings import ResourceManagerSettings, get_plugin_settings
@@ -69,8 +69,8 @@ class UserSessionResourcesRegistry:
     def _registry(self) -> RedisResourceRegistry:
         return get_registry(self.app)
 
-    def _resource_key(self) -> UserSessionDict:
-        return UserSessionDict(
+    def _resource_key(self) -> UserSession:
+        return UserSession(
             user_id=f"{self.user_id}",
             client_session_id=self.client_session_id or "*",
         )
@@ -198,7 +198,7 @@ class UserSessionResourcesRegistry:
         app: web.Application, key: str, value: str
     ) -> list[UserSessionID]:
         registry = get_registry(app)
-        registry_keys: list[UserSessionDict] = await registry.find_keys(
+        registry_keys: list[UserSession] = await registry.find_keys(
             resource=(key, value)
         )
         users_sessions_ids: list[UserSessionID] = [

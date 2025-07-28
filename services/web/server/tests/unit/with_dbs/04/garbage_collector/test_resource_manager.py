@@ -21,7 +21,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
-    UserSessionDict,
+    UserSession,
     get_registry,
 )
 from tenacity.asyncio import AsyncRetrying
@@ -98,7 +98,7 @@ async def test_websocket_resource_management(
 ):
     sio, cur_client_session_id = await create_socketio_connection(None, client)
     sid = sio.get_sid()
-    resource_key = UserSessionDict(
+    resource_key = UserSession(
         user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
     )
 
@@ -143,13 +143,13 @@ async def test_websocket_multiple_connections(
     ],
 ):
     NUMBER_OF_SOCKETS = 5
-    resource_keys: list[UserSessionDict] = []
+    resource_keys: list[UserSession] = []
 
     # connect multiple clients
     clients = []
     for socket_count in range(1, NUMBER_OF_SOCKETS + 1):
         sio, cur_client_session_id = await create_socketio_connection(None, client)
-        resource_key = UserSessionDict(
+        resource_key = UserSession(
             user_id=f"{logged_user['id']}", client_session_id=cur_client_session_id
         )
         assert await socket_registry.find_keys(("socket_id", sio.get_sid())) == [

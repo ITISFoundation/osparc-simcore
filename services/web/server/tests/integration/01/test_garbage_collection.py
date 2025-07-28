@@ -55,7 +55,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
-    UserSessionDict,
+    UserSession,
     get_registry,
 )
 from simcore_service_webserver.rest.plugin import setup_rest
@@ -354,7 +354,7 @@ async def change_user_role(
 
 class SioConnectionData(NamedTuple):
     sio: socketio.AsyncClient
-    resource_key: UserSessionDict
+    resource_key: UserSession
 
 
 async def connect_to_socketio(
@@ -369,7 +369,7 @@ async def connect_to_socketio(
     socket_registry = get_registry(client.app)
     cur_client_session_id = f"{uuid4()}"
     sio, *_ = await socketio_client_factory(cur_client_session_id, client)
-    resource_key: UserSessionDict = {
+    resource_key: UserSession = {
         "user_id": str(user["id"]),
         "client_session_id": cur_client_session_id,
     }

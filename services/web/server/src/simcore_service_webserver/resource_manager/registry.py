@@ -39,7 +39,7 @@ _ALIVE_SUFFIX = "alive"  # points to a string type
 _RESOURCE_SUFFIX = "resources"  # points to a hash (like a dict) type
 
 
-class UserSessionDict(TypedDict):
+class UserSession(TypedDict):
     """Parts of the key used in redis for a user-session"""
 
     user_id: UserID
@@ -53,8 +53,8 @@ class ResourcesDict(TypedDict, total=False):
     socket_id: str
 
 
-AliveSessions: TypeAlias = list[UserSessionDict]
-DeadSessions: TypeAlias = list[UserSessionDict]
+AliveSessions: TypeAlias = list[UserSession]
+DeadSessions: TypeAlias = list[UserSession]
 
 
 class RedisResourceRegistry:
@@ -76,48 +76,44 @@ class RedisResourceRegistry:
         return self._app
 
     @classmethod
-    def _hash_key(cls, key: UserSessionDict) -> str:
+    def _hash_key(cls, key: UserSession) -> str:
         hash_key: str = ":".join(f"{k}={v}" for k, v in key.items())
         return hash_key
 
     @classmethod
-    def _decode_hash_key(cls, hash_key: str) -> UserSessionDict:
+    def _decode_hash_key(cls, hash_key: str) -> UserSession:
         tmp_key = (
             hash_key[: -len(f":{_RESOURCE_SUFFIX}")]
             if hash_key.endswith(f":{_RESOURCE_SUFFIX}")
             else hash_key[: -len(f":{_ALIVE_SUFFIX}")]
         )
         key = dict(x.split("=") for x in tmp_key.split(":"))
-        return UserSessionDict(**key)  # type: ignore
+        return UserSession(**key)  # type: ignore
 
     @property
     def client(self) -> aioredis.Redis:
         client: aioredis.Redis = get_redis_resources_client(self.app)
         return client
 
-    async def set_resource(
-        self, key: UserSessionDict, resource: tuple[str, str]
-    ) -> None:
+    async def set_resource(self, key: UserSession, resource: tuple[str, str]) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         field, value = resource
         await handle_redis_returns_union_types(
             self.client.hset(hash_key, mapping={field: value})
         )
 
-    async def get_resources(self, key: UserSessionDict) -> ResourcesDict:
+    async def get_resources(self, key: UserSession) -> ResourcesDict:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         fields = await handle_redis_returns_union_types(self.client.hgetall(hash_key))
         return ResourcesDict(**fields)
 
-    async def remove_resource(self, key: UserSessionDict, resource_name: str) -> None:
+    async def remove_resource(self, key: UserSession, resource_name: str) -> None:
         hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
         await handle_redis_returns_union_types(
             self.client.hdel(hash_key, resource_name)
         )
 
-    async def find_resources(
-        self, key: UserSessionDict, resource_name: str
-    ) -> list[str]:
+    async def find_resources(self, key: UserSession, resource_name: str) -> list[str]:
         resources: list[str] = []
         # the key might only be partialy complete
         partial_hash_key = f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}"
@@ -132,7 +128,7 @@ class RedisResourceRegistry:
                     resources.append(key_value)
         return resources
 
-    async def find_keys(self, resource: tuple[str, str]) -> list[UserSessionDict]:
+    async def find_keys(self, resource: tuple[str, str]) -> list[UserSession]:
         if not resource:
             return []
 
@@ -144,17 +140,17 @@ class RedisResourceRegistry:
             == await handle_redis_returns_union_types(self.client.hget(hash_key, field))
         ]
 
-    async def set_key_alive(self, key: UserSessionDict, timeout: int) -> None:
+    async def set_key_alive(self, key: UserSession, timeout: int) -> None:
         # setting the timeout to always expire, timeout > 0
         timeout = int(max(1, timeout))
         hash_key = f"{self._hash_key(key)}:{_ALIVE_SUFFIX}"
         await self.client.set(hash_key, 1, ex=timeout)
 
-    async def is_key_alive(self, key: UserSessionDict) -> bool:
+    async def is_key_alive(self, key: UserSession) -> bool:
         hash_key = f"{self._hash_key(key)}:{_ALIVE_SUFFIX}"
         return bool(await self.client.exists(hash_key) > 0)
 
-    async def remove_key(self, key: UserSessionDict) -> None:
+    async def remove_key(self, key: UserSession) -> None:
         await self.client.delete(
             f"{self._hash_key(key)}:{_RESOURCE_SUFFIX}",
             f"{self._hash_key(key)}:{_ALIVE_SUFFIX}",
