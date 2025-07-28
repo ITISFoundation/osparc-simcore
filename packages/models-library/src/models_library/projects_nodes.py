@@ -383,7 +383,8 @@ class Node(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
         json_schema_extra=_update_json_schema_extra,
     )
 
