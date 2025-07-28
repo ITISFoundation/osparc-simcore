@@ -98,7 +98,7 @@ async def _get_tasks_to_remove(
     return tasks_to_remove
 
 
-class TasksManager:
+class TasksManager:  # pylint:disable=too-many-instance-attributes
     """
     Monitors execution and results retrieval of a collection of asyncio.Tasks
     """
