@@ -1,9 +1,13 @@
 import pytest
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.services_types import ServiceRunID
+from models_library.services_types import ServiceKey, ServiceRunID, ServiceVersion
 from models_library.users import UserID
-from pydantic import PositiveInt
+from pydantic import PositiveInt, TypeAdapter
+from pytest_simcore.helpers.faker_factories import (
+    random_service_key,
+    random_service_version,
+)
 
 
 @pytest.mark.parametrize(
@@ -38,3 +42,12 @@ def test_get_resource_tracking_run_id_for_dynamic():
     assert isinstance(
         ServiceRunID.get_resource_tracking_run_id_for_dynamic(), ServiceRunID
     )
+
+
+def test_faker_factories_random_service_key_and_version_are_in_sync():
+
+    for _ in range(10):
+        key = random_service_key()
+        version = random_service_version()
+        TypeAdapter(ServiceKey).validate_python(key)
+        TypeAdapter(ServiceVersion).validate_python(version)

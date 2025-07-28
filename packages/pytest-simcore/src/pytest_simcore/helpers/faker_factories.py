@@ -26,8 +26,7 @@ DEFAULT_FAKER: Final = Faker()
 
 
 def random_service_key(fake: Faker = DEFAULT_FAKER, *, name: str | None = None) -> str:
-    """Generates a random service key"""
-    return f"simcore/services/{fake.random_element(['dynamic', 'computational'])}/{name or fake.name()}"
+    return f"simcore/services/{fake.random_element(['dynamic', 'comp', 'frontend'])}/{name or fake.name().lower().replace(' ', '')}"
 
 
 def random_service_version(fake: Faker = DEFAULT_FAKER) -> str:
