@@ -203,10 +203,10 @@ class UserSessionResourcesRegistry:
 
 @contextmanager
 def managed_resource(
-    user_id: str | int, client_session_id: str | None, app: web.Application
+    user_id: UserID, client_session_id: str | None, app: web.Application
 ) -> Iterator[UserSessionResourcesRegistry]:
     try:
-        registry = UserSessionResourcesRegistry(int(user_id), client_session_id, app)
+        registry = UserSessionResourcesRegistry(user_id, client_session_id, app)
         yield registry
     except Exception:
         _logger.debug(
