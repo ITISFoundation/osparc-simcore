@@ -827,6 +827,20 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
       })
       return Promise.all(promises);
-    }
+    },
+
+    updateWorkbenchFromPatches: function(workbenchPatches) {
+      console.log(workbenchPatches);
+      // group the patches by nodeId
+      const workbenchPatchesByNode = {};
+      workbenchPatches.forEach(workbenchPatch => {
+        const nodeId = workbenchPatch.path.split("/")[2];
+        if (!(nodeId in workbenchPatchesByNode)) {
+          workbenchPatchesByNode[nodeId] = [];
+        }
+        workbenchPatchesByNode[nodeId].push(workbenchPatch);
+      });
+      console.log(workbenchPatchesByNode);
+    },
   }
 });

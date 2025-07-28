@@ -364,10 +364,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               }
             }
             if (workbenchPatches.length > 0) {
-              // OM todo
-              // this.getStudy().getWorkbench().updateWorkbenchFromDiff(delta["workbench"]);
-              // delete delta["workbench"];
-              // this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches);
+              this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches);
             }
             if (uiPatches.length > 0) {
               this.getStudy().getUi().updateUiFromPatches(uiPatches);
