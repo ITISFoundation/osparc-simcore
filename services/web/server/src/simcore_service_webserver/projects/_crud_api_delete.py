@@ -18,7 +18,6 @@ from servicelib.utils import fire_and_forget_task
 from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
 from ..users.exceptions import UserNotFoundError
-from ..users.users_service import FullNameDict
 from . import _projects_repository
 from ._access_rights_service import check_user_project_permission
 from ._projects_repository_legacy import ProjectDBAPI
@@ -40,13 +39,12 @@ class RemoveProjectServicesCallable(Protocol):
     # NOTE: this function was tmp added here to avoid refactoring all projects_api in a single PR
     async def __call__(
         self,
-        user_id: int,
-        project_uuid: str,
+        user_id: UserID,
+        project_uuid: ProjectID,
         app: web.Application,
         simcore_user_agent: str,
         *,
         notify_users: bool = True,
-        user_name: FullNameDict | None = None,
     ) -> None: ...
 
 
@@ -109,7 +107,7 @@ async def delete_project(
         # - raises ProjectNotFoundError, UserNotFoundError, ProjectLockError
         await remove_project_dynamic_services(
             user_id=user_id,
-            project_uuid=f"{project_uuid}",
+            project_uuid=project_uuid,
             app=app,
             simcore_user_agent=simcore_user_agent,
             notify_users=False,

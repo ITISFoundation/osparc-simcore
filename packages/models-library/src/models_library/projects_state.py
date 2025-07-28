@@ -195,8 +195,6 @@ class ProjectLocked(BaseModel):
                     "status": ProjectStatus.OPENED,
                     "owner": {
                         "user_id": 123,
-                        "first_name": "Johnny",
-                        "last_name": "Cash",
                     },
                 },
             ]

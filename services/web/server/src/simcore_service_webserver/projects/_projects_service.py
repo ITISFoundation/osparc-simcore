@@ -110,9 +110,9 @@ from ..redis import (
     get_redis_document_manager_client_sdk,
     get_redis_lock_manager_client_sdk,
 )
+from ..resource_manager.models import UserSession
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
-    UserSessionID,
     managed_resource,
 )
 from ..resource_usage import service as rut_api
@@ -129,7 +129,6 @@ from ..user_preferences.user_preferences_service import (
 )
 from ..users import users_service
 from ..users.exceptions import UserDefaultWalletNotFoundError, UserNotFoundError
-from ..users.users_service import FullNameDict
 from ..wallets import api as wallets_service
 from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
@@ -1442,7 +1441,7 @@ async def post_trigger_connected_service_retrieve(
 
 
 async def _user_has_another_active_session(
-    users_sessions_ids: list[UserSessionID], app: web.Application
+    users_sessions_ids: list[UserSession], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
     for u in users_sessions_ids:
@@ -1453,7 +1452,7 @@ async def _user_has_another_active_session(
 
 
 async def _clean_user_disconnected_clients(
-    users_sessions_ids: list[UserSessionID], app: web.Application
+    users_sessions_ids: list[UserSession], app: web.Application
 ):
     for u in users_sessions_ids:
         with managed_resource(u.user_id, u.client_session_id, app) as user_session:
@@ -1498,10 +1497,7 @@ async def try_open_project_for_user(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=project_uuid,
             status=ProjectStatus.OPENING,
-            owner=Owner(
-                user_id=user_id,
-                **await users_service.get_user_fullname(app, user_id=user_id),
-            ),
+            owner=Owner(user_id=user_id),
             notification_cb=None,
         )
         async def _open_project() -> bool:
@@ -1584,48 +1580,55 @@ async def try_open_project_for_user(
         return False
 
 
-async def try_close_project_for_user(
-    user_id: int,
-    project_uuid: str,
+async def close_project_for_user(
+    user_id: UserID,
+    project_uuid: ProjectID,
     client_session_id: str,
     app: web.Application,
     simcore_user_agent: str,
+    *,
+    wait_for_service_closed: bool = False,
 ):
     with managed_resource(user_id, client_session_id, app) as user_session:
         current_user_session = user_session.get_id()
         all_user_sessions_with_project = await user_session.find_users_of_resource(
-            app, key=PROJECT_ID_KEY, value=project_uuid
+            app, key=PROJECT_ID_KEY, value=f"{project_uuid}"
         )
 
         # first check whether other sessions registered this project
         if current_user_session not in all_user_sessions_with_project:
             # nothing to do, I do not have this project registered
-            log.warning(
-                "%s is not registered as resource of %s. Skipping close project",
-                f"{project_uuid=}",
-                f"{user_id}",
-                extra=get_log_record_extra(user_id=user_id),
-            )
             return
 
         # remove the project from our list of opened ones
-        with log_context(
-            log, logging.DEBUG, f"removing {user_id=} session for {project_uuid=}"
-        ):
-            await user_session.remove(key=PROJECT_ID_KEY)
+        await user_session.remove(key=PROJECT_ID_KEY)
 
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)
     log.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
     if not all_user_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
-        fire_and_forget_task(
-            remove_project_dynamic_services(
-                user_id, project_uuid, app, simcore_user_agent
-            ),
-            task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
-            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+        remove_services_task = remove_project_dynamic_services(
+            user_id, project_uuid, app, simcore_user_agent
         )
+        if wait_for_service_closed:
+            # wait for the task to finish
+            await remove_services_task
+        else:
+            fire_and_forget_task(
+                remove_services_task,
+                task_suffix_name=f"remove_project_dynamic_services_{user_id=}_{project_uuid=}",
+                fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
+            )
+    else:
+        # when the project is still opened by other users, we just notify the project state update
+        project = await get_project_for_user(
+            app,
+            f"{project_uuid}",
+            user_id,
+            include_state=True,
+        )
+        await notify_project_state_update(app, project)
 
 
 async def _get_project_share_state(
@@ -1965,13 +1968,12 @@ async def run_project_dynamic_services(
 
 
 async def remove_project_dynamic_services(
-    user_id: int,
-    project_uuid: str,
+    user_id: UserID,
+    project_uuid: ProjectID,
     app: web.Application,
     simcore_user_agent: str,
     *,
     notify_users: bool = True,
-    user_name: FullNameDict | None = None,
 ) -> None:
     """
 
@@ -1987,10 +1989,6 @@ async def remove_project_dynamic_services(
         user_id,
     )
 
-    user_name_data: FullNameDict = user_name or await users_service.get_user_fullname(
-        app, user_id=user_id
-    )
-
     user_role: UserRole | None = None
     try:
         user_role = await users_service.get_user_role(app, user_id=user_id)
@@ -1998,7 +1996,7 @@ async def remove_project_dynamic_services(
         user_role = None
 
     save_state = await has_user_project_access_rights(
-        app, project_id=ProjectID(project_uuid), user_id=user_id, permission="write"
+        app, project_id=project_uuid, user_id=user_id, permission="write"
     )
     if user_role is None or user_role <= UserRole.GUEST:
         save_state = False
@@ -2008,9 +2006,9 @@ async def remove_project_dynamic_services(
         get_redis_lock_manager_client_sdk(app),
         project_uuid=project_uuid,
         status=ProjectStatus.CLOSING,
-        owner=Owner(user_id=user_id, **user_name_data),
+        owner=Owner(user_id=user_id),
         notification_cb=(
-            create_user_notification_cb(user_id, ProjectID(project_uuid), app)
+            create_user_notification_cb(user_id, project_uuid, app)
             if notify_users
             else None
         ),
