@@ -44,10 +44,14 @@ def test_get_resource_tracking_run_id_for_dynamic():
     )
 
 
-def test_faker_factories_random_service_key_and_version_are_in_sync():
+@pytest.mark.parametrize(
+    "service_key, service_version",
+    [(random_service_key(), random_service_version()) for _ in range(10)],
+)
+def test_service_key_and_version_are_in_sync(
+    service_key: ServiceKey, service_version: ServiceVersion
+):
+    TypeAdapter(ServiceKey).validate_python(service_key)
+    TypeAdapter(ServiceVersion).validate_python(service_version)
 
-    for _ in range(10):
-        key = random_service_key()
-        version = random_service_version()
-        TypeAdapter(ServiceKey).validate_python(key)
-        TypeAdapter(ServiceVersion).validate_python(version)
+    assert service_key.startswith("simcore/services/")
