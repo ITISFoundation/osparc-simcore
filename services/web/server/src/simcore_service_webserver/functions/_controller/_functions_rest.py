@@ -17,10 +17,8 @@ from models_library.functions import (
     RegisteredSolverFunction,
 )
 from models_library.products import ProductName
-from models_library.projects import ProjectID
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
-from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
@@ -70,57 +68,49 @@ async def _build_function_access_rights(
     )
 
 
-async def _build_project_function_extras_dict(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    function: RegisteredProjectFunction,
+def _build_project_function_extras_dict(
+    project: ProjectDBGet,
 ) -> dict[str, Any]:
-    project_dict = await _projects_service.get_project_for_user(
-        app=app,
-        project_uuid=f"{function.project_id}",
-        user_id=user_id,
-    )
-
     extras: dict[str, Any] = {}
-    if thumbnail := project_dict["thumbnail"]:
+    if thumbnail := project.thumbnail:
         extras["thumbnail"] = thumbnail
     return extras
 
 
-async def _build_solver_function_extras_dict(
-    app: web.Application,
-    *,
-    function: RegisteredSolverFunction,
+def _build_solver_function_extras_dict(
+    service_metadata: ServiceMetadata,
 ) -> dict[str, Any]:
-    services_metadata = await _services_metadata_proxy.get_service_metadata(
-        app,
-        key=function.solver_key,
-        version=function.solver_version,
-    )
+
     extras: dict[str, Any] = {}
-    if thumbnail := services_metadata.thumbnail:
+    if thumbnail := service_metadata.thumbnail:
         extras["thumbnail"] = thumbnail
     return extras
 
 
 async def _build_function_extras(
-    app: web.Application, user_id: UserID, *, function: RegisteredFunction
+    app: web.Application, *, function: RegisteredFunction
 ) -> dict[str, Any]:
     extras: dict[str, Any] = {}
     match function.function_class:
         case FunctionClass.PROJECT:
             assert isinstance(function, RegisteredProjectFunction)
-            extras |= await _build_project_function_extras_dict(
-                function=function,
+            projects = await _projects_service.batch_get_projects(
                 app=app,
-                user_id=user_id,
+                project_uuids=[function.project_id],
             )
+            if project := projects.get(function.project_id):
+                extras |= _build_project_function_extras_dict(
+                    project=project,
+                )
         case FunctionClass.SOLVER:
             assert isinstance(function, RegisteredSolverFunction)
-            extras |= await _build_solver_function_extras_dict(
+            services_metadata = await _services_metadata_proxy.get_service_metadata(
                 app,
-                function=function,
+                key=function.solver_key,
+                version=function.solver_version,
+            )
+            extras |= _build_solver_function_extras_dict(
+                service_metadata=services_metadata,
             )
     return extras
 
@@ -178,10 +168,7 @@ async def list_functions(request: web.Request) -> web.Response:
 
     chunk: list[RegisteredFunctionGet] = []
 
-    projects_cache: dict[ProjectID, ProjectDBGet] = {}
-    service_metadata_cache: dict[tuple[ServiceKey, ServiceVersion], ServiceMetadata] = (
-        {}
-    )
+    extras_map: dict[FunctionID, dict[str, Any]] = {}
 
     if query_params.include_extras:
         if any(
@@ -192,10 +179,19 @@ async def list_functions(request: web.Request) -> web.Response:
                 for function in functions
                 if function.function_class == FunctionClass.PROJECT
             ]
-            projects_cache |= await _projects_service.batch_get_projects(
+            projects_cache = await _projects_service.batch_get_projects(
                 request.app,
                 project_uuids=project_uuids,
             )
+            for function in functions:
+                if function.function_class == FunctionClass.PROJECT:
+                    project = projects_cache.get(function.project_id)
+                    if not project:
+                        continue
+                    extras_map[function.uid] = _build_project_function_extras_dict(
+                        project=project
+                    )
+
         if any(
             function.function_class == FunctionClass.SOLVER for function in functions
         ):
@@ -204,11 +200,21 @@ async def list_functions(request: web.Request) -> web.Response:
                 for function in functions
                 if function.function_class == FunctionClass.SOLVER
             }
-            service_metadata_cache |= (
+            service_metadata_cache = (
                 await _services_metadata_proxy.batch_get_service_metadata(
                     app=request.app, keys_and_versions=service_keys_and_versions
                 )
             )
+            for function in functions:
+                if function.function_class == FunctionClass.SOLVER:
+                    service_metadata = service_metadata_cache.get(
+                        (function.solver_key, function.solver_version)
+                    )
+                    if not service_metadata:
+                        continue
+                    extras_map[function.uid] = _build_solver_function_extras_dict(
+                        service_metadata=service_metadata
+                    )
 
     for function in functions:
         access_rights = await _build_function_access_rights(
@@ -218,13 +224,7 @@ async def list_functions(request: web.Request) -> web.Response:
             function_id=function.uid,
         )
 
-        extras = (
-            await _build_function_extras(
-                request.app, req_ctx.user_id, function=function
-            )
-            if query_params.include_extras
-            else {}
-        )
+        extras = extras_map.get(function.uid, {})
 
         chunk.append(
             TypeAdapter(RegisteredFunctionGet).validate_python(
@@ -275,7 +275,7 @@ async def get_function(request: web.Request) -> web.Response:
     )
 
     extras = (
-        await _build_function_extras(request.app, req_ctx.user_id, function=function)
+        await _build_function_extras(request.app, function=function)
         if query_params.include_extras
         else {}
     )
@@ -323,7 +323,7 @@ async def update_function(request: web.Request) -> web.Response:
     )
 
     extras = (
-        await _build_function_extras(request.app, req_ctx.user_id, function=function)
+        await _build_function_extras(request.app, function=function)
         if query_params.include_extras
         else {}
     )

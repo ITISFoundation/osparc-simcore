@@ -183,7 +183,10 @@ async def batch_get_projects(
             .where(projects.c.uuid.in_([f"{uuid}" for uuid in project_uuids]))
         )
         result = await conn.stream(query)
-        return {row.uuid: ProjectDBGet.model_validate(row) async for row in result}
+        return {
+            ProjectID(row.uuid): ProjectDBGet.model_validate(row)
+            async for row in result
+        }
 
 
 def _select_trashed_by_primary_gid_query() -> sql.Select:
