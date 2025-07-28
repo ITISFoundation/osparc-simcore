@@ -4,6 +4,7 @@
 # pylint:disable=no-value-for-parameter
 
 import contextlib
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any
 from uuid import uuid4
@@ -14,6 +15,7 @@ from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
+from pytest_simcore.helpers.logging_tools import log_context
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.products import products
@@ -29,6 +31,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import sync_insert_and_get_user_and_secrets_lifespan
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture()
@@ -89,52 +93,65 @@ async def create_project(
         **project_overrides,
     ) -> ProjectAtDB:
         project_uuid = uuid4()
-        print(f"Created new project with uuid={project_uuid}")
-        project_config = {
-            "uuid": f"{project_uuid}",
-            "name": faker.name(),
-            "type": ProjectType.STANDARD.name,
-            "description": faker.text(),
-            "prj_owner": user["id"],
-            "access_rights": {"1": {"read": True, "write": True, "delete": True}},
-            "thumbnail": "",
-            "workbench": {},
-        }
-        project_config.update(**project_overrides)
-        async with sqlalchemy_async_engine.connect() as con, con.begin():
-            result = await con.execute(
-                projects.insert()
-                .values(**project_config)
-                .returning(sa.literal_column("*"))
-            )
+        with log_context(
+            logging.INFO,
+            "Creating new project with uuid=%s",
+            project_uuid,
+            logger=_logger,
+        ) as log_ctx:
 
-            inserted_project = ProjectAtDB.model_validate(result.one())
-            project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
-            # NOTE: currently no resources is passed until it becomes necessary
-            default_node_config = {
-                "required_resources": {},
-                "key": faker.pystr(),
-                "version": faker.pystr(),
-                "label": faker.pystr(),
+            default_project_config = {
+                "uuid": f"{project_uuid}",
+                "name": faker.name(),
+                "type": ProjectType.STANDARD.name,
+                "description": faker.text(),
+                "prj_owner": user["id"],
+                "access_rights": {"1": {"read": True, "write": True, "delete": True}},
+                "thumbnail": "",
             }
-            if project_nodes_overrides:
-                default_node_config.update(project_nodes_overrides)
-            await project_nodes_repo.add(
-                con,
-                nodes=[
-                    ProjectNodeCreate(node_id=NodeID(node_id), **default_node_config)
-                    for node_id in inserted_project.workbench
-                ],
-            )
-            await con.execute(
-                projects_to_products.insert().values(
-                    project_uuid=f"{inserted_project.uuid}",
-                    product_name=product_name,
+            default_project_config.update(**project_overrides)
+            project_workbench = default_project_config.pop("workbench", {})
+
+            async with sqlalchemy_async_engine.connect() as con, con.begin():
+                result = await con.execute(
+                    projects.insert()
+                    .values(**default_project_config)
+                    .returning(sa.literal_column("*"))
                 )
-            )
-        print(f"--> created {inserted_project=}")
-        created_project_ids.append(f"{inserted_project.uuid}")
-        return inserted_project
+
+                inserted_project = ProjectAtDB.model_validate(
+                    {**dict(result.one()._asdict()), "workbench": project_workbench}
+                )
+
+                project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
+                # NOTE: currently no resources is passed until it becomes necessary
+                default_node_config = {
+                    "required_resources": {},
+                    "key": faker.pystr(),
+                    "version": faker.pystr(),
+                    "label": faker.pystr(),
+                }
+                if project_nodes_overrides:
+                    default_node_config.update(project_nodes_overrides)
+
+                await project_nodes_repo.add(
+                    con,
+                    nodes=[
+                        ProjectNodeCreate(
+                            node_id=NodeID(node_id), **default_node_config
+                        )
+                        for node_id in inserted_project.workbench
+                    ],
+                )
+                await con.execute(
+                    projects_to_products.insert().values(
+                        project_uuid=f"{inserted_project.uuid}",
+                        product_name=product_name,
+                    )
+                )
+            log_ctx.logger.info("Created project %s", inserted_project)
+            created_project_ids.append(f"{inserted_project.uuid}")
+            return inserted_project
 
     yield _
 
@@ -143,7 +160,7 @@ async def create_project(
         await con.execute(
             projects.delete().where(projects.c.uuid.in_(created_project_ids))
         )
-    print(f"<-- delete projects {created_project_ids=}")
+    _logger.info("<-- delete projects %s", created_project_ids)
 
 
 @pytest.fixture
