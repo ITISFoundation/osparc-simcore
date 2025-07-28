@@ -45,7 +45,6 @@ class RedisClientSDK:
         return self._client
 
     def __post_init__(self) -> None:
-        self._health_check_task_started_event = asyncio.Event()
         self._client = aioredis.from_url(
             self.redis_dsn,
             # Run 3 retries with exponential backoff strategy source: https://redis.readthedocs.io/en/stable/backoff.html
@@ -62,6 +61,7 @@ class RedisClientSDK:
         )
         # NOTE: connection is done here already
         self._is_healthy = False
+        self._health_check_task_started_event = asyncio.Event()
 
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
@@ -93,6 +93,8 @@ class RedisClientSDK:
         ):
             if self._health_check_task:
                 with log_catch(_logger, reraise=False):
+                    assert self._health_check_task_started_event  # nosec
+                    await self._health_check_task_started_event.wait()
                     await cancel_wait_task(
                         self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
                     )
