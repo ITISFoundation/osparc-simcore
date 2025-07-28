@@ -496,6 +496,7 @@ async def test_open_project(
     assert client.app
 
     # Only create socketio connection for non-anonymous users
+    client_id = None
     if expected != status.HTTP_401_UNAUTHORIZED:
         _, client_id, _ = await create_socketio_connection_with_handlers(client)
 
@@ -737,8 +738,9 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     )
 
     # Only create socketio connection for non-anonymous users
+    client_id = None
     if expected != status.HTTP_401_UNAUTHORIZED:
-        _, client_id_, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(client)
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
@@ -1524,7 +1526,7 @@ async def test_open_shared_project_multiple_users(
             [opened_project_state]
             * 1,  # NOTE: only one call per user since they are part of the everyone group
         )
-        for user_j, client_j, _, sio_j, sio_j_handlers in other_users:
+        for _user_j, client_j, _, _sio_j, sio_j_handlers in other_users:
             # check already opened  by other users which should also notify
             await _assert_project_state_updated(
                 sio_j_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
@@ -1595,7 +1597,7 @@ async def test_open_shared_project_multiple_users(
         [opened_project_state] * 2,
     )
     # check all the other users
-    for user_i, client_i, _, sio_i, sio_i_handlers in other_users:
+    for _user_i, client_i, _, _sio_i, sio_i_handlers in other_users:
         await _assert_project_state_updated(
             sio_i_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
             shared_project,

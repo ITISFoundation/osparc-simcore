@@ -149,6 +149,7 @@ async def test_redis_registry(
     }
     assert not await redis_registry.get_resources(invalid_user_session)
     # find them
+    assert await redis_registry.find_keys([]) == []
     for res in resources:
         assert await redis_registry.find_resources(user_session, res[0]) == [res[1]]
         assert not await redis_registry.find_resources(invalid_user_session, res[0])
