@@ -390,13 +390,6 @@ def pipeline_test_params(
     list_comp_tasks: list[CompTaskAtDB],
     expected_pipeline_details_output: PipelineDetails,
 ) -> PipelineDetailsTestParams:
-    # check the inputs make sense
-    # assert len(set(dag_adjacency)) == len(node_keys) == len(list_comp_tasks)
-    # assert dag_adjacency.keys() == node_keys.keys()
-    # assert len(
-    #     {t.node_id for t in list_comp_tasks}.intersection(node_keys.keys())
-    # ) == len(set(dag_adjacency))
-
     # resolve the naming
     node_name_to_uuid_map = {}
     resolved_dag_adjacency: dict[str, list[str]] = {}
