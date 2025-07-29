@@ -117,25 +117,26 @@ async def _add_frontend_needed_data(
     #   with information from the projects table!
     # NOTE: This part with the projects, should be done in the client code not here!
 
-    prj_names_mapping: dict[ProjectID | NodeID, str] = {}
+    repo = ProjectRepository.instance(engine)
+    valid_project_uuids = [
+        proj_data.uuid
+        async for proj_data in repo.list_valid_projects_in(project_uuids=project_ids)
+    ]
 
-    async for proj_data in ProjectRepository.instance(engine).list_valid_projects_in(
-        include_uuids=project_ids
-    ):
-        prj_names_mapping |= {proj_data.uuid: proj_data.name} | {
-            NodeID(node_id): node_data.label
-            for node_id, node_data in proj_data.workbench.items()
-        }
+    prj_names_mapping = await repo.get_project_id_and_node_id_to_names_map(
+        project_uuids=valid_project_uuids
+    )
 
     clean_data: list[FileMetaData] = []
     for d in data:
         if d.project_id not in prj_names_mapping:
             continue
         assert d.project_id  # nosec
-        d.project_name = prj_names_mapping[d.project_id]
-        if d.node_id in prj_names_mapping:
+        names_mapping = prj_names_mapping[d.project_id]
+        d.project_name = names_mapping[f"{d.project_id}"]
+        if d.node_id in names_mapping:
             assert d.node_id  # nosec
-            d.node_name = prj_names_mapping[d.node_id]
+            d.node_name = names_mapping[f"{d.node_id}"]
         if d.node_name and d.project_name:
             clean_data.append(d)
 
@@ -170,7 +171,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             )
             async for prj_data in ProjectRepository.instance(
                 get_db_engine(self.app)
-            ).list_valid_projects_in(include_uuids=readable_projects_ids)
+            ).list_valid_projects_in(project_uuids=readable_projects_ids)
         ]
 
     async def list_files_in_dataset(
@@ -782,8 +783,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         node_mapping: dict[NodeID, NodeID],
         task_progress: ProgressBarData,
     ) -> None:
-        src_project_uuid: ProjectID = ProjectID(src_project["uuid"])
-        dst_project_uuid: ProjectID = ProjectID(dst_project["uuid"])
+        src_project_uuid = ProjectID(src_project["uuid"])
+        dst_project_uuid = ProjectID(dst_project["uuid"])
         with log_context(
             _logger,
             logging.INFO,
