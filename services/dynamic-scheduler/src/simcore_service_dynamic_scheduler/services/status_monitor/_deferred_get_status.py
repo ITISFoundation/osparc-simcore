@@ -78,6 +78,6 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
             else:
                 _logger.info(
                     "Did not find a project for '%s', skipping status delivery of: %s",
-                    project_id,
+                    node_id,
                     result,
                 )
