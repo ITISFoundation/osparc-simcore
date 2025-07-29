@@ -23,6 +23,7 @@ from aiohttp import web
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
     GetProjectInactivityResponse,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -33,6 +34,10 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectPatch,
 )
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeGet,
+    NodeGetUnknown,
+)
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
@@ -40,7 +45,13 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID
 from models_library.projects_access import Owner
-from models_library.projects_nodes import Node, NodeState, PartialNode
+from models_library.projects_nodes import (
+    Node,
+    NodeLockReason,
+    NodeLockState,
+    NodeState,
+    PartialNode,
+)
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     ProjectRunningState,
@@ -1348,6 +1359,45 @@ async def is_node_id_present_in_any_project_workbench(
     """If the node_id is presnet in one of the projects' workbenche returns True"""
     db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     return await db_legacy.node_id_exists(node_id)
+
+
+async def _get_node_lock_state(
+    app: web.Application, *, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+) -> NodeLockState:
+    node = await _projects_nodes_repository.get(
+        app, project_id=project_uuid, node_id=node_id
+    )
+
+    if _is_node_dynamic(node.key):
+        # if the service is dynamic and running it is locked
+        service = await dynamic_scheduler_service.get_dynamic_service(
+            app, node_id=node_id
+        )
+
+        if isinstance(service, DynamicServiceGet | NodeGet):
+            # service is running
+            return NodeLockState(
+                is_locked=True,
+                locked_by=await users_service.get_user_primary_group_id(
+                    app, TypeAdapter(UserID).validate_python(service.user_id)
+                ),
+                locked_reason=NodeLockReason.OPENED,
+            )
+        if isinstance(service, NodeGetUnknown):
+            # service state is unknown
+            # we should raise an exception here
+            msg = "Node state is unknown"
+            raise RuntimeError(msg)
+        return NodeLockState(is_locked=False)
+
+    # if the service is computational and no pipeline is running it is not locked
+    if await director_v2_service.is_pipeline_running(app, user_id, project_uuid):
+        return NodeLockState(
+            is_locked=True,
+            locked_by=await users_service.get_user_primary_group_id(app, user_id),
+            locked_reason=NodeLockReason.OPENED,
+        )
+    return NodeLockState(is_locked=False)
 
 
 async def _safe_retrieve(
