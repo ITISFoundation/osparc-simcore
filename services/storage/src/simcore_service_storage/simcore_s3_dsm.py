@@ -134,7 +134,7 @@ async def _add_frontend_needed_data(
         assert d.project_id  # nosec
         names_mapping = prj_names_mapping[d.project_id]
         d.project_name = names_mapping[f"{d.project_id}"]
-        if d.node_id in names_mapping:
+        if f"{d.node_id}" in names_mapping:
             assert d.node_id  # nosec
             d.node_name = names_mapping[f"{d.node_id}"]
         if d.node_name and d.project_name:

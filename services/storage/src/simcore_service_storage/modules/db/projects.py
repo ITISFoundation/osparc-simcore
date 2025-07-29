@@ -27,7 +27,7 @@ class ProjectRepository(BaseRepository):
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
                 sa.select(projects).where(
-                    projects.c.uuid.in_([f"{pid}" for pid in project_uuids])
+                    projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
                 )
             ):
                 with suppress(ValidationError):
@@ -43,7 +43,7 @@ class ProjectRepository(BaseRepository):
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
                 sa.select(projects.c.uuid, projects.c.name).where(
-                    projects.c.uuid.in_([f"{pid}" for pid in project_uuids])
+                    projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
                 )
             ):
                 names_map[ProjectID(row.uuid)] = {f"{row.uuid}": row.name}

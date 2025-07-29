@@ -63,7 +63,7 @@ from tenacity.wait import wait_fixed
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
