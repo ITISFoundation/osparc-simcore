@@ -10,6 +10,7 @@ from uuid import UUID
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
     HttpUrl,
@@ -85,6 +86,7 @@ class BaseProjectModel(BaseModel):
     ]
     description: Annotated[
         str,
+        BeforeValidator(none_to_empty_str_pre_validator),
         Field(
             description="longer one-line description about the project",
             examples=["Dabbling in temporal transitions ..."],
@@ -92,6 +94,9 @@ class BaseProjectModel(BaseModel):
     ]
     thumbnail: Annotated[
         HttpUrl | None,
+        BeforeValidator(
+            empty_str_to_none_pre_validator,
+        ),
         Field(
             description="url of the project thumbnail",
             examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -104,15 +109,6 @@ class BaseProjectModel(BaseModel):
     # Pipeline of nodes (SEE projects_nodes.py)
     # FIXME: pedro removes this one
     workbench: Annotated[NodesDict, Field(description="Project's pipeline")]
-
-    # validators
-    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
-        empty_str_to_none_pre_validator
-    )
-
-    _none_description_is_empty = field_validator("description", mode="before")(
-        none_to_empty_str_pre_validator
-    )
 
 
 class ProjectAtDB(BaseProjectModel):
