@@ -1873,6 +1873,7 @@ async def add_project_states_for_user(
         computational_node_states = computation_task.pipeline_details.node_states
 
     for node_uuid, node in project["workbench"].items():
+        assert isinstance(node_uuid, str)  # nosec
         assert isinstance(node, dict)  # nosec
 
         node_lock_state = await _get_node_share_state(
@@ -1890,7 +1891,7 @@ async def add_project_states_for_user(
         node_state_dict = json_loads(
             node_state.model_dump_json(by_alias=True, exclude_unset=True)
         )
-        node.setdefault("state", node_state_dict)
+        node.setdefault("state", {}).update(node_state_dict)
         if "progress" in node["state"] and node["state"]["progress"] is not None:
             # ensure progress is a percentage
             node["progress"] = round(node["state"]["progress"] * 100.0)
