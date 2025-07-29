@@ -67,7 +67,6 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
         ).to_socket_dict()
     elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         await _notify_comp_node_progress(app, rabbit_message)
-        return True
     else:
         message = WebSocketNodeProgress.from_rabbit_message(
             rabbit_message
