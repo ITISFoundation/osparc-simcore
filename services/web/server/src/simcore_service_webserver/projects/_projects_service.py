@@ -1129,7 +1129,7 @@ async def update_project_node_state(
         user_id,
     )
 
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy = ProjectDBAPI.get_from_app_context(app)
     product_name = await db_legacy.get_project_product(project_id)
     await check_user_project_permission(
         app,
@@ -1281,7 +1281,7 @@ async def update_project_node_outputs(
     )
     new_outputs = new_outputs or {}
 
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy = ProjectDBAPI.get_from_app_context(app)
     product_name = await db_legacy.get_project_product(project_id)
     await check_user_project_permission(
         app,
