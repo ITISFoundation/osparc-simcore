@@ -95,7 +95,7 @@ async def _compute_node_modified_state(
         return result
 
     computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
-    return computed_hash != node["run_hash"]
+    return bool(computed_hash != node["run_hash"])
 
 
 async def _compute_node_dependencies_state(graph_data, node_id) -> set[NodeID]:
