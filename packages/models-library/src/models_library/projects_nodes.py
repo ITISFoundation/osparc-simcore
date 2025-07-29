@@ -75,42 +75,40 @@ OutputsDict: TypeAlias = dict[
 UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
-class NodeLockReason(StrAutoEnum):
+class NodeShareStatus(StrAutoEnum):
     OPENING = auto()
     OPENED = auto()
     CLOSING = auto()
 
 
-class NodeLockState(BaseModel):
-    is_locked: Annotated[
+class NodeShareState(BaseModel):
+    locked: Annotated[
         bool,
         Field(
             description="True if the node is locked, False otherwise",
         ),
     ]
 
-    locked_by: Annotated[
-        GroupID | None,
-        Field(description="Group that owns locked the node, None if not locked"),
+    current_user_groupids: Annotated[
+        list[GroupID] | None,
+        Field(
+            description="Group(s) that currently have access to the node (or locked it)"
+        ),
     ] = None
 
-    locked_reason: Annotated[
-        NodeLockReason | None,
+    status: Annotated[
+        NodeShareStatus | None,
         Field(
             description="Reason why the node is locked, None if not locked",
         ),
     ] = None
 
     @model_validator(mode="after")
-    def _validate_lock_state(self) -> "NodeLockState":
-        if self.is_locked and (self.locked_by is None or self.locked_reason is None):
-            msg = "If the node is locked, both 'locked_by' and 'locked_reason' must be set"
+    def _validate_lock_state(self) -> "NodeShareState":
+        if self.locked and (self.current_user_groupids is None or self.status is None):
+            msg = "If the node is locked, both 'current_user_groupids' and 'status' must be set"
             raise ValueError(msg)
-        if not self.is_locked and (
-            self.locked_by is not None or self.locked_reason is not None
-        ):
-            msg = "If the node is not locked, both 'locked_by' and 'locked_reason' must be None"
-            raise ValueError(msg)
+
         return self
 
     @staticmethod
@@ -119,12 +117,17 @@ class NodeLockState(BaseModel):
             {
                 "examples": [
                     {
-                        "is_locked": False,
+                        "locked": False,
                     },
                     {
-                        "is_locked": True,
-                        "locked_by": 666,
-                        "locked_reason": "OPENING",
+                        "locked": True,
+                        "current_user_groupids": [666],
+                        "status": "OPENING",
+                    },
+                    {
+                        "locked": False,
+                        "current_user_groupids": [666, 4563],
+                        "status": "OPENED",
                     },
                 ]
             }
@@ -168,9 +171,9 @@ class NodeState(BaseModel):
         ),
     ] = 0
 
-    lock_state: Annotated[NodeLockState, Field(description="the node's lock state")] = (
-        NodeLockState(is_locked=False, locked_by=None, locked_reason=None)
-    )
+    lock_state: Annotated[
+        NodeShareState, Field(description="the node's lock state")
+    ] = NodeShareState(locked=False, current_user_groupids=None, status=None)
 
     model_config = ConfigDict(
         extra="forbid",

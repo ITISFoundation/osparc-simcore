@@ -47,8 +47,8 @@ from models_library.projects import Project, ProjectID
 from models_library.projects_access import Owner
 from models_library.projects_nodes import (
     Node,
-    NodeLockReason,
-    NodeLockState,
+    NodeShareState,
+    NodeShareStatus,
     NodeState,
     PartialNode,
 )
@@ -1361,9 +1361,9 @@ async def is_node_id_present_in_any_project_workbench(
     return await db_legacy.node_id_exists(node_id)
 
 
-async def _get_node_lock_state(
+async def _get_node_share_state(
     app: web.Application, *, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
-) -> NodeLockState:
+) -> NodeShareState:
     node = await _projects_nodes_repository.get(
         app, project_id=project_uuid, node_id=node_id
     )
@@ -1376,28 +1376,32 @@ async def _get_node_lock_state(
 
         if isinstance(service, DynamicServiceGet | NodeGet):
             # service is running
-            return NodeLockState(
-                is_locked=True,
-                locked_by=await users_service.get_user_primary_group_id(
-                    app, TypeAdapter(UserID).validate_python(service.user_id)
-                ),
-                locked_reason=NodeLockReason.OPENED,
+            return NodeShareState(
+                locked=True,
+                current_user_groupids=[
+                    await users_service.get_user_primary_group_id(
+                        app, TypeAdapter(UserID).validate_python(service.user_id)
+                    )
+                ],
+                status=NodeShareStatus.OPENED,
             )
         if isinstance(service, NodeGetUnknown):
             # service state is unknown
             # we should raise an exception here
             msg = "Node state is unknown"
             raise RuntimeError(msg)
-        return NodeLockState(is_locked=False)
+        return NodeShareState(locked=False)
 
     # if the service is computational and no pipeline is running it is not locked
     if await director_v2_service.is_pipeline_running(app, user_id, project_uuid):
-        return NodeLockState(
-            is_locked=True,
-            locked_by=await users_service.get_user_primary_group_id(app, user_id),
-            locked_reason=NodeLockReason.OPENED,
+        return NodeShareState(
+            locked=True,
+            current_user_groupids=[
+                await users_service.get_user_primary_group_id(app, user_id)
+            ],
+            status=NodeShareStatus.OPENED,
         )
-    return NodeLockState(is_locked=False)
+    return NodeShareState(locked=False)
 
 
 async def _safe_retrieve(
@@ -1871,7 +1875,7 @@ async def add_project_states_for_user(
     for node_uuid, node in project["workbench"].items():
         assert isinstance(node, dict)  # nosec
 
-        node_lock_state = await _get_node_lock_state(
+        node_lock_state = await _get_node_share_state(
             app,
             user_id=user_id,
             project_uuid=project["uuid"],
