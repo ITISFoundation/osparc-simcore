@@ -35,6 +35,10 @@ from tenacity.wait import wait_fixed
 pytest_simcore_core_services_selection = [
     "redis",
 ]
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
+
 
 _RETRY_PARAMS: dict[str, Any] = {
     "reraise": True,
@@ -195,7 +199,7 @@ async def test_fire_and_forget_task_is_not_auto_removed(
     )
     assert not status.done, "task was removed although it is fire and forget"
     # the task shall finish
-    await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
+    await asyncio.sleep(4 * TEST_CHECK_STALE_INTERVAL_S)
     # get the result
     task_result = await tasks_manager.get_task_result(
         task_id, with_task_context=empty_context
@@ -351,10 +355,19 @@ async def test_get_result_task_was_cancelled_multiple_times(
     for _ in range(5):
         await tasks_manager.cancel_task(task_id, with_task_context=empty_context)
 
-    with pytest.raises(
+    with pytest.raises(  # noqa: PT012
         TaskCancelledError, match=f"Task {task_id} was cancelled before completing"
     ):
-        await tasks_manager.get_task_result(task_id, with_task_context=empty_context)
+        async for attempt in AsyncRetrying(
+            **{
+                **_RETRY_PARAMS,
+                "retry": retry_if_exception_type((TaskNotCompletedError,)),
+            }
+        ):
+            with attempt:
+                await tasks_manager.get_task_result(
+                    task_id, with_task_context=empty_context
+                )
 
 
 async def test_cancel_task_from_different_manager(

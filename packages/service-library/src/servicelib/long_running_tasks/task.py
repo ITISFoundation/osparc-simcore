@@ -1,8 +1,10 @@
 import asyncio
+import base64
 import datetime
 import functools
 import inspect
 import logging
+import pickle
 import traceback
 import urllib.parse
 from contextlib import suppress
@@ -97,6 +99,14 @@ async def _get_tasks_to_remove(
                     (tracked_task.task_id, tracked_task.task_context)
                 )
     return tasks_to_remove
+
+
+def _error_to_string(e: Exception) -> str:
+    return base64.b85encode(pickle.dumps(e)).decode("utf-8")
+
+
+def _error_from_string(error_str: str) -> Exception:
+    return pickle.loads(base64.b85decode(error_str))  # noqa: S301
 
 
 class TasksManager:  # pylint:disable=too-many-instance-attributes
@@ -267,10 +277,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     # task was not completed try again next time and see if it is done
                     continue
                 except asyncio.CancelledError:
-                    # the task was cancelled
                     task_data.result_field = ResultField(
-                        error=TaskCancelledError.__name__
+                        error=_error_to_string(TaskCancelledError(task_id=task_id))
                     )
+                except Exception as e:  # pylint:disable=broad-except
+                    task_data.result_field = ResultField(error=_error_to_string(e))
 
                 await self._tasks_data.set_task_data(task_id, task_data)
 
@@ -357,11 +368,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         if not tracked_task.is_done or tracked_task.result_field is None:
             raise TaskNotCompletedError(task_id=task_id)
 
-        if (
-            tracked_task.result_field.error is not None
-            and tracked_task.result_field.error == TaskCancelledError.__name__
-        ):
-            raise TaskCancelledError(task_id=task_id)
+        if tracked_task.result_field.error is not None:
+            raise _error_from_string(tracked_task.result_field.error)
 
         return tracked_task.result_field.result
 
