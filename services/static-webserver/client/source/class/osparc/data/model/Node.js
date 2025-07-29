@@ -718,7 +718,7 @@ qx.Class.define("osparc.data.model.Node", {
         });
       } else {
         this.fireDataEvent("projectDocumentChanged", {
-          "op": "delete",
+          "op": "remove",
           "path": `/ui/workbench/${this.getNodeId()}/marker`,
           "osparc-resource": "ui",
         });

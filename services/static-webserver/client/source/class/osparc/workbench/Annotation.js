@@ -276,14 +276,8 @@ qx.Class.define("osparc.workbench.Annotation", {
       const serializeData = {
         type: this.getType(),
         attributes: this.getAttributes(),
+        color: this.getColor(), // TYPES.NOTE and TYPES.CONVERSATION do not need a color but backend expects it
       };
-      if ([
-        this.self().TYPES.RECT,
-        this.self().TYPES.TEXT,
-        this.self().TYPES.NOTE,
-      ].includes(this.getType())) {
-        serializeData.color = this.getColor();
-      }
       return serializeData;
     }
   }
