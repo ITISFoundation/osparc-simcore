@@ -632,7 +632,7 @@ async def test_compute_pipeline_details(
                     inputs=None,
                     image=Image(name="simcore/services/comp/fake", tag="1.3.4"),
                     state=RunningState.NOT_STARTED,
-                    internal_id=3,
+                    internal_id=2,
                     node_class=NodeClass.COMPUTATIONAL,
                     created=datetime.datetime.now(tz=datetime.UTC),
                     modified=datetime.datetime.now(tz=datetime.UTC),
