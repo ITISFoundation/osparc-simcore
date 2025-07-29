@@ -134,7 +134,7 @@ async def purchase_licensed_item(
     # Check whether wallet has enough credits
     if wallet.available_credits - pricing_unit.current_cost_per_unit < 0:
         raise WalletNotEnoughCreditsError(
-            reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
+            details=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
         )
 
     user = await users_service.get_user(app, user_id=user_id)

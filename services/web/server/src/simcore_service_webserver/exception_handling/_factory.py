@@ -145,7 +145,7 @@ def create_http_error_exception_handlers_map() -> ExceptionHandlersMap:
     """
     exc_handlers_map: ExceptionHandlersMap = {
         exc_type: create_exception_handler_from_http_info(
-            status_code=code, msg_template="{reason}"
+            status_code=code, msg_template="{text}"
         )
         for code, exc_type in _STATUS_CODE_TO_HTTP_ERRORS.items()
     }

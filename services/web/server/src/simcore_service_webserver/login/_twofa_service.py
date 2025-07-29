@@ -134,7 +134,7 @@ async def send_sms_code(
 
     except TwilioException as exc:
         raise SendingVerificationSmsError(
-            reason=f"Could not send SMS to {mask_phone_number(phone_number)}",
+            details=f"Could not send SMS to {mask_phone_number(phone_number)}",
             user_id=user_id,
             twilio_error=exc,
         ) from exc
@@ -176,7 +176,7 @@ async def send_email_code(
         )
     except Exception as exc:
         raise SendingVerificationEmailError(
-            reason=f"Could not send email to {user_email}",
+            details=f"Could not send email to {user_email}",
             user_id=user_id,
             user_email=user_email,
             email_error=exc,
