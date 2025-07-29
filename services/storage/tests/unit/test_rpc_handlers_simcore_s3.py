@@ -220,13 +220,17 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with 1 large file
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, _, src_projects_list = await random_project_with_files(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -313,13 +317,17 @@ async def test_copy_folders_from_valid_project(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with some files
-    src_project, src_projects_list = await random_project_with_files(project_params)
+    src_project, _, src_projects_list = await random_project_with_files(project_params)
     # 2. create a dst project without files
     dst_project, nodes_map = clone_project_data(src_project)
     dst_project = await create_project(**dst_project)
@@ -592,14 +600,18 @@ async def test_start_export_data(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
     task_progress_spy: Mock,
     export_as: Literal["path", "download_link"],
 ):
-    _, src_projects_list = await random_project_with_files(project_params)
+    _, _, src_projects_list = await random_project_with_files(project_params)
 
     all_available_files: set[SimcoreS3FileID] = set()
     for x in src_projects_list.values():

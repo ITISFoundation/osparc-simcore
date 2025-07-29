@@ -1518,14 +1518,18 @@ async def test_listing_with_project_id_filter(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     uuid_filter: bool,
     project_params: ProjectWithFilesParams,
 ):
-    src_project, src_projects_list = await random_project_with_files(project_params)
-    _, _ = await random_project_with_files(project_params)
+    src_project, _, src_projects_list = await random_project_with_files(project_params)
+    await random_project_with_files(project_params)
     assert len(src_projects_list.keys()) > 0
     node_id = next(iter(src_projects_list.keys()))
     project_files_in_db = set(src_projects_list[node_id])
