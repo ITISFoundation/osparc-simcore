@@ -651,20 +651,6 @@ async def test_compute_pipeline_details(
                     modified=datetime.datetime.now(tz=datetime.UTC),
                     last_heartbeat=None,
                 ),
-                CompTaskAtDB.model_construct(
-                    project_id=uuid4(),
-                    node_id="node_3",
-                    schema=NodeSchema(inputs={}, outputs={}),
-                    inputs=None,
-                    image=Image(name="simcore/services/comp/fake", tag="1.3.4"),
-                    state=RunningState.NOT_STARTED,
-                    internal_id=3,
-                    node_class=NodeClass.COMPUTATIONAL,
-                    created=datetime.datetime.now(tz=datetime.UTC),
-                    modified=datetime.datetime.now(tz=datetime.UTC),
-                    last_heartbeat=None,
-                    progress=1.00,
-                ),
             ],
             PipelineDetails.model_construct(
                 adjacency_list={
@@ -683,19 +669,20 @@ async def test_compute_pipeline_details(
                     ),
                 },
             ),
-            id="proper dag",
+            id="dag with missing tasks (node 3 is missing, so it is not skipped in the pipeline details)",
         )
     ],
+)
+@pytest.mark.acceptance_test(
+    "For https://github.com/ITISFoundation/osparc-simcore/issues/8172"
 )
 async def test_compute_pipeline_details_with_missing_tasks(
     pipeline_test_params: PipelineDetailsTestParams,
 ):
-    # remove one task
-    incomplete_comp_tasks = pipeline_test_params.comp_tasks[:-1]
     received_details = await compute_pipeline_details(
         pipeline_test_params.complete_dag,
         pipeline_test_params.pipeline_dag,
-        incomplete_comp_tasks,
+        pipeline_test_params.comp_tasks,
     )
     assert (
         received_details.model_dump()
