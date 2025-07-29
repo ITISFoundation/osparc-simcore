@@ -1860,7 +1860,7 @@ async def add_project_states_for_user(
     )
     # for templates: the project is never locked and never opened. also the running state is always unknown
     share_state = await _get_project_share_state(user_id, project["uuid"], app)
-    running_state = RunningState.UNKNOWN
+    project_running_state = RunningState.UNKNOWN
 
     if not is_template and (
         computation_task := await director_v2_service.get_computation_task(
@@ -1868,7 +1868,7 @@ async def add_project_states_for_user(
         )
     ):
         # get the running state
-        running_state = computation_task.state
+        project_running_state = computation_task.state
         # get the nodes individual states
         for (
             node_id,
@@ -1884,8 +1884,21 @@ async def add_project_states_for_user(
             prj_node_progress = node_state_dict.get("progress", None) or 0
             prj_node.update({"progress": round(prj_node_progress * 100.0)})
 
+    for node_uuid, node in project["workbench"].items():
+        assert isinstance(node, dict)  # nosec
+        node_lock_state = await _get_node_lock_state(
+            app,
+            user_id=user_id,
+            project_uuid=project["uuid"],
+            node_id=NodeID(node_uuid),
+        )
+        node.setdefault("state", {}).setdefault(
+            "lock_state",
+            node_lock_state.model_dump(mode="json", by_alias=True, exclude_unset=True),
+        )
+
     project["state"] = ProjectState(
-        share_state=share_state, state=ProjectRunningState(value=running_state)
+        share_state=share_state, state=ProjectRunningState(value=project_running_state)
     ).model_dump(by_alias=True, exclude_unset=True)
     return project
 
