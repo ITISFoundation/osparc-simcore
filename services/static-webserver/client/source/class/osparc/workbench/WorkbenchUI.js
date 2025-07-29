@@ -1070,7 +1070,9 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     clearNode(nodeId) {
       const nodeUI = this.getNodeUI(nodeId);
-      this.__clearNodeUI(nodeUI);
+      if (nodeUI) {
+        this.__clearNodeUI(nodeUI);
+      }
     },
 
     clearEdge: function(edgeId) {
