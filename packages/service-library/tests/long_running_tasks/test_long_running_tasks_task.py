@@ -7,7 +7,7 @@
 import asyncio
 import urllib.parse
 from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Any, Final
 
@@ -83,8 +83,8 @@ def empty_context() -> TaskContext:
     return {}
 
 
-@pytest.fixture
-async def tasks_manager(
+@asynccontextmanager
+async def get_tasks_manager(
     redis_service: RedisSettings,
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
@@ -97,12 +97,24 @@ async def tasks_manager(
         namespace="test",
     )
     await tasks_manager.setup()
-    yield tasks_manager
-    await tasks_manager.teardown()
 
+    yield tasks_manager
+
+    await tasks_manager.teardown()
     # triggers cleanup of all redis data
     async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):
         pass
+
+
+@pytest.fixture
+async def tasks_manager(
+    redis_service: RedisSettings,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+) -> AsyncIterator[TasksManager]:
+    async with get_tasks_manager(redis_service, get_redis_client_sdk) as manager:
+        yield manager
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
@@ -338,6 +350,45 @@ async def test_get_result_task_was_cancelled_multiple_times(
         await tasks_manager.get_task_result(task_id, with_task_context=empty_context)
 
 
+async def test_cancel_task_from_different_manager(
+    redis_service: RedisSettings,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    empty_context: TaskContext,
+):
+    async with get_tasks_manager(
+        redis_service, get_redis_client_sdk
+    ) as manager_1, get_tasks_manager(
+        redis_service, get_redis_client_sdk
+    ) as manager_2, get_tasks_manager(
+        redis_service, get_redis_client_sdk
+    ) as manager_3:
+        task_id = await lrt_api.start_task(
+            manager_1,
+            a_background_task.__name__,
+            raise_when_finished=False,
+            total_sleep=1,
+            task_context=empty_context,
+        )
+
+        # wati for task to complete
+        for manager in (manager_1, manager_2, manager_3):
+            status = await manager.get_task_status(task_id, empty_context)
+            assert status.done is False
+
+        async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+            with attempt:
+                for manager in (manager_1, manager_2, manager_3):
+                    status = await manager.get_task_status(task_id, empty_context)
+                    assert status.done is True
+
+        # check all provide the same result
+        for manager in (manager_1, manager_2, manager_3):
+            task_result = await manager.get_task_result(task_id, empty_context)
+            assert task_result == 42
+
+
 async def test_remove_task(tasks_manager: TasksManager, empty_context: TaskContext):
     task_id = await lrt_api.start_task(
         tasks_manager,
@@ -357,7 +408,6 @@ async def test_remove_task(tasks_manager: TasksManager, empty_context: TaskConte
 async def test_remove_task_with_task_context(
     tasks_manager: TasksManager, empty_context: TaskContext
 ):
-    TASK_CONTEXT = {"some_context": "some_value"}
     task_id = await lrt_api.start_task(
         tasks_manager,
         a_background_task.__name__,
