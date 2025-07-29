@@ -493,12 +493,12 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
         total_sleep=10,
         task_context=empty_context,
     )
-    await tasks_manager._tasks_data.set_as_cancelled(
+    await tasks_manager._tasks_data.set_as_cancelled(  # noqa: SLF001
         task_id, with_task_context=empty_context
     )
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-        with attempt:
+        with attempt:  # noqa: SIM117
             with pytest.raises(TaskNotFoundError):
                 assert (
                     await tasks_manager.get_task_status(task_id, empty_context) is None
