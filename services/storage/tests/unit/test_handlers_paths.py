@@ -31,6 +31,7 @@ from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -462,34 +463,46 @@ async def test_list_paths_with_display_name_containing_slashes(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     sqlalchemy_async_engine: AsyncEngine,
 ):
-    project, list_of_files = with_random_project_with_files
+    project, nodes, list_of_files = with_random_project_with_files
     project_name_with_slashes = "soméà$èq¨thing with/ slas/h/es/"
     node_name_with_non_ascii = "my node / is not ascii: éàèù"
-    # adjust project to contain "difficult" characters
+
     async with sqlalchemy_async_engine.begin() as conn:
+        # update project to contain "difficult" characters
         result = await conn.execute(
             sa.update(projects)
             .where(projects.c.uuid == project["uuid"])
             .values(name=project_name_with_slashes)
-            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+            .returning(projects.c.name)
         )
         row = result.one()
         assert row.name == project_name_with_slashes
-        project_workbench = row.workbench
-        assert len(project_workbench) == 1
-        node = next(iter(project_workbench.values()))
-        node["label"] = node_name_with_non_ascii
-        result = await conn.execute(
-            sa.update(projects)
+
+        # update a node (first occurrence) to contain "difficult" characters
+        subquery = (
+            sa.select(projects_nodes.c.node_id)
+            .select_from(projects_nodes.join(projects))
             .where(projects.c.uuid == project["uuid"])
-            .values(workbench=project_workbench)
-            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+            .order_by(projects_nodes.c.node_id)
+            .limit(1)
         )
-        row = result.one()
+        first_row = await conn.execute(subquery)
+        first_id = first_row.scalar_one_or_none()
+
+        if first_id:
+            result = await conn.execute(
+                sa.update(projects_nodes)
+                .where(projects_nodes.c.node_id == first_id)
+                .values(label=node_name_with_non_ascii)
+                .returning(projects_nodes.c.label)
+            )
+            row = result.one()
+            assert row.label == node_name_with_non_ascii
 
     # ls the root
     file_filter = None
@@ -511,7 +524,7 @@ async def test_list_paths_with_display_name_containing_slashes(
     # ls the nodes to ensure / is still there between project and node
     file_filter = Path(project["uuid"])
     expected_paths = sorted(
-        ((file_filter / node_key, False) for node_key in project["workbench"]),
+        ((file_filter / f"{node_id}", False) for node_id in nodes),
         key=lambda x: x[0],
     )
     assert len(expected_paths) == 1, "test configuration problem"
@@ -530,7 +543,7 @@ async def test_list_paths_with_display_name_containing_slashes(
     ), "display path parts should be url encoded"
 
     # ls in the node workspace
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
