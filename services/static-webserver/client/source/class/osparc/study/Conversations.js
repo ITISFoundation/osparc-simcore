@@ -221,6 +221,12 @@ qx.Class.define("osparc.study.Conversations", {
 
     __addToPages: function(conversationPage) {
       const conversationsLayout = this.getChildControl("conversations-layout");
+      if (conversationsLayout.getChildren().length === 1) {
+        // remove the temporary conversation page
+        if (conversationsLayout.getChildren()[0].getConversationId() === null) {
+          conversationsLayout.remove(conversationsLayout.getChildren()[0]);
+        }
+      }
       conversationsLayout.add(conversationPage);
 
       if (this.__newConversationButton === null) {
@@ -246,8 +252,11 @@ qx.Class.define("osparc.study.Conversations", {
         conversationsLayout.getChildControl("bar").add(newConversationButton);
       }
       // remove and add to move to last position
-      conversationsLayout.getChildControl("bar").remove(this.__newConversationButton);
-      conversationsLayout.getChildControl("bar").add(this.__newConversationButton);
+      const bar = conversationsLayout.getChildControl("bar");
+      if (bar.indexOf(this.__newConversationButton) > -1) {
+        bar.remove(this.__newConversationButton);
+      }
+      bar.add(this.__newConversationButton);
     },
 
     __removeConversationPage: function(conversationId, changeSelection = false) {
