@@ -896,15 +896,23 @@ qx.Class.define("osparc.data.model.Workbench", {
       // not solved yet, reload the site to avoid issues
       window.location.reload();
 
-      // this is an async operation with an await
       const promises = nodesAdded.map(nodeId => {
-        const nodeData = workbenchPatchesByNode[nodeId][0].value;
+        const addNodePatch = workbenchPatchesByNode[nodeId].find(workbenchPatch => {
+          const pathParts = workbenchPatch.path.split("/");
+          return pathParts.length === 3 && workbenchPatch.op === "add";
+        });
+        const nodeData = addNodePatch.value;
+        // delete the node "add" from the workbenchPatchesByNode
+        const index = workbenchPatchesByNode[nodeId].indexOf(addNodePatch);
+        if (index > -1) {
+          workbenchPatchesByNode[nodeId].splice(index, 1);
+        }
+        // this is an async operation with an await
         return this.createNode(nodeData["key"], nodeData["version"]);
       });
       return Promise.all(promises)
         .then(nodes => {
           // may populate it
-          // OM? delete the node add from the workbenchPatchesByNode
           // after adding nodes, we can apply the patches
           this.__updateNodesFromPatches(workbenchPatchesByNode);
         })
