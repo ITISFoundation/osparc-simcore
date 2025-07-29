@@ -493,13 +493,14 @@ async def test_create_and_delete_folders_from_project(
     product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, dict[str, Path | str]]],
     ],
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     mock_datcore_download,
     num_concurrent_calls: int,
 ):
-    project_in_db, _ = with_random_project_with_files
+    project_in_db, _, _ = with_random_project_with_files
     # NOTE: here the point is to NOT have a limit on the number of calls!!
     await asyncio.gather(
         *[
