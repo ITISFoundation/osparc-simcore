@@ -1442,18 +1442,31 @@ qx.Class.define("osparc.data.model.Node", {
             this.__setInputData(currentInputs);
             break;
           }
-          case "inputsUnits":
-            // this is never transmitted
+          case "inputsUnits": {
+            // this is never transmitted by the frontend
             const updatedPortKey = path.split("/")[4];
             const currentInputUnits = this.__getInputUnits();
             currentInputUnits[updatedPortKey] = value;
             this.__setInputUnits(currentInputUnits);
             break;
+          }
           case "inputNodes":
           case "inputsRequired":
-          case "outputs":
-          case "progress":
             console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
+            break;
+          case "outputs": {
+            const updatedPortKey = path.split("/")[4];
+            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputsData();
+            currentOutputs[updatedPortKey] = value;
+            this.setOutputData(currentOutputs);
+            break;
+          }
+          case "progress":
+            if (this.isFilePicker()) {
+              this.getStatus().setProgress(value);
+            } else {
+              console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
+            }
             break;
           default:
             if (nodePropertyKeys.includes(nodeProperty)) {
