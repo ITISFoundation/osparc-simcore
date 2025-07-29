@@ -182,7 +182,7 @@ async def test_list_paths_pagination(
 
     # ls in the workspace (S3-based)
     # ls in the workspace
-    selected_node_id = random.choice(list(nodes.keys()))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
@@ -246,7 +246,7 @@ async def test_list_paths_pagination_large_page(
     ],
 ):
     project, nodes, list_of_files = with_random_project_with_files
-    selected_node_id = random.choice(list(nodes.keys()))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
@@ -669,7 +669,7 @@ async def test_path_compute_size(
     )
 
     # get size of one of the nodes
-    selected_node_id = random.choice(list(nodes.keys()))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     path = Path(project["uuid"]) / f"{selected_node_id}"
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
