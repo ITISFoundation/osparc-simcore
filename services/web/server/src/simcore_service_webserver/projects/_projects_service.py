@@ -262,7 +262,7 @@ async def get_project_for_user(
     )
     workspace_is_private = user_project_access.workspace_id is None
 
-    project, project_type = await db.get_project_dict_and_type(
+    project, _project_type = await db.get_project_dict_and_type(
         project_uuid,
     )
 
