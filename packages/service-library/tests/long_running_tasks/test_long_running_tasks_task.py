@@ -295,7 +295,14 @@ async def test_get_result(tasks_manager: TasksManager, empty_context: TaskContex
     task_id = await lrt_api.start_task(
         tasks_manager, fast_background_task.__name__, task_context=empty_context
     )
-    await asyncio.sleep(0.1)
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            status = await tasks_manager.get_task_status(
+                task_id, with_task_context=empty_context
+            )
+            assert status.done is True
+
     result = await tasks_manager.get_task_result(
         task_id, with_task_context=empty_context
     )
