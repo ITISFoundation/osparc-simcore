@@ -1861,41 +1861,35 @@ async def add_project_states_for_user(
     # for templates: the project is never locked and never opened. also the running state is always unknown
     share_state = await _get_project_share_state(user_id, project["uuid"], app)
     project_running_state = RunningState.UNKNOWN
-
-    if not is_template and (
-        computation_task := await director_v2_service.get_computation_task(
-            app, user_id, project["uuid"]
-        )
+    computational_node_states: dict[NodeID, NodeState] = {}
+    if computation_task := await director_v2_service.get_computation_task(
+        app, user_id, project["uuid"]
     ):
-        # get the running state
         project_running_state = computation_task.state
-        # get the nodes individual states
-        for (
-            node_id,
-            node_state,
-        ) in computation_task.pipeline_details.node_states.items():
-            prj_node = project["workbench"].get(str(node_id))
-            if prj_node is None:
-                continue
-            node_state_dict = json_loads(
-                node_state.model_dump_json(by_alias=True, exclude_unset=True)
-            )
-            prj_node.setdefault("state", {}).update(node_state_dict)
-            prj_node_progress = node_state_dict.get("progress", None) or 0
-            prj_node.update({"progress": round(prj_node_progress * 100.0)})
+        computational_node_states = computation_task.pipeline_details.node_states
 
     for node_uuid, node in project["workbench"].items():
         assert isinstance(node, dict)  # nosec
+
         node_lock_state = await _get_node_lock_state(
             app,
             user_id=user_id,
             project_uuid=project["uuid"],
             node_id=NodeID(node_uuid),
         )
-        node.setdefault("state", {}).setdefault(
-            "lock_state",
-            node_lock_state.model_dump(mode="json", by_alias=True, exclude_unset=True),
+
+        # create complete node state
+        node_state = computational_node_states.get(
+            NodeID(node_uuid), NodeState(current_status=RunningState.UNKNOWN)
         )
+        node_state.lock_state = node_lock_state
+        node_state_dict = json_loads(
+            node_state.model_dump_json(by_alias=True, exclude_unset=True)
+        )
+        node.setdefault("state", node_state_dict)
+        if "progress" in node["state"] and node["state"]["progress"] is not None:
+            # ensure progress is a percentage
+            node["progress"] = round(node["state"]["progress"] * 100.0)
 
     project["state"] = ProjectState(
         share_state=share_state, state=ProjectRunningState(value=project_running_state)
