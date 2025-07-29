@@ -8,6 +8,7 @@ from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
+from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 
 from ..._meta import api_version_prefix as VTAG
 from ...login.decorators import login_required
@@ -44,11 +45,14 @@ async def move_project_to_workspace(request: web.Request):
         _ProjectWorkspacesPathParams, request
     )
 
+    client_session_id: str | None = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+
     await _workspaces_service.move_project_into_workspace(
         app=request.app,
         user_id=req_ctx.user_id,
         project_id=path_params.project_id,
         workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
+        client_session_id=client_session_id,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

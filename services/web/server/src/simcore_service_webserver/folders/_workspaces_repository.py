@@ -26,6 +26,7 @@ async def move_folder_into_workspace(
     folder_id: FolderID,
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
+    client_session_id: str | None = None,
 ) -> None:
     # 1. User needs to have delete permission on source folder
     folder_db = await _folders_repository.get(
@@ -84,6 +85,7 @@ async def move_folder_into_workspace(
                 project_uuid=project_id,
                 patch_project_data={"workspace_id": workspace_id},
                 user_primary_gid=user["primary_gid"],
+                client_session_id=client_session_id,
             )
 
         # 5. BATCH update of folders with workspace_id

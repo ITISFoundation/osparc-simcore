@@ -34,6 +34,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectPatch,
 )
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
 from models_library.groups import GroupID
@@ -122,6 +123,7 @@ from ..socketio.messages import (
     send_message_to_standard_group,
     send_message_to_user,
 )
+from ..socketio.server import get_socket_server
 from ..storage import api as storage_service
 from ..user_preferences import user_preferences_service
 from ..user_preferences.user_preferences_service import (
@@ -169,9 +171,7 @@ from .models import ProjectDBGet, ProjectDict, ProjectPatchInternalExtended
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
-log = logging.getLogger(__name__)
-
-PROJECT_REDIS_LOCK_KEY: str = "project:{}"
+_logger = logging.getLogger(__name__)
 
 
 async def patch_project_and_notify_users(
@@ -180,6 +180,7 @@ async def patch_project_and_notify_users(
     project_uuid: ProjectID,
     patch_project_data: dict[str, Any],
     user_primary_gid: GroupID,
+    client_session_id: str | None,
 ) -> None:
     """
     Patches a project and notifies users involved in the project with version control.
@@ -248,6 +249,7 @@ async def patch_project_and_notify_users(
         app=app,
         project_id=project_uuid,
         user_primary_gid=user_primary_gid,
+        client_session_id=client_session_id,
         version=document_version,
         document=project_document,
     )
@@ -335,17 +337,17 @@ async def get_project_for_user(
 async def get_project_type(
     app: web.Application, project_uuid: ProjectID
 ) -> ProjectType:
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    assert db  # nosec
-    return await db.get_project_type(project_uuid)
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db_legacy  # nosec
+    return await db_legacy.get_project_type(project_uuid)
 
 
 async def get_project_dict_legacy(
     app: web.Application, project_uuid: ProjectID
 ) -> ProjectDict:
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    assert db  # nosec
-    project, _ = await db.get_project_dict_and_type(
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    assert db_legacy  # nosec
+    project, _ = await db_legacy.get_project_dict_and_type(
         f"{project_uuid}",
     )
     return project
@@ -394,12 +396,19 @@ async def patch_project_for_user(
     project_uuid: ProjectID,
     project_patch: ProjectPatch | ProjectPatchInternalExtended,
     product_name: ProductName,
+    client_session_id: str | None,
 ):
+    # client_session_id (str | None): The session ID of the frontend client making the request.
+    # This is used to distinguish between multiple sessions a user may have open.
+    # In scenarios with optimistic UI updates, if a change is made from one session,
+    # that session can ignore the notification it published to all sessions (including other users),
+    # preventing redundant updates in the originating session.
+
     patch_project_data = project_patch.to_domain_model()
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     # 1. Get project
-    project_db = await db.get_project_db(project_uuid=project_uuid)
+    project_db = await db_legacy.get_project_db(project_uuid=project_uuid)
 
     # 2. Check user permissions
     _user_project_access_rights = await check_user_project_permission(
@@ -456,6 +465,7 @@ async def patch_project_for_user(
         project_uuid=project_uuid,
         patch_project_data=patch_project_data,
         user_primary_gid=current_user["primary_gid"],
+        client_session_id=client_session_id,
     )
 
 
@@ -516,7 +526,7 @@ async def submit_delete_project_task(
             user_id,
             simcore_user_agent,
             remove_project_dynamic_services,
-            log,
+            _logger,
         )
     return task
 
@@ -612,7 +622,7 @@ async def update_project_node_resources_from_hardware_info(
                     service_to_resources[1].resources["RAM"].limit
                 ),
             )
-            log.debug(
+            _logger.debug(
                 "the most hungry service is %s",
                 f"{scalable_service_name=}:{hungry_service_resources}",
             )
@@ -750,7 +760,7 @@ async def _start_dynamic_service(  # noqa: C901
         )
     except ProjectNodeRequiredInputsNotSetError as e:
         if graceful_start:
-            log.info(
+            _logger.info(
                 "Did not start '%s' because of missing required inputs: %s",
                 node_uuid,
                 e,
@@ -940,8 +950,9 @@ async def add_project_node(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     service_id: str | None,
+    client_session_id: str | None,
 ) -> NodeID:
-    log.debug(
+    _logger.debug(
         "starting node %s:%s in project %s for user %s",
         service_key,
         service_version,
@@ -962,9 +973,9 @@ async def add_project_node(
     default_resources = await catalog_service.get_service_resources(
         request.app, user_id, service_key, service_version
     )
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    assert db  # nosec
-    await db.add_project_node(
+    db_legacy: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+    assert db_legacy  # nosec
+    await db_legacy.add_project_node(
         user_id,
         ProjectID(project["uuid"]),
         ProjectNodeCreate(
@@ -982,6 +993,7 @@ async def add_project_node(
             }
         ),
         product_name,
+        client_session_id=client_session_id,
     )
 
     # also ensure the project is updated by director-v2 since services
@@ -1075,8 +1087,9 @@ async def delete_project_node(
     node_uuid: NodeIDStr,
     product_name: ProductName,
     product_api_base_url: str,
+    client_session_id: str | None,
 ) -> None:
-    log.debug(
+    _logger.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
@@ -1114,9 +1127,11 @@ async def delete_project_node(
     )
 
     # remove the node from the db
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    assert db  # nosec
-    await db.remove_project_node(user_id, project_uuid, NodeID(node_uuid))
+    db_legacy: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    assert db_legacy  # nosec
+    await db_legacy.remove_project_node(
+        user_id, project_uuid, NodeID(node_uuid), client_session_id=client_session_id
+    )
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
@@ -1130,9 +1145,11 @@ async def delete_project_node(
 async def update_project_linked_product(
     app: web.Application, project_id: ProjectID, product_name: str
 ) -> None:
-    with log_context(log, level=logging.DEBUG, msg="updating project linked product"):
-        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-        await db.upsert_project_linked_product(project_id, product_name)
+    with log_context(
+        _logger, level=logging.DEBUG, msg="updating project linked product"
+    ):
+        db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        await db_legacy.upsert_project_linked_product(project_id, product_name)
 
 
 async def update_project_node_state(
@@ -1141,16 +1158,17 @@ async def update_project_node_state(
     project_id: ProjectID,
     node_id: NodeID,
     new_state: str,
+    client_session_id: str | None,
 ) -> dict:
-    log.debug(
+    _logger.debug(
         "updating node %s current state in project %s for user %s",
         node_id,
         project_id,
         user_id,
     )
 
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    product_name = await db.get_project_product(project_id)
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    product_name = await db_legacy.get_project_product(project_id)
     await check_user_project_permission(
         app,
         project_id=project_id,
@@ -1161,12 +1179,13 @@ async def update_project_node_state(
 
     # Delete this once workbench is removed from the projects table
     # See: https://github.com/ITISFoundation/osparc-simcore/issues/7046
-    await db.update_project_node_data(
+    await db_legacy.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
         product_name=None,
         new_node_data={"state": {"currentStatus": new_state}},
+        client_session_id=client_session_id,
     )
 
     await _projects_nodes_repository.update(
@@ -1183,8 +1202,8 @@ async def update_project_node_state(
 
 
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    return await db.is_hidden(project_id)
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db_legacy.is_hidden(project_id)
 
 
 async def patch_project_node(
@@ -1196,12 +1215,13 @@ async def patch_project_node(
     project_id: ProjectID,
     node_id: NodeID,
     partial_node: PartialNode,
+    client_session_id: str | None,
 ) -> None:
     _node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(
         mode="json", exclude_unset=True, by_alias=True
     )
 
-    _projects_repository = ProjectDBAPI.get_from_app_context(app)
+    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(app)
 
     # 1. Check user permissions
     await check_user_project_permission(
@@ -1214,7 +1234,7 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await _projects_repository.get_project_dict_and_type(
+        _project, _ = await _projects_repository_legacy.get_project_dict_and_type(
             project_uuid=f"{project_id}"
         )
         _project_node_data = _project["workbench"][f"{node_id}"]
@@ -1233,12 +1253,13 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
-    updated_project, _ = await _projects_repository.update_project_node_data(
+    updated_project, _ = await _projects_repository_legacy.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
         product_name=product_name,
         new_node_data=_node_patch_exclude_unset,
+        client_session_id=client_session_id,
     )
 
     await _projects_nodes_repository.update(
@@ -1282,11 +1303,12 @@ async def update_project_node_outputs(
     node_id: NodeID,
     new_outputs: dict | None,
     new_run_hash: str | None,
+    client_session_id: str | None,
 ) -> tuple[dict, list[str]]:
     """
     Updates outputs of a given node in a project with 'data'
     """
-    log.debug(
+    _logger.debug(
         "updating node %s outputs in project %s for user %s with %s: run_hash [%s]",
         node_id,
         project_id,
@@ -1297,8 +1319,8 @@ async def update_project_node_outputs(
     )
     new_outputs = new_outputs or {}
 
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    product_name = await db.get_project_product(project_id)
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    product_name = await db_legacy.get_project_product(project_id)
     await check_user_project_permission(
         app,
         project_id=project_id,
@@ -1307,12 +1329,13 @@ async def update_project_node_outputs(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
-    updated_project, changed_entries = await db.update_project_node_data(
+    updated_project, changed_entries = await db_legacy.update_project_node_data(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
         product_name=None,
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
+        client_session_id=client_session_id,
     )
 
     await _projects_nodes_repository.update(
@@ -1324,7 +1347,7 @@ async def update_project_node_outputs(
         ),
     )
 
-    log.debug(
+    _logger.debug(
         "patched project %s, following entries changed: %s",
         project_id,
         pformat(changed_entries),
@@ -1348,8 +1371,8 @@ async def list_node_ids_in_project(
     project_uuid: ProjectID,
 ) -> set[NodeID]:
     """Returns a set with all the node_ids from a project's workbench"""
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    return await db.list_node_ids_in_project(project_uuid)
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db_legacy.list_node_ids_in_project(project_uuid)
 
 
 async def is_node_id_present_in_any_project_workbench(
@@ -1357,8 +1380,8 @@ async def is_node_id_present_in_any_project_workbench(
     node_id: NodeID,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    return await db.node_id_exists(node_id)
+    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    return await db_legacy.node_id_exists(node_id)
 
 
 async def _safe_retrieve(
@@ -1367,7 +1390,7 @@ async def _safe_retrieve(
     try:
         await dynamic_scheduler_service.retrieve_inputs(app, node_id, port_keys)
     except RPCServerError as exc:
-        log.warning(
+        _logger.warning(
             "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s]",
             node_id,
             port_keys,
@@ -1381,7 +1404,7 @@ async def _trigger_connected_service_retrieve(
     project_id = project["uuid"]
     if await is_project_locked(get_redis_lock_manager_client_sdk(app), project_id):
         # NOTE: we log warn since this function is fire&forget and raise an exception would not be anybody to handle it
-        log.warning(
+        _logger.warning(
             "Skipping service retrieval because project with %s is currently locked."
             "Operation triggered by %s",
             f"{project_id=}",
@@ -1457,7 +1480,7 @@ async def _clean_user_disconnected_clients(
     for u in users_sessions_ids:
         with managed_resource(u.user_id, u.client_session_id, app) as user_session:
             if await user_session.get_socket_id() is None:
-                log.debug(
+                _logger.debug(
                     "removing disconnected project of user %s/%s",
                     u.user_id,
                     u.client_session_id,
@@ -1603,9 +1626,31 @@ async def close_project_for_user(
         # remove the project from our list of opened ones
         await user_session.remove(key=PROJECT_ID_KEY)
 
+        # remove the clent session from the project room
+        _socket_id = await user_session.get_socket_id()
+        if _socket_id is not None:
+            _logger.debug(
+                "User %s/%s is leaving project room %s with socket_id %s",
+                user_id,
+                client_session_id,
+                project_uuid,
+                _socket_id,
+            )
+            sio = get_socket_server(app)
+            await sio.leave_room(
+                _socket_id, SocketIORoomStr.from_project_id(project_uuid)
+            )
+        else:
+            _logger.warning(
+                "User %s/%s has no socket_id, cannot leave project room %s",
+                user_id,
+                client_session_id,
+                project_uuid,
+            )
+
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)
-    log.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
+    _logger.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
     if not all_user_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
         remove_services_task = remove_project_dynamic_services(
@@ -1647,7 +1692,7 @@ async def _get_project_share_state(
     )
     app_settings = get_application_settings(app)
     if prj_locked_state:
-        log.debug(
+        _logger.debug(
             "project [%s] is currently locked: %s",
             f"{project_uuid=}",
             f"{prj_locked_state=}",
@@ -1695,12 +1740,12 @@ async def _get_project_share_state(
 
     if not set_user_ids:
         # no one has the project, so it is unlocked and closed.
-        log.debug("project [%s] is not in use", f"{project_uuid=}")
+        _logger.debug("project [%s] is not in use", f"{project_uuid=}")
         return ProjectShareState(
             status=ProjectStatus.CLOSED, locked=False, current_user_groupids=[]
         )
 
-    log.debug(
+    _logger.debug(
         "project [%s] might be used by the following users: [%s]",
         f"{project_uuid=}",
         f"{set_user_ids=}",
@@ -1714,7 +1759,7 @@ async def _get_project_share_state(
             user_sessions_with_project, app
         ):
             # in this case the project is re-openable by the same user until it gets closed
-            log.debug(
+            _logger.debug(
                 "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
                 f"{project_uuid=}",
                 f"{set_user_ids=}",
@@ -1751,7 +1796,7 @@ async def add_project_states_for_user(
     is_template: bool,
     app: web.Application,
 ) -> ProjectDict:
-    log.debug(
+    _logger.debug(
         "adding project states for %s with project %s",
         f"{user_id=}",
         f"{project['uuid']=}",
@@ -1983,7 +2028,7 @@ async def remove_project_dynamic_services(
 
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
-    log.debug(
+    _logger.debug(
         "removing project interactive services for project [%s] and user [%s]",
         project_uuid,
         user_id,

@@ -19,6 +19,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
+from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
@@ -89,6 +90,8 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     inputs_updates = await parse_request_body_as(list[ProjectInputUpdate], request)
 
+    client_session_id: str | None = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+
     assert request.app  # nosec
 
     workbench = await _get_validated_workbench_model(
@@ -123,6 +126,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         project_uuid=path_params.project_id,
         product_name=req_ctx.product_name,
         partial_workbench_data=jsonable_encoder(partial_workbench_data),
+        client_session_id=client_session_id,
     )
 
     workbench = TypeAdapter(dict[NodeID, Node]).validate_python(

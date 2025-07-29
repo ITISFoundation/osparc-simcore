@@ -881,6 +881,7 @@ class ProjectDBAPI(BaseProjectDB):
         node_id: NodeID,
         product_name: str | None,
         new_node_data: dict[str, Any],
+        client_session_id: str | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         with log_context(
             _logger,
@@ -897,6 +898,7 @@ class ProjectDBAPI(BaseProjectDB):
                 project_uuid=project_uuid,
                 product_name=product_name,
                 allow_workbench_changes=False,
+                client_session_id=client_session_id,
             )
 
     async def update_project_multiple_node_data(
@@ -906,6 +908,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectID,
         product_name: str | None,
         partial_workbench_data: dict[NodeIDStr, dict[str, Any]],
+        client_session_id: str | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         """
         Raises:
@@ -923,6 +926,7 @@ class ProjectDBAPI(BaseProjectDB):
                 project_uuid=project_uuid,
                 product_name=product_name,
                 allow_workbench_changes=False,
+                client_session_id=client_session_id,
             )
 
     async def _update_project_workbench_with_lock_and_notify(
@@ -933,6 +937,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectID,
         product_name: str | None = None,
         allow_workbench_changes: bool,
+        client_session_id: str | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         """
         Updates project workbench with Redis lock and user notification.
@@ -1002,7 +1007,7 @@ class ProjectDBAPI(BaseProjectDB):
                 ),
             )
 
-            # Increment document version and notify users
+            # Increment document version
             redis_client_sdk = get_redis_document_manager_client_sdk(self._app)
             document_version = await increment_and_return_project_document_version(
                 redis_client=redis_client_sdk, project_uuid=project_uuid
@@ -1020,6 +1025,7 @@ class ProjectDBAPI(BaseProjectDB):
             app=self._app,
             project_id=project_uuid,
             user_primary_gid=user_primary_gid,
+            client_session_id=client_session_id,
             version=document_version,
             document=project_document,
         )
@@ -1103,6 +1109,7 @@ class ProjectDBAPI(BaseProjectDB):
         node: ProjectNodeCreate,
         old_struct_node: Node,
         product_name: str,
+        client_session_id: str | None,
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[NodeIDStr, Any] = {
@@ -1117,13 +1124,18 @@ class ProjectDBAPI(BaseProjectDB):
             project_uuid=project_id,
             product_name=product_name,
             allow_workbench_changes=True,
+            client_session_id=client_session_id,
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             await project_nodes_repo.add(conn, nodes=[node])
 
     async def remove_project_node(
-        self, user_id: UserID, project_id: ProjectID, node_id: NodeID
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        client_session_id: str | None,
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[NodeIDStr, Any] = {
@@ -1134,6 +1146,7 @@ class ProjectDBAPI(BaseProjectDB):
             user_id=user_id,
             project_uuid=project_id,
             allow_workbench_changes=True,
+            client_session_id=client_session_id,
         )
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:

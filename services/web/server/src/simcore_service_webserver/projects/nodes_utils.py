@@ -42,6 +42,7 @@ async def update_node_outputs(
     outputs: dict,
     run_hash: str | None,
     node_errors: list[ErrorDict] | None,
+    client_session_id: str | None,
     *,
     ui_changed_keys: set[str] | None,
 ) -> None:
@@ -53,6 +54,7 @@ async def update_node_outputs(
         node_uuid,
         new_outputs=outputs,
         new_run_hash=run_hash,
+        client_session_id=client_session_id,
     )
 
     await _projects_service.notify_project_node_update(

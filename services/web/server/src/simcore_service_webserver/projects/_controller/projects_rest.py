@@ -25,6 +25,7 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.redis import get_project_locked_state
+from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
@@ -313,12 +314,15 @@ async def patch_project(request: web.Request):
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
 
+    client_session_id: str | None = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+
     await _projects_service.patch_project_for_user(
         request.app,
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
         project_patch=project_patch,
         product_name=req_ctx.product_name,
+        client_session_id=client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

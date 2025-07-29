@@ -24,6 +24,7 @@ async def move_project_into_workspace(
     project_id: ProjectID,
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
+    client_session_id: str | None = None,
 ) -> None:
     # 1. User needs to have delete permission on project
     project_access_rights = await get_user_project_access_rights(
@@ -57,6 +58,7 @@ async def move_project_into_workspace(
             project_uuid=project_id,
             patch_project_data={"workspace_id": workspace_id},
             user_primary_gid=user["primary_gid"],
+            client_session_id=client_session_id,
         )
 
         # 5. Remove all project permissions, leave only the user who moved the project
