@@ -77,7 +77,7 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
                 await service_tracker.set_frontend_notified_for_service(app, node_id)
             else:
                 _logger.info(
-                    "Did not find a user for '%s', skipping status delivery of: %s",
-                    node_id,
+                    "Did not find a project for '%s', skipping status delivery of: %s",
+                    project_id,
                     result,
                 )
