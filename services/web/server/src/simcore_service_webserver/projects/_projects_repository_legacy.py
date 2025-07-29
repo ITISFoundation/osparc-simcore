@@ -881,7 +881,7 @@ class ProjectDBAPI(BaseProjectDB):
             extra=get_log_record_extra(user_id=user_id),
         ):
             partial_workbench_data: dict[NodeIDStr, Any] = {
-                NodeIDStr(f"{node_id}"): new_node_data,
+                f"{node_id}": new_node_data,
             }
             return await self._update_project_workbench_with_lock_and_notify(
                 partial_workbench_data,
