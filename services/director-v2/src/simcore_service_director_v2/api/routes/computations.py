@@ -58,7 +58,6 @@ from ...core.errors import (
     ProjectNotFoundError,
     WalletNotEnoughCreditsError,
 )
-from ...models.comp_pipelines import CompPipelineAtDB
 from ...models.comp_runs import CompRunsAtDB, ProjectMetadataDict, RunMetadataDict
 from ...models.comp_tasks import CompTaskAtDB
 from ...modules.catalog import CatalogClient
@@ -537,10 +536,8 @@ async def stop_computation(
         # check the project exists
         await project_repo.get_project(project_id)
         # get the project pipeline
-        pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(
-            project_id
-        )
-        pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
+        pipeline_at_db = await comp_pipelines_repo.get_pipeline(project_id)
+        pipeline_dag = pipeline_at_db.get_graph()
         # get the project task states
         tasks: list[CompTaskAtDB] = await comp_tasks_repo.list_tasks(project_id)
         # create the complete DAG graph
