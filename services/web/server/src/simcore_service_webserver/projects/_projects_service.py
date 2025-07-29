@@ -274,7 +274,6 @@ async def get_project_for_user(
         project = await add_project_states_for_user(
             user_id=user_id,
             project=project,
-            is_template=project_type is ProjectType.TEMPLATE,
             app=app,
         )
 
@@ -1258,7 +1257,7 @@ async def patch_project_node(
     # 5. Updates project states for user, if inputs/outputs have been changed
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
         updated_project = await add_project_states_for_user(
-            user_id=user_id, project=updated_project, is_template=False, app=app
+            user_id=user_id, project=updated_project, app=app
         )
         for node_uuid in updated_project["workbench"]:
             await notify_project_node_update(
@@ -1326,7 +1325,7 @@ async def update_project_node_outputs(
         pformat(changed_entries),
     )
     updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, is_template=False, app=app
+        user_id=user_id, project=updated_project, app=app
     )
 
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
@@ -1825,7 +1824,6 @@ async def add_project_states_for_user(
     *,
     user_id: int,
     project: ProjectDict,
-    is_template: bool,
     app: web.Application,
 ) -> ProjectDict:
     _logger.debug(
