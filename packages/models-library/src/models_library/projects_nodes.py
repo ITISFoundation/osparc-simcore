@@ -35,7 +35,7 @@ from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
 from .utils.enums import StrAutoEnum
 
-InputTypes = Union[
+InputTypes = Union[  # noqa: UP007
     # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
@@ -47,7 +47,7 @@ InputTypes = Union[
     DownloadLink,
     list[Any] | dict[str, Any],  # arrays | object
 ]
-OutputTypes = Union[
+OutputTypes = Union[  # noqa: UP007
     # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
@@ -318,7 +318,6 @@ class Node(BaseModel):
     @classmethod
     def _convert_from_enum(cls, v):
         if isinstance(v, str):
-
             # the old version of state was a enum of RunningState
             running_state_value = _convert_old_enum_name(v)
             return NodeState(current_status=running_state_value)

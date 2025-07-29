@@ -217,7 +217,7 @@ async def delete_node(request: web.Request) -> web.Response:
         request,
         path_params.project_id,
         req_ctx.user_id,
-        NodeIDStr(path_params.node_id),
+        f"{path_params.node_id}",
         req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
         client_session_id=header_params.client_session_id,
