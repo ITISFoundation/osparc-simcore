@@ -17,6 +17,7 @@ from pydantic import (
     StrictInt,
     StringConstraints,
     field_validator,
+    model_validator,
 )
 from pydantic.config import JsonDict
 
@@ -74,7 +75,7 @@ OutputsDict: TypeAlias = dict[
 UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
 
 
-class NodeLockStatus(StrAutoEnum):
+class NodeLockReason(StrAutoEnum):
     OPENING = auto()
     OPENED = auto()
     CLOSING = auto()
@@ -91,16 +92,47 @@ class NodeLockState(BaseModel):
     locked_by: Annotated[
         GroupID | None,
         Field(description="Group that owns locked the node, None if not locked"),
-    ]
+    ] = None
 
     locked_reason: Annotated[
-        NodeLockStatus | None,
+        NodeLockReason | None,
         Field(
             description="Reason why the node is locked, None if not locked",
         ),
-    ]
+    ] = None
 
-    model_config = ConfigDict(extra="forbid")
+    @model_validator(mode="after")
+    def _validate_lock_state(self) -> "NodeLockState":
+        if self.is_locked and (self.locked_by is None or self.locked_reason is None):
+            msg = "If the node is locked, both 'locked_by' and 'locked_reason' must be set"
+            raise ValueError(msg)
+        if not self.is_locked and (
+            self.locked_by is not None or self.locked_reason is not None
+        ):
+            msg = "If the node is not locked, both 'locked_by' and 'locked_reason' must be None"
+            raise ValueError(msg)
+        return self
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "is_locked": False,
+                    },
+                    {
+                        "is_locked": True,
+                        "locked_by": 666,
+                        "locked_reason": "OPENING",
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid", json_schema_extra=_update_json_schema_extra
+    )
 
 
 class NodeState(BaseModel):
@@ -135,6 +167,10 @@ class NodeState(BaseModel):
             description="current progress of the task if available (None if not started or not a computational task)",
         ),
     ] = 0
+
+    lock_state: Annotated[NodeLockState, Field(description="the node's lock state")] = (
+        NodeLockState(is_locked=False, locked_by=None, locked_reason=None)
+    )
 
     model_config = ConfigDict(
         extra="forbid",
