@@ -230,9 +230,11 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with 1 large file
-    src_project, _, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_project_nodes, src_projects_list = await random_project_with_files(
+        project_params
+    )
     # 2. create a dst project without files
-    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project, _, nodes_map = clone_project_data(src_project, src_project_nodes)
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
@@ -241,7 +243,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         product_name,
         src_project,
         dst_project,
-        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+        nodes_map=nodes_map,
     )
     assert data == jsonable_encoder(
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
@@ -327,9 +329,11 @@ async def test_copy_folders_from_valid_project(
     project_params: ProjectWithFilesParams,
 ):
     # 1. create a src project with some files
-    src_project, _, src_projects_list = await random_project_with_files(project_params)
+    src_project, src_project_nodes, src_projects_list = await random_project_with_files(
+        project_params
+    )
     # 2. create a dst project without files
-    dst_project, nodes_map = clone_project_data(src_project)
+    dst_project, _, nodes_map = clone_project_data(src_project, src_project_nodes)
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
@@ -338,7 +342,7 @@ async def test_copy_folders_from_valid_project(
         product_name,
         src_project,
         dst_project,
-        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+        nodes_map=nodes_map,
     )
     assert data == jsonable_encoder(
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
@@ -378,13 +382,14 @@ async def _create_and_delete_folders_from_project(
     user_id: UserID,
     product_name: ProductName,
     project: dict[str, Any],
+    project_nodes: dict[NodeID, dict[str, Any]],
     initialized_app: FastAPI,
     project_db_creator: Callable,
     check_list_files: bool,
     *,
     client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> None:
-    destination_project, nodes_map = clone_project_data(project)
+    destination_project, _, nodes_map = clone_project_data(project, project_nodes)
     await project_db_creator(**destination_project)
 
     # creating a copy
@@ -394,7 +399,7 @@ async def _create_and_delete_folders_from_project(
         product_name,
         project,
         destination_project,
-        nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
+        nodes_map=nodes_map,
         client_timeout=client_timeout,
     )
 
@@ -500,7 +505,7 @@ async def test_create_and_delete_folders_from_project(
     mock_datcore_download,
     num_concurrent_calls: int,
 ):
-    project_in_db, _, _ = with_random_project_with_files
+    project_in_db, project_nodes_in_db, _ = with_random_project_with_files
     # NOTE: here the point is to NOT have a limit on the number of calls!!
     await asyncio.gather(
         *[
@@ -510,6 +515,7 @@ async def test_create_and_delete_folders_from_project(
                 user_id,
                 product_name,
                 project_in_db,
+                project_nodes_in_db,
                 initialized_app,
                 create_project,
                 check_list_files=False,
