@@ -43,7 +43,7 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
         )
         if node.input_nodes:
             for input_node_id in node.input_nodes:
-                predecessor_node = workbench.get(NodeIDStr(input_node_id))
+                predecessor_node = workbench.get(f"{input_node_id}")
                 assert (
                     predecessor_node
                 ), f"Node {input_node_id} not found in workbench"  # nosec
@@ -99,9 +99,7 @@ async def _compute_node_modified_state(
         return result
 
     computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
-    if computed_hash != node["run_hash"]:
-        return True
-    return False
+    return bool(computed_hash != node["run_hash"])
 
 
 async def _compute_node_dependencies_state(graph_data, node_id) -> set[NodeID]:
@@ -109,9 +107,10 @@ async def _compute_node_dependencies_state(graph_data, node_id) -> set[NodeID]:
     # check if the previous node is outdated or waits for dependencies... in which case this one has to wait
     non_computed_dependencies: set[NodeID] = set()
     for input_port in node.get("inputs", {}).values():
-        if isinstance(input_port, PortLink):
-            if _node_needs_computation(graph_data, input_port.node_uuid):
-                non_computed_dependencies.add(input_port.node_uuid)
+        if isinstance(input_port, PortLink) and _node_needs_computation(
+            graph_data, input_port.node_uuid
+        ):
+            non_computed_dependencies.add(input_port.node_uuid)
     # all good. ready
     return non_computed_dependencies
 
@@ -192,14 +191,14 @@ def compute_pipeline_started_timestamp(
     if not pipeline_dag.nodes:
         return None
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+        f"{task.node_id}": task for task in comp_tasks
     }
-    TOMORROW = arrow.utcnow().shift(days=1).datetime
+    tomorrow = arrow.utcnow().shift(days=1).datetime
     pipeline_started_at: datetime.datetime | None = min(
-        node_id_to_comp_task[node_id].start or TOMORROW
+        node_id_to_comp_task[node_id].start or tomorrow
         for node_id in pipeline_dag.nodes
     )
-    if pipeline_started_at == TOMORROW:
+    if pipeline_started_at == tomorrow:
         pipeline_started_at = None
     return pipeline_started_at
 
@@ -210,13 +209,13 @@ def compute_pipeline_stopped_timestamp(
     if not pipeline_dag.nodes:
         return None
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+        f"{task.node_id}": task for task in comp_tasks
     }
-    TOMORROW = arrow.utcnow().shift(days=1).datetime
+    tomorrow = arrow.utcnow().shift(days=1).datetime
     pipeline_stopped_at: datetime.datetime | None = max(
-        node_id_to_comp_task[node_id].end or TOMORROW for node_id in pipeline_dag.nodes
+        node_id_to_comp_task[node_id].end or tomorrow for node_id in pipeline_dag.nodes
     )
-    if pipeline_stopped_at == TOMORROW:
+    if pipeline_stopped_at == tomorrow:
         pipeline_stopped_at = None
     return pipeline_stopped_at
 
@@ -231,15 +230,15 @@ async def compute_pipeline_details(
 
     # NOTE: the latest progress is available in comp_tasks only
     node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        NodeIDStr(f"{task.node_id}"): task for task in comp_tasks
+        f"{task.node_id}": task for task in comp_tasks
     }
     pipeline_progress = None
     if len(pipeline_dag.nodes) > 0:
-
         pipeline_progress = sum(
             (node_id_to_comp_task[node_id].progress or 0) / len(pipeline_dag.nodes)
             for node_id in pipeline_dag.nodes
-            if node_id_to_comp_task[node_id].progress is not None
+            if node_id in node_id_to_comp_task
+            and node_id_to_comp_task[node_id].progress is not None
         )
         pipeline_progress = max(0.0, min(pipeline_progress, 1.0))
 
@@ -250,10 +249,15 @@ async def compute_pipeline_details(
             node_id: NodeState(
                 modified=node_data.get(kNODE_MODIFIED_STATE, False),
                 dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
-                current_status=node_id_to_comp_task[node_id].state,
+                current_status=(
+                    node_id_to_comp_task[node_id].state
+                    if node_id in node_id_to_comp_task
+                    else RunningState.UNKNOWN
+                ),
                 progress=(
                     node_id_to_comp_task[node_id].progress
-                    if node_id_to_comp_task[node_id].progress is not None
+                    if node_id in node_id_to_comp_task
+                    and node_id_to_comp_task[node_id].progress is not None
                     else None
                 ),
             )
@@ -265,12 +269,13 @@ async def compute_pipeline_details(
 
 def find_computational_node_cycles(dag: nx.DiGraph) -> list[list[str]]:
     """returns a list of nodes part of a cycle and computational, which is currently forbidden."""
-    computational_node_cycles = []
+
     list_potential_cycles = nx.algorithms.cycles.simple_cycles(dag)
-    for cycle in list_potential_cycles:
+    return [
+        deepcopy(cycle)
+        for cycle in list_potential_cycles
         if any(
             dag.nodes[node_id]["node_class"] is NodeClass.COMPUTATIONAL
             for node_id in cycle
-        ):
-            computational_node_cycles.append(deepcopy(cycle))
-    return computational_node_cycles
+        )
+    ]

@@ -118,7 +118,7 @@ def handle_aiohttp_web_http_error(
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
         exception.set_status(
-            exception.status, safe_status_message(message=exception.reason)
+            exception.status, reason=safe_status_message(message=exception.reason)
         )
 
     if not exception.text or not is_enveloped_from_text(exception.text):
@@ -165,7 +165,7 @@ def _handle_aiohttp_web_http_successful(
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
         exception.set_status(
-            exception.status, safe_status_message(message=exception.reason)
+            exception.status, reason=safe_status_message(message=exception.reason)
         )
 
     if exception.text and not is_enveloped_from_text(exception.text):
