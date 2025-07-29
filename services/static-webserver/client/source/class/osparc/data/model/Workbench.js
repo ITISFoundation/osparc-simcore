@@ -862,6 +862,20 @@ qx.Class.define("osparc.data.model.Workbench", {
       });
 
       // first, remove nodes
+      if (nodesRemoved.length) {
+        this.__removeNodesFromPatches(nodesRemoved, workbenchPatchesByNode);
+      }
+      // second, add nodes if any
+      if (nodesAdded.length) {
+        // this will call update nodes once finished
+        this.__addNodesFromPatches(nodesAdded, workbenchPatchesByNode);
+      } else {
+        // third, update nodes
+        this.__updateNodesFromPatches(workbenchPatchesByNode);
+      }
+    },
+
+    __removeNodesFromPatches: function(nodesRemoved, workbenchPatchesByNode) {
       nodesRemoved.forEach(nodeId => {
         const node = this.getNode(nodeId);
         if (node) {
@@ -870,11 +884,27 @@ qx.Class.define("osparc.data.model.Workbench", {
         this.__nodeRemoved(nodeId);
         delete workbenchPatchesByNode[nodeId];
       });
+    },
 
-      // second, add nodes
-      console.log("Adding nodes", nodesAdded);
+    __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode) {
+      // this is an async operation with an await
+      const promises = nodesAdded.map(nodeId => {
+        const nodeData = workbenchPatchesByNode[nodeId][0].value;
+        return this.createNode(nodeData["key"], nodeData["version"]);
+      });
+      return Promise.all(promises)
+        .then(nodes => {
+          // may populate it
+          // OM? delete the node add from the workbenchPatchesByNode
+          // after adding nodes, we can apply the patches
+          this.__updateNodesFromPatches(workbenchPatchesByNode);
+        })
+        .catch(err => {
+          console.error("Error adding nodes from patches:", err);
+        });
+    },
 
-      // third, update nodes
+    __updateNodesFromPatches: function(workbenchPatchesByNode) {
       Object.keys(workbenchPatchesByNode).forEach(nodeId => {
         const node = this.getNode(nodeId);
         if (node === null) {
