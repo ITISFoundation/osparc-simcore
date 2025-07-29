@@ -106,7 +106,7 @@ def _error_to_string(e: Exception) -> str:
 
 
 def _error_from_string(error_str: str) -> Exception:
-    return pickle.loads(base64.b85decode(error_str))  # noqa: S301
+    return pickle.loads(base64.b85decode(error_str))  # type: ignore[no-any-return]  # noqa: S301
 
 
 class TasksManager:  # pylint:disable=too-many-instance-attributes
