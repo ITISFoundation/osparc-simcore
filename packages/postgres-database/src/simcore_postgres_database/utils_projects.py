@@ -33,7 +33,7 @@ class ProjectsRepo:
                 await conn.scalar(
                     sa.select(1)
                     .select_from(projects)
-                    .where(projects.c.uuid == project_uuid)
+                    .where(projects.c.uuid == f"{project_uuid}")
                     .limit(1)
                 )
                 is not None
