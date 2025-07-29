@@ -215,10 +215,10 @@ def share_with_collaborator(
 @pytest.fixture
 async def create_project_node(
     user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
-) -> Callable[..., Awaitable[NodeID]]:
+) -> Callable[..., Awaitable[tuple[NodeID, dict[str, Any]]]]:
     async def _creator(
         project_id: ProjectID, node_id: NodeID | None = None, **kwargs
-    ) -> NodeID:
+    ) -> tuple[NodeID, dict[str, Any]]:
         async with sqlalchemy_async_engine.begin() as conn:
             new_node_id = node_id or NodeID(faker.uuid4())
             node_values = {
@@ -227,13 +227,16 @@ async def create_project_node(
                 "label": "pytest_fake_node",
             }
             node_values.update(**kwargs)
-            await conn.execute(
-                projects_nodes.insert().values(
+            result = await conn.execute(
+                projects_nodes.insert()
+                .values(
                     node_id=f"{new_node_id}",
                     project_uuid=f"{project_id}",
                     **node_values,
                 )
+                .returning(sa.literal_column("*"))
             )
-        return new_node_id
+            row = result.one()
+            return new_node_id, row._asdict()
 
     return _creator

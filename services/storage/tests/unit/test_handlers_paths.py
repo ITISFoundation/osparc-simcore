@@ -157,16 +157,16 @@ async def test_list_paths_pagination(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
-    project, list_of_files = with_random_project_with_files
-    num_nodes = len(list(project["workbench"]))
+    project, nodes, list_of_files = with_random_project_with_files
 
     # ls the nodes (DB-based)
     file_filter = Path(project["uuid"])
     expected_paths = sorted(
-        ((file_filter / node_key, False) for node_key in project["workbench"]),
+        ((file_filter / f"{node_id}", False) for node_id in nodes),
         key=lambda x: x[0],
     )
     await _assert_list_paths(
@@ -176,12 +176,12 @@ async def test_list_paths_pagination(
         user_id,
         file_filter=file_filter,
         expected_paths=expected_paths,
-        limit=int(num_nodes / 2 + 0.5),
+        limit=int(len(nodes) / 2 + 0.5),
     )
 
     # ls in the workspace (S3-based)
     # ls in the workspace
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_id = random.choice(list(nodes.keys()))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
@@ -240,11 +240,12 @@ async def test_list_paths_pagination_large_page(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
-    project, list_of_files = with_random_project_with_files
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    project, nodes, list_of_files = with_random_project_with_files
+    selected_node_id = random.choice(list(nodes.keys()))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
@@ -292,7 +293,11 @@ async def test_list_paths(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
@@ -305,7 +310,10 @@ async def test_list_paths(
 
     # ls root returns our projects
     expected_paths = sorted(
-        ((Path(f"{prj_db['uuid']}"), False) for prj_db, _ in project_to_files_mapping),
+        (
+            (Path(f"{prj_db['uuid']}"), False)
+            for prj_db, _, _ in project_to_files_mapping
+        ),
         key=lambda x: x[0],
     )
     await _assert_list_paths(
@@ -318,9 +326,9 @@ async def test_list_paths(
     )
 
     # ls with only some part of the path should return only the projects that match
-    selected_project, selected_project_files = random.choice(  # noqa: S311
+    selected_project, selected_nodes, selected_project_files = random.choice(
         project_to_files_mapping
-    )
+    )  # noqa: S311
     partial_file_filter = Path(
         selected_project["uuid"][: len(selected_project["uuid"]) // 2]
     )
@@ -340,7 +348,7 @@ async def test_list_paths(
     # now we ls inside one of the projects returns the nodes
     file_filter = Path(selected_project["uuid"])
     expected_paths = sorted(
-        ((file_filter / node_key, False) for node_key in selected_project["workbench"]),
+        ((file_filter / f"{node_id}", False) for node_id in selected_nodes),
         key=lambda x: x[0],
     )
     await _assert_list_paths(
@@ -353,9 +361,7 @@ async def test_list_paths(
     )
 
     # now we ls in one of the nodes
-    selected_node_id = NodeID(
-        random.choice(list(selected_project["workbench"]))  # noqa: S311
-    )
+    selected_node_id = random.choice(list(selected_nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in selected_project_files[selected_node_id]
     ]
@@ -623,6 +629,7 @@ async def test_path_compute_size(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     project_params: ProjectWithFilesParams,
@@ -630,7 +637,7 @@ async def test_path_compute_size(
     assert (
         len(project_params.allowed_file_sizes) == 1
     ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
-    project, list_of_files = with_random_project_with_files
+    project, nodes, list_of_files = with_random_project_with_files
 
     total_num_files = sum(
         len(files_in_node) for files_in_node in list_of_files.values()
@@ -649,7 +656,7 @@ async def test_path_compute_size(
     )
 
     # get size of one of the nodes
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_id = random.choice(list(nodes.keys()))  # noqa: S311
     path = Path(project["uuid"]) / f"{selected_node_id}"
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
