@@ -43,7 +43,7 @@ class MockKeys(StrAutoEnum):
     GET_TIMEOUT = auto()
     START_DEFERRED = auto()
     ON_DEFERRED_CREATED = auto()
-    RUN_DEFERRED_BEFORE_HADNLER = auto()
+    RUN_DEFERRED_BEFORE_HANDLER = auto()
     RUN_DEFERRED_AFTER_HANDLER = auto()
     ON_DEFERRED_RESULT = auto()
     ON_FINISHED_WITH_ERROR = auto()
@@ -124,7 +124,7 @@ async def get_mocked_deferred_handler(
 
             @classmethod
             async def run(cls, context: DeferredContext) -> Any:
-                mocks[MockKeys.RUN_DEFERRED_BEFORE_HADNLER](context)
+                mocks[MockKeys.RUN_DEFERRED_BEFORE_HANDLER](context)
                 result = await run(context)
                 mocks[MockKeys.RUN_DEFERRED_AFTER_HANDLER](context)
                 return result
@@ -322,7 +322,7 @@ async def test_deferred_manager_cancelled(
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_CREATED, count=1)
     task_uid = TaskUID(mocks[MockKeys.ON_DEFERRED_CREATED].call_args_list[0].args[0])
 
-    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_BEFORE_HADNLER, count=1)
+    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_BEFORE_HANDLER, count=1)
     await mocked_deferred_handler.cancel(task_uid)
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)

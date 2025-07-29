@@ -27,7 +27,7 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def mock_env(
-    uese_in_memory_lonng_running_tasks: None,
+    use_in_memory_long_running_tasks: None,
     mock_exclusive: None,
     disable_rabbitmq: None,
     disable_postgres: None,

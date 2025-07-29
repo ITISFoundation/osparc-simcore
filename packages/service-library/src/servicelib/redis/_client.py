@@ -59,7 +59,6 @@ class RedisClientSDK:
             decode_responses=self.decode_responses,
             client_name=self.client_name,
         )
-        # NOTE: connection is done here already
         self._is_healthy = False
         self._health_check_task_started_event = asyncio.Event()
 
@@ -78,7 +77,7 @@ class RedisClientSDK:
         # NOTE: this achieves 2 very important things:
         # - ensure redis is working
         # - before shutting down an initialized Redis connection it must
-        #   make at least one call to the servicer, otherwise tests might hang
+        #   make at least one call to the server, otherwise tests might hang
         await self.ping()
 
         _logger.info(

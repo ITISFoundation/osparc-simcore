@@ -20,7 +20,7 @@ def _mock_decorator_with_args(*decorator_args, **decorator_kwargs):
 
 
 @pytest.fixture
-def uese_in_memory_lonng_running_tasks(mocker: MockerFixture) -> None:
+def use_in_memory_long_running_tasks(mocker: MockerFixture) -> None:
     mocker.patch.object(task, "RedisStore", InMemoryStore)
     # for testing the exclsive is not required so it's disabled
     mocker.patch.object(task, "exclusive", _mock_decorator_with_args)
