@@ -164,11 +164,7 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "REDIS_HOST": f"{redis_settings.REDIS_HOST}",
-        "REDIS_PASSWORD": f"{'null' if redis_settings.REDIS_PASSWORD is None else redis_settings.REDIS_PASSWORD.get_secret_value()}",
-        "REDIS_PORT": f"{redis_settings.REDIS_PORT}",
-        "REDIS_SECURE": f"{redis_settings.REDIS_SECURE}",
-        "REDIS_USER": redis_settings.REDIS_USER or "null",
+        "REDIS_SETTINGS": redis_settings.model_dump_json(),
         "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
             json_dumps(
                 model_dump_with_secrets(
