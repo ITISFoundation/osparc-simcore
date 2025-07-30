@@ -102,9 +102,10 @@ class RedisClientSDK:
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
             if self._health_check_task:
+                assert self._health_check_task_started_event  # nosec
+                await self._health_check_task_started_event.wait()
+
                 with log_catch(_logger, reraise=False):
-                    assert self._health_check_task_started_event  # nosec
-                    await self._health_check_task_started_event.wait()
                     await cancel_wait_task(
                         self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
                     )
