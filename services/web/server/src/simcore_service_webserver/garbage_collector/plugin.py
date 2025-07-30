@@ -67,7 +67,7 @@ def setup_garbage_collector(app: web.Application) -> None:
         _tasks_trash.create_background_task_to_prune_trash(wait_period_s)
     )
 
-    wait_period_s = 600
+    wait_period_s = settings.GARBAGE_COLLECTOR_PRUNE_DOCUMENTS_INTERVAL_S
     app.cleanup_ctx.append(
         _tasks_documents.create_background_task_to_prune_documents(wait_period_s)
     )
