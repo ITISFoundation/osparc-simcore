@@ -160,6 +160,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __savingTimer: null,
     __studyEditorIdlingTracker: null,
     __lastSyncedProjectDocument: null,
+    __lastSyncedProjectVersion: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
@@ -332,11 +333,21 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (!socket.slotExists("projectDocument:updated")) {
         socket.on("projectDocument:updated", data => {
           if (data["projectId"] === this.getStudy().getUuid()) {
+
+            // OM replace this by sessionId
             if (data["userPrimaryGid"] === osparc.auth.Data.getInstance().getGroupId()) {
               // ignore my own updates
               console.debug("Ignoring my own projectDocument:updated event", data);
               return;
             }
+
+            const documentVersion = data["version"];
+            if (this.__lastSyncedProjectVersion && documentVersion <= this.__lastSyncedProjectVersion) {
+              // ignore old updates
+              console.debug("Ignoring old projectDocument:updated event", data);
+              return;
+            }
+            this.__lastSyncedProjectVersion = documentVersion;
 
             const updatedStudy = data["document"];
             // curate projectDocument:updated document
@@ -345,8 +356,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const myStudy = this.getStudy().serialize();
             // curate myStudy
             this.self().curateFrontendProjectDocument(myStudy);
-
-            // this.__setLastSyncedProjectDocument(updatedStudy);
 
             this.__blockUpdates = true;
             const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
