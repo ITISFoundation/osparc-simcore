@@ -881,7 +881,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         // if the user is in that node, restore the node to the workbench
         if (this.getStudy().getUi().getCurrentNodeId() === nodeId) {
-          this.getStudy().setMode("pipeline");
+          this.getStudy().getUi().setMode("pipeline");
           this.getStudy().getUi().setCurrentNodeId(null);
         }
         if (node) {

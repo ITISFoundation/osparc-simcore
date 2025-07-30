@@ -333,7 +333,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (!socket.slotExists("projectDocument:updated")) {
         socket.on("projectDocument:updated", data => {
           if (data["projectId"] === this.getStudy().getUuid()) {
-            // OM remove this once backend provides the clientSessionId
+            // OM remove this once backend provides the clientSessionId #8176
             if (data["userPrimaryGid"] && data["userPrimaryGid"] === osparc.auth.Data.getInstance().getGroupId()) {
               // ignore my own updates
               console.debug("Ignoring my own projectDocument:updated event", data);
