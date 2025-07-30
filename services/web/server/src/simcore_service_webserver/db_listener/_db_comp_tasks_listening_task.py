@@ -52,7 +52,12 @@ async def _update_project_state(
     node_errors: list[ErrorDict] | None,
 ) -> None:
     project = await _projects_service.update_project_node_state(
-        app, user_id, project_uuid, node_uuid, new_state
+        app,
+        user_id,
+        project_uuid,
+        node_uuid,
+        new_state,
+        client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
     )
 
     await _projects_service.notify_project_node_update(
@@ -95,6 +100,7 @@ async def _handle_db_notification(
                 changed_row.run_hash,
                 node_errors=changed_row.errors,
                 ui_changed_keys=None,
+                client_session_id=None,  # <-- The trigger for this update is not from the UI (its db listener)
             )
 
         if "state" in payload.changes and (changed_row.state is not None):
