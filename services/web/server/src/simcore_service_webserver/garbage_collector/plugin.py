@@ -10,7 +10,7 @@ from ..products.plugin import setup_products
 from ..projects._projects_repository_legacy import setup_projects_db
 from ..redis import setup_redis
 from ..socketio.plugin import setup_socketio
-from . import _tasks_api_keys, _tasks_core, _tasks_trash, _tasks_users
+from . import _tasks_api_keys, _tasks_core, _tasks_documents, _tasks_trash, _tasks_users
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -65,4 +65,9 @@ def setup_garbage_collector(app: web.Application) -> None:
     # SEE https://github.com/ITISFoundation/osparc-issues#468
     app.cleanup_ctx.append(
         _tasks_trash.create_background_task_to_prune_trash(wait_period_s)
+    )
+
+    wait_period_s = 600
+    app.cleanup_ctx.append(
+        _tasks_documents.create_background_task_to_prune_documents(wait_period_s)
     )

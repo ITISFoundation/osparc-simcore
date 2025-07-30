@@ -84,3 +84,6 @@ async def create_project_document_and_increment_version(
         return project_document, document_version
 
     return await _create_project_document_and_increment_version()
+
+
+async def remove_project_documents_as_admin(app: web.Application) -> None: ...
