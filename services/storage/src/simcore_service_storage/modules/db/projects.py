@@ -31,7 +31,7 @@ class ProjectRepository(BaseRepository):
                 )
             ):
                 with suppress(ValidationError):
-                    yield ProjectAtDB.model_validate(row)
+                    yield ProjectAtDB.model_validate_ignoring_workbench(row._asdict())
 
     async def get_project_id_and_node_id_to_names_map(
         self,
