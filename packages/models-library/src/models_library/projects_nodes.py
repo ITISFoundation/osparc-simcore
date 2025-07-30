@@ -331,8 +331,8 @@ class Node(BaseModel):
 
     state: Annotated[
         NodeState | None,
-        Field(description="The node's state object"),
-    ] = None
+        Field(default_factory=NodeState, description="The node's state object"),
+    ] = DEFAULT_FACTORY
 
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
