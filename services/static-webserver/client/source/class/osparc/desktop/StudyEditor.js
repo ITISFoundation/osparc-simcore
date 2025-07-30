@@ -80,7 +80,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       flex: 1
     });
 
-    this.__lastSyncedProjectDocument = null;
     this.__updatingStudy = 0;
     this.__throttledPatchPending = false;
   },
