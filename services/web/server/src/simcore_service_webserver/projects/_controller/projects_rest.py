@@ -313,7 +313,6 @@ async def patch_project(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     project_patch = await parse_request_body_as(ProjectPatch, request)
-
     header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     await _projects_service.patch_project_for_user(
