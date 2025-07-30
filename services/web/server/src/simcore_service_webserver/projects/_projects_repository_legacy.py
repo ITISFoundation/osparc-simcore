@@ -958,36 +958,33 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             user_primary_gid = await self._get_user_primary_group_gid(conn, user_id)
 
-        # 10 concurrent calls
+        # Update the workbench
+        updated_project, changed_entries = await self._update_project_workbench(
+            partial_workbench_data,
+            user_id=user_id,
+            project_uuid=f"{project_uuid}",
+            product_name=product_name,
+            allow_workbench_changes=allow_workbench_changes,
+        )
+
         @exclusive(
             get_redis_lock_manager_client_sdk(self._app),
             lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
             blocking=True,
             blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
         )
-        async def _update_workbench_and_notify() -> (
-            tuple[ProjectDict, dict[NodeIDStr, Any], ProjectDocument, int]
+        async def _build_project_document_and_increment_version() -> (
+            tuple[ProjectDocument, int]
         ):
             """This function is protected because
             - the project document and its version must be kept in sync
             """
-            # Update the workbench work since it's atomic
-            updated_project, changed_entries = await self._update_project_workbench(
-                partial_workbench_data,
-                user_id=user_id,
-                project_uuid=f"{project_uuid}",
-                product_name=product_name,
-                allow_workbench_changes=allow_workbench_changes,
-            )
-            # the update project with last_modified timestamp latest is the last
-
             # Get the full project with workbench for document creation
             project_with_workbench = (
                 await _projects_repository.get_project_with_workbench(
                     app=self._app, project_uuid=project_uuid
                 )
             )
-
             # Create project document
             project_document = ProjectDocument(
                 uuid=project_with_workbench.uuid,
@@ -1006,21 +1003,19 @@ class ProjectDBAPI(BaseProjectDB):
                     ProjectTemplateType, project_with_workbench.template_type
                 ),
             )
-
             # Increment document version
             redis_client_sdk = get_redis_document_manager_client_sdk(self._app)
             document_version = await increment_and_return_project_document_version(
                 redis_client=redis_client_sdk, project_uuid=project_uuid
             )
 
-            return updated_project, changed_entries, project_document, document_version
+            return project_document, document_version
 
         (
-            updated_project,
-            changed_entries,
             project_document,
             document_version,
-        ) = await _update_workbench_and_notify()
+        ) = await _build_project_document_and_increment_version()
+
         await notify_project_document_updated(
             app=self._app,
             project_id=project_uuid,

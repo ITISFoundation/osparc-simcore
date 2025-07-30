@@ -203,21 +203,24 @@ async def patch_project_and_notify_users(
         thread-safe operations on the project document.
     """
 
+    await _projects_repository.patch_project(
+        app=app,
+        project_uuid=project_uuid,
+        new_partial_project_data=patch_project_data,
+    )
+
     @exclusive(
         get_redis_lock_manager_client_sdk(app),
         lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
         blocking=True,
         blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
     )
-    async def _patch_and_create_project_document() -> tuple[ProjectDocument, int]:
+    async def _build_project_document_and_increment_version() -> (
+        tuple[ProjectDocument, int]
+    ):
         """This function is protected because
         - the project document and its version must be kept in sync
         """
-        await _projects_repository.patch_project(
-            app=app,
-            project_uuid=project_uuid,
-            new_partial_project_data=patch_project_data,
-        )
         project_with_workbench = await _projects_repository.get_project_with_workbench(
             app=app, project_uuid=project_uuid
         )
@@ -244,7 +247,9 @@ async def patch_project_and_notify_users(
         )
         return project_document, document_version
 
-    project_document, document_version = await _patch_and_create_project_document()
+    project_document, document_version = (
+        await _build_project_document_and_increment_version()
+    )
     await notify_project_document_updated(
         app=app,
         project_id=project_uuid,
