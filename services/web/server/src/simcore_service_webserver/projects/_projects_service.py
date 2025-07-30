@@ -1449,6 +1449,35 @@ async def _clean_user_disconnected_clients(
                 await user_session.remove(PROJECT_ID_KEY)
 
 
+async def _leave_project_room(
+    *,
+    app: web.Application,
+    user_id: UserID,
+    client_session_id: str,
+    project_uuid: ProjectID,
+    user_session,
+) -> None:
+    """Helper function to leave a project room via socketio"""
+    socket_id = await user_session.get_socket_id()
+    if socket_id is not None:
+        _logger.debug(
+            "User %s/%s is leaving project room %s with socket_id %s",
+            user_id,
+            client_session_id,
+            project_uuid,
+            socket_id,
+        )
+        sio = get_socket_server(app)
+        await sio.leave_room(socket_id, SocketIORoomStr.from_project_id(project_uuid))
+    else:
+        _logger.error(
+            "User %s/%s has no socket_id, cannot leave project room %s",
+            user_id,
+            client_session_id,
+            project_uuid,
+        )
+
+
 def create_user_notification_cb(
     user_id: UserID, project_uuid: ProjectID, app: web.Application
 ):
@@ -1588,26 +1617,13 @@ async def close_project_for_user(
         await user_session.remove(key=PROJECT_ID_KEY)
 
         # remove the clent session from the project room
-        _socket_id = await user_session.get_socket_id()
-        if _socket_id is not None:
-            _logger.debug(
-                "User %s/%s is leaving project room %s with socket_id %s",
-                user_id,
-                client_session_id,
-                project_uuid,
-                _socket_id,
-            )
-            sio = get_socket_server(app)
-            await sio.leave_room(
-                _socket_id, SocketIORoomStr.from_project_id(project_uuid)
-            )
-        else:
-            _logger.warning(
-                "User %s/%s has no socket_id, cannot leave project room %s",
-                user_id,
-                client_session_id,
-                project_uuid,
-            )
+        await _leave_project_room(
+            app=app,
+            user_id=user_id,
+            client_session_id=client_session_id,
+            project_uuid=project_uuid,
+            user_session=user_session,
+        )
 
     # check it is not opened by someone else
     all_user_sessions_with_project.remove(current_user_session)

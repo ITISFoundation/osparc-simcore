@@ -6,7 +6,10 @@ This module contains common utilities for building and versioning project docume
 from typing import cast
 
 from aiohttp import web
-from models_library.api_schemas_webserver.projects import ProjectDocument
+from models_library.api_schemas_webserver.projects import (
+    ProjectDocument,
+    ProjectDocumentVersion,
+)
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects import ProjectType as ProjectTypeAPI
 from servicelib.redis import (
@@ -24,7 +27,7 @@ from . import _projects_repository
 
 async def build_project_document_and_increment_version(
     app: web.Application, project_uuid: ProjectID
-) -> tuple[ProjectDocument, int]:
+) -> tuple[ProjectDocument, ProjectDocumentVersion]:
     """Build project document and increment version with Redis lock protection.
 
     This function is protected by Redis exclusive lock because:
