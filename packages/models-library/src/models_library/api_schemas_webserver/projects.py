@@ -302,6 +302,9 @@ class ProjectDocument(OutputSchema):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
 
+ProjectDocumentVersion: TypeAlias = int
+
+
 __all__: tuple[str, ...] = (
     "EmptyModel",
     "ProjectCopyOverride",
