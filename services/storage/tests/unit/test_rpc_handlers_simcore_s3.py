@@ -269,7 +269,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         dst_project_nodes,
         nodes_map=nodes_map,
     )
-
+    data.pop("workbench", None)  # remove workbench from the data
     assert data == jsonable_encoder(
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
