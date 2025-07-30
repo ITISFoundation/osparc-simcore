@@ -3,6 +3,8 @@
 This module contains common utilities for building and versioning project documents.
 """
 
+import logging
+import re
 from typing import cast
 
 from aiohttp import web
@@ -10,6 +12,7 @@ from models_library.api_schemas_webserver.projects import (
     ProjectDocument,
     ProjectDocumentVersion,
 )
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects import ProjectType as ProjectTypeAPI
 from servicelib.redis import (
@@ -22,7 +25,10 @@ from ..redis import (
     get_redis_document_manager_client_sdk,
     get_redis_lock_manager_client_sdk,
 )
+from ..socketio._utils import get_socket_server
 from . import _projects_repository
+
+_logger = logging.getLogger(__name__)
 
 
 async def create_project_document_and_increment_version(
@@ -86,4 +92,70 @@ async def create_project_document_and_increment_version(
     return await _create_project_document_and_increment_version()
 
 
-async def remove_project_documents_as_admin(app: web.Application) -> None: ...
+async def remove_project_documents_as_admin(app: web.Application) -> None:
+    """Admin function to clean up project documents for projects with no connected users.
+
+    This function scans through all project documents in the Redis DOCUMENTS database,
+    checks if there are any users currently connected to the project room via socketio,
+    and removes documents that have no connected users.
+    """
+    # Get Redis document manager client to access the DOCUMENTS database
+    redis_client = get_redis_document_manager_client_sdk(app)
+
+    # Pattern to match project document keys - looking for keys that contain project UUIDs
+    project_document_pattern = "projects:*:version"
+
+    # Get socketio server instance
+    sio = get_socket_server(app)
+
+    projects_removed = 0
+
+    # Scan through all project document keys
+    async for key in redis_client.redis.scan_iter(
+        match=project_document_pattern, count=1000
+    ):
+        # Extract project UUID from the key pattern "projects:{project_uuid}:version"
+        key_str = key.decode("utf-8") if isinstance(key, bytes) else key
+        match = re.match(r"projects:([0-9a-f-]+):version", key_str)
+
+        if not match:
+            continue
+
+        project_uuid_str = match.group(1)
+        project_uuid = ProjectID(project_uuid_str)
+        project_room = SocketIORoomStr.from_project_id(project_uuid)
+
+        # Check if there are any users connected to this project room
+        try:
+            # Get all session IDs (socket IDs) in the project room
+            room_sessions = list(
+                sio.manager.get_participants(namespace="/", room=project_room)
+            )
+
+            # If no users are connected to this project room, remove the document
+            if not room_sessions:
+                await redis_client.redis.delete(key_str)
+                projects_removed += 1
+                _logger.info(
+                    "Removed project document for project %s (no connected users)",
+                    project_uuid,
+                )
+            else:
+                _logger.debug(
+                    "Project %s has %d connected users, keeping document",
+                    project_uuid,
+                    len(room_sessions),
+                )
+
+        except (KeyError, AttributeError, ValueError) as e:
+            _logger.warning(
+                "Failed to check room participants for project %s: %s",
+                project_uuid,
+                str(e),
+            )
+            continue
+
+    _logger.info(
+        "Project document cleanup completed: removed %d project documents",
+        projects_removed,
+    )
