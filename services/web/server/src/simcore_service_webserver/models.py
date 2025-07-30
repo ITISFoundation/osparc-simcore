@@ -6,6 +6,7 @@ from models_library.users import UserID
 from pydantic import ConfigDict, Field
 from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 
 from .constants import RQ_PRODUCT_KEY
 
@@ -24,4 +25,19 @@ class AuthenticatedRequestContext(RequestParameters):
 
     model_config = ConfigDict(
         frozen=True  # prevents modifications after middlewares creates this model
+    )
+
+
+class ClientSessionHeaderParams(RequestParameters):
+    """Header parameters for client session tracking in collaborative features."""
+
+    client_session_id: str | None = Field(
+        default=None,
+        alias=X_CLIENT_SESSION_ID_HEADER,
+        description="Client session identifier for collaborative features",
+    )
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="forbid",
     )

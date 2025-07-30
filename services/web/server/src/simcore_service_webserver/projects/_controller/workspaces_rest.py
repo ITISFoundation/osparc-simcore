@@ -7,11 +7,14 @@ from models_library.utils.common_validators import null_or_none_str_to_none_vali
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 from servicelib.aiohttp import status
-from servicelib.aiohttp.requests_validation import parse_request_path_parameters_as
-from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
+from servicelib.aiohttp.requests_validation import (
+    parse_request_headers_as,
+    parse_request_path_parameters_as,
+)
 
 from ..._meta import api_version_prefix as VTAG
 from ...login.decorators import login_required
+from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from .. import _workspaces_service
 from ._rest_exceptions import handle_plugin_requests_exceptions
@@ -44,8 +47,7 @@ async def move_project_to_workspace(request: web.Request):
     path_params = parse_request_path_parameters_as(
         _ProjectWorkspacesPathParams, request
     )
-
-    client_session_id: str | None = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     await _workspaces_service.move_project_into_workspace(
         app=request.app,
@@ -53,6 +55,6 @@ async def move_project_to_workspace(request: web.Request):
         project_id=path_params.project_id,
         workspace_id=path_params.workspace_id,
         product_name=req_ctx.product_name,
-        client_session_id=client_session_id,
+        client_session_id=header_params.client_session_id,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

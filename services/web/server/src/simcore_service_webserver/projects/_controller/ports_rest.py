@@ -17,12 +17,13 @@ from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseModel, Field, TypeAdapter
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
 )
-from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
+from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _ports_service, _projects_service
@@ -89,8 +90,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     inputs_updates = await parse_request_body_as(list[ProjectInputUpdate], request)
-
-    client_session_id: str | None = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     assert request.app  # nosec
 
@@ -126,7 +126,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         project_uuid=path_params.project_id,
         product_name=req_ctx.product_name,
         partial_workbench_data=jsonable_encoder(partial_workbench_data),
-        client_session_id=client_session_id,
+        client_session_id=header_params.client_session_id,
     )
 
     workbench = TypeAdapter(dict[NodeID, Node]).validate_python(

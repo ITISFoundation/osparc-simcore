@@ -35,6 +35,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -50,7 +51,6 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
-from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 from servicelib.services_utils import get_status_as_dict
 from simcore_postgres_database.models.users import UserRole
 
@@ -60,6 +60,7 @@ from ...dynamic_scheduler import api as dynamic_scheduler_service
 from ...groups.api import get_group_from_gid, list_all_user_groups_ids
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
+from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
@@ -97,8 +98,7 @@ async def create_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body = await parse_request_body_as(NodeCreate, request)
-
-    client_session_id = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     if await _projects_service.is_service_deprecated(
         request.app,
@@ -127,7 +127,7 @@ async def create_node(request: web.Request) -> web.Response:
             body.service_key,
             body.service_version,
             body.service_id,
-            client_session_id=client_session_id,
+            client_session_id=header_params.client_session_id,
         )
     }
     assert NodeCreated.model_validate(data) is not None  # nosec
@@ -182,8 +182,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
-
-    client_session_id = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     await _projects_service.patch_project_node(
         request.app,
@@ -193,7 +192,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         node_id=path_params.node_id,
         partial_node=node_patch.to_domain_model(),
-        client_session_id=client_session_id,
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -206,8 +205,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
 async def delete_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
-
-    client_session_id = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     # ensure the project exists
     await _projects_service.get_project_for_user(
@@ -222,7 +220,7 @@ async def delete_node(request: web.Request) -> web.Response:
         NodeIDStr(path_params.node_id),
         req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
-        client_session_id=client_session_id,
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -259,8 +257,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_outputs = await parse_request_body_as(NodeOutputs, request)
-
-    client_session_id = request.headers.get(X_CLIENT_SESSION_ID_HEADER)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     ui_changed_keys = set()
     ui_changed_keys.add(f"{path_params.node_id}")
@@ -273,7 +270,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         run_hash=None,
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
-        client_session_id=client_session_id,
+        client_session_id=header_params.client_session_id,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
