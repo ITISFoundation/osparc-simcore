@@ -1464,7 +1464,7 @@ qx.Class.define("osparc.data.model.Node", {
               // we don't have more information about the input node, so we just remove it by index
               const index = path.split("/")[4];
               // make sure index is valid
-              if (index > -1 || index < this.__inputNodes.length) {
+              if (index >= 0 && index < this.__inputNodes.length) {
                 this.fireDataEvent("removeEdge", {
                   nodeId1: this.__inputNodes[index],
                   nodeId2: this.getNodeId(),
