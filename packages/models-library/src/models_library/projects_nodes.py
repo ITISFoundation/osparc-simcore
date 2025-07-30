@@ -171,7 +171,9 @@ class NodeState(BaseModel):
         ),
     ] = 0
 
-    lock_state: Annotated[NodeShareState, Field(description="the node's lock state")]
+    lock_state: Annotated[
+        NodeShareState | None, Field(description="the node's lock state")
+    ]
 
     model_config = ConfigDict(
         extra="forbid",
@@ -329,8 +331,8 @@ class Node(BaseModel):
 
     state: Annotated[
         NodeState | None,
-        Field(default_factory=NodeState, description="The node's state object"),
-    ] = DEFAULT_FACTORY
+        Field(description="The node's state object"),
+    ] = None
 
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
@@ -357,7 +359,7 @@ class Node(BaseModel):
         if isinstance(v, str):
             # the old version of state was a enum of RunningState
             running_state_value = _convert_old_enum_name(v)
-            return NodeState(current_status=running_state_value)
+            return NodeState(current_status=running_state_value, lock_state=None)
         return v
 
     @staticmethod
