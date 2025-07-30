@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
+import tenacity
 from common_library.async_tools import cancel_wait_task
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
@@ -62,6 +63,16 @@ class RedisClientSDK:
         self._is_healthy = False
         self._health_check_task_started_event = asyncio.Event()
 
+    @tenacity.retry(
+        wait=tenacity.wait_fixed(2),
+        stop=tenacity.stop_after_delay(20),
+        before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
+        reraise=True,
+    )
+    async def wait_till_redis_is_responsive(self) -> None:
+        if not await self.ping():
+            raise tenacity.TryAgain
+
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
@@ -78,7 +89,7 @@ class RedisClientSDK:
         # - ensure redis is working
         # - before shutting down an initialized Redis connection it must
         #   make at least one call to the server, otherwise tests might hang
-        await self.ping()
+        await self.wait_till_redis_is_responsive()
 
         _logger.info(
             "Connection to %s succeeded with %s",
