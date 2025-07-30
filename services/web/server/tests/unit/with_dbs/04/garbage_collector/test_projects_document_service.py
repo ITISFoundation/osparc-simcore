@@ -230,3 +230,41 @@ async def test_remove_project_documents_as_admin_with_known_opened_projects(
         )
         == 0
     ), "Project 2 should be removed because it's not in known opened projects and has no socket connections"
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.USER,
+    ],
+)
+async def test_remove_project_documents_as_admin_mixed_state(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    redis_document_client: Any,
+    sample_project_uuids: list[ProjectID],
+    create_project_socketio_connections,
+):
+    """Test mixed state: some projects have documents, some have connections without documents."""
+    # Setup: Create document only for first project
+    test_key = f"projects:{sample_project_uuids[0]}:version"
+    await increment_and_return_project_document_version(
+        redis_client=redis_document_client, project_uuid=sample_project_uuids[0]
+    )
+
+    # Create SocketIO connection for second project (no document)
+    await create_project_socketio_connections(
+        project_uuids=sample_project_uuids[1:2],  # Only second project
+        connected_project_indices=[0],  # Connect it to room
+    )
+
+    # Execute the function
+    await _project_document_service.remove_project_documents_as_admin(client.app)
+
+    # Verify: First project document should be removed (no connections)
+    assert (
+        await redis_document_client.redis.exists(test_key) == 0
+    ), "Project 0 document should be removed (no active connections)"
+
+    # Cleanup
+    await redis_document_client.redis.delete(test_key)
