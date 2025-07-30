@@ -200,6 +200,7 @@ qx.Class.define("osparc.data.model.Node", {
     "keyChanged": "qx.event.type.Event",
     "changePosition": "qx.event.type.Data",
     "createEdge": "qx.event.type.Data",
+    "removeEdge": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
@@ -926,8 +927,9 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __removeInputNodeByIndex: function(index) {
-      // make sue index is valid
+    removeInputNode: function(inputNodeId) {
+      const index = this.__inputNodes.indexOf(inputNodeId);
+      // make sure index is valid
       if (index < 0 || index >= this.__inputNodes.length) {
         return false;
       }
@@ -935,11 +937,6 @@ qx.Class.define("osparc.data.model.Node", {
       this.__inputNodes.splice(index, 1);
       this.fireEvent("changeInputNodes");
       return true;
-    },
-
-    removeInputNode: function(inputNodeId) {
-      const index = this.__inputNodes.indexOf(inputNodeId);
-      this.__removeInputNodeByIndex(index);
     },
 
     isInputNode: function(inputNodeId) {
@@ -1466,7 +1463,13 @@ qx.Class.define("osparc.data.model.Node", {
             } else if (op === "remove") {
               // we don't have more information about the input node, so we just remove it by index
               const index = path.split("/")[4];
-              this.__removeInputNodeByIndex(index);
+              // make sure index is valid
+              if (index > -1 || index < this.__inputNodes.length) {
+                this.fireDataEvent("removeEdge", {
+                  nodeId1: this.__inputNodes[index],
+                  nodeId2: this.getNodeId(),
+                });
+              }
             }
             break;
           case "inputsRequired":

@@ -668,6 +668,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const { nodeId1, nodeId2 } = data;
         this._createEdgeBetweenNodes(nodeId1, nodeId2, false);
       });
+      node.addListener("removeEdge", e => {
+        const data = e.getData();
+        const { nodeId1, nodeId2 } = data;
+        this.__removeEdgeBetweenNodes(nodeId1, nodeId2);
+      });
       nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
@@ -871,6 +876,25 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       });
       edgeRepresentation.widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
       this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
+    },
+
+    __getEdgeUIBetweenNodes: function(node1Id, node2Id) {
+      const foundEdgeUI = this.__edgesUI.find(edgeUi => {
+        const edgeObj = edgeUi.getEdge();
+        const inputNode = edgeObj.getInputNode();
+        const outputNode = edgeObj.getOutputNode();
+        if (inputNode.getNodeId() === node1Id && outputNode.getNodeId() === node2Id) {
+          return true;
+        }
+      });
+      return foundEdgeUI;
+    },
+
+    __removeEdgeBetweenNodes: function(node1Id, node2Id) {
+      const edgeUI = this.__getEdgeUIBetweenNodes(node1Id, node2Id);
+      if (edgeUI) {
+        this.__removeEdge(edgeUI);
+      }
     },
 
     __updateAllEdges: function() {
