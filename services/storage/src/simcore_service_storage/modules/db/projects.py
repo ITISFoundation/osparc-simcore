@@ -31,7 +31,8 @@ class ProjectRepository(BaseRepository):
                 )
             ):
                 with suppress(ValidationError):
-                    yield ProjectAtDB.model_validate_ignoring_workbench(row._asdict())
+                    # FIXME: remove workbench once model is fixed
+                    yield ProjectAtDB.model_validate(row._asdict() | {"workbench": {}})
 
     async def get_project_id_and_node_id_to_names_map(
         self,

@@ -111,18 +111,6 @@ class BaseProjectModel(BaseModel):
     # NOTE: GCR: a validation failed (See: services/storage/src/simcore_service_storage/modules/db/projects.py)
     workbench: Annotated[NodesDict, Field(description="Project's pipeline")]
 
-    @classmethod
-    def model_validate_ignoring_workbench(cls, obj: Any):
-        if isinstance(obj, dict):
-            data = dict(obj)
-            data.pop("workbench", None)
-        else:
-            data = obj
-        model = cls.model_validate(data)
-        if isinstance(obj, dict) and "workbench" in obj:
-            model.workbench = obj["workbench"]
-        return model
-
 
 class ProjectAtDB(BaseProjectModel):
     # Model used to READ from database
