@@ -113,7 +113,7 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
     # Get known opened projects ids based on Redis resources table
     registry = get_registry(app)
     known_opened_project_ids = await list_opened_project_ids(registry)
-    known_opened_project_ids = set(known_opened_project_ids)
+    known_opened_project_ids_set = set(known_opened_project_ids)
 
     projects_removed = 0
 
@@ -133,7 +133,7 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
         project_room = SocketIORoomStr.from_project_id(project_uuid)
 
         # 1. CHECK - Check if the project UUID is in the known opened projects
-        if project_uuid in known_opened_project_ids:
+        if project_uuid in known_opened_project_ids_set:
             _logger.debug(
                 "Project %s is in Redis Resources table (which means Project is opened), keeping document",
                 project_uuid,
