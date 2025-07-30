@@ -45,13 +45,12 @@ APP_WALLET_SUBSCRIPTION_LOCK_KEY: Final[str] = "wallet_subscription_lock"
 async def _notify_comp_node_progress(
     app: web.Application, message: ProgressRabbitMessageNode
 ) -> None:
-    with log_catch(_logger, reraise=False):
-        project = await _projects_service.get_project_for_user(
-            app, f"{message.project_id}", message.user_id, include_state=True
-        )
-        await _projects_service.notify_project_node_update(
-            app, project, message.node_id, None
-        )
+    project = await _projects_service.get_project_for_user(
+        app, f"{message.project_id}", message.user_id, include_state=True
+    )
+    await _projects_service.notify_project_node_update(
+        app, project, message.node_id, None
+    )
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
