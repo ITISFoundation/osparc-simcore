@@ -50,7 +50,7 @@ from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
-from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_projects import new_project
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
@@ -683,7 +683,7 @@ async def user_project(
     tests_data_dir: Path,
     osparc_product_name: ProductName,
 ) -> AsyncIterator[ProjectDict]:
-    async with NewProject(
+    async with new_project(
         fake_project,
         client.app,
         user_id=logged_user["id"],

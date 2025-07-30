@@ -224,7 +224,6 @@ class BaseProjectDB:
         query = (
             sa.select(
                 *PROJECT_DB_COLS,
-                projects.c.workbench,
                 users.c.primary_gid.label("trashed_by_primary_gid"),
                 access_rights_subquery.c.access_rights,
             )

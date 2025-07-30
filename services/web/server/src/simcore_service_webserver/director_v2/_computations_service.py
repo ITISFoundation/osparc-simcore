@@ -1,3 +1,4 @@
+from collections.abc import Awaitable
 from decimal import Decimal
 
 from aiohttp import web
@@ -14,6 +15,8 @@ from models_library.computations import (
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.rest_ordering import OrderBy
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -29,6 +32,7 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CreditTransactionNotFoundError,
 )
 from servicelib.utils import limited_gather
+from simcore_service_webserver.projects._projects_nodes_repository import get_by_project
 
 from ..products.products_service import is_product_billable
 from ..projects.api import (
@@ -248,15 +252,23 @@ async def list_computations_latest_iteration_tasks(
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
     # Fetch projects metadata concurrently
     # NOTE: MD: can be improved with a single batch call
-    project_dicts = await limited_gather(
+
+    async def _wrap_with_id(
+        project_id: ProjectID, coro: Awaitable[list[tuple[NodeID, Node]]]
+    ) -> tuple[ProjectID, dict[NodeID, Node]]:
+        nodes = await coro
+        return project_id, dict(nodes)
+
+    results = await limited_gather(
         *[
-            get_project_dict_legacy(app, project_uuid=project_uuid)
+            _wrap_with_id(project_uuid, get_by_project(app, project_id=project_uuid))
             for project_uuid in unique_project_uuids
         ],
         limit=20,
     )
+
     # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench = {prj["uuid"]: prj["workbench"] for prj in project_dicts}
+    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = dict(results)
 
     _service_run_ids = [item.service_run_id for item in _tasks_get.items]
     _is_product_billable = await is_product_billable(app, product_name=product_name)
@@ -286,9 +298,8 @@ async def list_computations_latest_iteration_tasks(
             started_at=item.started_at,
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
-            node_name=project_uuid_to_workbench[f"{item.project_uuid}"][
-                f"{item.node_id}"
-            ].get("label", ""),
+            node_name=project_uuid_to_workbench[item.project_uuid][item.node_id].label
+            or "",
             osparc_credits=credits_or_none,
         )
         for item, credits_or_none in zip(

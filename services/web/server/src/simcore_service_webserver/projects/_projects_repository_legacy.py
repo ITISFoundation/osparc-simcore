@@ -234,41 +234,10 @@ class ProjectDBAPI(BaseProjectDB):
                         )
                         selected_values["tags"] = project_tag_ids
 
-                        # NOTE: this will at some point completely replace workbench in the DB
-                        if selected_values["workbench"]:
-                            project_nodes_repo = ProjectNodesRepo(
-                                project_uuid=project_uuid
+                        if project_nodes:
+                            await ProjectNodesRepo(project_uuid=project_uuid).add(
+                                conn, nodes=list(project_nodes.values())
                             )
-                            if project_nodes is None:
-                                project_nodes = {
-                                    NodeID(node_id): ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
-                                    )
-                                    for node_id, node_info in selected_values[
-                                        "workbench"
-                                    ].items()
-                                }
-
-                            nodes = [
-                                project_nodes.get(
-                                    NodeID(node_id),
-                                    ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
-                                    ),
-                                )
-                                for node_id, node_info in selected_values[
-                                    "workbench"
-                                ].items()
-                            ]
-                            await project_nodes_repo.add(conn, nodes=nodes)
         return selected_values
 
     async def insert_project(
@@ -333,7 +302,6 @@ class ProjectDBAPI(BaseProjectDB):
         # ensure we have the minimal amount of data here
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
-        insert_values.setdefault("workbench", {})
         insert_values.setdefault("workspace_id", None)
 
         # must be valid uuid
@@ -738,7 +706,6 @@ class ProjectDBAPI(BaseProjectDB):
             result = await conn.execute(
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
                 ).where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()

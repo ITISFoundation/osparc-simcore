@@ -27,7 +27,7 @@ from models_library.services_resources import (
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_projects import delete_all_projects, new_project
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
@@ -127,7 +127,7 @@ async def shared_project(
             },
         },
     )
-    async with NewProject(
+    async with new_project(
         fake_project,
         client.app,
         user_id=logged_user["id"],
@@ -156,7 +156,7 @@ async def template_project(
         str(all_group["gid"]): {"read": True, "write": False, "delete": False}
     }
 
-    async with NewProject(
+    async with new_project(
         project_data,
         client.app,
         user_id=user["id"],
@@ -191,7 +191,7 @@ async def create_template_project(
         project_data |= prj_kwargs
 
         new_template_project = await created_projects_exit_stack.enter_async_context(
-            NewProject(
+            new_project(
                 project_data,
                 client.app,
                 user_id=user["id"],
@@ -289,7 +289,7 @@ async def user_project_with_num_dynamic_services(
                 }
             }
             project = await stack.enter_async_context(
-                NewProject(
+                new_project(
                     project_data,
                     client.app,
                     user_id=logged_user["id"],
