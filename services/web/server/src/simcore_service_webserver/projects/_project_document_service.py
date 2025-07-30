@@ -25,6 +25,8 @@ from ..redis import (
     get_redis_document_manager_client_sdk,
     get_redis_lock_manager_client_sdk,
 )
+from ..resource_manager.registry import get_registry
+from ..resource_manager.registry_utils import list_opened_project_ids
 from ..socketio._utils import get_socket_server
 from . import _projects_repository
 
@@ -108,6 +110,11 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
     # Get socketio server instance
     sio = get_socket_server(app)
 
+    # Get known opened projects ids based on Redis resources table
+    registry = get_registry(app)
+    known_opened_project_ids = await list_opened_project_ids(registry)
+    known_opened_project_ids = set(known_opened_project_ids)
+
     projects_removed = 0
 
     # Scan through all project document keys
@@ -125,7 +132,15 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
         project_uuid = ProjectID(project_uuid_str)
         project_room = SocketIORoomStr.from_project_id(project_uuid)
 
-        # Check if there are any users connected to this project room
+        # 1. CHECK - Check if the project UUID is in the known opened projects
+        if project_uuid in known_opened_project_ids:
+            _logger.debug(
+                "Project %s is in Redis Resources table (which means Project is opened), keeping document",
+                project_uuid,
+            )
+            continue
+
+        # 2. CHECK - Check if there are any users connected to this project room
         try:
             # Get all session IDs (socket IDs) in the project room
             room_sessions = list(
@@ -141,17 +156,16 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                     project_uuid,
                 )
             else:
-                _logger.debug(
-                    "Project %s has %d connected users, keeping document",
+                _logger.error(
+                    "Project %s has %d connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
                     project_uuid,
                     len(room_sessions),
                 )
 
-        except (KeyError, AttributeError, ValueError) as e:
-            _logger.warning(
-                "Failed to check room participants for project %s: %s",
+        except (KeyError, AttributeError, ValueError):
+            _logger.exception(
+                "Failed to check room participants for project %s",
                 project_uuid,
-                str(e),
             )
             continue
 
