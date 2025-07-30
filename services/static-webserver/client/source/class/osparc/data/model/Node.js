@@ -925,15 +925,20 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
+    __removeInputNodeByIndex: function(index) {
+      // make sue index is valid
+      if (index < 0 || index >= this.__inputNodes.length) {
+        return false;
+      }
+      // remove node connection
+      this.__inputNodes.splice(index, 1);
+      this.fireEvent("changeInputNodes");
+      return true;
+    },
+
     removeInputNode: function(inputNodeId) {
       const index = this.__inputNodes.indexOf(inputNodeId);
-      if (index > -1) {
-        // remove node connection
-        this.__inputNodes.splice(index, 1);
-        this.fireEvent("changeInputNodes");
-        return true;
-      }
-      return false;
+      this.__removeInputNodeByIndex(index);
     },
 
     isInputNode: function(inputNodeId) {
@@ -1451,6 +1456,14 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           }
           case "inputNodes":
+            if (op === "add") {
+              const inputNodeId = value;
+              this.addInputNode(inputNodeId);
+            } else if (op === "remove") {
+              const index = path.split("/")[4];
+              this.__removeInputNodeByIndex(index);
+            }
+            break;
           case "inputsRequired":
             console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
             break;

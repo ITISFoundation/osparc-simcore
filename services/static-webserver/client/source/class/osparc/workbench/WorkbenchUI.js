@@ -828,39 +828,44 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const edgeUI = new osparc.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
-        const hint = edgeUI.getHint();
-        const that = this;
-        [
-          edgeRepresentation.widerCurve.node,
-          edgeRepresentation.node
-        ].forEach(svgEl => {
-          svgEl.addEventListener("click", e => {
-            // this is needed to get out of the context of svg
-            that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-            e.stopPropagation();
-          }, this);
-
-          const topOffset = 20;
-          [
-            "mouseover",
-            "mousemove"
-          ].forEach(ev => {
-            svgEl.addEventListener(ev, e => {
-              const leftOffset = -(parseInt(hint.getHintBounds().width/2));
-              const properties = {
-                top: e.clientY + topOffset,
-                left: e.clientX + leftOffset
-              };
-              hint.setLayoutProperties(properties);
-              if (hint.getText()) {
-                hint.show();
-              }
-            }, this);
-          });
-        });
-        edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
-        this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
+        this.__decorateEdgeUI(edgeUI);
       }
+    },
+
+    __decorateEdgeUI: function(edgeUI) {
+      const hint = edgeUI.getHint();
+      const edgeRepresentation = edgeUI.getRepresentation();
+      const that = this;
+      [
+        edgeRepresentation.widerCurve.node,
+        edgeRepresentation.node
+      ].forEach(svgEl => {
+        svgEl.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
+
+        const topOffset = 20;
+        [
+          "mouseover",
+          "mousemove"
+        ].forEach(ev => {
+          svgEl.addEventListener(ev, e => {
+            const leftOffset = -(parseInt(hint.getHintBounds().width/2));
+            const properties = {
+              top: e.clientY + topOffset,
+              left: e.clientX + leftOffset
+            };
+            hint.setLayoutProperties(properties);
+            if (hint.getText()) {
+              hint.show();
+            }
+          }, this);
+        });
+      });
+      edgeRepresentation.widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
+      this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
     },
 
     __updateAllEdges: function() {
