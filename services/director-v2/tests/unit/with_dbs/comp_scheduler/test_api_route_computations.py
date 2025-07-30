@@ -953,6 +953,7 @@ async def test_get_computation_from_not_started_computation_task(
                         for node, next_nodes in fake_workbench_adjacency.items()
                         if f"{t.node_id}" in next_nodes
                     },
+                    lock_state=None,
                 )
                 for t in comp_tasks
                 if t.node_class == NodeClass.COMPUTATIONAL
@@ -1025,6 +1026,7 @@ async def test_get_computation_from_published_computation_task(
                         if f"{t.node_id}" in next_nodes
                     },
                     progress=0,
+                    lock_state=None,
                 )
                 for t in comp_tasks
                 if t.node_class == NodeClass.COMPUTATIONAL
