@@ -128,7 +128,7 @@ async def build_rrids_tree_view(
 ) -> dict[str, Any]:
     if tree_view_mode != "std":
         raise web.HTTPNotImplemented(
-            reason="Currently only 'std' option for the classifiers tree view is implemented"
+            text="Currently only 'std' option for the classifiers tree view is implemented"
         )
 
     scicrunch = SciCrunch.get_instance(app)

@@ -95,13 +95,13 @@ async def delete_project_as_admin(
     except ProjectLockError as err:
         raise ProjectDeleteError(
             project_uuid=project_uuid,
-            reason=f"Cannot delete project {project_uuid} because it is currently in use. Details: {err}",
+            details=f"Cannot delete project {project_uuid} because it is currently in use. Details: {err}",
             state=state,
         ) from err
 
     except Exception as err:
         raise ProjectDeleteError(
             project_uuid=project_uuid,
-            reason=f"Unexpected error. Deletion sequence: {state=}",
+            details=f"Unexpected error. Deletion sequence: {state=}",
             state=state,
         ) from err

@@ -8,12 +8,12 @@ from ..errors import WebServerBaseError
 class DirectorV2ServiceError(WebServerBaseError, RuntimeError):
     """Basic exception for errors raised by director-v2"""
 
-    msg_template = "Unexpected error: director-v2 returned '{status}', reason '{reason}' after calling '{url}'"
+    msg_template = "Unexpected error: director-v2 returned '{status}', details '{details}' after calling '{url}'"
 
-    def __init__(self, *, status: int, reason: str, **ctx: Any) -> None:
+    def __init__(self, *, status: int, details: str, **ctx: Any) -> None:
         super().__init__(**ctx)
         self.status = status
-        self.reason = reason
+        self.details = details
 
 
 class ComputationNotFoundError(DirectorV2ServiceError):

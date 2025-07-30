@@ -875,7 +875,7 @@ async def _start_dynamic_service(  # noqa: C901
                 and wallet.available_credits <= ZERO_CREDITS
             ):
                 raise WalletNotEnoughCreditsError(
-                    reason=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
+                    details=f"Wallet '{wallet.name}' has {wallet.available_credits} credits."
                 )
 
             pricing_info = PricingInfo(
