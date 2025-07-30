@@ -433,7 +433,6 @@ async def test_run_partial_computation(
                 },
                 currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
                 progress=s.get("progress"),
-                lock_state=None,
             )
             for n, s in exp_node_states.items()
         }
