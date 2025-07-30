@@ -893,8 +893,9 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode) {
-      // not solved yet, reload the site to avoid issues
-      window.location.reload();
+      // not solved yet, log the user out to avoid issues
+      qx.core.Init.getApplication().logout(this.tr("Potential updates coming from a collaborator"));
+      return;
 
       const promises = nodesAdded.map(nodeId => {
         const addNodePatch = workbenchPatchesByNode[nodeId].find(workbenchPatch => {
