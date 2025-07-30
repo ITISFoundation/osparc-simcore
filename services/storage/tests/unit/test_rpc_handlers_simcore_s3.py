@@ -116,6 +116,8 @@ async def _request_copy_folders(
             if async_job_result.done:
                 result = await async_job_result.result()
                 assert isinstance(result, AsyncJobResult)
+                assert isinstance(result.result, dict)
+                result.result.pop("workbench", None)  # remove workbench from the data
                 return result.result
 
     pytest.fail(reason="Copy folders failed!")
@@ -189,7 +191,6 @@ async def test_copy_folders_from_empty_project(
         {},
         nodes_map={},
     )
-    data.pop("workbench", None)  # remove workbench from the data
     assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
     async with sqlalchemy_async_engine.connect() as conn:
@@ -269,7 +270,6 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         dst_project_nodes,
         nodes_map=nodes_map,
     )
-    data.pop("workbench", None)  # remove workbench from the data
     assert data == jsonable_encoder(
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
@@ -371,7 +371,6 @@ async def test_copy_folders_from_valid_project(
         dst_project_nodes,
         nodes_map=nodes_map,
     )
-    data.pop("workbench", None)  # remove workbench from the data
     assert data == jsonable_encoder(
         await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
     )
@@ -432,9 +431,6 @@ async def _create_and_delete_folders_from_project(
         nodes_map=nodes_map,
         client_timeout=client_timeout,
     )
-
-    data.pop("workbench", None)  # remove workbench from the data
-
     # data should be equal to the destination project, and all store entries should point to simcore.s3
     # NOTE: data is jsonized where destination project is not!
     assert jsonable_encoder(dst_project) == data
