@@ -9,6 +9,7 @@
 import json
 import uuid
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -243,3 +244,93 @@ async def test_patch_project_with_client_session_header(
     )
     # This should fail validation since it's not a proper UUID
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
+)
+async def test_patch_project_with_mocked_header_parsing(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+):
+    """Test that header_params = parse_request_headers_as(ClientSessionHeaderParams, request) works correctly"""
+    assert client.app
+    base_url = client.app.router["patch_project"].url_for(
+        project_id=user_project["uuid"]
+    )
+
+    # Generate a valid client session ID
+    test_client_session_id = str(uuid.uuid4())
+
+    # Mock the _projects_service.patch_project_for_user to spy on the client_session_id parameter
+    with patch(
+        "simcore_service_webserver.projects._controller.projects_rest._projects_service.patch_project_for_user"
+    ) as mock_patch_project_service:
+        # Make the service call succeed
+        mock_patch_project_service.return_value = None
+
+        # Make the PATCH request with client session header
+        resp = await client.patch(
+            f"{base_url}",
+            data=json.dumps(
+                {
+                    "name": "testing-name-with-mocked-header",
+                    "description": "testing-description-with-mocked-header",
+                }
+            ),
+            headers={"X-Client-Session-Id": test_client_session_id},
+        )
+        await assert_status(resp, expected)
+
+        # Verify that patch_project_for_user was called with the correct client_session_id
+        mock_patch_project_service.assert_called_once()
+        call_args = mock_patch_project_service.call_args
+
+        # Extract the client_session_id from the call arguments
+        assert "client_session_id" in call_args.kwargs
+        assert call_args.kwargs["client_session_id"] == test_client_session_id
+
+
+@pytest.mark.parametrize(
+    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
+)
+async def test_patch_project_without_client_session_header(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+):
+    """Test patch project works when X-Client-Session-Id header is not provided"""
+    assert client.app
+    base_url = client.app.router["patch_project"].url_for(
+        project_id=user_project["uuid"]
+    )
+
+    # Mock the _projects_service.patch_project_for_user to spy on the client_session_id parameter
+    with patch(
+        "simcore_service_webserver.projects._controller.projects_rest._projects_service.patch_project_for_user"
+    ) as mock_patch_project_service:
+        # Make the service call succeed
+        mock_patch_project_service.return_value = None
+
+        # Make the PATCH request WITHOUT client session header
+        resp = await client.patch(
+            f"{base_url}",
+            data=json.dumps(
+                {
+                    "name": "testing-name-without-header",
+                    "description": "testing-description-without-header",
+                }
+            ),
+        )
+        await assert_status(resp, expected)
+
+        # Verify that patch_project_for_user was called with client_session_id=None
+        mock_patch_project_service.assert_called_once()
+        call_args = mock_patch_project_service.call_args
+
+        # Extract the client_session_id from the call arguments
+        assert "client_session_id" in call_args.kwargs
+        assert call_args.kwargs["client_session_id"] is None
