@@ -12,7 +12,7 @@ from settings_library.redis import RedisSettings
 
 from ...aiohttp import status
 from ...long_running_tasks import lrt_api
-from ...long_running_tasks._error_serialization import (
+from ...long_running_tasks._redis_serialization import (
     BaseObjectSerializer,
     register_custom_serialization,
 )

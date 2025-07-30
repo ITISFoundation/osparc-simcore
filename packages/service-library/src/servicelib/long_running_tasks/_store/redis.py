@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Final
 
 import redis.asyncio as aioredis
@@ -8,6 +9,8 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from ...redis._client import RedisClientSDK
 from ..models import TaskContext, TaskData, TaskId
 from .base import BaseStore
+
+_logger = logging.getLogger(__name__)
 
 STORE_TYPE_TASK_DATA: Final[str] = "TD"
 STORE_TYPE_CANCELLED_TASKS: Final[str] = "CT"
@@ -49,6 +52,9 @@ class RedisStore(BaseStore):
         return TypeAdapter(TaskData).validate_json(result) if result else None
 
     async def set_task_data(self, task_id: TaskId, value: TaskData) -> None:
+        _logger.debug(
+            "Setting task data for task_id=%s with data value=%s", task_id, value
+        )
         await self.redis.hset(
             self._get_redis_hash_key(STORE_TYPE_TASK_DATA),
             task_id,

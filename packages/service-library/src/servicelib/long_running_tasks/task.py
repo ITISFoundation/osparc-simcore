@@ -17,7 +17,7 @@ from servicelib.logging_utils import log_catch
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis import RedisClientSDK, exclusive
-from ._error_serialization import error_from_string, error_to_string
+from ._redis_serialization import object_to_string, string_to_object
 from ._store.base import BaseStore
 from ._store.redis import RedisStore
 from .errors import (
@@ -263,16 +263,18 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
                 # get task result
                 try:
-                    task_data.result_field = ResultField(result=task.result())
+                    task_data.result_field = ResultField(
+                        result=object_to_string(task.result())
+                    )
                 except asyncio.InvalidStateError:
                     # task was not completed try again next time and see if it is done
                     continue
                 except asyncio.CancelledError:
                     task_data.result_field = ResultField(
-                        error=error_to_string(TaskCancelledError(task_id=task_id))
+                        error=object_to_string(TaskCancelledError(task_id=task_id))
                     )
                 except Exception as e:  # pylint:disable=broad-except
-                    task_data.result_field = ResultField(error=error_to_string(e))
+                    task_data.result_field = ResultField(error=object_to_string(e))
 
                 await self._tasks_data.set_task_data(task_id, task_data)
 
@@ -360,9 +362,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             raise TaskNotCompletedError(task_id=task_id)
 
         if tracked_task.result_field.error is not None:
-            raise error_from_string(tracked_task.result_field.error)
+            raise string_to_object(tracked_task.result_field.error)
 
-        return tracked_task.result_field.result
+        return string_to_object(tracked_task.result_field.result)
 
     async def cancel_task(
         self, task_id: TaskId, with_task_context: TaskContext

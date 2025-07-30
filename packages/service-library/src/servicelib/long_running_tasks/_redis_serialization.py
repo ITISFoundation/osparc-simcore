@@ -2,7 +2,7 @@ import base64
 import logging
 import pickle
 from abc import ABC, abstractmethod
-from typing import Final, Generic, TypeVar
+from typing import Any, Final, Generic, TypeVar
 
 _logger = logging.getLogger(__name__)
 
@@ -42,9 +42,9 @@ _TYPE_FIELD: Final[str] = "__pickle__type__field__"
 _MODULE_FIELD: Final[str] = "__pickle__module__field__"
 
 
-def error_to_string(e: Exception) -> str:
-    """Serialize exception to base64-encoded string."""
-    to_serialize: Exception | dict = e
+def object_to_string(e: Any) -> str:
+    """Serialize object to base64-encoded string."""
+    to_serialize: Any | dict = e
     object_class = type(e)
 
     for registered_class, object_serializer in _SERIALIZERS.items():
@@ -59,8 +59,8 @@ def error_to_string(e: Exception) -> str:
     return base64.b85encode(pickle.dumps(to_serialize)).decode("utf-8")
 
 
-def error_from_string(error_str: str) -> Exception:
-    """Deserialize exception from base64-encoded string."""
+def string_to_object(error_str: str) -> Any:
+    """Deserialize object from base64-encoded string."""
     data = pickle.loads(base64.b85decode(error_str))  # noqa: S301
 
     if isinstance(data, dict) and _TYPE_FIELD in data and _MODULE_FIELD in data:
