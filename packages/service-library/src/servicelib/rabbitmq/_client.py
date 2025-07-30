@@ -46,7 +46,6 @@ def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
         and isinstance(x_death[0], dict)
         and "count" in x_death[0]
     ):
-
         assert isinstance(x_death[0]["count"], int)  # nosec
         count = x_death[0]["count"]
 
@@ -96,7 +95,9 @@ async def _on_message(
                 if not await message_handler(message.body):
                     await _safe_nack(message_handler, max_retries_upon_error, message)
         except Exception:  # pylint: disable=broad-exception-caught
-            _logger.exception("Exception raised when handling message")
+            _logger.exception(
+                "Exception raised when handling message. This is catched and will continue. TIP: review your code"
+            )
             with log_catch(_logger, reraise=False):
                 await _safe_nack(message_handler, max_retries_upon_error, message)
 
