@@ -349,7 +349,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
       const op = patch.op;
       const path = patch.path;
       const value = patch.value;
-      const annotationId = path.split("/")[3];
+      let annotationId = path.split("/")[3];
       switch (op) {
         case "add": {
           const annotation = this.addAnnotation(value, annotationId);
@@ -361,13 +361,30 @@ qx.Class.define("osparc.data.model.StudyUI", {
           this.fireDataEvent("annotationRemoved", annotationId);
           break;
         case "replace":
-          if (annotationId in this.getAnnotations()) {
+          if (annotationId && annotationId in this.getAnnotations()) {
             const annotation = this.getAnnotations()[annotationId];
             if (annotation) {
               if (path.includes("/color")) {
                 annotation.setColor(value);
               } else if (path.includes("/attributes")) {
                 this.__updateAnnotationAttributesFromPatch(annotation, path, value);
+              }
+            }
+          } else {
+            // the first (add) or last (remove) annotation will fall here
+            if (value && Object.keys(value).length) {
+              // first added
+              annotationId = Object.keys(value)[0];
+              const annotationData = Object.values(value)[0];
+              const annotation = this.addAnnotation(annotationData, annotationId);
+              this.fireDataEvent("annotationAdded", annotation);
+            } else {
+              // last removed
+              const currentIds = Object.keys(this.getAnnotations());
+              if (currentIds.length === 1) {
+                annotationId = currentIds[0];
+                this.removeAnnotation(annotationId);
+                this.fireDataEvent("annotationRemoved", annotationId);
               }
             }
           }
