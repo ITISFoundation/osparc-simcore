@@ -1430,7 +1430,6 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     updateNodeFromPatch: function(nodePatches) {
-      console.log(nodePatches);
       const nodePropertyKeys = this.self().getProperties();
       nodePatches.forEach(patch => {
         const op = patch.op;

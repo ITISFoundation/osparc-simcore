@@ -1023,9 +1023,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
      */
     projectDocumentChanged: function(patchData) {
       patchData["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
-      if (osparc.utils.Utils.isDevelopmentPlatform()) {
-        console.log("projectDocumentChanged", patchData);
-      }
       // avoid echo loop
       if (this.__blockUpdates) {
         return;
