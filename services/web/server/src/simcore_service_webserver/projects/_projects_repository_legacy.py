@@ -15,7 +15,6 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from models_library.api_schemas_webserver.projects import ProjectDocument
 from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
 from models_library.groups import GroupID
@@ -26,7 +25,6 @@ from models_library.projects import (
     ProjectListAtDB,
     ProjectTemplateType,
 )
-from models_library.projects import ProjectType as ProjectTypeAPI
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -44,11 +42,6 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.redis import (
-    PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
-    exclusive,
-    increment_and_return_project_document_version,
-)
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
@@ -82,12 +75,7 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
-from ..redis import (
-    get_redis_document_manager_client_sdk,
-    get_redis_lock_manager_client_sdk,
-)
 from ..utils import now_str
-from . import _projects_repository
 from ._comments_repository import (
     create_project_comment,
     delete_project_comment,
@@ -96,6 +84,7 @@ from ._comments_repository import (
     total_project_comments,
     update_project_comment,
 )
+from ._project_document_utils import build_project_document_and_increment_version
 from ._projects_repository import PROJECT_DB_COLS
 from ._projects_repository_legacy_utils import (
     ANY_USER_ID_SENTINEL,
@@ -967,54 +956,10 @@ class ProjectDBAPI(BaseProjectDB):
             allow_workbench_changes=allow_workbench_changes,
         )
 
-        @exclusive(
-            get_redis_lock_manager_client_sdk(self._app),
-            lock_key=PROJECT_DB_UPDATE_REDIS_LOCK_KEY.format(project_uuid),
-            blocking=True,
-            blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
-        )
-        async def _build_project_document_and_increment_version() -> (
-            tuple[ProjectDocument, int]
-        ):
-            """This function is protected because
-            - the project document and its version must be kept in sync
-            """
-            # Get the full project with workbench for document creation
-            project_with_workbench = (
-                await _projects_repository.get_project_with_workbench(
-                    app=self._app, project_uuid=project_uuid
-                )
-            )
-            # Create project document
-            project_document = ProjectDocument(
-                uuid=project_with_workbench.uuid,
-                workspace_id=project_with_workbench.workspace_id,
-                name=project_with_workbench.name,
-                description=project_with_workbench.description,
-                thumbnail=project_with_workbench.thumbnail,
-                last_change_date=project_with_workbench.last_change_date,
-                classifiers=project_with_workbench.classifiers,
-                dev=project_with_workbench.dev,
-                quality=project_with_workbench.quality,
-                workbench=project_with_workbench.workbench,
-                ui=project_with_workbench.ui,
-                type=cast(ProjectTypeAPI, project_with_workbench.type),
-                template_type=cast(
-                    ProjectTemplateType, project_with_workbench.template_type
-                ),
-            )
-            # Increment document version
-            redis_client_sdk = get_redis_document_manager_client_sdk(self._app)
-            document_version = await increment_and_return_project_document_version(
-                redis_client=redis_client_sdk, project_uuid=project_uuid
-            )
-
-            return project_document, document_version
-
         (
             project_document,
             document_version,
-        ) = await _build_project_document_and_increment_version()
+        ) = await build_project_document_and_increment_version(self._app, project_uuid)
 
         await notify_project_document_updated(
             app=self._app,
