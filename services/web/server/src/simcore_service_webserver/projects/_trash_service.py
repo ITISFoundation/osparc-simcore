@@ -224,7 +224,7 @@ async def delete_explicitly_trashed_project(
         raise ProjectNotTrashedError(
             project_uuid=project_id,
             user_id=user_id,
-            reason="Cannot delete trashed project since it does not fit current criteria",
+            details="Cannot delete trashed project since it does not fit current criteria",
         )
 
     await _projects_service.delete_project_by_user(

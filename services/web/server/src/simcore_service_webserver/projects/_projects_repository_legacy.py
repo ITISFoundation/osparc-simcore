@@ -1381,7 +1381,7 @@ class ProjectDBAPI(BaseProjectDB):
             # reduce time to develop by not implementing something that might never be necessary
             raise ProjectDeleteError(
                 project_uuid=project_uuid,
-                reason="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
+                details="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
             )
 
 

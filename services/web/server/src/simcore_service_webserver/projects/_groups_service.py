@@ -121,7 +121,7 @@ async def replace_project_group(
             raise ProjectInvalidRightsError(
                 user_id=user_id,
                 project_uuid=project_id,
-                reason=f"User does not have access to modify owner project group in project {project_id}",
+                details=f"User does not have access to modify owner project group in project {project_id}",
             )
 
     project_group_db: ProjectGroupGetDB = (
@@ -168,7 +168,7 @@ async def delete_project_group(
         raise ProjectInvalidRightsError(
             user_id=user_id,
             project_uuid=project_id,
-            reason=f"User does not have access to modify owner project group in project {project_id}",
+            details=f"User does not have access to modify owner project group in project {project_id}",
         )
 
     await _groups_repository.delete_project_group(

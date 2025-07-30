@@ -269,7 +269,7 @@ async def delete_trashed_workspace(
         raise WorkspaceNotTrashedError(
             workspace_id=workspace_id,
             user_id=user_id,
-            reason="Cannot delete trashed workspace since it does not fit current criteria",
+            details="Cannot delete trashed workspace since it does not fit current criteria",
         )
 
     # NOTE: this function deletes workspace AND its content recursively!
