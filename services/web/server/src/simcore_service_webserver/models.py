@@ -40,12 +40,15 @@ class AuthenticatedRequestContext(RequestParameters):
     )
 
 
+assert X_CLIENT_SESSION_ID_HEADER
+
+
 class ClientSessionHeaderParams(RequestParameters):
     """Header parameters for client session tracking in collaborative features."""
 
     client_session_id: ClientSessionID | None = Field(
         default=None,
-        alias=X_CLIENT_SESSION_ID_HEADER,
+        alias="x-client-session-id",  # X_CLIENT_SESSION_ID_HEADER,
         description="Client session identifier for collaborative features (UUID string)",
     )
 
