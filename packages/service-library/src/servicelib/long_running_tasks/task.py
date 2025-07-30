@@ -1,10 +1,8 @@
 import asyncio
-import base64
 import datetime
 import functools
 import inspect
 import logging
-import pickle
 import traceback
 import urllib.parse
 from contextlib import suppress
@@ -19,6 +17,7 @@ from servicelib.logging_utils import log_catch
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis import RedisClientSDK, exclusive
+from ._error_serialization import error_from_string, error_to_string
 from ._store.base import BaseStore
 from ._store.redis import RedisStore
 from .errors import (
@@ -99,14 +98,6 @@ async def _get_tasks_to_remove(
                     (tracked_task.task_id, tracked_task.task_context)
                 )
     return tasks_to_remove
-
-
-def _error_to_string(e: Exception) -> str:
-    return base64.b85encode(pickle.dumps(e)).decode("utf-8")
-
-
-def _error_from_string(error_str: str) -> Exception:
-    return pickle.loads(base64.b85decode(error_str))  # type: ignore[no-any-return]  # noqa: S301
 
 
 class TasksManager:  # pylint:disable=too-many-instance-attributes
@@ -278,10 +269,10 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     continue
                 except asyncio.CancelledError:
                     task_data.result_field = ResultField(
-                        error=_error_to_string(TaskCancelledError(task_id=task_id))
+                        error=error_to_string(TaskCancelledError(task_id=task_id))
                     )
                 except Exception as e:  # pylint:disable=broad-except
-                    task_data.result_field = ResultField(error=_error_to_string(e))
+                    task_data.result_field = ResultField(error=error_to_string(e))
 
                 await self._tasks_data.set_task_data(task_id, task_data)
 
@@ -369,7 +360,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             raise TaskNotCompletedError(task_id=task_id)
 
         if tracked_task.result_field.error is not None:
-            raise _error_from_string(tracked_task.result_field.error)
+            raise error_from_string(tracked_task.result_field.error)
 
         return tracked_task.result_field.result
 

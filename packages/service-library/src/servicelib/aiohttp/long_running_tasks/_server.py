@@ -5,19 +5,23 @@ from functools import wraps
 from typing import Any
 
 from aiohttp import web
+from aiohttp.web import HTTPException
 from common_library.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, TypeAdapter
-from servicelib.long_running_tasks.task import Namespace
 from settings_library.redis import RedisSettings
 
 from ...aiohttp import status
 from ...long_running_tasks import lrt_api
+from ...long_running_tasks._error_serialization import (
+    BaseObjectSerializer,
+    register_custom_serialization,
+)
 from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_CHECK_INTERVAL,
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
 from ...long_running_tasks.models import TaskContext, TaskGet
-from ...long_running_tasks.task import RegisteredTaskName
+from ...long_running_tasks.task import Namespace, RegisteredTaskName
 from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
@@ -118,6 +122,22 @@ def _wrap_and_add_routes(
         )
 
 
+class AiohttpHTTPExceptionSerializer(BaseObjectSerializer[HTTPException]):
+    @classmethod
+    def get_init_kwargs_from_object(cls, obj: HTTPException) -> dict:
+        return {
+            "status_code": obj.status_code,
+            "reason": obj.reason,
+            "text": obj.text,
+            "headers": dict(obj.headers) if obj.headers else None,
+        }
+
+    @classmethod
+    def prepare_object_init_kwargs(cls, data: dict) -> dict:
+        data.pop("status_code")
+        return data
+
+
 def setup(
     app: web.Application,
     *,
@@ -140,6 +160,8 @@ def setup(
     """
 
     async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:
+        register_custom_serialization(HTTPException, AiohttpHTTPExceptionSerializer)
+
         # add error handlers
         app.middlewares.append(base_long_running_error_handler)
 
