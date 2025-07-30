@@ -173,7 +173,7 @@ class NodeState(BaseModel):
 
     lock_state: Annotated[
         NodeShareState | None, Field(description="the node's lock state")
-    ]
+    ] = None
 
     model_config = ConfigDict(
         extra="forbid",
