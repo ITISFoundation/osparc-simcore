@@ -359,7 +359,7 @@ class Node(BaseModel):
         if isinstance(v, str):
             # the old version of state was a enum of RunningState
             running_state_value = _convert_old_enum_name(v)
-            return NodeState(current_status=running_state_value, lock_state=None)
+            return NodeState(current_status=running_state_value)
         return v
 
     @staticmethod
