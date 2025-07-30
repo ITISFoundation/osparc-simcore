@@ -375,8 +375,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         """
         Eventually cancels the task.
 
-        NOTE: task can be cancelled immediatley if it runs in the same process or
-        be cancelled some time in the near future if it runs in a different process.
+        # NOTE: aborts the task:
+        # - Immediately, if the task is running on the current worker.
+        # - Asynchronously (after a short delay), if the task is running on another worker.
 
         raises TaskNotFoundError if the task cannot be found
         """
