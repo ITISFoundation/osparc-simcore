@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from servicelib.aiohttp import status
 
 from ...long_running_tasks import lrt_api
-from ...long_running_tasks.models import TaskGet, TaskId, TaskStatus
+from ...long_running_tasks.models import TaskGet, TaskId
 from ..requests_validation import parse_request_path_parameters_as
 from ..rest_responses import create_data_response
 from ._manager import get_long_running_manager
@@ -41,7 +41,7 @@ async def get_task_status(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     long_running_manager = get_long_running_manager(request.app)
 
-    task_status: TaskStatus = await lrt_api.get_task_status(
+    task_status = await lrt_api.get_task_status(
         long_running_manager.tasks_manager,
         long_running_manager.get_task_context(request),
         path_params.task_id,
