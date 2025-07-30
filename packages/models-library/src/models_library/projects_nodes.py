@@ -171,9 +171,7 @@ class NodeState(BaseModel):
         ),
     ] = 0
 
-    lock_state: Annotated[
-        NodeShareState, Field(description="the node's lock state")
-    ] = NodeShareState(locked=False, current_user_groupids=None, status=None)
+    lock_state: Annotated[NodeShareState, Field(description="the node's lock state")]
 
     model_config = ConfigDict(
         extra="forbid",
