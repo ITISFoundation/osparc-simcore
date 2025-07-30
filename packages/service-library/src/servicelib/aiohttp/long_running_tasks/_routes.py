@@ -2,8 +2,8 @@ from typing import Any
 
 from aiohttp import web
 from pydantic import BaseModel
-from servicelib.aiohttp import status
 
+from ...aiohttp import status
 from ...long_running_tasks import lrt_api
 from ...long_running_tasks.models import TaskGet, TaskId
 from ..requests_validation import parse_request_path_parameters_as

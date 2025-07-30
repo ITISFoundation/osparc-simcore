@@ -2,8 +2,8 @@ import logging
 from typing import Any
 
 from common_library.error_codes import create_error_code
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
+from ..logging_errors import create_troubleshootting_log_kwargs
 from .errors import TaskNotCompletedError, TaskNotFoundError
 from .models import TaskBase, TaskContext, TaskId, TaskStatus
 from .task import RegisteredTaskName, TasksManager

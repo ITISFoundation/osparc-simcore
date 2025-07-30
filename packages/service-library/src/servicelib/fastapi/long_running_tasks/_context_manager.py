@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from typing import Any, Final
 
 from pydantic import PositiveFloat
-from servicelib.logging_errors import create_troubleshootting_log_message
 
+from ...logging_errors import create_troubleshootting_log_message
 from ...long_running_tasks.errors import TaskClientTimeoutError, TaskExceptionError
 from ...long_running_tasks.models import (
     ProgressCallback,

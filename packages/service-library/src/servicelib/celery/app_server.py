@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from asyncio import AbstractEventLoop
 from typing import Generic, TypeVar
 
-from servicelib.celery.task_manager import TaskManager
+from ..celery.task_manager import TaskManager
 
 T = TypeVar("T")
 
