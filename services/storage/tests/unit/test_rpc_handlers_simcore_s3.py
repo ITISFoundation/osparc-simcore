@@ -189,6 +189,7 @@ async def test_copy_folders_from_empty_project(
         {},
         nodes_map={},
     )
+    data.pop("workbench", None)  # remove workbench from the data
     assert data == jsonable_encoder(dst_project)
     # check there is nothing in the dst project
     async with sqlalchemy_async_engine.connect() as conn:
