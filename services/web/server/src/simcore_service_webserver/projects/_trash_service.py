@@ -98,6 +98,7 @@ async def trash_project(
             trashed_explicitly=explicit,
             trashed_by=user_id,
         ),
+        client_session_id=None,
     )
 
 
@@ -117,6 +118,7 @@ async def untrash_project(
         project_patch=ProjectPatchInternalExtended(
             trashed_at=None, trashed_explicitly=False, trashed_by=None
         ),
+        client_session_id=None,
     )
 
 
