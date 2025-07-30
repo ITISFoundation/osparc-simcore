@@ -7,6 +7,7 @@
 
 
 import json
+import uuid
 from http import HTTPStatus
 
 import pytest
@@ -185,3 +186,60 @@ async def test_patch_project(
     assert data["ui"] == _patch_ui_2["ui"]
     assert data["quality"] == _patch_quality["quality"]
     assert data["dev"] == _patch_dev["dev"]
+
+
+@pytest.mark.parametrize(
+    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
+)
+async def test_patch_project_with_client_session_header(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    expected: HTTPStatus,
+):
+    assert client.app
+    base_url = client.app.router["patch_project"].url_for(
+        project_id=user_project["uuid"]
+    )
+
+    # Generate a valid UUID for client session ID
+    client_session_id = str(uuid.uuid4())
+
+    # Test patch with X-Client-Session-Id header - should succeed
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(
+            {
+                "name": "testing-name-with-session",
+                "description": "testing-description-with-session",
+            }
+        ),
+        headers={"X-Client-Session-Id": client_session_id},
+    )
+    await assert_status(resp, expected)
+
+    # Test patch without X-Client-Session-Id header - should also succeed (header is optional)
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(
+            {
+                "name": "testing-name-without-session",
+                "description": "testing-description-without-session",
+            }
+        ),
+    )
+    await assert_status(resp, expected)
+
+    # Test patch with invalid X-Client-Session-Id header - should fail with validation error
+    resp = await client.patch(
+        f"{base_url}",
+        data=json.dumps(
+            {
+                "name": "testing-name-invalid-session",
+                "description": "testing-description-invalid-session",
+            }
+        ),
+        headers={"X-Client-Session-Id": "invalid-uuid-format"},
+    )
+    # This should fail validation since it's not a proper UUID
+    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)

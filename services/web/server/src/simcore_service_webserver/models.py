@@ -48,7 +48,7 @@ class ClientSessionHeaderParams(RequestParameters):
 
     client_session_id: ClientSessionID | None = Field(
         default=None,
-        alias="x-client-session-id",  # X_CLIENT_SESSION_ID_HEADER,
+        alias="X-Client-Session-Id",  # X_CLIENT_SESSION_ID_HEADER,
         description="Client session identifier for collaborative features (UUID string)",
     )
 
