@@ -1169,7 +1169,7 @@ async def update_project_node_state(
         project_id=project_id,
         node_id=node_id,
         partial_node=PartialNode.model_construct(
-            state=NodeState(current_status=RunningState(new_state))
+            state=NodeState(current_status=RunningState(new_state), lock_state=None)
         ),
     )
     return await get_project_for_user(
