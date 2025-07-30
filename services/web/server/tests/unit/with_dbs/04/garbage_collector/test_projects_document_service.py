@@ -74,9 +74,6 @@ async def test_remove_project_documents_as_admin_with_real_connections(
         await increment_and_return_project_document_version(
             redis_client=redis_document_client, project_uuid=project_id
         )
-    # # Also add some invalid keys that should be ignored
-    # await redis_document_client.redis.set("projects:invalid-uuid:version", "1.0")
-    # await redis_document_client.redis.set("other:key:pattern", "1.0")
 
     # Verify keys exist before cleanup
     for key in test_keys:
@@ -102,8 +99,9 @@ async def test_remove_project_documents_as_admin_with_real_connections(
     connections.append((sio_client_3, session_id_3))
 
     try:
-        # Execute the function under test
-        await _project_document_service.remove_project_documents_as_admin(client.app)
+        await _project_document_service.remove_project_documents_as_admin(
+            client.app
+        )  # <-- This is the function being tested
 
         # Verify results:
         # - Projects 0 and 1 should still have their documents (users connected)
@@ -127,10 +125,6 @@ async def test_remove_project_documents_as_admin_with_real_connections(
             == 0
         )
 
-        # Invalid keys should remain untouched
-        # assert await redis_document_client.redis.exists("projects:invalid-uuid:version") == 1
-        # assert await redis_document_client.redis.exists("other:key:pattern") == 1
-
     finally:
         # Cleanup: Disconnect all SocketIO clients
         for sio_client, _ in connections:
@@ -140,8 +134,82 @@ async def test_remove_project_documents_as_admin_with_real_connections(
         # Cleanup: Remove test keys from Redis
         for key in test_keys:
             await redis_document_client.redis.delete(key)
-        # await redis_document_client.redis.delete("projects:invalid-uuid:version")
-        # await redis_document_client.redis.delete("other:key:pattern")
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        UserRole.USER,
+    ],
+)
+async def test_remove_project_documents_as_admin_with_known_opened_projects(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    sample_project_uuids: list[ProjectID],
+    mocker,
+):
+    """Test that project documents are NOT removed when projects are in known opened projects list."""
+    from servicelib.redis import increment_and_return_project_document_version
+    from simcore_service_webserver.projects._project_document_service import (
+        get_redis_document_manager_client_sdk,
+    )
+
+    # Get the real Redis document manager client
+    redis_document_client = get_redis_document_manager_client_sdk(client.app)
+
+    # Setup: Create real Redis keys for project documents
+    test_keys = []
+    for project_id in sample_project_uuids:
+        key = f"projects:{project_id}:version"
+        test_keys.append(key)
+        # Set a document version in Redis
+        await increment_and_return_project_document_version(
+            redis_client=redis_document_client, project_uuid=project_id
+        )
+
+    # Verify keys exist before cleanup
+    for key in test_keys:
+        assert await redis_document_client.redis.exists(key) == 1
+
+    # Mock list_opened_project_ids to return the first two projects as "known opened"
+    known_opened_projects = sample_project_uuids[:2]  # First two projects are "opened"
+    mocker.patch(
+        "simcore_service_webserver.projects._project_document_service.list_opened_project_ids",
+        return_value=known_opened_projects,
+    )
+
+    try:
+        # Execute the function
+        await _project_document_service.remove_project_documents_as_admin(client.app)
+
+        # Verify results:
+        # - Projects 0 and 1 should still have their documents (in known opened projects)
+        # - Project 2 should have its document removed (not in known opened projects and no socket connections)
+        assert (
+            await redis_document_client.redis.exists(
+                f"projects:{sample_project_uuids[0]}:version"
+            )
+            == 1
+        ), "Project 0 should be kept because it's in known opened projects"
+
+        assert (
+            await redis_document_client.redis.exists(
+                f"projects:{sample_project_uuids[1]}:version"
+            )
+            == 1
+        ), "Project 1 should be kept because it's in known opened projects"
+
+        assert (
+            await redis_document_client.redis.exists(
+                f"projects:{sample_project_uuids[2]}:version"
+            )
+            == 0
+        ), "Project 2 should be removed because it's not in known opened projects and has no socket connections"
+
+    finally:
+        # Cleanup: Remove remaining test keys from Redis
+        for key in test_keys:
+            await redis_document_client.redis.delete(key)
 
 
 # async def test_remove_project_documents_as_admin_with_connected_users(
