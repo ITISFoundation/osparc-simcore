@@ -1261,7 +1261,7 @@ async def patch_project_node(
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, app=app
     )
-    # 5. Updates project states for user, if inputs/outputs have been changed
+    # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
         for node_uuid in updated_project["workbench"]:
             await notify_project_node_update(
