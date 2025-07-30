@@ -75,6 +75,7 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
+from ..models import ClientSessionID
 from ..utils import now_str
 from ._comments_repository import (
     create_project_comment,
@@ -84,7 +85,7 @@ from ._comments_repository import (
     total_project_comments,
     update_project_comment,
 )
-from ._project_document_utils import build_project_document_and_increment_version
+from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository import PROJECT_DB_COLS
 from ._projects_repository_legacy_utils import (
     ANY_USER_ID_SENTINEL,
@@ -870,7 +871,7 @@ class ProjectDBAPI(BaseProjectDB):
         node_id: NodeID,
         product_name: str | None,
         new_node_data: dict[str, Any],
-        client_session_id: str | None,
+        client_session_id: ClientSessionID | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         with log_context(
             _logger,
@@ -897,7 +898,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectID,
         product_name: str | None,
         partial_workbench_data: dict[NodeIDStr, dict[str, Any]],
-        client_session_id: str | None,
+        client_session_id: ClientSessionID | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         """
         Raises:
@@ -926,7 +927,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_uuid: ProjectID,
         product_name: str | None = None,
         allow_workbench_changes: bool,
-        client_session_id: str | None,
+        client_session_id: ClientSessionID | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         """
         Updates project workbench with Redis lock and user notification.
@@ -959,7 +960,7 @@ class ProjectDBAPI(BaseProjectDB):
         (
             project_document,
             document_version,
-        ) = await build_project_document_and_increment_version(self._app, project_uuid)
+        ) = await create_project_document_and_increment_version(self._app, project_uuid)
 
         await notify_project_document_updated(
             app=self._app,
@@ -1049,7 +1050,7 @@ class ProjectDBAPI(BaseProjectDB):
         node: ProjectNodeCreate,
         old_struct_node: Node,
         product_name: str,
-        client_session_id: str | None,
+        client_session_id: ClientSessionID | None,
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[NodeIDStr, Any] = {
@@ -1075,7 +1076,7 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: UserID,
         project_id: ProjectID,
         node_id: NodeID,
-        client_session_id: str | None,
+        client_session_id: ClientSessionID | None,
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[NodeIDStr, Any] = {

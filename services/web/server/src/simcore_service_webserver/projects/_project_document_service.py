@@ -25,7 +25,7 @@ from ..redis import (
 from . import _projects_repository
 
 
-async def build_project_document_and_increment_version(
+async def create_project_document_and_increment_version(
     app: web.Application, project_uuid: ProjectID
 ) -> tuple[ProjectDocument, ProjectDocumentVersion]:
     """Build project document and increment version with Redis lock protection.
@@ -47,7 +47,7 @@ async def build_project_document_and_increment_version(
         blocking=True,
         blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
     )
-    async def _build_project_document_and_increment_version() -> (
+    async def _create_project_document_and_increment_version() -> (
         tuple[ProjectDocument, int]
     ):
         """This function is protected because
@@ -83,4 +83,4 @@ async def build_project_document_and_increment_version(
 
         return project_document, document_version
 
-    return await _build_project_document_and_increment_version()
+    return await _create_project_document_and_increment_version()

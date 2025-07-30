@@ -3,7 +3,7 @@ from typing import Annotated, TypeAlias
 from models_library.products import ProductName
 from models_library.rest_base import RequestParameters
 from models_library.users import UserID
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, StringConstraints
 from pydantic_extra_types.phone_numbers import PhoneNumberValidator
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
@@ -14,6 +14,18 @@ PhoneNumberStr: TypeAlias = Annotated[
     # NOTE: validator require installing `phonenumbers``
     str,
     PhoneNumberValidator(number_format="E164"),
+]
+
+
+ClientSessionID: TypeAlias = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=36,
+        max_length=36,
+        pattern=r"^[0-9a-fA-F\-]{36}$",  # UUID format
+        strict=True,
+    ),
 ]
 
 
@@ -31,10 +43,10 @@ class AuthenticatedRequestContext(RequestParameters):
 class ClientSessionHeaderParams(RequestParameters):
     """Header parameters for client session tracking in collaborative features."""
 
-    client_session_id: str | None = Field(
+    client_session_id: ClientSessionID | None = Field(
         default=None,
         alias=X_CLIENT_SESSION_ID_HEADER,
-        description="Client session identifier for collaborative features",
+        description="Client session identifier for collaborative features (UUID string)",
     )
 
     model_config = ConfigDict(

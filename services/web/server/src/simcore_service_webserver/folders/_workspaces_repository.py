@@ -8,6 +8,7 @@ from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
+from ..models import ClientSessionID
 from ..projects import _folders_repository as projects_folders_repository
 from ..projects import _groups_repository as projects_groups_repository
 from ..projects._access_rights_service import check_user_project_permission
@@ -26,7 +27,7 @@ async def move_folder_into_workspace(
     folder_id: FolderID,
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
-    client_session_id: str | None = None,
+    client_session_id: ClientSessionID | None = None,
 ) -> None:
     # 1. User needs to have delete permission on source folder
     folder_db = await _folders_repository.get(

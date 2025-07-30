@@ -8,6 +8,7 @@ from models_library.workspaces import WorkspaceID
 from simcore_postgres_database.utils_repos import transaction_context
 
 from ..db.plugin import get_asyncpg_engine
+from ..models import ClientSessionID
 from ..users import users_service
 from ..workspaces.api import check_user_workspace_access
 from . import _folders_repository, _groups_repository, _projects_service
@@ -24,7 +25,7 @@ async def move_project_into_workspace(
     project_id: ProjectID,
     workspace_id: WorkspaceID | None,
     product_name: ProductName,
-    client_session_id: str | None = None,
+    client_session_id: ClientSessionID | None = None,
 ) -> None:
     # 1. User needs to have delete permission on project
     project_access_rights = await get_user_project_access_rights(

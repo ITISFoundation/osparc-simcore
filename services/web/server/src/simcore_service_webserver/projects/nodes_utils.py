@@ -9,6 +9,7 @@ from models_library.users import UserID
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 
+from ..models import ClientSessionID
 from . import _projects_service
 
 log = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ async def update_node_outputs(
     outputs: dict,
     run_hash: str | None,
     node_errors: list[ErrorDict] | None,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
     *,
     ui_changed_keys: set[str] | None,
 ) -> None:

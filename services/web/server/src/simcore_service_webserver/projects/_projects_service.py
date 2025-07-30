@@ -101,6 +101,7 @@ from ..application_settings import get_application_settings
 from ..catalog import catalog_service
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..models import ClientSessionID
 from ..products import products_web
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
@@ -139,7 +140,7 @@ from ._access_rights_service import (
     has_user_project_access_rights,
 )
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
-from ._project_document_utils import build_project_document_and_increment_version
+from ._project_document_service import create_project_document_and_increment_version
 from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
 from ._socketio_service import notify_project_document_updated
@@ -174,7 +175,7 @@ async def patch_project_and_notify_users(
     project_uuid: ProjectID,
     patch_project_data: dict[str, Any],
     user_primary_gid: GroupID,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
 ) -> None:
     """
     Patches a project and notifies users involved in the project with version control.
@@ -204,7 +205,7 @@ async def patch_project_and_notify_users(
     )
 
     project_document, document_version = (
-        await build_project_document_and_increment_version(app, project_uuid)
+        await create_project_document_and_increment_version(app, project_uuid)
     )
     await notify_project_document_updated(
         app=app,
@@ -357,7 +358,7 @@ async def patch_project_for_user(
     project_uuid: ProjectID,
     project_patch: ProjectPatch | ProjectPatchInternalExtended,
     product_name: ProductName,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
 ):
     # client_session_id (str | None): The session ID of the frontend client making the request.
     # This is used to distinguish between multiple sessions a user may have open.
@@ -911,7 +912,7 @@ async def add_project_node(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     service_id: str | None,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
 ) -> NodeID:
     _logger.debug(
         "starting node %s:%s in project %s for user %s",
@@ -1048,7 +1049,7 @@ async def delete_project_node(
     node_uuid: NodeIDStr,
     product_name: ProductName,
     product_api_base_url: str,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
 ) -> None:
     _logger.debug(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
@@ -1119,7 +1120,7 @@ async def update_project_node_state(
     project_id: ProjectID,
     node_id: NodeID,
     new_state: str,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
 ) -> dict:
     _logger.debug(
         "updating node %s current state in project %s for user %s",
@@ -1176,7 +1177,7 @@ async def patch_project_node(
     project_id: ProjectID,
     node_id: NodeID,
     partial_node: PartialNode,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
 ) -> None:
     _node_patch_exclude_unset: dict[str, Any] = partial_node.model_dump(
         mode="json", exclude_unset=True, by_alias=True
@@ -1264,7 +1265,7 @@ async def update_project_node_outputs(
     node_id: NodeID,
     new_outputs: dict | None,
     new_run_hash: str | None,
-    client_session_id: str | None,
+    client_session_id: ClientSessionID | None,
 ) -> tuple[dict, list[str]]:
     """
     Updates outputs of a given node in a project with 'data'
@@ -1453,7 +1454,7 @@ async def _leave_project_room(
     *,
     app: web.Application,
     user_id: UserID,
-    client_session_id: str,
+    client_session_id: ClientSessionID,
     project_uuid: ProjectID,
     user_session,
 ) -> None:
@@ -1490,7 +1491,7 @@ def create_user_notification_cb(
 async def try_open_project_for_user(
     user_id: UserID,
     project_uuid: ProjectID,
-    client_session_id: str,
+    client_session_id: ClientSessionID,
     app: web.Application,
     *,
     max_number_of_opened_projects_per_user: int | None,
@@ -1596,7 +1597,7 @@ async def try_open_project_for_user(
 async def close_project_for_user(
     user_id: UserID,
     project_uuid: ProjectID,
-    client_session_id: str,
+    client_session_id: ClientSessionID,
     app: web.Application,
     simcore_user_agent: str,
     *,
