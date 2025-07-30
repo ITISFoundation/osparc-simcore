@@ -663,6 +663,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const nodeUI = new osparc.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
       node.addListener("keyChanged", () => this.__selectNode(nodeUI), this);
+      node.addListener("createEdge", e => {
+        const data = e.getData();
+        const { nodeId1, nodeId2 } = data;
+        this._createEdgeBetweenNodes(nodeId1, nodeId2, false);
+      });
       nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);

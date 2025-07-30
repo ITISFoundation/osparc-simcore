@@ -199,6 +199,7 @@ qx.Class.define("osparc.data.model.Node", {
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",
     "changePosition": "qx.event.type.Data",
+    "createEdge": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
@@ -1458,8 +1459,12 @@ qx.Class.define("osparc.data.model.Node", {
           case "inputNodes":
             if (op === "add") {
               const inputNodeId = value;
-              this.addInputNode(inputNodeId);
+              this.fireDataEvent("createEdge", {
+                nodeId1: inputNodeId,
+                nodeId2: this.getNodeId(),
+              });
             } else if (op === "remove") {
+              // we don't have more information about the input node, so we just remove it by index
               const index = path.split("/")[4];
               this.__removeInputNodeByIndex(index);
             }
