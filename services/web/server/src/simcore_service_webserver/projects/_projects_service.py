@@ -20,7 +20,7 @@ from typing import Any, Final, cast
 from uuid import uuid4
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps, json_loads
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -1860,16 +1860,24 @@ async def add_project_states_for_user(
         f"{user_id=}",
         f"{project['uuid']=}",
     )
-    # for templates: the project is never locked and never opened. also the running state is always unknown
-    share_state = await _get_project_share_state(user_id, project["uuid"], app)
-    project_running_state = RunningState.UNKNOWN
-    computational_node_states: dict[NodeID, NodeState] = {}
-    if computation_task := await director_v2_service.get_computation_task(
-        app, user_id, project["uuid"]
-    ):
-        project_running_state = computation_task.state
-        computational_node_states = computation_task.pipeline_details.node_states
+    project_share_state, user_computation_task = await asyncio.gather(
+        _get_project_share_state(user_id, project["uuid"], app),
+        director_v2_service.get_computation_task(app, user_id, project["uuid"]),
+    )
+    # retrieve the project computational state
+    # if the user has no computation task, we assume the project is not running
+    project_running_state = (
+        user_computation_task.state
+        if user_computation_task
+        else RunningState.NOT_STARTED
+    )
+    computational_node_states = (
+        user_computation_task.pipeline_details.node_states
+        if user_computation_task
+        else {}
+    )
 
+    # compose the node states
     for node_uuid, node in project["workbench"].items():
         assert isinstance(node_uuid, str)  # nosec
         assert isinstance(node, dict)  # nosec
@@ -1880,22 +1888,33 @@ async def add_project_states_for_user(
             project_uuid=project["uuid"],
             node_id=NodeID(node_uuid),
         )
+        if NodeID(node_uuid) in computational_node_states:
+            node_state = computational_node_states[NodeID(node_uuid)].model_copy(
+                update={"lock_state": node_lock_state}
+            )
+        else:
+            # if the node is not in the computational state, we create a new one
+            service_is_running = node_lock_state.status is NodeShareStatus.OPENED
+            node_state = NodeState(
+                current_status=(
+                    RunningState.STARTED
+                    if service_is_running
+                    else RunningState.NOT_STARTED
+                ),
+                lock_state=node_lock_state,
+            )
 
-        # create complete node state
-        node_state = computational_node_states.get(
-            NodeID(node_uuid), NodeState(current_status=RunningState.UNKNOWN)
-        )
-        node_state.lock_state = node_lock_state
-        node_state_dict = json_loads(
+        # upgrade the project
+        node.setdefault("state", {}).update(
             node_state.model_dump_json(by_alias=True, exclude_unset=True)
         )
-        node.setdefault("state", {}).update(node_state_dict)
         if "progress" in node["state"] and node["state"]["progress"] is not None:
             # ensure progress is a percentage
             node["progress"] = round(node["state"]["progress"] * 100.0)
 
     project["state"] = ProjectState(
-        share_state=share_state, state=ProjectRunningState(value=project_running_state)
+        share_state=project_share_state,
+        state=ProjectRunningState(value=project_running_state),
     ).model_dump(by_alias=True, exclude_unset=True)
     return project
 
