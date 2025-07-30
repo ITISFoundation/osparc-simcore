@@ -489,7 +489,7 @@ _MANY_NODES: Final[int] = 60
                 adjacency_list={f"node_{x}": [] for x in range(_MANY_NODES)},
                 progress=1.0,
                 node_states={
-                    f"node_{x}": NodeState(modified=True, progress=1, lock_state=None)
+                    f"node_{x}": NodeState(modified=True, progress=1)
                     for x in range(_MANY_NODES)
                 },
             ),
@@ -568,9 +568,9 @@ _MANY_NODES: Final[int] = 60
                 },
                 progress=0.3333333333333333,
                 node_states={
-                    "node_1": NodeState(modified=True, progress=None, lock_state=None),
-                    "node_2": NodeState(modified=True, progress=None, lock_state=None),
-                    "node_3": NodeState(modified=True, progress=1, lock_state=None),
+                    "node_1": NodeState(modified=True, progress=None),
+                    "node_2": NodeState(modified=True, progress=None),
+                    "node_3": NodeState(modified=True, progress=1),
                 },
             ),
             id="proper dag",
@@ -653,13 +653,12 @@ async def test_compute_pipeline_details(
                 },
                 progress=0.0,
                 node_states={
-                    "node_1": NodeState(modified=True, progress=None, lock_state=None),
-                    "node_2": NodeState(modified=True, progress=None, lock_state=None),
+                    "node_1": NodeState(modified=True, progress=None),
+                    "node_2": NodeState(modified=True, progress=None),
                     "node_3": NodeState(
                         modified=True,
                         progress=None,
                         current_status=RunningState.UNKNOWN,
-                        lock_state=None,
                     ),
                 },
             ),

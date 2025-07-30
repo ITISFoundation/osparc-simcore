@@ -256,7 +256,6 @@ async def compute_pipeline_details(
                     and node_id_to_comp_task[node_id].progress is not None
                     else None
                 ),
-                lock_state=None,
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_data["node_class"] is NodeClass.COMPUTATIONAL
