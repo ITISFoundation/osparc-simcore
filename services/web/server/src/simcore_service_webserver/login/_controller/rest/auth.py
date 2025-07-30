@@ -2,12 +2,12 @@ import logging
 
 from aiohttp import web
 from aiohttp.web import RouteTableDef
+from common_library.user_messages import user_message
 from models_library.authentification import TwoFactorAuthentificationMethod
 from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.models.users import UserRole
 
@@ -212,8 +212,7 @@ async def login_2fa(request: web.Request):
     )
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
-            reason="2FA login is not available",
-            content_type=MIMETYPE_APPLICATION_JSON,
+            text=user_message("2FA login is not available"),
         )
 
     # validates input params
@@ -224,13 +223,9 @@ async def login_2fa(request: web.Request):
         request.app, login_2fa_.email
     )
     if not _expected_2fa_code:
-        raise web.HTTPUnauthorized(
-            reason=MSG_WRONG_2FA_CODE__EXPIRED, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__EXPIRED)
     if login_2fa_.code.get_secret_value() != _expected_2fa_code:
-        raise web.HTTPUnauthorized(
-            reason=MSG_WRONG_2FA_CODE__INVALID, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        raise web.HTTPUnauthorized(text=MSG_WRONG_2FA_CODE__INVALID)
 
     user = _auth_service.check_not_null_user(
         await _auth_service.get_user_or_none(request.app, email=login_2fa_.email)

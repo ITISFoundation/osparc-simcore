@@ -8,11 +8,11 @@ class WorkspacesRuntimeError(WebServerBaseError, RuntimeError): ...
 
 
 class WorkspaceNotFoundError(WorkspacesValueError):
-    msg_template = "Workspace not found. {reason}"
+    msg_template = "Workspace not found: {details}"
 
 
 class WorkspaceAccessForbiddenError(WorkspacesValueError):
-    msg_template = "Workspace access forbidden. {reason}"
+    msg_template = "Workspace access forbidden: {details}"
 
 
 class WorkspaceBatchDeleteError(WorkspacesValueError):
@@ -31,4 +31,4 @@ class WorkspaceFolderInconsistencyError(WorkspacesValueError):
 
 
 class WorkspaceNotTrashedError(WorkspacesRuntimeError):
-    msg_template = "Cannot delete workspace {workspace_id} since it was not trashed first: {reason}"
+    msg_template = "Cannot delete workspace {workspace_id} since it was not trashed first: {details}"
