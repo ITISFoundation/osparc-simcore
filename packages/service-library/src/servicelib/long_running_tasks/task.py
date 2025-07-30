@@ -364,7 +364,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         if tracked_task.result_field.error is not None:
             raise string_to_object(tracked_task.result_field.error)
 
-        return string_to_object(tracked_task.result_field.result)
+        return string_to_object(tracked_task.result_field.result)  # type: ignore[arg-type]
 
     async def cancel_task(
         self, task_id: TaskId, with_task_context: TaskContext

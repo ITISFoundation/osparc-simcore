@@ -30,7 +30,7 @@ TaskContext: TypeAlias = dict[str, Any]
 
 
 class ResultField(BaseModel):
-    result: Any | None = None
+    result: str | None = None
     error: str | None = None
 
     @model_validator(mode="after")

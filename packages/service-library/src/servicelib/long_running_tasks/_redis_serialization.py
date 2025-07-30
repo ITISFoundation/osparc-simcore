@@ -75,11 +75,11 @@ def string_to_object(error_str: str) -> Any:
                     data.pop(_TYPE_FIELD)
                     data.pop(_MODULE_FIELD)
 
-                    return exception_class(  # type: ignore[no-any-return]
+                    return exception_class(
                         **object_serializer.prepare_object_init_kwargs(data)
                     )
         except (ImportError, AttributeError, TypeError) as e:
             msg = f"Could not reconstruct object from data: {data}"
             raise ValueError(msg) from e
 
-    return data  # type: ignore[no-any-return]
+    return data
