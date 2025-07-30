@@ -109,9 +109,9 @@ class BaseProjectModel(BaseModel):
     # Pipeline of nodes (SEE projects_nodes.py)
     # FIXME: pedro checks this one
     # NOTE: GCG: a validation failed (See: services/storage/src/simcore_service_storage/modules/db/projects.py)
-    workbench: Annotated[NodesDict, Field(description="Project's pipeline")] | None = (
-        None
-    )
+    workbench: Annotated[
+        NodesDict, Field(description="Project's pipeline", exclude=True)
+    ]
 
 
 class ProjectAtDB(BaseProjectModel):
