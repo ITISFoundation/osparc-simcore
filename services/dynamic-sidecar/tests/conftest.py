@@ -169,7 +169,7 @@ def mock_rabbit_check(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def base_mock_envs(
-    use_in_memory_long_running_tasks: None,
+    use_in_memory_redis: None,
     dy_volumes: Path,
     shared_store_dir: Path,
     compose_namespace: str,
@@ -211,7 +211,7 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
-    use_in_memory_long_running_tasks: None,
+    use_in_memory_redis: None,
     mock_storage_check: None,
     mock_postgres_check: None,
     mock_rabbit_check: None,
