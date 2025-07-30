@@ -301,7 +301,7 @@ qx.Class.define("osparc.data.model.StudyUI", {
               this.__updateNodeMarkerFromPatch(node, patch);
             }
           }
-        } else if (path.startsWith("/ui/annotations/")) {
+        } else if (path.startsWith("/ui/annotations")) {
           this.__updateAnnotationFromPatch(patch);
         }
       });
