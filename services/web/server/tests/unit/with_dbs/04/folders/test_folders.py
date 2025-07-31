@@ -272,6 +272,7 @@ async def test_project_folder_movement_full_workflow(
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_project_listing_inside_of_private_folder(
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
@@ -391,6 +392,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_folders_deletion(
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: HTTPStatus,
