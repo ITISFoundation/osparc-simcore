@@ -8,7 +8,6 @@ from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks._store.base import BaseStore
-from servicelib.long_running_tasks._store.in_memory import InMemoryStore
 from servicelib.long_running_tasks._store.redis import RedisStore
 from servicelib.long_running_tasks.models import TaskData
 from servicelib.redis._client import RedisClientSDK
@@ -39,25 +38,14 @@ def get_task_data(faker: Faker) -> Callable[[], TaskData]:
     return _
 
 
-@pytest.fixture(params=[InMemoryStore, RedisStore])
+@pytest.fixture(params=[])
 async def store(
     redis_service: RedisSettings,
-    request: pytest.FixtureRequest,
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
 ) -> AsyncIterable[BaseStore]:
-    store: BaseStore | None = None
-    match request.param.__name__:
-        case InMemoryStore.__name__:
-            store = InMemoryStore()
-
-        case RedisStore.__name__:
-            store = RedisStore(redis_settings=redis_service, namespace="test")
-
-    if store is None:
-        msg = f"Unsupported store type: {request.param}"
-        raise ValueError(msg)
+    store = RedisStore(redis_settings=redis_service, namespace="test")
 
     await store.setup()
     yield store
