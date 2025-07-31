@@ -106,7 +106,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   },
 
   events: {
-    "filterChanged": "qx.event.type.Data"
+    "filterChanged": "qx.event.type.Data",
+    "resetButtonPressed": "qx.event.type.Event",
   },
 
   members: {
@@ -413,6 +414,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     resetButtonPressed: function() {
       this.resetFilters();
       this.__filter();
+      this.fireEvent("resetButtonPressed");
     },
 
     getFilterData: function() {
