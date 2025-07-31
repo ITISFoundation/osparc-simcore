@@ -413,7 +413,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     resetButtonPressed: function() {
       this.resetFilters();
-      this.__filter();
+      this._filterChange(this.self().getInitialFilterData());
       this.fireEvent("resetButtonPressed");
     },
 
