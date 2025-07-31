@@ -1,4 +1,3 @@
-from collections.abc import Awaitable
 from decimal import Decimal
 
 from aiohttp import web
@@ -32,9 +31,11 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CreditTransactionNotFoundError,
 )
 from servicelib.utils import limited_gather
-from simcore_service_webserver.projects._projects_nodes_repository import get_by_project
 
 from ..products.products_service import is_product_billable
+from ..projects._projects_nodes_repository import (
+    get_by_projects,
+)
 from ..projects.api import (
     batch_get_project_name,
     check_user_project_permission,
@@ -45,13 +46,6 @@ from ..projects.projects_metadata_service import (
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ._comp_runs_collections_service import get_comp_run_collection_or_none_by_id
-
-
-async def _wrap_with_id(
-    project_id: ProjectID, coro: Awaitable[list[tuple[NodeID, Node]]]
-) -> tuple[ProjectID, dict[NodeID, Node]]:
-    nodes = await coro
-    return project_id, dict(nodes)
 
 
 async def _get_projects_metadata(
@@ -257,18 +251,14 @@ async def list_computations_latest_iteration_tasks(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
     # Fetch projects metadata concurrently
-    # NOTE: MD: can be improved with a single batch call
-
-    results = await limited_gather(
-        *[
-            _wrap_with_id(project_uuid, get_by_project(app, project_id=project_uuid))
-            for project_uuid in unique_project_uuids
-        ],
-        limit=20,
+    _projects_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = await get_by_projects(
+        app, project_ids=unique_project_uuids
     )
 
     # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = dict(results)
+    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = {
+        project_uuid: dict(nodes) for project_uuid, nodes in _projects_nodes.items()
+    }
 
     _service_run_ids = [item.service_run_id for item in _tasks_get.items]
     _is_product_billable = await is_product_billable(app, product_name=product_name)
@@ -420,17 +410,15 @@ async def list_computation_collection_run_tasks(
 
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
-    # NOTE: MD: can be improved with a single batch call
-    results = await limited_gather(
-        *[
-            _wrap_with_id(project_uuid, get_by_project(app, project_id=project_uuid))
-            for project_uuid in unique_project_uuids
-        ],
-        limit=20,
+
+    _projects_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = await get_by_projects(
+        app, project_ids=unique_project_uuids
     )
 
     # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = dict(results)
+    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = {
+        project_uuid: dict(nodes) for project_uuid, nodes in _projects_nodes.items()
+    }
 
     # Fetch projects metadata concurrently
     _projects_metadata = await _get_projects_metadata(

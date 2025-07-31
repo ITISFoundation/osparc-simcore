@@ -5,6 +5,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID
+from simcore_postgres_database.utils_projects_nodes import ProjectNode
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
@@ -20,6 +21,7 @@ _logger = logging.getLogger(__name__)
 
 _SELECTION_PROJECTS_NODES_DB_ARGS = [
     projects_nodes.c.node_id,
+    projects_nodes.c.project_uuid,
     projects_nodes.c.key,
     projects_nodes.c.version,
     projects_nodes.c.label,
@@ -80,8 +82,6 @@ async def get_by_project(
         result = await conn.stream(query)
         assert result  # nosec
 
-        from simcore_postgres_database.utils_projects_nodes import ProjectNode
-
         rows = await result.all()
         return [
             (
@@ -96,6 +96,46 @@ async def get_by_project(
             )
             for row in rows
         ]
+
+
+async def get_by_projects(
+    app: web.Application,
+    project_ids: set[ProjectID],
+    connection: AsyncConnection | None = None,
+) -> dict[ProjectID, list[tuple[NodeID, Node]]]:
+    if not project_ids:
+        return {}
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        query = sa.select(*_SELECTION_PROJECTS_NODES_DB_ARGS).where(
+            projects_nodes.c.project_uuid.in_([f"{pid}" for pid in project_ids])
+        )
+
+        result = await conn.stream(query)
+        assert result  # nosec
+
+        rows = await result.all()
+
+        # Initialize dict with empty lists for all requested project_ids
+        projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {
+            pid: [] for pid in project_ids
+        }
+
+        # Fill in the actual data
+        for row in rows:
+            node = Node.model_validate(
+                ProjectNode.model_validate(row).model_dump(
+                    exclude_none=True,
+                    exclude_unset=True,
+                    exclude={"node_id", "created", "modified"},
+                )
+            )
+
+            projects_to_nodes[ProjectID(row.project_uuid)].append(
+                (NodeID(row.node_id), node)
+            )
+
+        return projects_to_nodes
 
 
 async def update(
