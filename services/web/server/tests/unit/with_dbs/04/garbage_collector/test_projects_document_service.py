@@ -116,12 +116,9 @@ async def create_project_socketio_connections(
         connections.extend(created_connections)
         return created_connections
 
-    yield _create_connections_for_projects
+    return _create_connections_for_projects
 
-    # Cleanup: Disconnect all SocketIO clients
-    for sio_client, _ in connections:
-        if sio_client.connected:
-            await sio_client.disconnect()
+    # Cleanup: Disconnect all SocketIO clients is done already in create_socket_io_connection
 
 
 @pytest.mark.parametrize(
