@@ -16,6 +16,7 @@ from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects import ProjectType as ProjectTypeAPI
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from servicelib.logging_utils import log_context
 from servicelib.redis import (
     PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
     exclusive,
@@ -102,99 +103,101 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
     checks if there are any users currently connected to the project room via socketio,
     and removes documents that have no connected users.
     """
-    # Get Redis document manager client to access the DOCUMENTS database
-    redis_client = get_redis_document_manager_client_sdk(app)
-
-    # Pattern to match project document keys - looking for keys that contain project UUIDs
-    project_document_pattern = "projects:*:version"
-
-    # Get socketio server instance
-    sio = get_socket_server(app)
-
-    # Get known opened projects ids based on Redis resources table
-    registry = get_registry(app)
-    known_opened_project_ids = await list_opened_project_ids(registry)
-    known_opened_project_ids_set = set(known_opened_project_ids)
-
-    projects_removed = 0
-
-    # Scan through all project document keys
-    async for key in redis_client.redis.scan_iter(
-        match=project_document_pattern, count=1000
+    with log_context(
+        _logger,
+        logging.INFO,
+        msg="Project document cleanup started",
     ):
-        # Extract project UUID from the key pattern "projects:{project_uuid}:version"
-        key_str = key.decode("utf-8") if isinstance(key, bytes) else key
-        match = re.match(r"projects:(?P<project_uuid>[0-9a-f-]+):version", key_str)
+        # Get Redis document manager client to access the DOCUMENTS database
+        redis_client = get_redis_document_manager_client_sdk(app)
 
-        if not match:
-            continue
+        # Pattern to match project document keys - looking for keys that contain project UUIDs
+        project_document_pattern = "projects:*:version"
 
-        project_uuid_str = match.group("project_uuid")
-        project_uuid = ProjectID(project_uuid_str)
-        project_room = SocketIORoomStr.from_project_id(project_uuid)
+        # Get socketio server instance
+        sio = get_socket_server(app)
 
-        # 1. CHECK - Check if the project UUID is in the known opened projects
-        if project_uuid in known_opened_project_ids_set:
-            _logger.debug(
-                "Project %s is in Redis Resources table (which means Project is opened), keeping document",
-                project_uuid,
-            )
-            continue
+        # Get known opened projects ids based on Redis resources table
+        registry = get_registry(app)
+        known_opened_project_ids = await list_opened_project_ids(registry)
+        known_opened_project_ids_set = set(known_opened_project_ids)
 
-        # 2. CHECK - Check if there are any users connected to this project room
-        try:
-            # Get all session IDs (socket IDs) in the project room
-            room_sessions = list(
-                sio.manager.get_participants(namespace="/", room=project_room)
-            )
+        projects_removed = 0
 
-            # If no users are connected to this project room, remove the document
-            if not room_sessions:
-                await redis_client.redis.delete(key_str)
-                projects_removed += 1
-                _logger.info(
-                    "Removed project document for project %s (no connected users)",
+        # Scan through all project document keys
+        async for key in redis_client.redis.scan_iter(
+            match=project_document_pattern, count=1000
+        ):
+            # Extract project UUID from the key pattern "projects:{project_uuid}:version"
+            key_str = key.decode("utf-8") if isinstance(key, bytes) else key
+            match = re.match(r"projects:(?P<project_uuid>[0-9a-f-]+):version", key_str)
+
+            if not match:
+                continue
+
+            project_uuid_str = match.group("project_uuid")
+            project_uuid = ProjectID(project_uuid_str)
+            project_room = SocketIORoomStr.from_project_id(project_uuid)
+
+            # 1. CHECK - Check if the project UUID is in the known opened projects
+            if project_uuid in known_opened_project_ids_set:
+                _logger.debug(
+                    "Project %s is in Redis Resources table (which means Project is opened), keeping document",
                     project_uuid,
                 )
-            else:
-                # Create a synthetic exception for this unexpected state
-                unexpected_state_error = RuntimeError(
-                    f"Project {project_uuid} has {len(room_sessions)} connected users but is not in Redis Resources table"
+                continue
+
+            # 2. CHECK - Check if there are any users connected to this project room
+            try:
+                # Get all session IDs (socket IDs) in the project room
+                room_sessions = list(
+                    sio.manager.get_participants(namespace="/", room=project_room)
                 )
-                _logger.error(
+
+                # If no users are connected to this project room, remove the document
+                if not room_sessions:
+                    await redis_client.redis.delete(key_str)
+                    projects_removed += 1
+                    _logger.info(
+                        "Removed project document for project %s (no connected users)",
+                        project_uuid,
+                    )
+                else:
+                    # Create a synthetic exception for this unexpected state
+                    unexpected_state_error = RuntimeError(
+                        f"Project {project_uuid} has {len(room_sessions)} connected users but is not in Redis Resources table"
+                    )
+                    _logger.error(
+                        **create_troubleshootting_log_kwargs(
+                            user_error_msg=f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
+                            error=unexpected_state_error,
+                            error_context={
+                                "project_uuid": str(project_uuid),
+                                "project_room": project_room,
+                                "key_str": key_str,
+                                "connected_users_count": len(room_sessions),
+                                "room_sessions": room_sessions[
+                                    :5
+                                ],  # Limit to first 5 sessions for debugging
+                            },
+                            tip="This indicates a potential race condition or inconsistency between the Redis Resources table and socketio room state. Check if the project was recently closed but users are still connected, or if there's a synchronization issue between services.",
+                        )
+                    )
+                    continue
+
+            except (KeyError, AttributeError, ValueError) as exc:
+                _logger.exception(
                     **create_troubleshootting_log_kwargs(
-                        user_error_msg=f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
-                        error=unexpected_state_error,
+                        user_error_msg=f"Failed to check room participants for project {project_uuid}",
+                        error=exc,
                         error_context={
                             "project_uuid": str(project_uuid),
                             "project_room": project_room,
                             "key_str": key_str,
-                            "connected_users_count": len(room_sessions),
-                            "room_sessions": room_sessions[
-                                :5
-                            ],  # Limit to first 5 sessions for debugging
                         },
-                        tip="This indicates a potential race condition or inconsistency between the Redis Resources table and socketio room state. Check if the project was recently closed but users are still connected, or if there's a synchronization issue between services.",
+                        tip="Check if socketio server is properly initialized and the room exists. This could indicate a socketio manager issue or invalid room format.",
                     )
                 )
                 continue
 
-        except (KeyError, AttributeError, ValueError) as exc:
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    user_error_msg=f"Failed to check room participants for project {project_uuid}",
-                    error=exc,
-                    error_context={
-                        "project_uuid": str(project_uuid),
-                        "project_room": project_room,
-                        "key_str": key_str,
-                    },
-                    tip="Check if socketio server is properly initialized and the room exists. This could indicate a socketio manager issue or invalid room format.",
-                )
-            )
-            continue
-
-    _logger.info(
-        "Project document cleanup completed: removed %d project documents",
-        projects_removed,
-    )
+        _logger.info("Completed: removed %d project documents", projects_removed)
