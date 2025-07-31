@@ -333,13 +333,15 @@ qx.Class.define("osparc.utils.Utils", {
       }
 
       const blinkInterval = setInterval(() => {
-        button.setBackgroundColor((count % 2 === 0) ? blinkColor : baseColor);
-        count++;
+        if (button && button.getContentElement()) {
+          button.setBackgroundColor((count % 2 === 0) ? blinkColor : baseColor);
+          count++;
 
-        if (count >= nTimes * 2) {
-          clearInterval(blinkInterval);
-          button.setBackgroundColor(baseColor);
-          button._blinkingIntervalId = null; // cleanup
+          if (count >= nTimes * 2) {
+            clearInterval(blinkInterval);
+            button.setBackgroundColor(baseColor);
+            button._blinkingIntervalId = null; // cleanup
+          }
         }
       }, interval);
 
