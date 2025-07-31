@@ -15,6 +15,7 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects import ProjectType as ProjectTypeAPI
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.redis import (
     PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
     exclusive,
@@ -156,16 +157,40 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                     project_uuid,
                 )
             else:
-                _logger.error(
-                    "Project %s has %d connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
-                    project_uuid,
-                    len(room_sessions),
+                # Create a synthetic exception for this unexpected state
+                unexpected_state_error = RuntimeError(
+                    f"Project {project_uuid} has {len(room_sessions)} connected users but is not in Redis Resources table"
                 )
+                _logger.error(
+                    **create_troubleshootting_log_kwargs(
+                        user_error_msg=f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
+                        error=unexpected_state_error,
+                        error_context={
+                            "project_uuid": str(project_uuid),
+                            "project_room": project_room,
+                            "key_str": key_str,
+                            "connected_users_count": len(room_sessions),
+                            "room_sessions": room_sessions[
+                                :5
+                            ],  # Limit to first 5 sessions for debugging
+                        },
+                        tip="This indicates a potential race condition or inconsistency between the Redis Resources table and socketio room state. Check if the project was recently closed but users are still connected, or if there's a synchronization issue between services.",
+                    )
+                )
+                continue
 
-        except (KeyError, AttributeError, ValueError):
+        except (KeyError, AttributeError, ValueError) as exc:
             _logger.exception(
-                "Failed to check room participants for project %s",
-                project_uuid,
+                **create_troubleshootting_log_kwargs(
+                    user_error_msg=f"Failed to check room participants for project {project_uuid}",
+                    error=exc,
+                    error_context={
+                        "project_uuid": str(project_uuid),
+                        "project_room": project_room,
+                        "key_str": key_str,
+                    },
+                    tip="Check if socketio server is properly initialized and the room exists. This could indicate a socketio manager issue or invalid room format.",
+                )
             )
             continue
 
