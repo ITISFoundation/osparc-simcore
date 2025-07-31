@@ -180,10 +180,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
     __deleteBtn: null,
     __nodeMoving: null,
 
-    getNodeType: function() {
-      return "service";
-    },
-
     getNodeId: function() {
       return this.getNode().getNodeId();
     },
