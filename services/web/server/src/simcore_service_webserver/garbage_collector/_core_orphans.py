@@ -20,7 +20,7 @@ from ..projects._projects_service import (
 )
 from ..projects.api import has_user_project_access_rights
 from ..resource_manager.registry import RedisResourceRegistry
-from ..resource_manager.registry_utils import list_opened_project_ids
+from ..resource_manager.service import list_opened_project_ids
 from ..users import users_service
 from ..users.exceptions import UserNotFoundError
 

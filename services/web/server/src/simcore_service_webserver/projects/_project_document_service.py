@@ -26,7 +26,7 @@ from ..redis import (
     get_redis_lock_manager_client_sdk,
 )
 from ..resource_manager.registry import get_registry
-from ..resource_manager.registry_utils import list_opened_project_ids
+from ..resource_manager.service import list_opened_project_ids
 from ..socketio._utils import get_socket_server
 from . import _projects_repository
 
@@ -123,12 +123,12 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
     ):
         # Extract project UUID from the key pattern "projects:{project_uuid}:version"
         key_str = key.decode("utf-8") if isinstance(key, bytes) else key
-        match = re.match(r"projects:([0-9a-f-]+):version", key_str)
+        match = re.match(r"projects:(?P<project_uuid>[0-9a-f-]+):version", key_str)
 
         if not match:
             continue
 
-        project_uuid_str = match.group(1)
+        project_uuid_str = match.group("project_uuid")
         project_uuid = ProjectID(project_uuid_str)
         project_room = SocketIORoomStr.from_project_id(project_uuid)
 
