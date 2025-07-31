@@ -236,7 +236,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         cancelled_tasks = await self._tasks_data.get_cancelled()
         for task_id, task_context in cancelled_tasks.items():
-            await self.remove_task(task_id, task_context)
+            await self.remove_task(task_id, task_context, reraise_errors=False)
 
     async def _status_update_worker(self) -> None:
         """
