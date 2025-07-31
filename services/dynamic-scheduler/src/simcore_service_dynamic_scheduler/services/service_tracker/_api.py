@@ -11,12 +11,16 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
-from models_library.users import UserID
 from servicelib.deferred_tasks import TaskUID
 
-from ._models import SchedulerServiceState, TrackedServiceModel, UserRequestedState
+from ._models import (
+    SchedulerServiceState,
+    TrackedServiceModel,
+    UserRequestedState,
+)
 from ._setup import get_tracker
 
 _logger = logging.getLogger(__name__)
@@ -242,7 +246,7 @@ async def get_all_tracked_services(app: FastAPI) -> dict[NodeID, TrackedServiceM
     return await get_tracker(app).all()
 
 
-async def get_user_id_for_service(app: FastAPI, node_id: NodeID) -> UserID | None:
-    """returns user_id for the service"""
+async def get_project_id_for_service(app: FastAPI, node_id: NodeID) -> ProjectID | None:
+    """returns project_id for the service"""
     model: TrackedServiceModel | None = await get_tracker(app).load(node_id)
-    return model.user_id if model else None
+    return model.project_id if model else None
