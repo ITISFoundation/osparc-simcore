@@ -91,6 +91,13 @@ qx.Class.define("osparc.conversation.AddMessage", {
         }
         case "comment-field":
           control = new osparc.editor.MarkdownEditor();
+          control.addListener("keydown", e => {
+            if (e.isCtrlPressed() && e.getKeyIdentifier() === "Enter") {
+              this.__addComment();
+              e.stopPropagation();
+              e.preventDefault();
+            }
+          }, this);
           control.getChildControl("buttons").exclude();
           const layout = this.getChildControl("add-comment-layout");
           layout.add(control, {
