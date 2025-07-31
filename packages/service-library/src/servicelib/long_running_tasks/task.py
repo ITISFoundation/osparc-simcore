@@ -5,7 +5,6 @@ import inspect
 import logging
 import traceback
 import urllib.parse
-from contextlib import suppress
 from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
 
@@ -369,6 +368,19 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         return string_to_object(tracked_task.result_field.result)
 
+    @staticmethod
+    async def _cancel_tracked_task(
+        task: asyncio.Task, task_id: TaskId, *, reraise_errors: bool
+    ) -> None:
+        try:
+            await cancel_wait_task(task, max_delay=_CANCEL_TASK_TIMEOUT)
+        except Exception as e:  # pylint:disable=broad-except
+            formatted_traceback = "".join(traceback.format_exception(e))
+            if reraise_errors:
+                raise TaskExceptionError(
+                    task_id=task_id, exception=e, traceback=formatted_traceback
+                ) from e
+
     async def cancel_task(
         self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
@@ -384,40 +396,10 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         await self._tasks_data.set_as_cancelled(task_id, with_task_context)
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
         await self._cancel_tracked_task(
-            self._created_tasks[tracked_task.task_id], task_id, reraise_errors=True
+            self._created_tasks[tracked_task.task_id], task_id, reraise_errors=False
         )
 
-    @staticmethod
-    async def _cancel_asyncio_task(
-        task: asyncio.Task, reference: str, *, reraise_errors: bool
-    ) -> None:
-        task.cancel()
-        with suppress(asyncio.CancelledError):
-            try:
-                try:
-                    await asyncio.wait_for(
-                        _await_task(task), timeout=_CANCEL_TASK_TIMEOUT
-                    )
-                except TimeoutError:
-                    _logger.warning(
-                        "Timed out while awaiting for cancellation of '%s'", reference
-                    )
-            except Exception:  # pylint:disable=broad-except
-                if reraise_errors:
-                    raise
-
-    async def _cancel_tracked_task(
-        self, task: asyncio.Task, task_id: TaskId, *, reraise_errors: bool
-    ) -> None:
-        try:
-            await self._cancel_asyncio_task(
-                task, task_id, reraise_errors=reraise_errors
-            )
-        except Exception as e:  # pylint:disable=broad-except
-            formatted_traceback = "".join(traceback.format_exception(e))
-            raise TaskExceptionError(
-                task_id=task_id, exception=e, traceback=formatted_traceback
-            ) from e
+        # wait for task to be removed?
 
     async def remove_task(
         self,
@@ -440,8 +422,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 task_id,
                 reraise_errors=reraise_errors,
             )
+            # task might already be removed via cancellation background task
             await self._tasks_data.delete_task_data(task_id)
-            del self._created_tasks[tracked_task.task_id]
+            self._created_tasks.pop(tracked_task.task_id, None)
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         unique_part = "unique" if is_unique else f"{uuid4()}"
