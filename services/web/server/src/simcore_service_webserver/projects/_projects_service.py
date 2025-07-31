@@ -697,6 +697,7 @@ async def _check_project_node_has_all_required_inputs(
         if output_entry is None:
             unset_outputs_in_upstream.append((source_output_key, source_node.label))
 
+    assert isinstance(node.inputs_required, list)  # nosec
     for required_input in node.inputs_required:
         _check_required_input(required_input)
 
