@@ -128,7 +128,6 @@ async def periodic_task_result(
             exception=e,
         ) from e
     except Exception as e:
-        error = TaskExceptionError(task_id=task_id, exception=e, traceback="")
         _logger.warning(
             create_troubleshootting_log_message(
                 user_error_msg=f"{task_id=} raised an exception",
@@ -136,4 +135,4 @@ async def periodic_task_result(
                 tip=f"Check the logs of the service responding to '{client.base_url}'",
             )
         )
-        raise error from e
+        raise TaskExceptionError(task_id=task_id, exception=e, traceback="") from e

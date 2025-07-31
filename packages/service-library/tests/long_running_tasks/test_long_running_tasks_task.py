@@ -17,7 +17,6 @@ from models_library.api_schemas_long_running_tasks.base import ProgressMessage
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
-    TaskCancelledError,
     TaskNotCompletedError,
     TaskNotFoundError,
     TaskNotRegisteredError,
@@ -324,34 +323,6 @@ async def test_get_result_finished_with_error(
         await tasks_manager.get_task_result(task_id, with_task_context=empty_context)
 
 
-async def test_get_result_task_was_cancelled_multiple_times(
-    tasks_manager: TasksManager, empty_context: TaskContext
-):
-    task_id = await lrt_api.start_task(
-        tasks_manager,
-        a_background_task.__name__,
-        raise_when_finished=False,
-        total_sleep=10,
-        task_context=empty_context,
-    )
-    for _ in range(5):
-        await tasks_manager.cancel_task(task_id, with_task_context=empty_context)
-
-    with pytest.raises(  # noqa: PT012
-        TaskCancelledError, match=f"Task {task_id} was cancelled before completing"
-    ):
-        async for attempt in AsyncRetrying(
-            **{
-                **_RETRY_PARAMS,
-                "retry": retry_if_exception_type((TaskNotCompletedError,)),
-            }
-        ):
-            with attempt:
-                await tasks_manager.get_task_result(
-                    task_id, with_task_context=empty_context
-                )
-
-
 async def test_cancel_task_from_different_manager(
     use_in_memory_redis: RedisSettings,
     empty_context: TaskContext,
@@ -434,28 +405,6 @@ async def test_remove_unknown_task(
     await tasks_manager.remove_task(
         "invalid_id", with_task_context=empty_context, reraise_errors=False
     )
-
-
-async def test_cancel_task_with_task_context(tasks_manager: TasksManager):
-    TASK_CONTEXT = {"some_context": "some_value"}
-    task_id = await lrt_api.start_task(
-        tasks_manager,
-        a_background_task.__name__,
-        raise_when_finished=False,
-        total_sleep=10,
-        task_context=TASK_CONTEXT,
-    )
-    # getting status fails if wrong task context given
-    with pytest.raises(TaskNotFoundError):
-        await tasks_manager.get_task_status(
-            task_id, with_task_context={"wrong_task_context": 12}
-        )
-    # getting status fails if wrong task context given
-    with pytest.raises(TaskNotFoundError):
-        await tasks_manager.cancel_task(
-            task_id, with_task_context={"wrong_task_context": 12}
-        )
-    await tasks_manager.cancel_task(task_id, with_task_context=TASK_CONTEXT)
 
 
 async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_different_process(

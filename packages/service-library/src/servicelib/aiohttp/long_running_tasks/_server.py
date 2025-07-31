@@ -95,9 +95,9 @@ async def start_long_running_task(
             dumps=json_dumps,
         )
     except asyncio.CancelledError:
-        # cancel the task, the client has disconnected
+        # remove the task, the client was disconnected
         if task_id:
-            await lrt_api.cancel_task(
+            await lrt_api.remove_task(
                 long_running_manager.tasks_manager, task_context, task_id
             )
         raise

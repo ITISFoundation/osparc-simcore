@@ -3,7 +3,6 @@ import datetime
 import functools
 import inspect
 import logging
-import traceback
 import urllib.parse
 from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
@@ -14,7 +13,6 @@ from pydantic import PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..background_task import create_periodic_task
-from ..logging_utils import log_catch
 from ..redis import RedisClientSDK, exclusive
 from ._redis_serialization import object_to_string, string_to_object
 from ._store.base import BaseStore
@@ -22,7 +20,6 @@ from ._store.redis import RedisStore
 from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
-    TaskExceptionError,
     TaskNotCompletedError,
     TaskNotFoundError,
     TaskNotRegisteredError,
@@ -171,12 +168,10 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             )
 
         if self._stale_tasks_monitor_task:
-            with log_catch(_logger, reraise=False):
-                await cancel_wait_task(self._stale_tasks_monitor_task)
+            await cancel_wait_task(self._stale_tasks_monitor_task)
 
         if self._cancelled_tasks_removal_task:
-            with log_catch(_logger, reraise=False):
-                await cancel_wait_task(self._cancelled_tasks_removal_task)
+            await cancel_wait_task(self._cancelled_tasks_removal_task)
 
         if self.redis_client_sdk is not None:
             await self.redis_client_sdk.shutdown()
@@ -368,38 +363,20 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         return string_to_object(tracked_task.result_field.result)
 
-    @staticmethod
     async def _cancel_tracked_task(
-        task: asyncio.Task, task_id: TaskId, *, reraise_errors: bool
+        self, task: asyncio.Task, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
         try:
+            await self._tasks_data.set_as_cancelled(task_id, with_task_context)
+            # TODO: remove this cancellation timeout
             await cancel_wait_task(task, max_delay=_CANCEL_TASK_TIMEOUT)
         except Exception as e:  # pylint:disable=broad-except
-            formatted_traceback = "".join(traceback.format_exception(e))
-            if reraise_errors:
-                raise TaskExceptionError(
-                    task_id=task_id, exception=e, traceback=formatted_traceback
-                ) from e
-
-    async def cancel_task(
-        self, task_id: TaskId, with_task_context: TaskContext
-    ) -> None:
-        """
-        Eventually cancels the task.
-
-        # NOTE: aborts the task:
-        # - Immediately, if the task is running on the current worker.
-        # - Asynchronously (after a short delay), if the task is running on another worker.
-
-        raises TaskNotFoundError if the task cannot be found
-        """
-        await self._tasks_data.set_as_cancelled(task_id, with_task_context)
-        tracked_task = await self._get_tracked_task(task_id, with_task_context)
-        await self._cancel_tracked_task(
-            self._created_tasks[tracked_task.task_id], task_id, reraise_errors=False
-        )
-
-        # wait for task to be removed?
+            _logger.info(
+                "Task %s cancellation failed with error: %s",
+                task_id,
+                e,
+                stack_info=True,
+            )
 
     async def remove_task(
         self,
@@ -417,14 +394,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             return
 
         if tracked_task.task_id in self._created_tasks:
-            await self._cancel_tracked_task(
-                self._created_tasks[tracked_task.task_id],
-                task_id,
-                reraise_errors=reraise_errors,
-            )
-            # task might already be removed via cancellation background task
+            # will have affect in the worker which deals with the removal
             await self._tasks_data.delete_task_data(task_id)
             self._created_tasks.pop(tracked_task.task_id, None)
+
+        # TODO: wait for removal to becompleted here
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         unique_part = "unique" if is_unique else f"{uuid4()}"

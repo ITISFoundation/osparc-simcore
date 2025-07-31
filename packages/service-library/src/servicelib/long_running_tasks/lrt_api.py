@@ -103,12 +103,5 @@ async def get_task_result(
 async def remove_task(
     tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> None:
-    """removes / cancels a task"""
+    """cancels and removes the task"""
     await tasks_manager.remove_task(task_id, with_task_context=task_context)
-
-
-async def cancel_task(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
-) -> None:
-    """cancels a task"""
-    await tasks_manager.cancel_task(task_id, with_task_context=task_context)
