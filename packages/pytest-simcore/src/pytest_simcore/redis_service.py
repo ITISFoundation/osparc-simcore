@@ -126,5 +126,6 @@ def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-async def use_in_memory_redis(mocker: MockerFixture) -> None:
+async def use_in_memory_redis(mocker: MockerFixture) -> RedisSettings:
     mocker.patch.object(_client, "aioredis", FakeAsyncRedis)
+    return RedisSettings()

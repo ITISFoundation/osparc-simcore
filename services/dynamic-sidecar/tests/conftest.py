@@ -28,6 +28,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     setenvs_from_dict,
     setenvs_from_envfile,
 )
+from settings_library.redis import RedisSettings
 from simcore_service_dynamic_sidecar.core.reserved_space import (
     remove_reserved_disk_space,
 )
@@ -168,7 +169,7 @@ def mock_rabbit_check(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def base_mock_envs(
-    use_in_memory_redis: None,
+    use_in_memory_redis: RedisSettings,
     dy_volumes: Path,
     shared_store_dir: Path,
     compose_namespace: str,
@@ -210,7 +211,7 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
-    use_in_memory_redis: None,
+    use_in_memory_redis: RedisSettings,
     mock_storage_check: None,
     mock_postgres_check: None,
     mock_rabbit_check: None,

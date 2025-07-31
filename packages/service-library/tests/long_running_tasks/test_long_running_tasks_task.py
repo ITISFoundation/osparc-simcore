@@ -6,8 +6,8 @@
 
 import asyncio
 import urllib.parse
-from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Any, Final
 
@@ -24,21 +24,12 @@ from servicelib.long_running_tasks.errors import (
 )
 from servicelib.long_running_tasks.models import TaskContext, TaskProgress, TaskStatus
 from servicelib.long_running_tasks.task import TaskRegistry, TasksManager
-from servicelib.redis._client import RedisClientSDK
-from settings_library.redis import RedisDatabase, RedisSettings
+from settings_library.redis import RedisSettings
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-
-pytest_simcore_core_services_selection = [
-    "redis",
-]
-pytest_simcore_ops_services_selection = [
-    "redis-commander",
-]
-
 
 _RETRY_PARAMS: dict[str, Any] = {
     "reraise": True,
@@ -89,15 +80,12 @@ def empty_context() -> TaskContext:
 
 @asynccontextmanager
 async def get_tasks_manager(
-    redis_service: RedisSettings,
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    redis_settings: RedisSettings,
 ) -> AsyncIterator[TasksManager]:
     tasks_manager = TasksManager(
         stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
         stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
-        redis_settings=redis_service,
+        redis_settings=redis_settings,
         namespace="test",
     )
     await tasks_manager.setup()
@@ -105,19 +93,13 @@ async def get_tasks_manager(
     yield tasks_manager
 
     await tasks_manager.teardown()
-    # triggers cleanup of all redis data
-    async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):
-        pass
 
 
 @pytest.fixture
 async def tasks_manager(
-    redis_service: RedisSettings,
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    use_in_memory_redis: RedisSettings,
 ) -> AsyncIterator[TasksManager]:
-    async with get_tasks_manager(redis_service, get_redis_client_sdk) as manager:
+    async with get_tasks_manager(use_in_memory_redis) as manager:
         yield manager
 
 
@@ -371,19 +353,12 @@ async def test_get_result_task_was_cancelled_multiple_times(
 
 
 async def test_cancel_task_from_different_manager(
-    redis_service: RedisSettings,
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    use_in_memory_redis: RedisSettings,
     empty_context: TaskContext,
 ):
-    async with get_tasks_manager(
-        redis_service, get_redis_client_sdk
-    ) as manager_1, get_tasks_manager(
-        redis_service, get_redis_client_sdk
-    ) as manager_2, get_tasks_manager(
-        redis_service, get_redis_client_sdk
-    ) as manager_3:
+    async with get_tasks_manager(use_in_memory_redis) as manager_1, get_tasks_manager(
+        use_in_memory_redis
+    ) as manager_2, get_tasks_manager(use_in_memory_redis) as manager_3:
         task_id = await lrt_api.start_task(
             manager_1,
             a_background_task.__name__,
