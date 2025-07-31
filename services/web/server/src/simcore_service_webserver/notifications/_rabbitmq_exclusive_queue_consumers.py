@@ -90,7 +90,7 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
         ).to_socket_dict()
 
     if message:
-        await send_message_to_user(
+        await send_message_to_standard_group(
             app,
             rabbit_message.user_id,
             message=message,
