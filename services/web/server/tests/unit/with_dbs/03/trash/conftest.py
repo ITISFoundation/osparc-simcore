@@ -20,7 +20,7 @@ from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
-from pytest_simcore.helpers.webserver_projects import NewProject
+from pytest_simcore.helpers.webserver_projects import new_project
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_service_webserver.projects.models import ProjectDict
 
@@ -59,7 +59,7 @@ async def other_user_project(
     tests_data_dir: Path,
     osparc_product_name: ProductName,
 ) -> AsyncIterable[ProjectDict]:
-    async with NewProject(
+    async with new_project(
         fake_project,
         client.app,
         user_id=other_user["id"],

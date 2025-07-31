@@ -173,11 +173,15 @@ async def paths_for_export(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
 ) -> set[SimcoreS3FileID]:
-    _, file_mapping = await random_project_with_files(
+    _, _, file_mapping = await random_project_with_files(
         ProjectWithFilesParams(
             num_nodes=2,
             allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1KiB"),),

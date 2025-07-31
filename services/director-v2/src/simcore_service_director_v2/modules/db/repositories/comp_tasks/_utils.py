@@ -400,6 +400,9 @@ async def generate_tasks_list_from_project(
             raise WalletNotEnoughCreditsError(
                 wallet_name=wallet_info.wallet_name,
                 wallet_credit_amount=wallet_info.wallet_credit_amount,
+                user_id=user_id,
+                product_name=product_name,
+                project_id=project.uuid,
             )
 
         assert rabbitmq_rpc_client  # nosec

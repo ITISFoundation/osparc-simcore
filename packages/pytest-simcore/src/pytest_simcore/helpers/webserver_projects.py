@@ -4,6 +4,8 @@
 
 import json
 import uuid as uuidlib
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -73,7 +75,9 @@ async def create_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
-    new_project = await db.insert_project(
+    workbench: dict[str, Any] = project_data.pop("workbench", {})
+
+    project_created = await db.insert_project(
         project_data,
         user_id,
         product_name=product_name,
@@ -86,11 +90,9 @@ async def create_project(
                 required_resources=ServiceResourcesDictHelpers.model_config[
                     "json_schema_extra"
                 ]["examples"][0],
-                key=node_info.get("key"),
-                version=node_info.get("version"),
-                label=node_info.get("label"),
+                **node_info,
             )
-            for node_id, node_info in project_data.get("workbench", {}).items()
+            for node_id, node_info in workbench.items()
         },
     )
 
@@ -103,7 +105,7 @@ async def create_project(
         for group_id, permissions in _access_rights.items():
             await update_or_insert_project_group(
                 app,
-                project_id=new_project["uuid"],
+                project_id=project_created["uuid"],
                 group_id=int(group_id),
                 read=permissions["read"],
                 write=permissions["write"],
@@ -112,20 +114,22 @@ async def create_project(
 
     try:
         uuidlib.UUID(str(project_data["uuid"]))
-        assert new_project["uuid"] == project_data["uuid"]
+        assert project_created["uuid"] == project_data["uuid"]
     except (ValueError, AssertionError):
         # in that case the uuid gets replaced
-        assert new_project["uuid"] != project_data["uuid"]
-        project_data["uuid"] = new_project["uuid"]
+        assert project_created["uuid"] != project_data["uuid"]
+        project_data["uuid"] = project_created["uuid"]
 
     for key in DB_EXCLUSIVE_COLUMNS:
         project_data.pop(key, None)
 
-    new_project: ProjectDict = remap_keys(
-        new_project,
+    project_created: ProjectDict = remap_keys(
+        project_created,
         rename={"trashed": "trashedAt"},
     )
-    return new_project
+
+    project_created["workbench"] = workbench  # NOTE: restore workbench
+    return project_created
 
 
 async def delete_all_projects(app: web.Application):
@@ -137,50 +141,35 @@ async def delete_all_projects(app: web.Application):
         await conn.execute(query)
 
 
-class NewProject:
-    def __init__(
-        self,
-        params_override: dict | None = None,
-        app: web.Application | None = None,
-        *,
-        user_id: int,
-        product_name: str,
-        tests_data_dir: Path,
-        force_uuid: bool = False,
-        as_template: bool = False,
-    ):
-        assert app  # nosec
+@asynccontextmanager
+async def new_project(
+    params_override: dict | None = None,
+    app: web.Application | None = None,
+    *,
+    user_id: int,
+    product_name: str,
+    tests_data_dir: Path,
+    force_uuid: bool = False,
+    as_template: bool = False,
+) -> AsyncIterator[ProjectDict]:
+    assert app  # nosec
+    assert tests_data_dir.exists()
+    assert tests_data_dir.is_dir()
 
-        self.params_override = params_override
-        self.user_id = user_id
-        self.product_name = product_name
-        self.app = app
-        self.prj = {}
-        self.force_uuid = force_uuid
-        self.tests_data_dir = tests_data_dir
-        self.as_template = as_template
+    project = await create_project(
+        app,
+        params_override,
+        user_id,
+        product_name=product_name,
+        force_uuid=force_uuid,
+        default_project_json=tests_data_dir / "fake-project.json",
+        as_template=as_template,
+    )
 
-        assert tests_data_dir.exists()
-        assert tests_data_dir.is_dir()
-
-    async def __aenter__(self) -> ProjectDict:
-        assert self.app  # nosec
-
-        self.prj = await create_project(
-            self.app,
-            self.params_override,
-            self.user_id,
-            product_name=self.product_name,
-            force_uuid=self.force_uuid,
-            default_project_json=self.tests_data_dir / "fake-project.json",
-            as_template=self.as_template,
-        )
-
-        return self.prj
-
-    async def __aexit__(self, *args):
-        assert self.app  # nosec
-        await delete_all_projects(self.app)
+    try:
+        yield project
+    finally:
+        await delete_all_projects(app)
 
 
 async def assert_get_same_project(

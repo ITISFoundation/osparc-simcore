@@ -259,9 +259,13 @@ async def client(
 
 @pytest.fixture
 async def node_id(
-    project_id: ProjectID, create_project_node: Callable[[ProjectID], Awaitable[NodeID]]
+    project_id: ProjectID,
+    create_project_node: Callable[
+        [ProjectID], Awaitable[tuple[NodeID, dict[str, Any]]]
+    ],
 ) -> NodeID:
-    return await create_project_node(project_id)
+    node_id, _ = await create_project_node(project_id)
+    return node_id
 
 
 @pytest.fixture
@@ -784,7 +788,7 @@ async def _upload_folder_task(
 async def random_project_with_files(
     sqlalchemy_async_engine: AsyncEngine,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
-    create_project_node: Callable[..., Awaitable[NodeID]],
+    create_project_node: Callable[..., Awaitable[tuple[NodeID, dict[str, Any]]]],
     create_simcore_file_id: Callable[
         [ProjectID, NodeID, str, Path | None], SimcoreS3FileID
     ],
@@ -798,17 +802,28 @@ async def random_project_with_files(
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
 ) -> Callable[
     [ProjectWithFilesParams],
-    Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
+    Awaitable[
+        tuple[
+            dict[str, Any],
+            dict[NodeID, dict[str, Any]],
+            dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+        ]
+    ],
 ]:
     async def _creator(
         project_params: ProjectWithFilesParams,
-    ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
+    ) -> tuple[
+        dict[str, Any],
+        dict[NodeID, dict[str, Any]],
+        dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+    ]:
         assert len(project_params.allowed_file_sizes) == len(
             project_params.allowed_file_checksums
         )
         project = await create_project(name="random-project")
         node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
         upload_tasks = []
+        nodes: dict[NodeID, dict[str, Any]] = {}
         for _ in range(project_params.num_nodes):
             # Create a node with outputs (files and others)
             project_id = ProjectID(project["uuid"])
@@ -818,7 +833,7 @@ async def random_project_with_files(
             output3_file_id = create_simcore_file_id(
                 project_id, node_id, output3_file_name, Path("outputs/output_3")
             )
-            created_node_id = await create_project_node(
+            created_node_id, created_node = await create_project_node(
                 ProjectID(project["uuid"]),
                 node_id,
                 outputs={
@@ -828,6 +843,7 @@ async def random_project_with_files(
                 },
             )
             assert created_node_id == node_id
+            nodes[created_node_id] = created_node
 
             upload_tasks.append(
                 _upload_one_file_task(
@@ -878,7 +894,7 @@ async def random_project_with_files(
                 node_to_files_mapping[node_id][file_id] = file_dict
 
         project = await get_updated_project(sqlalchemy_async_engine, project["uuid"])
-        return project, node_to_files_mapping
+        return project, nodes, node_to_files_mapping
 
     return _creator
 
@@ -933,7 +949,7 @@ async def output_file(
     yield file
 
     async with sqlalchemy_async_engine.begin() as conn:
-        result = await conn.execute(
+        await conn.execute(
             file_meta_data.delete().where(file_meta_data.c.file_id == row.file_id)
         )
 
