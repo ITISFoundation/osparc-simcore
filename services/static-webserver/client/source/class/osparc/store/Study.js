@@ -178,7 +178,7 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "updateMetadata", params);
     },
 
-    getStudyState: function(studyId) {
+    fetchStudyState: function(studyId) {
       osparc.data.Resources.fetch("studies", "state", {
         url: {
           "studyId": studyId

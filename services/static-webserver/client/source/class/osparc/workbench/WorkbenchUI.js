@@ -904,11 +904,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __updateEdges: function(nodeUI) {
-      let edgesInvolved = [];
-      if (nodeUI.getNodeType() === "service") {
-        edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
-      }
-
+      const edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
       edgesInvolved.forEach(edgeId => {
         const edgeUI = this.__getEdgeUI(edgeId);
         if (edgeUI) {
@@ -1090,16 +1086,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     getNodeUI: function(nodeId) {
-      return this.__nodesUI.find(nodeUI => nodeUI.getNodeType() === "service" && nodeUI.getNodeId() === nodeId);
+      return this.__nodesUI.find(nodeUI => nodeUI.getNodeId() === nodeId);
     },
 
     __getEdgeUI: function(edgeId) {
-      for (let i = 0; i < this.__edgesUI.length; i++) {
-        if (this.__edgesUI[i].getEdgeId() === edgeId) {
-          return this.__edgesUI[i];
-        }
-      }
-      return null;
+      return this.__edgesUI.find(edgeUI => edgeUI.getEdgeId() === edgeId);
     },
 
     clearNode(nodeId) {

@@ -45,7 +45,7 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image();
+          control = new qx.ui.basic.Image("@FontAwesome5Regular/bell/22");
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle",
           })).set({
@@ -57,6 +57,24 @@ qx.Class.define("osparc.notification.NotificationsButton", {
           });
           break;
         }
+        case "is-active-icon-outline":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/12").set({
+            textColor: osparc.navigation.NavigationBar.BG_COLOR,
+          });
+          this._add(control, {
+            bottom: -4,
+            right: -4,
+          });
+          break;
+        case "is-active-icon":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/8").set({
+            textColor: "strong-main",
+          });
+          this._add(control, {
+            bottom: -2,
+            right: -2,
+          });
+          break;
         case "number":
           control = new qx.ui.basic.Label().set({
             backgroundColor: "error",
@@ -82,16 +100,15 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       const notifications = notificationManager.getNotifications();
       notifications.forEach(notification => notification.addListener("changeRead", () => this.__updateButton(), this));
 
-      const nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
-      const icon = this.getChildControl("icon");
-      icon.set({
-        source: nUnreadNotifications > 0 ? "@FontAwesome5Solid/bell/22" : "@FontAwesome5Regular/bell/22",
-        textColor: nUnreadNotifications > 0 ? "strong-main" : "text"
-      });
-      const number = this.getChildControl("number");
-      number.set({
-        value: nUnreadNotifications.toString(),
-        visibility: nUnreadNotifications > 0 ? "visible" : "excluded"
+      let nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
+      nUnreadNotifications = 5;
+      [
+        this.getChildControl("is-active-icon-outline"),
+        this.getChildControl("is-active-icon"),
+      ].forEach(control => {
+        control.set({
+          visibility: nUnreadNotifications > 0 ? "visible" : "excluded"
+        });
       });
     },
 
