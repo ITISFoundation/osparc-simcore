@@ -8,8 +8,10 @@ from datetime import timedelta
 
 import pytest
 import tenacity
+from fakeredis import FakeAsyncRedis
 from pytest_mock import MockerFixture
 from redis.asyncio import Redis, from_url
+from servicelib.redis import _client
 from settings_library.basic_types import PortInt
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity.before_sleep import before_sleep_log
@@ -121,3 +123,8 @@ def mock_redis_socket_timeout(mocker: MockerFixture) -> None:
     mocker.patch(
         "servicelib.redis._client.DEFAULT_SOCKET_TIMEOUT", timedelta(seconds=0.25)
     )
+
+
+@pytest.fixture
+async def use_in_memory_redis(mocker: MockerFixture) -> None:
+    mocker.patch.object(_client, "aioredis", FakeAsyncRedis)
