@@ -217,9 +217,10 @@ async def patch_project_and_notify_users(
         new_partial_project_data=patch_project_data,
     )
 
-    project_document, document_version = (
-        await create_project_document_and_increment_version(app, project_uuid)
-    )
+    (
+        project_document,
+        document_version,
+    ) = await create_project_document_and_increment_version(app, project_uuid)
     await notify_project_document_updated(
         app=app,
         project_id=project_uuid,
@@ -693,6 +694,7 @@ async def _check_project_node_has_all_required_inputs(
         if output_entry is None:
             unset_outputs_in_upstream.append((source_output_key, source_node.label))
 
+    assert isinstance(node.inputs_required, list)  # nosec
     for required_input in node.inputs_required:
         _check_required_input(required_input)
 
