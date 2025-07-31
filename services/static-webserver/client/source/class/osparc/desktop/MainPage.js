@@ -257,7 +257,7 @@ qx.Class.define("osparc.desktop.MainPage", {
             // these operations need to be done after template creation
             osparc.store.Study.getInstance().addCollaborators(templateData, templateAccessRights);
             if (templateType) {
-              osparc.store.Study.getInstance().patchTemplateType(templateData["uuid"], templateType)
+              osparc.store.Study.getInstance().patchTemplateType(templateData, templateType)
                 .then(() => {
                   if (tutorialBrowser && templateType === osparc.data.model.StudyUI.TUTORIAL_TYPE) {
                     tutorialBrowser.reloadResources(false);
