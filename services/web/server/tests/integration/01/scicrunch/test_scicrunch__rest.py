@@ -3,14 +3,14 @@
 # pylint:disable=redefined-outer-name
 
 """
-    Tests raw communication with scicrunch service API
+Tests raw communication with scicrunch service API
 
-    - Use for systematic exploration of the API
-    - Analyzes responses of the API to known situtations
-    - Ensures parts of the scicrunch service API that we use do not change interface or behaviour
+- Use for systematic exploration of the API
+- Analyzes responses of the API to known situtations
+- Ensures parts of the scicrunch service API that we use do not change interface or behaviour
 
-    NOTE: this is intended for manual testing during development
-    NOTE: skipped if it does not define a valid SCICRUNCH_API_KEY
+NOTE: this is intended for manual testing during development
+NOTE: skipped if it does not define a valid SCICRUNCH_API_KEY
 """
 
 import os
