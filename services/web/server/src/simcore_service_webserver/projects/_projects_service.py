@@ -9,6 +9,7 @@
 
 import asyncio
 import collections
+import contextlib
 import datetime
 import logging
 from collections import defaultdict
@@ -163,6 +164,7 @@ from .exceptions import (
     InvalidEC2TypeInResourcesSpecsError,
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
+    NodeShareStateCannotBeComputedError,
     ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
@@ -1385,10 +1387,10 @@ async def _get_node_share_state(
                 status=NodeShareStatus.OPENED,
             )
         if isinstance(service, NodeGetUnknown):
-            # service state is unknown
-            # we should raise an exception here
-            msg = "Node state is unknown"
-            raise RuntimeError(msg)
+            # service state is unknown, raise
+            raise NodeShareStateCannotBeComputedError(
+                project_uuid=project_uuid, node_uuid=node_id
+            )
         return NodeShareState(locked=False)
 
     # if the service is computational and no pipeline is running it is not locked
@@ -1882,19 +1884,23 @@ async def add_project_states_for_user(
         assert isinstance(node_uuid, str)  # nosec
         assert isinstance(node, dict)  # nosec
 
-        node_lock_state = await _get_node_share_state(
-            app,
-            user_id=user_id,
-            project_uuid=project["uuid"],
-            node_id=NodeID(node_uuid),
-        )
+        node_lock_state = None
+        with contextlib.suppress(NodeShareStateCannotBeComputedError):
+            node_lock_state = await _get_node_share_state(
+                app,
+                user_id=user_id,
+                project_uuid=project["uuid"],
+                node_id=NodeID(node_uuid),
+            )
         if NodeID(node_uuid) in computational_node_states:
             node_state = computational_node_states[NodeID(node_uuid)].model_copy(
                 update={"lock_state": node_lock_state}
             )
         else:
             # if the node is not in the computational state, we create a new one
-            service_is_running = node_lock_state.status is NodeShareStatus.OPENED
+            service_is_running = node_lock_state and (
+                node_lock_state.status is NodeShareStatus.OPENED
+            )
             node_state = NodeState(
                 current_status=(
                     RunningState.STARTED
