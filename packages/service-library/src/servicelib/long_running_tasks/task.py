@@ -29,10 +29,6 @@ from .models import ResultField, TaskBase, TaskContext, TaskData, TaskId, TaskSt
 _logger = logging.getLogger(__name__)
 
 
-_CANCEL_TASK_TIMEOUT: Final[PositiveFloat] = datetime.timedelta(
-    seconds=10  # NOTE: 1 second is too short to cleanup a task
-).total_seconds()
-
 _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
 
@@ -368,8 +364,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
     ) -> None:
         try:
             await self._tasks_data.set_as_cancelled(task_id, with_task_context)
-            # TODO: remove this cancellation timeout
-            await cancel_wait_task(task, max_delay=_CANCEL_TASK_TIMEOUT)
+            await cancel_wait_task(task)
         except Exception as e:  # pylint:disable=broad-except
             _logger.info(
                 "Task %s cancellation failed with error: %s",
