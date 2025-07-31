@@ -164,7 +164,9 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
-        "REDIS_SETTINGS": redis_settings.model_dump_json(),
+        "REDIS_SETTINGS": json_dumps(
+            model_dump_with_secrets(redis_settings, show_secrets=True)
+        ),
         "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
             json_dumps(
                 model_dump_with_secrets(

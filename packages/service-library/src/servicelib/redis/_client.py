@@ -29,6 +29,17 @@ _logger = logging.getLogger(__name__)
 _HEALTHCHECK_TASK_TIMEOUT_S: Final[float] = 3.0
 
 
+@tenacity.retry(
+    wait=tenacity.wait_fixed(2),
+    stop=tenacity.stop_after_delay(20),
+    before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
+    reraise=True,
+)
+async def wait_till_redis_is_responsive(client: aioredis.Redis) -> None:
+    if not await client.ping():
+        raise tenacity.TryAgain
+
+
 @dataclass
 class RedisClientSDK:
     redis_dsn: str
@@ -63,16 +74,6 @@ class RedisClientSDK:
         self._is_healthy = False
         self._health_check_task_started_event = asyncio.Event()
 
-    @tenacity.retry(
-        wait=tenacity.wait_fixed(2),
-        stop=tenacity.stop_after_delay(20),
-        before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
-        reraise=True,
-    )
-    async def wait_till_redis_is_responsive(self) -> None:
-        if not await self.ping():
-            raise tenacity.TryAgain
-
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
@@ -89,7 +90,7 @@ class RedisClientSDK:
         # - ensure redis is working
         # - before shutting down an initialized Redis connection it must
         #   make at least one call to the server, otherwise tests might hang
-        await self.wait_till_redis_is_responsive()
+        await wait_till_redis_is_responsive(self._client)
 
         _logger.info(
             "Connection to %s succeeded with %s",
