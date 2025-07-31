@@ -54,6 +54,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     HEIGHT: 36,
     BG_COLOR: "input_background",
 
+    getInitialFilterData: function() {
+      return {
+        tags: [],
+        classifiers: [],
+        sharedWith: null,
+        appType: null,
+        text: ""
+      };
+    },
+
     getSharedWithOptions: function(resourceType) {
       if (resourceType === "template") {
         resourceType = "tutorial";
@@ -406,13 +416,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     getFilterData: function() {
-      const filterData = {
-        tags: [],
-        classifiers: [],
-        sharedWith: null,
-        appType: null,
-        text: ""
-      };
+      const filterData = this.self().getInitialFilterData();
       const textFilter = this.getTextFilterValue();
       filterData["text"] = textFilter ? textFilter : "";
       this.getChildControl("active-filters").getChildren().forEach(chip => {
