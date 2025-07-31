@@ -1094,12 +1094,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __getEdgeUI: function(edgeId) {
-      for (let i = 0; i < this.__edgesUI.length; i++) {
-        if (this.__edgesUI[i].getEdgeId() === edgeId) {
-          return this.__edgesUI[i];
-        }
-      }
-      return null;
+      this.__edgesUI.find(edgeUI => edgeUI.getEdgeId() === edgeId);
     },
 
     clearNode(nodeId) {
