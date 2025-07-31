@@ -7,6 +7,7 @@ from pydantic import TypeAdapter
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ...redis._client import RedisClientSDK
+from ...redis._utils import handle_redis_returns_union_types
 from ..models import TaskContext, TaskData, TaskId
 from .base import BaseStore
 
@@ -46,41 +47,47 @@ class RedisStore(BaseStore):
         return f"{self.namespace}:{store_type}:{name}"
 
     async def get_task_data(self, task_id: TaskId) -> TaskData | None:
-        result: Any | None = await self._redis.hget(
-            self._get_redis_hash_key(_STORE_TYPE_TASK_DATA), task_id
-        )  # type: ignore[misc]
+        result: Any | None = await handle_redis_returns_union_types(
+            self._redis.hget(self._get_redis_hash_key(_STORE_TYPE_TASK_DATA), task_id)
+        )
         return TypeAdapter(TaskData).validate_json(result) if result else None
 
     async def set_task_data(self, task_id: TaskId, value: TaskData) -> None:
         _logger.debug(
             "Setting task data for task_id=%s with data value=%s", task_id, value
         )
-        await self._redis.hset(
-            self._get_redis_hash_key(_STORE_TYPE_TASK_DATA),
-            task_id,
-            value.model_dump_json(),
-        )  # type: ignore[misc]
+        await handle_redis_returns_union_types(
+            self._redis.hset(
+                self._get_redis_hash_key(_STORE_TYPE_TASK_DATA),
+                task_id,
+                value.model_dump_json(),
+            )
+        )
 
     async def list_tasks_data(self) -> list[TaskData]:
-        result: list[Any] = await self._redis.hvals(
-            self._get_redis_hash_key(_STORE_TYPE_TASK_DATA)
-        )  # type: ignore[misc]
+        result: list[Any] = await handle_redis_returns_union_types(
+            self._redis.hvals(self._get_redis_hash_key(_STORE_TYPE_TASK_DATA))
+        )
         return [TypeAdapter(TaskData).validate_json(item) for item in result]
 
     async def delete_task_data(self, task_id: TaskId) -> None:
-        await self._redis.hdel(self._get_redis_hash_key(_STORE_TYPE_TASK_DATA), task_id)  # type: ignore[misc]
+        await handle_redis_returns_union_types(
+            self._redis.hdel(self._get_redis_hash_key(_STORE_TYPE_TASK_DATA), task_id)
+        )
 
     async def set_as_cancelled(
         self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
-        await self._redis.hset(
-            self._get_redis_hash_key(_STORE_TYPE_CANCELLED_TASKS),
-            task_id,
-            json_dumps(with_task_context),
-        )  # type: ignore[misc]
+        await handle_redis_returns_union_types(
+            self._redis.hset(
+                self._get_redis_hash_key(_STORE_TYPE_CANCELLED_TASKS),
+                task_id,
+                json_dumps(with_task_context),
+            )
+        )
 
     async def get_cancelled(self) -> dict[TaskId, TaskContext]:
-        result: dict[str, str | None] = await self._redis.hgetall(
-            self._get_redis_hash_key(_STORE_TYPE_CANCELLED_TASKS)
-        )  # type: ignore[misc]
+        result: dict[str, str | None] = await handle_redis_returns_union_types(
+            self._redis.hgetall(self._get_redis_hash_key(_STORE_TYPE_CANCELLED_TASKS))
+        )
         return {task_id: json_loads(context) for task_id, context in result.items()}
