@@ -98,7 +98,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
         this._outputsLayout.add(outputsForm);
       }
 
-      this._outputsBtn.set({
+      this.getOutputsButton().set({
         value: false,
         enabled: this.getNode().hasOutputs() > 0
       });
