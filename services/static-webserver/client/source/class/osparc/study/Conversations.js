@@ -52,7 +52,6 @@ qx.Class.define("osparc.study.Conversations", {
       PROJECT_ANNOTATION: "PROJECT_ANNOTATION",
     },
 
-
     CHANNELS: {
       CONVERSATION_CREATED: "conversation:created",
       CONVERSATION_UPDATED: "conversation:updated",
@@ -72,6 +71,17 @@ qx.Class.define("osparc.study.Conversations", {
         conversations.destroy();
       }, this);
       return win;
+    },
+
+    makeButtonBlink: function(button) {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      Object.values(osparc.study.Conversations.CHANNELS).forEach(eventName => {
+        socket.on(eventName, () => {
+          if (button) {
+            osparc.utils.Utils.makeButtonBlink(button);
+          }
+        });
+      });
     },
   },
 

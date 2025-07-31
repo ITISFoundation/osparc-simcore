@@ -442,7 +442,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       this.__addTopBarSpacer(topBar);
 
-      const commentsButton = new qx.ui.form.Button().set({
+      const conversationButton = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
         toolTipText: this.tr("Conversations"),
         icon: "@FontAwesome5Solid/comments/16",
@@ -450,8 +450,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         marginTop: 7,
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
       });
-      commentsButton.addListener("execute", () => osparc.study.Conversations.popUpInWindow(study.serialize()));
-      topBar.add(commentsButton);
+      osparc.study.Conversations.makeButtonBlink(conversationButton);
+      conversationButton.addListener("execute", () => osparc.study.Conversations.popUpInWindow(study.serialize()));
+      topBar.add(conversationButton);
 
       const startAppButtonTB = this.__startAppButtonTB = new qx.ui.form.Button().set({
         appearance: "form-button-outlined",
