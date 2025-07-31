@@ -210,7 +210,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       textField.addListener("focusout", () => this.__filter(), this);
 
       const resetButton = this.getChildControl("reset-button");
-      resetButton.addListener("execute", () => this.__resetFilters(), this);
+      resetButton.addListener("execute", () => this.resetButtonPressed(), this);
 
       osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
@@ -410,7 +410,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.getChildControl("text-field").resetValue();
     },
 
-    __resetFilters: function() {
+    resetButtonPressed: function() {
       this.resetFilters();
       this.__filter();
     },
