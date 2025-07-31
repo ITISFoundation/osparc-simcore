@@ -341,6 +341,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __applyNode: function(node) {
+      node.addListener("changePosition", e => {
+        this.moveNodeTo(e.getData());
+      });
+
       if (node.isDynamic()) {
         const startButton = new qx.ui.menu.Button().set({
           label: this.tr("Start"),

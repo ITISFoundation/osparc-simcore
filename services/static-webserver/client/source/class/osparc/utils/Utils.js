@@ -156,7 +156,11 @@ qx.Class.define("osparc.utils.Utils", {
             source = imgSrc;
           }
         })
-        .finally(() => image.setSource(source));
+        .finally(() => {
+          if (image.getContentElement() && imgSrc) { // check if the image is still there
+            image.setSource(source);
+          }
+        });
     },
 
     addWhiteSpaces: function(integer) {

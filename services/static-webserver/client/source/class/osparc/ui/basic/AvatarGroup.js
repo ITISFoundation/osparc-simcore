@@ -53,7 +53,10 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
     __onGlobalPointerMove: null,
 
     setUserGroupIds: function(userGroupIds) {
-      if (JSON.stringify(userGroupIds) === JSON.stringify(this.__userGroupIds)) {
+      if (
+        userGroupIds.length &&
+        JSON.stringify(userGroupIds) === JSON.stringify(this.__userGroupIds)
+      ) {
         return;
       }
       this.__userGroupIds = userGroupIds || [];
