@@ -6,8 +6,7 @@
 
 import asyncio
 import urllib.parse
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import datetime, timedelta
 from typing import Any, Final
 
@@ -77,29 +76,35 @@ def empty_context() -> TaskContext:
     return {}
 
 
-@asynccontextmanager
-async def get_tasks_manager(
-    redis_settings: RedisSettings,
-) -> AsyncIterator[TasksManager]:
-    tasks_manager = TasksManager(
-        stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
-        stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
-        redis_settings=redis_settings,
-        namespace="test",
-    )
-    await tasks_manager.setup()
+@pytest.fixture
+async def get_tasks_manager() -> (
+    AsyncIterator[Callable[[RedisSettings], Awaitable[TasksManager]]]
+):
+    managers: list[TasksManager] = []
 
-    yield tasks_manager
+    async def _(redis_settings: RedisSettings) -> TasksManager:
+        tasks_manager = TasksManager(
+            stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
+            stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
+            redis_settings=redis_settings,
+            namespace="test",
+        )
+        await tasks_manager.setup()
+        managers.append(tasks_manager)
+        return tasks_manager
 
-    await tasks_manager.teardown()
+    yield _
+
+    for manager in managers:
+        await manager.teardown()
 
 
 @pytest.fixture
 async def tasks_manager(
     use_in_memory_redis: RedisSettings,
-) -> AsyncIterator[TasksManager]:
-    async with get_tasks_manager(use_in_memory_redis) as manager:
-        yield manager
+    get_tasks_manager: Callable[[RedisSettings], Awaitable[TasksManager]],
+) -> TasksManager:
+    return await get_tasks_manager(use_in_memory_redis)
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
@@ -325,34 +330,36 @@ async def test_get_result_finished_with_error(
 
 async def test_cancel_task_from_different_manager(
     use_in_memory_redis: RedisSettings,
+    get_tasks_manager: Callable[[RedisSettings], Awaitable[TasksManager]],
     empty_context: TaskContext,
 ):
-    async with get_tasks_manager(use_in_memory_redis) as manager_1, get_tasks_manager(
-        use_in_memory_redis
-    ) as manager_2, get_tasks_manager(use_in_memory_redis) as manager_3:
-        task_id = await lrt_api.start_task(
-            manager_1,
-            a_background_task.__name__,
-            raise_when_finished=False,
-            total_sleep=1,
-            task_context=empty_context,
-        )
+    manager_1 = await get_tasks_manager(use_in_memory_redis)
+    manager_2 = await get_tasks_manager(use_in_memory_redis)
+    manager_3 = await get_tasks_manager(use_in_memory_redis)
 
-        # wati for task to complete
-        for manager in (manager_1, manager_2, manager_3):
-            status = await manager.get_task_status(task_id, empty_context)
-            assert status.done is False
+    task_id = await lrt_api.start_task(
+        manager_1,
+        a_background_task.__name__,
+        raise_when_finished=False,
+        total_sleep=1,
+        task_context=empty_context,
+    )
 
-        async for attempt in AsyncRetrying(**_RETRY_PARAMS):
-            with attempt:
-                for manager in (manager_1, manager_2, manager_3):
-                    status = await manager.get_task_status(task_id, empty_context)
-                    assert status.done is True
+    # wati for task to complete
+    for manager in (manager_1, manager_2, manager_3):
+        status = await manager.get_task_status(task_id, empty_context)
+        assert status.done is False
 
-        # check all provide the same result
-        for manager in (manager_1, manager_2, manager_3):
-            task_result = await manager.get_task_result(task_id, empty_context)
-            assert task_result == 42
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            for manager in (manager_1, manager_2, manager_3):
+                status = await manager.get_task_status(task_id, empty_context)
+                assert status.done is True
+
+    # check all provide the same result
+    for manager in (manager_1, manager_2, manager_3):
+        task_result = await manager.get_task_result(task_id, empty_context)
+        assert task_result == 42
 
 
 async def test_remove_task(tasks_manager: TasksManager, empty_context: TaskContext):
