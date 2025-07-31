@@ -1906,7 +1906,7 @@ async def add_project_states_for_user(
 
         # upgrade the project
         node.setdefault("state", {}).update(
-            node_state.model_dump_json(by_alias=True, exclude_unset=True)
+            node_state.model_dump(mode="json", by_alias=True, exclude_unset=True)
         )
         if "progress" in node["state"] and node["state"]["progress"] is not None:
             # ensure progress is a percentage
