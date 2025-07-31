@@ -246,6 +246,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__connectEvents();
 
         study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesButtons());
+        study.getWorkbench().addListener("nodeRemoved", e => {
+          const {nodeId, connectedEdgeIds} = e.getData();
+          this.nodeRemoved(nodeId, connectedEdgeIds);
+        });
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
         this.__evalSlidesButtons();
@@ -1169,21 +1173,21 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __doRemoveNode: async function(nodeId) {
+    __doRemoveNode: function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
-      const connectedEdges = workbench.getConnectedEdges(nodeId);
-      const removed = await workbench.removeNode(nodeId);
-      if (removed) {
-        // remove first the connected edges
-        for (let i = 0; i < connectedEdges.length; i++) {
-          const edgeId = connectedEdges[i];
-          this.__workbenchUI.clearEdge(edgeId);
-        }
-        this.__workbenchUI.clearNode(nodeId);
-      }
+      workbench.removeNode(nodeId);
       if ([this.__currentNodeId, null].includes(this.__nodesTree.getCurrentNodeId())) {
         this.nodeSelected(this.getStudy().getUuid());
       }
+    },
+
+    nodeRemoved: function(nodeId, connectedEdgeIds) {
+      // remove first the connected edges
+      connectedEdgeIds.forEach(edgeId => {
+        this.__workbenchUI.clearEdge(edgeId);
+      });
+      // then remove the node
+      this.__workbenchUI.clearNode(nodeId);
     },
 
     __removeEdge: function(edgeId) {
