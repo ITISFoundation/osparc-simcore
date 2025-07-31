@@ -1081,11 +1081,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._searchBarFilter.set({
         showFilterMenu: false,
       });
+      this._searchBarFilter.addListener("resetButtonPressed", () => this.__filterChanged());
       const searchBarTextField = this._searchBarFilter.getChildControl("text-field");
       searchBarTextField.set({
         cursor: "pointer",
       });
-      searchBarTextField.addListener("resetButtonPressed", () => this.__filterChanged());
       searchBarTextField.addListener("tap", () => this.__extendSearchBar());
 
       const header = this.__header = new osparc.dashboard.StudyBrowserHeader();
