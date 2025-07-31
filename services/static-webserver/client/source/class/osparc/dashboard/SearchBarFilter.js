@@ -370,6 +370,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       searchBarFilterExtended.set({
         width: bounds.width,
       });
+      searchBarFilterExtended.addListener("resetFilter", () => {
+        this.resetButtonPressed();
+      }, this);
       return searchBarFilterExtended;
     },
 

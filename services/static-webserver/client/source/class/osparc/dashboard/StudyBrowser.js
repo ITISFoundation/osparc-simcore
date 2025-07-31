@@ -1218,9 +1218,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             break;
         }
       });
-      searchBarFilterExtended.addListener("resetFilter", () => {
-        this._searchBarFilter.resetButtonPressed();
-      }, this);
     },
 
     __connectContexts: function() {
