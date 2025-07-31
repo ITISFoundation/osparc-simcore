@@ -66,7 +66,9 @@ qx.Class.define("osparc.study.Conversations", {
       const title = qx.locale.Manager.tr("Conversations");
       const viewWidth = 600;
       const viewHeight = 700;
-      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight);
+      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight).set({
+        maxHeight: viewHeight,
+      });
       win.addListener("close", () => {
         conversations.destroy();
       }, this);
