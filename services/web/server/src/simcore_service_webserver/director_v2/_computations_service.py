@@ -38,7 +38,6 @@ from ..products.products_service import is_product_billable
 from ..projects.api import (
     batch_get_project_name,
     check_user_project_permission,
-    get_project_dict_legacy,
 )
 from ..projects.projects_metadata_service import (
     get_project_custom_metadata_or_empty_dict,
@@ -46,6 +45,13 @@ from ..projects.projects_metadata_service import (
 )
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ._comp_runs_collections_service import get_comp_run_collection_or_none_by_id
+
+
+async def _wrap_with_id(
+    project_id: ProjectID, coro: Awaitable[list[tuple[NodeID, Node]]]
+) -> tuple[ProjectID, dict[NodeID, Node]]:
+    nodes = await coro
+    return project_id, dict(nodes)
 
 
 async def _get_projects_metadata(
@@ -253,12 +259,6 @@ async def list_computations_latest_iteration_tasks(
     # Fetch projects metadata concurrently
     # NOTE: MD: can be improved with a single batch call
 
-    async def _wrap_with_id(
-        project_id: ProjectID, coro: Awaitable[list[tuple[NodeID, Node]]]
-    ) -> tuple[ProjectID, dict[NodeID, Node]]:
-        nodes = await coro
-        return project_id, dict(nodes)
-
     results = await limited_gather(
         *[
             _wrap_with_id(project_uuid, get_by_project(app, project_id=project_uuid))
@@ -299,7 +299,7 @@ async def list_computations_latest_iteration_tasks(
             ended_at=item.ended_at,
             log_download_link=item.log_download_link,
             node_name=project_uuid_to_workbench[item.project_uuid][item.node_id].label
-            or "",
+            or "Unknown",
             osparc_credits=credits_or_none,
         )
         for item, credits_or_none in zip(
@@ -421,15 +421,16 @@ async def list_computation_collection_run_tasks(
     # Get unique set of all project_uuids from comp_tasks
     unique_project_uuids = {task.project_uuid for task in _tasks_get.items}
     # NOTE: MD: can be improved with a single batch call
-    project_dicts = await limited_gather(
+    results = await limited_gather(
         *[
-            get_project_dict_legacy(app, project_uuid=project_uuid)
+            _wrap_with_id(project_uuid, get_by_project(app, project_id=project_uuid))
             for project_uuid in unique_project_uuids
         ],
         limit=20,
     )
+
     # Build a dict: project_uuid -> workbench
-    project_uuid_to_workbench = {prj["uuid"]: prj["workbench"] for prj in project_dicts}
+    project_uuid_to_workbench: dict[ProjectID, dict[NodeID, Node]] = dict(results)
 
     # Fetch projects metadata concurrently
     _projects_metadata = await _get_projects_metadata(
@@ -466,9 +467,7 @@ async def list_computation_collection_run_tasks(
             log_download_link=item.log_download_link,
             name=(
                 custom_metadata.get("job_name")
-                or project_uuid_to_workbench[f"{item.project_uuid}"][
-                    f"{item.node_id}"
-                ].get("label")
+                or project_uuid_to_workbench[item.project_uuid][item.node_id].label
                 or "Unknown"
             ),
             osparc_credits=credits_or_none,
