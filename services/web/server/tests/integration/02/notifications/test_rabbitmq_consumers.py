@@ -420,7 +420,7 @@ async def test_progress_computational_workflow(
     )
     await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
 
-    call_expected = subscribe_to_logs
+    call_expected = sender_same_user_id and subscribe_to_logs
     if call_expected:
         expected_call = jsonable_encoder(
             progress_message, include={"node_id", "project_id"}
