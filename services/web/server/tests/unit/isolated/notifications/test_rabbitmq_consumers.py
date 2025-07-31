@@ -80,17 +80,17 @@ from simcore_service_webserver.socketio.models import WebSocketNodeProgress
 async def test_regression_progress_message_parser(
     mocker: MockerFixture, raw_data: bytes, expected_socket_message: SocketMessageDict
 ):
-    send_messages_to_user_mock = mocker.patch(
-        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_message_to_user",
+    send_message_to_project_room_mock = mocker.patch(
+        "simcore_service_webserver.notifications._rabbitmq_exclusive_queue_consumers.send_message_to_project_room",
         autospec=True,
     )
 
     app = AsyncMock()
     assert await _progress_message_parser(app, raw_data)
 
-    # tests how send_message_to_user is called
-    assert send_messages_to_user_mock.call_count == 1
-    message = send_messages_to_user_mock.call_args.kwargs["message"]
+    # tests how send_message_to_project_room is called
+    assert send_message_to_project_room_mock.call_count == 1
+    message = send_message_to_project_room_mock.call_args.kwargs["message"]
 
     # check that all fields are sent as expected
     assert message["data"] == expected_socket_message["data"]
