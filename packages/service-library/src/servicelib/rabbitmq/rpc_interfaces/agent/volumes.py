@@ -6,8 +6,9 @@ from models_library.docker import DockerNodeID
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import NonNegativeInt, TypeAdapter
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient
+
+from ....logging_utils import log_decorator
+from ....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 

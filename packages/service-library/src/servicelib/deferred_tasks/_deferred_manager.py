@@ -16,10 +16,10 @@ from faststream.rabbit import (
     RabbitRouter,
 )
 from pydantic import NonNegativeInt
-from servicelib.logging_utils import log_catch, log_context
-from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 
+from ..logging_utils import log_catch, log_context
+from ..redis import RedisClientSDK
 from ._base_deferred_handler import (
     BaseDeferredHandler,
     DeferredContext,

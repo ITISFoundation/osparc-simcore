@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import redis.asyncio as aioredis
 import redis.exceptions
+import tenacity
 from common_library.async_tools import cancel_wait_task
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
@@ -26,6 +27,17 @@ _logger = logging.getLogger(__name__)
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7077
 _HEALTHCHECK_TASK_TIMEOUT_S: Final[float] = 3.0
+
+
+@tenacity.retry(
+    wait=tenacity.wait_fixed(2),
+    stop=tenacity.stop_after_delay(20),
+    before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
+    reraise=True,
+)
+async def wait_till_redis_is_responsive(client: aioredis.Redis) -> None:
+    if not await client.ping():
+        raise tenacity.TryAgain
 
 
 @dataclass
@@ -59,10 +71,10 @@ class RedisClientSDK:
             decode_responses=self.decode_responses,
             client_name=self.client_name,
         )
-        # NOTE: connection is done here already
         self._is_healthy = False
         self._health_check_task_started_event = asyncio.Event()
 
+    async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
             assert self._health_check_task_started_event  # nosec
@@ -73,6 +85,12 @@ class RedisClientSDK:
             _periodic_check_health(),
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
+
+        # NOTE: this achieves 2 very important things:
+        # - ensure redis is working
+        # - before shutting down an initialized Redis connection it must
+        #   make at least one call to the server, otherwise tests might hang
+        await wait_till_redis_is_responsive(self._client)
 
         _logger.info(
             "Connection to %s succeeded with %s",
@@ -86,11 +104,12 @@ class RedisClientSDK:
         ):
             if self._health_check_task:
                 assert self._health_check_task_started_event  # nosec
-                # NOTE: wait for the health check task to have started once before we can cancel it
                 await self._health_check_task_started_event.wait()
-                await cancel_wait_task(
-                    self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
-                )
+
+                with log_catch(_logger, reraise=False):
+                    await cancel_wait_task(
+                        self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
+                    )
 
             await self._client.aclose(close_connection_pool=True)
 
@@ -99,6 +118,7 @@ class RedisClientSDK:
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
             await self._client.ping()
             return True
+
         return False
 
     @property

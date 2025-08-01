@@ -15,8 +15,9 @@ from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient
+
+from .....logging_utils import log_decorator
+from .....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 

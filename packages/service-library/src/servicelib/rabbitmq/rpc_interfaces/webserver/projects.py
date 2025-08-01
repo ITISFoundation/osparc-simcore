@@ -16,8 +16,9 @@ from models_library.rpc_pagination import (
 )
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient
+
+from ....logging_utils import log_decorator
+from ....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 

@@ -16,13 +16,12 @@ from common_library.json_serialization import json_dumps, json_loads
 from common_library.user_messages import user_message
 from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from servicelib.status_codes_utils import is_5xx_server_error
 
 from ..logging_errors import create_troubleshootting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped_from_text
-from ..status_codes_utils import get_code_description
+from ..status_codes_utils import get_code_description, is_5xx_server_error
 from . import status
 from .rest_responses import (
     create_data_response,

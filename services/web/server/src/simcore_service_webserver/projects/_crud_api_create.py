@@ -180,7 +180,7 @@ async def _copy_files_from_source_project(
             user_id=user_id,
             product_name=product_name,
         ):
-            task_progress.update(
+            await task_progress.update(
                 message=(
                     async_job_composed_result.status.progress.message.description
                     if async_job_composed_result.status.progress.message
@@ -296,7 +296,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     copy_file_coro = None
     project_nodes = None
     try:
-        progress.update(message="creating new study...")
+        await progress.update(message="creating new study...")
 
         workspace_id = None
         folder_id = None
@@ -384,7 +384,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
-        progress.update()
+        await progress.update()
 
         # 3.2 move project to proper folder
         if folder_id:
@@ -414,7 +414,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(new_project["uuid"])
         )
-        progress.update()
+        await progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_service.create_or_update_pipeline(
@@ -435,7 +435,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             is_template=as_template,
             app=request.app,
         )
-        progress.update()
+        await progress.update()
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)

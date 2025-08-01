@@ -11,6 +11,7 @@ from settings_library.utils_cli import create_settings_command
 
 from ._meta import PROJECT_NAME
 from .core.application import create_base_app
+from .core.rabbitmq import setup_rabbitmq
 from .core.settings import ApplicationSettings
 from .modules.long_running_tasks import task_ports_outputs_push, task_save_state
 from .modules.mounted_fs import MountedVolumes, setup_mounted_fs
@@ -39,6 +40,7 @@ async def _initialized_app() -> AsyncIterator[FastAPI]:
     app = create_base_app()
 
     # setup MountedVolumes
+    setup_rabbitmq(app)
     setup_mounted_fs(app)
     setup_outputs(app)
 

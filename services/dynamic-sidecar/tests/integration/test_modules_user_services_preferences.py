@@ -17,6 +17,7 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
+from settings_library.redis import RedisSettings
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.modules.user_services_preferences import (
     load_user_services_preferences,
@@ -32,6 +33,7 @@ from simcore_service_dynamic_sidecar.modules.user_services_preferences._utils im
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -62,9 +64,10 @@ def product_name() -> ProductName:
 
 
 @pytest.fixture
-def mock_environment(  # pylint:disable=too-many-arguments
+def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     mock_rabbit_check: None,
     mock_storage_check: None,
+    redis_service: RedisSettings,
     postgres_host_config: PostgresTestConfig,
     monkeypatch: pytest.MonkeyPatch,
     base_mock_envs: EnvVarsDict,

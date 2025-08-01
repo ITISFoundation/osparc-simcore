@@ -8,7 +8,6 @@ from typing import Any
 from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient, ConnectError, HTTPError, PoolTimeout, Response
 from httpx._types import TimeoutTypes, URLTypes
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from settings_library.tracing import TracingSettings
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
@@ -18,6 +17,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
 from .http_client import BaseHTTPApi
+from .tracing import setup_httpx_client_tracing
 
 _logger = logging.getLogger(__name__)
 
@@ -128,7 +128,7 @@ def retry_on_errors(
     """
 
     def decorator(
-        request_func: Callable[..., Awaitable[Response]]
+        request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
         assert asyncio.iscoroutinefunction(request_func)
 
@@ -178,7 +178,7 @@ def expect_status(
     """
 
     def decorator(
-        request_func: Callable[..., Awaitable[Response]]
+        request_func: Callable[..., Awaitable[Response]],
     ) -> Callable[..., Awaitable[Response]]:
         assert asyncio.iscoroutinefunction(request_func)
 

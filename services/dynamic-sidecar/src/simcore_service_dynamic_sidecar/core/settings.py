@@ -29,6 +29,7 @@ from settings_library.node_ports import StorageAuthSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.r_clone import RCloneSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.resource_usage_tracker import (
     DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL,
 )
@@ -185,6 +186,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True}
     )
     RABBIT_SETTINGS: RabbitSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
+    REDIS_SETTINGS: RedisSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
 

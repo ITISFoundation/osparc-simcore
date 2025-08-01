@@ -51,6 +51,8 @@ docker==7.1.0
     # via -r requirements/_test.in
 faker==36.2.2
     # via -r requirements/_test.in
+fakeredis==2.30.3
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 frozenlist==1.5.0
@@ -74,6 +76,8 @@ jmespath==1.0.1
     #   aiobotocore
     #   boto3
     #   botocore
+lupa==2.5
+    # via fakeredis
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt
@@ -125,6 +129,11 @@ python-dotenv==1.0.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+redis==5.2.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
 requests==2.32.4
     # via
     #   -c requirements/_base.txt
@@ -140,6 +149,8 @@ sniffio==1.3.1
     # via
     #   -c requirements/_base.txt
     #   asgi-lifespan
+sortedcontainers==2.4.0
+    # via fakeredis
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
