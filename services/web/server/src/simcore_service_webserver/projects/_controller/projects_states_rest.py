@@ -164,7 +164,6 @@ async def open_project(request: web.Request) -> web.Response:
         project = await _projects_service.add_project_states_for_user(
             user_id=req_ctx.user_id,
             project=project,
-            is_template=False,
             app=request.app,
         )
         await _projects_service.notify_project_state_update(request.app, project)

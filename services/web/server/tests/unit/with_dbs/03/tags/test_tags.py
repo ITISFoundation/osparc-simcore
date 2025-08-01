@@ -86,7 +86,7 @@ async def test_tags_to_studies(
             share_state=ProjectShareStateOutputSchema(
                 locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
             ),
-            state=ProjectRunningState(value=RunningState.UNKNOWN),
+            state=ProjectRunningState(value=RunningState.NOT_STARTED),
         ),
         exclude_unset=True,
     )
