@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
@@ -20,6 +21,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .helpers.faker_factories import DEFAULT_FAKER, random_project
+from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
@@ -215,28 +217,38 @@ def share_with_collaborator(
 @pytest.fixture
 async def create_project_node(
     user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
-) -> Callable[..., Awaitable[tuple[NodeID, dict[str, Any]]]]:
-    async def _creator(
-        project_id: ProjectID, node_id: NodeID | None = None, **kwargs
-    ) -> tuple[NodeID, dict[str, Any]]:
-        async with sqlalchemy_async_engine.begin() as conn:
+) -> AsyncIterator[Callable[..., Awaitable[tuple[NodeID, dict[str, Any]]]]]:
+    created_node_entries: list[tuple[NodeID, ProjectID]] = []
+
+    async with contextlib.AsyncExitStack() as stack:
+
+        async def _creator(
+            project_id: ProjectID, node_id: NodeID | None = None, **kwargs
+        ) -> tuple[NodeID, dict[str, Any]]:
             new_node_id = node_id or NodeID(faker.uuid4())
             node_values = {
+                "node_id": f"{new_node_id}",
+                "project_uuid": f"{project_id}",
                 "key": "simcore/services/frontend/file-picker",
                 "version": "1.0.0",
                 "label": "pytest_fake_node",
+                **kwargs,
             }
-            node_values.update(**kwargs)
-            result = await conn.execute(
-                projects_nodes.insert()
-                .values(
-                    node_id=f"{new_node_id}",
-                    project_uuid=f"{project_id}",
-                    **node_values,
-                )
-                .returning(sa.literal_column("*"))
-            )
-            row = result.one()
-            return new_node_id, row._asdict()
 
-    return _creator
+            node_row = await stack.enter_async_context(
+                insert_and_get_row_lifespan(
+                    sqlalchemy_async_engine,
+                    table=projects_nodes,
+                    values=node_values,
+                    pk_col=projects_nodes.c.node_id,
+                    pk_value=f"{new_node_id}",
+                )
+            )
+
+            created_node_entries.append((new_node_id, project_id))
+            return new_node_id, node_row
+
+        yield _creator
+
+    # Cleanup is handled automatically by insert_and_get_row_lifespan
+    print("Deleting ", created_node_entries)
