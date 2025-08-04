@@ -48,7 +48,7 @@ def test_get_resource_tracking_run_id_for_dynamic():
     "service_key, service_version",
     [(random_service_key(), random_service_version()) for _ in range(10)],
 )
-def test_service_key_and_version_are_in_sync(
+def test_faker_factory_service_key_and_version_are_in_sync(
     service_key: ServiceKey, service_version: ServiceVersion
 ):
     TypeAdapter(ServiceKey).validate_python(service_key)
