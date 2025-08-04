@@ -1,10 +1,9 @@
 from collections.abc import AsyncIterator
-from contextlib import suppress
+from typing import NamedTuple
 
 import sqlalchemy as sa
-from models_library.projects import ProjectAtDB, ProjectID, ProjectIDStr
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
-from pydantic import ValidationError
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
@@ -13,26 +12,29 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from ._base import BaseRepository
 
 
+class ProjectBasicTuple(NamedTuple):
+    uuid: ProjectID
+    name: str
+
+
 class ProjectRepository(BaseRepository):
     async def list_valid_projects_in(
         self,
         *,
         connection: AsyncConnection | None = None,
         project_uuids: list[ProjectID],
-    ) -> AsyncIterator[ProjectAtDB]:
+    ) -> AsyncIterator[ProjectBasicTuple]:
         """
 
         NOTE that it lists ONLY validated projects in 'project_uuids'
         """
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
-                sa.select(projects).where(
+                sa.select(projects.c.uuid, projects.c.name).where(
                     projects.c.uuid.in_(f"{pid}" for pid in project_uuids)
                 )
             ):
-                with suppress(ValidationError):
-                    # FIXME: remove workbench once model is fixed
-                    yield ProjectAtDB.model_validate(row._asdict() | {"workbench": {}})
+                yield ProjectBasicTuple(uuid=ProjectID(row.uuid), name=row.name)
 
     async def get_project_id_and_node_id_to_names_map(
         self,
