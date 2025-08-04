@@ -27,6 +27,12 @@ from simcore_service_api_server.api.dependencies.functions import (
     get_stored_job_outputs,
     get_stored_job_status,
 )
+from simcore_service_api_server.api.dependencies.models_schemas_function_filters import (
+    get_function_jobs_filters,
+)
+from simcore_service_api_server.models.schemas.functions_filters import (
+    FunctionJobsListFilters,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_jobs import JobService
@@ -94,16 +100,18 @@ for endpoint in ENDPOINTS:
     ),
 )
 async def list_function_jobs(
+    page_params: Annotated[PaginationParams, Depends()],
     function_job_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
-    page_params: Annotated[PaginationParams, Depends()],
-    function_job_ids: Annotated[list[FunctionJobID] | None, Depends()],
+    filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
 ) -> Page[RegisteredFunctionJob]:
     function_jobs_list, meta = await function_job_service.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
-        filter_by_function_job_ids=function_job_ids,
+        filter_by_function_job_ids=filters.function_job_ids,
+        filter_by_function_job_collection_id=filters.function_job_collection_id,
+        filter_by_function_id=filters.function_id,
     )
 
     return create_page(

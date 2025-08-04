@@ -4,6 +4,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
+from unittest.mock import ANY
 
 import httpx
 import pytest
@@ -13,8 +14,11 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.functions import FunctionJobStatus, RegisteredProjectFunction
+from models_library.products import ProductName
 from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from models_library.users import UserID
+from pytest_mock import MockType
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import JobStatus
@@ -111,26 +115,42 @@ async def test_list_function_jobs(
 
 async def test_list_function_jobs_with_job_id_filter(
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], MockType],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    user_id: UserID,
+    product_name: ProductName,
     auth: httpx.BasicAuth,
 ) -> None:
 
-    mock_handler_in_functions_rpc_interface(
+    mocked_list_function_jobs = mock_handler_in_functions_rpc_interface(
         "list_function_jobs",
         (
-            [mock_registered_project_function_job for _ in range(5)],
-            PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
+            [mock_registered_project_function_job for _ in range(3)],
+            PageMetaInfoLimitOffset(total=5, count=3, limit=3, offset=1),
         ),
     )
     response = await client.get(
         f"{API_VTAG}/function_jobs",
-        params={"function_job_ids": [str(mock_registered_project_function_job.uid)]},
+        params={
+            "function_job_ids": [str(mock_registered_project_function_job.uid)],
+            "limit": 3,
+            "offset": 1,
+        },
         auth=auth,
+    )
+    mocked_list_function_jobs.assert_called_once_with(
+        ANY,  # Dummy rpc client
+        filter_by_function_job_ids=[mock_registered_project_function_job.uid],
+        filter_by_function_job_collection_id=None,
+        filter_by_function_id=None,
+        pagination_offset=1,
+        pagination_limit=3,
+        product_name=product_name,
+        user_id=user_id,
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
-    assert len(data) == 5
+    assert len(data) == 3
     assert (
         RegisteredProjectFunctionJob.model_validate(data[0])
         == mock_registered_project_function_job
