@@ -68,8 +68,15 @@ qx.Class.define("osparc.WatchDog", {
       check: "Number",
       init: 2 * 1000, // in milliseconds
       nullable: false,
-      apply: "_applyHeartbeatInterval"
-    }
+      apply: "__applyHeartbeatInterval"
+    },
+
+    appConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeAppConnected"
+    },
   },
 
   members: {
@@ -88,8 +95,10 @@ qx.Class.define("osparc.WatchDog", {
       }
     },
 
-    _applyHeartbeatInterval: function(value) {
+    __applyHeartbeatInterval: function(value) {
       this.__clientHeartbeatWWPinger.postMessage(["start", value]);
+
+      this.setAppConnected(true);
     },
 
     __pingServer: function() {
