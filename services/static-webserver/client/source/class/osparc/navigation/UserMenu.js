@@ -51,9 +51,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.desktop.account.MyAccountWindow.openWindow(), this);
           this.add(control);
           break;
-        case "admin-center":
-          control = new qx.ui.menu.Button(this.tr("Admin Center"));
-          control.addListener("execute", () => osparc.admin.AdminCenterWindow.openWindow(), this);
+        case "tester-center":
+          control = new qx.ui.menu.Button(this.tr("Tester Center"));
+          control.addListener("execute", () => osparc.tester.TesterCenterWindow.openWindow(), this);
           this.add(control);
           break;
         case "po-center":
@@ -61,9 +61,9 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.po.POCenterWindow.openWindow(), this);
           this.add(control);
           break;
-        case "tester-center":
-          control = new qx.ui.menu.Button(this.tr("Tester Center"));
-          control.addListener("execute", () => osparc.tester.TesterCenterWindow.openWindow(), this);
+        case "admin-center":
+          control = new qx.ui.menu.Button(this.tr("Admin Center"));
+          control.addListener("execute", () => osparc.admin.AdminCenterWindow.openWindow(), this);
           this.add(control);
           break;
         case "billing-center":
