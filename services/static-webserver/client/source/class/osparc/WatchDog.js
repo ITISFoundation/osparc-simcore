@@ -48,11 +48,7 @@ qx.Class.define("osparc.WatchDog", {
 
     // register for socket.io event to change the default heartbeat interval
     const socket = osparc.wrapper.WebSocket.getInstance();
-    socket.removeSlot("set_heartbeat_emit_interval");
-    socket.on("set_heartbeat_emit_interval", ({ interval }) => {
-      const newInterval = parseInt(interval) * 1000;
-      this.setHeartbeatInterval(newInterval);
-    }, this);
+    socket.bind("heartbeatInterval", this, "heartbeatInterval");
   },
 
   properties: {
@@ -66,8 +62,8 @@ qx.Class.define("osparc.WatchDog", {
 
     heartbeatInterval: {
       check: "Number",
-      init: 2 * 1000, // in milliseconds
-      nullable: false,
+      init: null,
+      nullable: true,
       apply: "__applyHeartbeatInterval"
     },
 
@@ -96,8 +92,10 @@ qx.Class.define("osparc.WatchDog", {
     },
 
     __applyHeartbeatInterval: function(value) {
+      if (value === null) {
+        return;
+      }
       this.__clientHeartbeatWWPinger.postMessage(["start", value]);
-
       this.setAppConnected(true);
     },
 
