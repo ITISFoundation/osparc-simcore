@@ -17,7 +17,10 @@ async def bg_task_app(router_prefix: str, redis_service: RedisSettings) -> FastA
     app = FastAPI()
 
     long_running_tasks.server.setup(
-        app, redis_settings=redis_service, namespace="test", router_prefix=router_prefix
+        app,
+        redis_settings=redis_service,
+        redis_namespace="test",
+        router_prefix=router_prefix,
     )
     return app
 

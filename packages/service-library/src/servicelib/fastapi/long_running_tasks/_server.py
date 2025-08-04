@@ -8,7 +8,7 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
 from ...long_running_tasks.errors import BaseLongRunningError
-from ...long_running_tasks.task import Namespace
+from ...long_running_tasks.task import RedisNamespace
 from ._error_handlers import base_long_running_error_handler
 from ._manager import FastAPILongRunningManager
 from ._routes import router
@@ -19,7 +19,7 @@ def setup(
     *,
     router_prefix: str = "",
     redis_settings: RedisSettings,
-    namespace: Namespace,
+    redis_namespace: RedisNamespace,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
     stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
@@ -46,7 +46,7 @@ def setup(
                 stale_task_check_interval=stale_task_check_interval,
                 stale_task_detect_timeout=stale_task_detect_timeout,
                 redis_settings=redis_settings,
-                namespace=namespace,
+                redis_namespace=redis_namespace,
             )
         )
         await long_running_manager.setup()

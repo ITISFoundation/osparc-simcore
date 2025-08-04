@@ -32,7 +32,10 @@ def app(
     # this adds enveloping and error middlewares
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(
-        app, redis_settings=redis_service, namespace="test", router_prefix="/futures"
+        app,
+        redis_settings=redis_service,
+        redis_namespace="test",
+        router_prefix="/futures",
     )
 
     return app

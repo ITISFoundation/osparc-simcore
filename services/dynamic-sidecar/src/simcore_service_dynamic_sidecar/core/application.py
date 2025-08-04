@@ -149,7 +149,7 @@ def create_base_app() -> FastAPI:
     long_running_tasks.server.setup(
         app,
         redis_settings=app_settings.REDIS_SETTINGS,
-        namespace=f"dy_sidecar-{app_settings.DY_SIDECAR_RUN_ID}",
+        redis_namespace=f"dy_sidecar-{app_settings.DY_SIDECAR_RUN_ID}",
     )
 
     app.include_router(get_main_router(app))

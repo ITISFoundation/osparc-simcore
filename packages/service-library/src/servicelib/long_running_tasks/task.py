@@ -41,7 +41,7 @@ _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(se
 
 
 RegisteredTaskName: TypeAlias = str
-Namespace: TypeAlias = str
+RedisNamespace: TypeAlias = str
 
 
 class TaskProtocol(Protocol):
@@ -109,17 +109,17 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         redis_settings: RedisSettings,
         stale_task_check_interval: datetime.timedelta,
         stale_task_detect_timeout: datetime.timedelta,
-        namespace: Namespace,
+        redis_namespace: RedisNamespace,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
-        self._tasks_data: BaseStore = RedisStore(redis_settings, namespace)
+        self._tasks_data: BaseStore = RedisStore(redis_settings, redis_namespace)
         self._created_tasks: dict[TaskId, asyncio.Task] = {}
 
         self.stale_task_check_interval = stale_task_check_interval
         self.stale_task_detect_timeout_s: PositiveFloat = (
             stale_task_detect_timeout.total_seconds()
         )
-        self.namespace = namespace
+        self.redis_namespace = redis_namespace
         self.redis_settings = redis_settings
 
         self._stale_tasks_monitor_task: asyncio.Task | None = None
@@ -135,14 +135,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         self.redis_client_sdk = RedisClientSDK(
             self.redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
-            client_name=f"long_running_tasks_store_{self.namespace}_lock",
+            client_name=f"long_running_tasks_store_{self.redis_namespace}_lock",
         )
         await self.redis_client_sdk.setup()
 
         self._stale_tasks_monitor_task = create_periodic_task(
             task=exclusive(
                 self.redis_client_sdk,
-                lock_key=f"{__name__}_{self.namespace}_stale_tasks_monitor",
+                lock_key=f"{__name__}_{self.redis_namespace}_stale_tasks_monitor",
             )(self._stale_tasks_monitor_worker),
             interval=self.stale_task_check_interval,
             task_name=f"{__name__}.{self._stale_tasks_monitor_worker.__name__}",
@@ -404,7 +404,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         unique_part = "unique" if is_unique else f"{uuid4()}"
-        return f"{self.namespace}.{task_name}.{unique_part}"
+        return f"{self.redis_namespace}.{task_name}.{unique_part}"
 
     async def _update_progress(
         self,

@@ -101,7 +101,10 @@ async def bg_task_app(
     app.include_router(user_routes)
 
     setup_server(
-        app, router_prefix=router_prefix, redis_settings=redis_service, namespace="test"
+        app,
+        router_prefix=router_prefix,
+        redis_settings=redis_service,
+        redis_namespace="test",
     )
     setup_client(app, router_prefix=router_prefix)
 

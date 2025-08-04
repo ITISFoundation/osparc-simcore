@@ -22,7 +22,11 @@ from servicelib.long_running_tasks.errors import (
     TaskNotRegisteredError,
 )
 from servicelib.long_running_tasks.models import TaskContext, TaskProgress, TaskStatus
-from servicelib.long_running_tasks.task import TaskRegistry, TasksManager
+from servicelib.long_running_tasks.task import (
+    RedisNamespace,
+    TaskRegistry,
+    TasksManager,
+)
 from settings_library.redis import RedisSettings
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
@@ -78,17 +82,21 @@ def empty_context() -> TaskContext:
 
 
 @pytest.fixture
-async def get_tasks_manager() -> (
-    AsyncIterator[Callable[[RedisSettings], Awaitable[TasksManager]]]
-):
+async def get_tasks_manager(
+    faker: Faker,
+) -> AsyncIterator[
+    Callable[[RedisSettings, RedisNamespace | None], Awaitable[TasksManager]]
+]:
     managers: list[TasksManager] = []
 
-    async def _(redis_settings: RedisSettings) -> TasksManager:
+    async def _(
+        redis_settings: RedisSettings, namespace: RedisNamespace | None
+    ) -> TasksManager:
         tasks_manager = TasksManager(
             stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
             stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
             redis_settings=redis_settings,
-            namespace="test",
+            redis_namespace=namespace or f"test{faker.uuid4()}",
         )
         await tasks_manager.setup()
         managers.append(tasks_manager)
@@ -97,16 +105,18 @@ async def get_tasks_manager() -> (
     yield _
 
     for manager in managers:
-        with suppress(Exception):  # avoids tests form hanging on test teardown
-            await manager.teardown()
+        with suppress(TimeoutError):  # avoids tets hanging on teardown
+            await asyncio.wait_for(manager.teardown(), timeout=10)
 
 
 @pytest.fixture
 async def tasks_manager(
     use_in_memory_redis: RedisSettings,
-    get_tasks_manager: Callable[[RedisSettings], Awaitable[TasksManager]],
+    get_tasks_manager: Callable[
+        [RedisSettings, RedisNamespace | None], Awaitable[TasksManager]
+    ],
 ) -> TasksManager:
-    return await get_tasks_manager(use_in_memory_redis)
+    return await get_tasks_manager(use_in_memory_redis, None)
 
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
@@ -332,12 +342,14 @@ async def test_get_result_finished_with_error(
 
 async def test_cancel_task_from_different_manager(
     use_in_memory_redis: RedisSettings,
-    get_tasks_manager: Callable[[RedisSettings], Awaitable[TasksManager]],
+    get_tasks_manager: Callable[
+        [RedisSettings, RedisNamespace | None], Awaitable[TasksManager]
+    ],
     empty_context: TaskContext,
 ):
-    manager_1 = await get_tasks_manager(use_in_memory_redis)
-    manager_2 = await get_tasks_manager(use_in_memory_redis)
-    manager_3 = await get_tasks_manager(use_in_memory_redis)
+    manager_1 = await get_tasks_manager(use_in_memory_redis, "test-namespace")
+    manager_2 = await get_tasks_manager(use_in_memory_redis, "test-namespace")
+    manager_3 = await get_tasks_manager(use_in_memory_redis, "test-namespace")
 
     task_id = await lrt_api.start_task(
         manager_1,

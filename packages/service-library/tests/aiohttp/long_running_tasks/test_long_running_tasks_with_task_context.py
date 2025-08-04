@@ -76,7 +76,7 @@ def app_with_task_context(
     long_running_tasks.server.setup(
         app,
         redis_settings=redis_service,
-        namespace="test",
+        redis_namespace="test",
         router_prefix="/futures_with_task_context",
         task_request_context_decorator=task_context_decorator,
     )

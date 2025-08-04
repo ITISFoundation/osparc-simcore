@@ -5,7 +5,7 @@ from settings_library.redis import RedisSettings
 
 from ...long_running_tasks.base_long_running_manager import BaseLongRunningManager
 from ...long_running_tasks.models import TaskContext
-from ...long_running_tasks.task import Namespace, TasksManager
+from ...long_running_tasks.task import RedisNamespace, TasksManager
 from ._constants import APP_LONG_RUNNING_MANAGER_KEY
 from ._request import get_task_context
 
@@ -17,14 +17,14 @@ class AiohttpLongRunningManager(BaseLongRunningManager):
         stale_task_check_interval: datetime.timedelta,
         stale_task_detect_timeout: datetime.timedelta,
         redis_settings: RedisSettings,
-        namespace: Namespace,
+        redis_namespace: RedisNamespace,
     ):
         self._app = app
         self._tasks_manager = TasksManager(
             stale_task_check_interval=stale_task_check_interval,
             stale_task_detect_timeout=stale_task_detect_timeout,
             redis_settings=redis_settings,
-            namespace=namespace,
+            redis_namespace=redis_namespace,
         )
 
     @property

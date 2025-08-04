@@ -10,7 +10,7 @@ from servicelib.aiohttp.long_running_tasks._constants import (
 )
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.long_running_tasks.task import Namespace
+from servicelib.long_running_tasks.task import RedisNamespace
 
 from . import redis
 from ._meta import API_VTAG
@@ -19,7 +19,7 @@ from .models import AuthenticatedRequestContext
 
 _logger = logging.getLogger(__name__)
 
-_LONG_RUNNING_TASKS_NAMESPACE: Final[Namespace] = "webserver-legacy"
+_LONG_RUNNING_TASKS_NAMESPACE: Final[RedisNamespace] = "webserver-legacy"
 
 
 def webserver_request_context_decorator(handler: Handler):
@@ -40,7 +40,7 @@ def setup_long_running_tasks(app: web.Application) -> None:
     setup(
         app,
         redis_settings=redis.get_plugin_settings(app),
-        namespace=_LONG_RUNNING_TASKS_NAMESPACE,
+        redis_namespace=_LONG_RUNNING_TASKS_NAMESPACE,
         router_prefix=f"/{API_VTAG}/tasks-legacy",
         handler_check_decorator=login_required,
         task_request_context_decorator=webserver_request_context_decorator,

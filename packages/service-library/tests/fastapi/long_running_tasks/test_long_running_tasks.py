@@ -102,7 +102,7 @@ async def app(
     # overrides fastapi/conftest.py:app
     app = FastAPI(title="test app")
     app.include_router(server_routes)
-    setup_server(app, redis_settings=redis_service, namespace="test")
+    setup_server(app, redis_settings=redis_service, redis_namespace="test")
     setup_client(app)
     async with LifespanManager(app):
         yield app
