@@ -41,7 +41,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     "fileRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
-    "changeChildVisibility": "qx.event.type.Event"
   },
 
   properties: {
@@ -543,29 +542,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
         row,
         column: this.self().GRID_POS.LABEL
       });
-    },
-
-    // overridden
-    setAccessLevel: function(data) {
-      const entry = this.self().GRID_POS;
-      const disableables = osparc.form.renderer.PropFormBase.getDisableables();
-      Object.entries(data).forEach(([portId, visibility]) => {
-        Object.values(entry).forEach(entryPos => {
-          const layoutElement = this._getLayoutChild(portId, entryPos);
-          if (layoutElement && layoutElement.child) {
-            const control = layoutElement.child;
-            if (control) {
-              const vis = visibility === this._visibility.hidden ? "excluded" : "visible";
-              const enabled = visibility === this._visibility.readWrite;
-              control.setVisibility(vis);
-              if (disableables.includes(entryPos)) {
-                control.setEnabled(enabled);
-              }
-            }
-          }
-        });
-      });
-      this.fireEvent("changeChildVisibility");
     },
 
     setPortErrorMessage: function(portId, msg) {

@@ -33,7 +33,7 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
 
   statics: {
     NAME: "jsondiffpatch",
-    VERSION: "0.3.11",
+    VERSION: "0.7.3",
     URL: "https://github.com/benjamine/jsondiffpatch"
   },
 
@@ -51,11 +51,12 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
 
   members: {
     __diffPatcher: null,
+    __deltaToPatch: null,
 
     init: function() {
       // initialize the script loading
-      let jsondiffpatchPath = "jsondiffpatch/jsondiffpatch.min.js";
-      let dynLoader = new qx.util.DynamicScriptLoader([
+      const jsondiffpatchPath = "jsondiffpatch/jsondiffpatch.min.js"; // own build required for the formatters to work
+      const dynLoader = new qx.util.DynamicScriptLoader([
         jsondiffpatchPath
       ]);
 
@@ -63,6 +64,9 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
         console.log(jsondiffpatchPath + " loaded");
 
         this.__diffPatcher = jsondiffpatch.create();
+
+        const JsonPatchFormatter = jsondiffpatch.formatters.jsonpatch;
+        this.__deltaToPatch = new JsonPatchFormatter();
 
         this.setLibReady(true);
       }, this);
@@ -75,20 +79,20 @@ qx.Class.define("osparc.wrapper.JsonDiffPatch", {
       dynLoader.start();
     },
 
+    // https://github.com/benjamine/jsondiffpatch/blob/master/docs/deltas.md
     diff: function(obj1, obj2) {
-      // https://github.com/benjamine/jsondiffpatch/blob/master/docs/deltas.md
       let delta = this.__diffPatcher.diff(obj1, obj2);
       return delta;
     },
 
-    patch: function(obj, delta) {
-      this.__diffPatcher.patch(obj, delta);
-      return obj;
+    // format to JSON PATCH (RFC 6902)
+    // https://github.com/benjamine/jsondiffpatch/blob/master/docs/formatters.md
+    deltaToJsonPatches: function(delta) {
+      if (this.__deltaToPatch) {
+        const patches = this.__deltaToPatch.format(delta);
+        return patches;
+      }
+      return [];
     },
-
-    // deep clone
-    clone: function(obj) {
-      return this.__diffPatcher.clone(obj);
-    }
   }
 });

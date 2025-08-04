@@ -56,11 +56,11 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     FolderValueNotPermittedError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        user_message("The folder operation cannot be completed: {reason}", _version=1),
+        user_message("The folder operation cannot be completed: {details}", _version=1),
     ),
     FoldersValueError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        user_message("The folder configuration is invalid: {reason}", _version=1),
+        user_message("The folder configuration is invalid: {details}", _version=1),
     ),
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,

@@ -24,14 +24,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
   construct: function() {
     this.base(arguments);
 
-    if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
-      // "IN_USE" is not a blocker anymore
-      const inUseIdx = qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.indexOf("IN_USE");
-      if (inUseIdx > -1) {
-        qx.util.PropertyUtil.getProperties(osparc.dashboard.CardBase).blocked.check.splice(inUseIdx, 1);
-      }
-    }
-
     [
       "pointerover",
       "focus"
@@ -812,7 +804,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       this.setBlocked(projectLocked ? "IN_USE" : false);
       if (projectLocked) {
-        this.__showBlockedCardFromStatus("IN_USE", state["shareState"]);
+        this.__showBlockedCardFromStatus("IN_USE", state);
       }
 
       if (pipelineState) {
@@ -896,10 +888,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       avatarGroup.setUserGroupIds(currentUserGroupIds);
     },
 
-    __showBlockedCardFromStatus: function(reason, shareState) {
+    __showBlockedCardFromStatus: function(reason, state) {
       switch (reason) {
         case "IN_USE":
-          this.__blockedInUse(shareState);
+          this.__blockedInUse(state);
           break;
         case "IN_DEBT":
           this.__blockedInDebt();
@@ -907,9 +899,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __blockedInUse: function(shareState) {
-      const status = shareState["status"];
-      const currentUserGroupIds = shareState["currentUserGroupids"];
+    __blockedInUse: function(state) {
+      const projectStatus = osparc.study.Utils.state.getProjectStatus(state);
+      const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(state);
       const usersStore = osparc.store.Users.getInstance();
       const userPromises = currentUserGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
       const usernames = [];
@@ -925,7 +917,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
           console.error("Failed to fetch user data for avatars:", error);
         })
         .finally(() => {
-          switch (status) {
+          switch (projectStatus) {
             case "CLOSING":
               image = "@FontAwesome5Solid/key/";
               toolTip += this.tr("Closing...");
