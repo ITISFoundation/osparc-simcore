@@ -54,6 +54,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     HEIGHT: 36,
     BG_COLOR: "input_background",
 
+    getInitialFilterData: function() {
+      return {
+        tags: [],
+        classifiers: [],
+        sharedWith: null,
+        appType: null,
+        text: ""
+      };
+    },
+
     getSharedWithOptions: function(resourceType) {
       if (resourceType === "template") {
         resourceType = "tutorial";
@@ -96,7 +106,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   },
 
   events: {
-    "filterChanged": "qx.event.type.Data"
+    "filterChanged": "qx.event.type.Data",
+    "resetButtonPressed": "qx.event.type.Event",
   },
 
   members: {
@@ -200,7 +211,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       textField.addListener("focusout", () => this.__filter(), this);
 
       const resetButton = this.getChildControl("reset-button");
-      resetButton.addListener("execute", () => this.__resetFilters(), this);
+      resetButton.addListener("execute", () => this.resetButtonPressed(), this);
 
       osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
@@ -359,6 +370,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       searchBarFilterExtended.set({
         width: bounds.width,
       });
+      searchBarFilterExtended.addListener("resetButtonPressed", () => {
+        this.resetButtonPressed();
+      }, this);
       return searchBarFilterExtended;
     },
 
@@ -400,19 +414,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.getChildControl("text-field").resetValue();
     },
 
-    __resetFilters: function() {
+    resetButtonPressed: function() {
       this.resetFilters();
-      this.__filter();
+      this._filterChange(this.self().getInitialFilterData());
+      this.fireEvent("resetButtonPressed");
     },
 
     getFilterData: function() {
-      const filterData = {
-        tags: [],
-        classifiers: [],
-        sharedWith: null,
-        appType: null,
-        text: ""
-      };
+      const filterData = this.self().getInitialFilterData();
       const textFilter = this.getTextFilterValue();
       filterData["text"] = textFilter ? textFilter : "";
       this.getChildControl("active-filters").getChildren().forEach(chip => {
