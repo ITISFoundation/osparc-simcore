@@ -91,6 +91,13 @@ for endpoint in ENDPOINTS:
                 "add `created_at` field in the registered function-related objects",
             )
         )
+    if endpoint == "list_function_jobs":
+        CHANGE_LOGS[endpoint].append(
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                "0.10",
+                "add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
+            )
+        )
 
 
 @function_job_router.get(

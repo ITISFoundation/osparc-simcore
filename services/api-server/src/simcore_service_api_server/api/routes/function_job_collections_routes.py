@@ -203,7 +203,7 @@ async def function_job_collection_list_function_jobs(
     description=create_route_description(
         base="Get the function jobs in function job collection",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
 )
