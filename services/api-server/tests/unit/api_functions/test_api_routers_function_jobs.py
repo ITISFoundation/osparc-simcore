@@ -29,7 +29,6 @@ async def test_delete_function_job(
 
     mock_handler_in_functions_rpc_interface("delete_function_job", None)
 
-    # Now, delete the function job
     response = await client.delete(
         f"{API_VTAG}/function_jobs/{mock_registered_project_function_job.uid}",
         auth=auth,
@@ -100,9 +99,35 @@ async def test_list_function_jobs(
             PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
         ),
     )
-
-    # Now, list function jobs
     response = await client.get(f"{API_VTAG}/function_jobs", auth=auth)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()["items"]
+    assert len(data) == 5
+    assert (
+        RegisteredProjectFunctionJob.model_validate(data[0])
+        == mock_registered_project_function_job
+    )
+
+
+async def test_list_function_jobs_with_job_id_filter(
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
+    auth: httpx.BasicAuth,
+) -> None:
+
+    mock_handler_in_functions_rpc_interface(
+        "list_function_jobs",
+        (
+            [mock_registered_project_function_job for _ in range(5)],
+            PageMetaInfoLimitOffset(total=5, count=5, limit=10, offset=0),
+        ),
+    )
+    response = await client.get(
+        f"{API_VTAG}/function_jobs",
+        params={"function_job_ids": [str(mock_registered_project_function_job.uid)]},
+        auth=auth,
+    )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
     assert len(data) == 5

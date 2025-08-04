@@ -20,6 +20,7 @@ from models_library.products import ProductName
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
+from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server.api.dependencies.functions import (
     get_function_from_functionjob,
     get_function_job_dependency,
@@ -37,7 +38,11 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
-from ..dependencies.services import get_api_client, get_job_service
+from ..dependencies.services import (
+    get_api_client,
+    get_function_job_service,
+    get_job_service,
+)
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, solvers_jobs_read, studies_jobs
@@ -84,22 +89,21 @@ for endpoint in ENDPOINTS:
 
 @function_job_router.get(
     "",
-    response_model=Page[RegisteredFunctionJob],
     description=create_route_description(
         base="List function jobs", changelog=CHANGE_LOGS["list_function_jobs"]
     ),
 )
 async def list_function_jobs(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
-):
-    function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
+    function_job_ids: Annotated[list[FunctionJobID] | None, Depends()],
+) -> Page[RegisteredFunctionJob]:
+    function_jobs_list, meta = await function_job_service.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
-        user_id=user_id,
-        product_name=product_name,
+        filter_by_function_job_ids=function_job_ids,
     )
 
     return create_page(
