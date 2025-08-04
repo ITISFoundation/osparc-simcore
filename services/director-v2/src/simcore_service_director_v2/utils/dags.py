@@ -44,9 +44,9 @@ def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
         if node.input_nodes:
             for input_node_id in node.input_nodes:
                 predecessor_node = workbench.get(f"{input_node_id}")
-                assert (
+                assert (  # nosec
                     predecessor_node
-                ), f"Node {input_node_id} not found in workbench"  # nosec
+                ), f"Node {input_node_id} not found in workbench"
                 if predecessor_node:
                     dag_graph.add_edge(str(input_node_id), node_id)
 

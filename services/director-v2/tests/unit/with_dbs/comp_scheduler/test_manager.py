@@ -411,7 +411,12 @@ async def test_empty_pipeline_is_not_scheduled(
             use_on_demand_clusters=False,
             collection_run_id=fake_collection_run_id,
         )
-    assert len(caplog.records) == 1
-    assert "no computational dag defined" in caplog.records[0].message
+
+    warning_log_regs = [
+        log_rec for log_rec in caplog.records if log_rec.levelname == "WARNING"
+    ]
+    assert len(warning_log_regs) == 1
+    assert "no computational dag defined" in warning_log_regs[0].message
+
     await assert_comp_runs_empty(sqlalchemy_async_engine)
     _assert_scheduler_client_not_called(scheduler_rabbit_client_parser)
