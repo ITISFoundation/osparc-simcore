@@ -514,11 +514,23 @@ qx.Class.define("osparc.Application", {
         .catch(err => console.error(err));
     },
 
-    __loadNodeViewerPage: async function(studyId, viewerNodeId) {
+    __loadNodeViewerPage: function(studyId, viewerNodeId) {
+      const loadViewerPage = () => {
+        const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
+        this.__mainPage = mainPage;
+        this.__loadView(mainPage);
+      }
       this.__connectWebSocket();
-      const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
-      this.__mainPage = mainPage;
-      this.__loadView(mainPage);
+
+      if (osparc.WatchDog.getInstance().isAppConnected()) {
+        loadViewerPage();
+      } else {
+        osparc.WatchDog.getInstance().addListener("changeAppConnected", e => {
+          if (e.getData()) {
+            loadViewerPage();
+          }
+        }, this);
+      }
     },
 
     __loadView: function(view, opts, clearUrl=true) {
