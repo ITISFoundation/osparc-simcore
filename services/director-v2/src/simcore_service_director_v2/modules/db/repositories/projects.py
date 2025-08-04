@@ -23,7 +23,11 @@ def _project_node_to_node(project_node: ProjectNode) -> Node:
     # Get all ProjectNode fields except those that don't belong in Node
     exclude_fields = {"node_id", "required_resources", "created", "modified"}
     node_data = project_node.model_dump(
-        exclude=exclude_fields, exclude_none=True, exclude_unset=True
+        # NOTE: this setup ensures using the defaults provided in Node model when the db does not
+        # provide them, e.g. `state`
+        exclude=exclude_fields,
+        exclude_none=True,
+        exclude_unset=True,
     )
 
     return Node.model_validate(node_data)
