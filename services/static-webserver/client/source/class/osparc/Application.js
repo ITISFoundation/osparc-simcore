@@ -515,12 +515,13 @@ qx.Class.define("osparc.Application", {
     },
 
     __loadNodeViewerPage: function(studyId, viewerNodeId) {
+      this.__connectWebSocket();
+
       const loadViewerPage = () => {
         const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
         this.__mainPage = mainPage;
         this.__loadView(mainPage);
       }
-      this.__connectWebSocket();
 
       if (osparc.WatchDog.getInstance().isAppConnected()) {
         loadViewerPage();
