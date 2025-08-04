@@ -7,6 +7,7 @@
 import asyncio
 import urllib.parse
 from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import Any, Final
 
@@ -96,7 +97,8 @@ async def get_tasks_manager() -> (
     yield _
 
     for manager in managers:
-        await manager.teardown()
+        with suppress(Exception):  # avoids tests form hanging on test teardown
+            await manager.teardown()
 
 
 @pytest.fixture

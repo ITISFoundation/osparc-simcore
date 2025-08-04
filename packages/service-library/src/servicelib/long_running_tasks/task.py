@@ -11,6 +11,13 @@ from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
+from tenacity import (
+    AsyncRetrying,
+    TryAgain,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..background_task import create_periodic_task
 from ..redis import RedisClientSDK, exclusive
@@ -163,11 +170,21 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 tracked_task.task_id, tracked_task.task_context, reraise_errors=False
             )
 
+        for task in self._created_tasks.values():
+            _logger.warning(
+                "Task %s was not completed before shutdown, cancelling it",
+                task.get_name(),
+            )
+            await cancel_wait_task(task)
+
         if self._stale_tasks_monitor_task:
             await cancel_wait_task(self._stale_tasks_monitor_task)
 
         if self._cancelled_tasks_removal_task:
             await cancel_wait_task(self._cancelled_tasks_removal_task)
+
+        if self._status_update_worker_task:
+            await cancel_wait_task(self._status_update_worker_task)
 
         if self.redis_client_sdk is not None:
             await self.redis_client_sdk.shutdown()
@@ -281,27 +298,6 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             if task.task_context == with_task_context
         ]
 
-    async def _add_task(
-        self,
-        task: asyncio.Task,
-        task_progress: TaskProgress,
-        task_context: TaskContext,
-        task_id: TaskId,
-        *,
-        fire_and_forget: bool,
-    ) -> TaskData:
-
-        task_data = TaskData(
-            task_id=task_id,
-            task_progress=task_progress,
-            task_context=task_context,
-            fire_and_forget=fire_and_forget,
-        )
-        await self._tasks_data.set_task_data(task_id, task_data)
-        self._created_tasks[task_id] = task
-
-        return task_data
-
     async def _get_tracked_task(
         self, task_id: TaskId, with_task_context: TaskContext
     ) -> TaskData:
@@ -393,7 +389,18 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             await self._tasks_data.delete_task_data(task_id)
             self._created_tasks.pop(tracked_task.task_id, None)
 
-        # TODO: wait for removal to becompleted here
+        # wait for task to be completed
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(10),
+            retry=retry_if_exception_type(TryAgain),
+        ):
+            with attempt:
+                try:
+                    await self._get_tracked_task(task_id, with_task_context)
+                    raise TryAgain
+                except TaskNotFoundError:
+                    pass
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         unique_part = "unique" if is_unique else f"{uuid4()}"
@@ -405,9 +412,18 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_context: TaskContext,
         task_progress: TaskProgress,
     ) -> None:
-        tracked_data = await self._get_tracked_task(task_id, task_context)
-        tracked_data.task_progress = task_progress
-        await self._tasks_data.set_task_data(task_id=task_id, value=tracked_data)
+        # NOTE: avoids errors while updating progress, since the task could have been
+        # cancelled and it's data removed
+        try:
+            tracked_data = await self._get_tracked_task(task_id, task_context)
+            tracked_data.task_progress = task_progress
+            await self._tasks_data.set_task_data(task_id=task_id, value=tracked_data)
+        except TaskNotFoundError:
+            _logger.debug(
+                "Task '%s' not found while updating progress %s",
+                task_id,
+                task_progress,
+            )
 
     async def start_task(
         self,
@@ -447,26 +463,25 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             functools.partial(self._update_progress, task_id, context_to_use)
         )
 
-        # bind the task with progress 0 and 1
-        async def _progress_task(progress: TaskProgress, handler: TaskProtocol):
+        async def _task_with_progress(progress: TaskProgress, handler: TaskProtocol):
+            # bind the task with progress 0 and 1
             await progress.update(message="starting", percent=0)
             try:
                 return await handler(progress, **task_kwargs)
             finally:
                 await progress.update(message="finished", percent=1)
 
-        async_task = asyncio.create_task(
-            _progress_task(task_progress, task), name=task_name
+        self._created_tasks[task_id] = asyncio.create_task(
+            _task_with_progress(task_progress, task), name=task_name
         )
 
-        tracked_task = await self._add_task(
-            task=async_task,
+        tracked_task = TaskData(
+            task_id=task_id,
             task_progress=task_progress,
             task_context=context_to_use,
             fire_and_forget=fire_and_forget,
-            task_id=task_id,
         )
-
+        await self._tasks_data.set_task_data(task_id, tracked_task)
         return tracked_task.task_id
 
 

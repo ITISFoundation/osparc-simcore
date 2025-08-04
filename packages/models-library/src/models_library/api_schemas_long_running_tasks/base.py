@@ -50,12 +50,14 @@ class TaskProgress(BaseModel):
         _logger.debug("Progress update: %s", f"{self}")
 
         if self._update_callback is not None:
-            await self._update_callback(self)
-        else:
-            _logger.warning(
-                "No update callback set for TaskProgress %s, progress will not be propagated",
-                self.task_id,
-            )
+            try:
+                await self._update_callback(self)
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                _logger.warning(
+                    "Error while calling progress update callback: %s",
+                    exc,
+                    stack_info=True,
+                )
 
     @classmethod
     def create(cls, task_id: TaskId | None = None) -> "TaskProgress":
