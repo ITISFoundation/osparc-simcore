@@ -20,16 +20,7 @@ def _project_node_to_node(project_node: ProjectNode) -> Node:
     Handles field mapping and excludes database-specific fields that are not
     part of the Node model.
     """
-    # Get all ProjectNode fields except those that don't belong in Node
-    exclude_fields = {"node_id", "required_resources", "created", "modified"}
-    node_data = project_node.model_dump(
-        # NOTE: this setup ensures using the defaults provided in Node model when the db does not
-        # provide them, e.g. `state`
-        exclude=exclude_fields,
-        exclude_none=True,
-        exclude_unset=True,
-    )
-
+    node_data = project_node.model_dump_as_node()
     return Node.model_validate(node_data)
 
 
