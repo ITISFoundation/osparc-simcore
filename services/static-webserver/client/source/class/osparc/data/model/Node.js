@@ -1440,6 +1440,10 @@ qx.Class.define("osparc.data.model.Node", {
           case "inputs": {
             const updatedPortKey = path.split("/")[4];
             const currentInputs = this.__getInputData();
+            if (osparc.utils.Ports.isDataALink(currentInputs[updatedPortKey])) {
+              // if the port is a link, we remove it from the props form
+              this.getPropsForm().removePortLink(updatedPortKey);
+            }
             currentInputs[updatedPortKey] = value;
             this.__setInputData(currentInputs);
             break;
