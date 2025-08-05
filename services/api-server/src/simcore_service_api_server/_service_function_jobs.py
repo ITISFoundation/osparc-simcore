@@ -4,6 +4,7 @@ from common_library.exclude import as_dict_exclude_none
 from models_library.functions import (
     FunctionID,
     FunctionJobCollectionID,
+    FunctionJobID,
     RegisteredFunctionJob,
 )
 from models_library.products import ProductName
@@ -23,7 +24,7 @@ class FunctionJobService:
         self,
         *,
         filter_by_function_id: FunctionID | None = None,
-        filter_by_function_job_ids: list[FunctionJobCollectionID] | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
         pagination_offset: PageOffsetInt | None = None,
         pagination_limit: PageLimitInt | None = None,
