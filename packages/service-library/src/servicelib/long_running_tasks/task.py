@@ -141,6 +141,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         )
         await self.locks_redis_client_sdk.setup()
 
+        # stale_tasks_monitor
         self._task_stale_tasks_monitor = create_periodic_task(
             task=exclusive(
                 self.locks_redis_client_sdk,
@@ -149,8 +150,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             interval=self.stale_task_check_interval,
             task_name=f"{__name__}.{self._stale_tasks_monitor.__name__}",
         )
-
         await self._started_event_task_stale_tasks_monitor.wait()
+
+        # cancelled_tasks_removal
         self._task_cancelled_tasks_removal = create_periodic_task(
             task=self._cancelled_tasks_removal,
             interval=_CANCEL_TASKS_CHECK_INTERVAL,
@@ -158,6 +160,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         )
         await self._started_event_task_cancelled_tasks_removal.wait()
 
+        # status_update
         self._task_status_update = create_periodic_task(
             task=self._status_update,
             interval=_STATUS_UPDATE_CHECK_INTERNAL,
@@ -166,10 +169,13 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         await self._started_event_task_status_update.wait()
 
     async def teardown(self) -> None:
+        # ensure all created tasks are cancelled
         for tracked_task in await self._tasks_data.list_tasks_data():
-            # when closing we do not care about pending errors
             await self.remove_task(
-                tracked_task.task_id, tracked_task.task_context, reraise_errors=False
+                tracked_task.task_id,
+                tracked_task.task_context,
+                # when closing we do not care about pending errors
+                reraise_errors=False,
             )
 
         for task in self._created_tasks.values():
@@ -179,12 +185,15 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             )
             await cancel_wait_task(task)
 
+        # stale_tasks_monitor
         if self._task_stale_tasks_monitor:
             await cancel_wait_task(self._task_stale_tasks_monitor)
 
+        # cancelled_tasks_removal
         if self._task_cancelled_tasks_removal:
             await cancel_wait_task(self._task_cancelled_tasks_removal)
 
+        # status_update
         if self._task_status_update:
             await cancel_wait_task(self._task_status_update)
 
