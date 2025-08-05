@@ -11,6 +11,7 @@ from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.utils_projects_nodes import make_workbench_subquery
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -169,17 +170,25 @@ class ProjectJobsRepository(BaseRepository):
         # Step 5: Query to get the total count
         total_query = sa.select(sa.func.count()).select_from(base_query)
 
-        # Step 6: Query to get the paginated list with full selection
+        # Step 6: Create subquery to aggregate project nodes into workbench structure
+        workbench_subquery = make_workbench_subquery()
+
+        # Step 7: Query to get the paginated list with full selection
         list_query = (
             sa.select(
                 *_PROJECT_DB_COLS,
-                projects.c.workbench,
+                sa.func.coalesce(
+                    workbench_subquery.c.workbench, sa.text("'{}'::json")
+                ).label("workbench"),
                 base_query.c.job_parent_resource_name,
             )
             .select_from(
                 base_query.join(
                     projects,
                     projects.c.uuid == base_query.c.project_uuid,
+                ).outerjoin(
+                    workbench_subquery,
+                    projects.c.uuid == workbench_subquery.c.project_uuid,
                 )
             )
             .order_by(

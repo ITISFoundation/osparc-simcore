@@ -681,8 +681,9 @@ async def _check_project_node_has_all_required_inputs(
         if output_entry is None:
             unset_outputs_in_upstream.append((source_output_key, source_node.label))
 
-    for required_input in node.inputs_required:
-        _check_required_input(required_input)
+    if node.inputs_required:
+        for required_input in node.inputs_required:
+            _check_required_input(required_input)
 
     node_with_required_inputs = node.label
     if unset_required_inputs:

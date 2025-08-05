@@ -177,7 +177,7 @@ class ProjectDBAPI(BaseProjectDB):
                 with attempt:
                     async with conn.begin():
                         project_index = None
-                        project_uuid = ProjectID(f"{insert_values['uuid']}")
+                        project_uuid = ProjectID(insert_values["uuid"])
 
                         try:
                             result: ResultProxy = await conn.execute(
@@ -296,11 +296,21 @@ class ProjectDBAPI(BaseProjectDB):
 
         # must be valid uuid
         try:
-            ProjectID(str(insert_values.get("uuid")))
+            ProjectID(f"{insert_values.get('uuid')}")
         except ValueError:
             if force_project_uuid:
                 raise
             insert_values["uuid"] = f"{uuid1()}"
+
+        # extract workbench nodes
+        workbench: dict[str, Any] = insert_values.pop("workbench", {})
+        project_nodes = project_nodes or {}
+        project_nodes |= {
+            NodeID(node_id): ProjectNodeCreate(
+                node_id=NodeID(node_id), **project_workbench_node
+            )
+            for node_id, project_workbench_node in workbench.items()
+        }
 
         inserted_project = await self._insert_project_in_db(
             insert_values,
@@ -309,6 +319,8 @@ class ProjectDBAPI(BaseProjectDB):
             project_tag_ids=project_tag_ids,
             project_nodes=project_nodes,
         )
+
+        inserted_project["workbench"] = workbench
 
         async with self.engine.acquire() as conn:
             # Returns created project with names as in the project schema
@@ -365,7 +377,6 @@ class ProjectDBAPI(BaseProjectDB):
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -648,8 +659,11 @@ class ProjectDBAPI(BaseProjectDB):
                 # Therefore, if we use this model, it will return those default values, which is not backward-compatible
                 # with the frontend. The frontend would need to check and adapt how it handles default values in
                 # Workbench nodes, which are currently not returned if not set in the DB.
-                ProjectListAtDB.model_validate(row)
-                prjs_output.append(dict(row.items()))
+                prj_dict = dict(row.items()) | {
+                    "workbench": await self._get_workbench(conn, row.uuid),
+                }
+                ProjectListAtDB.model_validate(prj_dict)
+                prjs_output.append(prj_dict)
 
             return (
                 prjs_output,
@@ -847,7 +861,7 @@ class ProjectDBAPI(BaseProjectDB):
             extra=get_log_record_extra(user_id=user_id),
         ):
             partial_workbench_data: dict[NodeIDStr, Any] = {
-                NodeIDStr(f"{node_id}"): new_node_data,
+                f"{node_id}": new_node_data,
             }
             return await self._update_project_workbench_with_lock_and_notify(
                 partial_workbench_data,
@@ -1021,7 +1035,7 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[NodeIDStr, Any] = {
-            NodeIDStr(f"{node.node_id}"): jsonable_encoder(
+            f"{node.node_id}": jsonable_encoder(
                 old_struct_node,
                 exclude_unset=True,
             ),
