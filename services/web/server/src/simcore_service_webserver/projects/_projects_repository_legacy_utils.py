@@ -21,6 +21,7 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from simcore_postgres_database.webserver_models import (
     projects,
 )
+from simcore_service_webserver.projects._nodes_repository import ProjectNodesRepo
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
@@ -32,7 +33,7 @@ from .exceptions import (
     ProjectInvalidUsageError,
     ProjectNotFoundError,
 )
-from .models import ProjectDict
+from .models import NodesDict, ProjectDict
 from .utils import find_changed_node_keys
 
 logger = logging.getLogger(__name__)
@@ -187,6 +188,23 @@ class BaseProjectDB:
                 .on_conflict_do_nothing()
             )
 
+    async def _get_workbench(
+        self,
+        connection: SAConnection,
+        project_uuid: str,
+    ) -> NodesDict:
+        project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+        exclude_fields = {"node_id", "required_resources", "created", "modified"}
+        workbench: NodesDict = {}
+
+        project_nodes = await project_nodes_repo.list(connection)
+        for project_node in project_nodes:
+            node_data = project_node.model_dump(
+                exclude=exclude_fields, exclude_none=True, exclude_unset=True
+            )
+            workbench[f"{project_node.node_id}"] = Node.model_validate(node_data)
+        return workbench
+
     async def _get_project(
         self,
         connection: SAConnection,
@@ -263,6 +281,7 @@ class BaseProjectDB:
             )
 
         project: dict[str, Any] = dict(project_row.items())
+        project["workbench"] = await self._get_workbench(connection, project_uuid)
 
         if "tags" not in exclude_foreign:
             tags = await self._get_tags_by_project(

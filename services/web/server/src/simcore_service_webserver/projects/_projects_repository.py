@@ -122,9 +122,7 @@ async def get_project_with_workbench(
     project_uuid: ProjectID,
 ) -> ProjectWithWorkbenchDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sql.select(*PROJECT_DB_COLS, projects.c.workbench).where(
-            projects.c.uuid == f"{project_uuid}"
-        )
+        query = sql.select(*PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}")
         result = await conn.execute(query)
         row = result.one_or_none()
         if row is None:
