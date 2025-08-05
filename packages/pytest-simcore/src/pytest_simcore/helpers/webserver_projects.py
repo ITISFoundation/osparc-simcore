@@ -12,10 +12,8 @@ from typing import Any
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from common_library.dict_tools import remap_keys
-from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
-from pydantic import TypeAdapter
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
 from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
@@ -77,12 +75,41 @@ async def create_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
-    raw_workbench = project_data.pop("workbench", {})
+    raw_workbench: dict[str, Any] = project_data.pop("workbench", {})
+    for raw_node in raw_workbench.values():
+        if "position" in raw_node:
+            del raw_node["position"]
 
-    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(raw_workbench)
+    # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
+    valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+    # Mapping from camelCase (workbench) to snake_case (ProjectNodeCreate)
+    field_mapping = {
+        "inputAccess": "input_access",
+        "inputNodes": "input_nodes",
+        "inputsUnits": "inputs_units",
+        "outputNodes": "output_nodes",
+        "runHash": "run_hash",
+        "bootOptions": "boot_options",
+    }
+
     fake_required_resources: dict[str, Any] = ServiceResourcesDictHelpers.model_config[
         "json_schema_extra"
     ]["examples"][0]
+
+    project_nodes = {
+        NodeID(node_id): ProjectNodeCreate(
+            node_id=NodeID(node_id),
+            # NOTE: fake initial resources until more is needed
+            required_resources=fake_required_resources,
+            **{
+                str(field_mapping.get(field, field)): value
+                for field, value in raw_node.items()
+                if field_mapping.get(field, field) in valid_fields
+            },
+        )
+        for node_id, raw_node in raw_workbench.items()
+    }
 
     project_created = await db.insert_project(
         project_data,
@@ -90,17 +117,7 @@ async def create_project(
         product_name=product_name,
         force_project_uuid=force_uuid,
         force_as_template=as_template,
-        # NOTE: fake initial resources until more is needed
-        project_nodes={
-            node_id: ProjectNodeCreate(
-                node_id=node_id,
-                required_resources=fake_required_resources,
-                **node_model.model_dump(
-                    by_alias=False, exclude_unset=True, mode="json"
-                ),
-            )
-            for node_id, node_model in workbench.items()
-        },
+        project_nodes=project_nodes,
     )
 
     if params_override and (
