@@ -9,9 +9,9 @@ from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
-from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 from simcore_postgres_database.models.projects_to_products import projects_to_products
+from simcore_postgres_database.utils_projects_nodes import make_workbench_subquery
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -171,50 +171,7 @@ class ProjectJobsRepository(BaseRepository):
         total_query = sa.select(sa.func.count()).select_from(base_query)
 
         # Step 6: Create subquery to aggregate project nodes into workbench structure
-        workbench_subquery = (
-            sa.select(
-                projects_nodes.c.project_uuid,
-                sa.func.json_object_agg(
-                    projects_nodes.c.node_id,
-                    sa.func.json_build_object(
-                        "key",
-                        projects_nodes.c.key,
-                        "version",
-                        projects_nodes.c.version,
-                        "label",
-                        projects_nodes.c.label,
-                        "progress",
-                        projects_nodes.c.progress,
-                        "thumbnail",
-                        projects_nodes.c.thumbnail,
-                        "inputAccess",
-                        projects_nodes.c.input_access,
-                        "inputNodes",
-                        projects_nodes.c.input_nodes,
-                        "inputs",
-                        projects_nodes.c.inputs,
-                        "inputsRequired",
-                        projects_nodes.c.inputs_required,
-                        "inputsUnits",
-                        projects_nodes.c.inputs_units,
-                        "outputNodes",
-                        projects_nodes.c.output_nodes,
-                        "outputs",
-                        projects_nodes.c.outputs,
-                        "runHash",
-                        projects_nodes.c.run_hash,
-                        "state",
-                        projects_nodes.c.state,
-                        "parent",
-                        projects_nodes.c.parent,
-                        "bootOptions",
-                        projects_nodes.c.boot_options,
-                    ),
-                ).label("workbench"),
-            )
-            .group_by(projects_nodes.c.project_uuid)
-            .subquery()
-        )
+        workbench_subquery = make_workbench_subquery()
 
         # Step 7: Query to get the paginated list with full selection
         list_query = (
@@ -242,7 +199,7 @@ class ProjectJobsRepository(BaseRepository):
             .offset(pagination_offset)
         )
 
-        # Step 8: Execute queries
+        # Step 7: Execute queries
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             total_count = await conn.scalar(total_query)
             assert isinstance(total_count, int)  # nosec
