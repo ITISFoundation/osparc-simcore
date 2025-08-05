@@ -8,7 +8,7 @@ from typing import Any, Literal, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectID, ProjectType
+from models_library.projects import NodesDict, ProjectID, ProjectType
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
@@ -33,7 +33,7 @@ from .exceptions import (
     ProjectInvalidUsageError,
     ProjectNotFoundError,
 )
-from .models import NodesDict, ProjectDict
+from .models import ProjectDict
 from .utils import find_changed_node_keys
 
 logger = logging.getLogger(__name__)
