@@ -523,10 +523,10 @@ qx.Class.define("osparc.Application", {
         this.__loadView(mainPage);
       }
 
-      if (osparc.WatchDog.getInstance().isAppConnected()) {
+      if (osparc.wrapper.WebSocket.getInstance().isAppConnected()) {
         loadViewerPage();
       } else {
-        osparc.WatchDog.getInstance().addListener("changeAppConnected", e => {
+        osparc.wrapper.WebSocket.getInstance().addListener("changeAppConnected", e => {
           if (e.getData()) {
             loadViewerPage();
           }

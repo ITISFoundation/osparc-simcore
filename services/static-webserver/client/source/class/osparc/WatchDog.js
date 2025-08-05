@@ -66,13 +66,6 @@ qx.Class.define("osparc.WatchDog", {
       nullable: true,
       apply: "__applyHeartbeatInterval"
     },
-
-    appConnected: {
-      check: "Boolean",
-      init: false,
-      nullable: false,
-      event: "changeAppConnected"
-    },
   },
 
   members: {
@@ -93,7 +86,6 @@ qx.Class.define("osparc.WatchDog", {
       }
 
       this.__startPinging();
-      this.setAppConnected(true);
     },
 
     __startPinging: function() {

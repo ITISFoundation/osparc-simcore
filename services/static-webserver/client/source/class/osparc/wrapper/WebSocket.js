@@ -126,6 +126,13 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       nullable: true,
       event: "heartbeatInterval"
     },
+
+    appConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeAppConnected"
+    },
   },
 
   /** Constructor
@@ -214,6 +221,8 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           if (interval) {
             const newInterval = parseInt(interval) * 1000;
             this.setHeartbeatInterval(newInterval);
+
+            this.setAppConnected(true);
           }
         }, this);
       }, this);
