@@ -9,13 +9,11 @@ from httpx import AsyncClient
 from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
     RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
-from simcore_service_webserver.functions._functions_service import (
-    RegisteredProjectFunctionJob,
-)
 
 
 async def test_get_function_job_collection(
