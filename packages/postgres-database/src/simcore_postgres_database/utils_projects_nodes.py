@@ -10,15 +10,15 @@ from common_library.async_tools import maybe_await
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
-from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.utils_aiosqlalchemy import map_db_exception
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.selectable import Subquery
 
 from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation, UniqueViolation
+from .models.projects import projects
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
+from .utils_aiosqlalchemy import map_db_exception
 
 
 #
