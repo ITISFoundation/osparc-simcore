@@ -118,7 +118,21 @@ qx.Class.define("osparc.wrapper.WebSocket", {
       nullable: false,
       init: 1000,
       check: "Number"
-    }
+    },
+
+    heartbeatInterval: {
+      check: "Number",
+      init: null,
+      nullable: true,
+      event: "heartbeatInterval"
+    },
+
+    appConnected: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeAppConnected"
+    },
   },
 
   /** Constructor
@@ -201,6 +215,16 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           this.on(event, () => {
             this.fireDataEvent(event);
           }, this);
+        }, this);
+
+        this.on("set_heartbeat_emit_interval", ({ interval }) => {
+          if (interval) {
+            const newInterval = parseInt(interval) * 1000;
+            this.setHeartbeatInterval(newInterval);
+
+            // we consider the app is connected when the backend set the heartbeat interval
+            this.setAppConnected(true);
+          }
         }, this);
       }, this);
 
