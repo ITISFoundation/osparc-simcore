@@ -47,7 +47,8 @@ class RedisClientSDK:
     health_check_interval: datetime.timedelta = DEFAULT_HEALTH_CHECK_INTERVAL
 
     _client: aioredis.Redis = field(init=False)
-    _health_check_task: Task | None = None
+    _task_health_check: Task | None = None
+    _started_event_task_health_check: asyncio.Event | None = None
     _is_healthy: bool = False
 
     @property
@@ -70,13 +71,16 @@ class RedisClientSDK:
             client_name=self.client_name,
         )
         self._is_healthy = False
+        self._started_event_task_health_check = asyncio.Event()
 
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
+            assert self._started_event_task_health_check  # nosec
+            self._started_event_task_health_check.set()
             self._is_healthy = await self.ping()
 
-        self._health_check_task = asyncio.create_task(
+        self._task_health_check = asyncio.create_task(
             _periodic_check_health(),
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
@@ -93,9 +97,12 @@ class RedisClientSDK:
         with log_context(
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
-            if self._health_check_task:
+            if self._task_health_check:
+                assert self._started_event_task_health_check  # nosec
+                await self._started_event_task_health_check.wait()
+
                 await cancel_wait_task(
-                    self._health_check_task, max_delay=_HEALTHCHECK_TIMEOUT_S
+                    self._task_health_check, max_delay=_HEALTHCHECK_TIMEOUT_S
                 )
 
             await self._client.aclose(close_connection_pool=True)
