@@ -68,6 +68,10 @@ qx.Class.define("osparc.WatchDog", {
     },
   },
 
+  statics: {
+    DEFAULT_HEARTBEAT_INTERVAL: 2000, // default to 2 seconds
+  },
+
   members: {
     __clientHeartbeatWWPinger: null,
 
@@ -89,7 +93,7 @@ qx.Class.define("osparc.WatchDog", {
     },
 
     __startPinging: function() {
-      const heartbeatInterval = this.getHeartbeatInterval() || 2000; // default to 2 seconds
+      const heartbeatInterval = this.getHeartbeatInterval() || osparc.WatchDog.DEFAULT_HEARTBEAT_INTERVAL;
       this.__clientHeartbeatWWPinger.postMessage(["start", heartbeatInterval]);
     },
 

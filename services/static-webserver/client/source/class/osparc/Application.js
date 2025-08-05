@@ -506,11 +506,13 @@ qx.Class.define("osparc.Application", {
               this.__mainPage = mainPage;
               this.__loadView(mainPage);
             };
-            if (osparc.wrapper.WebSocket.getInstance().isAppConnected()) {
+            const wsInstance = osparc.wrapper.WebSocket.getInstance();
+            if (wsInstance.isAppConnected()) {
               loadViewerPage();
             } else {
-              osparc.wrapper.WebSocket.getInstance().addListener("changeAppConnected", e => {
+              const listenerId = wsInstance.addListener("changeAppConnected", function(e) {
                 if (e.getData()) {
+                  wsInstance.removeListenerById(listenerId);
                   loadViewerPage();
                 }
               }, this);
@@ -528,11 +530,13 @@ qx.Class.define("osparc.Application", {
         this.__mainPage = mainPage;
         this.__loadView(mainPage);
       };
-      if (osparc.wrapper.WebSocket.getInstance().isAppConnected()) {
+      const wsInstance = osparc.wrapper.WebSocket.getInstance();
+      if (wsInstance.isAppConnected()) {
         loadNodeViewerPage();
       } else {
-        osparc.wrapper.WebSocket.getInstance().addListener("changeAppConnected", e => {
+        const listenerId = wsInstance.addListener("changeAppConnected", e => {
           if (e.getData()) {
+            wsInstance.removeListenerById(listenerId);
             loadNodeViewerPage();
           }
         }, this);
