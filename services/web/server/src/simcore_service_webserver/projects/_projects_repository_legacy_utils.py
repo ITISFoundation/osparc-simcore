@@ -14,6 +14,7 @@ from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
 from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
 )
@@ -24,7 +25,6 @@ from simcore_postgres_database.webserver_models import (
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
-from ..projects._nodes_repository import ProjectNodesRepo
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
