@@ -129,17 +129,15 @@ async def create_study_job(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    x_simcore_parent_project_uuid: ProjectID | None,
-    x_simcore_parent_node_id: NodeID | None,
     hidden: Annotated[bool, Query()] = True,  # noqa: FBT002
+    x_simcore_parent_project_uuid: ProjectID | None = Header(  # noqa: B008
+        default=None
+    ),
+    x_simcore_parent_node_id: NodeID | None = Header(default=None),  # noqa: B008
 ) -> Job:
     """
     hidden -- if True (default) hides project from UI
     """
-    if x_simcore_parent_project_uuid is None:
-        x_simcore_parent_project_uuid = Header(default=None)
-    if x_simcore_parent_node_id is None:
-        x_simcore_parent_node_id = Header(default=None)
     project = await webserver_api.clone_project(
         project_id=study_id,
         hidden=hidden,
