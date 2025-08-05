@@ -15,6 +15,7 @@ from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
+from simcore_postgres_database.utils_projects_nodes import make_workbench_subquery
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -122,7 +123,12 @@ async def get_project_with_workbench(
     project_uuid: ProjectID,
 ) -> ProjectWithWorkbenchDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sql.select(*PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}")
+        query = sql.select(
+            *PROJECT_DB_COLS,
+            sa.func.coalesce(
+                make_workbench_subquery().c.workbench, sa.text("'{}'::json")
+            ).label("workbench"),
+        ).where(projects.c.uuid == f"{project_uuid}")
         result = await conn.execute(query)
         row = result.one_or_none()
         if row is None:

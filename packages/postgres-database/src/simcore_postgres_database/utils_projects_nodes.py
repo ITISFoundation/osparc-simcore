@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
-import sqlalchemy
+import sqlalchemy as sa
 import sqlalchemy.exc
 from common_library.async_tools import maybe_await
 from common_library.basic_types import DEFAULT_FACTORY
@@ -12,6 +12,7 @@ from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
 from simcore_postgres_database.utils_aiosqlalchemy import map_db_exception
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.sql.selectable import Subquery
 
 from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation, UniqueViolation
@@ -79,6 +80,53 @@ class ProjectNode(ProjectNodeCreate):
     modified: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+def make_workbench_subquery() -> Subquery:
+    return (
+        sa.select(
+            projects_nodes.c.project_uuid,
+            sa.func.json_object_agg(
+                projects_nodes.c.node_id,
+                sa.func.json_build_object(
+                    "key",
+                    projects_nodes.c.key,
+                    "version",
+                    projects_nodes.c.version,
+                    "label",
+                    projects_nodes.c.label,
+                    "progress",
+                    projects_nodes.c.progress,
+                    "thumbnail",
+                    projects_nodes.c.thumbnail,
+                    "inputAccess",
+                    projects_nodes.c.input_access,
+                    "inputNodes",
+                    projects_nodes.c.input_nodes,
+                    "inputs",
+                    projects_nodes.c.inputs,
+                    "inputsRequired",
+                    projects_nodes.c.inputs_required,
+                    "inputsUnits",
+                    projects_nodes.c.inputs_units,
+                    "outputNodes",
+                    projects_nodes.c.output_nodes,
+                    "outputs",
+                    projects_nodes.c.outputs,
+                    "runHash",
+                    projects_nodes.c.run_hash,
+                    "state",
+                    projects_nodes.c.state,
+                    "parent",
+                    projects_nodes.c.parent,
+                    "bootOptions",
+                    projects_nodes.c.boot_options,
+                ),
+            ).label("workbench"),
+        )
+        .group_by(projects_nodes.c.project_uuid)
+        .subquery()
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
