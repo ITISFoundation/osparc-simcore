@@ -139,6 +139,14 @@ class ProjectNodesRepo:
             for node in nodes
         ]
 
+        # Check
+        field_names = set(values[0].keys())
+        for v in values:
+            if set(v.keys()) != field_names:
+                msg = f"All rows in batch-insert MUST have same keys. Inconsistent keys in node values: {set(v.keys())} != {field_names}"
+                raise ValueError(msg)
+
+        # statement
         insert_stmt = (
             projects_nodes.insert()
             .values(values)
