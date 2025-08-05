@@ -13,6 +13,9 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_webserver.functions._functions_service import (
+    RegisteredProjectFunctionJob,
+)
 
 
 async def test_get_function_job_collection(
@@ -106,7 +109,7 @@ async def test_get_function_job_collection_jobs(
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_function_job_collection: RegisteredFunctionJobCollection,
-    mock_registered_project_function_job: RegisteredProjectFunction,
+    mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
     response_type: str | None,
 ) -> None:
