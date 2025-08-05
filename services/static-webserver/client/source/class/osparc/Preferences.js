@@ -210,7 +210,11 @@ qx.Class.define("osparc.Preferences", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __patchPreference: function(value, _, propName) {
+    __patchPreference: function(value, old, propName) {
+      // only patch if it changed
+      if (value === old) {
+        return;
+      }
       this.self().patchPreference(propName, value);
     }
   }
