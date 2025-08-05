@@ -13,10 +13,6 @@ from servicelib.long_running_tasks.models import TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
-pytest_simcore_core_services_selection = [
-    "redis",
-]
-
 
 @pytest.fixture
 def get_task_data(faker: Faker) -> Callable[[], TaskData]:
@@ -38,14 +34,14 @@ def get_task_data(faker: Faker) -> Callable[[], TaskData]:
     return _
 
 
-@pytest.fixture(params=[])
+@pytest.fixture
 async def store(
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
 ) -> AsyncIterable[BaseStore]:
-    store = RedisStore(redis_settings=redis_service, namespace="test")
+    store = RedisStore(redis_settings=use_in_memory_redis, namespace="test")
 
     await store.setup()
     yield store
@@ -82,13 +78,13 @@ async def test_workflow(
 
 @pytest.fixture
 async def redis_stores(
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
 ) -> AsyncIterable[list[RedisStore]]:
     stores: list[RedisStore] = [
-        RedisStore(redis_settings=redis_service, namespace=f"test-{i}")
+        RedisStore(redis_settings=use_in_memory_redis, namespace=f"test-{i}")
         for i in range(5)
     ]
     for store in stores:

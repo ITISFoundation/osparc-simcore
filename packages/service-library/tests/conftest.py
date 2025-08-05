@@ -73,7 +73,7 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 async def get_redis_client_sdk(
     mock_redis_socket_timeout: None,
     mocker: MockerFixture,
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
 ) -> AsyncIterable[
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:
@@ -82,7 +82,7 @@ async def get_redis_client_sdk(
         database: RedisDatabase,
         decode_response: bool = True,  # noqa: FBT002
     ) -> AsyncIterator[RedisClientSDK]:
-        redis_resources_dns = redis_service.build_redis_dsn(database)
+        redis_resources_dns = use_in_memory_redis.build_redis_dsn(database)
         client = RedisClientSDK(
             redis_resources_dns, decode_responses=decode_response, client_name="pytest"
         )
@@ -101,7 +101,7 @@ async def get_redis_client_sdk(
 
     async with RedisClientsManager(
         {RedisManagerDBConfig(database=db) for db in RedisDatabase},
-        redis_service,
+        use_in_memory_redis,
         client_name="pytest",
     ) as clients_manager:
         await _cleanup_redis_data(clients_manager)
