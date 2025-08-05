@@ -1,18 +1,22 @@
-from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager
+from collections.abc import AsyncIterator
 
 import pytest
 from servicelib.redis import RedisClientSDK
-from settings_library.redis import RedisDatabase
+from settings_library.redis import RedisDatabase, RedisSettings
 
 
 @pytest.fixture
 async def redis_client_sdk_deferred_tasks(
-    get_redis_client_sdk: Callable[
-        [RedisDatabase, bool], AbstractAsyncContextManager[RedisClientSDK]
-    ]
+    redis_service: RedisSettings,
 ) -> AsyncIterator[RedisClientSDK]:
-    async with get_redis_client_sdk(
-        RedisDatabase.DEFERRED_TASKS, decode_response=False
-    ) as client:
-        yield client
+
+    client = RedisClientSDK(
+        redis_service.build_redis_dsn(RedisDatabase.DEFERRED_TASKS),
+        decode_responses=False,
+        client_name="pytest-deferred_tasks",
+    )
+    await client.setup()
+
+    yield client
+
+    await client.shutdown()
