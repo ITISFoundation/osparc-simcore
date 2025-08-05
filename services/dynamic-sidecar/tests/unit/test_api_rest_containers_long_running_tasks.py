@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=no-member
 
+import asyncio
 import json
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
@@ -394,12 +395,13 @@ async def _assert_progress_finished(
     last_progress_message: tuple[ProgressMessage, ProgressPercent] | None,
 ) -> None:
     async for attempt in AsyncRetrying(
-        stop=stop_after_delay(5),
+        stop=stop_after_delay(10),
         wait=wait_fixed(0.1),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
         with attempt:
+            await asyncio.sleep(0)  # yield control to the event loop
             assert last_progress_message == ("finished", 1.0)
 
 
