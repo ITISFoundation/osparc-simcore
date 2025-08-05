@@ -51,7 +51,7 @@ from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client, get_study_service
-from ..dependencies.webserver_http import AuthSession, get_webserver_session
+from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
@@ -129,13 +129,17 @@ async def create_study_job(
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
+    x_simcore_parent_project_uuid: ProjectID | None,
+    x_simcore_parent_node_id: NodeID | None,
     hidden: Annotated[bool, Query()] = True,  # noqa: FBT002
-    x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
-    x_simcore_parent_node_id: NodeID | None = Header(default=None),
 ) -> Job:
     """
     hidden -- if True (default) hides project from UI
     """
+    if x_simcore_parent_project_uuid is None:
+        x_simcore_parent_project_uuid = Header(default=None)
+    if x_simcore_parent_node_id is None:
+        x_simcore_parent_node_id = Header(default=None)
     project = await webserver_api.clone_project(
         project_id=study_id,
         hidden=hidden,

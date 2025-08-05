@@ -200,6 +200,7 @@ async def function_job_collection_list_function_jobs(
 @function_job_collections_router.get(
     "/{function_job_collection_id:uuid}/function_jobs/page",
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
+    response_model=Page[RegisteredFunctionJob],
     description=create_route_description(
         base="Get the function jobs in function job collection",
         changelog=[
@@ -213,7 +214,7 @@ async def function_job_collection_list_function_jobs_page(
         FunctionJobService, Depends(get_function_job_service)
     ],
     page_params: Annotated[PaginationParams, Depends()],
-) -> Page[RegisteredFunctionJob]:
+):
     function_jobs_list, meta = await function_job_service.list_function_jobs(
         filter_by_function_job_collection_id=function_job_collection_id,
         pagination_offset=page_params.offset,

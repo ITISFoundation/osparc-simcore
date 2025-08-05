@@ -102,6 +102,7 @@ for endpoint in ENDPOINTS:
 
 @function_job_router.get(
     "",
+    response_model=Page[RegisteredFunctionJob],
     description=create_route_description(
         base="List function jobs", changelog=CHANGE_LOGS["list_function_jobs"]
     ),
@@ -112,7 +113,7 @@ async def list_function_jobs(
         FunctionJobService, Depends(get_function_job_service)
     ],
     filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
-) -> Page[RegisteredFunctionJob]:
+):
     function_jobs_list, meta = await function_job_service.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
