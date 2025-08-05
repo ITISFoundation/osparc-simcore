@@ -391,3 +391,19 @@ async def test_not_implemented_use_cases(
             parent_project_uuid=missing_parent_project["uuid"],
             parent_node_id=missing_parent_node.node_id,
         )
+
+
+async def test_model_dump_as_node(
+    connection: SAConnection,
+    create_fake_user: Callable[..., Awaitable[RowProxy]],
+    create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
+):
+    user: RowProxy = await create_fake_user(connection)
+    project: RowProxy = await create_fake_project(connection, user, hidden=True)
+    project_node = await create_fake_projects_node(project["uuid"])
+
+    node_data = project_node.model_dump_as_node()
+    assert isinstance(node_data, dict)
+    assert node_data["key"] == project_node.key
+    assert "node_id" not in node_data, "this is only in ProjectNode but not in Node!"

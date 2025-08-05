@@ -66,27 +66,32 @@ class ProjectNodeCreate(BaseModel):
     parent: str | None = None
     boot_options: dict[str, Any] | None = None
 
+    model_config = ConfigDict(frozen=True)
+
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
         return cls.model_fields.keys() - exclude
 
+    def _get_node_exclude_fields(self) -> set[str]:
+        """Get the base fields to exclude when converting to Node model."""
+        return {"node_id", "required_resources"}
+
     def model_dump_as_node(self) -> dict[str, Any]:
         """Converts a ProjectNode from the database to a Node model for the API.
+
+        Usage:
+            Node.model_validate(project_node_create.model_dump_as_node(), by_name=True)
 
         Handles field mapping and excludes database-specific fields that are not
         part of the Node model.
         """
-        # Get all ProjectNode fields except those that don't belong in Node
-        exclude_fields = {"node_id", "required_resources"}
         return self.model_dump(
             # NOTE: this setup ensures using the defaults provided in Node model when the db does not
             # provide them, e.g. `state`
-            exclude=exclude_fields,
+            exclude=self._get_node_exclude_fields(),
             exclude_none=True,
             exclude_unset=True,
         )
-
-    model_config = ConfigDict(frozen=True)
 
 
 class ProjectNode(ProjectNodeCreate):
@@ -95,21 +100,12 @@ class ProjectNode(ProjectNodeCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
-    def model_dump_as_node(self) -> dict[str, Any]:
-        """Converts a ProjectNode from the database to a Node model for the API.
+    def _get_node_exclude_fields(self) -> set[str]:
+        """Get the fields to exclude when converting to Node model, including DB-specific fields."""
+        base_excludes = super()._get_node_exclude_fields()
+        return base_excludes | {"created", "modified"}
 
-        Handles field mapping and excludes database-specific fields that are not
-        part of the Node model.
-        """
-        # Get all ProjectNode fields except those that don't belong in Node
-        exclude_fields = {"node_id", "required_resources", "created", "modified"}
-        return self.model_dump(
-            # NOTE: this setup ensures using the defaults provided in Node model when the db does not
-            # provide them, e.g. `state`
-            exclude=exclude_fields,
-            exclude_none=True,
-            exclude_unset=True,
-        )
+    # NOTE: model_dump_as_node is inherited from ProjectNodeCreate and uses the overridden _get_node_exclude_fields
 
 
 @dataclass(frozen=True, kw_only=True)
