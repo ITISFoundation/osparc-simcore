@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
-from pydantic import PositiveFloat
+from pydantic import NonNegativeFloat, PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -38,6 +38,9 @@ _logger = logging.getLogger(__name__)
 
 _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
+
+_TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
+_TASK_REMOVAL_WAIT_CHECK_INTERVAL: Final[NonNegativeFloat] = 0.1
 
 
 RegisteredTaskName: TypeAlias = str
@@ -405,10 +408,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
             await self._tasks_data.delete_task_data(task_id)
 
-        # wait for task to be completed
+        # wait for task to be removed since it might not have been running
+        # in this process
         async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.1),
-            stop=stop_after_delay(10),
+            wait=wait_fixed(_TASK_REMOVAL_WAIT_CHECK_INTERVAL),
+            stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
             retry=retry_if_exception_type(TryAgain),
         ):
             with attempt:
