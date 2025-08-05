@@ -118,6 +118,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         self.redis_namespace = redis_namespace
         self.redis_settings = redis_settings
 
+        self.locks_redis_client_sdk: RedisClientSDK | None = None
+
         # stale_tasks_monitor
         self._task_stale_tasks_monitor: asyncio.Task | None = None
         self._started_event_task_stale_tasks_monitor = asyncio.Event()
@@ -130,20 +132,18 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         self._task_status_update: asyncio.Task | None = None
         self._started_event_task_status_update = asyncio.Event()
 
-        self.redis_client_sdk: RedisClientSDK | None = None
-
     async def setup(self) -> None:
         await self._tasks_data.setup()
 
-        self.redis_client_sdk = RedisClientSDK(
+        self.locks_redis_client_sdk = RedisClientSDK(
             self.redis_settings.build_redis_dsn(RedisDatabase.LOCKS),
             client_name=f"long_running_tasks_store_{self.redis_namespace}_lock",
         )
-        await self.redis_client_sdk.setup()
+        await self.locks_redis_client_sdk.setup()
 
         self._task_stale_tasks_monitor = create_periodic_task(
             task=exclusive(
-                self.redis_client_sdk,
+                self.locks_redis_client_sdk,
                 lock_key=f"{__name__}_{self.redis_namespace}_stale_tasks_monitor",
             )(self._stale_tasks_monitor),
             interval=self.stale_task_check_interval,
@@ -188,8 +188,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         if self._task_status_update:
             await cancel_wait_task(self._task_status_update)
 
-        if self.redis_client_sdk is not None:
-            await self.redis_client_sdk.shutdown()
+        if self.locks_redis_client_sdk is not None:
+            await self.locks_redis_client_sdk.shutdown()
 
         await self._tasks_data.shutdown()
 
