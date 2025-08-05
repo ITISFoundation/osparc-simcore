@@ -25,8 +25,7 @@ from ._constants import (
 
 _logger = logging.getLogger(__name__)
 
-# SEE https://github.com/ITISFoundation/osparc-simcore/pull/7077
-_HEALTHCHECK_TASK_TIMEOUT_S: Final[float] = 3.0
+_HEALTHCHECK_TIMEOUT_S: Final[float] = 3.0
 
 
 @tenacity.retry(
@@ -106,17 +105,16 @@ class RedisClientSDK:
                 assert self._health_check_task_started_event  # nosec
                 await self._health_check_task_started_event.wait()
 
-                with log_catch(_logger, reraise=False):
-                    await cancel_wait_task(
-                        self._health_check_task, max_delay=_HEALTHCHECK_TASK_TIMEOUT_S
-                    )
+                await cancel_wait_task(
+                    self._health_check_task, max_delay=_HEALTHCHECK_TIMEOUT_S
+                )
 
             await self._client.aclose(close_connection_pool=True)
 
     async def ping(self) -> bool:
         with log_catch(_logger, reraise=False):
             # NOTE: retry_* input parameters from aioredis.from_url do not apply for the ping call
-            await self._client.ping()
+            await asyncio.wait_for(self._client.ping(), timeout=_HEALTHCHECK_TIMEOUT_S)
             return True
 
         return False
