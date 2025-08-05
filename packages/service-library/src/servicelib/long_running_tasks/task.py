@@ -118,14 +118,17 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         self.redis_namespace = redis_namespace
         self.redis_settings = redis_settings
 
+        # stale_tasks_monitor
         self._task_stale_tasks_monitor: asyncio.Task | None = None
         self._started_event_task_stale_tasks_monitor = asyncio.Event()
 
+        # cancelled_tasks_removal
         self._task_cancelled_tasks_removal: asyncio.Task | None = None
         self._started_event_task_cancelled_tasks_removal = asyncio.Event()
 
-        self._task_status_update_worker: asyncio.Task | None = None
-        self._started_event_task_status_update_worker = asyncio.Event()
+        # status_update
+        self._task_status_update: asyncio.Task | None = None
+        self._started_event_task_status_update = asyncio.Event()
 
         self.redis_client_sdk: RedisClientSDK | None = None
 
@@ -142,25 +145,25 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             task=exclusive(
                 self.redis_client_sdk,
                 lock_key=f"{__name__}_{self.redis_namespace}_stale_tasks_monitor",
-            )(self._stale_tasks_monitor_worker),
+            )(self._stale_tasks_monitor),
             interval=self.stale_task_check_interval,
-            task_name=f"{__name__}.{self._stale_tasks_monitor_worker.__name__}",
+            task_name=f"{__name__}.{self._stale_tasks_monitor.__name__}",
         )
 
         await self._started_event_task_stale_tasks_monitor.wait()
         self._task_cancelled_tasks_removal = create_periodic_task(
-            task=self._cancelled_tasks_removal_worker,
+            task=self._cancelled_tasks_removal,
             interval=_CANCEL_TASKS_CHECK_INTERVAL,
-            task_name=f"{__name__}.{self._cancelled_tasks_removal_worker.__name__}",
+            task_name=f"{__name__}.{self._cancelled_tasks_removal.__name__}",
         )
         await self._started_event_task_cancelled_tasks_removal.wait()
 
-        self._task_status_update_worker = create_periodic_task(
-            task=self._status_update_worker,
+        self._task_status_update = create_periodic_task(
+            task=self._status_update,
             interval=_STATUS_UPDATE_CHECK_INTERNAL,
-            task_name=f"{__name__}.{self._status_update_worker.__name__}",
+            task_name=f"{__name__}.{self._status_update.__name__}",
         )
-        await self._started_event_task_status_update_worker.wait()
+        await self._started_event_task_status_update.wait()
 
     async def teardown(self) -> None:
         for tracked_task in await self._tasks_data.list_tasks_data():
@@ -182,15 +185,15 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         if self._task_cancelled_tasks_removal:
             await cancel_wait_task(self._task_cancelled_tasks_removal)
 
-        if self._task_status_update_worker:
-            await cancel_wait_task(self._task_status_update_worker)
+        if self._task_status_update:
+            await cancel_wait_task(self._task_status_update)
 
         if self.redis_client_sdk is not None:
             await self.redis_client_sdk.shutdown()
 
         await self._tasks_data.shutdown()
 
-    async def _stale_tasks_monitor_worker(self) -> None:
+    async def _stale_tasks_monitor(self) -> None:
         """
         A task is considered stale, if the task status is not queried
         in the last `stale_task_detect_timeout_s` and it is not a fire and forget type of task.
@@ -231,7 +234,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 task_id, with_task_context=task_context, reraise_errors=False
             )
 
-    async def _cancelled_tasks_removal_worker(self) -> None:
+    async def _cancelled_tasks_removal(self) -> None:
         """
         A task can be cancelled by the client, which implies it does not for sure
         run in the same process as the one processing the request.
@@ -244,12 +247,12 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         for task_id, task_context in cancelled_tasks.items():
             await self.remove_task(task_id, task_context, reraise_errors=False)
 
-    async def _status_update_worker(self) -> None:
+    async def _status_update(self) -> None:
         """
-        Worker which monitors locally running tasks and updates their status
+        A task which monitors locally running tasks and updates their status
         in the Redis store when they are done.
         """
-        self._started_event_task_status_update_worker.set()
+        self._started_event_task_status_update.set()
         task_id: TaskId
         for task_id in set(self._created_tasks.keys()):
             if task := self._created_tasks.get(task_id, None):
