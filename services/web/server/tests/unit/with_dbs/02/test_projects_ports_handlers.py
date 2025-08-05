@@ -74,7 +74,7 @@ def mock_directorv2_service_api_responses(
     return aioresponses_mocker
 
 
-@pytest.mark.acceptance_test()
+@pytest.mark.acceptance_test
 @pytest.mark.parametrize(
     "user_role,expected",
     [
