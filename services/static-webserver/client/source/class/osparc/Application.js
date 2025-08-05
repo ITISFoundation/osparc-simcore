@@ -501,14 +501,20 @@ qx.Class.define("osparc.Application", {
               osparc.store.Store.getInstance().setCurrentStudyId(studyId);
             }
 
-            let mainPage = null;
-            if (osparc.product.Utils.getProductName().includes("s4ldesktop")) {
-              mainPage = new osparc.desktop.MainPageDesktop();
+            const loadViewerPage = () => {
+              const mainPage = new osparc.desktop.MainPage();
+              this.__mainPage = mainPage;
+              this.__loadView(mainPage);
+            };
+            if (osparc.wrapper.WebSocket.getInstance().isAppConnected()) {
+              loadViewerPage();
             } else {
-              mainPage = new osparc.desktop.MainPage();
+              osparc.wrapper.WebSocket.getInstance().addListener("changeAppConnected", e => {
+                if (e.getData()) {
+                  loadViewerPage();
+                }
+              }, this);
             }
-            this.__mainPage = mainPage;
-            this.__loadView(mainPage);
           }
         })
         .catch(err => console.error(err));
@@ -517,18 +523,17 @@ qx.Class.define("osparc.Application", {
     __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
 
-      const loadViewerPage = () => {
+      const loadNodeViewerPage = () => {
         const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
         this.__mainPage = mainPage;
         this.__loadView(mainPage);
-      }
-
+      };
       if (osparc.wrapper.WebSocket.getInstance().isAppConnected()) {
-        loadViewerPage();
+        loadNodeViewerPage();
       } else {
         osparc.wrapper.WebSocket.getInstance().addListener("changeAppConnected", e => {
           if (e.getData()) {
-            loadViewerPage();
+            loadNodeViewerPage();
           }
         }, this);
       }
