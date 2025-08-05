@@ -4,8 +4,6 @@ from collections.abc import AsyncIterable, Callable
 from contextlib import AbstractAsyncContextManager
 
 import pytest
-from faker import Faker
-from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks._store.base import BaseStore
 from servicelib.long_running_tasks._store.redis import RedisStore
@@ -15,23 +13,10 @@ from settings_library.redis import RedisDatabase, RedisSettings
 
 
 @pytest.fixture
-def get_task_data(faker: Faker) -> Callable[[], TaskData]:
-    def _() -> TaskData:
-        task_id = faker.uuid4()
-        return TypeAdapter(TaskData).validate_python(
-            {
-                "task_id": task_id,
-                "task_name": faker.word(),
-                "task_status": faker.random_element(
-                    elements=("running", "completed", "failed")
-                ),
-                "task_progress": TaskProgress.create(task_id),
-                "task_context": {"key": "value"},
-                "fire_and_forget": faker.boolean(),
-            }
-        )
-
-    return _
+def task_data() -> TaskData:
+    return TypeAdapter(TaskData).validate_python(
+        TaskData.model_json_schema()["examples"][0]
+    )
 
 
 @pytest.fixture
@@ -52,14 +37,11 @@ async def store(
         pass
 
 
-async def test_workflow(
-    store: BaseStore, get_task_data: Callable[[], TaskData]
-) -> None:
+async def test_workflow(store: BaseStore, task_data: TaskData) -> None:
     # task data
     assert await store.list_tasks_data() == []
     assert await store.get_task_data("missing") is None
 
-    task_data = get_task_data()
     await store.set_task_data(task_data.task_id, task_data)
 
     assert await store.list_tasks_data() == [task_data]
@@ -101,9 +83,8 @@ async def redis_stores(
 
 
 async def test_workflow_multiple_redis_stores_with_different_namespaces(
-    redis_stores: list[RedisStore], get_task_data: Callable[[], TaskData]
+    redis_stores: list[RedisStore], task_data: TaskData
 ):
-    task_data = get_task_data()
 
     for store in redis_stores:
         assert await store.list_tasks_data() == []

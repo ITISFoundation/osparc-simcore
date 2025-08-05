@@ -76,6 +76,20 @@ class TaskData(BaseModel):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "task_id": "1a119618-7186-4bc1-b8de-7e3ff314cb7e",
+                    "task_name": "running-task",
+                    "task_status": "running",
+                    "task_progress": {
+                        "task_id": "1a119618-7186-4bc1-b8de-7e3ff314cb7e"
+                    },
+                    "task_context": {"key": "value"},
+                    "fire_and_forget": False,
+                }
+            ]
+        },
     )
 
 
