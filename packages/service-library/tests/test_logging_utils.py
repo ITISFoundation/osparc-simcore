@@ -573,3 +573,176 @@ def test_setup_async_loggers_exception_handling(
 
     # Check that the message was logged and cleanup happened
     assert "Message before exception" in caplog.text
+
+
+def _create_grok_regex_pattern() -> str:
+    """Convert Grok pattern to regex for testing."""
+    # The Grok pattern from the comment:
+    # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_msg=%{GREEDYDATA:log_msg}
+
+    grok_to_regex = {
+        r"%{WORD:log_level}": r"(?P<log_level>\w+)",
+        r"%{TIMESTAMP_ISO8601:log_timestamp}": r"(?P<log_timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3})",
+        r"%{NOTSPACE:log_source}": r"(?P<log_source>\S+)",
+        r"%{NOTSPACE:log_uid}": r"(?P<log_uid>\S+)",
+        r"%{NOTSPACE:log_oec}": r"(?P<log_oec>\S+)",
+        r"%{NOTSPACE:log_trace_id}": r"(?P<log_trace_id>\S+)",
+        r"%{GREEDYDATA:log_msg}": r"(?P<log_msg>.*)",
+    }
+
+    grok_pattern = r"log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_msg=%{GREEDYDATA:log_msg}"
+
+    # Convert to regex
+    regex_pattern = grok_pattern
+    for grok, regex in grok_to_regex.items():
+        regex_pattern = regex_pattern.replace(grok, regex)
+
+    return regex_pattern
+
+
+def _create_test_log_record(
+    name: str,
+    level: int,
+    func_name: str,
+    lineno: int,
+    message: str,
+    *,
+    user_id: int | str | None = None,
+    error_code: str | None = None,
+    trace_id: str | None = None,
+) -> logging.LogRecord:
+    """Create a test LogRecord with optional extra fields."""
+    from servicelib.logging_utils import get_log_record_extra
+
+    record = logging.LogRecord(
+        name=name,
+        level=level,
+        pathname="/path/to/file.py",
+        lineno=lineno,
+        msg=message,
+        args=(),
+        exc_info=None,
+        func=func_name,
+    )
+
+    # Add extra fields if provided
+    extra = get_log_record_extra(user_id=user_id, error_code=error_code)
+    if extra:
+        for key, value in extra.items():
+            setattr(record, key, value)
+
+    # Add OpenTelemetry trace ID
+    record.otelTraceID = trace_id  # type: ignore[attr-defined]
+
+    return record
+
+
+def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
+    """
+    Test that the Graylog Grok pattern correctly parses logs formatted with _DEFAULT_FORMATTING.
+
+    This test validates that the Grok pattern defined in the comment can correctly
+    parse logs formatted with _DEFAULT_FORMATTING.
+
+    WARNING: If log formatting changes, the Grok pattern in Graylog must be updated accordingly.
+    """
+    import io
+    import re
+
+    from servicelib.logging_utils import _DEFAULT_FORMATTING, CustomFormatter
+
+    # Create a custom handler with the default formatter
+    log_stream = io.StringIO()
+    handler = logging.StreamHandler(log_stream)
+    formatter = CustomFormatter(_DEFAULT_FORMATTING, log_format_local_dev_enabled=False)
+    handler.setFormatter(formatter)
+
+    # Create test log record with all fields populated
+    test_message = (
+        "This is a test log message with special chars: []{} and new line\nembedded"
+    )
+    record = _create_test_log_record(
+        name="test.module.submodule",
+        level=logging.INFO,
+        func_name="test_function",
+        lineno=42,
+        message=test_message,
+        user_id=12345,
+        error_code="OEC001",
+        trace_id="1234567890abcdef1234567890abcdef",
+    )
+
+    # Format the record
+    formatted_log = formatter.format(record)
+
+    # Test that the formatted log matches the Grok pattern
+    regex_pattern = _create_grok_regex_pattern()
+    match = re.match(regex_pattern, formatted_log)
+
+    assert (
+        match is not None
+    ), f"Grok pattern did not match formatted log. Log: {formatted_log!r}"
+
+    # Verify extracted fields match expected values
+    groups = match.groupdict()
+
+    assert groups["log_level"] == "INFO"
+    assert groups["log_source"] == "test.module.submodule:test_function(42)"
+    assert groups["log_uid"] == "12345"
+    assert groups["log_oec"] == "OEC001"
+    assert groups["log_trace_id"] == "1234567890abcdef1234567890abcdef"
+
+    # Verify the message is correctly escaped (newlines become \\n)
+    expected_message = test_message.replace("\n", "\\n")
+    assert groups["log_msg"] == expected_message
+
+    # Verify timestamp format is ISO8601-like (as expected by Python logging)
+    timestamp_pattern = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}"
+    assert re.match(timestamp_pattern, groups["log_timestamp"])
+
+
+def test_grok_pattern_parsing_with_none_values(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """
+    Test Grok pattern parsing when optional fields are None.
+
+    WARNING: If log formatting changes, the Grok pattern in Graylog must be updated accordingly.
+    """
+    import io
+    import re
+
+    from servicelib.logging_utils import _DEFAULT_FORMATTING, CustomFormatter
+
+    # Create a custom handler with the default formatter
+    handler = logging.StreamHandler(io.StringIO())
+    formatter = CustomFormatter(_DEFAULT_FORMATTING, log_format_local_dev_enabled=False)
+    handler.setFormatter(formatter)
+
+    # Create test log record with None values for optional fields
+    record = _create_test_log_record(
+        name="test.module",
+        level=logging.ERROR,
+        func_name="error_function",
+        lineno=100,
+        message="Error message",
+        user_id=None,
+        error_code=None,
+        trace_id=None,
+    )
+
+    formatted_log = formatter.format(record)
+    regex_pattern = _create_grok_regex_pattern()
+    match = re.match(regex_pattern, formatted_log)
+
+    assert (
+        match is not None
+    ), f"Grok pattern did not match log with None values. Log: {formatted_log!r}"
+
+    groups = match.groupdict()
+    assert groups["log_level"] == "ERROR"
+    assert groups["log_source"] == "test.module:error_function(100)"
+    assert groups["log_uid"] == "None"
+    assert groups["log_oec"] == "None"
+    assert groups["log_trace_id"] == "None"
+    assert groups["log_msg"] == "Error message"
