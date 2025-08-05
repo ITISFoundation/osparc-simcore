@@ -74,6 +74,42 @@ async def test_get_project_trashed_column_can_be_converted_to_datetime(
     assert trashed == expected
 
 
+@pytest.mark.parametrize("with_explicit_connection", [True, False])
+async def test_projects_repo_exists_with_existing_project(
+    asyncpg_engine: AsyncEngine,
+    registered_project: dict,
+    with_explicit_connection: bool,
+):
+    projects_repo = ProjectsRepo(asyncpg_engine)
+    project_uuid = registered_project["uuid"]
+
+    if with_explicit_connection:
+        async with transaction_context(asyncpg_engine) as conn:
+            exists = await projects_repo.exists(project_uuid, connection=conn)
+    else:
+        exists = await projects_repo.exists(project_uuid)
+
+    assert exists is True
+
+
+@pytest.mark.parametrize("with_explicit_connection", [True, False])
+async def test_projects_repo_exists_with_non_existing_project(
+    asyncpg_engine: AsyncEngine,
+    faker: Faker,
+    with_explicit_connection: bool,
+):
+    projects_repo = ProjectsRepo(asyncpg_engine)
+    non_existing_uuid = faker.uuid4()
+
+    if with_explicit_connection:
+        async with transaction_context(asyncpg_engine) as conn:
+            exists = await projects_repo.exists(non_existing_uuid, connection=conn)
+    else:
+        exists = await projects_repo.exists(non_existing_uuid)
+
+    assert exists is False
+
+
 async def test_get_project_last_change_date(
     asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker
 ):
