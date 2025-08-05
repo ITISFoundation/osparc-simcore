@@ -1451,7 +1451,7 @@ qx.Class.define("osparc.data.model.Node", {
           case "inputsUnits": {
             // this is never transmitted by the frontend
             const updatedPortKey = path.split("/")[4];
-            const currentInputUnits = this.__getInputUnits();
+            const currentInputUnits = this.__getInputUnits() || {};
             currentInputUnits[updatedPortKey] = value;
             this.__setInputUnits(currentInputUnits);
             break;
