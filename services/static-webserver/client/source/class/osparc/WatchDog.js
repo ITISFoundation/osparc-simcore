@@ -84,19 +84,25 @@ qx.Class.define("osparc.WatchDog", {
         logo.setOnline(value);
       }
 
-      if (value) {
-        this.__clientHeartbeatWWPinger.postMessage(["start", this.getHeartbeatInterval()]);
-      } else {
-        this.__clientHeartbeatWWPinger.postMessage(["stop"]);
-      }
+      value ? this.__startPinging() : this.__stopPinging();
     },
 
     __applyHeartbeatInterval: function(value) {
       if (value === null) {
         return;
       }
-      this.__clientHeartbeatWWPinger.postMessage(["start", value]);
+
+      this.__startPinging();
       this.setAppConnected(true);
+    },
+
+    __startPinging: function() {
+      const heartbeatInterval = this.getHeartbeatInterval() || 2000; // default to 2 seconds
+      this.__clientHeartbeatWWPinger.postMessage(["start", heartbeatInterval]);
+    },
+
+    __stopPinging: function() {
+      this.__clientHeartbeatWWPinger.postMessage(["stop"]);
     },
 
     __pingServer: function() {
