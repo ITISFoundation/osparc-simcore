@@ -6,6 +6,7 @@
 import asyncio
 import re
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from http import HTTPStatus
@@ -55,7 +56,9 @@ from simcore_service_webserver.projects._controller.nodes_rest import (
 from simcore_service_webserver.projects.models import ProjectDict
 from tenacity import (
     AsyncRetrying,
+    RetryError,
     retry_if_exception_type,
+    retry_unless_exception_type,
     stop_after_delay,
     wait_fixed,
 )
@@ -952,21 +955,29 @@ async def test_stop_node(
         status.HTTP_202_ACCEPTED if user_role == UserRole.GUEST else expected.accepted,
     )
 
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(5),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    ):
-        with attempt:
-            if error is None:
+    if error is None:
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(5),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        ):
+            with attempt:
                 mocked_dynamic_services_interface[
                     "dynamic_scheduler.api.stop_dynamic_service"
                 ].assert_called_once()
-            else:
-                mocked_dynamic_services_interface[
-                    "dynamic_scheduler.api.stop_dynamic_service"
-                ].assert_not_called()
+    else:
+        with suppress(RetryError):
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.1),
+                stop=stop_after_delay(5),
+                retry=retry_unless_exception_type(AssertionError),
+                reraise=True,
+            ):
+                with attempt:
+                    mocked_dynamic_services_interface[
+                        "dynamic_scheduler.api.stop_dynamic_service"
+                    ].assert_not_called()
 
 
 @pytest.fixture
