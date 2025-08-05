@@ -1,3 +1,4 @@
+# pylint: disable=contextmanager-generator-missing-cleanup
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
@@ -12,7 +13,6 @@ from typing import Any
 import pytest
 import servicelib
 from faker import Faker
-from pytest_mock import MockerFixture
 from servicelib.redis import RedisClientSDK, RedisClientsManager, RedisManagerDBConfig
 from settings_library.redis import RedisDatabase, RedisSettings
 
@@ -69,12 +69,10 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
     return data
 
 
-@pytest.fixture
-async def get_redis_client_sdk(
-    mock_redis_socket_timeout: None,
-    mocker: MockerFixture,
-    use_in_memory_redis: RedisSettings,
-) -> AsyncIterable[
+@asynccontextmanager
+async def _get_redis_client_sdk(
+    redis_settings: RedisSettings,
+) -> AsyncIterator[
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:
     @asynccontextmanager
@@ -82,7 +80,7 @@ async def get_redis_client_sdk(
         database: RedisDatabase,
         decode_response: bool = True,  # noqa: FBT002
     ) -> AsyncIterator[RedisClientSDK]:
-        redis_resources_dns = use_in_memory_redis.build_redis_dsn(database)
+        redis_resources_dns = redis_settings.build_redis_dsn(database)
         client = RedisClientSDK(
             redis_resources_dns, decode_responses=decode_response, client_name="pytest"
         )
@@ -101,9 +99,29 @@ async def get_redis_client_sdk(
 
     async with RedisClientsManager(
         {RedisManagerDBConfig(database=db) for db in RedisDatabase},
-        use_in_memory_redis,
+        redis_settings,
         client_name="pytest",
     ) as clients_manager:
         await _cleanup_redis_data(clients_manager)
         yield _
         await _cleanup_redis_data(clients_manager)
+
+
+@pytest.fixture
+async def get_redis_client_sdk(
+    mock_redis_socket_timeout: None, use_in_memory_redis: RedisSettings
+) -> AsyncIterable[
+    Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
+]:
+    async with _get_redis_client_sdk(use_in_memory_redis) as client:
+        yield client
+
+
+@pytest.fixture
+async def get_in_process_redis_client_sdk(
+    mock_redis_socket_timeout: None, redis_service: RedisSettings
+) -> AsyncIterable[
+    Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
+]:
+    async with _get_redis_client_sdk(redis_service) as client:
+        yield client
