@@ -385,9 +385,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             return
 
         if tracked_task.task_id in self._created_tasks:
-            # will have affect in the worker which deals with the removal
+            task_to_cancel = self._created_tasks.pop(tracked_task.task_id, None)
+            if task_to_cancel is not None:
+                # canceling the task affects the worker that started it.
+                # awaiting the cancelled task is a must since if the CancelledError
+                # was intercepted, those actions need to finish
+                await cancel_wait_task(task_to_cancel)
+
             await self._tasks_data.delete_task_data(task_id)
-            self._created_tasks.pop(tracked_task.task_id, None)
 
         # wait for task to be completed
         async for attempt in AsyncRetrying(
