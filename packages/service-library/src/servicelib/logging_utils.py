@@ -140,8 +140,6 @@ def _setup_logging_formatter(
     tracing_settings: TracingSettings | None,
     log_format_local_dev_enabled: bool,
 ) -> logging.Formatter:
-    assert tracing_settings  # nosec
-
     fmt = _LOCAL_FORMATTING if log_format_local_dev_enabled else _DEFAULT_FORMATTING
 
     return CustomFormatter(
