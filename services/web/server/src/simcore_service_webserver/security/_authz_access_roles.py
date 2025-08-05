@@ -120,7 +120,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "resource-usage.write",
             "storage.files.sync",
         ],
-        inherits=[UserRole.TESTER],
+        inherits=[UserRole.PRODUCT_OWNER],
     ),
 }
 
