@@ -48,7 +48,6 @@ class RedisClientSDK:
 
     _client: aioredis.Redis = field(init=False)
     _health_check_task: Task | None = None
-    _health_check_task_started_event: asyncio.Event | None = None
     _is_healthy: bool = False
 
     @property
@@ -71,13 +70,10 @@ class RedisClientSDK:
             client_name=self.client_name,
         )
         self._is_healthy = False
-        self._health_check_task_started_event = asyncio.Event()
 
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
-            assert self._health_check_task_started_event  # nosec
-            self._health_check_task_started_event.set()
             self._is_healthy = await self.ping()
 
         self._health_check_task = asyncio.create_task(
@@ -85,10 +81,6 @@ class RedisClientSDK:
             name=f"redis_service_health_check_{self.redis_dsn}__{uuid4()}",
         )
 
-        # NOTE: this achieves 2 very important things:
-        # - ensure redis is working
-        # - before shutting down an initialized Redis connection it must
-        #   make at least one call to the server, otherwise tests might hang
         await wait_till_redis_is_responsive(self._client)
 
         _logger.info(
@@ -102,9 +94,6 @@ class RedisClientSDK:
             _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
         ):
             if self._health_check_task:
-                assert self._health_check_task_started_event  # nosec
-                await self._health_check_task_started_event.wait()
-
                 await cancel_wait_task(
                     self._health_check_task, max_delay=_HEALTHCHECK_TIMEOUT_S
                 )
