@@ -135,7 +135,6 @@ async def create_project(
         rename={"trashed": "trashedAt"},
     )
 
-    project_created["workbench"] = workbench  # NOTE: restore workbench
     return project_created
 
 
