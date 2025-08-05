@@ -66,10 +66,6 @@ class TaskRegistry:
             del cls.REGISTERED_TASKS[task.__name__]
 
 
-async def _await_task(task: asyncio.Task) -> None:
-    await task
-
-
 async def _get_tasks_to_remove(
     tracked_tasks: BaseStore,
     stale_task_detect_timeout_s: PositiveFloat,
