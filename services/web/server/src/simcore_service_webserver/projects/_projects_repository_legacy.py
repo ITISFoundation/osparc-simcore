@@ -320,7 +320,10 @@ class ProjectDBAPI(BaseProjectDB):
             project_nodes=project_nodes,
         )
 
-        inserted_project["workbench"] = workbench
+        inserted_project["workbench"] = {
+            f"{node_id}": project_node.model_dump_as_node()
+            for node_id, project_node in project_nodes.items()
+        }
 
         async with self.engine.acquire() as conn:
             # Returns created project with names as in the project schema
