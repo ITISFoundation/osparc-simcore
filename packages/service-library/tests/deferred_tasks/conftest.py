@@ -5,6 +5,10 @@ from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
 
 
+async def _cleanup_redis_data(client: RedisClientSDK) -> None:
+    await client.redis.flushall()
+
+
 @pytest.fixture
 async def redis_client_sdk_deferred_tasks(
     redis_service: RedisSettings,
@@ -17,6 +21,9 @@ async def redis_client_sdk_deferred_tasks(
     )
     await client.setup()
 
+    await _cleanup_redis_data(client)
+
     yield client
 
+    await _cleanup_redis_data(client)
     await client.shutdown()
