@@ -77,9 +77,9 @@ async def create_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
-    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(
-        project_data.pop("workbench", {})
-    )
+    raw_workbench = project_data.pop("workbench", {})
+
+    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(raw_workbench)
     fake_required_resources: dict[str, Any] = ServiceResourcesDictHelpers.model_config[
         "json_schema_extra"
     ]["examples"][0]
@@ -134,7 +134,7 @@ async def create_project(
         project_created,
         rename={"trashed": "trashedAt"},
     )
-
+    project_created["workbench"] = raw_workbench
     return project_created
 
 
