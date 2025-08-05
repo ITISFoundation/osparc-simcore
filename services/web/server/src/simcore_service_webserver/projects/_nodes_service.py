@@ -81,6 +81,15 @@ async def get_project_nodes_services(
     )
 
 
+async def get_project_nodes_map(
+    app: web.Application, *, project_id: ProjectID
+) -> dict[NodeID, Node]:
+    """
+    Returns a map of node_id to Node for the given project_id which used to be called the project's `workbench`
+    """
+    return await _nodes_repository.get_project_nodes_map(app, project_id=project_id)
+
+
 #
 # PREVIEWS
 #

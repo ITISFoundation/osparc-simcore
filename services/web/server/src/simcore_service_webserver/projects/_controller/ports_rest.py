@@ -8,10 +8,8 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectOutputGet,
 )
 from models_library.basic_types import KeyIDStr
-from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
-from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseModel, Field, TypeAdapter
@@ -26,27 +24,12 @@ from ...login.decorators import login_required
 from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
-from .. import _ports_service, _projects_service
-from .._access_rights_service import check_user_project_permission
+from .. import _access_rights_service, _nodes_service, _ports_service
 from .._projects_repository_legacy import ProjectDBAPI
-from ..models import ProjectDict
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
 log = logging.getLogger(__name__)
-
-
-async def _get_validated_workbench_model(
-    app: web.Application, project_id: ProjectID, user_id: UserID
-) -> dict[NodeID, Node]:
-    project: ProjectDict = await _projects_service.get_project_for_user(
-        app,
-        project_uuid=f"{project_id}",
-        user_id=user_id,
-        include_state=False,
-    )
-
-    return TypeAdapter(dict[NodeID, Node]).validate_python(project["workbench"])
 
 
 routes = web.RouteTableDef()
@@ -66,9 +49,17 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
-    workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+    await _access_rights_service.check_user_project_permission(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        permission="read",
     )
+    workbench = await _nodes_service.get_project_nodes_map(
+        app=request.app, project_id=path_params.project_id
+    )
+
     inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
     return envelope_json_response(
@@ -94,8 +85,15 @@ async def update_project_inputs(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
-    workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+    await _access_rights_service.check_user_project_permission(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        permission="write",  # because we are updating inputs later
+    )
+    workbench = await _nodes_service.get_project_nodes_map(
+        app=request.app, project_id=path_params.project_id
     )
     current_inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
@@ -112,14 +110,6 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         )
 
     # patch workbench
-    await check_user_project_permission(
-        request.app,
-        project_id=path_params.project_id,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-        permission="write",
-    )
-
     assert db  # nosec
     updated_project, _ = await db.update_project_multiple_node_data(
         user_id=req_ctx.user_id,
@@ -159,9 +149,17 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
-    workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+    await _access_rights_service.check_user_project_permission(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        permission="read",
     )
+    workbench = await _nodes_service.get_project_nodes_map(
+        app=request.app, project_id=path_params.project_id
+    )
+
     outputs: dict[NodeID, Any] = await _ports_service.get_project_outputs(
         request.app, project_id=path_params.project_id, workbench=workbench
     )
@@ -206,10 +204,16 @@ async def list_project_metadata_ports(request: web.Request) -> web.Response:
 
     assert request.app  # nosec
 
-    workbench = await _get_validated_workbench_model(
-        app=request.app, project_id=path_params.project_id, user_id=req_ctx.user_id
+    await _access_rights_service.check_user_project_permission(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        permission="read",
     )
-
+    workbench = await _nodes_service.get_project_nodes_map(
+        app=request.app, project_id=path_params.project_id
+    )
     return envelope_json_response(
         [
             ProjectMetadataPortGet(
