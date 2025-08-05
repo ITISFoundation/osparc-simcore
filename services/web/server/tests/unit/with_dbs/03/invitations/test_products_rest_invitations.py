@@ -34,7 +34,7 @@ from simcore_service_webserver.models import PhoneNumberStr
         (UserRole.USER, status.HTTP_403_FORBIDDEN),
         (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
-        (UserRole.ADMIN, status.HTTP_403_FORBIDDEN),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_role_access_to_generate_invitation(
