@@ -32,7 +32,6 @@ from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
-    "redis",
 ]
 pytest_simcore_ops_services_selection = [
     "redis-commander",
@@ -136,12 +135,12 @@ class _RemoteProcessLifecycleManager:
         self,
         remote_process: _RemoteProcess,
         rabbit_service: RabbitSettings,
-        redis_service: RedisSettings,
+        redis_settings: RedisSettings,
         max_workers: int,
     ) -> None:
         self.remote_process = remote_process
         self.rabbit_service = rabbit_service
-        self.redis_service = redis_service
+        self.redis_settings = redis_settings
         self.max_workers = max_workers
 
     async def __aenter__(self) -> "_RemoteProcessLifecycleManager":
@@ -168,7 +167,7 @@ class _RemoteProcessLifecycleManager:
                 ),
                 "redis": json_dumps(
                     model_dump_with_secrets(
-                        self.redis_service,
+                        self.redis_settings,
                         show_secrets=True,
                         **_get_serialization_options(),
                     )
@@ -256,7 +255,7 @@ async def _sleep_in_interval(lower: NonNegativeFloat, upper: NonNegativeFloat) -
 async def test_workflow_with_outages_in_process_running_deferred_manager(
     get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
     remote_processes: int,
     max_workers: int,
     deferred_tasks_to_start: NonNegativeInt,
@@ -269,7 +268,7 @@ async def test_workflow_with_outages_in_process_running_deferred_manager(
                     _RemoteProcessLifecycleManager(
                         await get_remote_process(),
                         rabbit_service,
-                        redis_service,
+                        use_in_memory_redis,
                         max_workers,
                     )
                 )
@@ -333,8 +332,7 @@ async def rabbit_client(
 
 
 class ClientWithPingProtocol(Protocol):
-    async def ping(self) -> bool:
-        ...
+    async def ping(self) -> bool: ...
 
 
 class ServiceManager:
@@ -404,7 +402,7 @@ async def test_workflow_with_third_party_services_outages(
     rabbit_client: RabbitMQClient,
     get_remote_process: Callable[[], Awaitable[_RemoteProcess]],
     rabbit_service: RabbitSettings,
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
     max_workers: int,
     deferred_tasks_to_start: int,
     service: str,
@@ -416,7 +414,7 @@ async def test_workflow_with_third_party_services_outages(
     async with _RemoteProcessLifecycleManager(
         await get_remote_process(),
         rabbit_service,
-        redis_service,
+        use_in_memory_redis,
         max_workers,
     ) as manager:
         # start all in parallel
