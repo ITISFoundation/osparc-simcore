@@ -222,6 +222,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
             const newInterval = parseInt(interval) * 1000;
             this.setHeartbeatInterval(newInterval);
 
+            // we consider the app is connected when the backend set the heartbeat interval
             this.setAppConnected(true);
           }
         }, this);
