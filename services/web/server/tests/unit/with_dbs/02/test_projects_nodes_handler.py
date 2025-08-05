@@ -63,10 +63,6 @@ from tenacity import (
     wait_fixed,
 )
 
-pytest_simcore_core_services_selection = [
-    "redis",
-]
-
 
 @pytest.mark.parametrize(
     "user_role,expected",
@@ -930,7 +926,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_stop_node(
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
