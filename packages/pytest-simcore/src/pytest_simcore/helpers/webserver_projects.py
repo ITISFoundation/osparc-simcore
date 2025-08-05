@@ -12,8 +12,10 @@ from typing import Any
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from common_library.dict_tools import remap_keys
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from pydantic import TypeAdapter
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
 from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
@@ -75,7 +77,12 @@ async def create_project(
 
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
-    workbench: dict[str, Any] = project_data.pop("workbench", {})
+    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(
+        project_data.pop("workbench", {})
+    )
+    fake_required_resources: dict[str, Any] = ServiceResourcesDictHelpers.model_config[
+        "json_schema_extra"
+    ]["examples"][0]
 
     project_created = await db.insert_project(
         project_data,
@@ -85,14 +92,14 @@ async def create_project(
         force_as_template=as_template,
         # NOTE: fake initial resources until more is needed
         project_nodes={
-            NodeID(node_id): ProjectNodeCreate(
-                node_id=NodeID(node_id),
-                required_resources=ServiceResourcesDictHelpers.model_config[
-                    "json_schema_extra"
-                ]["examples"][0],
-                **node_info,
+            node_id: ProjectNodeCreate(
+                node_id=node_id,
+                required_resources=fake_required_resources,
+                **node_model.model_dump(
+                    by_alias=False, exclude_unset=True, mode="json"
+                ),
             )
-            for node_id, node_info in workbench.items()
+            for node_id, node_model in workbench.items()
         },
     )
 
