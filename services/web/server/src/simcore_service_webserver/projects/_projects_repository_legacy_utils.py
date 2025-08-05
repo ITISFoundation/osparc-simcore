@@ -197,7 +197,7 @@ class BaseProjectDB:
         exclude_fields = {"node_id", "required_resources", "created", "modified"}
         workbench: NodesDict = {}
 
-        project_nodes = await project_nodes_repo.list(connection)
+        project_nodes = await project_nodes_repo.list(connection)  # type: ignore
         for project_node in project_nodes:
             node_data = project_node.model_dump(
                 exclude=exclude_fields, exclude_none=True, exclude_unset=True
