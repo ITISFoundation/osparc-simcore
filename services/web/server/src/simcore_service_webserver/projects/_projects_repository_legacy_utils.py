@@ -21,10 +21,10 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from simcore_postgres_database.webserver_models import (
     projects,
 )
-from simcore_service_webserver.projects._nodes_repository import ProjectNodesRepo
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..db.models import GroupType, groups, projects_tags, user_to_groups, users
+from ..projects._nodes_repository import ProjectNodesRepo
 from ..users.exceptions import UserNotFoundError
 from ..utils import format_datetime
 from ._projects_repository import PROJECT_DB_COLS
