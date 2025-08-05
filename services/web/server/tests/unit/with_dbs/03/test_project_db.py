@@ -168,7 +168,6 @@ def _assert_project_db_row(
         "description": project["description"],
         "thumbnail": project["thumbnail"],
         "prj_owner": None,
-        "workbench": project["workbench"],
         "published": False,
         "dev": project["dev"],
         "classifiers": project["classifiers"],

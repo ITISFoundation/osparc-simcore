@@ -305,9 +305,28 @@ class ProjectDBAPI(BaseProjectDB):
         # extract workbench nodes
         workbench: dict[str, Any] = insert_values.pop("workbench", {})
         project_nodes = project_nodes or {}
+
+        # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
+        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+        # Mapping from camelCase (workbench) to snake_case (ProjectNodeCreate)
+        field_mapping = {
+            "inputAccess": "input_access",
+            "inputNodes": "input_nodes",
+            "inputsUnits": "inputs_units",
+            "outputNodes": "output_nodes",
+            "runHash": "run_hash",
+            "bootOptions": "boot_options",
+        }
+
         project_nodes |= {
             NodeID(node_id): ProjectNodeCreate(
-                node_id=NodeID(node_id), **project_workbench_node
+                node_id=NodeID(node_id),
+                **{
+                    str(field_mapping.get(field, field)): value
+                    for field, value in project_workbench_node.items()
+                    if field_mapping.get(field, field) in valid_fields
+                },
             )
             for node_id, project_workbench_node in workbench.items()
         }
@@ -320,10 +339,7 @@ class ProjectDBAPI(BaseProjectDB):
             project_nodes=project_nodes,
         )
 
-        inserted_project["workbench"] = {
-            f"{node_id}": project_node.model_dump_as_node()
-            for node_id, project_node in project_nodes.items()
-        }
+        inserted_project["workbench"] = workbench
 
         async with self.engine.acquire() as conn:
             # Returns created project with names as in the project schema
