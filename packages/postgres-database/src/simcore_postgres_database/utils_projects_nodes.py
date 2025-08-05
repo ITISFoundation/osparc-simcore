@@ -72,7 +72,7 @@ class ProjectNodeCreate(BaseModel):
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
         return cls.model_fields.keys() - exclude
 
-    def _get_node_exclude_fields(self) -> set[str]:
+    def _get_node_exclude_fields(self) -> set[str]:  # pylint: disable=no-self-use
         """Get the base fields to exclude when converting to Node model."""
         return {"node_id", "required_resources"}
 
@@ -100,7 +100,7 @@ class ProjectNode(ProjectNodeCreate):
 
     model_config = ConfigDict(from_attributes=True)
 
-    def _get_node_exclude_fields(self) -> set[str]:
+    def _get_node_exclude_fields(self) -> set[str]:  # pylint: disable=no-self-use
         """Get the fields to exclude when converting to Node model, including DB-specific fields."""
         base_excludes = super()._get_node_exclude_fields()
         return base_excludes | {"created", "modified"}
