@@ -7,11 +7,11 @@ class BaseStore:
 
     @abstractmethod
     async def get_task_data(self, task_id: TaskId) -> TaskData | None:
-        """Retrieve a tracked task by its key."""
+        """Retrieve a tracked task"""
 
     @abstractmethod
     async def set_task_data(self, task_id: TaskId, value: TaskData) -> None:
-        """Set a tracked task with its key."""
+        """Set a tracked task's data"""
 
     @abstractmethod
     async def list_tasks_data(self) -> list[TaskData]:
@@ -19,7 +19,7 @@ class BaseStore:
 
     @abstractmethod
     async def delete_task_data(self, task_id: TaskId) -> None:
-        """Delete a tracked task by its key."""
+        """Delete a tracked task."""
 
     @abstractmethod
     async def set_as_cancelled(
