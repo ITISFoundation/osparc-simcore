@@ -501,24 +501,46 @@ qx.Class.define("osparc.Application", {
               osparc.store.Store.getInstance().setCurrentStudyId(studyId);
             }
 
-            let mainPage = null;
-            if (osparc.product.Utils.getProductName().includes("s4ldesktop")) {
-              mainPage = new osparc.desktop.MainPageDesktop();
+            const loadViewerPage = () => {
+              const mainPage = new osparc.desktop.MainPage();
+              this.__mainPage = mainPage;
+              this.__loadView(mainPage);
+            };
+            const wsInstance = osparc.wrapper.WebSocket.getInstance();
+            if (wsInstance.isAppConnected()) {
+              loadViewerPage();
             } else {
-              mainPage = new osparc.desktop.MainPage();
+              const listenerId = wsInstance.addListener("changeAppConnected", function(e) {
+                if (e.getData()) {
+                  wsInstance.removeListenerById(listenerId);
+                  loadViewerPage();
+                }
+              }, this);
             }
-            this.__mainPage = mainPage;
-            this.__loadView(mainPage);
           }
         })
         .catch(err => console.error(err));
     },
 
-    __loadNodeViewerPage: async function(studyId, viewerNodeId) {
+    __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
-      const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
-      this.__mainPage = mainPage;
-      this.__loadView(mainPage);
+
+      const loadNodeViewerPage = () => {
+        const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
+        this.__mainPage = mainPage;
+        this.__loadView(mainPage);
+      };
+      const wsInstance = osparc.wrapper.WebSocket.getInstance();
+      if (wsInstance.isAppConnected()) {
+        loadNodeViewerPage();
+      } else {
+        const listenerId = wsInstance.addListener("changeAppConnected", e => {
+          if (e.getData()) {
+            wsInstance.removeListenerById(listenerId);
+            loadNodeViewerPage();
+          }
+        }, this);
+      }
     },
 
     __loadView: function(view, opts, clearUrl=true) {
