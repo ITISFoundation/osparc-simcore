@@ -80,6 +80,13 @@ class RedisStore(BaseStore):
             )
         )
 
+    async def delete_set_as_cancelled(self, task_id: TaskId) -> None:
+        await handle_redis_returns_union_types(
+            self._redis.hdel(
+                self._get_redis_hash_key(_STORE_TYPE_CANCELLED_TASKS), task_id
+            )
+        )
+
     async def get_cancelled(self) -> dict[TaskId, TaskContext]:
         result: dict[str, str | None] = await handle_redis_returns_union_types(
             self._redis.hgetall(self._get_redis_hash_key(_STORE_TYPE_CANCELLED_TASKS))

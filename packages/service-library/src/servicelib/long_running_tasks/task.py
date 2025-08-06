@@ -150,6 +150,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 lock_key=f"{__name__}_{self.redis_namespace}_stale_tasks_monitor",
             )(self._stale_tasks_monitor),
             interval=self.stale_task_check_interval,
+            wait_before_running=self.stale_task_check_interval,
             task_name=f"{__name__}.{self._stale_tasks_monitor.__name__}",
         )
         await self._started_event_task_stale_tasks_monitor.wait()
@@ -255,8 +256,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         self._started_event_task_cancelled_tasks_removal.set()
 
         cancelled_tasks = await self._tasks_data.get_cancelled()
-        for task_id, task_context in cancelled_tasks.items():
-            await self.remove_task(task_id, task_context, reraise_errors=False)
+        for task_id in cancelled_tasks:
+            await self._cancel_and_remove_local_task(task_id)
 
     async def _status_update(self) -> None:
         """
@@ -368,19 +369,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         return string_to_object(tracked_task.result_field.result)
 
-    async def _cancel_tracked_task(
-        self, task: asyncio.Task, task_id: TaskId, with_task_context: TaskContext
-    ) -> None:
-        try:
-            await self._tasks_data.set_as_cancelled(task_id, with_task_context)
-            await cancel_wait_task(task)
-        except Exception as e:  # pylint:disable=broad-except
-            _logger.info(
-                "Task %s cancellation failed with error: %s",
-                task_id,
-                e,
-                stack_info=True,
-            )
+    async def _cancel_and_remove_local_task(self, task_id: TaskId) -> None:
+        """cancels task and removes if from local tracker if this is the worke that started it"""
+
+        task_to_cancel = self._created_tasks.pop(task_id, None)
+        if task_to_cancel is not None:
+            await cancel_wait_task(task_to_cancel)
+            await self._tasks_data.delete_set_as_cancelled(task_id)
+            await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
         self,
@@ -397,26 +393,22 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 raise
             return
 
-        if tracked_task.task_id in self._created_tasks:
-            task_to_cancel = self._created_tasks.pop(tracked_task.task_id, None)
-            if task_to_cancel is not None:
-                # canceling the task affects the worker that started it.
-                # awaiting the cancelled task is a must since if the CancelledError
-                # was intercepted, those actions need to finish
-                await cancel_wait_task(task_to_cancel)
-
-            await self._tasks_data.delete_task_data(task_id)
+        await self._tasks_data.set_as_cancelled(
+            tracked_task.task_id, tracked_task.task_context
+        )
 
         # wait for task to be removed since it might not have been running
         # in this process
         async for attempt in AsyncRetrying(
-            wait=wait_exponential(max=2),
+            wait=wait_exponential(max=1),
             stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
             retry=retry_if_exception_type(TryAgain),
         ):
             with attempt:
                 try:
-                    await self._get_tracked_task(task_id, with_task_context)
+                    await self._get_tracked_task(
+                        tracked_task.task_id, tracked_task.task_context
+                    )
                     raise TryAgain
                 except TaskNotFoundError:
                     pass
