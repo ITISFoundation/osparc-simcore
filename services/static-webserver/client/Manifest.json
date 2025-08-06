@@ -27,7 +27,7 @@
       "osparc/schedulerWorker.js",
       "svg/svg.js",
       "svg/svg.path.js",
-      "jsondiffpatch/jsondiffpatch.0.7.3.min.js",
+      "jsondiffpatch/jsondiffpatch-0.7.3.min.js",
       "jsontreeviewer/jsonTree.js",
       "marked/marked.min.js",
       "DOMPurify/purify.min.js"
