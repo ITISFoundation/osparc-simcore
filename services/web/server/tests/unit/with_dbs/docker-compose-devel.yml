@@ -82,7 +82,7 @@ services:
         scheduled_maintenance:redis:6379:3:${TEST_REDIS_PASSWORD},
         user_notifications:redis:6379:4:${TEST_REDIS_PASSWORD},
         announcements:redis:6379:5:${TEST_REDIS_PASSWORD},
-        distributed_identifiers:redis:6379:6:${TEST_REDIS_PASSWORD},
+        long_running_tasks:redis:6379:6:${TEST_REDIS_PASSWORD},
         deferred_tasks:redis:6379:7:${TEST_REDIS_PASSWORD},
         dynamic_services:${REDIS_HOST}:${REDIS_PORT}:8:${TEST_REDIS_PASSWORD},
         celery_tasks:${REDIS_HOST}:${REDIS_PORT}:9:${TEST_REDIS_PASSWORD},

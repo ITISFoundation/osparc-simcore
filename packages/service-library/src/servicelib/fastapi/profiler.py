@@ -1,11 +1,11 @@
 from typing import Any, Final
 
 from fastapi import FastAPI
-from servicelib.aiohttp import status
-from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from ..aiohttp import status
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
 from ..utils_profiling_middleware import (
     _is_profiling,
     _profiler,

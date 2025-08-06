@@ -47,6 +47,8 @@ async def create_task_manager(
         ),
         client_name="celery_tasks",
     )
+    await redis_client_sdk.setup()
+    # GCR please address https://github.com/ITISFoundation/osparc-simcore/issues/8159
 
     return CeleryTaskManager(
         app,
