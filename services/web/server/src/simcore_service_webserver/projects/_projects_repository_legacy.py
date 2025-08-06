@@ -394,9 +394,14 @@ class ProjectDBAPI(BaseProjectDB):
                 .group_by(project_to_groups.c.project_uuid)
             ).subquery("my_access_rights_subquery")
 
+            workbench_subquery = make_workbench_subquery()
+
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
+                    sa.func.coalesce(
+                        workbench_subquery.c.workbench, sa.text("'{}'::json")
+                    ).label("workbench"),
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -410,6 +415,10 @@ class ProjectDBAPI(BaseProjectDB):
                             & (projects_to_folders.c.user_id == user_id)
                         ),
                         isouter=True,
+                    )
+                    .outerjoin(
+                        workbench_subquery,
+                        workbench_subquery.c.project_uuid == projects.c.uuid,
                     )
                 )
                 .where(
