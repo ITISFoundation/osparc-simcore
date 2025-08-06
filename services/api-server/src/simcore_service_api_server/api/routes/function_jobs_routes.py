@@ -2,6 +2,7 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi_pagination.api import create_page
+from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.functions import (
     FunctionClass,
@@ -113,7 +114,7 @@ async def list_function_jobs(
         FunctionJobService, Depends(get_function_job_service)
     ],
     filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
-):
+) -> AbstractPage[RegisteredFunctionJob]:
     function_jobs_list, meta = await function_job_service.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,

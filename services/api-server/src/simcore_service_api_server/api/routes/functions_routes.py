@@ -5,6 +5,7 @@ from typing import Annotated, Final, Literal
 import jsonschema
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi_pagination.api import create_page
+from fastapi_pagination.bases import AbstractPage
 from jsonschema import ValidationError
 from models_library.api_schemas_api_server.functions import (
     Function,
@@ -166,7 +167,7 @@ async def get_function(
 async def list_functions(
     function_service: Annotated[FunctionService, Depends(get_function_service)],
     page_params: Annotated[PaginationParams, Depends()],
-):
+) -> AbstractPage[RegisteredFunction]:
     functions_list, meta = await function_service.list_functions(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -193,7 +194,7 @@ async def list_function_jobs_for_functionid(
         FunctionJobService, Depends(get_function_job_service)
     ],
     page_params: Annotated[PaginationParams, Depends()],
-):
+) -> AbstractPage[RegisteredFunctionJob]:
     function_jobs_list, meta = await function_job_service.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
