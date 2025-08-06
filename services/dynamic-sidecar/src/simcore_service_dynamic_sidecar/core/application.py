@@ -146,7 +146,11 @@ def create_base_app() -> FastAPI:
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
 
-    long_running_tasks.server.setup(app)
+    long_running_tasks.server.setup(
+        app,
+        redis_settings=app_settings.REDIS_SETTINGS,
+        redis_namespace=f"dy_sidecar-{app_settings.DY_SIDECAR_RUN_ID}",
+    )
 
     app.include_router(get_main_router(app))
 

@@ -77,7 +77,7 @@ async def test_listing_tasks_with_list_inprocess_tasks_error(
     assert client.app
 
     class _DummyTaskManager:
-        def list_tasks(self, *args, **kwargs):
+        async def list_tasks(self, *args, **kwargs):
             raise Exception  # pylint: disable=broad-exception-raised  # noqa: TRY002
 
     mock = Mock()

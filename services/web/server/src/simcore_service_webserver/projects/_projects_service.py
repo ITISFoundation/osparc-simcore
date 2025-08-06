@@ -204,9 +204,10 @@ async def patch_project_and_notify_users(
         new_partial_project_data=patch_project_data,
     )
 
-    project_document, document_version = (
-        await create_project_document_and_increment_version(app, project_uuid)
-    )
+    (
+        project_document,
+        document_version,
+    ) = await create_project_document_and_increment_version(app, project_uuid)
     await notify_project_document_updated(
         app=app,
         project_id=project_uuid,
@@ -1666,10 +1667,15 @@ async def _get_project_share_state(
     4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
+    app_settings = get_application_settings(app)
     prj_locked_state = await get_project_locked_state(
         get_redis_lock_manager_client_sdk(app), project_uuid
     )
-    app_settings = get_application_settings(app)
+    with managed_resource(user_id, None, app) as rt:
+        user_sessions_with_project = await rt.find_users_of_resource(
+            app, PROJECT_ID_KEY, project_uuid
+        )
+
     if prj_locked_state:
         _logger.debug(
             "project [%s] is currently locked: %s",
@@ -1685,7 +1691,17 @@ async def _get_project_share_state(
                     ProjectStatus.CLONING,
                     ProjectStatus.EXPORTING,
                     ProjectStatus.MAINTAINING,
-                ],
+                ]
+                or (
+                    (
+                        app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
+                        is not None
+                    )
+                    and (
+                        len(user_sessions_with_project)
+                        < app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
+                    )
+                ),
                 current_user_groupids=(
                     [
                         await users_service.get_user_primary_group_id(
@@ -1696,6 +1712,7 @@ async def _get_project_share_state(
                     else []
                 ),
             )
+        # "old" behavior to remove once RTC is fully implemented
         return ProjectShareState(
             status=prj_locked_state.status,
             locked=prj_locked_state.value,
@@ -1710,29 +1727,27 @@ async def _get_project_share_state(
             ),
         )
 
-    # let's now check if anyone has the project in use somehow
-    with managed_resource(user_id, None, app) as rt:
-        user_sessions_with_project = await rt.find_users_of_resource(
-            app, PROJECT_ID_KEY, project_uuid
-        )
-    set_user_ids = {user_session.user_id for user_session in user_sessions_with_project}
-
-    if not set_user_ids:
+    if not user_sessions_with_project:
         # no one has the project, so it is unlocked and closed.
         _logger.debug("project [%s] is not in use", f"{project_uuid=}")
         return ProjectShareState(
             status=ProjectStatus.CLOSED, locked=False, current_user_groupids=[]
         )
 
+    # let's now check if anyone has the project in use somehow
+    active_user_ids = {
+        user_session.user_id for user_session in user_sessions_with_project
+    }
+
     _logger.debug(
         "project [%s] might be used by the following users: [%s]",
         f"{project_uuid=}",
-        f"{set_user_ids=}",
+        f"{active_user_ids=}",
     )
 
     if app_settings.WEBSERVER_REALTIME_COLLABORATION is None:  # noqa: SIM102
         # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
-        if set_user_ids.issubset(
+        if active_user_ids.issubset(
             {user_id}
         ) and not await _user_has_another_active_session(
             user_sessions_with_project, app
@@ -1741,7 +1756,7 @@ async def _get_project_share_state(
             _logger.debug(
                 "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
                 f"{project_uuid=}",
-                f"{set_user_ids=}",
+                f"{active_user_ids=}",
             )
             return ProjectShareState(
                 status=ProjectStatus.OPENED,
@@ -1749,19 +1764,30 @@ async def _get_project_share_state(
                 current_user_groupids=await limited_gather(
                     *[
                         users_service.get_user_primary_group_id(app, user_id=uid)
-                        for uid in set_user_ids
+                        for uid in active_user_ids
                     ],
                     limit=10,
                 ),
             )
 
+    # compute lock state
+    if app_settings.WEBSERVER_REALTIME_COLLABORATION is None:
+        locked = True
+    elif app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS is None:
+        locked = False
+    else:
+        locked = (
+            len(user_sessions_with_project)
+            >= app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
+        )
+
     return ProjectShareState(
         status=ProjectStatus.OPENED,
-        locked=bool(app_settings.WEBSERVER_REALTIME_COLLABORATION is None),
+        locked=locked,
         current_user_groupids=await limited_gather(
             *[
                 users_service.get_user_primary_group_id(app, user_id=uid)
-                for uid in set_user_ids
+                for uid in active_user_ids
             ],
             limit=10,
         ),
