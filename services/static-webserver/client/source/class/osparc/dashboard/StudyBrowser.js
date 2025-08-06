@@ -1210,12 +1210,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
         // then update the search context this will trigger the search
         const searchContext = data["searchContext"];
-        switch (searchContext) {
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-            this._changeContext(searchContext);
-            break;
+        if ([
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+        ].includes(searchContext)) {
+          this._changeContext(searchContext);
         }
       });
     },
@@ -1304,7 +1304,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _changeContext: function(context, workspaceId = null, folderId = null) {
       if (
-        !context.includes("search") && // load projects if search string changed
+        !context.includes("search") && // move on if it's a search context, it will be handled later
         context === this.getCurrentContext() &&
         workspaceId === this.getCurrentWorkspaceId() &&
         folderId === this.getCurrentFolderId()
@@ -1315,11 +1315,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (
         context.includes("search") &&
+        context === this.getCurrentContext() &&
         this.__lastUrlParams &&
         "text" in this.__lastUrlParams &&
         this.__lastUrlParams["text"] === this._searchBarFilter.getTextFilterValue()
       ) {
-        // text search didn't change
+        // context and text search didn't change
         return;
       }
 
