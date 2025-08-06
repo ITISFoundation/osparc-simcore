@@ -419,12 +419,13 @@ qx.Class.define("osparc.store.Services", {
           }
         },
         release: {
-          "version": "0.0.0",
-          "versionDisplay": null,
-          "retired": null,
+          version: "0.0.0",
+          versionDisplay: null,
+          retired: null,
           released: "2024-11-27T14:03:19.212649",
-          "compatibility": null,
+          compatibility: null,
         },
+        history: [],
       };
     },
 
