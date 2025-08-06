@@ -1302,7 +1302,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    _changeContext: function(context, workspaceId = null, folderId = null) {)
+    _changeContext: function(context, workspaceId = null, folderId = null) {
       if (
         !context.includes("search") && // move on if it's a search context, it will be handled later
         context === this.getCurrentContext() &&
