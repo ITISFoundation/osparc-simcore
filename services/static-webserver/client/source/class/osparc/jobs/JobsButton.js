@@ -109,7 +109,6 @@ qx.Class.define("osparc.jobs.JobsButton", {
     },
 
     __updateJobsButton: function(isActive) {
-      isActive = true;
       this.getChildControl("icon");
       [
         this.getChildControl("is-active-icon-outline"),

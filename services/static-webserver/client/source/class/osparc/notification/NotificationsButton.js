@@ -101,7 +101,6 @@ qx.Class.define("osparc.notification.NotificationsButton", {
       notifications.forEach(notification => notification.addListener("changeRead", () => this.__updateButton(), this));
 
       let nUnreadNotifications = notifications.filter(notification => notification.getRead() === false).length;
-      nUnreadNotifications = 5;
       [
         this.getChildControl("is-active-icon-outline"),
         this.getChildControl("is-active-icon"),

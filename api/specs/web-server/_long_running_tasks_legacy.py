@@ -26,7 +26,7 @@ router = APIRouter(
     name="list_tasks",
     description="Lists all long running tasks",
 )
-def list_tasks(): ...
+async def list_tasks(): ...
 
 
 @router.get(
@@ -35,7 +35,7 @@ def list_tasks(): ...
     name="get_task_status",
     description="Retrieves the status of a task",
 )
-def get_task_status(
+async def get_task_status(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
@@ -46,7 +46,7 @@ def get_task_status(
     description="Cancels and deletes a task",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def cancel_and_delete_task(
+async def cancel_and_delete_task(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 
@@ -57,6 +57,6 @@ def cancel_and_delete_task(
     response_model=Any,
     description="Retrieves the result of a task",
 )
-def get_task_result(
+async def get_task_result(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
