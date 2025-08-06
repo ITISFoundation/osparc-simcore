@@ -211,7 +211,7 @@ qx.Class.define("osparc.Preferences", {
     },
 
     __patchPreference: function(value, old, propName) {
-      // only patch if it changed
+      // only patch if the value changed
       if (value === old) {
         return;
       }
