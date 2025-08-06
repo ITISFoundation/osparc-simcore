@@ -4,12 +4,14 @@ import functools
 import inspect
 import logging
 import urllib.parse
+from contextlib import suppress
 from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
+from servicelib.logging_utils import log_catch
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -38,7 +40,7 @@ _logger = logging.getLogger(__name__)
 
 _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
-
+_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 
 
@@ -150,7 +152,6 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 lock_key=f"{__name__}_{self.redis_namespace}_stale_tasks_monitor",
             )(self._stale_tasks_monitor),
             interval=self.stale_task_check_interval,
-            wait_before_running=self.stale_task_check_interval,
             task_name=f"{__name__}.{self._stale_tasks_monitor.__name__}",
         )
         await self._started_event_task_stale_tasks_monitor.wait()
@@ -190,7 +191,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         # stale_tasks_monitor
         if self._task_stale_tasks_monitor:
-            await cancel_wait_task(self._task_stale_tasks_monitor)
+            # since the task is using a redis lock, it might not have been started
+            # inside other processes, this helps to avoid getting stuck since the task
+            # might have never been created
+            with log_catch(_logger, reraise=False):
+                await cancel_wait_task(
+                    self._task_stale_tasks_monitor,
+                    max_delay=_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT,
+                )
 
         # cancelled_tasks_removal
         if self._task_cancelled_tasks_removal:
@@ -235,16 +243,19 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             # - finished with a result
             # - finished with errors
             # we just print the status from where one can infer the above
-            _logger.warning(
-                "Removing stale task '%s' with status '%s'",
-                task_id,
-                (
-                    await self.get_task_status(task_id, with_task_context=task_context)
-                ).model_dump_json(),
-            )
-            await self.remove_task(
-                task_id, with_task_context=task_context, reraise_errors=False
-            )
+            with suppress(TaskNotFoundError):
+                _logger.warning(
+                    "Removing stale task '%s' with status '%s'",
+                    task_id,
+                    (
+                        await self.get_task_status(
+                            task_id, with_task_context=task_context
+                        )
+                    ).model_dump_json(),
+                )
+                await self.remove_task(
+                    task_id, with_task_context=task_context, reraise_errors=False
+                )
 
     async def _cancelled_tasks_removal(self) -> None:
         """
