@@ -94,7 +94,7 @@ def clone_project_document(
         )
 
         # exclude annotations UI info for conversations done in the source project
-        annotations = project_copy.get("ui", {}).get("annotations", {}).copy()
+        annotations = deepcopy(project_copy.get("ui", {}).get("annotations", {}))
         for ann_id, ann in annotations.items():
             if ann["type"] == "conversation":
                 project_copy["ui"]["annotations"].pop(ann_id)
