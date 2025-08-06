@@ -1501,7 +1501,7 @@ async def test_open_shared_project_multiple_users(
     other_users: list[
         tuple[UserInfoDict, TestClient, str, socketio.AsyncClient, _SocketHandlers]
     ] = []
-    for _ in range(1, max_number_of_user_sessions):
+    for user_session in range(1, max_number_of_user_sessions):
         client_i = client_on_running_server_factory()
 
         # user i logs in
@@ -1521,7 +1521,7 @@ async def test_open_shared_project_multiple_users(
         opened_project_state = opened_project_state.model_copy(
             update={
                 "share_state": ProjectShareStateOutputSchema(
-                    locked=False,
+                    locked=(not user_session < max_number_of_user_sessions - 1),
                     status=ProjectStatus.OPENED,
                     current_user_groupids=[
                         *opened_project_state.share_state.current_user_groupids,
