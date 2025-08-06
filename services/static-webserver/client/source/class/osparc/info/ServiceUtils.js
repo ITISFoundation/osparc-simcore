@@ -122,20 +122,27 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createAccessRights: function(serviceData) {
-      let permissions = "";
-      const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = serviceData["accessRights"];
-      if (myGID in ar) {
-        if (ar[myGID]["write"]) {
-          permissions = qx.locale.Manager.tr("Write");
-        } else if (ar[myGID]["execute"]) {
-          permissions = qx.locale.Manager.tr("Execute");
+      const allMyGIds = osparc.store.Groups.getInstance().getAllMyGroupIds();
+      const accessRights = serviceData["accessRights"];
+      const permissions = new Set();
+      allMyGIds.forEach(gId => {
+        if (gId in accessRights) {
+          if (accessRights[gId]["write"]) {
+            permissions.add("write");
+          } else if (accessRights[gId]["execute"]) {
+            permissions.add("read");
+          }
         }
+      });
+      const accessRightsLabel = new qx.ui.basic.Label();
+      if (permissions.has("write")) {
+        accessRightsLabel.setValue(osparc.data.Roles.SERVICES["write"].label);
+      } else if (permissions.has("read")) {
+        accessRightsLabel.setValue(osparc.data.Roles.SERVICES["read"].label);
       } else {
-        permissions = qx.locale.Manager.tr("Public");
+        accessRightsLabel.setValue(qx.locale.Manager.tr("Public"));
       }
-      const accessRights = new qx.ui.basic.Label(permissions);
-      return accessRights;
+      return accessRightsLabel;
     },
 
     /**
