@@ -53,9 +53,6 @@ class RedisStore(BaseStore):
         return TypeAdapter(TaskData).validate_json(result) if result else None
 
     async def set_task_data(self, task_id: TaskId, value: TaskData) -> None:
-        _logger.debug(
-            "Setting task data for task_id=%s with data value=%s", task_id, value
-        )
         await handle_redis_returns_union_types(
             self._redis.hset(
                 self._get_redis_hash_key(_STORE_TYPE_TASK_DATA),
