@@ -6,9 +6,9 @@
 
 import asyncio
 import urllib.parse
-from collections.abc import AsyncIterator, Awaitable, Callable
-from datetime import datetime, timedelta
-from typing import Any, Final
+from collections.abc import Awaitable, Callable
+from datetime import datetime
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -32,6 +32,7 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+from utils import TEST_CHECK_STALE_INTERVAL_S
 
 _RETRY_PARAMS: dict[str, Any] = {
     "reraise": True,
@@ -72,39 +73,10 @@ TaskRegistry.register(a_background_task)
 TaskRegistry.register(fast_background_task)
 TaskRegistry.register(failing_background_task)
 
-TEST_CHECK_STALE_INTERVAL_S: Final[float] = 1
-
 
 @pytest.fixture
 def empty_context() -> TaskContext:
     return {}
-
-
-@pytest.fixture
-async def get_tasks_manager(
-    faker: Faker,
-) -> AsyncIterator[
-    Callable[[RedisSettings, RedisNamespace | None], Awaitable[TasksManager]]
-]:
-    managers: list[TasksManager] = []
-
-    async def _(
-        redis_settings: RedisSettings, namespace: RedisNamespace | None
-    ) -> TasksManager:
-        tasks_manager = TasksManager(
-            stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
-            stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
-            redis_settings=redis_settings,
-            redis_namespace=namespace or f"test{faker.uuid4()}",
-        )
-        await tasks_manager.setup()
-        managers.append(tasks_manager)
-        return tasks_manager
-
-    yield _
-
-    for manager in managers:
-        await manager.teardown()
 
 
 @pytest.fixture
