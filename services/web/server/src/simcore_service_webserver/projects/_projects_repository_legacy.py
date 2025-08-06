@@ -61,6 +61,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
     ProjectNodesRepo,
+    make_workbench_subquery,
 )
 from simcore_postgres_database.webserver_models import (
     ProjectType,
@@ -451,10 +452,14 @@ class ProjectDBAPI(BaseProjectDB):
                 .group_by(workspaces_access_rights.c.workspace_id)
             ).subquery("my_workspace_access_rights_subquery")
 
+            workbench_subquery = make_workbench_subquery()
+
             shared_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
+                    sa.func.coalesce(
+                        workbench_subquery.c.workbench, sa.text("'{}'::json")
+                    ).label("workbench"),
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -472,6 +477,10 @@ class ProjectDBAPI(BaseProjectDB):
                             & (projects_to_folders.c.user_id.is_(None))
                         ),
                         isouter=True,
+                    )
+                    .outerjoin(
+                        workbench_subquery,
+                        workbench_subquery.c.project_uuid == projects.c.uuid,
                     )
                 )
                 .where(projects_to_products.c.product_name == product_name)
