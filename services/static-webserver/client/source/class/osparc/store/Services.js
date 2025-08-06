@@ -35,6 +35,10 @@ qx.Class.define("osparc.store.Services", {
 
         osparc.data.Resources.getInstance().getAllPages("services")
           .then(servicesArray => {
+            // OM testing purposes
+            const unknownMetadata = this.getUnknownServiceMetadata();
+            servicesArray.push(unknownMetadata); // add a dummy service to test the NodeUnknown class
+
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
             this.__addTSRInfos(servicesObj);
@@ -400,10 +404,10 @@ qx.Class.define("osparc.store.Services", {
       return this.getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
     },
 
-    getUnknownServiceMetadata: function(key, version) {
+    getUnknownServiceMetadata: function() {
       return {
-        key: key || "simcore/services/frontend/unknown",
-        version: version || "0.0.0",
+        key: "simcore/services/frontend/unknown",
+        version: "0.0.0",
         type: "frontend",
         name: "Unknown",
         inputs: {},
@@ -413,6 +417,13 @@ qx.Class.define("osparc.store.Services", {
             execute: true,
             write: false,
           }
+        },
+        release: {
+          "version": "0.0.0",
+          "versionDisplay": null,
+          "retired": null,
+          released: "2024-11-27T14:03:19.212649",
+          "compatibility": null,
         },
       };
     },

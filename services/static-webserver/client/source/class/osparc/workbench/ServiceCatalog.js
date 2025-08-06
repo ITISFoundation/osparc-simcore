@@ -201,9 +201,6 @@ qx.Class.define("osparc.workbench.ServiceCatalog", {
       const excludeDeprecated = true;
       osparc.store.Services.getServicesLatestList(excludeFrontend, excludeDeprecated)
         .then(servicesList => {
-          // OM testing purposes
-          const unknownMetadata = osparc.store.Services.getUnknownServiceMetadata("asdf", "0.4.2");
-          servicesList.push(unknownMetadata); // add a dummy service to test the NodeUnknown class
           // first check metadata is complete
           this.__servicesLatest = servicesList.filter(service => service !== null && service.inputs && service.outputs);
           this.__updateList();
