@@ -191,9 +191,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         # stale_tasks_monitor
         if self._task_stale_tasks_monitor:
-            # since the task is using a redis lock, it might not have been started
-            # inside other processes, this helps to avoid getting stuck since the task
-            # might have never been created
+            # since the task is using a redis lock if the lock could not be acquired
+            # trying to cancel the task will hang, this avoids hanging
+            # there are no sideeffects in timing out this cancellation
             with log_catch(_logger, reraise=False):
                 await cancel_wait_task(
                     self._task_stale_tasks_monitor,
