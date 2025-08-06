@@ -130,10 +130,8 @@ async def create_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,  # noqa: FBT002
-    x_simcore_parent_project_uuid: ProjectID | None = Header(  # noqa: B008
-        default=None
-    ),
-    x_simcore_parent_node_id: NodeID | None = Header(default=None),  # noqa: B008
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
 ) -> Job:
     """
     hidden -- if True (default) hides project from UI
