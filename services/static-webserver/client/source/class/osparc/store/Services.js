@@ -400,6 +400,23 @@ qx.Class.define("osparc.store.Services", {
       return this.getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
     },
 
+    getUnknownServiceMetadata: function(key, version) {
+      return {
+        key: key || "simcore/services/frontend/unknown",
+        version: version || "0.0.0",
+        type: "frontend",
+        name: "Unknown",
+        inputs: {},
+        outputs: {},
+        accessRights: {
+          1: {
+            execute: true,
+            write: false,
+          }
+        },
+      };
+    },
+
     __addServiceToCache: function(service) {
       this.__addHit(service);
       this.__addTSRInfo(service);
