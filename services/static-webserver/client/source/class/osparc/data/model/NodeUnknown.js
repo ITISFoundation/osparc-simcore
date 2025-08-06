@@ -34,14 +34,6 @@ qx.Class.define("osparc.data.model.NodeUnknown", {
     this.base(arguments, study, metadata, nodeId);
   },
 
-  statics: {
-  },
-
   members: {
-    // overridden to avoid populating with metadata
-    _populateWithMetadata: function() {
-      // this is overridden by the NodeUnknown class
-      // to avoid populating with metadata
-    }
   }
 });

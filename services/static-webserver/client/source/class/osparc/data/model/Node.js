@@ -62,7 +62,7 @@ qx.Class.define("osparc.data.model.Node", {
       status: new osparc.data.model.NodeStatus(this)
     });
 
-    this._populateWithMetadata();
+    this.__populateWithMetadata();
   },
 
   properties: {
@@ -482,7 +482,7 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    _populateWithMetadata: function() {
+    __populateWithMetadata: function() {
       const metadata = this.__metaData;
       if (metadata) {
         if (metadata.name) {
@@ -1286,7 +1286,7 @@ qx.Class.define("osparc.data.model.Node", {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();
         this.setKey(newMetadata["key"]);
-        this._populateWithMetadata();
+        this.__populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
         osparc.node.ParameterEditor.setParameterOutputValue(this, value);
@@ -1303,7 +1303,7 @@ qx.Class.define("osparc.data.model.Node", {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();
         this.setKey(metadata["key"]);
-        this._populateWithMetadata();
+        this.__populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
         this.__setInputData({
