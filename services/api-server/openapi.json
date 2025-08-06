@@ -6230,7 +6230,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection List Function Jobs List",
-        "description": "Get the function jobs in function job collection\n\nNew in *version 0.8.0*",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.10*",
         "operationId": "function_job_collection_list_function_jobs_list",
         "security": [
           {
