@@ -100,7 +100,7 @@ async def app(
     app.include_router(server_routes)
     setup_server(app, redis_settings=use_in_memory_redis, redis_namespace="test")
     setup_client(app)
-    async with LifespanManager(app):
+    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
 
