@@ -1209,13 +1209,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             break;
         }
         // then update the search context this will trigger the search
-        const searchContext = data["searchContext"];
-        switch (searchContext) {
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-            this._changeContext(searchContext);
-            break;
+        if ([
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+        ].includes(curatedContext)) {
+          this._changeContext(curatedContext);
         }
       });
     },
