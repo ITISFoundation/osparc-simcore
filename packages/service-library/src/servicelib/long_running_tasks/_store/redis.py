@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Final
 
 import redis.asyncio as aioredis
@@ -10,8 +9,6 @@ from ...redis._client import RedisClientSDK
 from ...redis._utils import handle_redis_returns_union_types
 from ..models import TaskContext, TaskData, TaskId
 from .base import BaseStore
-
-_logger = logging.getLogger(__name__)
 
 _STORE_TYPE_TASK_DATA: Final[str] = "TD"
 _STORE_TYPE_CANCELLED_TASKS: Final[str] = "CT"
