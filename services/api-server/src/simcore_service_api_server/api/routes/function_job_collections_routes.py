@@ -3,6 +3,7 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
+from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -93,7 +94,7 @@ async def list_function_job_collections(
     ],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-):
+) -> AbstractPage[RegisteredFunctionJobCollection]:
     function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -214,7 +215,7 @@ async def function_job_collection_list_function_jobs_page(
         FunctionJobService, Depends(get_function_job_service)
     ],
     page_params: Annotated[PaginationParams, Depends()],
-):
+) -> AbstractPage[RegisteredFunctionJob]:
     function_jobs_list, meta = await function_job_service.list_function_jobs(
         filter_by_function_job_collection_id=function_job_collection_id,
         pagination_offset=page_params.offset,
@@ -229,7 +230,7 @@ async def function_job_collection_list_function_jobs_page(
     description=create_route_description(
         base="Get the function jobs in function job collection",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
         ],
     ),
 )
