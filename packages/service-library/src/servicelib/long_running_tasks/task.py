@@ -16,7 +16,7 @@ from tenacity import (
     TryAgain,
     retry_if_exception_type,
     stop_after_delay,
-    wait_fixed,
+    wait_exponential,
 )
 
 from ..background_task import create_periodic_task
@@ -40,7 +40,6 @@ _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(sec
 _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
 
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
-_TASK_REMOVAL_WAIT_CHECK_INTERVAL: Final[NonNegativeFloat] = 0.1
 
 
 RegisteredTaskName: TypeAlias = str
@@ -411,7 +410,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         # wait for task to be removed since it might not have been running
         # in this process
         async for attempt in AsyncRetrying(
-            wait=wait_fixed(_TASK_REMOVAL_WAIT_CHECK_INTERVAL),
+            wait=wait_exponential(max=2),
             stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
             retry=retry_if_exception_type(TryAgain),
         ):
