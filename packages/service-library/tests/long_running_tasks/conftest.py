@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import timedelta
@@ -17,15 +19,21 @@ _logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-async def get_tasks_manager(
-    faker: Faker, mocker: MockerFixture
-) -> AsyncIterator[
-    Callable[[RedisSettings, RedisNamespace | None], Awaitable[TasksManager]]
-]:
+async def mock_cancel_tasks_check_interval(
+    mocker: MockerFixture,
+) -> None:
     mocker.patch(
         "servicelib.long_running_tasks.task._CANCEL_TASKS_CHECK_INTERVAL",
         new=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
     )
+
+
+@pytest.fixture
+async def get_tasks_manager(
+    mock_cancel_tasks_check_interval: None, faker: Faker
+) -> AsyncIterator[
+    Callable[[RedisSettings, RedisNamespace | None], Awaitable[TasksManager]]
+]:
     managers: list[TasksManager] = []
 
     async def _(
