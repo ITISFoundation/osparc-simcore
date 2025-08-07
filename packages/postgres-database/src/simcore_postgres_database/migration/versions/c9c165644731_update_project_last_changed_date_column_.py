@@ -16,9 +16,9 @@ branch_labels = None
 depends_on = None
 
 
-update_projects_last_changed_date = sa.DDL(
+update_projects_last_change_date = sa.DDL(
     """
-CREATE OR REPLACE FUNCTION update_projects_last_changed_date()
+CREATE OR REPLACE FUNCTION update_projects_last_change_date()
 RETURNS TRIGGER AS $$
 DECLARE
     project_uuid VARCHAR;
@@ -30,7 +30,7 @@ BEGIN
     END IF;
 
     UPDATE projects
-    SET last_changed_date = NOW()
+    SET last_change_date = NOW()
     WHERE uuid = project_uuid;
 
     RETURN NULL;
@@ -46,18 +46,18 @@ DROP TRIGGER IF EXISTS projects_nodes_changed on projects_nodes;
 CREATE TRIGGER projects_nodes_changed
 AFTER INSERT OR UPDATE OR DELETE ON projects_nodes
 FOR EACH ROW
-EXECUTE FUNCTION update_projects_last_changed_date();
+EXECUTE FUNCTION update_projects_last_change_date();
 """
 )
 
 
 def upgrade():
-    op.execute(update_projects_last_changed_date)
+    op.execute(update_projects_last_change_date)
     op.execute(projects_nodes_changed)
 
 
 def downgrade():
-    op.execute(sa.DDL("DROP FUNCTION IF EXISTS update_projects_last_changed_date();"))
+    op.execute(sa.DDL("DROP FUNCTION IF EXISTS update_projects_last_change_date();"))
     op.execute(
         sa.DDL("DROP TRIGGER IF EXISTS projects_nodes_changed ON projects_nodes;")
     )
