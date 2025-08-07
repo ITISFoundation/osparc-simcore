@@ -1247,15 +1247,6 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
-    updated_project, _ = await _projects_repository_legacy.update_project_node_data(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_id=node_id,
-        product_name=product_name,
-        new_node_data=_node_patch_exclude_unset,
-        client_session_id=client_session_id,
-    )
-
     await _projects_nodes_repository.update(
         app,
         project_id=project_id,
