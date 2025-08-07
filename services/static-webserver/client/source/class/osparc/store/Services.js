@@ -24,6 +24,8 @@ qx.Class.define("osparc.store.Services", {
     __studyServicesPromisesCached: {},
     __pricingPlansCached: {},
 
+    UNKNOWN_SERVICE_KEY: "simcore/services/frontend/unknown",
+
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
         if (useCache && Object.keys(this.__servicesCached)) {
@@ -408,7 +410,7 @@ qx.Class.define("osparc.store.Services", {
     },
 
     getUnknownServiceMetadata: function() {
-      const key = "simcore/services/frontend/unknown";
+      const key = this.UNKNOWN_SERVICE_KEY;
       const version = "0.0.0";
       const versionDisplay = "Unknown";
       const releaseInfo = {

@@ -350,7 +350,12 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       let nodeUI = null;
       try {
-        const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
+        let node = null;
+        if (service.getKey() === osparc.store.Services.UNKNOWN_SERVICE_KEY) {
+          node = this.__getWorkbench().createUnknownNode();
+        } else {
+          await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
+        }
         nodeUI = this._createNodeUI(node.getNodeId());
         this._addNodeUIToWorkbench(nodeUI, pos);
         qx.ui.core.queue.Layout.flush();
