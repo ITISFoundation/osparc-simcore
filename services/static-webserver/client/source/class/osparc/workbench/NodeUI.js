@@ -105,8 +105,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     type: {
-      check: ["normal", "file", "parameter", "iterator", "probe"],
-      init: "normal",
+      check: ["computational", "dynamic", "file", "parameter", "iterator", "probe", "unknown"],
+      init: null,
       nullable: false,
       apply: "__applyType"
     },
@@ -321,7 +321,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
           converter: val => val === null ? 0 : val
         });
       }
-      if (node.isFilePicker()) {
+      if (node.isComputational()) {
+        this.setType("computational");
+      } else if (node.isDynamic()) {
+        this.setType("dynamic");
+      } else if (node.isFilePicker()) {
         this.setType("file");
       } else if (node.isParameter()) {
         this.setType("parameter");
@@ -330,6 +334,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.setType("iterator");
       } else if (node.isProbe()) {
         this.setType("probe");
+      } else if (node.isUnknown()) {
+        this.setType("unknown");
       }
       this.addListener("resize", () => {
         setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
@@ -468,6 +474,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
         case "probe":
           this.__turnIntoProbeUI();
           break;
+        case "unknown":
+          this.__turnIntoUnknownUI();
+          break;
       }
     },
 
@@ -583,6 +592,15 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
       this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(linkLabel), this);
       this.__setProbeValue(linkLabel);
+    },
+
+    __turnIntoUnknownUI: function() {
+      const width = 150;
+      this.__setNodeUIWidth(width);
+
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add();
+      this.fireEvent("updateNodeDecorator");
     },
 
     __checkTurnIntoIteratorUI: function() {

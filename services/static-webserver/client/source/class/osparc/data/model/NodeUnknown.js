@@ -36,12 +36,22 @@ qx.Class.define("osparc.data.model.NodeUnknown", {
     // but keep the original key and version
     if (key && version) {
       this.set({
-        key: key || metadata["key"],
-        version: version || metadata["version"],
+        key,
+        version,
       });
     }
   },
 
   members: {
+    // override
+    serialize: function() {
+      /*
+      if (this.getKey() === osparc.store.Services.UNKNOWN_SERVICE_KEY) {
+        return null;
+      }
+      */
+
+      return this.base(arguments);
+    }
   }
 });
