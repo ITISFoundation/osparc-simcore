@@ -63,7 +63,6 @@ COLORS = {
 class LogExtra(TypedDict):
     log_uid: NotRequired[str]
     log_oec: NotRequired[str]
-    log_trace_id: NotRequired[str]
 
 
 def get_log_record_extra(
@@ -98,7 +97,10 @@ class CustomFormatter(logging.Formatter):
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
 
-        for name in LogExtra.__optional_keys__:  # pylint: disable=no-member
+        optional_keys = LogExtra.__optional_keys__ | frozenset(
+            ["otelTraceID", "otelSpanID"]
+        )  # pylint: disable=no-member
+        for name in optional_keys:
             if not hasattr(record, name):
                 setattr(record, name, None)
 
@@ -121,13 +123,14 @@ _DEFAULT_FORMATTING: Final[str] = " | ".join(
         "log_uid=%(log_uid)s",
         "log_oec=%(log_oec)s",
         "log_trace_id=%(otelTraceID)s",
+        "log_span_id=%(otelSpanID)s",
         "log_msg=%(message)s",
     ]
 )
 
 _LOCAL_FORMATTING: Final[str] = (
     "%(levelname)s: [%(asctime)s/%(processName)s] "
-    "[log_trace_id=%(otelTraceID)s] "
+    "[log_trace_id=%(otelTraceID)s|log_span_id=%(otelSpanID)s] "
     "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
 )
 

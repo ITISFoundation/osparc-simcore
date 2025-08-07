@@ -614,6 +614,7 @@ def _create_test_log_record(
     user_id: int | str | None = None,
     error_code: str | None = None,
     trace_id: str | None = None,
+    span_id: str | None = None,
 ) -> logging.LogRecord:
     """Create a test LogRecord with optional extra fields."""
     from servicelib.logging_utils import get_log_record_extra
@@ -637,6 +638,7 @@ def _create_test_log_record(
 
     # Add OpenTelemetry trace ID
     record.otelTraceID = trace_id  # type: ignore[attr-defined]
+    record.otelSpanID = span_id  # type: ignore[attr-defined]
 
     return record
 
@@ -670,6 +672,7 @@ def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
         user_id=12345,
         error_code="OEC001",
         trace_id="1234567890abcdef1234567890abcdef",
+        span_id="987654321",
     )
 
     # Format the record
@@ -691,6 +694,7 @@ def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
     assert groups["log_uid"] == "12345"
     assert groups["log_oec"] == "OEC001"
     assert groups["log_trace_id"] == "1234567890abcdef1234567890abcdef"
+    assert groups["log_span_id"] == "987654321"
 
     # Verify the message is correctly escaped (newlines become \\n)
     expected_message = test_message.replace("\n", "\\n")
@@ -725,6 +729,7 @@ def test_grok_pattern_parsing_with_none_values(
         user_id=None,
         error_code=None,
         trace_id=None,
+        span_id=None,
     )
 
     formatted_log = formatter.format(record)
@@ -741,4 +746,5 @@ def test_grok_pattern_parsing_with_none_values(
     assert groups["log_uid"] == "None"
     assert groups["log_oec"] == "None"
     assert groups["log_trace_id"] == "None"
+    assert groups["log_span_id"] == "None"
     assert groups["log_msg"] == "Error message"
