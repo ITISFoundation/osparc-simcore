@@ -44,7 +44,7 @@ from .function_jobs_routes import function_job_status, get_function_job
 function_job_collections_router = APIRouter()
 
 FIRST_RELEASE_VERSION = "0.8.0"
-JOB_LIST_PAGE_RELEASE_VERSION = "0.9.0"
+JOB_LIST_PAGE_RELEASE_VERSION = "0.10.0"
 
 _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
     status.HTTP_404_NOT_FOUND: {
@@ -62,7 +62,7 @@ ENDPOINTS = [
 CHANGE_LOGS = {}
 for endpoint in ENDPOINTS:
     CHANGE_LOGS[endpoint] = [
-        FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8.0"),
+        FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
     ]
     if endpoint in [
         "list_function_job_collections",
@@ -205,7 +205,7 @@ async def function_job_collection_list_function_jobs(
     description=create_route_description(
         base="Get the function jobs in function job collection",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(JOB_LIST_PAGE_RELEASE_VERSION),
         ],
     ),
 )
@@ -230,7 +230,7 @@ async def function_job_collection_list_function_jobs_page(
     description=create_route_description(
         base="Get the function jobs in function job collection",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(JOB_LIST_PAGE_RELEASE_VERSION),
         ],
     ),
 )
