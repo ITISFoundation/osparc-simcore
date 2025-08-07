@@ -24,13 +24,6 @@ from tenacity import (
     wait_fixed,
 )
 
-pytest_simcore_core_services_selection = [
-    "redis",
-]
-pytest_simcore_ops_services_selection = [
-    "redis-commander",
-]
-
 
 @pytest.fixture
 async def redis_client_sdk(

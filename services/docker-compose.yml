@@ -1465,6 +1465,7 @@ services:
     networks:
       - default
       - autoscaling_subnet
+      - interactive_services_subnet
     volumes:
       - redis-data:/data
     healthcheck:
