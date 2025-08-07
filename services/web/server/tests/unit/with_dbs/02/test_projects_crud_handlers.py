@@ -207,6 +207,16 @@ async def test_list_projects(
         project_permalink = got.pop("permalink")
         folder_id = got.pop("folderId")
 
+        got_last_change_date = got.pop("lastChangeDate", None)
+        template_project_last_change_date = template_project.pop("lastChangeDate", None)
+        if (
+            got_last_change_date is not None
+            and template_project_last_change_date is not None
+        ):
+            assert to_datetime(got_last_change_date) >= to_datetime(
+                template_project_last_change_date
+            )
+
         assert got == {k: template_project[k] for k in got}
 
         assert not ProjectStateOutputSchema(
@@ -219,6 +229,16 @@ async def test_list_projects(
         project_state = got.pop("state")
         project_permalink = got.pop("permalink", None)
         folder_id = got.pop("folderId")
+
+        got_last_change_date = got.pop("lastChangeDate", None)
+        user_project_last_change_date = user_project.pop("lastChangeDate", None)
+        if (
+            got_last_change_date is not None
+            and user_project_last_change_date is not None
+        ):
+            assert to_datetime(got_last_change_date) >= to_datetime(
+                user_project_last_change_date
+            )
 
         assert got == {k: user_project[k] for k in got}
 
@@ -237,6 +257,16 @@ async def test_list_projects(
         project_permalink = got.pop("permalink", None)
         folder_id = got.pop("folderId")
 
+        got_last_change_date = got.pop("lastChangeDate", None)
+        user_project_last_change_date = user_project.pop("lastChangeDate", None)
+        if (
+            got_last_change_date is not None
+            and user_project_last_change_date is not None
+        ):
+            assert to_datetime(got_last_change_date) >= to_datetime(
+                user_project_last_change_date
+            )
+
         assert got == {k: user_project[k] for k in got}
         assert not ProjectStateOutputSchema(
             **project_state
@@ -254,6 +284,16 @@ async def test_list_projects(
         project_state = got.pop("state")
         project_permalink = got.pop("permalink")
         folder_id = got.pop("folderId")
+
+        got_last_change_date = got.pop("lastChangeDate", None)
+        template_project_last_change_date = template_project.pop("lastChangeDate", None)
+        if (
+            got_last_change_date is not None
+            and template_project_last_change_date is not None
+        ):
+            assert to_datetime(got_last_change_date) >= to_datetime(
+                template_project_last_change_date
+            )
 
         assert got == {k: template_project[k] for k in got}
         assert not ProjectStateOutputSchema(
