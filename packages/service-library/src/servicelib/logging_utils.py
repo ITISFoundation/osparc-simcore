@@ -137,7 +137,6 @@ _LOCAL_FORMATTING: Final[str] = (
 
 def _setup_logging_formatter(
     *,
-    tracing_settings: TracingSettings | None,
     log_format_local_dev_enabled: bool,
 ) -> logging.Formatter:
     fmt = _LOCAL_FORMATTING if log_format_local_dev_enabled else _DEFAULT_FORMATTING
@@ -206,7 +205,6 @@ def _configure_common_logging_settings(
         setup_log_tracing(tracing_settings=tracing_settings)
 
     return _setup_logging_formatter(
-        tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 

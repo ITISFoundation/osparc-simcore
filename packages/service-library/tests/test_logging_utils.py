@@ -1,7 +1,9 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
+import io
 import logging
+import re
 from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
@@ -10,6 +12,8 @@ from typing import Any
 import pytest
 from faker import Faker
 from servicelib.logging_utils import (
+    _DEFAULT_FORMATTING,
+    CustomFormatter,
     LogExtra,
     LogLevelInt,
     LogMessageStr,
@@ -646,10 +650,6 @@ def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
 
     WARNING: If log formatting changes, the Grok pattern in Graylog must be updated accordingly.
     """
-    import io
-    import re
-
-    from servicelib.logging_utils import _DEFAULT_FORMATTING, CustomFormatter
 
     # Create a custom handler with the default formatter
     log_stream = io.StringIO()
@@ -709,10 +709,6 @@ def test_grok_pattern_parsing_with_none_values(
 
     WARNING: If log formatting changes, the Grok pattern in Graylog must be updated accordingly.
     """
-    import io
-    import re
-
-    from servicelib.logging_utils import _DEFAULT_FORMATTING, CustomFormatter
 
     # Create a custom handler with the default formatter
     handler = logging.StreamHandler(io.StringIO())
