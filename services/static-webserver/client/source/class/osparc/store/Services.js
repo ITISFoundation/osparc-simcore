@@ -154,6 +154,9 @@ qx.Class.define("osparc.store.Services", {
       // ensure that the promise is immediately stored in the cache before any asynchronous
       // operations (like fetch) are executed. This prevents duplicate requests for the
       // same key and version when multiple consumers call getService concurrently.
+      if (!(key in this.__servicesPromisesCached)) {
+        this.__servicesPromisesCached[key] = {};
+      }
       this.__servicesPromisesCached[key][version] = promise;
       return promise;
     },
