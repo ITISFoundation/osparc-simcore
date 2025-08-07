@@ -7,8 +7,13 @@
 
 import pytest
 from faker import Faker
+from models_library.projects_nodes import Node
 from pydantic import TypeAdapter, ValidationError
 from pytest_simcore.helpers.faker_factories import random_phone_number
+from simcore_postgres_database.utils_projects_nodes import (
+    ProjectNode,
+    ProjectNodeCreate,
+)
 from simcore_service_webserver.users._controller.rest._rest_schemas import (
     MyPhoneRegister,
     PhoneNumberStr,
@@ -67,3 +72,36 @@ def test_invalid_phone_numbers(phone: str):
     # This test is used to tune options of PhoneNumberValidator
     with pytest.raises(ValidationError):
         MyPhoneRegister.model_validate({"phone": phone})
+
+
+_node_examples = Node.model_json_schema()["examples"]
+
+
+@pytest.mark.parametrize(
+    "node_data",
+    _node_examples,
+    ids=[f"example-{i}" for i in range(len(_node_examples))],
+)
+def test_adapters_between_project_node_models(node_data: dict, faker: Faker):
+    # -> to Node
+    node_id = faker.uuid4()
+    node = Node.model_validate(node_data)
+
+    # -> to ProjectNodeCreate and ProjectNode
+    project_node_create = ProjectNodeCreate(
+        node_id=node_id,
+        **node.model_dump(by_alias=False, mode="json"),
+    )
+    project_node = ProjectNode(
+        node_id=node_id,
+        created=faker.date_time(),
+        modified=faker.date_time(),
+        **node.model_dump(by_alias=False, mode="json"),
+    )
+
+    # -> to Node
+    assert (
+        Node.model_validate(project_node_create.model_dump_as_node(), by_name=True)
+        == node
+    )
+    assert Node.model_validate(project_node.model_dump_as_node(), by_name=True) == node
