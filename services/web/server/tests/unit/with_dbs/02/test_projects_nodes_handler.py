@@ -49,6 +49,7 @@ from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects as projects_db_model
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._controller.nodes_rest import (
     _ProjectNodePreview,
@@ -756,13 +757,11 @@ async def test_delete_node(
         # ensure the node is gone
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select(projects_db_model.c.workbench).where(
-                    projects_db_model.c.uuid == user_project["uuid"]
-                )
+                sa.select(sa.literal(1))
+                .where(projects_nodes.c.node_id == node_id)
+                .limit(1)
             )
-            assert result
-            workbench = result.one()[projects_db_model.c.workbench]
-            assert node_id not in workbench
+            assert result.scalar() is None
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)

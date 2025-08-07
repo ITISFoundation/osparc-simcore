@@ -43,6 +43,22 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
 ]
 
 
+async def delete(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.execute(
+            projects_nodes.delete().where(
+                (projects_nodes.c.project_uuid == f"{project_id}")
+                & (projects_nodes.c.node_id == f"{node_id}")
+            )
+        )
+
+
 async def get(
     app: web.Application,
     connection: AsyncConnection | None = None,

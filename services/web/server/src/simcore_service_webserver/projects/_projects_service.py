@@ -998,16 +998,14 @@ async def start_project_node(
     project_id: ProjectID,
     node_id: NodeID,
 ):
-    project = await get_project_for_user(request.app, f"{project_id}", user_id)
-    workbench = project.get("workbench", {})
-    if not workbench.get(f"{node_id}"):
-        raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
-    node_details = Node.model_construct(**workbench[f"{node_id}"])
+    node = await _projects_nodes_repository.get(
+        request.app, project_id=project_id, node_id=node_id
+    )
 
     await _start_dynamic_service(
         request,
-        service_key=node_details.key,
-        service_version=node_details.version,
+        service_key=node.key,
+        service_version=node.version,
         product_name=product_name,
         product_api_base_url=product_api_base_url,
         user_id=user_id,
@@ -1090,12 +1088,12 @@ async def delete_project_node(
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
-    # remove the node from the db
-    db_legacy: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    assert db_legacy  # nosec
-    await db_legacy.remove_project_node(
-        user_id, project_uuid, NodeID(node_uuid), client_session_id=client_session_id
+    await _projects_nodes_repository.delete(
+        request.app,
+        project_id=project_uuid,
+        node_id=NodeID(node_uuid),
     )
+
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
@@ -1103,6 +1101,24 @@ async def delete_project_node(
     )
     await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=project_uuid
+    )
+
+    (
+        project_document,
+        document_version,
+    ) = await create_project_document_and_increment_version(request.app, project_uuid)
+
+    user_primary_gid = await users_service.get_user_primary_group_id(
+        request.app, user_id
+    )
+
+    await notify_project_document_updated(
+        app=request.app,
+        project_id=project_uuid,
+        user_primary_gid=user_primary_gid,
+        client_session_id=client_session_id,
+        version=document_version,
+        document=project_document,
     )
 
 
