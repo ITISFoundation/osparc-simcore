@@ -161,7 +161,12 @@ from .exceptions import (
     ProjectTooManyUserSessionsError,
     ProjectTypeAndTemplateIncompatibilityError,
 )
-from .models import ProjectDBGet, ProjectDict, ProjectPatchInternalExtended
+from .models import (
+    ProjectDBGet,
+    ProjectDict,
+    ProjectPatchInternalExtended,
+    ProjectWithWorkbenchDBGet,
+)
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
@@ -1278,8 +1283,10 @@ async def patch_project_node(
             app, project_id=project_id
         )
 
-    updated_project = await _projects_repository.get_project_with_workbench(
-        app, project_uuid=project_id
+    updated_project: ProjectWithWorkbenchDBGet = (
+        await _projects_repository.get_project_with_workbench(
+            app, project_uuid=project_id
+        )
     )
 
     # 5. Updates project states for user, if inputs/outputs have been changed

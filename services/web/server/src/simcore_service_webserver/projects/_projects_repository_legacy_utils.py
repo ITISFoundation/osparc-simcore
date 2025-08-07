@@ -191,8 +191,8 @@ class BaseProjectDB:
                 .on_conflict_do_nothing()
             )
 
+    @staticmethod
     async def _get_workbench(
-        self,
         connection: SAConnection,
         project_uuid: str,
     ) -> NodesDict:
