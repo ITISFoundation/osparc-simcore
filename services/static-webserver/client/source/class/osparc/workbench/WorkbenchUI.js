@@ -354,7 +354,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         if (service.getKey() === osparc.store.Services.UNKNOWN_SERVICE_KEY) {
           node = this.__getWorkbench().createUnknownNode();
         } else {
-          await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
+          node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
         }
         nodeUI = this._createNodeUI(node.getNodeId());
         this._addNodeUIToWorkbench(nodeUI, pos);
