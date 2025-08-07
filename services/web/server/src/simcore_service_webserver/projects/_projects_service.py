@@ -1171,17 +1171,6 @@ async def update_project_node_state(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
-    # Delete this once workbench is removed from the projects table
-    # See: https://github.com/ITISFoundation/osparc-simcore/issues/7046
-    await db_legacy.update_project_node_data(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_id=node_id,
-        product_name=None,
-        new_node_data={"state": {"currentStatus": new_state}},
-        client_session_id=client_session_id,
-    )
-
     await _projects_nodes_repository.update(
         app,
         project_id=project_id,
@@ -1190,6 +1179,14 @@ async def update_project_node_state(
             state=NodeState(current_status=RunningState(new_state))
         ),
     )
+
+    await _create_project_document_and_notify(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        client_session_id=client_session_id,
+    )
+
     return await get_project_for_user(
         app, user_id=user_id, project_uuid=f"{project_id}", include_state=True
     )
