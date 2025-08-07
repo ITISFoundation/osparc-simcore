@@ -63,7 +63,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     captionBar.set({
       cursor: "move",
       paddingRight: 0,
-      paddingLeft: this.self().PORT_WIDTH
+      paddingLeft: this.self().PORT_DIAMETER - 6,
     });
 
     const menuBtn = this.__getMenuButton();
@@ -133,7 +133,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     NODE_WIDTH: 180,
     NODE_HEIGHT: 80,
     FILE_NODE_WIDTH: 120,
-    PORT_HEIGHT: 18,
+    PORT_DIAMETER: 18,
     PORT_WIDTH: 11,
     CONTENT_PADDING: 2,
     PORT_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
@@ -845,7 +845,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __createPort: function(isInput, placeholder = false) {
       let port = null;
-      const width = this.self().PORT_HEIGHT;
+      const width = this.self().PORT_DIAMETER;
       if (placeholder) {
         port = new qx.ui.core.Spacer(width, width);
       } else {
@@ -888,7 +888,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const bounds = this.getCurrentBounds();
       const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width - 1;
-      const y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2 + 2;
+      const y = bounds.top + captionHeight + this.self().PORT_DIAMETER/2 + 2;
       return [x, y];
     },
 
