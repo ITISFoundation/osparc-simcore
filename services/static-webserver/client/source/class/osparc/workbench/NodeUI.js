@@ -852,9 +852,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
         port = new qx.ui.basic.Image().set({
           source: this.self().PORT_DISCONNECTED, // disconnected by default
           height: width,
+          width: width,
           draggable: true,
           droppable: true,
-          width: width,
           alignY: "top",
           backgroundColor: "background-main"
         });
