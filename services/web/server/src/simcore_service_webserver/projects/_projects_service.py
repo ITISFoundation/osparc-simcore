@@ -935,9 +935,9 @@ async def _start_dynamic_service(  # noqa: C901
 
 async def add_project_node(
     request: web.Request,
-    project: dict[str, Any],
     user_id: UserID,
     product_name: str,
+    project_id: ProjectID,
     product_api_base_url: str,
     service_key: ServiceKey,
     service_version: ServiceVersion,
@@ -948,14 +948,14 @@ async def add_project_node(
         "starting node %s:%s in project %s for user %s",
         service_key,
         service_version,
-        project["uuid"],
+        project_id,
         user_id,
         extra=get_log_record_extra(user_id=user_id),
     )
 
     await check_user_project_permission(
         request.app,
-        project_id=project["uuid"],
+        project_id=project_id,
         user_id=user_id,
         product_name=product_name,
         permission="write",
@@ -968,7 +968,7 @@ async def add_project_node(
 
     await _projects_nodes_repository.add(
         request.app,
-        project_id=ProjectID(project["uuid"]),
+        project_id=project_id,
         node_id=node_uuid,
         node=Node(
             key=service_key,
@@ -980,7 +980,7 @@ async def add_project_node(
 
     await _create_project_document_and_notify(
         request.app,
-        project_id=ProjectID(project["uuid"]),
+        project_id=project_id,
         user_id=user_id,
         client_session_id=client_session_id,
     )
@@ -990,12 +990,12 @@ async def add_project_node(
     await director_v2_service.create_or_update_pipeline(
         request.app,
         user_id,
-        project["uuid"],
+        project_id,
         product_name,
         product_api_base_url,
     )
     await dynamic_scheduler_service.update_projects_networks(
-        request.app, project_id=ProjectID(project["uuid"])
+        request.app, project_id=project_id
     )
 
     if _is_node_dynamic(service_key):
@@ -1008,7 +1008,7 @@ async def add_project_node(
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 user_id=user_id,
-                project_uuid=ProjectID(project["uuid"]),
+                project_uuid=project_id,
                 node_uuid=node_uuid,
             )
 
