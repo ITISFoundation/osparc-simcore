@@ -1249,6 +1249,22 @@ async def patch_project_node(
         partial_node=partial_node,
     )
 
+    (
+        project_document,
+        document_version,
+    ) = await create_project_document_and_increment_version(app, project_id)
+
+    user_primary_gid = await users_service.get_user_primary_group_id(app, user_id)
+
+    await notify_project_document_updated(
+        app=app,
+        project_id=project_id,
+        user_primary_gid=user_primary_gid,
+        client_session_id=client_session_id,
+        version=document_version,
+        document=project_document,
+    )
+
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
     await director_v2_service.create_or_update_pipeline(
         app,
@@ -1262,10 +1278,17 @@ async def patch_project_node(
             app, project_id=project_id
         )
 
+    updated_project = await _projects_repository.get_project_with_workbench(
+        app, project_uuid=project_id
+    )
+
     # 5. Updates project states for user, if inputs/outputs have been changed
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
         updated_project = await add_project_states_for_user(
-            user_id=user_id, project=updated_project, is_template=False, app=app
+            user_id=user_id,
+            project=updated_project.model_dump(),
+            is_template=False,
+            app=app,
         )
         for node_uuid in updated_project["workbench"]:
             await notify_project_node_update(
@@ -1273,7 +1296,9 @@ async def patch_project_node(
             )
         return
 
-    await notify_project_node_update(app, updated_project, node_id, errors=None)
+    await notify_project_node_update(
+        app, updated_project.model_dump(), node_id, errors=None
+    )
 
 
 async def update_project_node_outputs(

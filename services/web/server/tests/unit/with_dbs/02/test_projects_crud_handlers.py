@@ -168,6 +168,12 @@ async def _assert_get_same_project(
         project_permalink = data.pop("permalink", None)
         folder_id = data.pop("folderId", None)
 
+        got_last_change_date = data.pop("lastChangeDate", None)
+        project_last_change_date = project.pop("lastChangeDate", None)
+        if got_last_change_date is not None and project_last_change_date is not None:
+            assert to_datetime(got_last_change_date) >= to_datetime(
+                project_last_change_date
+            )
         assert data == {k: project[k] for k in data}
 
         if project_state:
