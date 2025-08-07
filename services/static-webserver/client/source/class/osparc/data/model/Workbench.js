@@ -273,8 +273,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       nodeRight.setInputConnected(true);
     },
 
-    __createNode: function(study, metadata, uuid) {
-      const node = new osparc.data.model.Node(study, metadata, uuid);
+    __createNode: function(study, metadata, nodeId) {
+      const node = new osparc.data.model.Node(study, metadata, nodeId);
       if (osparc.utils.Utils.eventDrivenPatch()) {
         node.listenToChanges();
         node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
@@ -288,6 +288,16 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__initNodeSignals(node);
       this.__addNode(node);
 
+      return node;
+    },
+
+    createUnknownNode: function(nodeId) {
+      if (nodeId === undefined) {
+        nodeId = osparc.utils.Utils.uuidV4();
+      }
+      const node = new osparc.data.model.NodeUnknown(this.getStudy(), null, null, nodeId);
+      this.__addNode(node);
+      node.populateNodeData();
       return node;
     },
 

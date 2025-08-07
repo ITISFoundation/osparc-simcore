@@ -24,6 +24,8 @@ qx.Class.define("osparc.store.Services", {
     __studyServicesPromisesCached: {},
     __pricingPlansCached: {},
 
+    UNKNOWN_SERVICE_KEY: "simcore/services/frontend/unknown",
+
     getServicesLatest: function(useCache = true) {
       return new Promise(resolve => {
         if (useCache && Object.keys(this.__servicesCached)) {
@@ -35,6 +37,10 @@ qx.Class.define("osparc.store.Services", {
 
         osparc.data.Resources.getInstance().getAllPages("services")
           .then(servicesArray => {
+            // OM testing purposes
+            const unknownMetadata = this.getUnknownServiceMetadata();
+            servicesArray.push(unknownMetadata); // add a dummy service to test the NodeUnknown class
+
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
             this.__addTSRInfos(servicesObj);
@@ -150,6 +156,9 @@ qx.Class.define("osparc.store.Services", {
       // ensure that the promise is immediately stored in the cache before any asynchronous
       // operations (like fetch) are executed. This prevents duplicate requests for the
       // same key and version when multiple consumers call getService concurrently.
+      if (!(key in this.__servicesPromisesCached)) {
+        this.__servicesPromisesCached[key] = {};
+      }
       this.__servicesPromisesCached[key][version] = promise;
       return promise;
     },
@@ -398,6 +407,37 @@ qx.Class.define("osparc.store.Services", {
 
     getProbeMetadata: function(type) {
       return this.getLatest("simcore/services/frontend/iterator-consumer/probe/"+type);
+    },
+
+    getUnknownServiceMetadata: function() {
+      const key = this.UNKNOWN_SERVICE_KEY;
+      const version = "0.0.0";
+      const versionDisplay = "Unknown";
+      const releaseInfo = {
+          version,
+          versionDisplay,
+          retired: null,
+          released: "2025-08-07T11:00:00.000000",
+          compatibility: null,
+      };
+      return {
+        key,
+        version,
+        versionDisplay,
+        description: "Unknown App",
+        type: "frontend",
+        name: "Unknown",
+        inputs: {},
+        outputs: {},
+        accessRights: {
+          1: {
+            execute: true,
+            write: false,
+          }
+        },
+        release: releaseInfo,
+        history: [releaseInfo],
+      };
     },
 
     __addServiceToCache: function(service) {

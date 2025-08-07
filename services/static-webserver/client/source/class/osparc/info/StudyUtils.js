@@ -84,21 +84,31 @@ qx.Class.define("osparc.info.StudyUtils", {
       * @param study {osparc.data.model.Study} Study Model
       */
     createAccessRights: function(study) {
-      const accessRights = new qx.ui.basic.Label();
-      let permissions = "";
-      const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = study.getAccessRights();
-      if (myGID in ar) {
-        if (ar[myGID]["delete"]) {
-          permissions = qx.locale.Manager.tr("Owner");
-        } else if (ar[myGID]["write"]) {
-          permissions = qx.locale.Manager.tr("Editor");
-        } else if (ar[myGID]["read"]) {
-          permissions = qx.locale.Manager.tr("User");
+      const allMyGIds = osparc.store.Groups.getInstance().getAllMyGroupIds();
+      const accessRights = study.getAccessRights();
+      const permissions = new Set();
+      allMyGIds.forEach(gId => {
+        if (gId in accessRights) {
+          if (accessRights[gId]["delete"]) {
+            permissions.add("delete");
+          } else if (accessRights[gId]["write"]) {
+            permissions.add("write");
+          } else if (accessRights[gId]["read"]) {
+            permissions.add("read");
+          }
         }
+      });
+      const accessRightsLabel = new qx.ui.basic.Label();
+      if (permissions.has("delete")) {
+        accessRightsLabel.setValue(osparc.data.Roles.STUDY["delete"].label);
+      } else if (permissions.has("write")) {
+        accessRightsLabel.setValue(osparc.data.Roles.STUDY["write"].label);
+      } else if (permissions.has("read")) {
+        accessRightsLabel.setValue(osparc.data.Roles.STUDY["read"].label);
+      } else {
+        accessRightsLabel.setValue(qx.locale.Manager.tr("Public"));
       }
-      accessRights.setValue(permissions);
-      return accessRights;
+      return accessRightsLabel;
     },
 
     /**

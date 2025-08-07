@@ -62,7 +62,7 @@ qx.Class.define("osparc.data.model.Node", {
       status: new osparc.data.model.NodeStatus(this)
     });
 
-    this.populateWithMetadata();
+    this.__populateWithMetadata();
   },
 
   properties: {
@@ -272,6 +272,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metadata && metadata.type && metadata.type === "computational");
     },
 
+    isUnknown: function(metadata) {
+      return (metadata && metadata.key && metadata.key === osparc.store.Services.UNKNOWN_SERVICE_KEY);
+    },
+
     isUpdatable: function(metadata) {
       return osparc.service.Utils.isUpdatable(metadata);
     },
@@ -404,6 +408,10 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isComputational(this.getMetaData());
     },
 
+    isUnknown: function() {
+      return osparc.data.model.Node.isUnknown(this.getMetaData());
+    },
+
     isUpdatable: function() {
       return osparc.data.model.Node.isUpdatable(this.getMetaData());
     },
@@ -482,7 +490,7 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    populateWithMetadata: function() {
+    __populateWithMetadata: function() {
       const metadata = this.__metaData;
       if (metadata) {
         if (metadata.name) {
@@ -1286,7 +1294,7 @@ qx.Class.define("osparc.data.model.Node", {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();
         this.setKey(newMetadata["key"]);
-        this.populateWithMetadata();
+        this.__populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
         osparc.node.ParameterEditor.setParameterOutputValue(this, value);
@@ -1303,7 +1311,7 @@ qx.Class.define("osparc.data.model.Node", {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();
         this.setKey(metadata["key"]);
-        this.populateWithMetadata();
+        this.__populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
         this.__setInputData({
