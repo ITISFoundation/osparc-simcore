@@ -591,10 +591,11 @@ def _create_grok_regex_pattern() -> str:
         r"%{NOTSPACE:log_uid}": r"(?P<log_uid>\S+)",
         r"%{NOTSPACE:log_oec}": r"(?P<log_oec>\S+)",
         r"%{NOTSPACE:log_trace_id}": r"(?P<log_trace_id>\S+)",
+        r"%{NOTSPACE:log_span_id}": r"(?P<log_span_id>\S+)",
         r"%{GREEDYDATA:log_msg}": r"(?P<log_msg>.*)",
     }
 
-    grok_pattern = r"log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_msg=%{GREEDYDATA:log_msg}"
+    grok_pattern = r"log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}"
 
     # Convert to regex
     regex_pattern = grok_pattern
