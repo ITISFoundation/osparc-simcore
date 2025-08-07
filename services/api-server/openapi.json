@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.10.0"
+    "version": "0.11.0"
   },
   "paths": {
     "/v0/meta": {
@@ -5305,7 +5305,7 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.10*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
         "operationId": "list_function_jobs",
         "security": [
           {
@@ -5770,7 +5770,7 @@
           "function_jobs"
         ],
         "summary": "Get Function Job Logs Task",
-        "description": "Get function job logs task\n\nNew in *version 0.10-rc1*",
+        "description": "Get function job logs task\n\nNew in *version 0.11.0*",
         "operationId": "get_function_job_logs_task",
         "security": [
           {
@@ -6148,7 +6148,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection List Function Jobs Page",
-        "description": "Get the function jobs in function job collection\n\nNew in *version 0.10*",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
         "operationId": "function_job_collection_list_function_jobs_page",
         "security": [
           {
@@ -6230,7 +6230,7 @@
           "function_job_collections"
         ],
         "summary": "Function Job Collection List Function Jobs List",
-        "description": "Get the function jobs in function job collection\n\nNew in *version 0.10*",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
         "operationId": "function_job_collection_list_function_jobs_list",
         "security": [
           {
