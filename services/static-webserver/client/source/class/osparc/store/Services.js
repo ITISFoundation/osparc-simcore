@@ -414,7 +414,7 @@ qx.Class.define("osparc.store.Services", {
           version,
           versionDisplay: null,
           retired: null,
-          released: "2024-11-27T14:03:19.212649",
+          released: "2025-08-07T11:00:00.000000",
           compatibility: null,
       };
       return {
