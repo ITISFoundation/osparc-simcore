@@ -220,12 +220,19 @@ qx.Class.define("osparc.workbench.NodeUI", {
             column: this.self().CAPTION_POS.DEPRECATED
           });
           break;
-        case "chips": {
+        case "middle-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
             alignY: "middle"
           })).set({
-            margin: [3, 4]
+            padding: [3, 4]
           });
+          this.add(control, {
+            row: 0,
+            column: 1
+          });
+          break;
+        case "node-type-chip": {
+          control = new osparc.ui.basic.Chip();
           let nodeType = this.getNode().getMetaData().type;
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
@@ -234,32 +241,34 @@ qx.Class.define("osparc.workbench.NodeUI", {
           }
           const type = osparc.service.Utils.getType(nodeType);
           if (type) {
-            const chip = new osparc.ui.basic.Chip().set({
+            control.set({
               icon: type.icon + "14",
               toolTipText: type.label
             });
-            control.add(chip);
           }
-          const nodeStatus = new osparc.ui.basic.NodeStatusUI(this.getNode());
-          control.add(nodeStatus);
-          const statusLabel = nodeStatus.getChildControl("label");
+          this.getChildControl("middle-container").add(control);
+          break;
+        }
+        case "node-status-ui": {
+          control = new osparc.ui.basic.NodeStatusUI(this.getNode()).set({
+            maxHeight: 20,
+            font: "text-10",
+          });
+          const statusLabel = control.getChildControl("label");
           const requestOpenLogger = () => this.fireEvent("requestOpenLogger");
           const evaluateLabel = () => {
             const failed = statusLabel.getValue() === "Unsuccessful";
             statusLabel.setCursor(failed ? "pointer" : "auto");
-            if (nodeStatus.hasListener("tap")) {
-              nodeStatus.removeListener("tap", requestOpenLogger);
+            if (control.hasListener("tap")) {
+              control.removeListener("tap", requestOpenLogger);
             }
             if (failed) {
-              nodeStatus.addListener("tap", requestOpenLogger);
+              control.addListener("tap", requestOpenLogger);
             }
           };
           evaluateLabel();
           statusLabel.addListener("changeValue", evaluateLabel);
-          this.add(control, {
-            row: 0,
-            column: 1
-          });
+          this.getChildControl("middle-container").add(control);
           break;
         }
         case "progress":
@@ -293,16 +302,19 @@ qx.Class.define("osparc.workbench.NodeUI", {
       });
       this.resetThumbnail();
 
-      this.__createWindowLayout();
+      this.__createContentLayout();
     },
 
-    __createWindowLayout: function() {
+    __createContentLayout: function() {
       const node = this.getNode();
+      if (node) {
+        this.getChildControl("middle-container").removeAll();
+        this.getChildControl("node-type-chip");
+        this.getChildControl("node-status-ui");
 
-      this.getChildControl("chips").show();
-
-      if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
-        this.getChildControl("progress").show();
+        if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
+          this.getChildControl("progress");
+        }
       }
     },
 
