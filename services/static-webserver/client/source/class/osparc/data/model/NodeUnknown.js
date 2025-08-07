@@ -29,9 +29,17 @@ qx.Class.define("osparc.data.model.NodeUnknown", {
     * @param nodeId {String} uuid of the service represented by the node (not needed for new Nodes)
     */
   construct: function(study, key, version, nodeId) {
+    // use the unknown metadata
     const metadata = osparc.store.Services.getUnknownServiceMetadata();
-
     this.base(arguments, study, metadata, nodeId);
+
+    // but keep the original key and version
+    if (key && version) {
+      this.set({
+        key: key || metadata["key"],
+        version: version || metadata["version"],
+      });
+    }
   },
 
   members: {
