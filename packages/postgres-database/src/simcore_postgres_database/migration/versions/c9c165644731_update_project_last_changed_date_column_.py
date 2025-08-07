@@ -57,7 +57,7 @@ def upgrade():
 
 
 def downgrade():
-    op.execute(sa.DDL("DROP FUNCTION IF EXISTS update_projects_last_change_date();"))
     op.execute(
         sa.DDL("DROP TRIGGER IF EXISTS projects_nodes_changed ON projects_nodes;")
     )
+    op.execute(sa.DDL("DROP FUNCTION IF EXISTS update_projects_last_change_date();"))
