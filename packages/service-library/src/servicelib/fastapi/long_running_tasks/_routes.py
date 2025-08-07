@@ -29,9 +29,7 @@ async def list_tasks(
                 request.url_for("cancel_and_delete_task", task_id=t.task_id)
             ),
         )
-        for t in await lrt_api.list_tasks(
-            long_running_manager.tasks_manager, task_context={}
-        )
+        for t in await lrt_api.list_tasks(long_running_manager, task_context={})
     ]
 
 
@@ -52,7 +50,7 @@ async def get_task_status(
 ) -> TaskStatus:
     assert request  # nosec
     return await lrt_api.get_task_status(
-        long_running_manager.tasks_manager, task_context={}, task_id=task_id
+        long_running_manager, task_context={}, task_id=task_id
     )
 
 
@@ -75,13 +73,13 @@ async def get_task_result(
 ) -> TaskResult | Any:
     assert request  # nosec
     return await lrt_api.get_task_result(
-        long_running_manager.tasks_manager, task_context={}, task_id=task_id
+        long_running_manager, task_context={}, task_id=task_id
     )
 
 
 @router.delete(
     "/{task_id}",
-    summary="Cancel and deletes a task",
+    summary="Cancels and removes a task",
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
@@ -89,7 +87,7 @@ async def get_task_result(
     },
 )
 @cancel_on_disconnect
-async def cancel_and_delete_task(
+async def remove_task(
     request: Request,
     task_id: TaskId,
     long_running_manager: Annotated[
@@ -97,6 +95,4 @@ async def cancel_and_delete_task(
     ],
 ) -> None:
     assert request  # nosec
-    await lrt_api.remove_task(
-        long_running_manager.tasks_manager, task_context={}, task_id=task_id
-    )
+    await lrt_api.remove_task(long_running_manager, task_context={}, task_id=task_id)

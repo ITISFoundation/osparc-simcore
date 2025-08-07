@@ -127,7 +127,7 @@ async def test_workflow(
     [
         ("GET", "get_task_status"),
         ("GET", "get_task_result"),
-        ("DELETE", "cancel_and_delete_task"),
+        ("DELETE", "remove_task"),
     ],
 )
 async def test_get_task_wrong_task_id_raises_not_found(
@@ -188,7 +188,7 @@ async def test_cancel_task(
     task_id = await start_long_running_task(client)
 
     # cancel the task
-    delete_url = client.app.router["cancel_and_delete_task"].url_for(task_id=task_id)
+    delete_url = client.app.router["remove_task"].url_for(task_id=task_id)
     result = await client.delete(f"{delete_url}")
     data, error = await assert_status(result, status.HTTP_204_NO_CONTENT)
     assert not data

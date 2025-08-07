@@ -63,7 +63,7 @@ async def start_long_running_task(
     task_id = None
     try:
         task_id = await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager,
             registerd_task_name,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
@@ -97,9 +97,7 @@ async def start_long_running_task(
     except asyncio.CancelledError:
         # remove the task, the client was disconnected
         if task_id:
-            await lrt_api.remove_task(
-                long_running_manager.tasks_manager, task_context, task_id
-            )
+            await lrt_api.remove_task(long_running_manager, task_context, task_id)
         raise
 
 

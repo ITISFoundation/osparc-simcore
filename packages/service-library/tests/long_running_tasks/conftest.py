@@ -13,7 +13,7 @@ from servicelib.long_running_tasks.task import (
     TasksManager,
 )
 from settings_library.redis import RedisSettings
-from utils import TEST_CHECK_STALE_INTERVAL_S
+from utils import TEST_CHECK_STALE_INTERVAL_S, NoWebAppLongRunningManager
 
 _logger = logging.getLogger(__name__)
 
@@ -54,3 +54,20 @@ async def get_tasks_manager(
     for manager in managers:
         with log_catch(_logger, reraise=False):
             await manager.teardown()
+
+
+@pytest.fixture
+def get_long_running_manager(
+    get_tasks_manager: Callable[
+        [RedisSettings, RedisNamespace | None], Awaitable[TasksManager]
+    ],
+) -> Callable[
+    [RedisSettings, RedisNamespace | None], Awaitable[NoWebAppLongRunningManager]
+]:
+    async def _(
+        redis_settings: RedisSettings, namespace: RedisNamespace | None
+    ) -> NoWebAppLongRunningManager:
+        tasks_manager = await get_tasks_manager(redis_settings, namespace)
+        return NoWebAppLongRunningManager(tasks_manager)
+
+    return _
