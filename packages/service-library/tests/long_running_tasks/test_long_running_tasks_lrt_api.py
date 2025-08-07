@@ -74,11 +74,7 @@ def disable_stale_tasks_monitor(mocker: MockerFixture) -> None:
     async def _to_replace(self: TasksManager) -> None:
         self._started_event_task_stale_tasks_monitor.set()
 
-    mocker.patch.object(
-        TasksManager,
-        "_stale_tasks_monitor",
-        _to_replace,
-    )
+    mocker.patch.object(TasksManager, "_stale_tasks_monitor", _to_replace)
 
 
 @pytest.fixture
