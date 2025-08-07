@@ -42,11 +42,11 @@ async def get_task_status(
 
 @router.delete(
     "/{task_id}",
-    name="cancel_and_delete_task",
-    description="Cancels and deletes a task",
+    name="remove_task",
+    description="Cancels and removes a task",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def cancel_and_delete_task(
+async def remove_task(
     _path_params: Annotated[_PathParam, Depends()],
 ): ...
 

@@ -26,7 +26,7 @@ async def list_tasks(request: web.Request) -> web.Response:
                 task_id=t.task_id,
                 status_href=f"{request.app.router['get_task_status'].url_for(task_id=t.task_id)}",
                 result_href=f"{request.app.router['get_task_result'].url_for(task_id=t.task_id)}",
-                abort_href=f"{request.app.router['cancel_and_delete_task'].url_for(task_id=t.task_id)}",
+                abort_href=f"{request.app.router['remove_task'].url_for(task_id=t.task_id)}",
             )
             for t in await lrt_api.list_tasks(
                 long_running_manager,

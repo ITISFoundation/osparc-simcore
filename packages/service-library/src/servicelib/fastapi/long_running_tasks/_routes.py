@@ -25,9 +25,7 @@ async def list_tasks(
             task_id=t.task_id,
             status_href=str(request.url_for("get_task_status", task_id=t.task_id)),
             result_href=str(request.url_for("get_task_result", task_id=t.task_id)),
-            abort_href=str(
-                request.url_for("cancel_and_delete_task", task_id=t.task_id)
-            ),
+            abort_href=str(request.url_for("remove_task", task_id=t.task_id)),
         )
         for t in await lrt_api.list_tasks(long_running_manager, task_context={})
     ]

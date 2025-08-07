@@ -106,7 +106,7 @@ async def auto_remove_task(client: Client, task_id: TaskId) -> AsyncIterator[Non
     try:
         yield
     finally:
-        await client.cancel_and_delete_task(task_id, timeout=10)
+        await client.remove_task(task_id, timeout=10)
 
 
 async def _get_container_timestamps(

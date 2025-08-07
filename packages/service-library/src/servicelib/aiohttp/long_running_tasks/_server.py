@@ -81,7 +81,7 @@ async def start_long_running_task(
             f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"  # NOSONAR
         )
         abort_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"  # NOSONAR
+            f"http://{ip_addr}:{port}{request_.app.router['remove_task'].url_for(task_id=task_id)}"  # NOSONAR
         )
         task_get = TaskGet(
             task_id=task_id,
