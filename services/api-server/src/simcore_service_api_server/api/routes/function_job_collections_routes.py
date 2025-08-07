@@ -44,7 +44,7 @@ from .function_jobs_routes import function_job_status, get_function_job
 function_job_collections_router = APIRouter()
 
 FIRST_RELEASE_VERSION = "0.8.0"
-JOB_LIST_PAGE_RELEASE_VERSION = "0.10.0"
+JOB_LIST_PAGE_RELEASE_VERSION = "0.11.0"
 
 _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
     status.HTTP_404_NOT_FOUND: {

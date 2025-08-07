@@ -63,6 +63,9 @@ from ._constants import (
 # pylint: disable=cyclic-import
 
 
+JOB_LIST_FILTER_PAGE_RELEASE_VERSION = "0.11.0"
+JOB_LOG_RELEASE_VERSION = "0.11.0"
+
 function_job_router = APIRouter()
 
 _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
@@ -95,7 +98,7 @@ for endpoint in ENDPOINTS:
     if endpoint == "list_function_jobs":
         CHANGE_LOGS[endpoint].append(
             FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-                "0.10",
+                JOB_LIST_FILTER_PAGE_RELEASE_VERSION,
                 "add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
             )
         )
@@ -350,7 +353,7 @@ async def function_job_outputs(
     description=create_route_description(
         base="Get function job logs task",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(JOB_LOG_RELEASE_VERSION),
         ],
     ),
 )
