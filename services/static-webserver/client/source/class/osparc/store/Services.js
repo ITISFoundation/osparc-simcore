@@ -410,9 +410,10 @@ qx.Class.define("osparc.store.Services", {
     getUnknownServiceMetadata: function() {
       const key = "simcore/services/frontend/unknown";
       const version = "0.0.0";
+      const versionDisplay = "Unknown";
       const releaseInfo = {
           version,
-          versionDisplay: null,
+          versionDisplay,
           retired: null,
           released: "2025-08-07T11:00:00.000000",
           compatibility: null,
@@ -420,6 +421,8 @@ qx.Class.define("osparc.store.Services", {
       return {
         key,
         version,
+        versionDisplay,
+        description: "Unknown App",
         type: "frontend",
         name: "Unknown",
         inputs: {},
