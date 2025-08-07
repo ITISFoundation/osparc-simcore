@@ -1089,29 +1089,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             await project_nodes_repo.add(conn, nodes=[node])
 
-    async def remove_project_node(
-        self,
-        user_id: UserID,
-        project_id: ProjectID,
-        node_id: NodeID,
-        client_session_id: ClientSessionID | None,
-    ) -> None:
-        # NOTE: permission check is done currently in update_project_workbench!
-        partial_workbench_data: dict[NodeIDStr, Any] = {
-            NodeIDStr(f"{node_id}"): None,
-        }
-        await self._update_project_workbench_with_lock_and_notify(
-            partial_workbench_data,
-            user_id=user_id,
-            project_uuid=project_id,
-            allow_workbench_changes=True,
-            client_session_id=client_session_id,
-        )
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
-            await project_nodes_repo.delete(conn, node_id=node_id)
-
-    async def get_project_node(  # NOTE: Not all Node data are here yet; they are in the workbench of a Project, waiting to be moved here.
+    async def get_project_node(
         self, project_id: ProjectID, node_id: NodeID
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
