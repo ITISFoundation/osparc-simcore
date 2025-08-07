@@ -10,6 +10,7 @@ from models_library.functions import (
     FunctionJob,
     FunctionJobClassSpecificData,
     FunctionJobCollection,
+    FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobDB,
     FunctionJobID,
@@ -203,6 +204,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     returned_function_jobs, page = await _functions_repository.list_function_jobs(
         app=app,
@@ -211,6 +214,8 @@ async def list_function_jobs(
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
         filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
     return [
         _decode_functionjob(returned_function_job)

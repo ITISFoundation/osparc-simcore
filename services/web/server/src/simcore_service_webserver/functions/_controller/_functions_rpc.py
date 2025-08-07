@@ -8,6 +8,7 @@ from models_library.functions import (
     FunctionInputSchema,
     FunctionJob,
     FunctionJobCollection,
+    FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionJobStatus,
@@ -199,6 +200,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     return await _functions_service.list_function_jobs(
         app=app,
@@ -207,6 +210,8 @@ async def list_function_jobs(
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
         filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
 
 

@@ -3,6 +3,7 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination.api import create_page
+from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_webserver.functions import (
     FunctionJobCollection,
     FunctionJobCollectionID,
@@ -13,6 +14,7 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from simcore_service_api_server._service_function_jobs import FunctionJobService
 from simcore_service_api_server.api.dependencies.functions import (
     get_stored_job_status,  # Import UserID
 )
@@ -28,7 +30,7 @@ from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.models_schemas_function_filters import (
     get_function_job_collections_filters,
 )
-from ..dependencies.services import get_api_client
+from ..dependencies.services import get_api_client, get_function_job_service
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -42,7 +44,7 @@ from .function_jobs_routes import function_job_status, get_function_job
 function_job_collections_router = APIRouter()
 
 FIRST_RELEASE_VERSION = "0.8.0"
-
+JOB_LIST_PAGE_RELEASE_VERSION = "0.11.0"
 
 _COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES: Final[dict] = {
     status.HTTP_404_NOT_FOUND: {
@@ -60,7 +62,7 @@ ENDPOINTS = [
 CHANGE_LOGS = {}
 for endpoint in ENDPOINTS:
     CHANGE_LOGS[endpoint] = [
-        FMSG_CHANGELOG_NEW_IN_VERSION.format("0.8.0"),
+        FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
     ]
     if endpoint in [
         "list_function_job_collections",
@@ -92,7 +94,7 @@ async def list_function_job_collections(
     ],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-):
+) -> AbstractPage[RegisteredFunctionJobCollection]:
     function_job_collection_list, meta = await wb_api_rpc.list_function_job_collections(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -113,7 +115,9 @@ async def list_function_job_collections(
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Get function job collection",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
     ),
 )
 async def get_function_job_collection(
@@ -174,31 +178,72 @@ async def delete_function_job_collection(
 
 @function_job_collections_router.get(
     "/{function_job_collection_id:uuid}/function_jobs",
-    response_model=list[RegisteredFunctionJob],
     responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Get the function jobs in function job collection",
-        changelog=[FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION)],
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(FIRST_RELEASE_VERSION),
+        ],
     ),
 )
 async def function_job_collection_list_function_jobs(
     function_job_collection_id: FunctionJobCollectionID,
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
 ) -> list[RegisteredFunctionJob]:
-    function_job_collection = await get_function_job_collection(
+    return await function_job_collection_list_function_jobs_list(
         function_job_collection_id=function_job_collection_id,
-        wb_api_rpc=wb_api_rpc,
-        user_id=user_id,
-        product_name=product_name,
+        function_job_service=function_job_service,
     )
-    return [
-        await get_function_job(
-            job_id, wb_api_rpc=wb_api_rpc, user_id=user_id, product_name=product_name
-        )
-        for job_id in function_job_collection.job_ids
-    ]
+
+
+@function_job_collections_router.get(
+    "/{function_job_collection_id:uuid}/function_jobs/page",
+    responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
+    response_model=Page[RegisteredFunctionJob],
+    description=create_route_description(
+        base="Get the function jobs in function job collection",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(JOB_LIST_PAGE_RELEASE_VERSION),
+        ],
+    ),
+)
+async def function_job_collection_list_function_jobs_page(
+    function_job_collection_id: FunctionJobCollectionID,
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
+    page_params: Annotated[PaginationParams, Depends()],
+) -> AbstractPage[RegisteredFunctionJob]:
+    function_jobs_list, meta = await function_job_service.list_function_jobs(
+        filter_by_function_job_collection_id=function_job_collection_id,
+        pagination_offset=page_params.offset,
+        pagination_limit=page_params.limit,
+    )
+    return create_page(function_jobs_list, total=meta.total, params=page_params)
+
+
+@function_job_collections_router.get(
+    "/{function_job_collection_id:uuid}/function_jobs/list",
+    responses={**_COMMON_FUNCTION_JOB_COLLECTION_ERROR_RESPONSES},
+    description=create_route_description(
+        base="Get the function jobs in function job collection",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(JOB_LIST_PAGE_RELEASE_VERSION),
+        ],
+    ),
+)
+async def function_job_collection_list_function_jobs_list(
+    function_job_collection_id: FunctionJobCollectionID,
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
+) -> list[RegisteredFunctionJob]:
+    function_jobs_list, _ = await function_job_service.list_function_jobs(
+        filter_by_function_job_collection_id=function_job_collection_id,
+    )
+    return function_jobs_list
 
 
 @function_job_collections_router.get(

@@ -51,7 +51,7 @@ from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client, get_study_service
-from ..dependencies.webserver_http import AuthSession, get_webserver_session
+from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
@@ -130,8 +130,8 @@ async def create_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
     hidden: Annotated[bool, Query()] = True,  # noqa: FBT002
-    x_simcore_parent_project_uuid: ProjectID | None = Header(default=None),
-    x_simcore_parent_node_id: NodeID | None = Header(default=None),
+    x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
+    x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
 ) -> Job:
     """
     hidden -- if True (default) hides project from UI

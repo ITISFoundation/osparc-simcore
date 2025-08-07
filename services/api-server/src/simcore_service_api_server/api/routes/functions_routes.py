@@ -5,6 +5,7 @@ from typing import Annotated, Final, Literal
 import jsonschema
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi_pagination.api import create_page
+from fastapi_pagination.bases import AbstractPage
 from jsonschema import ValidationError
 from models_library.api_schemas_api_server.functions import (
     Function,
@@ -35,6 +36,8 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
+from simcore_service_api_server._service_function_jobs import FunctionJobService
+from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server.api.dependencies.functions import get_stored_job_status
 
@@ -46,7 +49,13 @@ from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client, get_job_service, get_solver_service
+from ..dependencies.services import (
+    get_api_client,
+    get_function_job_service,
+    get_function_service,
+    get_job_service,
+    get_solver_service,
+)
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, studies_jobs
@@ -156,16 +165,12 @@ async def get_function(
     ),
 )
 async def list_functions(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
-):
-    functions_list, meta = await wb_api_rpc.list_functions(
+) -> AbstractPage[RegisteredFunction]:
+    functions_list, meta = await function_service.list_functions(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
-        user_id=user_id,
-        product_name=product_name,
     )
 
     return create_page(
@@ -185,17 +190,15 @@ async def list_functions(
 )
 async def list_function_jobs_for_functionid(
     function_id: FunctionID,
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
-):
-    function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
+) -> AbstractPage[RegisteredFunctionJob]:
+    function_jobs_list, meta = await function_job_service.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
         filter_by_function_id=function_id,
-        user_id=user_id,
-        product_name=product_name,
     )
 
     return create_page(

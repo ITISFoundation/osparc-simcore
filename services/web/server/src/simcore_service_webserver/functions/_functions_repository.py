@@ -15,6 +15,7 @@ from models_library.functions import (
     FunctionJobAccessRightsDB,
     FunctionJobClassSpecificData,
     FunctionJobCollectionAccessRightsDB,
+    FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionJobStatus,
@@ -412,6 +413,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJobDB], PageMetaInfoLimitOffset]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_api_access_rights(
@@ -433,16 +436,41 @@ async def list_function_jobs(
             )
         )
 
+        filter_conditions = sqlalchemy.and_(
+            function_jobs_table.c.uuid.in_(access_subquery),
+            (
+                function_jobs_table.c.function_uuid == filter_by_function_id
+                if filter_by_function_id
+                else sqlalchemy.sql.true()
+            ),
+            (
+                function_jobs_table.c.uuid.in_(filter_by_function_job_ids)
+                if filter_by_function_job_ids
+                else sqlalchemy.sql.true()
+            ),
+        )
+
+        if filter_by_function_job_collection_id:
+            collection_subquery = (
+                function_job_collections_to_function_jobs_table.select()
+                .with_only_columns(
+                    function_job_collections_to_function_jobs_table.c.function_job_uuid
+                )
+                .where(
+                    function_job_collections_to_function_jobs_table.c.function_job_collection_uuid
+                    == filter_by_function_job_collection_id
+                )
+            )
+            filter_conditions = sqlalchemy.and_(
+                filter_conditions,
+                function_jobs_table.c.uuid.in_(collection_subquery),
+            )
+
         total_count_result = await conn.scalar(
             func.count()
             .select()
             .select_from(function_jobs_table)
-            .where(function_jobs_table.c.uuid.in_(access_subquery))
-            .where(
-                function_jobs_table.c.function_uuid == filter_by_function_id
-                if filter_by_function_id
-                else sqlalchemy.sql.true()
-            )
+            .where(filter_conditions)
         )
         if total_count_result == 0:
             return [], PageMetaInfoLimitOffset(
@@ -452,12 +480,7 @@ async def list_function_jobs(
             RegisteredFunctionJobDB.model_validate(row)
             async for row in await conn.stream(
                 function_jobs_table.select()
-                .where(function_jobs_table.c.uuid.in_(access_subquery))
-                .where(
-                    function_jobs_table.c.function_uuid == filter_by_function_id
-                    if filter_by_function_id
-                    else sqlalchemy.sql.true()
-                )
+                .where(filter_conditions)
                 .offset(pagination_offset)
                 .limit(pagination_limit)
             )

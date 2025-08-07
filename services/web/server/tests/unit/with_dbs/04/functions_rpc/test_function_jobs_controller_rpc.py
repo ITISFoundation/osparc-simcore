@@ -11,7 +11,7 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunction,
     ProjectFunctionJob,
 )
-from models_library.functions import FunctionJobStatus
+from models_library.functions import FunctionJobCollection, FunctionJobStatus
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
@@ -211,7 +211,7 @@ async def test_list_function_jobs(
     "user_role",
     [UserRole.USER],
 )
-async def test_list_function_jobs_for_functionid(
+async def test_list_function_jobs_filtering(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
     mock_function: ProjectFunction,
@@ -273,6 +273,19 @@ async def test_list_function_jobs_for_functionid(
                 )
             )
 
+    function_job_collection = await functions_rpc.register_function_job_collection(
+        rabbitmq_rpc_client=rpc_client,
+        function_job_collection=FunctionJobCollection(
+            job_ids=[
+                job.uid
+                for job in first_registered_function_jobs[1:2]
+                + second_registered_function_jobs[0:1]
+            ]
+        ),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
     # List function jobs for a specific function ID
     jobs, _ = await functions_rpc.list_function_jobs(
         rabbitmq_rpc_client=rpc_client,
@@ -284,9 +297,57 @@ async def test_list_function_jobs_for_functionid(
     )
 
     # Assert the list contains the registered job
-    assert len(jobs) > 0
     assert len(jobs) == 3
     assert all(j.function_uid == first_registered_function.uid for j in jobs)
+
+    # List function jobs for a specific function job IDs
+    jobs, _ = await functions_rpc.list_function_jobs(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        filter_by_function_job_ids=[
+            job.uid
+            for job in first_registered_function_jobs[0:1]
+            + second_registered_function_jobs[1:2]
+        ],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Assert the list contains the registered job
+    assert len(jobs) == 2
+    assert jobs[0].uid == first_registered_function_jobs[0].uid
+    assert jobs[1].uid == second_registered_function_jobs[1].uid
+
+    # List function jobs for a specific function job collection
+    jobs, _ = await functions_rpc.list_function_jobs(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        filter_by_function_job_collection_id=function_job_collection.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Assert the list contains the registered job
+    assert len(jobs) == 2
+    assert jobs[0].uid == first_registered_function_jobs[1].uid
+    assert jobs[1].uid == second_registered_function_jobs[0].uid
+
+    # List function jobs for a specific function job collection and function job id
+    jobs, _ = await functions_rpc.list_function_jobs(
+        rabbitmq_rpc_client=rpc_client,
+        pagination_limit=10,
+        pagination_offset=0,
+        filter_by_function_job_collection_id=function_job_collection.uid,
+        filter_by_function_job_ids=[first_registered_function_jobs[1].uid],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    # Assert the list contains the registered job
+    assert len(jobs) == 1
+    assert jobs[0].uid == first_registered_function_jobs[1].uid
 
 
 @pytest.mark.parametrize(
