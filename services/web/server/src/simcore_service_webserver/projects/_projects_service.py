@@ -1284,15 +1284,15 @@ async def patch_project_node(
 
     # 5. Updates project states for user, if inputs/outputs have been changed
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
-        updated_project = await add_project_states_for_user(
+        updated_project_with_states = await add_project_states_for_user(
             user_id=user_id,
             project=updated_project.model_dump(),
             is_template=False,
             app=app,
         )
-        for node_uuid in updated_project["workbench"]:
+        for node_uuid in updated_project_with_states["workbench"]:
             await notify_project_node_update(
-                app, updated_project, node_uuid, errors=None
+                app, updated_project_with_states, node_uuid, errors=None
             )
         return
 
