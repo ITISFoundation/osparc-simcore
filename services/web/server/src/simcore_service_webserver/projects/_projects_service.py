@@ -92,7 +92,6 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
-    ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
@@ -167,6 +166,30 @@ from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
 _logger = logging.getLogger(__name__)
+
+
+async def _create_project_document_and_notify(
+    app,
+    *,
+    project_id: ProjectID,
+    user_id: UserID,
+    client_session_id: ClientSessionID | None,
+):
+    (
+        project_document,
+        document_version,
+    ) = await create_project_document_and_increment_version(app, project_id)
+
+    user_primary_gid = await users_service.get_user_primary_group_id(app, user_id)
+
+    await notify_project_document_updated(
+        app=app,
+        project_id=project_id,
+        user_primary_gid=user_primary_gid,
+        client_session_id=client_session_id,
+        version=document_version,
+        document=project_document,
+    )
 
 
 async def patch_project_and_notify_users(
@@ -937,26 +960,23 @@ async def add_project_node(
     default_resources = await catalog_service.get_service_resources(
         request.app, user_id, service_key, service_version
     )
-    db_legacy: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    assert db_legacy  # nosec
-    await db_legacy.add_project_node(
-        user_id,
-        ProjectID(project["uuid"]),
-        ProjectNodeCreate(
-            node_id=node_uuid,
-            required_resources=jsonable_encoder(default_resources),
+
+    await _projects_nodes_repository.add(
+        request.app,
+        project_id=ProjectID(project["uuid"]),
+        node_id=node_uuid,
+        node=Node(
             key=service_key,
             version=service_version,
             label=service_key.split("/")[-1],
+            required_resources=jsonable_encoder(default_resources),
         ),
-        Node.model_validate(
-            {
-                "key": service_key,
-                "version": service_version,
-                "label": service_key.split("/")[-1],
-            }
-        ),
-        product_name,
+    )
+
+    await _create_project_document_and_notify(
+        request.app,
+        project_id=ProjectID(project["uuid"]),
+        user_id=user_id,
         client_session_id=client_session_id,
     )
 
@@ -1094,6 +1114,13 @@ async def delete_project_node(
         node_id=NodeID(node_uuid),
     )
 
+    await _create_project_document_and_notify(
+        request.app,
+        project_id=project_uuid,
+        user_id=user_id,
+        client_session_id=client_session_id,
+    )
+
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
@@ -1101,24 +1128,6 @@ async def delete_project_node(
     )
     await dynamic_scheduler_service.update_projects_networks(
         request.app, project_id=project_uuid
-    )
-
-    (
-        project_document,
-        document_version,
-    ) = await create_project_document_and_increment_version(request.app, project_uuid)
-
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id
-    )
-
-    await notify_project_document_updated(
-        app=request.app,
-        project_id=project_uuid,
-        user_primary_gid=user_primary_gid,
-        client_session_id=client_session_id,
-        version=document_version,
-        document=project_document,
     )
 
 
@@ -1249,20 +1258,11 @@ async def patch_project_node(
         partial_node=partial_node,
     )
 
-    (
-        project_document,
-        document_version,
-    ) = await create_project_document_and_increment_version(app, project_id)
-
-    user_primary_gid = await users_service.get_user_primary_group_id(app, user_id)
-
-    await notify_project_document_updated(
-        app=app,
+    await _create_project_document_and_notify(
+        app,
         project_id=project_id,
-        user_primary_gid=user_primary_gid,
+        user_id=user_id,
         client_session_id=client_session_id,
-        version=document_version,
-        document=project_document,
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)

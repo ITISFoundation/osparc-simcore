@@ -371,16 +371,14 @@ async def test_create_node(
 
         # check database is updated
         assert "node_id" in data
-        create_node_id = data["node_id"]
+        node_id = data["node_id"]
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select(projects_db_model.c.workbench).where(
-                    projects_db_model.c.uuid == user_project["uuid"]
-                )
+                sa.select(sa.literal(1))
+                .where(projects_nodes.c.node_id == node_id)
+                .limit(1)
             )
-        assert result
-        workbench = result.one()[projects_db_model.c.workbench]
-        assert create_node_id in workbench
+        assert result.scalar() is not None
     else:
         assert error
 

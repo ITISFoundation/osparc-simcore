@@ -269,6 +269,10 @@ class Node(BaseModel):
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
 
+    required_resources: Annotated[
+        dict[str, Any] | None, Field(default_factory=dict)
+    ] = DEFAULT_FACTORY
+
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
         Field(

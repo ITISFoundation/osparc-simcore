@@ -43,6 +43,24 @@ _SELECTION_PROJECTS_NODES_DB_ARGS = [
 ]
 
 
+async def add(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node: Node,
+) -> None:
+    values = node.model_dump(mode="json", exclude_none=True, exclude_unset=True)
+
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.execute(
+            projects_nodes.insert().values(
+                project_uuid=f"{project_id}", node_id=f"{node_id}", **values
+            )
+        )
+
+
 async def delete(
     app: web.Application,
     connection: AsyncConnection | None = None,
