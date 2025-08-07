@@ -12,7 +12,7 @@ How these tests works:
 import asyncio
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Final
+from typing import Annotated, Final
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -25,13 +25,15 @@ from servicelib.fastapi.long_running_tasks.server import (
     get_long_running_manager,
 )
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
+from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.models import (
     TaskGet,
     TaskId,
     TaskProgress,
     TaskStatus,
 )
-from servicelib.long_running_tasks.task import TaskContext, start_task
+from servicelib.long_running_tasks.task import TaskContext, TaskRegistry
+from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -42,7 +44,7 @@ ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 
 async def _string_list_task(
-    task_progress: TaskProgress,
+    progress: TaskProgress,
     num_strings: int,
     sleep_time: float,
     fail: bool,
@@ -51,12 +53,15 @@ async def _string_list_task(
     for index in range(num_strings):
         generated_strings.append(f"{index}")
         await asyncio.sleep(sleep_time)
-        task_progress.update(message="generated item", percent=index / num_strings)
+        await progress.update(message="generated item", percent=index / num_strings)
         if fail:
             msg = "We were asked to fail!!"
             raise RuntimeError(msg)
 
     return generated_strings
+
+
+TaskRegistry.register(_string_list_task)
 
 
 @pytest.fixture
@@ -69,29 +74,31 @@ def server_routes() -> APIRouter:
     async def create_string_list_task(
         num_strings: int,
         sleep_time: float,
+        long_running_manager: Annotated[
+            FastAPILongRunningManager, Depends(get_long_running_manager)
+        ],
+        *,
         fail: bool = False,
-        long_running_manager: FastAPILongRunningManager = Depends(
-            get_long_running_manager
-        ),
     ) -> TaskId:
-        task_id = start_task(
+        return await lrt_api.start_task(
             long_running_manager.tasks_manager,
-            _string_list_task,
+            _string_list_task.__name__,
             num_strings=num_strings,
             sleep_time=sleep_time,
             fail=fail,
         )
-        return task_id
 
     return routes
 
 
 @pytest.fixture
-async def app(server_routes: APIRouter) -> AsyncIterator[FastAPI]:
+async def app(
+    server_routes: APIRouter, use_in_memory_redis: RedisSettings
+) -> AsyncIterator[FastAPI]:
     # overrides fastapi/conftest.py:app
     app = FastAPI(title="test app")
     app.include_router(server_routes)
-    setup_server(app)
+    setup_server(app, redis_settings=use_in_memory_redis, redis_namespace="test")
     setup_client(app)
     async with LifespanManager(app):
         yield app

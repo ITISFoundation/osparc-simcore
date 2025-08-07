@@ -35,7 +35,12 @@ from ..projects import (
     ProjectType,
 )
 from ..projects_access import AccessRights, GroupIDStr
-from ..projects_state import ProjectState
+from ..projects_state import (
+    ProjectShareCurrentUserGroupIDs,
+    ProjectShareLocked,
+    ProjectShareStatus,
+    ProjectStateRunningState,
+)
 from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -105,6 +110,17 @@ class ProjectCopyOverride(InputSchema):
         )
 
 
+class ProjectShareStateOutputSchema(OutputSchema):
+    status: ProjectShareStatus
+    locked: ProjectShareLocked
+    current_user_groupids: ProjectShareCurrentUserGroupIDs
+
+
+class ProjectStateOutputSchema(OutputSchema):
+    share_state: ProjectShareStateOutputSchema
+    state: ProjectStateRunningState
+
+
 class ProjectGet(OutputSchema):
     uuid: ProjectID
 
@@ -124,7 +140,7 @@ class ProjectGet(OutputSchema):
     # state
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
-    state: ProjectState | None = None
+    state: ProjectStateOutputSchema | None = None
     trashed_at: datetime | None
     trashed_by: Annotated[
         GroupID | None, Field(description="The primary gid of the user who trashed")
@@ -265,6 +281,28 @@ class ProjectPatch(InputSchema):
 
     def to_domain_model(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
+
+
+class ProjectDocument(OutputSchema):
+    uuid: ProjectID
+    workspace_id: WorkspaceID | None
+    name: str
+    description: str
+    thumbnail: HttpUrl | None
+    last_change_date: datetime
+    classifiers: list[ClassifierID]
+    dev: dict | None
+    quality: dict[str, Any]
+    workbench: NodesDict
+    ui: StudyUI | None
+    type: ProjectType
+    template_type: ProjectTemplateType | None
+
+    # config
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+
+
+ProjectDocumentVersion: TypeAlias = int
 
 
 __all__: tuple[str, ...] = (

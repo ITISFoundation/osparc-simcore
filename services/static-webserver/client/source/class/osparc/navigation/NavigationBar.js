@@ -54,6 +54,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     });
 
     osparc.utils.Utils.setIdToWidget(this, "navigationBar");
+
+    const socket = osparc.wrapper.WebSocket.getInstance();
+    if (socket.isConnected()) {
+      this.__listenToProjectStateUpdated();
+    } else {
+      socket.addListener("connect", () => this.__listenToProjectStateUpdated());
+    }
   },
 
   events: {
@@ -81,6 +88,15 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       allowGrowY: false,
       minWidth: 30,
       minHeight: 30
+    },
+
+    RIGHT_BUTTON_OPTS: {
+      cursor: "pointer",
+      alignX: "center",
+      alignY: "middle",
+      allowGrowX: false,
+      allowGrowY: false,
+      padding: 4,
     },
   },
 
@@ -119,6 +135,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       this.getChildControl("read-only-info");
 
       // right-items
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        this.getChildControl("avatar-group");
+      }
       this.getChildControl("tasks-button");
       if (osparc.product.Utils.showComputationalActivity()) {
         this.getChildControl("jobs-button");
@@ -153,7 +172,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           break;
         case "right-items":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
             alignY: "middle",
             alignX: "right"
           }));
@@ -234,16 +253,31 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("center-items").add(control);
           break;
         }
+        case "avatar-group": {
+          const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 80 : 150;
+          control = new osparc.ui.basic.AvatarGroup(26, "right", maxWidth).set({
+            alignY: "middle",
+          });
+          this.getChildControl("right-items").add(control);
+          break;
+        }
         case "tasks-button":
-          control = new osparc.task.TasksButton();
+          control = new osparc.task.TasksButton().set({
+            visibility: "excluded",
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "jobs-button":
-          control = new osparc.jobs.JobsButton();
+          control = new osparc.jobs.JobsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "notifications-button":
-          control = new osparc.notification.NotificationsButton();
+          control = new osparc.notification.NotificationsButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "expiration-icon": {
@@ -273,13 +307,16 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         }
         case "help":
-          control = this.__createHelpMenuBtn();
-          control.set(this.self().BUTTON_OPTIONS);
+          control = this.__createHelpMenuBtn().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           osparc.utils.Utils.setIdToWidget(control, "helpNavigationBtn");
           this.getChildControl("right-items").add(control);
           break;
         case "credits-button":
-          control = new osparc.desktop.credits.CreditsIndicatorButton();
+          control = new osparc.desktop.credits.CreditsIndicatorButton().set({
+            ...this.self().RIGHT_BUTTON_OPTS
+          });
           this.getChildControl("right-items").add(control);
           break;
         case "log-in-button": {
@@ -308,6 +345,23 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __listenToProjectStateUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      socket.on("projectStateUpdated", data => {
+        if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+          if (this.getStudy() && data["project_uuid"] === this.getStudy().getUuid()) {
+            const projectState = data["data"];
+            const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
+            // remove myself from the list of users
+            const filteredUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
+            // show the rest of the users in the avatar group
+            const avatarGroup = this.getChildControl("avatar-group");
+            avatarGroup.setUserGroupIds(filteredUserGroupIds);
+          }
+        }
+      }, this);
     },
 
     __createHelpMenuBtn: function() {
@@ -351,7 +405,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     __applyStudy: function(study) {
       const savingStudyIcon = this.getChildControl("saving-study-icon");
-      const readOnlyInfo = this.getChildControl("read-only-info")
+      const readOnlyInfo = this.getChildControl("read-only-info");
       if (study) {
         this.getChildControl("study-title-options").setStudy(study);
         study.bind("savePending", savingStudyIcon, "visibility", {
@@ -363,6 +417,16 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       } else {
         savingStudyIcon.exclude();
         readOnlyInfo.exclude();
+      }
+
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
+        const avatarGroup = this.getChildControl("avatar-group");
+        if (study) {
+          avatarGroup.show();
+        } else {
+          avatarGroup.exclude();
+          avatarGroup.setUserGroupIds([]);
+        }
       }
     },
 

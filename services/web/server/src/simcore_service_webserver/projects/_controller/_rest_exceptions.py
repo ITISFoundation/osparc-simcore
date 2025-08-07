@@ -44,6 +44,7 @@ from ..exceptions import (
     ProjectOwnerNotFoundInTheProjectAccessRightsError,
     ProjectStartsTooManyDynamicNodesError,
     ProjectTooManyProjectOpenedError,
+    ProjectTooManyUserSessionsError,
     ProjectTypeAndTemplateIncompatibilityError,
     ProjectWalletPendingTransactionError,
     WrongTagIdsInQueryError,
@@ -59,7 +60,7 @@ _FOLDER_ERRORS: ExceptionToHttpErrorMap = {
     ),
     FolderNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("The requested folder could not be found: {reason}", _version=1),
+        user_message("The requested folder could not be found", _version=1),
     ),
 }
 
@@ -88,14 +89,14 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectDeleteError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
         user_message(
-            "Unable to complete deletion of project '{project_uuid}': {reason}",
+            "Unable to complete deletion of project '{project_uuid}': {details}",
             _version=1,
         ),
     ),
     ProjectGroupNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
-            "The requested project group could not be found: {reason}", _version=1
+            "The requested project group could not be found: {details}", _version=1
         ),
     ),
     ProjectInvalidRightsError: HttpErrorInfo(
@@ -148,6 +149,13 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
             _version=1,
         ),
     ),
+    ProjectTooManyUserSessionsError: HttpErrorInfo(
+        status.HTTP_409_CONFLICT,
+        user_message(
+            "You cannot open more than {max_num_sessions} session(s) for the same project at once. Please close another session and retry.",
+            _version=1,
+        ),
+    ),
     ProjectInDebtCanNotChangeWalletError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
         user_message(
@@ -169,7 +177,7 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ProjectTypeAndTemplateIncompatibilityError: HttpErrorInfo(
         status.HTTP_400_BAD_REQUEST,
         user_message(
-            "The project type and template type combination is not valid: {reason}",
+            "The project type and template type combination is not valid",
             _version=1,
         ),
     ),
@@ -179,12 +187,12 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
 _WORKSPACE_ERRORS: ExceptionToHttpErrorMap = {
     WorkspaceAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
-        user_message("Access to this workspace is forbidden: {reason}", _version=1),
+        user_message("Access to this workspace is forbidden: {details}", _version=1),
     ),
     WorkspaceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
-            "The requested workspace could not be found: {reason}", _version=1
+            "The requested workspace could not be found: {details}", _version=1
         ),
     ),
 }
@@ -193,19 +201,19 @@ _WORKSPACE_ERRORS: ExceptionToHttpErrorMap = {
 _WALLET_ERRORS: ExceptionToHttpErrorMap = {
     UserDefaultWalletNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message("The requested wallet could not be found: {reason}", _version=1),
+        user_message("The requested wallet could not be found: {details}", _version=1),
     ),
     WalletAccessForbiddenError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "Payment is required, but you do not have access to the project's linked wallet: {reason}",
+            "Payment is required, but you do not have access to the project's linked wallet: {details}",
             _version=1,
         ),
     ),
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
         user_message(
-            "The wallet does not have enough credits to complete this operation: {reason}",
+            "The wallet does not have enough credits to complete this operation: {details}",
             _version=1,
         ),
     ),

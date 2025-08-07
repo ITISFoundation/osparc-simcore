@@ -15,10 +15,11 @@ class RedisDatabase(IntEnum):
     SCHEDULED_MAINTENANCE = 3
     USER_NOTIFICATIONS = 4
     ANNOUNCEMENTS = 5
-    DISTRIBUTED_IDENTIFIERS = 6
+    LONG_RUNNING_TASKS = 6
     DEFERRED_TASKS = 7
     DYNAMIC_SERVICES = 8
     CELERY_TASKS = 9
+    DOCUMENTS = 10
 
 
 class RedisSettings(BaseCustomSettings):

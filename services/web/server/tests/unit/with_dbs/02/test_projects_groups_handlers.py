@@ -237,6 +237,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_share_project(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -303,6 +304,7 @@ async def test_share_project(
     ],
 )
 async def test_share_project_with_roles(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

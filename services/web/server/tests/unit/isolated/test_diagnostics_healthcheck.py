@@ -188,7 +188,7 @@ async def test_healthy_app(client: TestClient, api_version_prefix: str):
     assert data
     assert not error
 
-    assert data["name"] == "simcore_service_webserver"
+    assert data["name"] == simcore_service_webserver._meta.APP_NAME
     assert data["version"] == simcore_service_webserver._meta.__version__
 
 

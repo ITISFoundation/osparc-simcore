@@ -11,10 +11,10 @@ from typing import Final
 
 import tqdm
 from pydantic import NonNegativeInt
-from servicelib.logging_utils import log_catch
 from tqdm.contrib.logging import tqdm_logging_redirect
 
 from ..file_utils import shutil_move
+from ..logging_utils import log_catch
 from ..progress_bar import ProgressBarData
 from ._errors import (
     CouldNotFindValueError,

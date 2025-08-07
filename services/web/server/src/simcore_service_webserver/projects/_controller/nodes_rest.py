@@ -35,6 +35,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
+    parse_request_headers_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
@@ -43,6 +44,7 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.long_running_tasks.models import TaskProgress
+from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rabbitmq import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
@@ -58,6 +60,7 @@ from ...dynamic_scheduler import api as dynamic_scheduler_service
 from ...groups.api import get_group_from_gid, list_all_user_groups_ids
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
+from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
@@ -95,6 +98,7 @@ async def create_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     body = await parse_request_body_as(NodeCreate, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     if await _projects_service.is_service_deprecated(
         request.app,
@@ -123,6 +127,7 @@ async def create_node(request: web.Request) -> web.Response:
             body.service_key,
             body.service_version,
             body.service_id,
+            client_session_id=header_params.client_session_id,
         )
     }
     assert NodeCreated.model_validate(data) is not None  # nosec
@@ -177,6 +182,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_patch = await parse_request_body_as(NodePatch, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     await _projects_service.patch_project_node(
         request.app,
@@ -186,6 +192,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         node_id=path_params.node_id,
         partial_node=node_patch.to_domain_model(),
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -198,6 +205,7 @@ async def patch_project_node(request: web.Request) -> web.Response:
 async def delete_node(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     # ensure the project exists
     await _projects_service.get_project_for_user(
@@ -212,6 +220,7 @@ async def delete_node(request: web.Request) -> web.Response:
         NodeIDStr(path_params.node_id),
         req_ctx.product_name,
         product_api_base_url=get_api_base_url(request),
+        client_session_id=header_params.client_session_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -248,6 +257,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(NodePathParams, request)
     node_outputs = await parse_request_body_as(NodeOutputs, request)
+    header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     ui_changed_keys = set()
     ui_changed_keys.add(f"{path_params.node_id}")
@@ -260,6 +270,7 @@ async def update_node_outputs(request: web.Request) -> web.Response:
         run_hash=None,
         node_errors=None,
         ui_changed_keys=ui_changed_keys,
+        client_session_id=header_params.client_session_id,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -289,11 +300,12 @@ async def start_node(request: web.Request) -> web.Response:
 
 
 async def _stop_dynamic_service_task(
-    _task_progress: TaskProgress,
+    progress: TaskProgress,
     *,
     app: web.Application,
     dynamic_service_stop: DynamicServiceStop,
 ):
+    _ = progress
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
         await dynamic_scheduler_service.stop_dynamic_service(
@@ -308,6 +320,9 @@ async def _stop_dynamic_service_task(
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+TaskRegistry.register(_stop_dynamic_service_task)
 
 
 @routes.post(
@@ -334,7 +349,7 @@ async def stop_node(request: web.Request) -> web.Response:
 
     return await start_long_running_task(
         request,
-        _stop_dynamic_service_task,  # type: ignore[arg-type] # @GitHK, @pcrespov this one I don't know how to fix
+        _stop_dynamic_service_task.__name__,
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
         app=request.app,

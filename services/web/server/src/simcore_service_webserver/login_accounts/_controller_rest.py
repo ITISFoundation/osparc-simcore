@@ -2,13 +2,17 @@ import logging
 from typing import Any
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.auth import (
     AccountRequestInfo,
     UnregisterCheck,
 )
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
-from servicelib.aiohttp.requests_validation import parse_request_body_as
+from servicelib.aiohttp.requests_validation import (
+    handle_validation_as_http_error,
+    parse_request_body_as,
+)
 from servicelib.logging_utils import get_log_record_extra, log_context
 from servicelib.utils import fire_and_forget_task
 
@@ -29,7 +33,7 @@ from ..security import security_service, security_web
 from ..security.decorators import permission_required
 from ..session import api as session_service
 from ..users import users_service
-from ..users.schemas import PreRegisteredUserGet
+from ..users.schemas import UserAccountRestPreRegister
 from ..utils import MINUTE
 from ..utils_rate_limiting import global_rate_limit_route
 from ..web_utils import flash_response
@@ -88,10 +92,17 @@ async def request_product_account(request: web.Request):
         raise web.HTTPUnprocessableEntity(text=MSG_WRONG_CAPTCHA__INVALID)
     session.pop(CAPTCHA_SESSION_KEY, None)
 
-    # create pre-regiatration or raise if already exists
+    with handle_validation_as_http_error(
+        error_msg_template=user_message(
+            "The form contains invalid information: '{failed}'", _version=1
+        ),
+        resource_name=request.rel_url.path,
+    ):
+        profile = UserAccountRestPreRegister.model_validate(body.form)
+
     await _service.create_pre_registration(
         request.app,
-        profile=PreRegisteredUserGet.model_validate(body.form),
+        profile=profile,
         product_name=product.name,
     )
 
@@ -124,11 +135,13 @@ async def unregister_account(request: web.Request):
     credentials = await users_service.get_user_credentials(
         request.app, user_id=req_ctx.user_id
     )
-    if body.email != credentials.email.lower() or not security_service.check_password(
+    if body.email != credentials.email or not security_service.check_password(
         body.password.get_secret_value(), credentials.password_hash
     ):
         raise web.HTTPConflict(
-            text="Wrong email or password. Please try again to delete this account"
+            text=user_message(
+                "Wrong email or password. Please try again to delete this account"
+            )
         )
 
     with log_context(

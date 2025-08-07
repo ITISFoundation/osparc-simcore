@@ -1,6 +1,4 @@
 import logging
-from collections import deque
-from collections.abc import Coroutine
 from typing import Any
 
 from aiohttp import web
@@ -8,12 +6,11 @@ from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
-from servicelib.utils import fire_and_forget_task, logged_gather
+from servicelib.utils import logged_gather
 
+from ..models import ClientSessionID
 from . import _projects_service
-from .utils import get_frontend_node_outputs_changes
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +39,7 @@ async def update_node_outputs(
     outputs: dict,
     run_hash: str | None,
     node_errors: list[ErrorDict] | None,
+    client_session_id: ClientSessionID | None,
     *,
     ui_changed_keys: set[str] | None,
 ) -> None:
@@ -53,6 +51,7 @@ async def update_node_outputs(
         node_uuid,
         new_outputs=outputs,
         new_run_hash=run_hash,
+        client_session_id=client_session_id,
     )
 
     await _projects_service.notify_project_node_update(
@@ -89,48 +88,3 @@ async def update_node_outputs(
     await _projects_service.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=f"{node_uuid}", changed_keys=keys
     )
-
-
-async def update_frontend_outputs(
-    app: web.Application,
-    user_id: UserID,
-    project_uuid: ProjectID,
-    old_project: dict[str, Any],
-    new_project: dict[str, Any],
-) -> None:
-    old_workbench = old_project["workbench"]
-    new_workbench = new_project["workbench"]
-    frontend_nodes_update_tasks: deque[Coroutine] = deque()
-
-    for node_key, node in new_workbench.items():
-        old_node = old_workbench.get(node_key)
-        if not old_node:
-            continue
-
-        # check if there were any changes in the outputs of
-        # frontend services
-        # NOTE: for now only file-picker is handled
-        outputs_changes: set[str] = get_frontend_node_outputs_changes(
-            new_node=node, old_node=old_node
-        )
-
-        if len(outputs_changes) > 0:
-            frontend_nodes_update_tasks.append(
-                update_node_outputs(
-                    app=app,
-                    user_id=user_id,
-                    project_uuid=project_uuid,
-                    node_uuid=node_key,
-                    outputs=node.get("outputs", {}),
-                    run_hash=None,
-                    node_errors=None,
-                    ui_changed_keys=outputs_changes,
-                )
-            )
-
-    for task_index, frontend_node_update_task in enumerate(frontend_nodes_update_tasks):
-        fire_and_forget_task(
-            frontend_node_update_task,
-            task_suffix_name=f"frontend_node_update_task_{task_index}",
-            fire_and_forget_tasks_collection=app[APP_FIRE_AND_FORGET_TASKS_KEY],
-        )

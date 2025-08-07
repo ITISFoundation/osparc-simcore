@@ -23,11 +23,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
 
     osparc.utils.Utils.setIdToWidget(this, "creditsIndicatorButton");
 
-    this.set({
-      cursor: "pointer",
-      padding: [3, 8]
-    });
-
     this.getChildControl("image").set({
       width: 24,
       height: 24
@@ -64,16 +59,7 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     },
 
     __positionCreditsContainer: function() {
-      const bounds = this.getBounds();
-      const cel = this.getContentElement();
-      if (cel) {
-        const domEle = cel.getDomElement();
-        if (domEle) {
-          const rect = domEle.getBoundingClientRect();
-          bounds.left = parseInt(rect.x);
-          bounds.top = parseInt(rect.y);
-        }
-      }
+      const bounds = osparc.utils.Utils.getBounds(this);
       const bottom = bounds.top + bounds.height;
       const right = bounds.left + bounds.width;
       this.__creditsContainer.setPosition(right, bottom);

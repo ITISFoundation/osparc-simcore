@@ -200,6 +200,7 @@ async def logged_user_function_api_access_rights(
     asyncpg_engine: AsyncEngine,
     logged_user: UserInfoDict,
     *,
+    expected_read_functions: bool,
     expected_write_functions: bool,
 ) -> AsyncIterator[dict[str, Any]]:
     cm = insert_and_get_row_lifespan(
@@ -208,7 +209,7 @@ async def logged_user_function_api_access_rights(
         values={
             "group_id": logged_user["primary_gid"],
             "product_name": FRONTEND_APP_DEFAULT,
-            "read_functions": True,
+            "read_functions": expected_read_functions,
             "write_functions": expected_write_functions,
             "execute_functions": True,
             "read_function_jobs": True,

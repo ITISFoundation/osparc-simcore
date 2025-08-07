@@ -1530,44 +1530,6 @@ jobs:
         with:
           flags: integrationtests #optional
 
-  integration-test-webserver-02:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] webserver 02"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: 'backend'
-      - name: install
-        run: ./ci/github/integration-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/integration-testing/webserver.bash test 02
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/web/server/test_failures
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: integrationtests #optional
-
   integration-test-director-v2-01:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push'}}
@@ -1782,7 +1744,6 @@ jobs:
         integration-test-docker-api-proxy,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
-        integration-test-webserver-02,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -1890,7 +1851,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/e2e/requirements/requirements.txt"
-      - uses: actions/setup-node@v4.1.0
+      - uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -1903,20 +1864,27 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
+      - name: wait before dumping logs
+        if: ${{ failure() }}
+        run: sleep 5
       - name: dump docker logs
+        if: ${{ failure() }}
         id: docker_logs_dump
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e/test_failures
       - name: upload screenshots
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_logs
@@ -1955,15 +1923,21 @@ jobs:
       - name: test
         run: |
           ./ci/github/system-testing/e2e-playwright.bash test
+      - name: wait before dumping logs
+        if: ${{ failure() }}
+        run: sleep 5
       - name: dump docker logs
+        if: ${{ failure() }}
         id: docker_logs_dump
         run: ./ci/github/system-testing/e2e-playwright.bash dump_docker_logs
       - name: upload docker logs
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_docker_logs
           path: ./tests/e2e-playwright/test_failures
       - name: upload tracing if failed
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.job }}_tracing

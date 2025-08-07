@@ -23,19 +23,35 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
+
 
 @pytest.fixture
-def app(server_routes: web.RouteTableDef) -> web.Application:
+def app(
+    server_routes: web.RouteTableDef, redis_service: RedisSettings
+) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
     # this adds enveloping and error middlewares
     append_rest_middlewares(app, api_version="")
-    long_running_tasks.server.setup(app, router_prefix="/futures")
+    long_running_tasks.server.setup(
+        app,
+        redis_settings=redis_service,
+        redis_namespace="test",
+        router_prefix="/futures",
+    )
 
     return app
 
@@ -97,7 +113,7 @@ async def test_workflow(
     # now get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
-    task_result, error = await assert_status(result, status.HTTP_201_CREATED)
+    task_result, error = await assert_status(result, status.HTTP_200_OK)
     assert task_result
     assert not error
     assert task_result == [f"{x}" for x in range(10)]
@@ -224,7 +240,9 @@ async def test_list_tasks(
 
     # the task name is properly formatted
     assert all(
-        task.task_name == "POST /long_running_task:start?num_strings=10&sleep_time=0.2"
+        task.task_name.startswith(
+            "POST /long_running_task:start?num_strings=10&sleep_time="
+        )
         for task in list_of_tasks
     )
     # now wait for them to finish

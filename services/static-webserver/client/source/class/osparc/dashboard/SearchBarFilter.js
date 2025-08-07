@@ -26,9 +26,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this._setLayout(new qx.ui.layout.HBox(5));
 
     this.set({
-      backgroundColor: "input_background",
+      backgroundColor: this.self().BG_COLOR,
       paddingLeft: 6,
       height: this.self().HEIGHT,
+      maxHeight: this.self().HEIGHT,
       decorator: "rounded",
     });
 
@@ -41,8 +42,27 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__currentFilter = null;
   },
 
+  properties: {
+    showFilterMenu: {
+      check: "Boolean",
+      init: true,
+      event: "changeShowFilterMenu",
+    }
+  },
+
   statics: {
     HEIGHT: 36,
+    BG_COLOR: "input_background",
+
+    getInitialFilterData: function() {
+      return {
+        tags: [],
+        classifiers: [],
+        sharedWith: null,
+        appType: null,
+        text: ""
+      };
+    },
 
     getSharedWithOptions: function(resourceType) {
       if (resourceType === "template") {
@@ -70,11 +90,24 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         label: qx.locale.Manager.tr("Public") + " " + resourceAlias,
         icon: "@FontAwesome5Solid/globe/20"
       }];
-    }
+    },
+
+    createChip: function(chipType, chipId, chipLabel) {
+      const chipButton = new qx.ui.form.Button().set({
+        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
+        icon: "@MaterialIcons/close/12",
+        toolTipText: chipLabel,
+        appearance: "chip-button"
+      });
+      chipButton.type = chipType;
+      chipButton.id = chipId;
+      return chipButton;
+    },
   },
 
   events: {
-    "filterChanged": "qx.event.type.Data"
+    "filterChanged": "qx.event.type.Data",
+    "resetButtonPressed": "qx.event.type.Event",
   },
 
   members: {
@@ -100,7 +133,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         case "text-field":
           control = new qx.ui.form.TextField().set({
-            backgroundColor: "input_background",
+            backgroundColor: this.self().BG_COLOR,
             font: "text-16",
             placeholder: this.tr("search"),
             alignY: "bottom",
@@ -175,16 +208,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           this.__hideFilterMenu();
         }
       }, this);
-      textField.addListener("changeValue", () => this.__filter(), this);
+      textField.addListener("focusout", () => this.__filter(), this);
 
       const resetButton = this.getChildControl("reset-button");
-      resetButton.addListener("execute", () => this.__resetFilters(), this);
+      resetButton.addListener("execute", () => this.resetButtonPressed(), this);
 
       osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
 
     getTextFilterValue: function() {
-      return this.getChildControl("text-field").getValue();
+      return this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue().trim() : null;
     },
 
     __showFilterMenu: function() {
@@ -203,7 +236,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         left: left
       });
 
-      this.__filtersMenu.show();
+      if (this.getShowFilterMenu()) {
+        this.__filtersMenu.show();
+      }
     },
 
     __hideFilterMenu: function() {
@@ -304,7 +339,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       });
     },
 
-
     setSharedWithActiveFilter: function(optionId, optionLabel) {
       this.__removeChips("shared-with");
       if (optionId === "show-all") {
@@ -323,28 +357,35 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
+    // this widget pops up a larger widget with all filters visible
+    // and lets users search between projects, templates, public projects and, eventually, files
+    popUpSearchBarFilter: function() {
+      const initFilterData = this.getFilterData();
+      const searchBarFilterExtended = new osparc.dashboard.SearchBarFilterExtended(this.__resourceType, initFilterData);
+      const bounds = osparc.utils.Utils.getBounds(this);
+      searchBarFilterExtended.setLayoutProperties({
+        left: bounds.left,
+        top: bounds.top,
+      });
+      searchBarFilterExtended.set({
+        width: bounds.width,
+      });
+      searchBarFilterExtended.addListener("resetButtonPressed", () => {
+        this.resetButtonPressed();
+      }, this);
+      return searchBarFilterExtended;
+    },
+
     __addChip: function(type, id, label) {
       const activeFilter = this.getChildControl("active-filters");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
       if (chipFound) {
         return;
       }
-      const chip = this.__createChip(type, id, label);
+      const chip = this.self().createChip(type, id, label);
+      chip.addListener("execute", () => this.__removeChip(type, id), this);
       activeFilter.add(chip);
       this.__filter();
-    },
-
-    __createChip: function(chipType, chipId, chipLabel) {
-      const chipButton = new qx.ui.form.Button().set({
-        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
-        icon: "@MaterialIcons/close/12",
-        toolTipText: chipLabel,
-        appearance: "chip-button"
-      });
-      chipButton.type = chipType;
-      chipButton.id = chipId;
-      chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
-      return chipButton;
     },
 
     __removeChip: function(type, id) {
@@ -373,19 +414,14 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.getChildControl("text-field").resetValue();
     },
 
-    __resetFilters: function() {
+    resetButtonPressed: function() {
       this.resetFilters();
-      this.__filter();
+      this._filterChange(this.self().getInitialFilterData());
+      this.fireEvent("resetButtonPressed");
     },
 
     getFilterData: function() {
-      const filterData = {
-        tags: [],
-        classifiers: [],
-        sharedWith: null,
-        appType: null,
-        text: ""
-      };
+      const filterData = this.self().getInitialFilterData();
       const textFilter = this.getTextFilterValue();
       filterData["text"] = textFilter ? textFilter : "";
       this.getChildControl("active-filters").getChildren().forEach(chip => {

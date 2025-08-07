@@ -17,9 +17,11 @@ from models_library.functions import (
     FunctionJobCollectionAccessRightsDB,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobStatus,
     FunctionOutputs,
     FunctionOutputSchema,
     FunctionsApiAccessRights,
+    FunctionUpdate,
     FunctionUserApiAccessRights,
     RegisteredFunctionDB,
     RegisteredFunctionJobCollectionDB,
@@ -324,23 +326,6 @@ async def get_function(
     function_id: FunctionID,
 ) -> RegisteredFunctionDB:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTIONS],
-        )
-
-        result = await conn.execute(
-            functions_table.select().where(functions_table.c.uuid == function_id)
-        )
-        row = result.one_or_none()
-
-        if row is None:
-            raise FunctionIDNotFoundError(function_id=function_id)
-        registered_function = RegisteredFunctionDB.model_validate(row)
-
         await check_user_permissions(
             app,
             connection=conn,
@@ -351,7 +336,14 @@ async def get_function(
             permissions=["read"],
         )
 
-    return registered_function
+        result = await conn.execute(
+            functions_table.select().where(functions_table.c.uuid == function_id)
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionIDNotFoundError(function_id=function_id)
+        return RegisteredFunctionDB.model_validate(row)
 
 
 async def list_functions(
@@ -479,6 +471,138 @@ async def list_function_jobs(
         )
 
 
+async def get_function_job_status(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionJobStatus:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        await check_user_permissions(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_id=function_job_id,
+            permissions=["read"],
+        )
+
+        result = await conn.execute(
+            function_jobs_table.select().where(
+                function_jobs_table.c.uuid == function_job_id
+            )
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
+
+        return FunctionJobStatus(status=row.status)
+
+
+async def get_function_job_outputs(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionOutputs:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        await check_user_permissions(
+            app,
+            connection=conn,
+            user_id=user_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_id=function_job_id,
+            permissions=["read"],
+        )
+
+        result = await conn.execute(
+            function_jobs_table.select().where(
+                function_jobs_table.c.uuid == function_job_id
+            )
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
+
+        return TypeAdapter(FunctionOutputs).validate_python(row.outputs)
+
+
+async def update_function_job_status(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    job_status: FunctionJobStatus,
+) -> FunctionJobStatus:
+    async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
+        await check_user_permissions(
+            app,
+            connection=transaction,
+            user_id=user_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_id=function_job_id,
+            permissions=["write"],
+        )
+
+        result = await transaction.execute(
+            function_jobs_table.update()
+            .where(function_jobs_table.c.uuid == function_job_id)
+            .values(status=job_status.status)
+            .returning(function_jobs_table.c.status)
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
+
+        return FunctionJobStatus(status=row.status)
+
+
+async def update_function_job_outputs(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    outputs: FunctionOutputs,
+) -> FunctionOutputs:
+    async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
+        await check_user_permissions(
+            app,
+            connection=transaction,
+            user_id=user_id,
+            product_name=product_name,
+            object_type="function_job",
+            object_id=function_job_id,
+            permissions=["write"],
+        )
+
+        result = await transaction.execute(
+            function_jobs_table.update()
+            .where(function_jobs_table.c.uuid == function_job_id)
+            .values(outputs=outputs)
+            .returning(function_jobs_table.c.outputs)
+        )
+        row = result.one_or_none()
+
+        if row is None:
+            raise FunctionJobIDNotFoundError(function_job_id=function_job_id)
+
+        return TypeAdapter(FunctionOutputs).validate_python(row.outputs)
+
+
 async def list_function_job_collections(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -597,17 +721,6 @@ async def delete_function(
     function_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTIONS,
-                FunctionsApiAccessRights.WRITE_FUNCTIONS,
-            ],
-        )
-
         await check_user_permissions(
             app,
             connection=transaction,
@@ -633,27 +746,16 @@ async def delete_function(
         )
 
 
-async def _update_function_attribute(
+async def update_function(
     app: web.Application,
-    connection: AsyncConnection | None,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    **update_kwargs,
+    function: FunctionUpdate,
 ) -> RegisteredFunctionDB:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTIONS,
-                FunctionsApiAccessRights.WRITE_FUNCTIONS,
-            ],
-        )
-
         await check_user_permissions(
             app,
             transaction,
@@ -661,13 +763,13 @@ async def _update_function_attribute(
             product_name=product_name,
             object_id=function_id,
             object_type="function",
-            permissions=["write"],
+            permissions=["read", "write"],
         )
 
         result = await transaction.execute(
             functions_table.update()
             .where(functions_table.c.uuid == function_id)
-            .values(**update_kwargs)
+            .values(**function.model_dump(exclude_none=True, exclude_unset=True))
             .returning(*_FUNCTIONS_TABLE_COLS)
         )
         row = result.one_or_none()
@@ -676,44 +778,6 @@ async def _update_function_attribute(
             raise FunctionIDNotFoundError(function_id=function_id)
 
         return RegisteredFunctionDB.model_validate(row)
-
-
-async def update_function_title(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    function_id: FunctionID,
-    title: str,
-) -> RegisteredFunctionDB:
-    return await _update_function_attribute(
-        app,
-        connection=connection,
-        user_id=user_id,
-        product_name=product_name,
-        function_id=function_id,
-        title=title,
-    )
-
-
-async def update_function_description(
-    app: web.Application,
-    connection: AsyncConnection | None = None,
-    *,
-    user_id: UserID,
-    product_name: ProductName,
-    function_id: FunctionID,
-    description: str,
-) -> RegisteredFunctionDB:
-    return await _update_function_attribute(
-        app,
-        connection=connection,
-        user_id=user_id,
-        product_name=product_name,
-        function_id=function_id,
-        description=description,
-    )
 
 
 async def get_function_job(
@@ -725,13 +789,6 @@ async def get_function_job(
     function_job_id: FunctionID,
 ) -> RegisteredFunctionJobDB:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
-        )
         await check_user_permissions(
             app,
             connection=conn,
@@ -764,16 +821,6 @@ async def delete_function_job(
     function_job_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTION_JOBS,
-                FunctionsApiAccessRights.WRITE_FUNCTION_JOBS,
-            ],
-        )
         await check_user_permissions(
             app,
             connection=transaction,
@@ -812,14 +859,6 @@ async def find_cached_function_jobs(
     inputs: FunctionInputs,
 ) -> list[RegisteredFunctionJobDB] | None:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOBS],
-        )
-
         jobs: list[RegisteredFunctionJobDB] = []
         async for row in await conn.stream(
             function_jobs_table.select().where(
@@ -858,13 +897,6 @@ async def get_function_job_collection(
     function_job_collection_id: FunctionID,
 ) -> tuple[RegisteredFunctionJobCollectionDB, list[FunctionJobID]]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        await check_user_api_access_rights(
-            app,
-            connection=conn,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[FunctionsApiAccessRights.READ_FUNCTION_JOB_COLLECTIONS],
-        )
         await check_user_permissions(
             app,
             connection=conn,
@@ -912,16 +944,6 @@ async def delete_function_job_collection(
     function_job_collection_id: FunctionID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
-        await check_user_api_access_rights(
-            app,
-            connection=transaction,
-            user_id=user_id,
-            product_name=product_name,
-            api_access_rights=[
-                FunctionsApiAccessRights.READ_FUNCTION_JOB_COLLECTIONS,
-                FunctionsApiAccessRights.WRITE_FUNCTION_JOB_COLLECTIONS,
-            ],
-        )
         await check_user_permissions(
             app,
             connection=transaction,
@@ -1178,6 +1200,21 @@ async def check_user_permissions(
     object_type: Literal["function", "function_job", "function_job_collection"],
     permissions: list[Literal["read", "write", "execute"]],
 ) -> bool:
+
+    api_access_rights = [
+        getattr(
+            FunctionsApiAccessRights, f"{permission.upper()}_{object_type.upper()}S"
+        )
+        for permission in permissions
+    ]
+    await check_user_api_access_rights(
+        app,
+        connection=connection,
+        user_id=user_id,
+        product_name=product_name,
+        api_access_rights=api_access_rights,
+    )
+
     user_permissions = await get_user_permissions(
         app,
         connection=connection,
@@ -1264,6 +1301,6 @@ async def check_user_api_access_rights(
 
     for api_access_right in api_access_rights:
         if not getattr(user_api_access_rights, api_access_right):
-            raise _ERRORS_MAP[api_access_right]
+            raise _ERRORS_MAP[api_access_right](user_id=user_id)
 
     return True

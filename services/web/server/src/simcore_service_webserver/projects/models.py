@@ -72,6 +72,11 @@ class ProjectDBGet(BaseModel):
     )
 
 
+class ProjectWithWorkbenchDBGet(ProjectDBGet):
+    # This model is used to read the project with its workbench
+    workbench: NodesDict
+
+
 class ProjectJobDBGet(ProjectDBGet):
     workbench: NodesDict
 

@@ -3,8 +3,9 @@ import json
 import logging
 
 from aiohttp import web
+from common_library.user_messages import user_message
 from models_library.api_schemas_webserver.projects import ProjectGet
-from models_library.projects_state import ProjectState
+from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from pydantic import BaseModel
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -16,16 +17,20 @@ from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_SIMCORE_USER_AGENT,
 )
+from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import ProjectType
 
 from ..._meta import API_VTAG as VTAG
+from ...application_settings import get_application_settings
 from ...director_v2.exceptions import DirectorV2ServiceError
 from ...login.decorators import login_required
 from ...notifications import project_logs
 from ...products import products_web
 from ...products.models import Product
+from ...resource_manager.user_sessions import managed_resource
 from ...security.decorators import permission_required
+from ...socketio.server import get_socket_server
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response, get_api_base_url
 from .. import _projects_service, projects_wallets_service
@@ -93,15 +98,40 @@ async def open_project(request: web.Request) -> web.Response:
         )
 
         product: Product = products_web.get_current_product(request)
+        app_settings = get_application_settings(request.app)
 
         if not await _projects_service.try_open_project_for_user(
             req_ctx.user_id,
             project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
-            max_number_of_studies_per_user=product.max_open_studies_per_user,
+            max_number_of_opened_projects_per_user=product.max_open_studies_per_user,
+            allow_multiple_sessions=app_settings.WEBSERVER_REALTIME_COLLABORATION
+            is not None,
+            max_number_of_user_sessions_per_project=(
+                app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
+                if app_settings.WEBSERVER_REALTIME_COLLABORATION
+                else None
+            ),
         ):
             raise HTTPLockedError(text="Project is locked, try later")
+
+        # Connect the socket_id to a project room
+        with managed_resource(
+            req_ctx.user_id, client_session_id, request.app
+        ) as user_session:
+            _socket_id = await user_session.get_socket_id()
+        if _socket_id is None:
+            raise web.HTTPUnprocessableEntity(
+                text=user_message(
+                    "Data corruption detected: unable to identify your session (socket_id missing). "
+                    "Please refresh the page and try again. If the problem persists, contact support."
+                )
+            )
+        sio = get_socket_server(request.app)
+        await sio.enter_room(
+            _socket_id, SocketIORoomStr.from_project_id(path_params.project_id)
+        )
 
         # the project can be opened, let's update its product links
         await _projects_service.update_project_linked_product(
@@ -144,9 +174,9 @@ async def open_project(request: web.Request) -> web.Response:
     except DirectorV2ServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
-        await _projects_service.try_close_project_for_user(
+        await _projects_service.close_project_for_user(
             user_id=req_ctx.user_id,
-            project_uuid=f"{path_params.project_id}",
+            project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
             simcore_user_agent=request.headers.get(
@@ -184,9 +214,9 @@ async def close_project(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    await _projects_service.try_close_project_for_user(
+    await _projects_service.close_project_for_user(
         req_ctx.user_id,
-        f"{path_params.project_id}",
+        path_params.project_id,
         client_session_id,
         request.app,
         simcore_user_agent=request.headers.get(
@@ -211,11 +241,16 @@ async def get_project_state(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
     # check that project exists and queries state
-    validated_project = await _projects_service.get_project_for_user(
+    project = await _projects_service.get_project_for_user(
         request.app,
         project_uuid=f"{path_params.project_id}",
         user_id=req_ctx.user_id,
         include_state=True,
     )
-    project_state = ProjectState(**validated_project["state"])
-    return envelope_json_response(project_state.model_dump())
+    project_state = ProjectGet.from_domain_model(project).state
+    assert project_state  # nosec
+    return envelope_json_response(
+        project_state.model_dump(
+            **RESPONSE_MODEL_POLICY,
+        )
+    )

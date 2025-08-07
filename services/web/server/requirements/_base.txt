@@ -251,7 +251,9 @@ grpcio==1.66.0
 gunicorn==23.0.0
     # via -r requirements/_base.in
 h11==0.16.0
-    # via httpcore
+    # via
+    #   httpcore
+    #   wsproto
 httpcore==1.0.9
     # via httpx
 httpx==0.28.1
@@ -584,6 +586,8 @@ pamqp==3.2.1
     # via aiormq
 passlib==1.7.4
     # via -r requirements/_base.in
+phonenumbers==9.0.9
+    # via -r requirements/_base.in
 pillow==10.3.0
     # via captcha
 pint==0.24.3
@@ -781,11 +785,11 @@ python-dateutil==2.8.2
     #   faker
 python-dotenv==1.0.1
     # via pydantic-settings
-python-engineio==4.3.4
+python-engineio==4.12.2
     # via python-socketio
 python-magic==0.4.25
     # via -r requirements/_base.in
-python-socketio==5.8.0
+python-socketio==5.13.0
     # via -r requirements/_base.in
 pytz==2022.1
     # via twilio
@@ -889,6 +893,8 @@ setuptools==80.9.0
     # via jsonschema
 shellingham==1.5.4
     # via typer
+simple-websocket==1.1.0
+    # via python-engineio
 six==1.16.0
     # via
     #   jsonschema
@@ -1043,6 +1049,8 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-dbapi
     #   opentelemetry-instrumentation-redis
+wsproto==1.2.0
+    # via simple-websocket
 yarl==1.20.0
     # via
     #   -c requirements/./constraints.txt

@@ -310,11 +310,6 @@ qx.Class.define("osparc.data.Permissions", {
         return false;
       }
 
-      // This needs to be provided by the backend
-      if (action === "readFunctions") {
-        return osparc.utils.Utils.isDevelopmentPlatform();
-      }
-
       if (
         this.__functionPermissions &&
         action in this.__functionPermissions
@@ -329,11 +324,11 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     isProductOwner: function() {
-      return this.getRole() === "product_owner";
+      return ["admin", "product_owner"].includes(this.getRole());
     },
 
     isAdmin: function() {
-      return this.getRole() === "admin";
+      return ["admin"].includes(this.getRole());
     },
   }
 });

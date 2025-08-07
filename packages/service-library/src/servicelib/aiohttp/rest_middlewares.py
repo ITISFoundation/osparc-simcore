@@ -16,13 +16,12 @@ from common_library.json_serialization import json_dumps, json_loads
 from common_library.user_messages import user_message
 from models_library.basic_types import IDStr
 from models_library.rest_error import ErrorGet, ErrorItemType, LogMessageType
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from servicelib.status_codes_utils import is_5xx_server_error
 
 from ..logging_errors import create_troubleshootting_log_kwargs
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
+from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..rest_responses import is_enveloped_from_text
-from ..status_codes_utils import get_code_description
+from ..status_codes_utils import get_code_description, is_5xx_server_error
 from . import status
 from .rest_responses import (
     create_data_response,
@@ -105,7 +104,7 @@ def _handle_unexpected_exception_as_500(
     return http_error
 
 
-def _handle_http_error(
+def handle_aiohttp_web_http_error(
     request: web.BaseRequest, exception: web.HTTPError
 ) -> web.HTTPError:
     """Handle standard HTTP errors by ensuring they're properly formatted.
@@ -118,7 +117,7 @@ def _handle_http_error(
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
         exception.set_status(
-            exception.status, safe_status_message(message=exception.reason)
+            exception.status, reason=safe_status_message(message=exception.reason)
         )
 
     if not exception.text or not is_enveloped_from_text(exception.text):
@@ -156,7 +155,7 @@ def _handle_http_error(
     return exception
 
 
-def _handle_http_successful(
+def _handle_aiohttp_web_http_successful(
     request: web.Request, exception: web.HTTPSuccessful
 ) -> web.HTTPSuccessful:
     """Handle successful HTTP responses, ensuring they're properly enveloped."""
@@ -165,7 +164,7 @@ def _handle_http_successful(
     exception.content_type = MIMETYPE_APPLICATION_JSON
     if exception.reason:
         exception.set_status(
-            exception.status, safe_status_message(message=exception.reason)
+            exception.status, reason=safe_status_message(message=exception.reason)
         )
 
     if exception.text and not is_enveloped_from_text(exception.text):
@@ -217,10 +216,10 @@ def error_middleware_factory(api_version: str) -> Middleware:
                 result = await handler(request)
 
             except web.HTTPError as exc:  # 4XX and 5XX raised as exceptions
-                result = _handle_http_error(request, exc)
+                result = handle_aiohttp_web_http_error(request, exc)
 
             except web.HTTPSuccessful as exc:  # 2XX rased as exceptions
-                result = _handle_http_successful(request, exc)
+                result = _handle_aiohttp_web_http_successful(request, exc)
 
             except web.HTTPRedirection as exc:  # 3XX raised as exceptions
                 result = exc
