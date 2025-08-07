@@ -134,7 +134,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     NODE_HEIGHT: 80,
     FILE_NODE_WIDTH: 120,
     PORT_DIAMETER: 18,
-    PORT_WIDTH: 11,
+    PORT_MARGIN_TOP: 4,
     CONTENT_PADDING: 2,
     PORT_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
     PORT_DISCONNECTED: "@FontAwesome5Regular/circle/18",
@@ -853,6 +853,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           source: this.self().PORT_DISCONNECTED, // disconnected by default
           height: width,
           width: width,
+          marginTop: this.self().PORT_MARGIN_TOP,
           draggable: true,
           droppable: true,
           alignY: "top",
@@ -888,7 +889,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const bounds = this.getCurrentBounds();
       const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width - 1;
-      const y = bounds.top + captionHeight + this.self().PORT_DIAMETER/2 + 2;
+      const y = bounds.top + captionHeight + this.self().PORT_DIAMETER/2 + this.self().PORT_MARGIN_TOP + 2;
       return [x, y];
     },
 
