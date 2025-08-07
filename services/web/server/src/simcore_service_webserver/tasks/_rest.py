@@ -59,7 +59,7 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 async def get_async_jobs(request: web.Request) -> web.Response:
     inprocess_long_running_manager = get_long_running_manager(request.app)
     inprocess_tracked_tasks = await lrt_api.list_tasks(
-        inprocess_long_running_manager.tasks_manager,
+        inprocess_long_running_manager,
         inprocess_long_running_manager.get_task_context(request),
     )
 
@@ -92,7 +92,7 @@ async def get_async_jobs(request: web.Request) -> web.Response:
             TaskGet(
                 task_id=f"{task.task_id}",
                 status_href=f"{request.app.router['get_task_status'].url_for(task_id=task.task_id)}",
-                abort_href=f"{request.app.router['cancel_and_delete_task'].url_for(task_id=task.task_id)}",
+                abort_href=f"{request.app.router['remove_task'].url_for(task_id=task.task_id)}",
                 result_href=f"{request.app.router['get_task_result'].url_for(task_id=task.task_id)}",
             )
             for task in inprocess_tracked_tasks

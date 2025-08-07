@@ -27,7 +27,7 @@ from simcore_postgres_database.models.users import UserRole
         ("GET", "list_tasks", {}),
         ("GET", "get_task_status", {"task_id": "some_fake_task_id"}),
         ("GET", "get_task_result", {"task_id": "some_fake_task_id"}),
-        ("DELETE", "cancel_and_delete_task", {"task_id": "some_fake_task_id"}),
+        ("DELETE", "remove_task", {"task_id": "some_fake_task_id"}),
     ],
 )
 async def test_long_running_tasks_access_restricted_to_logged_users(

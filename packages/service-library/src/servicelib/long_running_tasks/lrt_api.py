@@ -4,15 +4,16 @@ from typing import Any
 from common_library.error_codes import create_error_code
 
 from ..logging_errors import create_troubleshootting_log_kwargs
+from .base_long_running_manager import BaseLongRunningManager
 from .errors import TaskNotCompletedError, TaskNotFoundError
 from .models import TaskBase, TaskContext, TaskId, TaskStatus
-from .task import RegisteredTaskName, TasksManager
+from .task import RegisteredTaskName
 
 _logger = logging.getLogger(__name__)
 
 
 async def start_task(
-    tasks_manager: TasksManager,
+    long_running_manager: BaseLongRunningManager,
     registered_task_name: RegisteredTaskName,
     *,
     unique: bool = False,
@@ -46,7 +47,7 @@ async def start_task(
     Returns:
         TaskId: the task unique identifier
     """
-    return await tasks_manager.start_task(
+    return await long_running_manager.tasks_manager.start_task(
         registered_task_name,
         unique=unique,
         task_context=task_context,
@@ -57,28 +58,34 @@ async def start_task(
 
 
 async def list_tasks(
-    tasks_manager: TasksManager, task_context: TaskContext
+    long_running_manager: BaseLongRunningManager, task_context: TaskContext
 ) -> list[TaskBase]:
-    return await tasks_manager.list_tasks(with_task_context=task_context)
+    return await long_running_manager.tasks_manager.list_tasks(
+        with_task_context=task_context
+    )
 
 
 async def get_task_status(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    long_running_manager: BaseLongRunningManager,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> TaskStatus:
     """returns the status of a task"""
-    return await tasks_manager.get_task_status(
+    return await long_running_manager.tasks_manager.get_task_status(
         task_id=task_id, with_task_context=task_context
     )
 
 
 async def get_task_result(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    long_running_manager: BaseLongRunningManager,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> Any:
     try:
-        task_result = await tasks_manager.get_task_result(
+        task_result = await long_running_manager.tasks_manager.get_task_result(
             task_id, with_task_context=task_context
         )
-        await tasks_manager.remove_task(
+        await long_running_manager.tasks_manager.remove_task(
             task_id, with_task_context=task_context, reraise_errors=False
         )
         return task_result
@@ -94,14 +101,18 @@ async def get_task_result(
             ),
         )
         # the task shall be removed in this case
-        await tasks_manager.remove_task(
+        await long_running_manager.tasks_manager.remove_task(
             task_id, with_task_context=task_context, reraise_errors=False
         )
         raise
 
 
 async def remove_task(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    long_running_manager: BaseLongRunningManager,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> None:
     """cancels and removes the task"""
-    await tasks_manager.remove_task(task_id, with_task_context=task_context)
+    await long_running_manager.tasks_manager.remove_task(
+        task_id, with_task_context=task_context
+    )

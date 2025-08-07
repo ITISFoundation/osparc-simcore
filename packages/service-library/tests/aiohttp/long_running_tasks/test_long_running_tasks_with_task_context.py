@@ -169,7 +169,7 @@ async def test_cancel_task(
 ):
     assert client_with_task_context.app
     task_id = await start_long_running_task(client_with_task_context)
-    cancel_url = client_with_task_context.app.router["cancel_and_delete_task"].url_for(
+    cancel_url = client_with_task_context.app.router["remove_task"].url_for(
         task_id=task_id
     )
     # calling cancel without task context should find nothing

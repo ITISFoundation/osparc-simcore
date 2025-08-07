@@ -63,7 +63,7 @@ async def start_long_running_task(
     task_id = None
     try:
         task_id = await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager,
             registerd_task_name,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
@@ -81,7 +81,7 @@ async def start_long_running_task(
             f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"  # NOSONAR
         )
         abort_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"  # NOSONAR
+            f"http://{ip_addr}:{port}{request_.app.router['remove_task'].url_for(task_id=task_id)}"  # NOSONAR
         )
         task_get = TaskGet(
             task_id=task_id,
@@ -97,9 +97,7 @@ async def start_long_running_task(
     except asyncio.CancelledError:
         # remove the task, the client was disconnected
         if task_id:
-            await lrt_api.remove_task(
-                long_running_manager.tasks_manager, task_context, task_id
-            )
+            await lrt_api.remove_task(long_running_manager, task_context, task_id)
         raise
 
 

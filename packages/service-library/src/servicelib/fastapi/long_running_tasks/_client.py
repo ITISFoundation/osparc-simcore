@@ -171,7 +171,7 @@ class Client:
         return result.json()
 
     @retry_on_http_errors
-    async def cancel_and_delete_task(
+    async def remove_task(
         self, task_id: TaskId, *, timeout: PositiveFloat | None = None  # noqa: ASYNC109
     ) -> None:
         timeout = timeout or self._client_configuration.default_timeout
