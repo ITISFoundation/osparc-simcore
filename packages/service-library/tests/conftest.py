@@ -3,9 +3,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
 
+import asyncio
 import sys
 from collections.abc import AsyncIterable, AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, suppress
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -91,7 +92,8 @@ async def _get_redis_client_sdk(
 
         yield client
 
-        await client.shutdown()
+        with suppress(TimeoutError):
+            await asyncio.wait_for(client.shutdown(), timeout=5.0)
 
     async def _cleanup_redis_data(clients_manager: RedisClientsManager) -> None:
         for db in RedisDatabase:
