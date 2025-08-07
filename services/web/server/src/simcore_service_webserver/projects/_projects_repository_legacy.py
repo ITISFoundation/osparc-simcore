@@ -26,7 +26,6 @@ from models_library.projects import (
     ProjectTemplateType,
 )
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
-from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import (
     PricingPlanAndUnitIdsTuple,
@@ -35,7 +34,6 @@ from models_library.resource_tracker import (
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
@@ -1060,34 +1058,6 @@ class ProjectDBAPI(BaseProjectDB):
             )
         msg = "linter unhappy without this"
         raise RuntimeError(msg)
-
-    async def add_project_node(
-        self,
-        user_id: UserID,
-        project_id: ProjectID,
-        node: ProjectNodeCreate,
-        old_struct_node: Node,
-        product_name: str,
-        client_session_id: ClientSessionID | None,
-    ) -> None:
-        # NOTE: permission check is done currently in update_project_workbench!
-        partial_workbench_data: dict[NodeIDStr, Any] = {
-            f"{node.node_id}": jsonable_encoder(
-                old_struct_node,
-                exclude_unset=True,
-            ),
-        }
-        await self._update_project_workbench_with_lock_and_notify(
-            partial_workbench_data,
-            user_id=user_id,
-            project_uuid=project_id,
-            product_name=product_name,
-            allow_workbench_changes=True,
-            client_session_id=client_session_id,
-        )
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
-            await project_nodes_repo.add(conn, nodes=[node])
 
     async def get_project_node(
         self, project_id: ProjectID, node_id: NodeID
