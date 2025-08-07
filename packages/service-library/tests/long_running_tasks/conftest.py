@@ -6,7 +6,6 @@ from datetime import timedelta
 
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
 from servicelib.logging_utils import log_catch
 from servicelib.long_running_tasks.task import (
     RedisNamespace,
@@ -19,18 +18,8 @@ _logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-async def mock_cancel_tasks_check_interval(
-    mocker: MockerFixture,
-) -> None:
-    mocker.patch(
-        "servicelib.long_running_tasks.task._CANCEL_TASKS_CHECK_INTERVAL",
-        new=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
-    )
-
-
-@pytest.fixture
 async def get_tasks_manager(
-    mock_cancel_tasks_check_interval: None, faker: Faker
+    fast_long_running_tasks_cancellation: None, faker: Faker
 ) -> AsyncIterator[
     Callable[[RedisSettings, RedisNamespace | None], Awaitable[TasksManager]]
 ]:

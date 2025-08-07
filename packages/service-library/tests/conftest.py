@@ -26,6 +26,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.file_extra",
     "pytest_simcore.logging",
+    "pytest_simcore.long_running_tasks",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",

@@ -42,6 +42,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.faker_users_data",
     "pytest_simcore.logging",
+    "pytest_simcore.long_running_tasks",
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
@@ -169,6 +170,7 @@ def mock_rabbit_check(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def base_mock_envs(
+    fast_long_running_tasks_cancellation: None,
     use_in_memory_redis: RedisSettings,
     dy_volumes: Path,
     shared_store_dir: Path,
@@ -211,6 +213,7 @@ def base_mock_envs(
 
 @pytest.fixture
 def mock_environment(
+    fast_long_running_tasks_cancellation: None,
     use_in_memory_redis: RedisSettings,
     mock_storage_check: None,
     mock_postgres_check: None,
