@@ -135,7 +135,7 @@ _LOCAL_FORMATTING: Final[str] = (
 )
 
 # Graylog Grok pattern extractor:
-# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_msg=%{GREEDYDATA:log_msg}
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}
 
 
 def _setup_logging_formatter(

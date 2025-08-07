@@ -582,7 +582,7 @@ def test_setup_async_loggers_exception_handling(
 def _create_grok_regex_pattern() -> str:
     """Convert Grok pattern to regex for testing."""
     # The Grok pattern from the comment:
-    # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_msg=%{GREEDYDATA:log_msg}
+    # log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}
 
     grok_to_regex = {
         r"%{WORD:log_level}": r"(?P<log_level>\w+)",
