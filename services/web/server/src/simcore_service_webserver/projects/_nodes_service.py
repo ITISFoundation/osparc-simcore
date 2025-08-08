@@ -10,7 +10,7 @@ from aiohttp.client import ClientError
 from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
 from models_library.basic_types import KeyIDStr
 from models_library.projects import ProjectID
-from models_library.projects_nodes import Node
+from models_library.projects_nodes import Node, PartialNode
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -88,6 +88,17 @@ async def get_project_nodes_map(
     Returns a map of node_id to Node for the given project_id which used to be called the project's `workbench`
     """
     return await _nodes_repository.get_project_nodes_map(app, project_id=project_id)
+
+
+async def update_project_nodes_map(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+    partial_nodes_map: dict[NodeID, PartialNode],
+) -> dict[NodeID, Node]:
+    return await _nodes_repository.update_project_nodes_map(
+        app, project_id=project_id, partial_nodes_map=partial_nodes_map
+    )
 
 
 #
