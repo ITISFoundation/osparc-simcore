@@ -56,7 +56,7 @@ async def update_project_nodes_map(
             project_node = await repo.update(
                 conn,
                 node_id=node_id,
-                node=node,
+                **node.model_dump(exclude_none=True, exclude_unset=True),
             )
             workbench[node_id] = project_node.model_dump_as_node()
 

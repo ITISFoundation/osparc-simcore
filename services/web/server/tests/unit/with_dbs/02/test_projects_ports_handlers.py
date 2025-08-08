@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
+from deepdiff import DeepDiff
 from models_library.api_schemas_directorv2.computations import TasksOutputs
 from models_library.api_schemas_webserver.projects import ProjectGet
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -109,55 +110,62 @@ async def test_io_workflow(
     ports_meta, error = await assert_status(resp, expected_status_code=expected)
 
     if not error:
-        assert ports_meta == [
-            {
-                "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
-                "kind": "input",
-                "content_schema": {
-                    "description": "Input integer value",
-                    "title": "X",
-                    "type": "integer",
+        diff = DeepDiff(
+            ports_meta,
+            [
+                {
+                    "key": "38a0d401-af4b-4ea7-ab4c-5005c712a546",
+                    "kind": "input",
+                    "content_schema": {
+                        "description": "Input integer value",
+                        "title": "X",
+                        "type": "integer",
+                    },
                 },
-            },
-            {
-                "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
-                "kind": "input",
-                "content_schema": {
-                    "description": "Input integer value",
-                    "title": "Z",
-                    "type": "integer",
+                {
+                    "key": "fc48252a-9dbb-4e07-bf9a-7af65a18f612",
+                    "kind": "input",
+                    "content_schema": {
+                        "description": "Input integer value",
+                        "title": "Z",
+                        "type": "integer",
+                    },
                 },
-            },
-            {
-                "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
-                "kind": "input",
-                "content_schema": {
-                    "description": "Input boolean value",
-                    "title": "on",
-                    "type": "boolean",
+                {
+                    "key": "7bf0741f-bae4-410b-b662-fc34b47c27c9",
+                    "kind": "input",
+                    "content_schema": {
+                        "description": "Input boolean value",
+                        "title": "on",
+                        "type": "boolean",
+                    },
                 },
-            },
-            {
-                "key": "09fd512e-0768-44ca-81fa-0cecab74ec1a",
-                "kind": "output",
-                "content_schema": {
-                    "description": "Output integer value",
-                    "title": "Random sleep interval_2",
-                    "type": "integer",
+                {
+                    "key": "09fd512e-0768-44ca-81fa-0cecab74ec1a",
+                    "kind": "output",
+                    "content_schema": {
+                        "description": "Output integer value",
+                        "title": "Random sleep interval_2",
+                        "type": "integer",
+                    },
                 },
-            },
-            {
-                "key": "76f607b4-8761-4f96-824d-cab670bc45f5",
-                "kind": "output",
-                "content_schema": {
-                    "description": "Output integer value",
-                    "title": "Random sleep interval",
-                    "type": "integer",
+                {
+                    "key": "76f607b4-8761-4f96-824d-cab670bc45f5",
+                    "kind": "output",
+                    "content_schema": {
+                        "description": "Output integer value",
+                        "title": "Random sleep interval",
+                        "type": "integer",
+                    },
                 },
-            },
-        ]
+            ],
+            ignore_order=True,
+        )
 
-        assert ports_meta == PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA
+        assert not diff
+        assert not DeepDiff(
+            ports_meta, PROJECTS_METADATA_PORTS_RESPONSE_BODY_DATA, ignore_order=True
+        )
 
     # get_project_inputs
     expected_url = client.app.router["get_project_inputs"].url_for(

@@ -113,10 +113,15 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         partial_workbench_data
     )
 
-    updated_workbench = await _nodes_service.update_project_nodes_map(
+    await _nodes_service.update_project_nodes_map(
         request.app,
         project_id=path_params.project_id,
         partial_nodes_map=partial_nodes_map,
+    )
+
+    # get updated workbench (including not updated nodes)
+    updated_workbench = await _nodes_service.get_project_nodes_map(
+        request.app, project_id=path_params.project_id
     )
 
     await _create_project_document_and_notify(
