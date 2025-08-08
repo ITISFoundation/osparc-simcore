@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from deepdiff import DeepDiff
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
@@ -168,13 +169,9 @@ async def _assert_get_same_project(
         project_permalink = data.pop("permalink", None)
         folder_id = data.pop("folderId", None)
 
-        got_last_change_date = data.pop("lastChangeDate", None)
-        project_last_change_date = project.pop("lastChangeDate", None)
-        if got_last_change_date is not None and project_last_change_date is not None:
-            assert to_datetime(got_last_change_date) >= to_datetime(
-                project_last_change_date
-            )
-        assert data == {k: project[k] for k in data}
+        assert not DeepDiff(
+            data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']"
+        )
 
         if project_state:
             assert ProjectStateOutputSchema.model_validate(project_state)
@@ -213,17 +210,11 @@ async def test_list_projects(
         project_permalink = got.pop("permalink")
         folder_id = got.pop("folderId")
 
-        got_last_change_date = got.pop("lastChangeDate", None)
-        template_project_last_change_date = template_project.pop("lastChangeDate", None)
-        if (
-            got_last_change_date is not None
-            and template_project_last_change_date is not None
-        ):
-            assert to_datetime(got_last_change_date) >= to_datetime(
-                template_project_last_change_date
-            )
-
-        assert got == {k: template_project[k] for k in got}
+        assert not DeepDiff(
+            got,
+            {k: template_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
 
         assert not ProjectStateOutputSchema(
             **project_state
@@ -236,17 +227,11 @@ async def test_list_projects(
         project_permalink = got.pop("permalink", None)
         folder_id = got.pop("folderId")
 
-        got_last_change_date = got.pop("lastChangeDate", None)
-        user_project_last_change_date = user_project.pop("lastChangeDate", None)
-        if (
-            got_last_change_date is not None
-            and user_project_last_change_date is not None
-        ):
-            assert to_datetime(got_last_change_date) >= to_datetime(
-                user_project_last_change_date
-            )
-
-        assert got == {k: user_project[k] for k in got}
+        assert not DeepDiff(
+            got,
+            {k: user_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
 
         assert ProjectStateOutputSchema(**project_state)
         assert project_permalink is None
@@ -263,17 +248,12 @@ async def test_list_projects(
         project_permalink = got.pop("permalink", None)
         folder_id = got.pop("folderId")
 
-        got_last_change_date = got.pop("lastChangeDate", None)
-        user_project_last_change_date = user_project.pop("lastChangeDate", None)
-        if (
-            got_last_change_date is not None
-            and user_project_last_change_date is not None
-        ):
-            assert to_datetime(got_last_change_date) >= to_datetime(
-                user_project_last_change_date
-            )
+        assert not DeepDiff(
+            got,
+            {k: user_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
 
-        assert got == {k: user_project[k] for k in got}
         assert not ProjectStateOutputSchema(
             **project_state
         ).share_state.locked, "Single user does not lock"
@@ -291,17 +271,11 @@ async def test_list_projects(
         project_permalink = got.pop("permalink")
         folder_id = got.pop("folderId")
 
-        got_last_change_date = got.pop("lastChangeDate", None)
-        template_project_last_change_date = template_project.pop("lastChangeDate", None)
-        if (
-            got_last_change_date is not None
-            and template_project_last_change_date is not None
-        ):
-            assert to_datetime(got_last_change_date) >= to_datetime(
-                template_project_last_change_date
-            )
-
-        assert got == {k: template_project[k] for k in got}
+        assert not DeepDiff(
+            got,
+            {k: template_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
         assert not ProjectStateOutputSchema(
             **project_state
         ).share_state.locked, "Templates are not locked"
