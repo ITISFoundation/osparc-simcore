@@ -210,6 +210,10 @@ async def assert_get_same_project(
     resp = await client.get(f"{url}")
     data, error = await assert_status(resp, expected)
 
+    # without our control
+    project.pop("lastChangeDate", None)
+    data.pop("lastChangeDate", None)
+
     if not error:
         assert data == {k: project[k] for k in data}
     return data

@@ -159,7 +159,7 @@ class Node(BaseModel):
         Field(description="The short name of the node", examples=["JupyterLab"]),
     ]
     progress: Annotated[
-        float | None,
+        int | None,
         Field(
             ge=0,
             le=100,
