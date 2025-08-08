@@ -4,37 +4,53 @@ import sqlalchemy as sa
 from models_library.services import ServiceKeyVersion
 from pydantic import ValidationError
 from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 
 from ._base import BaseRepository
 
 _logger = logging.getLogger(__name__)
 
 
+_IGNORED_SERVICE_KEYS: set[str] = {
+    # NOTE: frontend only nodes
+    "simcore/services/frontend/file-picker",
+    "simcore/services/frontend/nodes-group",
+}
+
+
 class ProjectsRepository(BaseRepository):
     async def list_services_from_published_templates(self) -> list[ServiceKeyVersion]:
-        list_of_published_services: list[ServiceKeyVersion] = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(
-                sa.select(projects).where(
-                    (projects.c.type == ProjectType.TEMPLATE)
-                    & (projects.c.published.is_(True))
+            query = (
+                sa.select(projects_nodes.c.key, projects_nodes.c.version)
+                .distinct()
+                .select_from(
+                    projects_nodes.join(
+                        projects, projects_nodes.c.project_uuid == projects.c.uuid
+                    )
                 )
-            ):
-                project_workbench = row.workbench
-                for node in project_workbench:
-                    service = project_workbench[node]
-                    try:
-                        if (
-                            "file-picker" in service["key"]
-                            or "nodes-group" in service["key"]
-                        ):
-                            # these 2 are not going to pass the validation tests, they are frontend only nodes.
-                            continue
-                        list_of_published_services.append(ServiceKeyVersion(**service))
-                    except ValidationError:
-                        _logger.warning(
-                            "service %s could not be validated", service, exc_info=True
-                        )
-                        continue
+                .where(
+                    sa.and_(
+                        projects.c.type == ProjectType.TEMPLATE,
+                        projects.c.published.is_(True),
+                        projects_nodes.c.key.notin_(_IGNORED_SERVICE_KEYS),
+                    )
+                )
+            )
 
-        return list_of_published_services
+            services = []
+            async for row in await conn.stream(query):
+                try:
+                    service = ServiceKeyVersion.model_validate(
+                        row, from_attributes=True
+                    )
+                    services.append(service)
+                except ValidationError:
+                    _logger.warning(
+                        "service with key=%s and version=%s could not be validated",
+                        row.key,
+                        row.version,
+                        exc_info=True,
+                    )
+
+            return services

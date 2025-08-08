@@ -13,7 +13,7 @@ from aioresponses import aioresponses
 from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
+from pytest_simcore.helpers.webserver_projects import delete_all_projects, new_project
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver.application_settings import ApplicationSettings
@@ -72,7 +72,7 @@ async def shared_project(
             },
         },
     )
-    async with NewProject(
+    async with new_project(
         fake_project,
         client.app,
         user_id=logged_user["id"],
@@ -101,7 +101,7 @@ async def template_project(
         str(all_group["gid"]): {"read": True, "write": False, "delete": False}
     }
 
-    async with NewProject(
+    async with new_project(
         project_data,
         client.app,
         user_id=user["id"],

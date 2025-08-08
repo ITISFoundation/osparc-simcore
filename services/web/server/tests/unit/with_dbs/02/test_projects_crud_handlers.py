@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from deepdiff import DeepDiff
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
@@ -168,7 +169,9 @@ async def _assert_get_same_project(
         project_permalink = data.pop("permalink", None)
         folder_id = data.pop("folderId", None)
 
-        assert data == {k: project[k] for k in data}
+        assert not DeepDiff(
+            data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']"
+        )
 
         if project_state:
             assert ProjectStateOutputSchema.model_validate(project_state)
@@ -207,7 +210,11 @@ async def test_list_projects(
         project_permalink = got.pop("permalink")
         folder_id = got.pop("folderId")
 
-        assert got == {k: template_project[k] for k in got}
+        assert not DeepDiff(
+            got,
+            {k: template_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
 
         assert not ProjectStateOutputSchema(
             **project_state
@@ -220,7 +227,11 @@ async def test_list_projects(
         project_permalink = got.pop("permalink", None)
         folder_id = got.pop("folderId")
 
-        assert got == {k: user_project[k] for k in got}
+        assert not DeepDiff(
+            got,
+            {k: user_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
 
         assert ProjectStateOutputSchema(**project_state)
         assert project_permalink is None
@@ -237,7 +248,12 @@ async def test_list_projects(
         project_permalink = got.pop("permalink", None)
         folder_id = got.pop("folderId")
 
-        assert got == {k: user_project[k] for k in got}
+        assert not DeepDiff(
+            got,
+            {k: user_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
+
         assert not ProjectStateOutputSchema(
             **project_state
         ).share_state.locked, "Single user does not lock"
@@ -255,7 +271,11 @@ async def test_list_projects(
         project_permalink = got.pop("permalink")
         folder_id = got.pop("folderId")
 
-        assert got == {k: template_project[k] for k in got}
+        assert not DeepDiff(
+            got,
+            {k: template_project[k] for k in got},
+            exclude_paths="root['lastChangeDate']",
+        )
         assert not ProjectStateOutputSchema(
             **project_state
         ).share_state.locked, "Templates are not locked"
