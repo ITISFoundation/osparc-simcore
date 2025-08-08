@@ -11582,6 +11582,15 @@
               }
             ],
             "title": "Started"
+          },
+          "tmp_result": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmp Result"
           }
         },
         "type": "object",
