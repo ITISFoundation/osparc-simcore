@@ -12,6 +12,7 @@ from typing import Any
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from common_library.dict_tools import remap_keys
+from deepdiff import DeepDiff
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
@@ -211,9 +212,9 @@ async def assert_get_same_project(
     data, error = await assert_status(resp, expected)
 
     # without our control
-    project.pop("lastChangeDate", None)
-    data.pop("lastChangeDate", None)
 
     if not error:
-        assert data == {k: project[k] for k in data}
+        assert not DeepDiff(
+            data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']"
+        )
     return data
