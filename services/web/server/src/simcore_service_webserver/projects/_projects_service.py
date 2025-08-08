@@ -1281,7 +1281,7 @@ async def patch_project_node(
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
         updated_project_with_states = await add_project_states_for_user(
             user_id=user_id,
-            project=updated_project.model_dump(),
+            project=updated_project.model_dump(mode="json"),
             is_template=False,
             app=app,
         )
