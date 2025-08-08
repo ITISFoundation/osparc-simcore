@@ -1292,7 +1292,7 @@ async def patch_project_node(
         return
 
     await notify_project_node_update(
-        app, updated_project.model_dump(), node_id, errors=None
+        app, updated_project.model_dump(mode="json"), node_id, errors=None
     )
 
 

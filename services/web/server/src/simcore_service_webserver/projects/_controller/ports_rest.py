@@ -8,9 +8,8 @@ from models_library.api_schemas_webserver.projects_ports import (
     ProjectOutputGet,
 )
 from models_library.basic_types import KeyIDStr
-from models_library.projects_nodes import Node
+from models_library.projects_nodes import PartialNode
 from models_library.projects_nodes_io import NodeID
-from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.utils.services_io import JsonSchemaDict
 from pydantic import BaseModel, Field, TypeAdapter
 from servicelib.aiohttp.requests_validation import (
@@ -25,7 +24,7 @@ from ...models import ClientSessionHeaderParams
 from ...security.decorators import permission_required
 from ...utils_aiohttp import envelope_json_response
 from .. import _access_rights_service, _nodes_service, _ports_service
-from .._projects_repository_legacy import ProjectDBAPI
+from .._projects_service import _create_project_document_and_notify
 from ._rest_exceptions import handle_plugin_requests_exceptions
 from ._rest_schemas import AuthenticatedRequestContext, ProjectPathParams
 
@@ -77,7 +76,6 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 @permission_required("project.update")
 @handle_plugin_requests_exceptions
 async def update_project_inputs(request: web.Request) -> web.Response:
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
     inputs_updates = await parse_request_body_as(list[ProjectInputUpdate], request)
@@ -92,10 +90,12 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         project_id=path_params.project_id,
         permission="write",  # because we are updating inputs later
     )
-    workbench = await _nodes_service.get_project_nodes_map(
+    current_workbench = await _nodes_service.get_project_nodes_map(
         app=request.app, project_id=path_params.project_id
     )
-    current_inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
+    current_inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(
+        current_workbench
+    )
 
     # build workbench patch
     partial_workbench_data = {}
@@ -104,30 +104,34 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         if node_id not in current_inputs:
             raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
 
-        workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
-        partial_workbench_data[node_id] = workbench[node_id].model_dump(
+        current_workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
+        partial_workbench_data[node_id] = current_workbench[node_id].model_dump(
             include={"outputs"}, exclude_unset=True
         )
 
-    # patch workbench
-    assert db  # nosec
-    updated_project, _ = await db.update_project_multiple_node_data(
+    partial_nodes_map = TypeAdapter(dict[NodeID, PartialNode]).validate_python(
+        partial_workbench_data
+    )
+
+    updated_workbench = await _nodes_service.update_project_nodes_map(
+        request.app,
+        project_id=path_params.project_id,
+        partial_nodes_map=partial_nodes_map,
+    )
+
+    await _create_project_document_and_notify(
+        request.app,
+        project_id=path_params.project_id,
         user_id=req_ctx.user_id,
-        project_uuid=path_params.project_id,
-        product_name=req_ctx.product_name,
-        partial_workbench_data=jsonable_encoder(partial_workbench_data),
         client_session_id=header_params.client_session_id,
     )
 
-    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(
-        updated_project["workbench"]
-    )
-    inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
+    inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(updated_workbench)
 
     return envelope_json_response(
         {
             node_id: ProjectInputGet(
-                key=node_id, label=workbench[node_id].label, value=value
+                key=node_id, label=updated_workbench[node_id].label, value=value
             )
             for node_id, value in inputs.items()
         }
