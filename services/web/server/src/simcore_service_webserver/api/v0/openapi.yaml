@@ -17467,6 +17467,11 @@ components:
             format: date-time
           - type: 'null'
           title: Started
+        tmp_result:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Tmp Result
       type: object
       required:
       - task_progress

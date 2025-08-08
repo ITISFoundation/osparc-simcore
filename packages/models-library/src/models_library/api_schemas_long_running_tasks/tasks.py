@@ -12,6 +12,7 @@ class TaskStatus(BaseModel):
     task_progress: TaskProgress
     done: bool
     started: datetime | None
+    tmp_result: Any | None = None
 
 
 class TaskResult(BaseModel):
