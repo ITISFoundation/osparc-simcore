@@ -48,16 +48,16 @@ async def _check_service_heartbeat(
         modified_at
         < base_start_timestamp - timedelta(minutes=2)
     ):
-        new_missed_heartbeat_counter = missed_heartbeat_counter + 1
+        missed_heartbeat_counter += 1
         if (
-            new_missed_heartbeat_counter
+            missed_heartbeat_counter
             > resource_usage_tracker_missed_heartbeat_counter_fail
         ):
             # Handle unhealthy service
             _logger.error(
                 "Service run id: %s is considered unhealthy and not billed. Counter %s",
                 service_run_id,
-                new_missed_heartbeat_counter,
+                missed_heartbeat_counter,
             )
             await _close_unhealthy_service(
                 db_engine, service_run_id, base_start_timestamp
@@ -66,24 +66,14 @@ async def _check_service_heartbeat(
             _logger.warning(
                 "Service run id: %s missed heartbeat. Counter %s",
                 service_run_id,
-                new_missed_heartbeat_counter,
+                missed_heartbeat_counter,
             )
-            # Use the original last_heartbeat_at and modified_at as keys for the update
-            # to ensure we're updating the correct record and prevent race conditions
-            updated_service = (
-                await service_runs_db.update_service_missed_heartbeat_counter(
-                    db_engine,
-                    service_run_id=service_run_id,
-                    last_heartbeat_at=last_heartbeat_at,
-                    missed_heartbeat_counter=new_missed_heartbeat_counter,
-                )
+            await service_runs_db.update_service_missed_heartbeat_counter(
+                db_engine,
+                service_run_id=service_run_id,
+                last_heartbeat_at=last_heartbeat_at,
+                missed_heartbeat_counter=missed_heartbeat_counter,
             )
-            # If the update returned None, it means another process already updated this record
-            if updated_service is None:
-                _logger.warning(
-                    "Service run id: %s was already updated by another process",
-                    service_run_id,
-                )
 
 
 async def _close_unhealthy_service(
