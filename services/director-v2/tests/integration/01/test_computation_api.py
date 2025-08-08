@@ -206,7 +206,7 @@ async def test_start_empty_computation_is_refused(
     ):
         await create_pipeline(
             async_client,
-            project=empty_project,
+            project_uuid=empty_project.uuid,
             user_id=user["id"],
             start_pipeline=True,
             product_name=osparc_product_name,
