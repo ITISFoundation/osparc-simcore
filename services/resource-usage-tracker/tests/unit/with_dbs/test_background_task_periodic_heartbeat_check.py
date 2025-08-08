@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 
@@ -132,6 +133,7 @@ async def test_process_event_functions(
 
     for _ in range(app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL):
         await check_running_services(initialized_app)
+        await asyncio.sleep(1)
         # NOTE: As we are doing check that the modified field needs to be older then some
         # threshold, we need to make this field artificaly older in this test
         with postgres_db.connect() as con:
