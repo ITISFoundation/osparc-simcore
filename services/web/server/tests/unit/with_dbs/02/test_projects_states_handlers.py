@@ -70,6 +70,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.licenses._licensed_resources_service import DeepDiff
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
@@ -1929,7 +1930,11 @@ async def test_open_shared_project_at_same_time(
             elif data:
                 project_status = ProjectStateOutputSchema(**data.pop("state"))
                 data.pop("folderId")
-                assert data == {k: shared_project[k] for k in data}
+                assert not DeepDiff(
+                    data,
+                    {k: shared_project[k] for k in data},
+                    exclude_paths=["root['lastChangeDate']"],
+                )
                 assert project_status.share_state.locked
                 assert project_status.share_state.current_user_groupids
                 assert len(project_status.share_state.current_user_groupids) == 1
