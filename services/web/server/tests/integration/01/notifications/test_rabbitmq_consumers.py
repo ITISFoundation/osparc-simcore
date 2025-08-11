@@ -124,7 +124,7 @@ async def _assert_handler_called_with_json(
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
-        stop=stop_after_delay(1000),
+        stop=stop_after_delay(10),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
