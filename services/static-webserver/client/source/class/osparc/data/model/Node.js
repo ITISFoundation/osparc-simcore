@@ -48,7 +48,6 @@ qx.Class.define("osparc.data.model.Node", {
   construct: function(study, key, version, nodeId) {
     this.base(arguments);
 
-    this.setOutputs({});
     this.__inputNodes = [];
     this.__inputsRequired = [];
 
@@ -494,6 +493,8 @@ qx.Class.define("osparc.data.model.Node", {
         }
         if (metadata.outputs) {
           this.setOutputs(metadata.outputs);
+        } else {
+          this.setOutputs({});
         }
       }
     },
