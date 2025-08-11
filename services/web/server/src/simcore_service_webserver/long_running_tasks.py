@@ -13,7 +13,7 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.long_running_tasks.models import RabbitNamespace
 from servicelib.long_running_tasks.task import RedisNamespace
 
-from . import rabbitmq, redis
+from . import rabbitmq_settings, redis
 from ._meta import API_VTAG
 from .login.decorators import login_required
 from .models import AuthenticatedRequestContext
@@ -43,7 +43,7 @@ def setup_long_running_tasks(app: web.Application) -> None:
     setup(
         app,
         redis_settings=redis.get_plugin_settings(app),
-        rabbit_settings=rabbitmq.get_plugin_settings(app),
+        rabbit_settings=rabbitmq_settings.get_plugin_settings(app),
         redis_namespace=_LRT_REDIS_NAMESPACE,
         rabbit_namespace=_LRT_RABBIT_NAMESPACE,
         router_prefix=f"/{API_VTAG}/tasks-legacy",
