@@ -4,7 +4,7 @@
 
 import asyncio
 import secrets
-from collections.abc import AsyncIterable, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from typing import Any, Final
 
 import pytest
@@ -76,17 +76,6 @@ def disable_stale_tasks_monitor(mocker: MockerFixture) -> None:
         self._started_event_task_stale_tasks_monitor.set()
 
     mocker.patch.object(TasksManager, "_stale_tasks_monitor", _to_replace)
-
-
-@pytest.fixture
-async def rabbitmq_rpc_client(
-    rabbit_service: RabbitSettings,
-) -> AsyncIterable[RabbitMQRPCClient]:
-    client = await RabbitMQRPCClient.create(
-        client_name="test-lrt-rpc-client", settings=rabbit_service
-    )
-    yield client
-    await client.close()
 
 
 @pytest.fixture

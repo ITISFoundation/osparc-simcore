@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from datetime import timedelta
 
 import pytest
@@ -12,6 +12,7 @@ from servicelib.long_running_tasks.task import (
     RedisNamespace,
     TasksManager,
 )
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from utils import TEST_CHECK_STALE_INTERVAL_S, NoWebAppLongRunningManager
@@ -79,3 +80,14 @@ async def get_long_running_manager(
     for manager in managers:
         with log_catch(_logger, reraise=False):
             await manager.teardown()
+
+
+@pytest.fixture
+async def rabbitmq_rpc_client(
+    rabbit_service: RabbitSettings,
+) -> AsyncIterable[RabbitMQRPCClient]:
+    client = await RabbitMQRPCClient.create(
+        client_name="test-lrt-rpc-client", settings=rabbit_service
+    )
+    yield client
+    await client.close()
