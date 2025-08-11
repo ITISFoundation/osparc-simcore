@@ -612,7 +612,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __turnIntoUnknownUI: function() {
-      const width = 150;
+      const width = 110;
       this.__setNodeUIWidth(width);
 
       this.setEnabled(false);
