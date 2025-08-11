@@ -7568,6 +7568,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Internal Server Error
+  /v0/storage/locations/{location_id}/search:
+    post:
+      tags:
+      - storage
+      summary: Search
+      description: Search
+      operationId: search
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchBodyParams'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/trash:empty:
     post:
       tags:
@@ -16423,6 +16450,15 @@ components:
         \ - A worker has picked up the task and is executing it\n- SUCCESS - Task\
         \ finished successfully\n- FAILED - Task finished with an error\n- ABORTED\
         \ - Task was aborted before completion"
+    SearchBodyParams:
+      properties:
+        namePattern:
+          type: string
+          title: Namepattern
+      type: object
+      required:
+      - namePattern
+      title: SearchBodyParams
     SelectBox:
       properties:
         structure:
