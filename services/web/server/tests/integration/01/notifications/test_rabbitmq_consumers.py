@@ -70,18 +70,12 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
-    "catalog",
-    "director-v2",
-    "director",
-    "migration",
     "postgres",
     "rabbit",
     "redis",
-    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [
-    "minio",
     "redis-commander",
 ]
 
@@ -380,6 +374,33 @@ async def test_progress_non_computational_workflow(
         await _assert_handler_not_called(mock_progress_handler)
 
 
+@pytest.fixture
+async def mocked_dynamic_services_interface(
+    mocker: MockerFixture,
+) -> dict[str, mock.MagicMock]:
+    mock = {}
+
+    for func_name in (
+        "list_dynamic_services",
+        "get_dynamic_service",
+        "run_dynamic_service",
+        "stop_dynamic_service",
+    ):
+        name = f"dynamic_scheduler.api.{func_name}"
+        mock[name] = mocker.patch(
+            f"simcore_service_webserver.{name}",
+            autospec=True,
+            return_value={},
+        )
+
+    mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
+        autospec=True,
+        return_value=None,
+    )
+    return mock
+
+
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
 @pytest.mark.parametrize(
     "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
@@ -388,6 +409,7 @@ async def test_progress_non_computational_workflow(
     "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
 )
 async def test_progress_computational_workflow(
+    mocked_dynamic_services_interface,
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     user_project: ProjectDict,
