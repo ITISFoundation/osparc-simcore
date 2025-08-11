@@ -399,7 +399,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
       const lock = this.getChildControl("lock");
       node.getStudy().bind("pipelineRunning", lock, "visibility", {
-        converter: pipelineRunning => !pipelineRunning ? "visible" : "excluded"
+        converter: pipelineRunning => pipelineRunning ? "visible" : "excluded"
       });
 
       this.__markerBtn.show();
