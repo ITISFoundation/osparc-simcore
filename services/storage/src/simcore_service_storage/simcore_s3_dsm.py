@@ -1,9 +1,10 @@
 import contextlib
 import datetime
+import fnmatch
 import logging
 import tempfile
 import urllib.parse
-from collections.abc import Coroutine
+from collections.abc import AsyncGenerator, Coroutine
 from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
@@ -958,6 +959,136 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 updated_fmd = await self._update_database_from_storage(fmd)
                 resolved_fmds.append(convert_db_to_model(updated_fmd))
         return resolved_fmds
+
+    def _create_file_metadata_from_s3_object(
+        self, s3_obj: S3MetaData, user_id: UserID
+    ) -> FileMetaData | None:
+        """Create FileMetaData from S3 object, return None if invalid."""
+        try:
+            return FileMetaData.from_simcore_node(
+                user_id=user_id,
+                file_id=TypeAdapter(SimcoreS3FileID).validate_python(s3_obj.object_key),
+                bucket=self.simcore_bucket_name,
+                location_id=self.get_location_id(),
+                location_name=self.get_location_name(),
+                sha256_checksum=None,
+                file_size=s3_obj.size,
+                last_modified=s3_obj.last_modified,
+                entity_tag=s3_obj.e_tag,
+            )
+        except (ValidationError, ValueError):
+            return None
+
+    async def _process_s3_page_results(
+        self,
+        current_page_results: list[FileMetaData],
+    ) -> list[FileMetaData]:
+        current_page_results.sort(
+            key=lambda x: x.last_modified
+            or datetime.datetime.min.replace(tzinfo=datetime.UTC),
+            reverse=True,
+        )
+
+        result_project_ids = list(
+            {
+                result.project_id
+                for result in current_page_results
+                if result.project_id is not None
+            }
+        )
+
+        if result_project_ids:
+            current_page_results = await _add_frontend_needed_data(
+                get_db_engine(self.app),
+                project_ids=result_project_ids,
+                data=current_page_results,
+            )
+
+        return current_page_results
+
+    async def _search_project_s3_files(
+        self,
+        proj_id: ProjectID,
+        filename_pattern: str,
+        user_id: UserID,
+        items_per_page: NonNegativeInt,
+    ) -> AsyncGenerator[list[FileMetaData], None]:
+        """Search S3 files in a specific project and yield results page by page."""
+        s3_client = get_s3_client(self.app)
+        min_parts_for_valid_s3_object = 2
+        current_page_results: list[FileMetaData] = []
+
+        try:
+            async for s3_objects in s3_client.list_objects_paginated(
+                bucket=self.simcore_bucket_name,
+                prefix=f"{proj_id}/",
+                items_per_page=items_per_page * 2,
+            ):
+                for s3_obj in s3_objects:
+                    filename = Path(s3_obj.object_key).name
+
+                    if (
+                        fnmatch.fnmatch(filename, filename_pattern)
+                        and len(s3_obj.object_key.split("/"))
+                        >= min_parts_for_valid_s3_object
+                    ):
+                        file_meta = self._create_file_metadata_from_s3_object(
+                            s3_obj, user_id
+                        )
+                        if file_meta:
+                            current_page_results.append(file_meta)
+
+                            if len(current_page_results) >= items_per_page:
+                                processed_results = await self._process_s3_page_results(
+                                    current_page_results
+                                )
+                                yield processed_results
+                                current_page_results = []
+
+            if current_page_results:
+                processed_results = await self._process_s3_page_results(
+                    current_page_results
+                )
+                yield processed_results
+
+        except S3KeyNotFoundError:
+            with log_context(
+                _logger, logging.DEBUG, f"Failed to search S3 for project {proj_id}"
+            ):
+                return
+
+    async def search_files(
+        self,
+        user_id: UserID,
+        *,
+        filename_pattern: str,
+        project_id: ProjectID | None = None,
+        items_per_page: NonNegativeInt = 100,
+    ) -> AsyncGenerator[list[FileMetaData], None]:
+        """
+        Search for files in S3 using a wildcard pattern for filenames.
+        Returns results as an async generator that yields pages of results.
+
+        Args:
+            user_id: The user requesting the search
+            filename_pattern: Wildcard pattern for filename matching (e.g., "*.txt", "test_*.json")
+            project_id: Optional project ID to limit search to specific project
+            items_per_page: Number of items to return per page
+
+        Yields:
+            List of FileMetaData objects for each page
+        """
+        # Validate access rights
+        accessible_projects_ids = await get_accessible_project_ids(
+            get_db_engine(self.app), user_id=user_id, project_id=project_id
+        )
+
+        # Search each accessible project
+        for proj_id in accessible_projects_ids:
+            async for page_results in self._search_project_s3_files(
+                proj_id, filename_pattern, user_id, items_per_page
+            ):
+                yield page_results
 
     async def create_soft_link(
         self, user_id: int, target_file_id: StorageFileID, link_file_id: StorageFileID

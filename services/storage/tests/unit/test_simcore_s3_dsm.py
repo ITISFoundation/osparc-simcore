@@ -168,6 +168,131 @@ async def test_upload_and_search(
         assert file.file_name in {"file1", "file2"}
 
 
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_files(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+):
+    # Upload files with different patterns
+    test_files = [
+        ("test_file1.txt", "*.txt"),
+        ("test_file2.txt", "*.txt"),
+        ("document.pdf", "*.pdf"),
+        ("data_file.csv", "data_*.csv"),
+        ("backup_file.bak", "backup_*"),
+        ("config.json", "*.json"),
+        ("temp_data.tmp", "temp_*"),
+    ]
+
+    uploaded_files = []
+    for file_name, _ in test_files:
+        checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
+        _, file_id = await upload_file(file_size, file_name, sha256_checksum=checksum)
+        uploaded_files.append((file_name, file_id, checksum))
+
+    # Test 1: Search for all .txt files
+    txt_results = []
+    async for page in simcore_s3_dsm.search_files(
+        user_id=user_id,
+        filename_pattern="*.txt",
+        project_id=project_id,
+        items_per_page=10,
+    ):
+        txt_results.extend(page)
+
+    # Should find 2 txt files
+    assert len(txt_results) == 2
+    txt_names = {file.file_name for file in txt_results}
+    assert txt_names == {"test_file1.txt", "test_file2.txt"}
+
+    # Test 2: Search with specific prefix pattern
+    data_results = []
+    async for page in simcore_s3_dsm.search_files(
+        user_id=user_id,
+        filename_pattern="data_*",
+        project_id=project_id,
+        items_per_page=10,
+    ):
+        data_results.extend(page)
+
+    # Should find 1 data file
+    assert len(data_results) == 1
+    assert data_results[0].file_name == "data_file.csv"
+
+    # Test 3: Search with pattern that matches multiple extensions
+    temp_results = []
+    async for page in simcore_s3_dsm.search_files(
+        user_id=user_id,
+        filename_pattern="temp_*",
+        project_id=project_id,
+        items_per_page=10,
+    ):
+        temp_results.extend(page)
+
+    # Should find 1 temp file
+    assert len(temp_results) == 1
+    assert temp_results[0].file_name == "temp_data.tmp"
+
+    # Test 4: Search with pattern that doesn't match anything
+    no_match_results = []
+    async for page in simcore_s3_dsm.search_files(
+        user_id=user_id,
+        filename_pattern="nonexistent_*",
+        project_id=project_id,
+        items_per_page=10,
+    ):
+        no_match_results.extend(page)
+
+    assert len(no_match_results) == 0
+
+    # Test 5: Search without project_id restriction (all accessible projects)
+    all_results = []
+    async for page in simcore_s3_dsm.search_files(
+        user_id=user_id,
+        filename_pattern="*",
+        items_per_page=10,
+    ):
+        all_results.extend(page)
+
+    # Should find at least our uploaded files
+    assert len(all_results) >= len(test_files)
+
+    # Verify that each result has expected FileMetaData structure
+    for file_meta in all_results:
+        assert isinstance(file_meta, FileMetaData)
+        assert file_meta.file_name is not None
+        assert file_meta.file_id is not None
+        assert file_meta.user_id == user_id
+        assert file_meta.project_id is not None
+
+    # Test 6: Test pagination with small page size
+    paginated_results = []
+    page_count = 0
+    async for page in simcore_s3_dsm.search_files(
+        user_id=user_id,
+        filename_pattern="*",
+        project_id=project_id,
+        items_per_page=2,  # Small page size to test pagination
+    ):
+        paginated_results.extend(page)
+        page_count += 1
+        # Each page should have at most 2 items
+        assert len(page) <= 2
+
+    # Should have multiple pages and all our files
+    assert page_count >= 4  # At least 7 files / 2 per page = 4 pages
+    assert len(paginated_results) == len(test_files)
+
+
 @pytest.fixture
 async def paths_for_export(
     random_project_with_files: Callable[
