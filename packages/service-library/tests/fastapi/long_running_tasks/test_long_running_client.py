@@ -8,7 +8,7 @@ from servicelib.fastapi.long_running_tasks._client import retry_on_http_errors
 @pytest.mark.parametrize(
     "error_class, error_args",
     [
-        (HTTPError, dict(message="")),
+        (HTTPError, {"message": ""}),
     ],
 )
 async def test_retry_on_errors(

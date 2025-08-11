@@ -1,8 +1,9 @@
 import logging
-from typing import Any
+from datetime import timedelta
+from typing import Any, Final
 
 from models_library.rabbitmq_basic_types import RPCMethodName
-from pydantic import TypeAdapter
+from pydantic import PositiveInt, TypeAdapter
 
 from ...logging_utils import log_decorator
 from ...long_running_tasks.task import RegisteredTaskName
@@ -11,6 +12,13 @@ from ..models import RabbitNamespace, TaskBase, TaskContext, TaskId, TaskStatus
 from .namespace import get_namespace
 
 _logger = logging.getLogger(__name__)
+
+_RPC_TIMEOUT_VERY_LONG_REQUEST: Final[PositiveInt] = int(
+    timedelta(minutes=60).total_seconds()
+)
+_RPC_TIMEOUT_NORMAL_REQUEST: Final[PositiveInt] = int(
+    timedelta(seconds=30).total_seconds()
+)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -34,6 +42,7 @@ async def start_task(
         task_name=task_name,
         fire_and_forget=fire_and_forget,
         **task_kwargs,
+        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
     )
     assert isinstance(result, TaskId)  # nosec
     return result
@@ -50,9 +59,9 @@ async def list_tasks(
         get_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("list_tasks"),
         task_context=task_context,
+        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
     )
-    assert TypeAdapter(list[TaskBase]).validate_python(result)  # nosec
-    return result
+    return TypeAdapter(list[TaskBase]).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -68,6 +77,7 @@ async def get_task_status(
         TypeAdapter(RPCMethodName).validate_python("get_task_status"),
         task_context=task_context,
         task_id=task_id,
+        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
     )
     assert isinstance(result, TaskStatus)  # nosec
     return result
@@ -86,6 +96,7 @@ async def get_task_result(
         TypeAdapter(RPCMethodName).validate_python("get_task_result"),
         task_context=task_context,
         task_id=task_id,
+        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
     )
 
 
@@ -104,5 +115,6 @@ async def remove_task(
         task_context=task_context,
         task_id=task_id,
         reraise_errors=reraise_errors,
+        timeout_s=_RPC_TIMEOUT_VERY_LONG_REQUEST,
     )
     assert result is None  # nosec

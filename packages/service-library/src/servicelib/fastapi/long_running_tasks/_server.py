@@ -1,6 +1,7 @@
 import datetime
 
 from fastapi import APIRouter, FastAPI
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from ...long_running_tasks.constants import (
@@ -8,6 +9,7 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
 from ...long_running_tasks.errors import BaseLongRunningError
+from ...long_running_tasks.models import RabbitNamespace
 from ...long_running_tasks.task import RedisNamespace
 from ._error_handlers import base_long_running_error_handler
 from ._manager import FastAPILongRunningManager
@@ -20,6 +22,8 @@ def setup(
     router_prefix: str = "",
     redis_settings: RedisSettings,
     redis_namespace: RedisNamespace,
+    rabbit_settings: RabbitSettings,
+    rabbit_namespace: RabbitNamespace,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
     stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
@@ -47,6 +51,8 @@ def setup(
                 stale_task_detect_timeout=stale_task_detect_timeout,
                 redis_settings=redis_settings,
                 redis_namespace=redis_namespace,
+                rabbit_settings=rabbit_settings,
+                rabbit_namespace=rabbit_namespace,
             )
         )
         await long_running_manager.setup()
