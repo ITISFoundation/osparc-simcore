@@ -106,15 +106,17 @@ qx.Class.define("osparc.info.ServiceUtils", {
         wrap: true,
         maxWidth: 220,
       });
-      authors.set({
-        value: serviceData["authors"].map(author => author["name"]).join(", "),
-      });
-      serviceData["authors"].forEach(author => {
-        const oldTTT = authors.getToolTipText();
+      if (serviceData["authors"]) {
         authors.set({
-          toolTipText: (oldTTT ? oldTTT : "") + `${author["email"]} - ${author["affiliation"]}<br>`
+          value: serviceData["authors"].map(author => author["name"]).join(", "),
         });
-      });
+        serviceData["authors"].forEach(author => {
+          const oldTTT = authors.getToolTipText();
+          authors.set({
+            toolTipText: (oldTTT ? oldTTT : "") + `${author["email"]} - ${author["affiliation"]}<br>`
+          });
+        });
+      }
       return authors;
     },
 
