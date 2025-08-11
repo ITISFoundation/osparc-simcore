@@ -700,6 +700,8 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserialize: function(workbenchInitData, workbenchUIInitData) {
+      this.__deserializeAll(workbenchInitData, workbenchUIInitData);
+
       this.__deserializeNodes(workbenchInitData, workbenchUIInitData)
         .then(() => {
           this.__deserializeEdges(workbenchInitData);
@@ -707,6 +709,21 @@ qx.Class.define("osparc.data.model.Workbench", {
           workbenchUIInitData = null;
           this.setDeserialized(true);
         });
+    },
+
+    __deserializeAll: function(workbenchData, uiData = {}) {
+      const nodeDatas = {};
+      const nodeUiDatas = {};
+      for (const nodeId in workbenchData) {
+        const nodeData = workbenchData[nodeId];
+        nodeDatas[nodeId] = nodeData;
+        if (uiData["workbench"] && nodeId in uiData["workbench"]) {
+          nodeUiDatas[nodeId] = uiData["workbench"][nodeId];
+        }
+      }
+      for (const nodeId in nodeDatas) {
+        console.log("node", nodeId, nodeDatas[nodeId], nodeUiDatas[nodeId]);
+      }
     },
 
     __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
