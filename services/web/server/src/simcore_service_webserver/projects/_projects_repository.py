@@ -8,12 +8,14 @@ from aiohttp import web
 from common_library.exclude import Unset, is_set
 from models_library.basic_types import IDStr
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.workspaces import WorkspaceID
-from pydantic import NonNegativeInt, PositiveInt
+from pydantic import NonNegativeInt, PositiveInt, TypeAdapter
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_projects_nodes import make_workbench_subquery
 from simcore_postgres_database.utils_repos import (
@@ -108,12 +110,30 @@ async def get_project(
     project_uuid: ProjectID,
 ) -> ProjectDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sql.select(*PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}")
-        result = await conn.execute(query)
+        result = await conn.execute(
+            sa.select(*PROJECT_DB_COLS).where(projects.c.uuid == f"{project_uuid}")
+        )
         row = result.one_or_none()
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         return ProjectDBGet.model_validate(row)
+
+
+async def get_project_product(
+    app,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: ProjectID,
+) -> ProductName:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.scalar(
+            sa.select(projects_to_products.c.product_name).where(
+                projects_to_products.c.project_uuid == f"{project_uuid}"
+            )
+        )
+        if result is None:
+            raise ProjectNotFoundError(project_uuid=project_uuid)
+        return TypeAdapter(ProductName).validate_python(result)
 
 
 async def get_project_with_workbench(
