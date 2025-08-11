@@ -23,6 +23,7 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -30,17 +31,15 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
-    "redis",
-]
-
-pytest_simcore_ops_services_selection = [
-    "redis-commander",
+    "rabbit",
 ]
 
 
 @pytest.fixture
 def app(
-    server_routes: web.RouteTableDef, redis_service: RedisSettings
+    server_routes: web.RouteTableDef,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
@@ -48,8 +47,10 @@ def app(
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(
         app,
-        redis_settings=redis_service,
+        redis_settings=use_in_memory_redis,
         redis_namespace="test",
+        rabbit_settings=rabbit_service,
+        rabbit_namespace="test",
         router_prefix="/futures",
     )
 
@@ -109,7 +110,14 @@ async def test_workflow(
         ("generated item", 0.8),
         ("finished", 1.0),
     ]
-    assert all(x in progress_updates for x in EXPECTED_MESSAGES)
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")

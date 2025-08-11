@@ -8,6 +8,7 @@ from aiohttp import web
 from aiohttp.web import HTTPException
 from common_library.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, TypeAdapter
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from ...aiohttp import status
@@ -20,7 +21,7 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_CHECK_INTERVAL,
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
-from ...long_running_tasks.models import TaskContext, TaskGet
+from ...long_running_tasks.models import RabbitNamespace, TaskContext, TaskGet
 from ...long_running_tasks.task import RedisNamespace, RegisteredTaskName
 from ..typing_extension import Handler
 from . import _routes
@@ -63,6 +64,7 @@ async def start_long_running_task(
     task_id = None
     try:
         task_id = await lrt_api.start_task(
+            long_running_manager.rpc_client,
             long_running_manager,
             registerd_task_name,
             fire_and_forget=fire_and_forget,
@@ -97,7 +99,12 @@ async def start_long_running_task(
     except asyncio.CancelledError:
         # remove the task, the client was disconnected
         if task_id:
-            await lrt_api.remove_task(long_running_manager, task_context, task_id)
+            await lrt_api.remove_task(
+                long_running_manager.rpc_client,
+                long_running_manager,
+                task_context,
+                task_id,
+            )
         raise
 
 
@@ -142,6 +149,8 @@ def setup(
     router_prefix: str,
     redis_settings: RedisSettings,
     redis_namespace: RedisNamespace,
+    rabbit_settings: RabbitSettings,
+    rabbit_namespace: RabbitNamespace,
     handler_check_decorator: Callable = _no_ops_decorator,
     task_request_context_decorator: Callable = _no_task_context_decorator,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
@@ -170,7 +179,9 @@ def setup(
                 stale_task_check_interval=stale_task_check_interval,
                 stale_task_detect_timeout=stale_task_detect_timeout,
                 redis_settings=redis_settings,
+                rabbit_settings=rabbit_settings,
                 redis_namespace=redis_namespace,
+                rabbit_namespace=rabbit_namespace,
             )
         )
 
