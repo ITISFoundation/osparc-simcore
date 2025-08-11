@@ -798,6 +798,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else if (node) {
         this.__populateSecondaryColumnNode(node);
       }
+
+      if (node instanceof osparc.data.model.Node) {
+        node.getStudy().bind("pipelineRunning", this.__serviceOptionsPage, "enabled", {
+          converter: pipelineRunning => !pipelineRunning
+        });
+      }
     },
 
     __populateSecondaryColumnStudy: function(study) {

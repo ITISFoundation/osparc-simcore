@@ -280,13 +280,6 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     /**
       * @abstract
       */
-    isSettingsGroupShowable: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    /**
-      * @abstract
-      */
     _addSettings: function() {
       throw new Error("Abstract method called!");
     },

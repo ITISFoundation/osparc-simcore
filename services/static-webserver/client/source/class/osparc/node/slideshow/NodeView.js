@@ -59,7 +59,13 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       if (propsForm && node.hasInputs()) {
         this._settingsLayout.add(propsForm);
       }
-      this.__checkSettingsVisibility();
+
+      const showSettings = node.isComputational();
+      this._settingsLayout.setVisibility(showSettings ? "visible" : "excluded");
+
+      node.getStudy().bind("pipelineRunning", this._settingsLayout, "enabled", {
+        converter: pipelineRunning => !pipelineRunning
+      });
 
       this._mainView.add(this._settingsLayout);
     },
@@ -126,19 +132,6 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     // overridden
     _applyNode: function(node) {
       this.base(arguments, node);
-    },
-
-    __checkSettingsVisibility: function() {
-      const isSettingsGroupShowable = this.isSettingsGroupShowable();
-      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
-    },
-
-    isSettingsGroupShowable: function() {
-      const node = this.getNode();
-      if (node.isComputational()) {
-        return this.self().isPropsFormShowable(node);
-      }
-      return false;
     },
 
     __iFrameChanged: function() {

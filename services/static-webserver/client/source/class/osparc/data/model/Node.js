@@ -599,23 +599,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     __applyPropsForm: function(propsForm) {
       osparc.utils.Utils.setIdToWidget(propsForm, "settingsForm_" + this.getNodeId());
-
-      const checkIsPipelineRunning = () => {
-        const isPipelineRunning = this.getStudy().isPipelineRunning();
-        this.getPropsForm().setEnabled(!isPipelineRunning);
-      };
-      this.getStudy().addListener("changeState", () => checkIsPipelineRunning(), this);
-
-      // potentially disabling the inputs form might have side effects if the deserialization is not over
-      if (this.getWorkbench().isDeserialized()) {
-        checkIsPipelineRunning();
-      } else {
-        this.getWorkbench().addListener("changeDeserialized", e => {
-          if (e.getData()) {
-            checkIsPipelineRunning();
-          }
-        }, this);
-      }
     },
 
     /**
