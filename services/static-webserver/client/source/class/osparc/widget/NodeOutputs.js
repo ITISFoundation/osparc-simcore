@@ -198,18 +198,21 @@ qx.Class.define("osparc.widget.NodeOutputs", {
         valueWidget = new osparc.ui.basic.LinkLabel();
         if ("store" in value) {
           // it's a file
-          const download = true;
-          const locationId = value.store;
-          const fileId = value.path;
           const filename = value.filename || osparc.file.FilePicker.getFilenameFromPath(value);
           valueWidget.setValue(filename);
           valueWidget.eTag = value["eTag"];
-          osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
-            .then(presignedLinkData => {
-              if ("resp" in presignedLinkData && presignedLinkData.resp) {
-                valueWidget.setUrl(presignedLinkData.resp.link);
-              }
-            });
+          const download = true;
+          const locationId = value.store;
+          const fileId = value.path;
+          // request the presigned link only when the widget is shown
+          valueWidget.addListenerOnce("appear", () => {
+            osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId)
+              .then(presignedLinkData => {
+                if ("resp" in presignedLinkData && presignedLinkData.resp) {
+                  valueWidget.setUrl(presignedLinkData.resp.link);
+                }
+              });
+          });
         } else if ("downloadLink" in value) {
           // it's a link
           const filename = (value.filename && value.filename.length > 0) ? value.filename : osparc.file.FileDownloadLink.extractLabelFromLink(value["downloadLink"]);
