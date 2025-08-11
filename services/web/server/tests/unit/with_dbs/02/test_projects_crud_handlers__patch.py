@@ -9,6 +9,7 @@
 import json
 import uuid
 from http import HTTPStatus
+from unittest import mock
 from unittest.mock import patch
 
 import pytest
@@ -60,6 +61,7 @@ async def test_patch_project_entrypoint_access(
     "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
 )
 async def test_patch_project(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
