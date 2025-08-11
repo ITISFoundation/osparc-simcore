@@ -7,6 +7,7 @@
 
 from copy import deepcopy
 from http.client import NO_CONTENT
+from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -26,6 +27,7 @@ def user_role() -> UserRole:
 
 @pytest.fixture
 async def moving_folder_id(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     fake_project: ProjectDict,
