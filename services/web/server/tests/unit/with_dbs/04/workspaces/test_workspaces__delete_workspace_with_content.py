@@ -43,6 +43,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_workspaces_full_workflow_deletion(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
