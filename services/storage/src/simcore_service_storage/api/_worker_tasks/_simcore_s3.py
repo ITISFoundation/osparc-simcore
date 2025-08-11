@@ -5,6 +5,7 @@ from typing import Any
 from aws_library.s3._models import S3ObjectKey
 from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
+from models_library.api_schemas_storage.search_async_jobs import SearchResult
 from models_library.api_schemas_storage.storage_schemas import (
     FoldersBody,
     LinkType,
@@ -21,7 +22,6 @@ from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
 from ...dsm import get_dsm_provider
-from ...models import FileMetaData
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
@@ -139,7 +139,7 @@ async def search(
     user_id: UserID,
     project_id: ProjectID | None,
     name_pattern: str,
-) -> list[FileMetaData]:
+) -> list[SearchResult]:
     with log_context(
         _logger,
         logging.INFO,
@@ -151,13 +151,24 @@ async def search(
 
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
-        pages = []
+        pages: list[SearchResult] = []
         async for page in dsm.search(
             user_id=user_id,
             project_id=project_id,
             name_pattern=name_pattern,
         ):
             # TODO: publish temporary result
-            pages.extend(page)
+            pages.extend(
+                [
+                    SearchResult(
+                        name=item.file_name,
+                        project_id=item.project_id,
+                        created_at=item.created_at,
+                        modified_at=item.last_modified,
+                        is_directory=item.is_directory,
+                    )
+                    for item in page
+                ]
+            )
 
         return pages
