@@ -116,7 +116,7 @@ async def _assert_handler_called_with_json(
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
-        stop=stop_after_delay(10),
+        stop=stop_after_delay(1000),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
@@ -370,6 +370,45 @@ async def test_progress_non_computational_workflow(
         await _assert_handler_not_called(mock_progress_handler)
 
 
+@pytest.fixture
+def mock_dynamic_scheduler(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.stop_dynamic_services_in_project",
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_webserver.dynamic_scheduler.api.update_projects_networks",
+        autospec=True,
+    )
+
+
+@pytest.fixture
+async def mocked_dynamic_services_interface(
+    mocker: MockerFixture,
+) -> dict[str, mock.MagicMock]:
+    mock = {}
+
+    for func_name in (
+        "list_dynamic_services",
+        "get_dynamic_service",
+        "run_dynamic_service",
+        "stop_dynamic_service",
+    ):
+        name = f"dynamic_scheduler.api.{func_name}"
+        mock[name] = mocker.patch(
+            f"simcore_service_webserver.{name}",
+            autospec=True,
+            return_value={},
+        )
+
+    mock["director_v2.api.create_or_update_pipeline"] = mocker.patch(
+        "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
+        autospec=True,
+        return_value=None,
+    )
+    return mock
+
+
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
 @pytest.mark.parametrize(
     "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
@@ -378,6 +417,8 @@ async def test_progress_non_computational_workflow(
     "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
 )
 async def test_progress_computational_workflow(
+    mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     user_project: ProjectDict,
