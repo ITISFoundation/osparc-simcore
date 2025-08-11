@@ -38,13 +38,6 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
 
   statics: {
     LOGGER_HEIGHT: 28,
-
-    isPropsFormShowable: function(node) {
-      if (node && ("getPropsForm" in node) && node.getPropsForm()) {
-        return node.getPropsForm().hasVisibleInputs();
-      }
-      return false;
-    },
   },
 
   members: {
@@ -55,9 +48,14 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       this._settingsLayout.removeAll();
 
       const node = this.getNode();
-      const propsForm = node.getPropsForm();
-      if (propsForm && node.hasInputs()) {
-        this._settingsLayout.add(propsForm);
+      if (
+        node.isComputational() &&
+        node.hasInputs() &&
+        "getPropsForm" in node &&
+        node.getPropsForm() &&
+        node.getPropsForm().hasVisibleInputs()
+      ) {
+        this._settingsLayout.add(node.getPropsForm());
       }
 
       const showSettings = node.isComputational();

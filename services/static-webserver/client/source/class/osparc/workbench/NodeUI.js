@@ -398,11 +398,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
 
       const lock = this.getChildControl("lock");
-      if (node.getPropsForm()) {
-        node.getPropsForm().bind("enabled", lock, "visibility", {
-          converter: val => val ? "excluded" : "visible"
-        });
-      }
+      node.getStudy().bind("pipelineRunning", lock, "visibility", {
+        converter: pipelineRunning => !pipelineRunning ? "visible" : "excluded"
+      });
+
       this.__markerBtn.show();
       this.getNode().bind("marker", this.__markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
