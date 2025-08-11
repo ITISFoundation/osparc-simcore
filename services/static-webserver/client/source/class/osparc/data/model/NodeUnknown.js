@@ -51,7 +51,7 @@ qx.Class.define("osparc.data.model.NodeUnknown", {
       }
       */
 
-      return this.base(arguments);
+      return null;
     }
   }
 });

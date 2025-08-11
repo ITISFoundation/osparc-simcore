@@ -245,6 +245,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
               icon: type.icon + "14",
               toolTipText: type.label
             });
+          } else if (this.getNode().isUnknown()) {
+            control.set({
+              icon: "@FontAwesome5Solid/question/14",
+              toolTipText: "Unknown",
+            });
           }
           this.getChildControl("middle-container").add(control);
           break;
@@ -514,8 +519,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const width = this.self().FILE_NODE_WIDTH;
       this.__setNodeUIWidth(width);
 
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.exclude();
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.exclude();
 
       if (this.hasChildControl("progress")) {
         this.getChildControl("progress").exclude();
@@ -548,8 +553,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const label = new qx.ui.basic.Label().set({
         font: "text-18"
       });
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.add(label);
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.add(label);
 
       this.getNode().bind("outputs", label, "value", {
         converter: outputs => {
@@ -599,8 +604,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
         paddingLeft: 5,
         font: "text-12"
       });
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.add(linkLabel);
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.add(linkLabel);
 
       this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(linkLabel), this);
       this.__setProbeValue(linkLabel);
@@ -610,8 +615,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const width = 150;
       this.__setNodeUIWidth(width);
 
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.add();
+      this.setEnabled(false);
+
       this.fireEvent("updateNodeDecorator");
     },
 
