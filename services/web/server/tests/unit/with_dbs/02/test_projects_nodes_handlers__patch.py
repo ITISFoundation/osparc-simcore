@@ -56,6 +56,7 @@ def mocked_notify_project_node_update(mocker: MockerFixture):
 )
 async def test_patch_project_node_entrypoint_access(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -78,6 +79,7 @@ async def test_patch_project_node_entrypoint_access(
 )
 async def test_patch_project_node(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -231,7 +233,7 @@ async def test_patch_project_node_notifies(
     "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
 )
 async def test_patch_project_node_inputs_notifies(
-    mocker: MockerFixture,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -270,6 +272,7 @@ async def test_patch_project_node_inputs_notifies(
     "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
 )
 async def test_patch_project_node_inputs_with_data_type_change(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
