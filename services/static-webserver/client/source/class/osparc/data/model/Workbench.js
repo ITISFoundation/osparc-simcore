@@ -739,25 +739,20 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __deserializeEdges: function(workbenchData) {
       for (const nodeId in workbenchData) {
-        const nodeData = workbenchData[nodeId];
         const node = this.getNode(nodeId);
         if (node === null) {
           continue;
         }
-        this.__addInputOutputNodesAndEdges(node, nodeData.inputNodes);
-      }
-    },
-
-    __addInputOutputNodesAndEdges: function(node, inputOutputNodeIds) {
-      if (inputOutputNodeIds) {
-        inputOutputNodeIds.forEach(inputOutputNodeId => {
-          const node1 = this.getNode(inputOutputNodeId);
-          if (node1 === null) {
+        const nodeData = workbenchData[nodeId];
+        const inputNodeIds = nodeData.inputNodes || [];
+        inputNodeIds.forEach(inputNodeId => {
+          const inputNode = this.getNode(inputNodeId);
+          if (inputNode === null) {
             return;
           }
-          const edge = new osparc.data.model.Edge(null, node1, node);
+          const edge = new osparc.data.model.Edge(null, inputNode, node);
           this.addEdge(edge);
-          node.addInputNode(inputOutputNodeId);
+          node.addInputNode(inputNodeId);
         });
       }
     },
