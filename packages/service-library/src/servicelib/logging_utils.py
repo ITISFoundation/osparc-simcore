@@ -97,7 +97,10 @@ class CustomFormatter(logging.Formatter):
         if hasattr(record, "file_name_override"):
             record.filename = record.file_name_override
 
-        for name in LogExtra.__optional_keys__:  # pylint: disable=no-member
+        optional_keys = LogExtra.__optional_keys__ | frozenset(  # pylint: disable=no-member
+            ["otelTraceID", "otelSpanID"]
+        )
+        for name in optional_keys:
             if not hasattr(record, name):
                 setattr(record, name, None)
 
@@ -119,56 +122,27 @@ _DEFAULT_FORMATTING: Final[str] = " | ".join(
         "log_source=%(name)s:%(funcName)s(%(lineno)d)",
         "log_uid=%(log_uid)s",
         "log_oec=%(log_oec)s",
+        "log_trace_id=%(otelTraceID)s",
+        "log_span_id=%(otelSpanID)s",
         "log_msg=%(message)s",
     ]
 )
 
 _LOCAL_FORMATTING: Final[str] = (
-    "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)]  -  %(message)s"
-)
-
-# Tracing format strings
-_TRACING_FORMATTING: Final[str] = " | ".join(
-    [
-        "log_level=%(levelname)s",
-        "log_timestamp=%(asctime)s",
-        "log_source=%(name)s:%(funcName)s(%(lineno)d)",
-        "log_uid=%(log_uid)s",
-        "log_oec=%(log_oec)s",
-        "log_trace_id=%(otelTraceID)s",
-        "log_span_id=%(otelSpanID)s",
-        "log_resource.service.name=%(otelServiceName)s",
-        "log_trace_sampled=%(otelTraceSampled)s",
-        "log_msg=%(message)s",
-    ]
-)
-
-_LOCAL_TRACING_FORMATTING: Final[str] = (
     "%(levelname)s: [%(asctime)s/%(processName)s] "
-    "[log_trace_id=%(otelTraceID)s log_span_id=%(otelSpanID)s "
-    "log_resource.service.name=%(otelServiceName)s log_trace_sampled=%(otelTraceSampled)s] "
+    "[log_trace_id=%(otelTraceID)s|log_span_id=%(otelSpanID)s] "
     "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
 )
 
 # Graylog Grok pattern extractor:
-# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{DATA:log_source} \| (log_uid=%{WORD:log_uid} \| )?log_msg=%{GREEDYDATA:log_msg}
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}
 
 
 def _setup_logging_formatter(
     *,
-    tracing_settings: TracingSettings | None,
     log_format_local_dev_enabled: bool,
 ) -> logging.Formatter:
-    if log_format_local_dev_enabled:
-        fmt = (
-            _LOCAL_TRACING_FORMATTING
-            if tracing_settings is not None
-            else _LOCAL_FORMATTING
-        )
-    else:
-        fmt = (
-            _TRACING_FORMATTING if tracing_settings is not None else _DEFAULT_FORMATTING
-        )
+    fmt = _LOCAL_FORMATTING if log_format_local_dev_enabled else _DEFAULT_FORMATTING
 
     return CustomFormatter(
         fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
@@ -234,7 +208,6 @@ def _configure_common_logging_settings(
         setup_log_tracing(tracing_settings=tracing_settings)
 
     return _setup_logging_formatter(
-        tracing_settings=tracing_settings,
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
 
