@@ -1047,11 +1047,11 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             ):
                 return
 
-    async def search_files(
+    async def search(
         self,
         user_id: UserID,
         *,
-        filename_pattern: str,
+        name_pattern: str,
         project_id: ProjectID | None = None,
         items_per_page: NonNegativeInt = 100,
     ) -> AsyncGenerator[list[FileMetaData], None]:
@@ -1076,7 +1076,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         # Search each accessible project
         for proj_id in accessible_projects_ids:
             async for page_results in self._search_project_s3_files(
-                proj_id, filename_pattern, user_id, items_per_page
+                proj_id, name_pattern, user_id, items_per_page
             ):
                 yield page_results
 

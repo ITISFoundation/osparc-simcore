@@ -14,7 +14,7 @@ from .._worker_tasks._simcore_s3 import (
     deep_copy_files_from_project,
     export_data,
     export_data_as_download_link,
-    search_files,
+    search,
 )
 
 router = RPCRouter()
@@ -68,13 +68,13 @@ async def start_export_data(
 
 
 @router.expose()
-async def start_search_files(
+async def start_search(
     task_manager: TaskManager,
     job_filter: AsyncJobFilter,
-    filename_pattern: str,
+    name_pattern: str,
     project_id: str | None = None,
 ) -> AsyncJobGet:
-    task_name = search_files.__name__
+    task_name = search.__name__
     task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
         task_metadata=TaskMetadata(
@@ -83,7 +83,7 @@ async def start_search_files(
         ),
         task_filter=task_filter,
         user_id=job_filter.user_id,
-        filename_pattern=filename_pattern,
+        name_pattern=name_pattern,
         project_id=project_id,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

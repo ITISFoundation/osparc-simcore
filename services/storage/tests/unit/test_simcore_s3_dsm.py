@@ -201,9 +201,9 @@ async def test_search_files(
 
     # Test 1: Search for all .txt files
     txt_results = []
-    async for page in simcore_s3_dsm.search_files(
+    async for page in simcore_s3_dsm.search(
         user_id=user_id,
-        filename_pattern="*.txt",
+        name_pattern="*.txt",
         project_id=project_id,
         items_per_page=10,
     ):
@@ -216,9 +216,9 @@ async def test_search_files(
 
     # Test 2: Search with specific prefix pattern
     data_results = []
-    async for page in simcore_s3_dsm.search_files(
+    async for page in simcore_s3_dsm.search(
         user_id=user_id,
-        filename_pattern="data_*",
+        name_pattern="data_*",
         project_id=project_id,
         items_per_page=10,
     ):
@@ -230,9 +230,9 @@ async def test_search_files(
 
     # Test 3: Search with pattern that matches multiple extensions
     temp_results = []
-    async for page in simcore_s3_dsm.search_files(
+    async for page in simcore_s3_dsm.search(
         user_id=user_id,
-        filename_pattern="temp_*",
+        name_pattern="temp_*",
         project_id=project_id,
         items_per_page=10,
     ):
@@ -244,9 +244,9 @@ async def test_search_files(
 
     # Test 4: Search with pattern that doesn't match anything
     no_match_results = []
-    async for page in simcore_s3_dsm.search_files(
+    async for page in simcore_s3_dsm.search(
         user_id=user_id,
-        filename_pattern="nonexistent_*",
+        name_pattern="nonexistent_*",
         project_id=project_id,
         items_per_page=10,
     ):
@@ -256,9 +256,9 @@ async def test_search_files(
 
     # Test 5: Search without project_id restriction (all accessible projects)
     all_results = []
-    async for page in simcore_s3_dsm.search_files(
+    async for page in simcore_s3_dsm.search(
         user_id=user_id,
-        filename_pattern="*",
+        name_pattern="*",
         items_per_page=10,
     ):
         all_results.extend(page)
@@ -277,9 +277,9 @@ async def test_search_files(
     # Test 6: Test pagination with small page size
     paginated_results = []
     page_count = 0
-    async for page in simcore_s3_dsm.search_files(
+    async for page in simcore_s3_dsm.search(
         user_id=user_id,
-        filename_pattern="*",
+        name_pattern="*",
         project_id=project_id,
         items_per_page=2,  # Small page size to test pagination
     ):

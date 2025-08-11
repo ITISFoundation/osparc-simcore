@@ -132,18 +132,18 @@ async def export_data_as_download_link(
     return PresignedLink(link=download_link)
 
 
-async def search_files(
+async def search(
     task: Task,
     task_id: TaskID,
     *,
     user_id: UserID,
     project_id: ProjectID | None,
-    filename_pattern: str,
+    name_pattern: str,
 ) -> list[FileMetaData]:
     with log_context(
         _logger,
         logging.INFO,
-        f"'{task_id}' search file {filename_pattern=}",
+        f"'{task_id}' search file {name_pattern=}",
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(
             SimcoreS3DataManager.get_location_id()
@@ -152,10 +152,10 @@ async def search_files(
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
         pages = []
-        async for page in dsm.search_files(
+        async for page in dsm.search(
             user_id=user_id,
-            filename_pattern=filename_pattern,
             project_id=project_id,
+            name_pattern=name_pattern,
         ):
             # TODO: publish temporary result
             pages.extend(page)
