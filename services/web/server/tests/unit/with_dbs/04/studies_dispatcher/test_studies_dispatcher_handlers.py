@@ -8,6 +8,7 @@ import asyncio
 import re
 import urllib.parse
 from typing import Any
+from unittest import mock
 
 import pytest
 import simcore_service_webserver.studies_dispatcher
@@ -388,6 +389,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
 
 
 async def test_dispatch_study_anonymously(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     redirect_url: URL,
     redirect_type: str,
@@ -451,6 +453,7 @@ async def test_dispatch_study_anonymously(
     ],
 )
 async def test_dispatch_logged_in_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     redirect_url: URL,
     redirect_type: str,

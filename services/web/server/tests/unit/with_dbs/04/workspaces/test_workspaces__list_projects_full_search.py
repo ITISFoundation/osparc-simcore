@@ -8,6 +8,7 @@
 import json
 from copy import deepcopy
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -27,7 +28,8 @@ _SEARCH_NAME_3 = "Skyline solutions"
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_workspaces__list_projects_full_search(
+async def test_workspaces__list_projects_full_search(  # noqa: PLR0915
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -148,6 +150,7 @@ async def test_workspaces__list_projects_full_search(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test__list_projects_full_search_with_query_parameters(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -222,6 +225,7 @@ async def test__list_projects_full_search_with_query_parameters(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test__list_projects_full_search_with_type_filter(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -289,6 +293,7 @@ async def test__list_projects_full_search_with_type_filter(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test__list_projects_full_search_with_template_type_hypertool_and_tutorial(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -356,6 +361,7 @@ async def test__list_projects_full_search_with_template_type_hypertool_and_tutor
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test__list_projects_full_search_with_template_type_regular_and_none(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
