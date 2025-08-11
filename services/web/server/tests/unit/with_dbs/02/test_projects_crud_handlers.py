@@ -540,6 +540,7 @@ async def test_new_project_from_other_study(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template_with_body(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
