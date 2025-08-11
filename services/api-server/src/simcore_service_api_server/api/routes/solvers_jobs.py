@@ -166,8 +166,9 @@ async def delete_job_assets(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-): ...
+    job_service: Annotated[JobService, Depends(get_job_service)],
+):
+    await job_service.delete_project_assets(project_id=job_id)
 
 
 @router.post(
