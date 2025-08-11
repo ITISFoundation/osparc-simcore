@@ -24,10 +24,6 @@ from simcore_service_webserver.projects.models import ProjectDict
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
     mocker.patch(
-        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
-        autospec=True,
-    )
-    mocker.patch(
         "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
     )

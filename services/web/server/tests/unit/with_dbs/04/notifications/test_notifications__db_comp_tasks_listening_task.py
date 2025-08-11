@@ -259,6 +259,7 @@ async def _check_for_stability(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_db_listener_upgrades_projects_row_correctly(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     with_started_listening_task: None,
     mock_dynamic_service_rpc: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,

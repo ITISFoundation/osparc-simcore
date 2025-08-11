@@ -185,6 +185,7 @@ async def _move_folder_to_workspace_and_assert(
 
 
 async def test_moving_between_private_and_shared_workspaces(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     fake_project: ProjectDict,
