@@ -5,7 +5,11 @@ from pathlib import Path
 
 from common_library.exclude import as_dict_exclude_none
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
-from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectPatch,
+)
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -27,6 +31,7 @@ from .services_http.solver_job_models_converters import (
     create_job_inputs_from_node_inputs,
     create_new_project_for_job,
 )
+from .services_http.storage import StorageApi
 from .services_http.webserver import AuthSession
 from .services_rpc.director_v2 import DirectorV2Service
 from .services_rpc.storage import StorageService
@@ -40,6 +45,7 @@ class JobService:
     _web_rest_client: AuthSession
     _web_rpc_client: WbApiRpcClient
     _storage_rpc_client: StorageService
+    _storage_rest_client: StorageApi
     _directorv2_rpc_client: DirectorV2Service
     user_id: UserID
     product_name: ProductName
@@ -167,3 +173,12 @@ class JobService:
             ],
         )
         return async_job_get
+
+    async def delete_project_assets(self, project_id: ProjectID):
+        """Marks job project as hidden and deletes S3 assets associated it"""
+        await self._web_rest_client.patch_project(
+            project_id=project_id, patch_params=ProjectPatch(hidden=True)
+        )
+        await self._storage_rest_client.delete_project_s3_assets(
+            user_id=self.user_id, project_id=project_id
+        )
