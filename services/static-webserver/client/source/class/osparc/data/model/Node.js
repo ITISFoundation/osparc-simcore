@@ -41,13 +41,13 @@ qx.Class.define("osparc.data.model.Node", {
 
   /**
     * @param study {osparc.data.model.Study} Study or Serialized Study Object
-    * @param metadata {Object} service's metadata
+    * @param key {String} unique key of the service represented by the node
+    * @param version {String} version of the service represented by the node
     * @param nodeId {String} uuid of the service represented by the node (not needed for new Nodes)
   */
-  construct: function(study, metadata, nodeId) {
+  construct: function(study, key, version, nodeId) {
     this.base(arguments);
 
-    this.__metaData = metadata;
     this.setOutputs({});
     this.__inputNodes = [];
     this.__inputsRequired = [];
@@ -57,12 +57,10 @@ qx.Class.define("osparc.data.model.Node", {
     }
     this.set({
       nodeId: nodeId || osparc.utils.Utils.uuidV4(),
-      key: metadata["key"],
-      version: metadata["version"],
+      key,
+      version,
       status: new osparc.data.model.NodeStatus(this)
     });
-
-    this.__populateWithMetadata();
   },
 
   properties: {
@@ -76,14 +74,12 @@ qx.Class.define("osparc.data.model.Node", {
     key: {
       check: "String",
       nullable: true,
-      apply: "__applyNewMetaData"
     },
 
     version: {
       check: "String",
       nullable: true,
       event: "changeVersion",
-      apply: "__applyNewMetaData"
     },
 
     nodeId: {
@@ -432,15 +428,6 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.getMinVisibleInputs(this.getMetaData());
     },
 
-    __applyNewMetaData: function(newV, oldV) {
-      if (oldV !== null) {
-        const metadata = osparc.store.Services.getMetadata(this.getKey(), this.getVersion());
-        if (metadata) {
-          this.__metaData = metadata;
-        }
-      }
-    },
-
     getMetaData: function() {
       return this.__metaData;
     },
@@ -490,8 +477,8 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    __populateWithMetadata: function() {
-      const metadata = this.__metaData;
+    populateWithMetadata: function(metadata) {
+      this.__metaData = metadata;
       if (metadata) {
         if (metadata.name) {
           this.setLabel(metadata.name);
@@ -1276,8 +1263,11 @@ qx.Class.define("osparc.data.model.Node", {
       if (newMetadata) {
         const value = this.__getInputData()["linspace_start"];
         const label = this.getLabel();
-        this.setKey(newMetadata["key"]);
-        this.__populateWithMetadata();
+        this.set({
+          key: newMetadata["key"],
+          version: newMetadata["version"],
+        });
+        this.populateWithMetadata(newMetadata);
         this.populateNodeData();
         this.setLabel(label);
         osparc.node.ParameterEditor.setParameterOutputValue(this, value);
@@ -1289,12 +1279,15 @@ qx.Class.define("osparc.data.model.Node", {
       if (!["int"].includes(type)) {
         return;
       }
-      const metadata = osparc.store.Services.getLatest("simcore/services/frontend/data-iterator/int-range")
-      if (metadata) {
+      const newMetadata = osparc.store.Services.getLatest("simcore/services/frontend/data-iterator/int-range")
+      if (newMetadata) {
         const value = this.__getOutputData("out_1");
         const label = this.getLabel();
-        this.setKey(metadata["key"]);
-        this.__populateWithMetadata();
+        this.set({
+          key: newMetadata["key"],
+          version: newMetadata["version"],
+        });
+        this.populateWithMetadata(newMetadata);
         this.populateNodeData();
         this.setLabel(label);
         this.__setInputData({

@@ -274,7 +274,8 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __createNode: function(study, metadata, nodeId) {
-      const node = new osparc.data.model.Node(study, metadata, nodeId);
+      const node = new osparc.data.model.Node(study, metadata["key"], metadata["version"], nodeId);
+      node.populateWithMetadata(metadata);
       if (osparc.utils.Utils.eventDrivenPatch()) {
         node.listenToChanges();
         node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
