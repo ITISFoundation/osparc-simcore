@@ -240,10 +240,6 @@ async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
     mocker.patch(
-        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
-        autospec=True,
-    )
-    mocker.patch(
         "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
     )
