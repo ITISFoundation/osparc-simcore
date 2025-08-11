@@ -7,6 +7,8 @@ from collections.abc import AsyncIterator
 
 import pytest
 import respx
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import status
 from httpx import Response
@@ -15,6 +17,7 @@ from models_library.basic_types import PortInt
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
@@ -25,12 +28,16 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 )
 from starlette.testclient import TestClient
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 
 @pytest.fixture
 def mock_env(
     use_in_memory_redis: RedisSettings,
     mock_exclusive: None,
-    disable_rabbitmq: None,
+    rabbit_service: RabbitSettings,
     disable_postgres: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -50,6 +57,10 @@ def mock_env(
     monkeypatch.setenv("S3_REGION", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
+    monkeypatch.setenv(
+        "DIRECTOR_V2_RABBITMQ",
+        json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
+    )
 
 
 @pytest.fixture
