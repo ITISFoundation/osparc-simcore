@@ -102,6 +102,7 @@ async def get_project_marked_as_job(
         project_id=project_uuid,
         user_id=user_id,
         product_name=product_name,
+        permission="read",
     )
     repo = ProjectJobsRepository.create_from_app(app)
     project_id = await repo.get_project_marked_as_job(
