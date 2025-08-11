@@ -111,6 +111,34 @@ async def list_projects_marked_as_jobs(
     return page
 
 
+@router.expose(reraise_if_error_type=(ValidationError,))
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_project_marked_as_job(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    job_parent_resource_name: str,
+) -> ProjectJobRpcGet:
+
+    try:
+        project = await _jobs_service.get_project_marked_as_job(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+    except ProjectInvalidRightsError as err:
+        raise ProjectForbiddenRpcError.from_domain_error(err) from err
+
+    except ProjectNotFoundError as err:
+        raise ProjectNotFoundRpcError.from_domain_error(err) from err
+
+    return ProjectJobRpcGet.model_validate(project.model_dump())
+
+
 async def register_rpc_routes_on_startup(app: web.Application):
     rpc_server = get_rabbitmq_rpc_server(app)
     await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)

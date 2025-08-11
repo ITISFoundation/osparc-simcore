@@ -78,3 +78,37 @@ async def list_my_projects_marked_as_jobs(
         filter_by_job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
         filter_any_custom_metadata=filter_any_custom_metadata,
     )
+
+
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_project_marked_as_job(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    job_parent_resource_name: Annotated[
+        str, AfterValidator(_validate_job_parent_resource_name)
+    ],
+) -> ProjectJobDBGet:
+    """
+    Retrieves the project associated with the given project_uuid and job_parent_resource_name.
+    Raises:
+        web.HTTPNotFound: if no project is found.
+    """
+    await check_user_project_permission(
+        app,
+        project_id=project_uuid,
+        user_id=user_id,
+        product_name=product_name,
+    )
+    repo = ProjectJobsRepository.create_from_app(app)
+    project_id = await repo.get_project_marked_as_job(
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+    if not project_id:
+        raise web.HTTPNotFound(
+            reason=f"No project found for project_uuid={project_uuid} and job_parent_resource_name={job_parent_resource_name}"
+        )
+    return project_id

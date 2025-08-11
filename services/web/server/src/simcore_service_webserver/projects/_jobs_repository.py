@@ -201,3 +201,40 @@ class ProjectJobsRepository(BaseRepository):
             )
 
             return total_count, projects_list
+
+    async def get_project_marked_as_job(
+        self,
+        connection: AsyncConnection | None = None,
+        *,
+        project_uuid: ProjectID,
+        job_parent_resource_name: str,
+    ) -> ProjectJobDBGet | None:
+        """
+        Returns the project associated with the given project_uuid and job_parent_resource_name
+        """
+        query = (
+            sa.select(
+                *_PROJECT_DB_COLS,
+                projects.c.workbench,
+                projects_to_jobs.c.job_parent_resource_name,
+            )
+            .select_from(
+                projects_to_jobs.join(
+                    projects,
+                    projects_to_jobs.c.project_uuid == projects.c.uuid,
+                )
+            )
+            .where(
+                projects_to_jobs.c.project_uuid == f"{project_uuid}",
+                projects_to_jobs.c.job_parent_resource_name == job_parent_resource_name,
+                projects.c.workspace_id.is_(None),
+            )
+            .limit(1)
+        )
+
+        async with pass_or_acquire_connection(self.engine, connection) as conn:
+            result = await conn.execute(query)
+            row = result.first()
+            if row is None:
+                return None
+            return TypeAdapter(ProjectJobDBGet).validate_python(row)
