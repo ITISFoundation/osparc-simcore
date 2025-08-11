@@ -960,25 +960,6 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 resolved_fmds.append(convert_db_to_model(updated_fmd))
         return resolved_fmds
 
-    def _create_file_metadata_from_s3_object(
-        self, s3_obj: S3MetaData, user_id: UserID
-    ) -> FileMetaData | None:
-        """Create FileMetaData from S3 object, return None if invalid."""
-        try:
-            return FileMetaData.from_simcore_node(
-                user_id=user_id,
-                file_id=TypeAdapter(SimcoreS3FileID).validate_python(s3_obj.object_key),
-                bucket=self.simcore_bucket_name,
-                location_id=self.get_location_id(),
-                location_name=self.get_location_name(),
-                sha256_checksum=None,
-                file_size=s3_obj.size,
-                last_modified=s3_obj.last_modified,
-                entity_tag=s3_obj.e_tag,
-            )
-        except (ValidationError, ValueError):
-            return None
-
     async def _process_s3_page_results(
         self,
         current_page_results: list[FileMetaData],
@@ -1032,18 +1013,27 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                         and len(s3_obj.object_key.split("/"))
                         >= min_parts_for_valid_s3_object
                     ):
-                        file_meta = self._create_file_metadata_from_s3_object(
-                            s3_obj, user_id
+                        file_meta = FileMetaData.from_simcore_node(
+                            user_id=user_id,
+                            file_id=TypeAdapter(SimcoreS3FileID).validate_python(
+                                s3_obj.object_key
+                            ),
+                            bucket=self.simcore_bucket_name,
+                            location_id=self.get_location_id(),
+                            location_name=self.get_location_name(),
+                            sha256_checksum=None,
+                            file_size=s3_obj.size,
+                            last_modified=s3_obj.last_modified,
+                            entity_tag=s3_obj.e_tag,
                         )
-                        if file_meta:
-                            current_page_results.append(file_meta)
+                        current_page_results.append(file_meta)
 
-                            if len(current_page_results) >= items_per_page:
-                                processed_results = await self._process_s3_page_results(
-                                    current_page_results
-                                )
-                                yield processed_results
-                                current_page_results = []
+                        if len(current_page_results) >= items_per_page:
+                            processed_results = await self._process_s3_page_results(
+                                current_page_results
+                            )
+                            yield processed_results
+                            current_page_results = []
 
             if current_page_results:
                 processed_results = await self._process_s3_page_results(
