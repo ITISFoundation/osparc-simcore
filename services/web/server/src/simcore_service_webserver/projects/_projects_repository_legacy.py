@@ -312,6 +312,7 @@ class ProjectDBAPI(BaseProjectDB):
         field_mapping = {
             "inputAccess": "input_access",
             "inputNodes": "input_nodes",
+            "inputsRequired": "inputs_required",
             "inputsUnits": "inputs_units",
             "outputNodes": "output_nodes",
             "runHash": "run_hash",

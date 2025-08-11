@@ -679,11 +679,11 @@ async def _check_project_node_has_all_required_inputs(
         permission="read",
     )
 
-    project_dict, _ = await db.get_project_dict_and_type(f"{project_uuid}")
+    nodes = await _projects_nodes_repository.get_by_project(
+        app, project_id=project_uuid
+    )
 
-    nodes_map: dict[NodeID, Node] = {
-        NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
-    }
+    nodes_map = dict(nodes)
     node = nodes_map[node_id]
 
     unset_required_inputs: list[str] = []

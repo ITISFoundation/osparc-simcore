@@ -61,6 +61,7 @@ class ProjectNodeCreate(BaseModel):
     input_access: dict[str, Any] | None = None
     input_nodes: list[str] | None = None
     inputs: dict[str, Any] | None = None
+    inputs_required: list[str] | None = None
     inputs_units: dict[str, Any] | None = None
     output_nodes: list[str] | None = None
     outputs: dict[str, Any] | None = None
