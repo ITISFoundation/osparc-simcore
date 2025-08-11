@@ -9,6 +9,7 @@ from models_library.rest_pagination import PageOffsetInt
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
     PageRpcProjectJobRpcGet,
+    ProjectJobRpcGet,
 )
 from models_library.rpc_pagination import (
     DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
@@ -68,3 +69,25 @@ async def list_projects_marked_as_jobs(
     )
     assert TypeAdapter(PageRpcProjectJobRpcGet).validate_python(result)  # nosec
     return cast(PageRpcProjectJobRpcGet, result)
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_project_marked_as_job(
+    rpc_client: RabbitMQRPCClient,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    job_parent_resource_name: str,
+) -> ProjectJobRpcGet:
+    result = await rpc_client.request(
+        WEBSERVER_RPC_NAMESPACE,
+        TypeAdapter(RPCMethodName).validate_python("get_project_marked_as_job"),
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+    assert TypeAdapter(ProjectJobRpcGet).validate_python(result)  # nosec
+    return cast(ProjectJobRpcGet, result)
