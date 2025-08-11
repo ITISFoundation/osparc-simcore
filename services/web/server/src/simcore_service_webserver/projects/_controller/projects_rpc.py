@@ -111,7 +111,13 @@ async def list_projects_marked_as_jobs(
     return page
 
 
-@router.expose(reraise_if_error_type=(ValidationError,))
+@router.expose(
+    reraise_if_error_type=(
+        ValidationError,
+        ProjectForbiddenRpcError,
+        ProjectNotFoundRpcError,
+    )
+)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def get_project_marked_as_job(
     app: web.Application,
@@ -136,7 +142,15 @@ async def get_project_marked_as_job(
     except ProjectNotFoundError as err:
         raise ProjectNotFoundRpcError.from_domain_error(err) from err
 
-    return ProjectJobRpcGet.model_validate(project.model_dump())
+    return ProjectJobRpcGet(
+        uuid=project.uuid,
+        name=project.name,
+        description=project.description,
+        workbench=project.workbench,
+        created_at=project.creation_date,
+        modified_at=project.last_change_date,
+        job_parent_resource_name=project.job_parent_resource_name,
+    )
 
 
 async def register_rpc_routes_on_startup(app: web.Application):

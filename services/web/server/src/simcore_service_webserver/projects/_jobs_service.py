@@ -9,6 +9,7 @@ from pydantic import AfterValidator, validate_call
 
 from ._access_rights_service import check_user_project_permission
 from ._jobs_repository import ProjectJobsRepository
+from .exceptions import ProjectNotFoundError
 from .models import ProjectJobDBGet
 
 _logger = logging.getLogger(__name__)
@@ -108,7 +109,7 @@ async def get_project_marked_as_job(
         job_parent_resource_name=job_parent_resource_name,
     )
     if not project_id:
-        raise web.HTTPNotFound(
-            reason=f"No project found for project_uuid={project_uuid} and job_parent_resource_name={job_parent_resource_name}"
+        raise ProjectNotFoundError(
+            project_uuid=project_uuid,
         )
     return project_id

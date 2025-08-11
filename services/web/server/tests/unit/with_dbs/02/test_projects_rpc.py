@@ -307,3 +307,93 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
 
     assert page.meta.total == 0
     assert len(page.data) == 0
+
+
+async def test_rpc_client_get_project_marked_as_job_found(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    # Mark the project as a job first
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+
+    # Should be able to retrieve it
+    project_job = await projects_rpc.get_project_marked_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+    assert project_job.uuid == project_uuid
+    assert project_job.job_parent_resource_name == job_parent_resource_name
+    assert project_job.name == user_project["name"]
+
+
+async def test_rpc_client_get_project_marked_as_job_not_found(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
+        ProjectNotFoundRpcError,
+    )
+
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    # Do NOT mark the project as a job, so it should not be found
+    with pytest.raises(ProjectNotFoundRpcError):
+        await projects_rpc.get_project_marked_as_job(
+            rpc_client=rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+
+
+async def test_rpc_client_get_project_marked_as_job_forbidden(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    other_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    """
+    Ensures ProjectForbiddenRpcError is raised if the user does not have read access to the project.
+    """
+    project_uuid = ProjectID(user_project["uuid"])
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    # Mark the project as a job as the owner
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=logged_user["id"],
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+
+    # Try to get the project as another user (should not have access)
+    with pytest.raises(ProjectForbiddenRpcError):
+        await projects_rpc.get_project_marked_as_job(
+            rpc_client=rpc_client,
+            product_name=product_name,
+            user_id=other_user["id"],
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
