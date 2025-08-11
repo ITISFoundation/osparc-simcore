@@ -1329,16 +1329,7 @@ async def update_project_node_outputs(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
-    updated_project, changed_entries = await db_legacy.update_project_node_data(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_id=node_id,
-        product_name=None,
-        new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
-        client_session_id=client_session_id,
-    )
-
-    await _projects_nodes_repository.update(
+    updated_node = await _projects_nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1347,23 +1338,31 @@ async def update_project_node_outputs(
         ),
     )
 
+    await _create_project_document_and_notify(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        client_session_id=client_session_id,
+    )
+
     _logger.debug(
         "patched project %s, following entries changed: %s",
         project_id,
-        pformat(changed_entries),
-    )
-    updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, is_template=False, app=app
+        pformat(updated_node),
     )
 
-    # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
-    # we do want only the key names
-    changed_keys = (
-        changed_entries.get(TypeAdapter(NodeIDStr).validate_python(f"{node_id}"), {})
-        .get("outputs", {})
-        .keys()
+    updated_project = await _projects_repository.get_project_with_workbench(
+        app, project_uuid=project_id
     )
-    return updated_project, changed_keys
+
+    updated_project_with_states = await add_project_states_for_user(
+        user_id=user_id,
+        project=updated_project.model_dump(mode="json"),
+        is_template=False,
+        app=app,
+    )
+
+    return updated_project_with_states, list(new_outputs.keys())
 
 
 async def list_node_ids_in_project(

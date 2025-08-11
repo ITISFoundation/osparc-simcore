@@ -179,15 +179,17 @@ async def update(
     project_id: ProjectID,
     node_id: NodeID,
     partial_node: PartialNode,
-) -> None:
+) -> Node:
     values = partial_node.model_dump(mode="json", exclude_unset=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(
+        result = await conn.stream(
             projects_nodes.update()
             .values(**values)
             .where(
                 (projects_nodes.c.project_uuid == f"{project_id}")
                 & (projects_nodes.c.node_id == f"{node_id}")
             )
+            .returning(*_SELECTION_PROJECTS_NODES_DB_ARGS)
         )
+        return Node.model_validate(await result.first(), from_attributes=True)
