@@ -7,10 +7,12 @@ from datetime import timedelta
 import pytest
 from faker import Faker
 from servicelib.logging_utils import log_catch
+from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
 from servicelib.long_running_tasks.task import (
     RedisNamespace,
     TasksManager,
 )
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from utils import TEST_CHECK_STALE_INTERVAL_S, NoWebAppLongRunningManager
 
@@ -46,17 +48,34 @@ async def get_tasks_manager(
 
 
 @pytest.fixture
-def get_long_running_manager(
+async def get_long_running_manager(
     get_tasks_manager: Callable[
         [RedisSettings, RedisNamespace | None], Awaitable[TasksManager]
     ],
-) -> Callable[
-    [RedisSettings, RedisNamespace | None], Awaitable[NoWebAppLongRunningManager]
+) -> AsyncIterator[
+    Callable[
+        [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
+        Awaitable[NoWebAppLongRunningManager],
+    ]
 ]:
+    managers: list[NoWebAppLongRunningManager] = []
+
     async def _(
-        redis_settings: RedisSettings, namespace: RedisNamespace | None
+        redis_settings: RedisSettings,
+        namespace: RedisNamespace | None,
+        rabbit_settings: RabbitSettings,
+        rabbit_namespace: RabbitNamespace,
     ) -> NoWebAppLongRunningManager:
         tasks_manager = await get_tasks_manager(redis_settings, namespace)
-        return NoWebAppLongRunningManager(tasks_manager)
+        manager = NoWebAppLongRunningManager(
+            tasks_manager, rabbit_settings, rabbit_namespace
+        )
+        await manager.setup()
+        managers.append(manager)
+        return manager
 
-    return _
+    yield _
+
+    for manager in managers:
+        with log_catch(_logger, reraise=False):
+            await manager.teardown()
