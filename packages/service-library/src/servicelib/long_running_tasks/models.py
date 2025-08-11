@@ -28,6 +28,8 @@ ProgressCallback: TypeAlias = Callable[
 RequestBody: TypeAlias = Any
 TaskContext: TypeAlias = dict[str, Any]
 
+RabbitNamespace: TypeAlias = str
+
 
 class ResultField(BaseModel):
     result: str | None = None
