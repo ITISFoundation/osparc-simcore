@@ -12,6 +12,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.progress_bar import ProgressReport
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -20,6 +21,7 @@ from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 
 from ...dsm import get_dsm_provider
+from ...models import FileMetaData
 from ...simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
@@ -128,3 +130,34 @@ async def export_data_as_download_link(
         user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
     )
     return PresignedLink(link=download_link)
+
+
+async def search_files(
+    task: Task,
+    task_id: TaskID,
+    *,
+    user_id: UserID,
+    project_id: ProjectID | None,
+    filename_pattern: str,
+) -> list[FileMetaData]:
+    with log_context(
+        _logger,
+        logging.INFO,
+        f"'{task_id}' search file {filename_pattern=}",
+    ):
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(
+            SimcoreS3DataManager.get_location_id()
+        )
+
+        assert isinstance(dsm, SimcoreS3DataManager)  # nosec
+
+        pages = []
+        async for page in dsm.search_files(
+            user_id=user_id,
+            filename_pattern=filename_pattern,
+            project_id=project_id,
+        ):
+            # TODO: publish temporary result
+            pages.extend(page)
+
+        return pages

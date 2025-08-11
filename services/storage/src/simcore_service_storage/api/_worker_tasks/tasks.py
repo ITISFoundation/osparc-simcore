@@ -18,6 +18,7 @@ from ._simcore_s3 import (
     deep_copy_files_from_project,
     export_data,
     export_data_as_download_link,
+    search_files,
 )
 
 _logger = logging.getLogger(__name__)
@@ -38,3 +39,4 @@ def setup_worker_tasks(app: Celery) -> None:
         register_task(app, complete_upload_file)
         register_task(app, delete_paths)
         register_task(app, deep_copy_files_from_project)
+        register_task(app, search_files)
