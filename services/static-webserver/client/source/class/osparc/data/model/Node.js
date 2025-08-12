@@ -63,6 +63,13 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   properties: {
+    initState: {
+      check: [null, "metadata", "populated"],
+      init: null,
+      nullable: true,
+      event: "changeInitState"
+    },
+
     study: {
       check: "osparc.data.model.Study",
       init: null,
@@ -476,7 +483,7 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    populateWithMetadata: function(metadata) {
+    populateMetadata: function(metadata) {
       this.__metaData = metadata;
       if (metadata) {
         if (metadata.name) {
@@ -490,6 +497,8 @@ qx.Class.define("osparc.data.model.Node", {
           if (this.getPropsForm()) {
             this.getPropsForm().makeInputsDynamic();
           }
+        } else {
+          this.setInputs({});
         }
         if (metadata.outputs) {
           this.setOutputs(metadata.outputs);
@@ -497,6 +506,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.setOutputs({});
         }
       }
+      this.setInitState("metadata");
     },
 
     populateNodeData: function(nodeData) {
@@ -510,16 +520,15 @@ qx.Class.define("osparc.data.model.Node", {
           this.setBootOptions(nodeData.bootOptions);
         }
       }
-
       if (this.isParameter()) {
         this.__initParameter();
       }
-
       if (osparc.store.Store.getInstance().getCurrentStudy()) {
         // do not initialize the logger and iframe if the study isn't open
         this.__initLogger();
         this.initIframeHandler();
       }
+      this.setInitState("populated");
     },
 
     populateNodeUIData: function(nodeUIData) {
@@ -1268,7 +1277,7 @@ qx.Class.define("osparc.data.model.Node", {
           key: newMetadata["key"],
           version: newMetadata["version"],
         });
-        this.populateWithMetadata(newMetadata);
+        this.populateMetadata(newMetadata);
         this.populateNodeData();
         this.setLabel(label);
         osparc.node.ParameterEditor.setParameterOutputValue(this, value);
@@ -1288,7 +1297,7 @@ qx.Class.define("osparc.data.model.Node", {
           key: newMetadata["key"],
           version: newMetadata["version"],
         });
-        this.populateWithMetadata(newMetadata);
+        this.populateMetadata(newMetadata);
         this.populateNodeData();
         this.setLabel(label);
         this.__setInputData({
