@@ -8,12 +8,11 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import aiopg
-import aiopg.sa
 import pytest
 import socketio
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock
 from faker import Faker
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.progress_bar import ProgressReport
@@ -63,6 +62,7 @@ from simcore_service_webserver.socketio.messages import (
 )
 from simcore_service_webserver.socketio.models import WebSocketNodeProgress
 from simcore_service_webserver.socketio.plugin import setup_socketio
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity import RetryError
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_always, retry_if_exception_type
@@ -76,6 +76,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
+    "adminer",
     "redis-commander",
 ]
 
@@ -410,6 +411,7 @@ async def mocked_dynamic_services_interface(
 )
 async def test_progress_computational_workflow(
     mocked_dynamic_services_interface,
+    director_v2_service_mock: AioResponsesMock,
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     user_project: ProjectDict,
@@ -417,7 +419,7 @@ async def test_progress_computational_workflow(
         [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
     ],
     mocker: MockerFixture,
-    aiopg_engine: aiopg.sa.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     subscribe_to_logs: bool,
     # user
     sender_same_user_id: bool,
@@ -468,15 +470,14 @@ async def test_progress_computational_workflow(
         await _assert_handler_not_called(mock_progress_handler)
 
     # check the database. doing it after the waiting calls above is safe
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         assert projects is not None
         result = await conn.execute(
             sa.select(projects.c.workbench).where(
                 projects.c.uuid == str(user_project_id)
             )
         )
-        row = await result.fetchone()
-        assert row
+        row = result.one()
         project_workbench = dict(row[projects.c.workbench])
         # NOTE: the progress might still be present but is not used anymore
         assert (
