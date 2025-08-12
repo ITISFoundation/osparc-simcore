@@ -64,7 +64,7 @@ qx.Class.define("osparc.data.model.Node", {
 
   properties: {
     initState: {
-      check: [null, "metadata", "populated"],
+      check: [null, "metadataPopulated", "metadataMissing", "dataPopulated"],
       init: null,
       nullable: true,
       event: "changeInitState"
@@ -486,14 +486,22 @@ qx.Class.define("osparc.data.model.Node", {
     fetchMetadataAndPopulate: function(nodeData, nodeUiData) {
       this.__initNodeData = nodeData;
       this.__initNodeUiData = nodeUiData;
-      this.getService(this.getKey(), this.getVersion())
+      return osparc.store.Services.getService(this.getKey(), this.getVersion())
         .then(serviceMetadata => {
           this.populateWithMetadata(serviceMetadata);
+          this.setInitState("metadataPopulated");
           this.populateNodeData(nodeData);
           // old place to store the position
           this.populateNodeUIData(nodeData);
           // new place to store the position and marker
           this.populateNodeUIData(nodeUiData);
+          this.setInitState("dataPopulated");
+        })
+        .catch(err => {
+          console.log(err);
+          const errorMsg = qx.locale.Manager.tr("Service metadata missing");
+          osparc.FlashMessenger.logError(errorMsg);
+          this.setInitState("metadataMissing");
         });
     },
 
@@ -520,7 +528,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.setOutputs({});
         }
       }
-      this.setInitState("metadata");
+      this.setInitState("metadataPopulated");
     },
 
     populateNodeData: function(nodeData) {
@@ -542,7 +550,6 @@ qx.Class.define("osparc.data.model.Node", {
         this.__initLogger();
         this.initIframeHandler();
       }
-      this.setInitState("populated");
     },
 
     populateNodeUIData: function(nodeUIData) {
@@ -736,8 +743,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     __setInputData: function(inputs) {
       if (this.__settingsForm && inputs) {
-        const inputData = {};
         const inputLinks = {};
+        const inputData = {};
         const inputsCopy = osparc.utils.Utils.deepCloneObject(inputs);
         for (let key in inputsCopy) {
           if (osparc.utils.Ports.isDataALink(inputsCopy[key])) {

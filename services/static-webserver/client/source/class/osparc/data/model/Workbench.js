@@ -106,11 +106,16 @@ qx.Class.define("osparc.data.model.Workbench", {
     buildWorkbench: function() {
       this.__nodes = {};
       this.__edges = {};
-      this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
-      // this.__deserializeAll(this.__workbenchInitData, this.__workbenchUIInitData);
-      // OM: isn't this handled later?
-      this.__workbenchInitData = null;
-      this.__workbenchUIInitData = null;
+      const newWay = true;
+      if (newWay) {
+        this.__deserializeAll(this.__workbenchInitData, this.__workbenchUIInitData);
+        this.__workbenchInitData = null;
+        this.__workbenchUIInitData = null;
+      } else {
+        this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
+        this.__workbenchInitData = null;
+        this.__workbenchUIInitData = null;
+      }
     },
 
     // starts the dynamic services
@@ -286,7 +291,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
-      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
+      osparc.utils.Utils.localCache.serviceToFavs(metadata["key"]);
 
       this.__initNodeSignals(node);
       this.__addNode(node);
@@ -295,7 +300,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserializeNode: function(key, version, nodeId, nodeData, nodeUiData) {
-      const node = osparc.data.model.Node(this.getStudy(), key, version, nodeId);
+      const node = new osparc.data.model.Node(this.getStudy(), key, version, nodeId);
       node.fetchMetadataAndPopulate(nodeData, nodeUiData);
       if (osparc.utils.Utils.eventDrivenPatch()) {
         node.listenToChanges();
@@ -305,7 +310,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
-      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
+      osparc.utils.Utils.localCache.serviceToFavs(key);
 
       this.__initNodeSignals(node);
       this.__addNode(node);
@@ -732,20 +737,25 @@ qx.Class.define("osparc.data.model.Workbench", {
         });
     },
 
-    __deserializeAll: function(workbenchData, uiData = {}) {
+    __deserializeAll: function(workbenchInitData, uiData = {}) {
       const nodeDatas = {};
       const nodeUiDatas = {};
-      for (const nodeId in workbenchData) {
-        const nodeData = workbenchData[nodeId];
+      for (const nodeId in workbenchInitData) {
+        const nodeData = workbenchInitData[nodeId];
         nodeDatas[nodeId] = nodeData;
         if (uiData["workbench"] && nodeId in uiData["workbench"]) {
           nodeUiDatas[nodeId] = uiData["workbench"][nodeId];
         }
       }
       for (const nodeId in nodeDatas) {
-        console.log("node", nodeId, nodeDatas[nodeId], nodeUiDatas[nodeId]);
-        this.__deserializeNode(nodeId, nodeDatas[nodeId], nodeUiDatas[nodeId]);
+        const nodeData = nodeDatas[nodeId];
+        const nodeUiData = nodeUiDatas[nodeId];
+        this.__deserializeNode(nodeData["key"], nodeData["version"], nodeId, nodeData, nodeUiData);
       }
+      setTimeout(() => {
+        this.__deserializeEdges(workbenchInitData);
+        this.setDeserialized(true);
+      }, 2000);
     },
 
     __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
