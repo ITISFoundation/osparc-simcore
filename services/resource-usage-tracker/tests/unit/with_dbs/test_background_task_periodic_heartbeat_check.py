@@ -121,6 +121,9 @@ def resource_tracker_setup_db(
         con.execute(resource_tracker_service_runs.delete())
 
 
+_PROD_RUN_INTERVAL_SEC = 1  # in reality in production this is 5 mins
+
+
 async def test_process_event_functions(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
     mocked_redis_server: None,
@@ -133,7 +136,7 @@ async def test_process_event_functions(
 
     for _ in range(app_settings.RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL):
         await check_running_services(initialized_app)
-        await asyncio.sleep(1)
+        await asyncio.sleep(_PROD_RUN_INTERVAL_SEC)
         # NOTE: As we are doing check that the modified field needs to be older then some
         # threshold, we need to make this field artificaly older in this test
         with postgres_db.connect() as con:
