@@ -5,6 +5,7 @@ from common_library.error_codes import create_error_code
 
 from ...logging_errors import create_troubleshootting_log_kwargs
 from ...rabbitmq import RPCRouter
+from .._serialization import object_to_string
 from ..base_long_running_manager import BaseLongRunningManager
 from ..errors import BaseLongRunningError, TaskNotCompletedError, TaskNotFoundError
 from ..models import TaskBase, TaskContext, TaskId, TaskStatus
@@ -57,8 +58,7 @@ async def get_task_status(
     )
 
 
-@router.expose(reraise_if_error_type=(BaseLongRunningError, Exception))
-async def get_task_result(
+async def _get_transferarble_task_result(
     long_running_manager: BaseLongRunningManager,
     *,
     task_context: TaskContext,
@@ -88,6 +88,23 @@ async def get_task_result(
             task_id, with_task_context=task_context, reraise_errors=False
         )
         raise
+
+
+@router.expose(reraise_if_error_type=(BaseLongRunningError, Exception))
+async def get_task_result(
+    long_running_manager: BaseLongRunningManager,
+    *,
+    task_context: TaskContext,
+    task_id: TaskId,
+) -> str:
+    try:
+        return object_to_string(
+            await _get_transferarble_task_result(
+                long_running_manager, task_context=task_context, task_id=task_id
+            )
+        )
+    except Exception as exc:  # pylint:disable=broad-exception-caught
+        return object_to_string(exc)
 
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))

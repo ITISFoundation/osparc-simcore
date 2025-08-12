@@ -8,6 +8,7 @@ from pydantic import PositiveInt, TypeAdapter
 from ...logging_utils import log_decorator
 from ...long_running_tasks.task import RegisteredTaskName
 from ...rabbitmq._client_rpc import RabbitMQRPCClient
+from .._serialization import string_to_object
 from ..models import RabbitNamespace, TaskBase, TaskContext, TaskId, TaskStatus
 from .namespace import get_namespace
 
@@ -91,13 +92,19 @@ async def get_task_result(
     task_context: TaskContext,
     task_id: TaskId,
 ) -> Any:
-    return await rabbitmq_rpc_client.request(
+    serialized_result = await rabbitmq_rpc_client.request(
         get_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("get_task_result"),
         task_context=task_context,
         task_id=task_id,
         timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
     )
+    assert isinstance(serialized_result, str)  # nosec
+    task_result = string_to_object(serialized_result)
+
+    if isinstance(task_result, Exception):
+        raise task_result
+    return task_result
 
 
 @log_decorator(_logger, level=logging.DEBUG)

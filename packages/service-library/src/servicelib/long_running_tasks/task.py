@@ -23,7 +23,7 @@ from tenacity import (
 
 from ..background_task import create_periodic_task
 from ..redis import RedisClientSDK, exclusive
-from ._redis_serialization import object_to_string, string_to_object
+from ._serialization import object_to_string, string_to_object
 from ._store.base import BaseStore
 from ._store.redis import RedisStore
 from .errors import (
@@ -63,6 +63,14 @@ class TaskRegistry:
     @classmethod
     def register(cls, task: TaskProtocol) -> None:
         cls.REGISTERED_TASKS[task.__name__] = task
+
+    @classmethod
+    def register_partial(
+        cls, task: TaskProtocol, *partial_args, **partial_kwargs
+    ) -> None:
+        cls.REGISTERED_TASKS[task.__name__] = functools.partial(
+            task, *partial_args, **partial_kwargs
+        )
 
     @classmethod
     def unregister(cls, task: TaskProtocol) -> None:

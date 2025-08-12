@@ -3,7 +3,7 @@ from typing import Any
 import pytest
 from aiohttp.web import HTTPException, HTTPInternalServerError
 from servicelib.aiohttp.long_running_tasks._server import AiohttpHTTPExceptionSerializer
-from servicelib.long_running_tasks._redis_serialization import (
+from servicelib.long_running_tasks._serialization import (
     object_to_string,
     register_custom_serialization,
     string_to_object,
