@@ -1865,9 +1865,9 @@ async def add_project_states_for_user(
             node_state_dict = json_loads(
                 node_state.model_dump_json(by_alias=True, exclude_unset=True)
             )
-            prj_node.setdefault("state", {}).update(node_state_dict)
+            prj_node.state = NodeState.model_validate(node_state_dict)
             prj_node_progress = node_state_dict.get("progress", None) or 0
-            prj_node.update({"progress": round(prj_node_progress * 100.0)})
+            prj_node.progress = round(prj_node_progress * 100.0)
 
     project["state"] = ProjectState(
         share_state=share_state, state=ProjectRunningState(value=running_state)
