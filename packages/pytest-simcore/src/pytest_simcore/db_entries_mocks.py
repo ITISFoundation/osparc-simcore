@@ -41,7 +41,6 @@ def create_registered_user(
     with contextlib.ExitStack() as stack:
 
         def _(**user_kwargs) -> dict[str, Any]:
-
             user_id = len(created_user_ids) + 1
             user = stack.enter_context(
                 sync_insert_and_get_user_and_secrets_lifespan(
@@ -122,8 +121,11 @@ async def create_project(
             await project_nodes_repo.add(
                 con,
                 nodes=[
-                    ProjectNodeCreate(node_id=NodeID(node_id), **default_node_config)
-                    for node_id in inserted_project.workbench
+                    ProjectNodeCreate(
+                        node_id=NodeID(node_id),
+                        **(default_node_config | node_data.model_dump(mode="json")),
+                    )
+                    for node_id, node_data in inserted_project.workbench.items()
                 ],
             )
             await con.execute(
