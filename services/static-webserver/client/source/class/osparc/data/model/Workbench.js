@@ -273,9 +273,9 @@ qx.Class.define("osparc.data.model.Workbench", {
       nodeRight.setInputConnected(true);
     },
 
-    __createNode: function(study, metadata, nodeId) {
-      const node = new osparc.data.model.Node(study, metadata["key"], metadata["version"], nodeId);
-      node.populateMetadata(metadata);
+    __createNode: function(metadata, nodeId) {
+      const node = new osparc.data.model.Node(this.getStudy(), metadata["key"], metadata["version"], nodeId);
+      node.populateWithMetadata(metadata);
       if (osparc.utils.Utils.eventDrivenPatch()) {
         node.listenToChanges();
         node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
@@ -290,6 +290,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__addNode(node);
 
       return node;
+    },
+
+    deserializeNode: function() {
+      // OM here
     },
 
     createUnknownNode: function(nodeId) {
@@ -331,7 +335,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeId = resp["node_id"];
 
         this.fireEvent("restartAutoSaveTimer");
-        const node = this.__createNode(this.getStudy(), metadata, nodeId);
+        const node = this.__createNode(metadata, nodeId);
         node.populateNodeData();
         this.__giveUniqueNameToNode(node, node.getLabel());
         node.checkState();
@@ -747,7 +751,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           for (let i=0; i<nodeIds.length; i++) {
             const metadata = values[i];
             const nodeId = nodeIds[i];
-            this.__createNode(this.getStudy(), metadata, nodeId);
+            this.__createNode(metadata, nodeId);
           }
 
           // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
