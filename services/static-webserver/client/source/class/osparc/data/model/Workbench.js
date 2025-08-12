@@ -292,8 +292,23 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-    deserializeNode: function() {
-      // OM here
+    __deserializeNode: function(key, version, nodeId, nodeData, nodeUiData) {
+      const node = osparc.data.model.Node(this.getStudy(), key, version, nodeId);
+      node.fetchMetadataAndPopulate(nodeData, nodeUiData);
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        node.listenToChanges();
+        node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
+      }
+      node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
+      node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
+      node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
+      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
+      osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
+
+      this.__initNodeSignals(node);
+      this.__addNode(node);
+
+      return node;
     },
 
     createUnknownNode: function(nodeId) {
@@ -695,11 +710,12 @@ qx.Class.define("osparc.data.model.Workbench", {
         this.getNode(nodeId).populateNodeData(nodeData);
 
         if ("position" in nodeData) {
-          // old way for storing the position
+          // old place to store the position
           this.getNode(nodeId).populateNodeUIData(nodeData);
         }
-        if (workbenchUIData && "workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
-          this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
+        if (workbenchUIData && "workbench" in workbenchUIData && nodeId in workbenchUIData["workbench"]) {
+          // new place to store the position and marker
+          this.getNode(nodeId).populateNodeUIData(workbenchUIData["workbench"][nodeId]);
         }
       });
     },

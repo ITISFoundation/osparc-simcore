@@ -483,10 +483,15 @@ qx.Class.define("osparc.data.model.Node", {
       return Object.keys(this.getOutputs()).length;
     },
 
-    fetchAndPopulateWithMetadata: function() {
+    fetchMetadataAndPopulate: function(nodeData, nodeUiData) {
       this.getService(this.getKey(), this.getVersion())
         .then(serviceMetadata => {
           this.populateWithMetadata(serviceMetadata);
+          this.populateNodeData(nodeData);
+          // old place to store the position
+          this.populateNodeUIData(nodeData);
+          // new place to store the position and marker
+          this.populateNodeUIData(nodeUiData);
         });
     },
 
