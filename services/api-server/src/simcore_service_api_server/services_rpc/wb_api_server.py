@@ -249,6 +249,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
+            storage_data_deleted=False,
         )
 
     async def list_projects_marked_as_jobs(

@@ -38,6 +38,7 @@ async def mark_project_as_job(
     user_id: UserID,
     project_uuid: ProjectID,
     job_parent_resource_name: str,
+    storage_data_deleted: bool,
 ) -> None:
 
     try:
@@ -48,6 +49,7 @@ async def mark_project_as_job(
             user_id=user_id,
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
+            storage_data_deleted=storage_data_deleted,
         )
     except ProjectInvalidRightsError as err:
         raise ProjectForbiddenRpcError.from_domain_error(err) from err

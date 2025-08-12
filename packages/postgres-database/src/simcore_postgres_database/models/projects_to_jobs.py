@@ -32,7 +32,6 @@ projects_to_jobs = sa.Table(
         "storage_data_deleted",
         sa.Boolean,
         nullable=False,
-        default=False,
         doc="Indicates whether the job's S3 data has been actively deleted.",
     ),
     # Composite key (project_uuid, job_parent_resource_name) uniquely identifies very row

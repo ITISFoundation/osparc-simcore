@@ -33,6 +33,7 @@ async def mark_project_as_job(
     user_id: UserID,
     project_uuid: ProjectID,
     job_parent_resource_name: str,
+    storage_data_deleted: bool,
 ) -> None:
 
     result = await rpc_client.request(
@@ -42,6 +43,7 @@ async def mark_project_as_job(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
+        storage_data_deleted=storage_data_deleted,
     )
     assert result is None
 

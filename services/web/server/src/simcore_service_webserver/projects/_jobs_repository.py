@@ -67,6 +67,7 @@ class ProjectJobsRepository(BaseRepository):
         *,
         project_uuid: ProjectID,
         job_parent_resource_name: str,
+        storage_data_deleted: bool,
     ) -> None:
         async with transaction_context(self.engine, connection) as conn:
             stmt = (
@@ -74,6 +75,7 @@ class ProjectJobsRepository(BaseRepository):
                 .values(
                     project_uuid=f"{project_uuid}",
                     job_parent_resource_name=job_parent_resource_name,
+                    storage_data_deleted=storage_data_deleted,
                 )
                 .on_conflict_do_update(
                     index_elements=["project_uuid", "job_parent_resource_name"],
