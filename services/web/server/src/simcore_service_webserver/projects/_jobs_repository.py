@@ -213,7 +213,6 @@ class ProjectJobsRepository(BaseRepository):
         connection: AsyncConnection | None = None,
         *,
         project_uuid: ProjectID,
-        job_parent_resource_name: str,
     ) -> ProjectJobDBGet | None:
         """
         Returns the project associated with the given project_uuid and job_parent_resource_name
@@ -233,7 +232,6 @@ class ProjectJobsRepository(BaseRepository):
             )
             .where(
                 projects_to_jobs.c.project_uuid == f"{project_uuid}",
-                projects_to_jobs.c.job_parent_resource_name == job_parent_resource_name,
                 projects.c.workspace_id.is_(None),
             )
             .limit(1)

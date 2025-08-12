@@ -341,7 +341,6 @@ async def test_rpc_client_get_project_marked_as_job_found(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
-        job_parent_resource_name=job_parent_resource_name,
     )
     assert project_job.uuid == project_uuid
     assert project_job.job_parent_resource_name == job_parent_resource_name
@@ -360,7 +359,6 @@ async def test_rpc_client_get_project_marked_as_job_not_found(
 
     project_uuid = ProjectID(user_project["uuid"])
     user_id = logged_user["id"]
-    job_parent_resource_name = "solvers/solver123/version/1.2.3"
 
     # Do NOT mark the project as a job, so it should not be found
     with pytest.raises(ProjectNotFoundRpcError):
@@ -369,7 +367,6 @@ async def test_rpc_client_get_project_marked_as_job_not_found(
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_uuid,
-            job_parent_resource_name=job_parent_resource_name,
         )
 
 
@@ -403,7 +400,6 @@ async def test_rpc_client_get_project_marked_as_job_forbidden(
             product_name=product_name,
             user_id=other_user["id"],
             project_uuid=project_uuid,
-            job_parent_resource_name=job_parent_resource_name,
         )
 
 
@@ -437,7 +433,6 @@ async def test_mark_and_get_project_job_storage_data_deleted(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
-        job_parent_resource_name=job_parent_resource_name,
     )
     assert project_job.storage_data_deleted is True
 
@@ -457,6 +452,5 @@ async def test_mark_and_get_project_job_storage_data_deleted(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
-        job_parent_resource_name=job_parent_resource_name,
     )
     assert project_job.storage_data_deleted is False

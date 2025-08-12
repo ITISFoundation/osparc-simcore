@@ -91,9 +91,6 @@ async def get_project_marked_as_job(
     product_name: ProductName,
     user_id: UserID,
     project_uuid: ProjectID,
-    job_parent_resource_name: Annotated[
-        str, AfterValidator(_validate_job_parent_resource_name)
-    ],
 ) -> ProjectJobDBGet:
     """
     Retrieves the project associated with the given project_uuid and job_parent_resource_name.
@@ -110,7 +107,6 @@ async def get_project_marked_as_job(
     repo = ProjectJobsRepository.create_from_app(app)
     project_id = await repo.get_project_marked_as_job(
         project_uuid=project_uuid,
-        job_parent_resource_name=job_parent_resource_name,
     )
     if not project_id:
         raise ProjectNotFoundError(
