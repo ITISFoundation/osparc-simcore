@@ -29,6 +29,8 @@ from ._controller import (
     wallets_rest,
     workspaces_rest,
 )
+from ._controller.nodes_rest import register_stop_dynamic_service_task
+from ._crud_api_create import register_create_project_task
 from ._projects_repository_legacy import setup_projects_db
 from ._security_service import setup_projects_access
 
@@ -74,5 +76,8 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(nodes_pricing_unit_rest.routes)
     app.router.add_routes(workspaces_rest.routes)
     app.router.add_routes(trash_rest.routes)
+
+    register_create_project_task(app)
+    register_stop_dynamic_service_task(app)
 
     return True

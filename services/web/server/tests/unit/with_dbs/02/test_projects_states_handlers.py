@@ -66,6 +66,7 @@ from pytest_simcore.helpers.webserver_projects import assert_get_same_project
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
@@ -83,6 +84,11 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 
 RESOURCE_NAME = "projects"
 API_PREFIX = f"/{API_VTAG}"
@@ -304,6 +310,7 @@ async def _delete_project(client: TestClient, project: dict) -> ClientResponse:
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_share_project_user_roles(
+    rabbit_service: RabbitSettings,
     mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict,

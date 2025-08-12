@@ -322,7 +322,8 @@ async def _stop_dynamic_service_task(
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-TaskRegistry.register(_stop_dynamic_service_task)
+def register_stop_dynamic_service_task(app: web.Application) -> None:
+    TaskRegistry.register_partial(_stop_dynamic_service_task, app=app)
 
 
 @routes.post(
@@ -352,7 +353,6 @@ async def stop_node(request: web.Request) -> web.Response:
         _stop_dynamic_service_task.__name__,
         task_context=jsonable_encoder(req_ctx),
         # task arguments from here on ---
-        app=request.app,
         dynamic_service_stop=DynamicServiceStop(
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,

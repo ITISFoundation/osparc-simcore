@@ -9,6 +9,7 @@ from simcore_postgres_database.models.projects import ProjectType, projects
 from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
+from yarl import URL
 
 from ..db.plugin import get_database_engine_legacy
 from ..projects.exceptions import PermalinkNotAllowedError, ProjectNotFoundError
@@ -33,8 +34,10 @@ class _GroupAccessRightsDict(TypedDict):
 
 
 def create_permalink_for_study(
-    request: web.Request,
+    app: web.Application,
     *,
+    url: URL,
+    headers: dict[str, str],
     project_uuid: ProjectID | ProjectIDStr,
     project_type: ProjectType,
     project_access_rights: dict[_GroupID, _GroupAccessRightsDict],
@@ -65,7 +68,7 @@ def create_permalink_for_study(
         raise PermalinkNotAllowedError(msg)
 
     # create
-    url_for = create_url_for_function(request)
+    url_for = create_url_for_function(app, url, headers)
     permalink = TypeAdapter(HttpUrl).validate_python(
         url_for(route_name="get_redirection_to_study_page", id=f"{project_uuid}"),
     )
@@ -77,14 +80,14 @@ def create_permalink_for_study(
 
 
 async def permalink_factory(
-    request: web.Request, project_uuid: ProjectID
+    app: web.Application, url: URL, headers: dict[str, str], project_uuid: ProjectID
 ) -> ProjectPermalink:
     """
     - Assumes project_id is up-to-date in the database
 
     """
     # NOTE: next iterations will mobe this as part of the project repository pattern
-    engine = get_database_engine_legacy(request.app)
+    engine = get_database_engine_legacy(app)
     async with engine.acquire() as conn:
         access_rights_subquery = (
             sa.select(
@@ -121,7 +124,9 @@ async def permalink_factory(
             raise ProjectNotFoundError(project_uuid=project_uuid)
 
     return create_permalink_for_study(
-        request,
+        app,
+        url=url,
+        headers=headers,
         project_uuid=row.uuid,
         project_type=row.type,
         project_access_rights=row.access_rights,

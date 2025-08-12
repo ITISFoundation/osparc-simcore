@@ -35,8 +35,9 @@ def get_routes_view(routes: RouteTableDef) -> str:
     return fh.getvalue()
 
 
-def create_url_for_function(request: web.Request) -> Callable:
-    app = request.app
+def create_url_for_function(
+    app: web.Application, url: URL, headers: dict[str, str]
+) -> Callable:
 
     def _url_for(route_name: str, **params: dict[str, Any]) -> str:
         """Reverse URL constructing using named resources"""
@@ -44,16 +45,16 @@ def create_url_for_function(request: web.Request) -> Callable:
             rel_url: URL = app.router[route_name].url_for(
                 **{k: f"{v}" for k, v in params.items()}
             )
-            url: URL = (
-                request.url.origin()
+            _url: URL = (
+                url.origin()
                 .with_scheme(
                     # Custom header by traefik. See labels in docker-compose as:
                     # - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
-                    request.headers.get(X_FORWARDED_PROTO, request.url.scheme)
+                    headers.get(X_FORWARDED_PROTO, url.scheme)
                 )
                 .with_path(str(rel_url))
             )
-            return f"{url}"
+            return f"{_url}"
 
         except KeyError as err:
             msg = f"Cannot find URL because there is no resource registered as {route_name=}Check name spelling or whether the router was not registered"
