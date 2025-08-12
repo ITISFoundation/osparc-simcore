@@ -52,6 +52,7 @@ from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -118,7 +119,7 @@ def user_role_response():
 
 @pytest.fixture
 async def client(
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     rabbit_service: RabbitSettings,
     redis_settings: RedisSettings,
     aiohttp_client: Callable,
@@ -170,29 +171,29 @@ def fake_workbench_adjacency_list(tests_data_dir: Path) -> dict[str, Any]:
         return json.load(fp)
 
 
-def _assert_db_contents(
+async def _assert_db_contents(
     project_id: str,
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     fake_workbench_payload: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
     check_outputs: bool,
 ) -> None:
-    with postgres_db.connect() as conn:
-        pipeline_db = conn.execute(
-            sa.select(comp_pipeline).where(comp_pipeline.c.project_id == project_id)
-        ).fetchone()
-        assert pipeline_db
+    async with sqlalchemy_async_engine.connect() as conn:
+        pipeline_db = (
+            await conn.execute(
+                sa.select(comp_pipeline).where(comp_pipeline.c.project_id == project_id)
+            )
+        ).one()
 
-        assert pipeline_db[comp_pipeline.c.project_id] == project_id
-        assert (
-            pipeline_db[comp_pipeline.c.dag_adjacency_list]
-            == fake_workbench_adjacency_list
-        )
+        assert pipeline_db.project_id == project_id
+        assert pipeline_db.dag_adjacency_list == fake_workbench_adjacency_list
 
         # check db comp_tasks
-        tasks_db = conn.execute(
-            sa.select(comp_tasks).where(comp_tasks.c.project_id == project_id)
-        ).fetchall()
+        tasks_db = (
+            await conn.execute(
+                sa.select(comp_tasks).where(comp_tasks.c.project_id == project_id)
+            )
+        ).all()
         assert tasks_db
 
         mock_pipeline = fake_workbench_payload
@@ -214,45 +215,43 @@ def _assert_db_contents(
 NodeIdStr = str
 
 
-def _get_computational_tasks_from_db(
+async def _get_computational_tasks_from_db(
     project_id: str,
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> dict[NodeIdStr, Any]:
     # this check is only there to check the comp_pipeline is there
-    with postgres_db.connect() as conn:
+    async with sqlalchemy_async_engine.connect() as conn:
         assert (
-            conn.execute(
+            await conn.execute(
                 sa.select(comp_pipeline).where(comp_pipeline.c.project_id == project_id)
-            ).fetchone()
-            is not None
-        ), f"missing pipeline in the database under comp_pipeline {project_id}"
+            )
+        ).one(), f"missing pipeline in the database under comp_pipeline {project_id}"
 
         # get the computational tasks
-        tasks_db = conn.execute(
-            sa.select(comp_tasks).where(
-                (comp_tasks.c.project_id == project_id)
-                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+        tasks_db = (
+            await conn.execute(
+                sa.select(comp_tasks).where(
+                    (comp_tasks.c.project_id == project_id)
+                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                )
             )
-        ).fetchall()
+        ).all()
 
     print(f"--> tasks from DB: {tasks_db=}")
     return {t.node_id: t for t in tasks_db}
 
 
-def _get_project_workbench_from_db(
+async def _get_project_workbench_from_db(
     project_id: str,
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> dict[str, Any]:
     # this check is only there to check the comp_pipeline is there
     print(f"--> looking for project {project_id=} in projects table...")
-    with postgres_db.connect() as conn:
-        project_in_db = conn.execute(
-            sa.select(projects).where(projects.c.uuid == project_id)
-        ).fetchone()
+    async with sqlalchemy_async_engine.connect() as conn:
+        project_in_db = (
+            await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))
+        ).one()
 
-    assert (
-        project_in_db
-    ), f"missing pipeline in the database under comp_pipeline {project_id}"
     print(
         f"<-- found following workbench: {json_dumps(project_in_db.workbench, indent=2)}"
     )
@@ -295,7 +294,7 @@ async def _assert_and_wait_for_pipeline_state(
 
 async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
     project_id: str,
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ) -> None:
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -307,11 +306,15 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             print(
                 f"--> waiting for pipeline results to move to projects table, attempt {attempt.retry_state.attempt_number}..."
             )
-            comp_tasks_in_db: dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
-                project_id, postgres_db
+            comp_tasks_in_db: dict[NodeIdStr, Any] = (
+                await _get_computational_tasks_from_db(
+                    project_id, sqlalchemy_async_engine
+                )
             )
-            workbench_in_db: dict[NodeIdStr, Any] = _get_project_workbench_from_db(
-                project_id, postgres_db
+            workbench_in_db: dict[NodeIdStr, Any] = (
+                await _get_project_workbench_from_db(
+                    project_id, sqlalchemy_async_engine
+                )
             )
             for node_id, node_values in comp_tasks_in_db.items():
                 assert (
@@ -343,7 +346,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
 async def test_start_stop_computation(
     client: TestClient,
     sleeper_service: dict[str, str],
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
@@ -369,9 +372,9 @@ async def test_start_stop_computation(
         assert "pipeline_id" in data
         assert data["pipeline_id"] == project_id
 
-        _assert_db_contents(
+        await _assert_db_contents(
             project_id,
-            postgres_db,
+            sqlalchemy_async_engine,
             fake_workbench_payload,
             fake_workbench_adjacency_list,
             check_outputs=False,
@@ -382,7 +385,7 @@ async def test_start_stop_computation(
         )
         # we need to wait until the webserver has updated the projects DB before starting another round
         await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
-            project_id, postgres_db
+            project_id, sqlalchemy_async_engine
         )
         # restart the computation, this should produce a 422 since the computation was complete
         resp = await client.post(f"{url_start}")
@@ -408,7 +411,7 @@ async def test_start_stop_computation(
         )
         # we need to wait until the webserver has updated the projects DB
         await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
-            project_id, postgres_db
+            project_id, sqlalchemy_async_engine
         )
 
 
@@ -416,7 +419,7 @@ async def test_start_stop_computation(
 async def test_run_pipeline_and_check_state(
     client: TestClient,
     sleeper_service: dict[str, str],
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     # logged_user: dict[str, Any],
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
@@ -440,9 +443,9 @@ async def test_run_pipeline_and_check_state(
     assert "pipeline_id" in data
     assert data["pipeline_id"] == project_id
 
-    _assert_db_contents(
+    await _assert_db_contents(
         project_id,
-        postgres_db,
+        sqlalchemy_async_engine,
         fake_workbench_payload,
         fake_workbench_adjacency_list,
         check_outputs=False,
@@ -508,8 +511,8 @@ async def test_run_pipeline_and_check_state(
                 f"--> pipeline completed with state {received_study_state=}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
     assert pipeline_state == RunningState.SUCCESS
-    comp_tasks_in_db: dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
-        project_id, postgres_db
+    comp_tasks_in_db: dict[NodeIdStr, Any] = await _get_computational_tasks_from_db(
+        project_id, sqlalchemy_async_engine
     )
     is_success = [t.state == StateType.SUCCESS for t in comp_tasks_in_db.values()]
     assert all(is_success), (
@@ -518,7 +521,7 @@ async def test_run_pipeline_and_check_state(
     )
     # we need to wait until the webserver has updated the projects DB
     await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
-        project_id, postgres_db
+        project_id, sqlalchemy_async_engine
     )
 
     print(f"<-- pipeline completed successfully in {time.monotonic() - start} seconds")
@@ -530,12 +533,12 @@ async def populated_project_metadata(
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     faker: Faker,
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     assert client.app
     project_uuid = user_project["uuid"]
-    with postgres_db.connect() as con:
-        con.execute(
+    async with sqlalchemy_async_engine.begin() as con:
+        await con.execute(
             projects_metadata.insert().values(
                 project_uuid=project_uuid,
                 custom={
@@ -546,15 +549,16 @@ async def populated_project_metadata(
             )
         )
         yield
-        con.execute(projects_metadata.delete())
-        con.execute(comp_runs_collections.delete())  # cleanup
+    async with sqlalchemy_async_engine.begin() as con:
+        await con.execute(projects_metadata.delete())
+        await con.execute(comp_runs_collections.delete())  # cleanup
 
 
 @pytest.mark.parametrize(*user_role_response(), ids=str)
 async def test_start_multiple_computation_with_the_same_collection_run_id(
     client: TestClient,
     sleeper_service: dict[str, str],
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     populated_project_metadata: None,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
@@ -584,7 +588,7 @@ async def test_start_multiple_computation_with_the_same_collection_run_id(
 async def test_running_computation_sends_progress_updates_via_socketio(
     client: TestClient,
     sleeper_service: dict[str, str],
-    postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     fake_workbench_adjacency_list: dict[str, Any],
@@ -611,9 +615,9 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     assert "pipeline_id" in data
     assert data["pipeline_id"] == project_id
 
-    _assert_db_contents(
+    await _assert_db_contents(
         project_id,
-        postgres_db,
+        sqlalchemy_async_engine,
         user_project["workbench"],
         fake_workbench_adjacency_list,
         check_outputs=False,
