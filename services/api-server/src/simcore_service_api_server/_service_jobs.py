@@ -22,8 +22,11 @@ from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
+from .models.api_resources import RelativeResourceName
 from .models.basic_types import NameValueTuple
-from .models.schemas.jobs import Job, JobID, JobInputs
+from .models.domain.jobs import Job as DomainJob
+from .models.schemas.jobs import Job as SchemaJob
+from .models.schemas.jobs import JobID, JobInputs
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver
 from .services_http.solver_job_models_converters import (
@@ -57,7 +60,7 @@ class JobService:
         filter_any_custom_metadata: list[NameValueTuple] | None = None,
         pagination_offset: PageOffsetInt | None = None,
         pagination_limit: PageLimitInt | None = None,
-    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+    ) -> tuple[list[SchemaJob], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
         pagination_kwargs = as_dict_exclude_none(
@@ -74,7 +77,7 @@ class JobService:
         )
 
         # 2. Convert projects to jobs
-        jobs: list[Job] = []
+        jobs: list[SchemaJob] = []
         for project_job in projects_page.data:
             assert (  # nosec
                 len(project_job.workbench) == 1
@@ -87,9 +90,9 @@ class JobService:
             assert project_job.job_parent_resource_name  # nosec
 
             jobs.append(
-                Job(
+                SchemaJob(
                     id=project_job.uuid,
-                    name=Job.compose_resource_name(
+                    name=SchemaJob.compose_resource_name(
                         project_job.job_parent_resource_name, project_job.uuid
                     ),
                     inputs_checksum=job_inputs.compute_checksum(),
@@ -114,12 +117,12 @@ class JobService:
         hidden: bool,
         project_name: str | None,
         description: str | None,
-    ) -> tuple[Job, ProjectGet]:
+    ) -> tuple[SchemaJob, ProjectGet]:
         """If no project_name is provided, the job name is used as project name"""
 
         # creates NEW job as prototype
 
-        pre_job = Job.create_job_from_solver_or_program(
+        pre_job = SchemaJob.create_job_from_solver_or_program(
             solver_or_program_name=solver_or_program.name, inputs=inputs
         )
         with log_context(
@@ -155,7 +158,7 @@ class JobService:
         )
         assert job.id == pre_job.id  # nosec
         assert job.name == pre_job.name  # nosec
-        assert job.name == Job.compose_resource_name(
+        assert job.name == SchemaJob.compose_resource_name(
             parent_name=solver_or_program.resource_name,
             job_id=job.id,
         )
@@ -175,8 +178,18 @@ class JobService:
         )
         return async_job_get
 
+    async def get_job(
+        self,
+        job_id: JobID,
+    ) -> DomainJob:
+        return await self._web_rpc_client.get_project_marked_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_id=job_id,
+        )
+
     async def delete_job_assets(
-        self, solver_or_program: Solver | Program, project_id: ProjectID
+        self, job_parent_resource_name: RelativeResourceName, project_id: ProjectID
     ):
         """Marks job project as hidden and deletes S3 assets associated it"""
         await self._web_rest_client.patch_project(
@@ -189,6 +202,6 @@ class JobService:
             product_name=self.product_name,
             user_id=self.user_id,
             project_uuid=project_id,
-            job_parent_resource_name=solver_or_program.name,
+            job_parent_resource_name=job_parent_resource_name,
             storage_data_deleted=True,
         )
