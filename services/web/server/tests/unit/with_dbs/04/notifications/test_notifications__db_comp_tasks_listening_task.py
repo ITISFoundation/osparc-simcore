@@ -21,6 +21,7 @@ import simcore_service_webserver
 import simcore_service_webserver.db_listener
 import simcore_service_webserver.db_listener._db_comp_tasks_listening_task
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses as AioResponsesMock
 from common_library.async_tools import delayed_start
 from faker import Faker
 from models_library.projects import ProjectAtDB
@@ -260,8 +261,8 @@ async def _check_for_stability(
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_db_listener_upgrades_projects_row_correctly(
     with_started_listening_task: None,
-    director_v2_service_mock,
-    mocked_dynamic_services_interface,
+    director_v2_service_mock: AioResponsesMock,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     mock_dynamic_service_rpc: mock.AsyncMock,
     sqlalchemy_async_engine: AsyncEngine,
     logged_user: UserInfoDict,
