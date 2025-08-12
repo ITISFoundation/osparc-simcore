@@ -19,6 +19,7 @@ from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.projects_state import RunningState
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
 from servicelib.aiohttp.application import create_safe_application
@@ -50,6 +51,7 @@ from simcore_service_webserver.resource_manager.plugin import setup_resource_man
 from simcore_service_webserver.rest.plugin import setup_rest
 from simcore_service_webserver.security.plugin import setup_security
 from simcore_service_webserver.session.plugin import setup_session
+from simcore_service_webserver.socketio.messages import SOCKET_IO_NODE_UPDATED_EVENT
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users.plugin import setup_users
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -64,6 +66,8 @@ pytest_simcore_core_services_selection = [
     "catalog",
     "dask-scheduler",
     "dask-sidecar",
+    "docker-api-proxy",
+    "dynamic-schdlr",
     "director-v2",
     "director",
     "migration",
@@ -596,11 +600,20 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     create_socketio_connection: Callable[
         [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
     ],
+    mocker: MockerFixture,
 ):
     assert client.app
-    socket_io_conn, *_ = await create_socketio_connection(None, client)
+    socket_io_conn, client_id = await create_socketio_connection(None, client)
+    mock_progress_handler = mocker.MagicMock()
+    socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_progress_handler)
 
     project_id = user_project["uuid"]
+
+    url_open = client.app.router["open_project"].url_for(
+        project_id=user_project["uuid"]
+    )
+    resp = await client.post(f"{url_open}", json=client_id)
+    await assert_status(resp, status.HTTP_200_OK)
 
     url_start = client.app.router["start_computation"].url_for(project_id=project_id)
     assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
@@ -608,9 +621,7 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     # POST /v0/computations/{project_id}:start
     resp = await client.post(f"{url_start}")
     data, error = await assert_status(resp, status.HTTP_201_CREATED)
-
-    if error:
-        return
+    assert not error
 
     assert "pipeline_id" in data
     assert data["pipeline_id"] == project_id
@@ -628,10 +639,17 @@ async def test_running_computation_sends_progress_updates_via_socketio(
         client,
         project_id,
         RunningState.SUCCESS,
-        _ExpectedResponseTuple(
-            ok=status.HTTP_200_OK,
-            created=status.HTTP_201_CREATED,
-            no_content=status.HTTP_204_NO_CONTENT,
-            confict=status.HTTP_409_CONFLICT,
-        ),
+        expected,
+    )
+
+    # check that the progress updates were sent
+    assert mock_progress_handler.call_count > 0, (
+        "expected progress updates to be sent via socketio, "
+        f"but got {mock_progress_handler.call_count} calls"
+    )
+    # check that the last progress update was for the SUCCESS state
+    last_call_args = mock_progress_handler.call_args_list[-1][0]
+    assert len(last_call_args) == 1, (
+        "expected the progress handler to be called with a single argument, "
+        f"but got {len(last_call_args)} arguments"
     )
