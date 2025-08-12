@@ -1406,20 +1406,6 @@ async def _get_node_share_state(
     return NodeShareState(locked=False)
 
 
-async def _safe_retrieve(
-    app: web.Application, node_id: NodeID, port_keys: list[str]
-) -> None:
-    try:
-        await dynamic_scheduler_service.retrieve_inputs(app, node_id, port_keys)
-    except RPCServerError as exc:
-        _logger.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s]",
-            node_id,
-            port_keys,
-            exc,
-        )
-
-
 async def _trigger_connected_service_retrieve(
     app: web.Application, project: dict, updated_node_uuid: str, changed_keys: list[str]
 ) -> None:
@@ -1460,10 +1446,10 @@ async def _trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        _safe_retrieve(app, NodeID(node), keys)
+        dynamic_scheduler_service.retrieve_inputs(app, NodeID(node), keys)
         for node, keys in nodes_keys_to_update.items()
     ]
-    await logged_gather(*update_tasks)
+    await logged_gather(*update_tasks, reraise=False)
 
 
 async def post_trigger_connected_service_retrieve(

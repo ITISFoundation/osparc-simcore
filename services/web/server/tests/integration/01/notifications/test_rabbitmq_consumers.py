@@ -377,7 +377,7 @@ async def test_progress_non_computational_workflow(
 @pytest.fixture
 async def mocked_dynamic_services_interface(
     mocker: MockerFixture,
-) -> dict[str, mock.Mock]:
+) -> dict[str, mock.MagicMock]:  # pylint: disable=no-member
     mock = {}
 
     for func_name in (
