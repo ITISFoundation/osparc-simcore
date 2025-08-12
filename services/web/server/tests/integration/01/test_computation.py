@@ -7,12 +7,13 @@
 import asyncio
 import json
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, NamedTuple
 
 import pytest
+import socketio
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
@@ -536,14 +537,12 @@ async def populated_project_metadata(
     with postgres_db.connect() as con:
         con.execute(
             projects_metadata.insert().values(
-                **{
-                    "project_uuid": project_uuid,
-                    "custom": {
-                        "job_name": "My Job Name",
-                        "group_id": faker.uuid4(),
-                        "group_name": "My Group Name",
-                    },
-                }
+                project_uuid=project_uuid,
+                custom={
+                    "job_name": "My Job Name",
+                    "group_id": faker.uuid4(),
+                    "group_name": "My Group Name",
+                },
             )
         )
         yield
@@ -579,3 +578,56 @@ async def test_start_multiple_computation_with_the_same_collection_run_id(
 
     # NOTE: This tests that there is only one entry in comp_runs_collections table created
     # as the project metadata has the same group_id
+
+
+@pytest.mark.parametrize(*user_role_response(), ids=str)
+async def test_running_computation_sends_progress_updates_via_socketio(
+    client: TestClient,
+    sleeper_service: dict[str, str],
+    postgres_db: sa.engine.Engine,
+    logged_user: dict[str, Any],
+    user_project: dict[str, Any],
+    fake_workbench_adjacency_list: dict[str, Any],
+    expected: _ExpectedResponseTuple,
+    create_socketio_connection: Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ],
+):
+    assert client.app
+    socket_io_conn, *_ = await create_socketio_connection(None, client)
+
+    project_id = user_project["uuid"]
+
+    url_start = client.app.router["start_computation"].url_for(project_id=project_id)
+    assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
+
+    # POST /v0/computations/{project_id}:start
+    resp = await client.post(f"{url_start}")
+    data, error = await assert_status(resp, status.HTTP_201_CREATED)
+
+    if error:
+        return
+
+    assert "pipeline_id" in data
+    assert data["pipeline_id"] == project_id
+
+    _assert_db_contents(
+        project_id,
+        postgres_db,
+        user_project["workbench"],
+        fake_workbench_adjacency_list,
+        check_outputs=False,
+    )
+
+    # wait for the computation to complete successfully
+    await _assert_and_wait_for_pipeline_state(
+        client,
+        project_id,
+        RunningState.SUCCESS,
+        _ExpectedResponseTuple(
+            ok=status.HTTP_200_OK,
+            created=status.HTTP_201_CREATED,
+            no_content=status.HTTP_204_NO_CONTENT,
+            confict=status.HTTP_409_CONFLICT,
+        ),
+    )
