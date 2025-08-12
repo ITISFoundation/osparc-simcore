@@ -134,7 +134,7 @@ class EC2InstanceConfig:
     ami_id: str
     key_name: str
     security_group_ids: list[str]
-    subnet_id: str
+    subnet_ids: list[str]
     iam_instance_profile: str
 
 
