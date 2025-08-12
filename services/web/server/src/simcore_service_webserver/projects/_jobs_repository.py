@@ -79,7 +79,10 @@ class ProjectJobsRepository(BaseRepository):
                 )
                 .on_conflict_do_update(
                     index_elements=["project_uuid", "job_parent_resource_name"],
-                    set_={"job_parent_resource_name": job_parent_resource_name},
+                    set_={
+                        "job_parent_resource_name": job_parent_resource_name,
+                        "storage_data_deleted": storage_data_deleted,
+                    },
                 )
             )
 
