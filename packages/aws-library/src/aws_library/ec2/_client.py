@@ -174,7 +174,7 @@ class SimcoreEC2API:
                     {
                         "AssociatePublicIpAddress": True,
                         "DeviceIndex": 0,
-                        "SubnetId": instance_config.subnet_id,
+                        "SubnetId": instance_config.subnet_ids,
                         "Groups": instance_config.security_group_ids,
                     }
                 ],

@@ -97,7 +97,7 @@ def ec2_instance_config(
         ami_id=aws_ami_id,
         key_name=faker.pystr(),
         security_group_ids=[aws_security_group_id],
-        subnet_id=aws_subnet_id,
+        subnet_ids=aws_subnet_id,
         iam_instance_profile="",
     )
 
