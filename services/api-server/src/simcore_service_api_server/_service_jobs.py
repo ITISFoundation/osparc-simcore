@@ -137,6 +137,7 @@ class JobService:
                 user_id=self.user_id,
                 project_uuid=new_project.uuid,
                 job_parent_resource_name=pre_job.runner_name,
+                storage_data_deleted=False,
             )
 
         assert new_project  # nosec
