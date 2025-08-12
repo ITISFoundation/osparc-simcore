@@ -151,6 +151,26 @@ async def delete_job(
     await webserver_api.delete_project(project_id=job_id)
 
 
+@router.delete(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/assets",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.11"),
+        ],
+    ),
+)
+async def delete_job_assets(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    job_service: Annotated[JobService, Depends(get_job_service)],
+):
+    await job_service.delete_project_assets(project_id=job_id)
+
+
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
     status_code=status.HTTP_202_ACCEPTED,

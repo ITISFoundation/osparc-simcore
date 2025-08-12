@@ -29,6 +29,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
+from models_library.projects import ProjectID
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
@@ -283,6 +284,16 @@ class StorageApi(BaseServiceClientApi):
         assert stored_file_meta is not None
         file_meta: File = to_file_api_model(stored_file_meta)
         return file_meta
+
+    @_exception_mapper(http_status_map={})
+    async def delete_project_s3_assets(
+        self, user_id: int, project_id: ProjectID
+    ) -> None:
+        response = await self.client.delete(
+            f"/locations/{self.SIMCORE_S3_ID}/folders/{project_id}",
+            params={"user_id": user_id},
+        )
+        response.raise_for_status()
 
 
 # MODULES APP SETUP -------------------------------------------------------------
