@@ -167,8 +167,15 @@ async def delete_job_assets(
     version: VersionStr,
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
 ):
-    await job_service.delete_project_assets(project_id=job_id)
+    solver = await solver_service.get_solver(
+        solver_key=solver_key,
+        solver_version=version,
+    )
+    await job_service.delete_job_assets(
+        job_parent_resource_name=solver.name, project_id=job_id
+    )
 
 
 @router.post(

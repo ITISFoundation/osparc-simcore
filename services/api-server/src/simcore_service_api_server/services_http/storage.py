@@ -290,7 +290,7 @@ class StorageApi(BaseServiceClientApi):
         self, user_id: int, project_id: ProjectID
     ) -> None:
         response = await self.client.delete(
-            f"/locations/{self.SIMCORE_S3_ID}/folders/{project_id}",
+            f"/simcore-s3/folders/{project_id}",
             params={"user_id": user_id},
         )
         response.raise_for_status()

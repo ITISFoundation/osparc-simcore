@@ -175,11 +175,20 @@ class JobService:
         )
         return async_job_get
 
-    async def delete_project_assets(self, project_id: ProjectID):
+    async def delete_job_assets(
+        self, solver_or_program: Solver | Program, project_id: ProjectID
+    ):
         """Marks job project as hidden and deletes S3 assets associated it"""
         await self._web_rest_client.patch_project(
             project_id=project_id, patch_params=ProjectPatch(hidden=True)
         )
         await self._storage_rest_client.delete_project_s3_assets(
             user_id=self.user_id, project_id=project_id
+        )
+        await self._web_rpc_client.mark_project_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_uuid=project_id,
+            job_parent_resource_name=solver_or_program.name,
+            storage_data_deleted=True,
         )
