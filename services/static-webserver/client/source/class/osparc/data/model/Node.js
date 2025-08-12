@@ -484,6 +484,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     fetchMetadataAndPopulate: function(nodeData, nodeUiData) {
+      this.__initNodeData = nodeData;
+      this.__initNodeUiData = nodeUiData;
       this.getService(this.getKey(), this.getVersion())
         .then(serviceMetadata => {
           this.populateWithMetadata(serviceMetadata);

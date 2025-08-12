@@ -107,6 +107,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__nodes = {};
       this.__edges = {};
       this.__deserialize(this.__workbenchInitData, this.__workbenchUIInitData);
+      // this.__deserializeAll(this.__workbenchInitData, this.__workbenchUIInitData);
+      // OM: isn't this handled later?
       this.__workbenchInitData = null;
       this.__workbenchUIInitData = null;
     },
@@ -721,8 +723,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserialize: function(workbenchInitData, workbenchUIInitData) {
-      this.__deserializeAll(workbenchInitData, workbenchUIInitData);
-
       this.__deserializeNodes(workbenchInitData, workbenchUIInitData)
         .then(() => {
           this.__deserializeEdges(workbenchInitData);
@@ -744,6 +744,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       for (const nodeId in nodeDatas) {
         console.log("node", nodeId, nodeDatas[nodeId], nodeUiDatas[nodeId]);
+        this.__deserializeNode(nodeId, nodeDatas[nodeId], nodeUiDatas[nodeId]);
       }
     },
 
