@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import urlparse, urlunparse
 
 import pytest
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
 from aioresponses.core import CallbackResult
 from faker import Faker
 from models_library.api_schemas_directorv2.computations import (
