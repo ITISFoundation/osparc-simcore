@@ -60,6 +60,7 @@ class TaskProtocol(Protocol):
 class TaskRegistry:
     REGISTERED_TASKS: ClassVar[dict[RegisteredTaskName, TaskProtocol]] = {}
 
+    # TODO: maybe only use one method to register
     @classmethod
     def register(cls, task: TaskProtocol) -> None:
         cls.REGISTERED_TASKS[task.__name__] = task
