@@ -219,6 +219,7 @@ class ProjectJobsRepository(BaseRepository):
                 *_PROJECT_DB_COLS,
                 projects.c.workbench,
                 projects_to_jobs.c.job_parent_resource_name,
+                projects_to_jobs.c.storage_data_deleted,
             )
             .select_from(
                 projects_to_jobs.join(

@@ -405,3 +405,39 @@ async def test_rpc_client_get_project_marked_as_job_forbidden(
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
         )
+
+
+@pytest.mark.parametrize("storage_data_deleted", [True, False])
+async def test_mark_and_get_project_job_storage_data_deleted(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+    storage_data_deleted: bool,
+):
+    """
+    Marks a project as a job with a given storage_data_deleted value,
+    then retrieves it and checks the value on the returned project_job.
+    """
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+        storage_data_deleted=storage_data_deleted,
+    )
+
+    # Retrieve via RPC and check
+    project_job = await projects_rpc.get_project_marked_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+    assert project_job.storage_data_deleted == storage_data_deleted
