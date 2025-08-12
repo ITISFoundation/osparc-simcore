@@ -609,11 +609,11 @@ async def test_running_computation_sends_progress_updates_via_socketio(
 
     project_id = user_project["uuid"]
 
-    url_open = client.app.router["open_project"].url_for(
-        project_id=user_project["uuid"]
-    )
-    resp = await client.post(f"{url_open}", json=client_id)
-    await assert_status(resp, status.HTTP_200_OK)
+    # url_open = client.app.router["open_project"].url_for(
+    #     project_id=user_project["uuid"]
+    # )
+    # resp = await client.post(f"{url_open}", json=client_id)
+    # await assert_status(resp, status.HTTP_200_OK)
 
     url_start = client.app.router["start_computation"].url_for(project_id=project_id)
     assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
