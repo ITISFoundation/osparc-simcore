@@ -1213,8 +1213,6 @@ async def patch_project_node(
         mode="json", exclude_unset=True, by_alias=True
     )
 
-    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(app)
-
     # 1. Check user permissions
     await check_user_project_permission(
         app,
@@ -1226,14 +1224,15 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await _projects_repository_legacy.get_project_dict_and_type(
-            project_uuid=f"{project_id}"
+        _project_node = await _projects_nodes_repository.get(
+            app,
+            project_id=project_id,
+            node_id=node_id,
         )
-        _project_node_data = _project["workbench"][f"{node_id}"]
 
-        _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
+        _service_key = _node_patch_exclude_unset.get("key", _project_node.key)
         _service_version = _node_patch_exclude_unset.get(
-            "version", _project_node_data["version"]
+            "version", _project_node.version
         )
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
         await catalog_rpc.check_for_service(
