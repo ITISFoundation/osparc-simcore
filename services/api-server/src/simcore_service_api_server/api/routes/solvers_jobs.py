@@ -167,14 +167,17 @@ async def delete_job_assets(
     version: VersionStr,
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
 ):
-    solver = await solver_service.get_solver(
-        solver_key=solver_key,
-        solver_version=version,
+    job_parent_resource_name = compose_job_resource_name(solver_key, version, job_id)
+
+    # check that job exists and is accessible to user
+    project_job_rpc_get = await job_service.get_job(
+        job_parent_resource_name=job_parent_resource_name, job_id=job_id
     )
+    assert project_job_rpc_get.uuid == job_id  # nosec
+
     await job_service.delete_job_assets(
-        job_parent_resource_name=solver.name, project_id=job_id
+        job_parent_resource_name=job_parent_resource_name, job_id=job_id
     )
 
 

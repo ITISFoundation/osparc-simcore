@@ -17,11 +17,13 @@ from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
+from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
+from .models.api_resources import RelativeResourceName
 from .models.basic_types import NameValueTuple
 from .models.schemas.jobs import Job, JobID, JobInputs
 from .models.schemas.programs import Program
@@ -175,20 +177,31 @@ class JobService:
         )
         return async_job_get
 
+    async def get_job(
+        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
+    ) -> ProjectJobRpcGet:
+        """This method can be used to check that the project exists and has the correct parent resource."""
+        return await self._web_rpc_client.get_project_marked_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_uuid=job_id,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+
     async def delete_job_assets(
-        self, solver_or_program: Solver | Program, project_id: ProjectID
+        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
     ):
         """Marks job project as hidden and deletes S3 assets associated it"""
         await self._web_rest_client.patch_project(
-            project_id=project_id, patch_params=ProjectPatch(hidden=True)
+            project_id=job_id, patch_params=ProjectPatch(hidden=True)
         )
         await self._storage_rest_client.delete_project_s3_assets(
-            user_id=self.user_id, project_id=project_id
+            user_id=self.user_id, project_id=job_id
         )
         await self._web_rpc_client.mark_project_as_job(
             product_name=self.product_name,
             user_id=self.user_id,
-            project_uuid=project_id,
-            job_parent_resource_name=solver_or_program.name,
+            project_uuid=job_id,
+            job_parent_resource_name=job_parent_resource_name,
             storage_data_deleted=True,
         )

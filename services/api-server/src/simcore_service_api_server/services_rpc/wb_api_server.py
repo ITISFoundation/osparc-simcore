@@ -63,6 +63,10 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
+from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
+    ProjectForbiddenRpcError,
+    ProjectNotFoundRpcError,
+)
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface,
 )
@@ -83,6 +87,8 @@ from simcore_service_api_server.models.basic_types import NameValueTuple
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
     InsufficientNumberOfSeatsError,
+    JobForbiddenAccessError,
+    JobNotFoundError,
     LicensedItemCheckoutNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -251,6 +257,28 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
             storage_data_deleted=storage_data_deleted,
+        )
+
+    @_exception_mapper(
+        rpc_exception_map={
+            ProjectForbiddenRpcError: JobForbiddenAccessError,
+            ProjectNotFoundRpcError: JobNotFoundError,
+        }
+    )
+    async def get_project_marked_as_job(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        job_parent_resource_name: RelativeResourceName,
+    ):
+        return await projects_rpc.get_project_marked_as_job(
+            rpc_client=self._client,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
         )
 
     async def list_projects_marked_as_jobs(
