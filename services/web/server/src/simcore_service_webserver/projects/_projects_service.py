@@ -267,7 +267,10 @@ async def get_project_for_user(
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
-    product_name = await db.get_project_product(ProjectID(project_uuid))
+    product_name = await _projects_repository.get_project_product(
+        app, project_uuid=ProjectID(project_uuid)
+    )
+
     user_project_access = await check_user_project_permission(
         app,
         project_id=ProjectID(project_uuid),
