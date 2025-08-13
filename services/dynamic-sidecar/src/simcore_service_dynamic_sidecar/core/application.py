@@ -5,7 +5,6 @@ from typing import Any, ClassVar
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.async_utils import cancel_sequential_workers
-from servicelib.fastapi import long_running_tasks
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
@@ -24,6 +23,7 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
 from ..modules.inputs import setup_inputs
+from ..modules.long_running_tasks import setup_long_running_tasks
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.notifications import setup_notifications
 from ..modules.outputs import setup_outputs
@@ -146,14 +146,6 @@ def create_base_app() -> FastAPI:
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
 
-    long_running_tasks.server.setup(
-        app,
-        redis_settings=app_settings.REDIS_SETTINGS,
-        redis_namespace=f"dy_sidecar-{app_settings.DY_SIDECAR_RUN_ID}",
-        rabbit_settings=app_settings.RABBIT_SETTINGS,
-        rabbit_namespace=f"dy_sidecar-{app_settings.DY_SIDECAR_RUN_ID}",
-    )
-
     app.include_router(get_main_router(app))
 
     setup_reserved_space(app)
@@ -192,6 +184,8 @@ def create_app() -> FastAPI:
     setup_system_monitor(app)
     setup_inputs(app)
     setup_outputs(app)
+
+    setup_long_running_tasks(app)
 
     setup_attribute_monitor(app)
 

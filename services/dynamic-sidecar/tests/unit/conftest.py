@@ -40,11 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def app(
-    mock_environment: EnvVarsDict,
-    mock_registry_service: AsyncMock,
-    mock_core_rabbitmq: dict[str, AsyncMock],
-) -> FastAPI:
+def app(mock_environment: EnvVarsDict, mock_registry_service: AsyncMock) -> FastAPI:
     """creates app with registry and rabbitMQ services mocked"""
     return create_app()
 

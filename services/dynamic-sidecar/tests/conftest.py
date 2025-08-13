@@ -360,9 +360,7 @@ def mock_stop_heart_beat_task(mocker: MockerFixture) -> AsyncMock:
 @pytest.fixture
 def mock_metrics_params(faker: Faker) -> CreateServiceMetricsAdditionalParams:
     return TypeAdapter(CreateServiceMetricsAdditionalParams).validate_python(
-        CreateServiceMetricsAdditionalParams.model_config["json_schema_extra"][
-            "example"
-        ],
+        CreateServiceMetricsAdditionalParams.model_json_schema()["example"]
     )
 
 

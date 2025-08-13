@@ -17,6 +17,7 @@ import pytest
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
+from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
@@ -28,12 +29,13 @@ from models_library.api_schemas_long_running_tasks.base import (
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
 from servicelib.long_running_tasks.task import TaskRegistry
+from settings_library.rabbit import RabbitSettings
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
@@ -52,6 +54,10 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -171,8 +177,20 @@ def backend_url() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_environment(mock_rabbitmq_envs: EnvVarsDict) -> EnvVarsDict:
-    return mock_rabbitmq_envs
+def mock_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    rabbit_service: RabbitSettings,
+    mock_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_environment,
+            "RABBIT_SETTINGS": json.dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            ),
+        },
+    )
 
 
 @pytest.fixture

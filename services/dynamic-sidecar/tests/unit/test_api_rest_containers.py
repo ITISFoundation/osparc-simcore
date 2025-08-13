@@ -19,6 +19,7 @@ import yaml
 from aiodocker.volumes import DockerVolume
 from aiofiles.os import mkdir
 from async_asgi_testclient import TestClient
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
@@ -29,6 +30,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.docker_constants import SUFFIX_EGRESS_PROXY_NAME
 from servicelib.long_running_tasks.models import TaskId
+from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api.rest.containers import _INACTIVE_FOR_LONG_TIME
 from simcore_service_dynamic_sidecar.core.application import AppState
@@ -46,6 +48,10 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 WAIT_FOR_OUTPUTS_WATCHER: Final[float] = 0.1
 FAST_POLLING_INTERVAL: Final[float] = 0.1
@@ -162,9 +168,19 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
 
 @pytest.fixture
 def mock_environment(
-    mock_environment: EnvVarsDict, mock_rabbitmq_envs: EnvVarsDict
+    monkeypatch: pytest.MonkeyPatch,
+    rabbit_service: RabbitSettings,
+    mock_environment: EnvVarsDict,
 ) -> EnvVarsDict:
-    return mock_rabbitmq_envs
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_environment,
+            "RABBIT_SETTINGS": json.dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            ),
+        },
+    )
 
 
 @pytest.fixture
@@ -267,10 +283,10 @@ def not_started_containers() -> list[str]:
 def mock_outputs_labels() -> dict[str, ServiceOutput]:
     return {
         "output_port_1": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_config["json_schema_extra"]["examples"][3]
+            ServiceOutput.model_json_schema()["examples"][3]
         ),
         "output_port_2": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_config["json_schema_extra"]["examples"][3]
+            ServiceOutput.model_json_schema()["examples"][3]
         ),
     }
 

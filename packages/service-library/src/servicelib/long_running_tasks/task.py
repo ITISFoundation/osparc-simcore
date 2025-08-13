@@ -67,9 +67,11 @@ class TaskRegistry:
 
     @classmethod
     def register_partial(cls, task: TaskProtocol, **partial_kwargs) -> None:
-        cls.REGISTERED_TASKS[task.__name__] = functools.partial(
-            task, **partial_kwargs
-        )  # type: ignore[assignment]
+        partail_task = functools.partial(task, **partial_kwargs)
+        partail_task.__name__ = (
+            task.__name__
+        )  # allows to call via the partial of via the orignal method
+        cls.REGISTERED_TASKS[task.__name__] = partail_task  # type: ignore[assignment]
 
     @classmethod
     def unregister(cls, task: TaskProtocol) -> None:
