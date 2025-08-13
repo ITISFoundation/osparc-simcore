@@ -24,7 +24,7 @@ services:
   api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *tracing_open_telemetry_environs
       API_SERVER_DEV_FEATURES_ENABLED: ${API_SERVER_DEV_FEATURES_ENABLED}
@@ -81,7 +81,7 @@ services:
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "as-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - autoscaling_subnet
     environment:
@@ -193,7 +193,7 @@ services:
   clusters-keeper:
     image: ${DOCKER_REGISTRY:-itisfoundation}/clusters-keeper:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "ck-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -261,7 +261,7 @@ services:
   director:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "dv0-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *tracing_open_telemetry_environs
       DIRECTOR_DEFAULT_MAX_MEMORY: ${DIRECTOR_DEFAULT_MAX_MEMORY}
@@ -308,7 +308,7 @@ services:
   director-v2:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "dv2-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *tracing_open_telemetry_environs
       AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
@@ -418,7 +418,7 @@ services:
   efs-guardian:
     image: ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "efs-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -521,7 +521,7 @@ services:
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "rut-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
     environment:
@@ -560,7 +560,7 @@ services:
   dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "ds-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
       - docker-api-network
@@ -627,7 +627,7 @@ services:
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "sw-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8000
@@ -1193,7 +1193,7 @@ services:
   agent:
     image: ${DOCKER_REGISTRY:-itisfoundation}/agent:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "age-{{.Node.Hostname}}-{{.Task.Slot}}"
     deploy:
       mode: global
       resources:
@@ -1226,7 +1226,7 @@ services:
   notifications:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "not-{{.Node.Hostname}}-{{.Task.Slot}}"
 
     environment:
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
@@ -1253,7 +1253,7 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "dsid-{{.Node.Hostname}}-{{.Task.Slot}}"
     deploy:
       mode: global
       endpoint_mode: dnsrr
@@ -1286,7 +1286,7 @@ services:
   dask-scheduler:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "dask-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<: *sidecar-environment
       DASK_START_AS_SCHEDULER: 1
@@ -1298,7 +1298,7 @@ services:
   datcore-adapter:
     image: ${DOCKER_REGISTRY:-itisfoundation}/datcore-adapter:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "dat-{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - storage_subnet
     environment:
