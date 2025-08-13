@@ -432,7 +432,9 @@ async def test_run_partial_computation(
                     NodeID(workbench_node_uuids[dep_n])
                     for dep_n in node_state["dependencies"]
                 },
-                currentStatus=node_state.get("currentStatus", RunningState.NOT_STARTED),
+                current_status=node_state.get(
+                    "currentStatus", RunningState.NOT_STARTED
+                ),
                 progress=node_state.get("progress"),
             )
             for node_index, node_state in expected_node_states.items()
