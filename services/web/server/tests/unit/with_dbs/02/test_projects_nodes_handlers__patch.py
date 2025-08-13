@@ -166,7 +166,9 @@ async def test_patch_project_node(
             "output_1": {
                 "store": 0,
                 "path": "9934cba6-4b51-11ef-968a-02420a00f1c1/571ffc8d-fa6e-411f-afc8-9c62d08dd2fa/matus.txt",
+                "label": "matus.txt",
                 "eTag": "d41d8cd98f00b204e9800998ecf8427e",
+                "dataset": None,
             }
         }
     }
