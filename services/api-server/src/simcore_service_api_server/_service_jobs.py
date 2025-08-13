@@ -184,7 +184,7 @@ class JobService:
         return await self._web_rpc_client.get_project_marked_as_job(
             product_name=self.product_name,
             user_id=self.user_id,
-            project_uuid=job_id,
+            project_id=job_id,
             job_parent_resource_name=job_parent_resource_name,
         )
 
