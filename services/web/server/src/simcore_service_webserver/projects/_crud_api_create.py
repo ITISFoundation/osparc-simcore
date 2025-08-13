@@ -523,3 +523,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
 def register_create_project_task(app: web.Application) -> None:
     TaskRegistry.register_partial(create_project, app=app)
+    _logger.debug(
+        "I've manged to register the create_project task %s",
+        TaskRegistry.REGISTERED_TASKS,
+    )
