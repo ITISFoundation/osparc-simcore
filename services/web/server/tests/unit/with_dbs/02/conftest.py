@@ -16,6 +16,7 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.projects_nodes import Node, NodeID
@@ -27,6 +28,8 @@ from models_library.services_resources import (
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
@@ -483,3 +486,25 @@ def workbench_db_column() -> dict[str, Any]:
 def workbench(workbench_db_column: dict[str, Any]) -> dict[NodeID, Node]:
     # convert to  model
     return TypeAdapter(dict[NodeID, Node]).validate_python(workbench_db_column)
+
+
+@pytest.fixture
+def max_number_of_user_sessions(faker: Faker) -> int:
+    return faker.pyint(min_value=1, max_value=5)
+
+
+@pytest.fixture
+def with_enabled_rtc_collaboration(
+    app_environment: EnvVarsDict,
+    with_dev_features_enabled: None,
+    monkeypatch: pytest.MonkeyPatch,
+    max_number_of_user_sessions: int,
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
+                {"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions}
+            )
+        },
+    )

@@ -22,7 +22,6 @@ import socketio
 import sqlalchemy as sa
 from aiohttp import ClientResponse
 from aiohttp.test_utils import TestClient, TestServer
-from common_library.json_serialization import json_dumps
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -54,8 +53,6 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.logging_tools import log_context
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
@@ -88,26 +85,26 @@ RESOURCE_NAME = "projects"
 API_PREFIX = f"/{API_VTAG}"
 
 
-@pytest.fixture
-def max_number_of_user_sessions(faker: Faker) -> int:
-    return faker.pyint(min_value=1, max_value=5)
+# @pytest.fixture
+# def max_number_of_user_sessions(faker: Faker) -> int:
+#     return faker.pyint(min_value=1, max_value=5)
 
 
-@pytest.fixture
-def with_enabled_rtc_collaboration(
-    app_environment: EnvVarsDict,
-    with_dev_features_enabled: None,
-    monkeypatch: pytest.MonkeyPatch,
-    max_number_of_user_sessions: int,
-) -> None:
-    setenvs_from_dict(
-        monkeypatch,
-        {
-            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
-                {"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions}
-            )
-        },
-    )
+# @pytest.fixture
+# def with_enabled_rtc_collaboration(
+#     app_environment: EnvVarsDict,
+#     with_dev_features_enabled: None,
+#     monkeypatch: pytest.MonkeyPatch,
+#     max_number_of_user_sessions: int,
+# ) -> None:
+#     setenvs_from_dict(
+#         monkeypatch,
+#         {
+#             "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
+#                 {"RTC_MAX_NUMBER_OF_USERS": max_number_of_user_sessions}
+#             )
+#         },
+#     )
 
 
 def assert_replaced(current_project, update_data):
