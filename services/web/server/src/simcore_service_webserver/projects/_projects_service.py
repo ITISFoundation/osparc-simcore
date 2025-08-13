@@ -233,18 +233,20 @@ async def patch_project_and_notify_users(
         new_partial_project_data=patch_project_data,
     )
 
-    (
-        project_document,
-        document_version,
-    ) = await create_project_document_and_increment_version(app, project_uuid)
-    await notify_project_document_updated(
-        app=app,
-        project_id=project_uuid,
-        user_primary_gid=user_primary_gid,
-        client_session_id=client_session_id,
-        version=document_version,
-        document=project_document,
-    )
+    app_settings = get_application_settings(app)
+    if app_settings.WEBSERVER_REALTIME_COLLABORATION is not None:
+        (
+            project_document,
+            document_version,
+        ) = await create_project_document_and_increment_version(app, project_uuid)
+        await notify_project_document_updated(
+            app=app,
+            project_id=project_uuid,
+            user_primary_gid=user_primary_gid,
+            client_session_id=client_session_id,
+            version=document_version,
+            document=project_document,
+        )
 
 
 def _is_node_dynamic(node_key: str) -> bool:

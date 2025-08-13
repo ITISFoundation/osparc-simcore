@@ -74,6 +74,7 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
+from ..application_settings import get_application_settings
 from ..models import ClientSessionID
 from ..utils import now_str
 from ._comments_repository import (
@@ -974,19 +975,23 @@ class ProjectDBAPI(BaseProjectDB):
             allow_workbench_changes=allow_workbench_changes,
         )
 
-        (
-            project_document,
-            document_version,
-        ) = await create_project_document_and_increment_version(self._app, project_uuid)
+        app_settings = get_application_settings(self._app)
+        if app_settings.WEBSERVER_REALTIME_COLLABORATION is not None:
+            (
+                project_document,
+                document_version,
+            ) = await create_project_document_and_increment_version(
+                self._app, project_uuid
+            )
 
-        await notify_project_document_updated(
-            app=self._app,
-            project_id=project_uuid,
-            user_primary_gid=user_primary_gid,
-            client_session_id=client_session_id,
-            version=document_version,
-            document=project_document,
-        )
+            await notify_project_document_updated(
+                app=self._app,
+                project_id=project_uuid,
+                user_primary_gid=user_primary_gid,
+                client_session_id=client_session_id,
+                version=document_version,
+                document=project_document,
+            )
         return updated_project, changed_entries
 
     async def _update_project_workbench(
