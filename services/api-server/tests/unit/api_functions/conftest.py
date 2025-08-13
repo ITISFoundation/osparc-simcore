@@ -34,7 +34,7 @@ from models_library.functions import (
 )
 from models_library.functions_errors import FunctionIDNotFoundError
 from models_library.projects import ProjectID
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -251,12 +251,12 @@ def mock_handler_in_functions_rpc_interface(
         handler_name: str = "",
         return_value: Any = None,
         exception: Exception | None = None,
-    ) -> None:
+    ) -> MockType:
         from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
             functions_rpc_interface,
         )
 
-        mock_wb_api_server_rpc.patch.object(
+        return mock_wb_api_server_rpc.patch.object(
             functions_rpc_interface,
             handler_name,
             return_value=return_value,
