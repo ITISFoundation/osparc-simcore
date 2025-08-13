@@ -168,7 +168,7 @@ async def delete_job_assets(
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
 ):
-    job_parent_resource_name = compose_job_resource_name(solver_key, version, job_id)
+    job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
 
     # check that job exists and is accessible to user
     project_job_rpc_get = await job_service.get_job(
@@ -193,6 +193,10 @@ async def delete_job_assets(
         },
         status.HTTP_406_NOT_ACCEPTABLE: {
             "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Job assets missing",
             "model": ErrorGet,
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
@@ -223,12 +227,25 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
     job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
+
+    job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
+    job = await job_service.get_job(
+        job_id=job_id, job_parent_resource_name=job_parent_resource_name
+    )
+    if job.storage_data_deleted:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=jsonable_encoder(
+                ErrorGet(errors=[f"Assets for job {job_id=} are missing"])
+            ),
+        )
 
     try:
         await start_project(
