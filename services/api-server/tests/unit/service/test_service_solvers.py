@@ -11,6 +11,10 @@ from models_library.users import UserID
 from pytest_mock import MockType
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_solvers import SolverService
+from simcore_service_api_server.exceptions.backend_errors import (
+    JobForbiddenAccessError,
+    JobNotFoundError,
+)
 from simcore_service_api_server.exceptions.custom_errors import (
     ServiceConfigurationError,
 )
@@ -107,20 +111,23 @@ async def test_job_service_get_job_success(
 
 
 @pytest.mark.parametrize(
-    "exception_type",
-    [ProjectForbiddenRpcError, ProjectNotFoundRpcError],
+    "client_exception_type,api_exception_type",
+    [
+        (ProjectForbiddenRpcError, JobForbiddenAccessError),
+        (ProjectNotFoundRpcError, JobNotFoundError),
+    ],
 )
 async def test_job_service_get_job_exceptions(
-    mocker, job_service: JobService, exception_type
+    mocker,
+    job_service: JobService,
+    client_exception_type: type[Exception],
+    api_exception_type: type[Exception],
 ):
     job_parent_resource_name = "solver-resource"
     job_id = ProjectID("123e4567-e89b-12d3-a456-426614174000")
-    mocker.patch.object(
-        job_service._web_rpc_client,
-        "get_project_marked_as_job",
-        side_effect=exception_type("error"),
-    )
+    # Patch the actual RPC interface method
+    patch_path = "servicelib.rabbitmq.rpc_interfaces.webserver.projects.get_project_marked_as_job"
+    mocker.patch(patch_path, side_effect=client_exception_type())
 
-    with pytest.raises(exception_type):
-        await job_service.get_job(job_parent_resource_name, job_id)
+    with pytest.raises(api_exception_type):
         await job_service.get_job(job_parent_resource_name, job_id)
