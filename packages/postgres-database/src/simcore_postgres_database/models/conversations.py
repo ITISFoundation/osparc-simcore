@@ -1,7 +1,7 @@
 import enum
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
 from ._common import RefActions, column_created_datetime, column_modified_datetime
 from .base import metadata
@@ -12,6 +12,7 @@ from .projects import projects
 class ConversationType(enum.Enum):
     PROJECT_STATIC = "PROJECT_STATIC"  # Static conversation for the project
     PROJECT_ANNOTATION = "PROJECT_ANNOTATION"  # Something like sticky note, can be located anywhere in the pipeline UI
+    SUPPORT = "SUPPORT"  # Support conversation
 
 
 conversations = sa.Table(
@@ -69,6 +70,13 @@ conversations = sa.Table(
         ),
         nullable=False,
         doc="Product name identifier. If None, then the item is not exposed",
+    ),
+    sa.Column(
+        "extra_context",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Free JSON to store extra context",
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),

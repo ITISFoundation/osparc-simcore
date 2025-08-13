@@ -140,6 +140,9 @@ class Product(BaseModel):
     group_id: Annotated[
         int | None, Field(description="Groups associated to this product")
     ] = None
+    support_standard_group_id: Annotated[
+        int | None, Field(description="Support standard group ID")
+    ] = None
 
     is_payment_enabled: Annotated[
         bool,
