@@ -270,14 +270,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         *,
         product_name: ProductName,
         user_id: UserID,
-        project_uuid: ProjectID,
+        project_id: ProjectID,
         job_parent_resource_name: RelativeResourceName,
     ):
         return await projects_rpc.get_project_marked_as_job(
             rpc_client=self._client,
             product_name=product_name,
             user_id=user_id,
-            project_uuid=project_uuid,
+            project_uuid=project_id,
             job_parent_resource_name=job_parent_resource_name,
         )
 
