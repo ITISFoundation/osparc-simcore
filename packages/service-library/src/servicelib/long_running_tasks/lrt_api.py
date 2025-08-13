@@ -1,14 +1,11 @@
 import logging
 from typing import Any
 
-from common_library.error_codes import create_error_code
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ..logging_errors import create_troubleshootting_log_kwargs
 from ._rabbit import lrt_client, lrt_server
 from ._rabbit.namespace import get_namespace
 from .base_long_running_manager import BaseLongRunningManager
-from .errors import TaskNotCompletedError, TaskNotFoundError
 from .models import TaskBase, TaskContext, TaskId, TaskStatus
 from .task import RegisteredTaskName
 
@@ -97,41 +94,12 @@ async def get_task_result(
     task_context: TaskContext,
     task_id: TaskId,
 ) -> Any:
-    try:
-        task_result = await lrt_client.get_task_result(
-            rabbitmq_rpc_client,
-            long_running_manager.rabbit_namespace,
-            task_context=task_context,
-            task_id=task_id,
-        )
-        await lrt_client.remove_task(
-            rabbitmq_rpc_client,
-            long_running_manager.rabbit_namespace,
-            task_id=task_id,
-            task_context=task_context,
-            reraise_errors=False,
-        )
-        return task_result
-    except (TaskNotFoundError, TaskNotCompletedError):
-        raise
-    except Exception as exc:
-        _logger.exception(
-            **create_troubleshootting_log_kwargs(
-                user_error_msg=f"{task_id=} raised an exception while getting its result",
-                error=exc,
-                error_code=create_error_code(exc),
-                error_context={"task_context": task_context, "task_id": task_id},
-            ),
-        )
-        # the task shall be removed in this case
-        await lrt_client.remove_task(
-            rabbitmq_rpc_client,
-            long_running_manager.rabbit_namespace,
-            task_id=task_id,
-            task_context=task_context,
-            reraise_errors=False,
-        )
-        raise
+    return await lrt_client.get_task_result(
+        rabbitmq_rpc_client,
+        long_running_manager.rabbit_namespace,
+        task_context=task_context,
+        task_id=task_id,
+    )
 
 
 async def remove_task(
