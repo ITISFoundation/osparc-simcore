@@ -227,3 +227,56 @@ async def test_create_job(
     )
     assert resp.status_code == status.HTTP_201_CREATED
     job = Job.model_validate(resp.json())
+
+
+@pytest.fixture
+def mocked_backend_services_apis_for_delete_job_assets(
+    mocked_webserver_rest_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_storage_rest_api_base: MockRouter,
+) -> dict[str, MockRouter | dict[str, MockType]]:
+
+    # Patch PATCH /projects/{project_id}
+    def _patch_project(request: httpx.Request, **kwargs):
+        # Accept any patch, return 204 No Content
+        return httpx.Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    mocked_webserver_rest_api.patch(
+        path__regex=r"/projects/(?P<project_id>[\w-]+)$",
+        name="patch_project",
+    ).mock(side_effect=_patch_project)
+
+    # Mock storage REST delete_project_s3_assets
+    def _delete_project_s3_assets(request: httpx.Request, **kwargs):
+        return httpx.Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    mocked_storage_rest_api_base.delete(
+        path__regex=r"/simcore-s3/folders/(?P<project_id>[\w-]+)$",
+        name="delete_project_s3_assets",
+    ).mock(side_effect=_delete_project_s3_assets)
+
+    return {
+        "webserver_rest": mocked_webserver_rest_api,
+        "webserver_rpc": mocked_webserver_rpc_api,
+        "storage_rest": mocked_storage_rest_api_base,
+    }
+
+
+@pytest.mark.acceptance_test("Test delete_job_assets endpoint")
+async def test_delete_job_assets_endpoint(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    mocked_backend_services_apis_for_delete_job_assets: dict[
+        str, MockRouter | dict[str, MockType]
+    ],
+):
+    job_id = "123e4567-e89b-12d3-a456-426614174000"
+    url = f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/assets"
+
+    resp = await client.delete(url, auth=auth)
+    assert resp.status_code == status.HTTP_204_NO_CONTENT
+
+    storage_rest = mocked_backend_services_apis_for_delete_job_assets["storage_rest"]
+    assert storage_rest["delete_project_s3_assets"].called
