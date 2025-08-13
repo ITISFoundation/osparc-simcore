@@ -63,13 +63,6 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   properties: {
-    initState: {
-      check: [null, "metadataPopulated", "metadataMissing", "dataPopulated"],
-      init: null,
-      nullable: true,
-      event: "changeInitState"
-    },
-
     study: {
       check: "osparc.data.model.Study",
       init: null,
@@ -492,19 +485,16 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.store.Services.getService(this.getKey(), this.getVersion())
         .then(serviceMetadata => {
           this.setMetadata(serviceMetadata);
-          this.setInitState("metadataPopulated");
           this.populateNodeData(nodeData);
           // old place to store the position
           this.populateNodeUIData(nodeData);
           // new place to store the position and marker
           this.populateNodeUIData(nodeUiData);
-          this.setInitState("dataPopulated");
         })
         .catch(err => {
           console.log(err);
           const errorMsg = qx.locale.Manager.tr("Service metadata missing");
           osparc.FlashMessenger.logError(errorMsg);
-          this.setInitState("metadataMissing");
         });
     },
 
@@ -530,7 +520,6 @@ qx.Class.define("osparc.data.model.Node", {
           this.setOutputs({});
         }
       }
-      this.setInitState("metadataPopulated");
     },
 
     populateNodeData: function(nodeData) {
