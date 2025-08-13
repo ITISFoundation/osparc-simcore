@@ -553,11 +553,13 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateNodeUIData: function(nodeUIData) {
-      if ("position" in nodeUIData) {
-        this.setPosition(nodeUIData.position);
-      }
-      if ("marker" in nodeUIData) {
-        this.addMarker(nodeUIData.marker);
+      if (nodeUIData) {
+        if ("position" in nodeUIData) {
+          this.setPosition(nodeUIData.position);
+        }
+        if ("marker" in nodeUIData) {
+          this.addMarker(nodeUIData.marker);
+        }
       }
     },
 
