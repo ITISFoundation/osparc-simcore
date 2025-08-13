@@ -7,7 +7,7 @@ class BaseLongRunningError(OsparcErrorMixin, Exception):
 
 class TaskNotRegisteredError(BaseLongRunningError):
     msg_template: str = (
-        "no task with task_name='{task_name}' was found in the task registry. "
+        "no task with task_name='{task_name}' was found in the task registry tasks={tasks}. "
         "Make sure it's registered before starting it."
     )
 

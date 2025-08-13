@@ -466,7 +466,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         **task_kwargs: Any,
     ) -> TaskId:
         if registered_task_name not in TaskRegistry.REGISTERED_TASKS:
-            raise TaskNotRegisteredError(task_name=registered_task_name)
+            raise TaskNotRegisteredError(
+                task_name=registered_task_name, tasks=TaskRegistry.REGISTERED_TASKS
+            )
 
         task = TaskRegistry.REGISTERED_TASKS[registered_task_name]
 
