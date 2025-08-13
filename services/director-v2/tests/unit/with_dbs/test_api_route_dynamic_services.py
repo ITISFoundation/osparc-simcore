@@ -40,6 +40,7 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
@@ -53,6 +54,7 @@ from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = [
     "postgres",
+    "rabbit",
     "redis",
 ]
 pytest_simcore_ops_services_selection = [
@@ -72,7 +74,6 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_config(
-    disable_rabbitmq: None,
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
@@ -100,8 +101,8 @@ def mock_env(
     mock_env: EnvVarsDict,
     mock_exclusive: None,
     disable_postgres: None,
-    disable_rabbitmq: None,
     redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> None:
@@ -125,11 +126,6 @@ def mock_env(
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL", f"{faker.url()}")
     monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-
-    monkeypatch.setenv("RABBIT_HOST", "mocked_host")
-    monkeypatch.setenv("RABBIT_SECURE", "false")
-    monkeypatch.setenv("RABBIT_USER", "mocked_user")
-    monkeypatch.setenv("RABBIT_PASSWORD", "mocked_password")
 
     monkeypatch.setenv("REGISTRY_AUTH", "false")
     monkeypatch.setenv("REGISTRY_USER", "test")
