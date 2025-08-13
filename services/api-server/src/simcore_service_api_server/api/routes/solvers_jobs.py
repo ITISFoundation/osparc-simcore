@@ -4,7 +4,7 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from models_library.clusters import ClusterID
@@ -240,11 +240,9 @@ async def start_job(
         job_id=job_id, job_parent_resource_name=job_parent_resource_name
     )
     if job.storage_data_deleted:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            content=jsonable_encoder(
-                ErrorGet(errors=[f"Assets for job {job_id=} are missing"])
-            ),
+            detail=f"Assets for job {job_id=} are missing",
         )
 
     try:
