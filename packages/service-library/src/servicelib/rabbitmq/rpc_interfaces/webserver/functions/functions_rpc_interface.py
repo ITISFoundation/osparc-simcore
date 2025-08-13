@@ -160,6 +160,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     result: tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
@@ -170,6 +172,8 @@ async def list_function_jobs(
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
         )
     )
     return TypeAdapter(

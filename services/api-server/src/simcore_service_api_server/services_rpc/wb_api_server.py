@@ -371,6 +371,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filter_by_function_id: FunctionID | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
+        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_jobs(
             self._client,
@@ -379,6 +381,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
         )
 
     async def list_function_job_collections(
