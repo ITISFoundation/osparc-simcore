@@ -156,7 +156,11 @@ qx.Class.define("osparc.utils.Utils", {
             source = imgSrc;
           }
         })
-        .finally(() => image.setSource(source));
+        .finally(() => {
+          if (image.getContentElement() && imgSrc) { // check if the image is still there
+            image.setSource(source);
+          }
+        });
     },
 
     addWhiteSpaces: function(integer) {
@@ -317,23 +321,32 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     makeButtonBlink: function(button, nTimes = 1) {
-      const onTime = 1000;
-      const oldBgColor = button.getBackgroundColor();
+      const baseColor = button.getBackgroundColor();
+      const blinkColor = "strong-main";
+      const interval = 500;
       let count = 0;
 
-      const blinkIt = btn => {
-        count++;
-        btn.setBackgroundColor("strong-main");
-        setTimeout(() => {
-          btn && btn.setBackgroundColor(oldBgColor);
-        }, onTime);
-      };
+      // If a blink is already in progress, cancel it
+      if (button._blinkingIntervalId) {
+        clearInterval(button._blinkingIntervalId);
+        button.setBackgroundColor(baseColor); // reset to base
+      }
 
-      // make it "blink": show it as strong button during onTime" nTimes
-      blinkIt(button);
-      const intervalId = setInterval(() => {
-        (count < nTimes) ? blinkIt(button) : clearInterval(intervalId);
-      }, 2*onTime);
+      const blinkInterval = setInterval(() => {
+        if (button && button.getContentElement()) {
+          button.setBackgroundColor((count % 2 === 0) ? blinkColor : baseColor);
+          count++;
+
+          if (count >= nTimes * 2) {
+            clearInterval(blinkInterval);
+            button.setBackgroundColor(baseColor);
+            button._blinkingIntervalId = null; // cleanup
+          }
+        }
+      }, interval);
+
+      // Store interval ID on the button
+      button._blinkingIntervalId = blinkInterval;
     },
 
     hardRefresh: function() {

@@ -69,6 +69,7 @@ async def test_patch_project_and_notify_users_sequential(
         project_uuid=project_uuid,
         patch_project_data=patch_data_1,
         user_primary_gid=user_primary_gid,
+        client_session_id=None,
     )
 
     # Get version after first patch
@@ -83,6 +84,7 @@ async def test_patch_project_and_notify_users_sequential(
         project_uuid=project_uuid,
         patch_project_data=patch_data_2,
         user_primary_gid=user_primary_gid,
+        client_session_id=None,
     )
 
     # Get version after second patch
@@ -126,6 +128,7 @@ async def test_patch_project_and_notify_users_concurrent_locking(
             project_uuid=project_uuid,
             patch_project_data=patch_data,
             user_primary_gid=user_primary_gid,
+            client_session_id=None,
         )
         for patch_data in concurrent_patch_data_list
     ]
@@ -189,6 +192,7 @@ async def test_patch_project_and_notify_users_concurrent_different_projects(
         project_uuid=project_uuid_1,
         patch_project_data=patch_data,
         user_primary_gid=user_primary_gid,
+        client_session_id=None,
     )
 
     # Get final versions

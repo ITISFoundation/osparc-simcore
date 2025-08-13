@@ -83,7 +83,7 @@ jobs:
       anything-py: ${{ steps.filter.outputs.anything-py }}
       anything-js: ${{ steps.filter.outputs.anything-js }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # For pull requests it's not necessary to checkout the code
       - uses: dorny/paths-filter@v3
         id: filter
@@ -313,7 +313,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -347,7 +347,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -377,7 +377,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -407,7 +407,7 @@ jobs:
         fail-fast: false
       steps:
         - name: Checkout code
-          uses: actions/checkout@v4
+          uses: actions/checkout@v5
         - name: Setup environment
           uses: ./.github/actions/setup-simcore-env
           with:
@@ -437,7 +437,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -469,7 +469,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -502,7 +502,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -533,7 +533,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -563,7 +563,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -597,7 +597,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -629,7 +629,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -667,7 +667,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -710,7 +710,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -748,7 +748,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -786,7 +786,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -824,7 +824,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -854,7 +854,7 @@ jobs:
           os: [ubuntu-24.04]
         fail-fast: false
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - name: setup docker buildx
           id: buildx
           uses: docker/setup-buildx-action@v3
@@ -897,7 +897,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -929,7 +929,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -961,7 +961,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -993,7 +993,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1025,7 +1025,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1067,7 +1067,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1099,7 +1099,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1142,7 +1142,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1166,7 +1166,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1198,7 +1198,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1230,7 +1230,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1262,7 +1262,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1294,7 +1294,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1326,7 +1326,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1358,7 +1358,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1389,7 +1389,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1421,7 +1421,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1504,7 +1504,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1530,44 +1530,6 @@ jobs:
         with:
           flags: integrationtests #optional
 
-  integration-test-webserver-02:
-    needs: [changes, build-test-images]
-    if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.webserver == 'true' || github.event_name == 'push' }}
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
-    name: "[int] webserver 02"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: ["3.11"]
-        os: [ubuntu-24.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup SimCore environment
-        uses: ./.github/actions/setup-simcore-env
-        with:
-          python-version: ${{ matrix.python }}
-          cache-dependency-glob: "**/web/server/requirements/ci.txt"
-      - name: Download and load Docker images
-        uses: ./.github/actions/download-load-docker-images
-        with:
-          artifact-name-pattern: 'backend'
-      - name: install
-        run: ./ci/github/integration-testing/webserver.bash install
-      - name: test
-        run: ./ci/github/integration-testing/webserver.bash test 02
-      - name: upload failed tests logs
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.job }}_docker_logs
-          path: ./services/web/server/test_failures
-      - uses: codecov/codecov-action@v5
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          flags: integrationtests #optional
-
   integration-test-director-v2-01:
     needs: [changes, build-test-images]
     if: ${{ needs.changes.outputs.anything-py == 'true' || needs.changes.outputs.director-v2 == 'true' || github.event_name == 'push'}}
@@ -1580,7 +1542,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1622,7 +1584,7 @@ jobs:
       DIRECTOR_DEFAULT_MAX_MEMORY: 268435456
       DIRECTOR_DEFAULT_MAX_NANO_CPUS: 10000000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1664,7 +1626,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1705,7 +1667,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1743,7 +1705,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1782,7 +1744,6 @@ jobs:
         integration-test-docker-api-proxy,
         integration-test-simcore-sdk,
         integration-test-webserver-01,
-        integration-test-webserver-02,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -1807,7 +1768,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1842,7 +1803,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1884,7 +1845,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1944,7 +1905,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -1992,7 +1953,7 @@ jobs:
         os: [ubuntu-24.04]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -2041,7 +2002,7 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:

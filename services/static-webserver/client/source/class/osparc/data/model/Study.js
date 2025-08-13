@@ -44,8 +44,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     this.set({
       uuid: studyData.uuid || this.getUuid(),
-      workspaceId: studyData.workspaceId || null,
-      folderId: studyData.folderId || null,
+      workspaceId: studyData.workspaceId || this.getWorkspaceId(),
+      folderId: studyData.folderId || this.getFolderId(),
       name: studyData.name || this.getName(),
       description: studyData.description || this.getDescription(),
       thumbnail: studyData.thumbnail || this.getThumbnail(),
@@ -60,9 +60,9 @@ qx.Class.define("osparc.data.model.Study", {
       permalink: studyData.permalink || this.getPermalink(),
       dev: studyData.dev || this.getDev(),
       trashedAt: studyData.trashedAt ? new Date(studyData.trashedAt) : this.getTrashedAt(),
-      trashedBy: studyData.trashedBy || null,
-      type: studyData.type,
-      templateType: studyData.templateType,
+      trashedBy: studyData.trashedBy || this.getTrashedBy(),
+      type: studyData.type || this.getType(),
+      templateType: studyData.templateType || this.getTemplateType(),
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
@@ -143,7 +143,7 @@ qx.Class.define("osparc.data.model.Study", {
 
     thumbnail: {
       check: "String",
-      nullable: false,
+      nullable: true,
       event: "changeThumbnail",
       init: ""
     },
@@ -573,19 +573,21 @@ qx.Class.define("osparc.data.model.Study", {
       // Do not listen to output related backend updates if the node is a frontend node.
       // The frontend controls its output values, progress and states.
       // If a File Picker is uploading a file, the backend could override the current state with some older state.
-      if (node && nodeData && !osparc.data.model.Node.isFrontend(node.getMetaData())) {
-        node.setOutputData(nodeData.outputs);
-        if ("progress" in nodeData) {
-          const progress = Number.parseInt(nodeData["progress"]);
-          node.getStatus().setProgress(progress);
+      if (node) {
+        if (nodeData && !osparc.data.model.Node.isFrontend(node.getMetaData())) {
+          node.setOutputData(nodeData.outputs);
+          if ("progress" in nodeData) {
+            const progress = Number.parseInt(nodeData["progress"]);
+            node.getStatus().setProgress(progress);
+          }
+          node.populateStates(nodeData);
         }
-        node.populateStates(nodeData);
-      }
-      if (node && "errors" in nodeUpdatedData) {
-        const errors = nodeUpdatedData["errors"];
-        node.setErrors(errors);
-      } else {
-        node.setErrors([]);
+        if ("errors" in nodeUpdatedData) {
+          const errors = nodeUpdatedData["errors"];
+          node.setErrors(errors);
+        } else {
+          node.setErrors([]);
+        }
       }
     },
 
@@ -745,23 +747,23 @@ qx.Class.define("osparc.data.model.Study", {
      * @param studyDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      * @param studySource {Object} Study object that was used to check the diffs on the frontend.
      */
-    patchStudyDelayed: function(studyDiffs, studySource) {
+    patchStudyDiffs: function(studyDiffs, studySource) {
       const promises = [];
       if ("workbench" in studyDiffs) {
-        promises.push(this.getWorkbench().patchWorkbenchDelayed(studyDiffs["workbench"], studySource["workbench"]));
+        promises.push(this.getWorkbench().patchWorkbenchDiffs(studyDiffs["workbench"], studySource["workbench"]));
         delete studyDiffs["workbench"];
       }
-      const fieldKeys = Object.keys(studyDiffs);
-      if (fieldKeys.length) {
-        fieldKeys.forEach(fieldKey => {
+      const changedFields = Object.keys(studyDiffs);
+      if (changedFields.length) {
+        changedFields.forEach(changedField => {
           // OM: can this be called all together?
           const patchData = {};
-          if (fieldKey === "ui") {
-            patchData[fieldKey] = this.getUi().serialize();
+          if (changedField === "ui") {
+            patchData[changedField] = this.getUi().serialize();
           } else {
-            const upKey = qx.lang.String.firstUp(fieldKey);
+            const upKey = qx.lang.String.firstUp(changedField);
             const getter = "get" + upKey;
-            patchData[fieldKey] = this[getter](studyDiffs[fieldKey]);
+            patchData[changedField] = this[getter](studyDiffs[changedField]);
           }
           promises.push(osparc.store.Study.getInstance().patchStudy(this.getUuid(), patchData))
         });
@@ -770,6 +772,53 @@ qx.Class.define("osparc.data.model.Study", {
         .then(() => {
           return studySource;
         });
-    }
+    },
+
+    // unused in favor of updateStudyFromPatches
+    updateStudyFromDiff: function(studyDiffs) {
+      const studyPropertyKeys = this.self().getProperties();
+      studyPropertyKeys.forEach(studyPropertyKey => {
+        if (studyPropertyKey in studyDiffs) {
+          const newValue = studyDiffs[studyPropertyKey][1];
+          if ("lastChangeDate" === studyPropertyKey) {
+            this.setLastChangeDate(new Date(newValue));
+          } else {
+            const upKey = qx.lang.String.firstUp(studyPropertyKey);
+            const setter = "set" + upKey;
+            this[setter](newValue);
+          }
+          delete studyDiffs[studyPropertyKey];
+        }
+      });
+    },
+
+    // json PATCHES
+    updateStudyFromPatches: function(studyPatches) {
+      const studyPropertyKeys = this.self().getProperties();
+      studyPatches.forEach(patch => {
+        const op = patch.op;
+        const path = patch.path;
+        const value = patch.value;
+        switch (op) {
+          case "replace":
+            const studyProperty = path.substring(1); // remove the leading "/"
+            if (studyPropertyKeys.includes(studyProperty)) {
+              if (path === "/lastChangeDate") {
+                this.setLastChangeDate(new Date(value));
+              } else {
+                const setter = "set" + qx.lang.String.firstUp(studyProperty);
+                if (this[setter]) {
+                  this[setter](value);
+                } else {
+                  console.warn(`Property "${studyProperty}" does not have a setter in osparc.data.model.Study`);
+                }
+              }
+            }
+            break;
+          default:
+            console.warn(`Unhandled patch operation "${op}" for path "${path}" with value "${value}"`);
+        }
+      });
+    },
   }
 });

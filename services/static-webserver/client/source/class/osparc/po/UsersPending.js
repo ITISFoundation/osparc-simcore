@@ -340,7 +340,7 @@ qx.Class.define("osparc.po.UsersPending", {
     __createRejectButton: function(email) {
       const button = new osparc.ui.form.FetchButton("Reject");
       button.addListener("execute", () => {
-        const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted"`;
+        const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted`;
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: "Reject User",
           confirmText: "Reject",

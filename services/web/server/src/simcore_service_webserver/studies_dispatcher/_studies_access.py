@@ -96,7 +96,7 @@ async def _get_published_template_project(
         )
         if project_group_get.read is False:
             raise ProjectGroupNotFoundError(
-                reason=f"Project {project_uuid} group 1 not read access"
+                details=f"Project {project_uuid} group 1 not read access"
             )
 
         if not prj:

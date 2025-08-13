@@ -262,7 +262,7 @@ async def raise_for_wallet_payments_permissions(
     )
     if not permissions.read or not permissions.write:
         raise WalletAccessForbiddenError(
-            reason=MSG_WALLET_NO_ACCESS_ERROR.format(
+            details=MSG_WALLET_NO_ACCESS_ERROR.format(
                 user_id=user_id, wallet_id=wallet_id
             )
         )

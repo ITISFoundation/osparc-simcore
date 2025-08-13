@@ -198,6 +198,9 @@ qx.Class.define("osparc.data.model.Node", {
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",
+    "changePosition": "qx.event.type.Data",
+    "createEdge": "qx.event.type.Data",
+    "removeEdge": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
@@ -236,6 +239,10 @@ qx.Class.define("osparc.data.model.Node", {
      "inputsRequired", // !! not a property but goes into the model
      "progress", // !! not a property but goes into the model
     ],
+
+    getProperties: function() {
+      return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
+    },
 
     isFrontend: function(metadata) {
       return (metadata && metadata.key && metadata.key.includes("/frontend/"));
@@ -524,7 +531,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.setPosition(nodeUIData.position);
       }
       if ("marker" in nodeUIData) {
-        this.__addMarker(nodeUIData.marker);
+        this.addMarker(nodeUIData.marker);
       }
     },
 
@@ -682,11 +689,11 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.getMarker()) {
         this.__removeMarker();
       } else {
-        this.__addMarker();
+        this.addMarker();
       }
     },
 
-    __addMarker: function(marker) {
+    addMarker: function(marker) {
       if (marker === undefined) {
         marker = {
           color: osparc.utils.Utils.getRandomColor()
@@ -718,7 +725,7 @@ qx.Class.define("osparc.data.model.Node", {
         });
       } else {
         this.fireDataEvent("projectDocumentChanged", {
-          "op": "delete",
+          "op": "remove",
           "path": `/ui/workbench/${this.getNodeId()}/marker`,
           "osparc-resource": "ui",
         });
@@ -922,13 +929,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     removeInputNode: function(inputNodeId) {
       const index = this.__inputNodes.indexOf(inputNodeId);
-      if (index > -1) {
-        // remove node connection
-        this.__inputNodes.splice(index, 1);
-        this.fireEvent("changeInputNodes");
-        return true;
+      // make sure index is valid
+      if (index < 0 || index >= this.__inputNodes.length) {
+        return false;
       }
-      return false;
+      // remove node connection
+      this.__inputNodes.splice(index, 1);
+      this.fireEvent("changeInputNodes");
+      return true;
     },
 
     isInputNode: function(inputNodeId) {
@@ -1198,13 +1206,17 @@ qx.Class.define("osparc.data.model.Node", {
         this.__deleteInBackend()
           .then(() => {
             resolve(true);
-            this.removeIFrame();
+            this.nodeRemoved();
           })
           .catch(err => {
             console.error(err);
             resolve(false);
           });
       });
+    },
+
+    nodeRemoved: function() {
+      this.removeIFrame();
     },
 
     __deleteInBackend: function() {
@@ -1249,6 +1261,11 @@ qx.Class.define("osparc.data.model.Node", {
           "y": this.__posY,
         },
         "osparc-resource": "ui",
+      });
+
+      this.fireDataEvent("changePosition", {
+        x: this.__posX,
+        y: this.__posY
       });
     },
 
@@ -1300,7 +1317,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     listenToChanges: function() {
       const nodeId = this.getNodeId();
-      const propertyKeys = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Node));
+      const nodePropertyKeys = this.self().getProperties();
       this.self().ListenChangesProps.forEach(key => {
         switch (key) {
           case "inputs":
@@ -1394,7 +1411,7 @@ qx.Class.define("osparc.data.model.Node", {
             }
             break;
           default:
-            if (propertyKeys.includes(key)) {
+            if (nodePropertyKeys.includes(key)) {
               this.addListener("change" + qx.lang.String.firstUp(key), e => {
                 const data = e.getData();
                 this.fireDataEvent("projectDocumentChanged", {
@@ -1412,6 +1429,83 @@ qx.Class.define("osparc.data.model.Node", {
       });
     },
 
+    updateNodeFromPatch: function(nodePatches) {
+      const nodePropertyKeys = this.self().getProperties();
+      nodePatches.forEach(patch => {
+        const op = patch.op;
+        const path = patch.path;
+        const value = patch.value;
+        const nodeProperty = path.split("/")[3];
+        switch (nodeProperty) {
+          case "inputs": {
+            const updatedPortKey = path.split("/")[4];
+            const currentInputs = this.__getInputData();
+            if (osparc.utils.Ports.isDataALink(currentInputs[updatedPortKey])) {
+              // if the port is a link, we remove it from the props form
+              this.getPropsForm().removePortLink(updatedPortKey);
+            }
+            currentInputs[updatedPortKey] = value;
+            this.__setInputData(currentInputs);
+            break;
+          }
+          case "inputsUnits": {
+            // this is never transmitted by the frontend
+            const updatedPortKey = path.split("/")[4];
+            const currentInputUnits = this.__getInputUnits() || {};
+            currentInputUnits[updatedPortKey] = value;
+            this.__setInputUnits(currentInputUnits);
+            break;
+          }
+          case "inputNodes":
+            if (op === "add") {
+              const inputNodeId = value;
+              this.fireDataEvent("createEdge", {
+                nodeId1: inputNodeId,
+                nodeId2: this.getNodeId(),
+              });
+            } else if (op === "remove") {
+              // we don't have more information about the input node, so we just remove it by index
+              const index = path.split("/")[4];
+              // make sure index is valid
+              if (index >= 0 && index < this.__inputNodes.length) {
+                this.fireDataEvent("removeEdge", {
+                  nodeId1: this.__inputNodes[index],
+                  nodeId2: this.getNodeId(),
+                });
+              }
+            }
+            break;
+          case "inputsRequired":
+            console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
+            break;
+          case "outputs": {
+            const updatedPortKey = path.split("/")[4];
+            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputsData();
+            currentOutputs[updatedPortKey] = value;
+            this.setOutputData(currentOutputs);
+            break;
+          }
+          case "progress":
+            if (this.isFilePicker()) {
+              this.getStatus().setProgress(value);
+            } else {
+              console.warn(`To be implemented: patching ${nodeProperty} is not supported yet`);
+            }
+            break;
+          default:
+            if (nodePropertyKeys.includes(nodeProperty)) {
+              const setter = "set" + qx.lang.String.firstUp(nodeProperty);
+              if (this[setter]) {
+                this[setter](value);
+              } else {
+                console.warn(`Property "${nodeProperty}" does not have a setter in osparc.data.model.Node`);
+              }
+            }
+            break;
+        }
+      });
+    },
+
     serialize: function() {
       // node generic
       let nodeEntry = {
@@ -1419,7 +1513,7 @@ qx.Class.define("osparc.data.model.Node", {
         version: this.getVersion(),
         label: this.getLabel(),
         inputs: this.__getInputData(),
-        inputsUnits: this.__getInputUnits(),
+        inputsUnits: this.__getInputUnits(), // this is not working
         inputNodes: this.getInputNodes(),
         inputsRequired: this.getInputsRequired(),
         bootOptions: this.getBootOptions()

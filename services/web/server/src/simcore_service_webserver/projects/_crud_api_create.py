@@ -38,7 +38,6 @@ from ..storage.api import (
     copy_data_folders_from_project,
     get_project_total_size_simcore_s3,
 )
-from ..users import users_service
 from ..workspaces.api import check_user_workspace_access, get_user_workspace
 from ..workspaces.errors import WorkspaceAccessForbiddenError
 from . import _folders_repository, _projects_repository, _projects_service
@@ -181,7 +180,7 @@ async def _copy_files_from_source_project(
             user_id=user_id,
             product_name=product_name,
         ):
-            task_progress.update(
+            await task_progress.update(
                 message=(
                     async_job_composed_result.status.progress.message.description
                     if async_job_composed_result.status.progress.message
@@ -203,10 +202,7 @@ async def _copy_files_from_source_project(
             get_redis_lock_manager_client_sdk(app),
             project_uuid=source_project["uuid"],
             status=ProjectStatus.CLONING,
-            owner=Owner(
-                user_id=user_id,
-                **await users_service.get_user_fullname(app, user_id=user_id),
-            ),
+            owner=Owner(user_id=user_id),
             notification_cb=_projects_service.create_user_notification_cb(
                 user_id, ProjectID(f"{source_project['uuid']}"), app
             ),
@@ -300,7 +296,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     copy_file_coro = None
     project_nodes = None
     try:
-        progress.update(message="creating new study...")
+        await progress.update(message="creating new study...")
 
         workspace_id = None
         folder_id = None
@@ -388,7 +384,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             parent_project_uuid=parent_project_uuid,
             parent_node_id=parent_node_id,
         )
-        progress.update()
+        await progress.update()
 
         # 3.2 move project to proper folder
         if folder_id:
@@ -418,7 +414,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(new_project["uuid"])
         )
-        progress.update()
+        await progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_service.create_or_update_pipeline(
@@ -439,7 +435,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             is_template=as_template,
             app=request.app,
         )
-        progress.update()
+        await progress.update()
 
         # Adds permalink
         await update_or_pop_permalink_in_project(request, new_project)

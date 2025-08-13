@@ -54,6 +54,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     "projectDocumentChanged": "qx.event.type.Data",
     "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
+    "nodeRemoved": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
@@ -283,6 +284,10 @@ qx.Class.define("osparc.data.model.Workbench", {
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
       osparc.utils.Utils.localCache.serviceToFavs(metadata.key);
+
+      this.__initNodeSignals(node);
+      this.__addNode(node);
+
       return node;
     },
 
@@ -316,11 +321,8 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         this.fireEvent("restartAutoSaveTimer");
         const node = this.__createNode(this.getStudy(), metadata, nodeId);
-        this.__initNodeSignals(node);
-        this.__addNode(node);
-
         node.populateNodeData();
-        this.giveUniqueNameToNode(node, node.getLabel());
+        this.__giveUniqueNameToNode(node, node.getLabel());
         node.checkState();
 
         return node;
@@ -539,11 +541,11 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     removeNode: async function(nodeId) {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.delete", true)) {
-        return false;
+        return;
       }
       if (this.getStudy().isPipelineRunning()) {
         osparc.FlashMessenger.logAs(this.self().CANT_DELETE_NODE, "ERROR");
-        return false;
+        return;
       }
 
       this.fireEvent("restartAutoSaveTimer");
@@ -552,26 +554,33 @@ qx.Class.define("osparc.data.model.Workbench", {
         // remove the node in the backend first
         const removed = await node.removeNode();
         if (removed) {
-          this.fireEvent("restartAutoSaveTimer");
-
-          delete this.__nodes[nodeId];
-
-          // remove first the connected edges
-          const connectedEdges = this.getConnectedEdges(nodeId);
-          connectedEdges.forEach(connectedEdgeId => {
-            this.removeEdge(connectedEdgeId);
-          });
-
-          // remove it from ui model
-          if (this.getStudy()) {
-            this.getStudy().getUi().removeNode(nodeId);
-          }
-
-          this.fireEvent("pipelineChanged");
-          return true;
+          this.__nodeRemoved(nodeId);
         }
       }
-      return false;
+    },
+
+    __nodeRemoved: function(nodeId) {
+      this.fireEvent("restartAutoSaveTimer");
+
+      delete this.__nodes[nodeId];
+
+      // remove first the connected edges
+      const connectedEdgeIds = this.getConnectedEdges(nodeId);
+      connectedEdgeIds.forEach(connectedEdgeId => {
+        this.removeEdge(connectedEdgeId);
+      });
+
+      // remove it from ui model
+      if (this.getStudy()) {
+        this.getStudy().getUi().removeNode(nodeId);
+      }
+
+      this.fireEvent("pipelineChanged");
+
+      this.fireDataEvent("nodeRemoved", {
+        nodeId,
+        connectedEdgeIds,
+      });
     },
 
     addServiceBetween: async function(service, leftNodeId, rightNodeId) {
@@ -653,7 +662,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
-    giveUniqueNameToNode: function(node, label, suffix = 2) {
+    __giveUniqueNameToNode: function(node, label, suffix = 2) {
       const newLabel = label + "_" + suffix;
       const allModels = this.getNodes();
       const nodes = Object.values(allModels);
@@ -661,7 +670,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (node2.getNodeId() !== node.getNodeId() &&
             node2.getLabel().localeCompare(node.getLabel()) === 0) {
           node.setLabel(newLabel);
-          this.giveUniqueNameToNode(node, label, suffix+1);
+          this.__giveUniqueNameToNode(node, label, suffix+1);
         }
       }
     },
@@ -710,9 +719,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           for (let i=0; i<nodeIds.length; i++) {
             const metadata = values[i];
             const nodeId = nodeIds[i];
-            const node = this.__createNode(this.getStudy(), metadata, nodeId);
-            this.__initNodeSignals(node);
-            this.__addNode(node);
+            this.__createNode(this.getStudy(), metadata, nodeId);
           }
 
           // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
@@ -720,7 +727,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
           nodeIds.forEach(nodeId => {
             const node = this.getNode(nodeId);
-            this.giveUniqueNameToNode(node, node.getLabel());
+            this.__giveUniqueNameToNode(node, node.getLabel());
           });
         });
     },
@@ -787,7 +794,7 @@ qx.Class.define("osparc.data.model.Workbench", {
      * @param workbenchDiffs {Object} Diff Object coming from the JsonDiffPatch lib. Use only the keys, not the changes.
      * @param workbenchSource {Object} Workbench object that was used to check the diffs on the frontend.
      */
-    patchWorkbenchDelayed: function(workbenchDiffs, workbenchSource) {
+    patchWorkbenchDiffs: function(workbenchDiffs, workbenchSource) {
       const promises = [];
       Object.keys(workbenchDiffs).forEach(nodeId => {
         const node = this.getNode(nodeId);
@@ -827,6 +834,104 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
       })
       return Promise.all(promises);
-    }
+    },
+
+    updateWorkbenchFromPatches: function(workbenchPatches) {
+      // group the patches by nodeId
+      const nodesAdded = [];
+      const nodesRemoved = [];
+      const workbenchPatchesByNode = {};
+      workbenchPatches.forEach(workbenchPatch => {
+        const nodeId = workbenchPatch.path.split("/")[2];
+
+        const pathParts = workbenchPatch.path.split("/");
+        if (pathParts.length === 3) {
+          if (workbenchPatch.op === "add") {
+            // node was added
+            nodesAdded.push(nodeId);
+          } else if (workbenchPatch.op === "remove") {
+            // node was removed
+            nodesRemoved.push(nodeId);
+          }
+        }
+
+        if (!(nodeId in workbenchPatchesByNode)) {
+          workbenchPatchesByNode[nodeId] = [];
+        }
+        workbenchPatchesByNode[nodeId].push(workbenchPatch);
+      });
+
+      // first, remove nodes
+      if (nodesRemoved.length) {
+        this.__removeNodesFromPatches(nodesRemoved, workbenchPatchesByNode);
+      }
+      // second, add nodes if any
+      if (nodesAdded.length) {
+        // this will call update nodes once finished
+        this.__addNodesFromPatches(nodesAdded, workbenchPatchesByNode);
+      } else {
+        // third, update nodes
+        this.__updateNodesFromPatches(workbenchPatchesByNode);
+      }
+    },
+
+    __removeNodesFromPatches: function(nodesRemoved, workbenchPatchesByNode) {
+      nodesRemoved.forEach(nodeId => {
+        const node = this.getNode(nodeId);
+
+        // if the user is in that node, restore the node to the workbench
+        if (this.getStudy().getUi().getCurrentNodeId() === nodeId) {
+          this.getStudy().getUi().setMode("pipeline");
+          this.getStudy().getUi().setCurrentNodeId(null);
+        }
+        if (node) {
+          node.nodeRemoved(nodeId);
+        }
+        this.__nodeRemoved(nodeId);
+        delete workbenchPatchesByNode[nodeId];
+      });
+    },
+
+    __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode) {
+      // not solved yet, log the user out to avoid issues
+      qx.core.Init.getApplication().logout(qx.locale.Manager.tr("Potentially conflicting updates coming from a collaborator"));
+      return;
+
+      const promises = nodesAdded.map(nodeId => {
+        const addNodePatch = workbenchPatchesByNode[nodeId].find(workbenchPatch => {
+          const pathParts = workbenchPatch.path.split("/");
+          return pathParts.length === 3 && workbenchPatch.op === "add";
+        });
+        const nodeData = addNodePatch.value;
+        // delete the node "add" from the workbenchPatchesByNode
+        const index = workbenchPatchesByNode[nodeId].indexOf(addNodePatch);
+        if (index > -1) {
+          workbenchPatchesByNode[nodeId].splice(index, 1);
+        }
+        // this is an async operation with an await
+        return this.createNode(nodeData["key"], nodeData["version"]);
+      });
+      return Promise.all(promises)
+        .then(nodes => {
+          // may populate it
+          // after adding nodes, we can apply the patches
+          this.__updateNodesFromPatches(workbenchPatchesByNode);
+        })
+        .catch(err => {
+          console.error("Error adding nodes from patches:", err);
+        });
+    },
+
+    __updateNodesFromPatches: function(workbenchPatchesByNode) {
+      Object.keys(workbenchPatchesByNode).forEach(nodeId => {
+        const node = this.getNode(nodeId);
+        if (node === null) {
+          console.warn(`Node with id ${nodeId} not found, skipping patch application.`);
+          return;
+        }
+        const nodePatches = workbenchPatchesByNode[nodeId];
+        node.updateNodeFromPatch(nodePatches);
+      });
+    },
   }
 });

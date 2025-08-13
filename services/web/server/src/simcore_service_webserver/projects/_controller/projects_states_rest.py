@@ -174,9 +174,9 @@ async def open_project(request: web.Request) -> web.Response:
     except DirectorV2ServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
-        await _projects_service.try_close_project_for_user(
+        await _projects_service.close_project_for_user(
             user_id=req_ctx.user_id,
-            project_uuid=f"{path_params.project_id}",
+            project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
             simcore_user_agent=request.headers.get(
@@ -214,9 +214,9 @@ async def close_project(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         include_state=False,
     )
-    await _projects_service.try_close_project_for_user(
+    await _projects_service.close_project_for_user(
         req_ctx.user_id,
-        f"{path_params.project_id}",
+        path_params.project_id,
         client_session_id,
         request.app,
         simcore_user_agent=request.headers.get(

@@ -346,7 +346,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addNode: async function(service, pos) {
       // render temporary node
-      let tempNodeUI = this.__createTemporaryNodeUI(pos);
+      let dashedNodeUI = this.__createTemporaryNodeUI(pos);
 
       let nodeUI = null;
       try {
@@ -359,7 +359,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         console.error(err);
       } finally {
         // remove temporary node
-        this.__removeTemporaryNodeUI(tempNodeUI);
+        this.__removeTemporaryNodeUI(dashedNodeUI);
       }
       return nodeUI;
     },
@@ -663,6 +663,16 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const nodeUI = new osparc.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
       node.addListener("keyChanged", () => this.__selectNode(nodeUI), this);
+      node.addListener("createEdge", e => {
+        const data = e.getData();
+        const { nodeId1, nodeId2 } = data;
+        this._createEdgeBetweenNodes(nodeId1, nodeId2, false);
+      });
+      node.addListener("removeEdge", e => {
+        const data = e.getData();
+        const { nodeId1, nodeId2 } = data;
+        this.__removeEdgeBetweenNodes(nodeId1, nodeId2);
+      });
       nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
@@ -828,38 +838,62 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const edgeUI = new osparc.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
-        const hint = edgeUI.getHint();
-        const that = this;
-        [
-          edgeRepresentation.widerCurve.node,
-          edgeRepresentation.node
-        ].forEach(svgEl => {
-          svgEl.addEventListener("click", e => {
-            // this is needed to get out of the context of svg
-            that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-            e.stopPropagation();
-          }, this);
+        this.__decorateEdgeUI(edgeUI);
+      }
+    },
 
-          const topOffset = 20;
-          [
-            "mouseover",
-            "mousemove"
-          ].forEach(ev => {
-            svgEl.addEventListener(ev, e => {
-              const leftOffset = -(parseInt(hint.getHintBounds().width/2));
-              const properties = {
-                top: e.clientY + topOffset,
-                left: e.clientX + leftOffset
-              };
-              hint.setLayoutProperties(properties);
-              if (hint.getText()) {
-                hint.show();
-              }
-            }, this);
-          });
+    __decorateEdgeUI: function(edgeUI) {
+      const hint = edgeUI.getHint();
+      const edgeRepresentation = edgeUI.getRepresentation();
+      const that = this;
+      [
+        edgeRepresentation.widerCurve.node,
+        edgeRepresentation.node
+      ].forEach(svgEl => {
+        svgEl.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
+
+        const topOffset = 20;
+        [
+          "mouseover",
+          "mousemove"
+        ].forEach(ev => {
+          svgEl.addEventListener(ev, e => {
+            const leftOffset = -(parseInt(hint.getHintBounds().width/2));
+            const properties = {
+              top: e.clientY + topOffset,
+              left: e.clientX + leftOffset
+            };
+            hint.setLayoutProperties(properties);
+            if (hint.getText()) {
+              hint.show();
+            }
+          }, this);
         });
-        edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
-        this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
+      });
+      edgeRepresentation.widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
+      this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
+    },
+
+    __getEdgeUIBetweenNodes: function(node1Id, node2Id) {
+      const foundEdgeUI = this.__edgesUI.find(edgeUi => {
+        const edgeObj = edgeUi.getEdge();
+        const inputNode = edgeObj.getInputNode();
+        const outputNode = edgeObj.getOutputNode();
+        if (inputNode.getNodeId() === node1Id && outputNode.getNodeId() === node2Id) {
+          return true;
+        }
+      });
+      return foundEdgeUI;
+    },
+
+    __removeEdgeBetweenNodes: function(node1Id, node2Id) {
+      const edgeUI = this.__getEdgeUIBetweenNodes(node1Id, node2Id);
+      if (edgeUI) {
+        this.__removeEdge(edgeUI);
       }
     },
 
@@ -870,11 +904,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __updateEdges: function(nodeUI) {
-      let edgesInvolved = [];
-      if (nodeUI.getNodeType() === "service") {
-        edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
-      }
-
+      const edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
       edgesInvolved.forEach(edgeId => {
         const edgeUI = this.__getEdgeUI(edgeId);
         if (edgeUI) {
@@ -1056,21 +1086,18 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     getNodeUI: function(nodeId) {
-      return this.__nodesUI.find(nodeUI => nodeUI.getNodeType() === "service" && nodeUI.getNodeId() === nodeId);
+      return this.__nodesUI.find(nodeUI => nodeUI.getNodeId() === nodeId);
     },
 
     __getEdgeUI: function(edgeId) {
-      for (let i = 0; i < this.__edgesUI.length; i++) {
-        if (this.__edgesUI[i].getEdgeId() === edgeId) {
-          return this.__edgesUI[i];
-        }
-      }
-      return null;
+      return this.__edgesUI.find(edgeUI => edgeUI.getEdgeId() === edgeId);
     },
 
     clearNode(nodeId) {
       const nodeUI = this.getNodeUI(nodeId);
-      this.__clearNodeUI(nodeUI);
+      if (nodeUI) {
+        this.__clearNodeUI(nodeUI);
+      }
     },
 
     clearEdge: function(edgeId) {
@@ -1207,6 +1234,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       Object.values(annotations).forEach(annotation => {
         this.__renderAnnotation(annotation);
       });
+      studyUI.addListener("annotationAdded", e => {
+        const annotation = e.getData();
+        this.__renderAnnotation(annotation);
+      }, this);
+      studyUI.addListener("annotationRemoved", e => {
+        const annotationId = e.getData();
+        this.__removeAnnotation(annotationId);
+      }, this);
     },
 
     __setSelectedItem: function(newID) {
@@ -2018,9 +2053,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__toolHint.setValue(null);
     },
 
-    __addAnnotation: function(annotationData, id) {
-      const annotation = new osparc.workbench.Annotation(annotationData, id);
-      this.getStudy().getUi().addAnnotation(annotation);
+    __addAnnotation: function(annotationData) {
+      const annotation = this.getStudy().getUi().addAnnotation(annotationData);
 
       this.__renderAnnotation(annotation);
 

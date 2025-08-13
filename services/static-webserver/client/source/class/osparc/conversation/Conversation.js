@@ -64,6 +64,7 @@ qx.Class.define("osparc.conversation.Conversation", {
     __messages: null,
     __nextRequestParams: null,
     __messagesTitle: null,
+    __messageScroll: null,
     __messagesList: null,
     __loadMoreMessages: null,
 
@@ -147,10 +148,15 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__messagesTitle = new qx.ui.basic.Label();
       this._add(this.__messagesTitle);
 
+      // add spacer to keep the messages list at the bottom
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 100 // high number to keep even a one message list at the bottom
+      });
+
       this.__messagesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         alignY: "middle"
       });
-      const scrollView = new qx.ui.container.Scroll();
+      const scrollView = this.__messageScroll = new qx.ui.container.Scroll();
       scrollView.add(this.__messagesList);
       this._add(scrollView, {
         flex: 1
@@ -197,7 +203,8 @@ qx.Class.define("osparc.conversation.Conversation", {
 
     __reloadMessages: function(removeMessages = true) {
       if (this.getConversationId() === null) {
-        this.__messagesTitle.setValue(this.tr("No messages yet"));
+        // temporary conversation page
+        this.__messagesTitle.setValue(this.tr("No Messages yet"));
         this.__messagesList.hide();
         this.__loadMoreMessages.hide();
         return;
@@ -217,7 +224,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           const messages = resp["data"];
           messages.forEach(message => this.addMessage(message));
           this.__nextRequestParams = resp["_links"]["next"];
-          if (this.__nextRequestParams === null) {
+          if (this.__nextRequestParams === null && this.__loadMoreMessages) {
             this.__loadMoreMessages.exclude();
           }
         })
@@ -226,7 +233,9 @@ qx.Class.define("osparc.conversation.Conversation", {
 
     __updateMessagesNumber: function() {
       const nMessages = this.__messages.filter(msg => msg["type"] === "MESSAGE").length;
-      if (nMessages === 1) {
+      if (nMessages === 0) {
+        this.__messagesTitle.setValue(this.tr("No Messages yet"));
+      } else if (nMessages === 1) {
         this.__messagesTitle.setValue(this.tr("1 Message"));
       } else if (nMessages > 1) {
         this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
@@ -243,9 +252,9 @@ qx.Class.define("osparc.conversation.Conversation", {
         return;
       }
 
-      // determine insertion index for most‐recent‐first order
+      // determine insertion index for latest‐first order
       const newTime = new Date(message["created"]);
-      let insertAt = this.__messages.findIndex(m => new Date(m["created"]) < newTime);
+      let insertAt = this.__messages.findIndex(m => new Date(m["created"]) > newTime);
       if (insertAt === -1) {
         insertAt = this.__messages.length;
       }
@@ -269,6 +278,12 @@ qx.Class.define("osparc.conversation.Conversation", {
         // insert into the UI at the same position
         this.__messagesList.addAt(control, insertAt);
       }
+
+      // scroll to bottom
+      // add timeout to ensure the scroll happens after the UI is updated
+      setTimeout(() => {
+        this.__messageScroll.scrollToY(this.__messageScroll.getChildControl("pane").getScrollMaxY());
+      }, 50);
 
       this.__updateMessagesNumber();
     },

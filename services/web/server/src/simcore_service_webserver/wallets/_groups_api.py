@@ -44,7 +44,7 @@ async def create_wallet_group(
     )
     if wallet.write is False:
         raise WalletAccessForbiddenError(
-            reason=f"User does not have write access to wallet {wallet_id}",
+            details=f"User does not have write access to wallet {wallet_id}",
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
@@ -78,7 +78,7 @@ async def list_wallet_groups_by_user_and_wallet(
     )
     if wallet.read is False:
         raise WalletAccessForbiddenError(
-            reason=f"User does not have read access to wallet {wallet_id}",
+            details=f"User does not have read access to wallet {wallet_id}",
             user_id=user_id,
             wallet_id=wallet_id,
             product_name=product_name,
@@ -132,14 +132,14 @@ async def update_wallet_group(
     )
     if wallet.write is False:
         raise WalletAccessForbiddenError(
-            reason=f"User does not have write access to wallet {wallet_id}"
+            details=f"User does not have write access to wallet {wallet_id}"
         )
     if wallet.owner == group_id:
         user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != wallet.owner:
             # Only the owner of the wallet can modify the owner group
             raise WalletAccessForbiddenError(
-                reason=f"User does not have access to modify owner wallet group in wallet {wallet_id}",
+                details=f"User does not have access to modify owner wallet group in wallet {wallet_id}",
                 user_id=user_id,
                 wallet_id=wallet_id,
                 product_name=product_name,
@@ -174,14 +174,14 @@ async def delete_wallet_group(
     )
     if wallet.delete is False:
         raise WalletAccessForbiddenError(
-            reason=f"User does not have delete access to wallet {wallet_id}"
+            details=f"User does not have delete access to wallet {wallet_id}"
         )
     if wallet.owner == group_id:
         user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != wallet.owner:
             # Only the owner of the wallet can delete the owner group
             raise WalletAccessForbiddenError(
-                reason=f"User does not have access to modify owner wallet group in wallet {wallet_id}"
+                details=f"User does not have access to modify owner wallet group in wallet {wallet_id}"
             )
 
     await wallets_groups_db.delete_wallet_group(

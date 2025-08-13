@@ -6,6 +6,7 @@
 import asyncio
 import re
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from http import HTTPStatus
@@ -46,12 +47,21 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._controller.nodes_rest import (
     _ProjectNodePreview,
 )
 from simcore_service_webserver.projects.models import ProjectDict
+from tenacity import (
+    AsyncRetrying,
+    RetryError,
+    retry_if_exception_type,
+    retry_unless_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 
 @pytest.mark.parametrize(
@@ -916,6 +926,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_stop_node(
+    use_in_memory_redis: RedisSettings,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     user_role: UserRole,
@@ -935,18 +946,34 @@ async def test_stop_node(
         project_id=project["uuid"], node_id=choice(all_service_uuids)  # noqa: S311
     )
     response = await client.post(f"{url}")
-    data, error = await assert_status(
+    _, error = await assert_status(
         response,
         status.HTTP_202_ACCEPTED if user_role == UserRole.GUEST else expected.accepted,
     )
+
     if error is None:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.stop_dynamic_service"
-        ].assert_called_once()
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(0.1),
+            stop=stop_after_delay(5),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
+        ):
+            with attempt:
+                mocked_dynamic_services_interface[
+                    "dynamic_scheduler.api.stop_dynamic_service"
+                ].assert_called_once()
     else:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.stop_dynamic_service"
-        ].assert_not_called()
+        with suppress(RetryError):
+            async for attempt in AsyncRetrying(
+                wait=wait_fixed(0.1),
+                stop=stop_after_delay(5),
+                retry=retry_unless_exception_type(AssertionError),
+                reraise=True,
+            ):
+                with attempt:
+                    mocked_dynamic_services_interface[
+                        "dynamic_scheduler.api.stop_dynamic_service"
+                    ].assert_not_called()
 
 
 @pytest.fixture
