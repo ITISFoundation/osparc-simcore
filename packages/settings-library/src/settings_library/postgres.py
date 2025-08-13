@@ -32,7 +32,7 @@ class PostgresSettings(BaseCustomSettings):
     # pool connection limits
     POSTGRES_MINSIZE: Annotated[
         int, Field(description="Minimum number of connections in the pool", ge=1)
-    ] = 5
+    ] = 2
     POSTGRES_MAXSIZE: Annotated[
         int, Field(description="Maximum number of connections in the pool", ge=1)
     ] = 50
