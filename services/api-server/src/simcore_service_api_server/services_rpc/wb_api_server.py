@@ -44,6 +44,7 @@ from models_library.rest_pagination import (
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
     MetadataFilterItem,
+    ProjectJobRpcGet,
 )
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -272,7 +273,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         project_id: ProjectID,
         job_parent_resource_name: RelativeResourceName,
-    ):
+    ) -> ProjectJobRpcGet:
         return await projects_rpc.get_project_marked_as_job(
             rpc_client=self._client,
             product_name=product_name,
