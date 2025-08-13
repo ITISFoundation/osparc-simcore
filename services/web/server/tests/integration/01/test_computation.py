@@ -647,9 +647,44 @@ async def test_running_computation_sends_progress_updates_via_socketio(
         "expected progress updates to be sent via socketio, "
         f"but got {mock_progress_handler.call_count} calls"
     )
-    # check that the last progress update was for the SUCCESS state
-    last_call_args = mock_progress_handler.call_args_list[-1][0]
-    assert len(last_call_args) == 1, (
-        "expected the progress handler to be called with a single argument, "
-        f"but got {len(last_call_args)} arguments"
+
+    # Get all computational nodes from the workbench (exclude file-picker nodes)
+    computational_node_ids = {
+        node_id
+        for node_id, node_data in user_project["workbench"].items()
+        if node_data.get("key", "").startswith("simcore/services/comp/")
+    }
+
+    # Collect all node IDs that received progress updates
+    received_progress_node_ids = set()
+    for call_args in mock_progress_handler.call_args_list:
+        assert len(call_args[0]) == 1, (
+            "expected the progress handler to be called with a single argument, "
+            f"but got {len(call_args[0])} arguments"
+        )
+        message = call_args[0][0]
+        assert isinstance(
+            message, dict
+        ), f"expected message to be dict, got {type(message)}"
+        assert (
+            "node_id" in message
+        ), f"expected 'node_id' in message, got {message.keys()}"
+        assert (
+            "project_id" in message
+        ), f"expected 'project_id' in message, got {message.keys()}"
+        assert (
+            message["project_id"] == project_id
+        ), f"expected project_id to match {project_id}, got {message['project_id']}"
+        received_progress_node_ids.add(message["node_id"])
+
+    # Verify that progress updates were sent for ALL computational nodes
+    missing_nodes = computational_node_ids - received_progress_node_ids
+    assert not missing_nodes, (
+        f"expected progress updates for all computational nodes {computational_node_ids}, "
+        f"but missing updates for {missing_nodes}. "
+        f"Received updates for: {received_progress_node_ids}"
+    )
+
+    print(
+        f"✓ Successfully received progress updates for all {len(computational_node_ids)} computational nodes: {computational_node_ids}"
     )
