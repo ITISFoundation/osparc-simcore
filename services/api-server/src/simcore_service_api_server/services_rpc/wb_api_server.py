@@ -44,7 +44,6 @@ from models_library.rest_pagination import (
 from models_library.rpc.webserver.projects import (
     ListProjectsMarkedAsJobRpcFilters,
     MetadataFilterItem,
-    PageRpcProjectJobRpcGet,
 )
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
@@ -64,10 +63,6 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
-from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
-    ProjectForbiddenRpcError,
-    ProjectNotFoundRpcError,
-)
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
     functions_rpc_interface,
 )
@@ -84,21 +79,14 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import
     release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
 )
 from simcore_service_api_server.models.basic_types import NameValueTuple
-from simcore_service_api_server.models.domain.jobs import Job
 
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
     InsufficientNumberOfSeatsError,
-    JobForbiddenAccessError,
-    JobNotFoundError,
     LicensedItemCheckoutNotFoundError,
 )
 from ..exceptions.service_errors_utils import service_exception_mapper
-from ..models.api_resources import (
-    RelativeResourceName,
-    compose_resource_name,
-    split_resource_name,
-)
+from ..models.api_resources import RelativeResourceName
 from ..models.pagination import Page, PaginationParams
 from ..models.schemas.model_adapter import (
     LicensedItemCheckoutGet,
@@ -274,7 +262,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_limit: int = 50,
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
-    ) -> PageRpcProjectJobRpcGet:
+    ):
         pagination_kwargs = as_dict_exclude_none(
             offset=pagination_offset, limit=pagination_limit
         )
@@ -297,38 +285,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             filters=filters,
             **pagination_kwargs,
-        )
-
-    @_exception_mapper(
-        rpc_exception_map={
-            ProjectForbiddenRpcError: JobForbiddenAccessError,
-            ProjectNotFoundRpcError: JobNotFoundError,
-        }
-    )
-    async def get_project_marked_as_job(
-        self,
-        *,
-        product_name: ProductName,
-        user_id: UserID,
-        project_id: ProjectID,
-    ) -> Job:
-        project_job_rpc = await projects_rpc.get_project_marked_as_job(
-            rpc_client=self._client,
-            product_name=product_name,
-            user_id=user_id,
-            project_uuid=project_id,
-        )
-        collection_or_resource_ids = [
-            *split_resource_name(project_job_rpc.job_parent_resource_name),
-            "jobs",
-            f"{project_job_rpc.uuid}",
-        ]
-        return Job(
-            id=project_job_rpc.uuid,
-            name=compose_resource_name(*collection_or_resource_ids),
-            job_parent_resource_name=project_job_rpc.job_parent_resource_name,
-            created_at=project_job_rpc.created_at,
-            runner_name=project_job_rpc.job_parent_resource_name,
         )
 
     async def register_function(

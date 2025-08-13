@@ -57,11 +57,6 @@ class ServiceForbiddenAccessError(BaseBackEndError):
     status_code = status.HTTP_403_FORBIDDEN
 
 
-class JobForbiddenAccessError(BaseBackEndError):
-    msg_template = "Could not get solver/study job {project_id}"
-    status_code = status.HTTP_403_FORBIDDEN
-
-
 class JobNotFoundError(BaseBackEndError):
     msg_template = "Could not get solver/study job {project_id}"
     status_code = status.HTTP_404_NOT_FOUND

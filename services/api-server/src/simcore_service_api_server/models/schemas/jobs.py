@@ -38,8 +38,6 @@ from ..api_resources import (
 from ..basic_types import VersionStr
 from ..domain.files import File as DomainFile
 from ..domain.files import FileInProgramJobData
-from ..domain.jobs import Job as DomainJob
-from ..domain.jobs import JobID
 from ..schemas.files import UserFile
 from .base import ApiServerInputSchema
 
@@ -51,6 +49,8 @@ from .base import ApiServerInputSchema
 #
 from .programs import Program, ProgramKeyId
 from .solvers import Solver
+
+JobID: TypeAlias = UUID
 
 # ArgumentTypes are types used in the job inputs (see ResultsTypes)
 ArgumentTypes: TypeAlias = (
@@ -322,11 +322,6 @@ class Job(BaseModel):
     def resource_name(self) -> str:
         """Relative Resource Name"""
         return self.name
-
-
-assert set(DomainJob.model_fields.keys()).issubset(
-    set(Job.model_fields.keys())
-)  # nosec
 
 
 def get_url(

@@ -14,7 +14,7 @@ from pydantic.types import PositiveInt
 
 from ..._service_jobs import JobService
 from ..._service_solvers import SolverService
-from ...exceptions.backend_errors import JobNotFoundError, ProjectAlreadyStartedError
+from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -167,16 +167,14 @@ async def delete_job_assets(
     version: VersionStr,
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
+    solver_service: Annotated[SolverService, Depends(get_solver_service)],
 ):
-    job = await job_service.get_job(job_id=job_id)
-    if job.job_parent_resource_name != compose_job_resource_name(
-        solver_key, version, job_id
-    ):
-        raise JobNotFoundError(
-            project_id=job_id,
-        )
+    solver = await solver_service.get_solver(
+        solver_key=solver_key,
+        solver_version=version,
+    )
     await job_service.delete_job_assets(
-        job_parent_resource_name=job.job_parent_resource_name, project_id=job_id
+        job_parent_resource_name=solver.name, project_id=job_id
     )
 
 

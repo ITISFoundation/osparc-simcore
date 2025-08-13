@@ -81,6 +81,7 @@ async def get_project_marked_as_job(
     product_name: ProductName,
     user_id: UserID,
     project_uuid: ProjectID,
+    job_parent_resource_name: str,
 ) -> ProjectJobRpcGet:
     result = await rpc_client.request(
         WEBSERVER_RPC_NAMESPACE,
@@ -88,6 +89,7 @@ async def get_project_marked_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
     )
     assert TypeAdapter(ProjectJobRpcGet).validate_python(result)  # nosec
     return cast(ProjectJobRpcGet, result)
