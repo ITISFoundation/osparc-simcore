@@ -154,7 +154,7 @@ qx.Class.define("osparc.widget.NodesTree", {
       if (node.getMetadata()) {
         populateWithMetadata();
       } else {
-        node.addListener("changeMetadata", () => populateWithMetadata(), this);
+        node.addListenerOnce("changeMetadata", () => populateWithMetadata(), this);
       }
 
       return nodeModel;
