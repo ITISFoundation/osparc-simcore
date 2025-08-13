@@ -134,7 +134,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeData = nodeDatas[nodeId];
         const nodeUiData = nodeUiDatas[nodeId];
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
-        nodesPromises.push(this.__populateNode(node, nodeData, nodeUiData));
+        nodesPromises.push(node.fetchMetadataAndPopulate(nodeData, nodeUiData));
       }
       return Promise.allSettled(nodesPromises);
     },
@@ -147,19 +147,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-    __populateNode: function(node, nodeData, nodeUiData) {
-      return node.fetchMetadataAndPopulate(nodeData, nodeUiData)
-        .then(() => {
-          if (osparc.utils.Utils.eventDrivenPatch()) {
-            node.listenToChanges();
-            node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
-          }
-          node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
-          node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
-          node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
-          node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
-        });
-    },
 
     __deserializeEdges: function(workbenchData) {
       for (const nodeId in workbenchData) {
@@ -382,7 +369,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         this.fireEvent("restartAutoSaveTimer");
         const node = this.__createNode(key, version, nodeId);
-        this.__populateNode(node);
+        node.fetchMetadataAndPopulate();
         // OM here: then maybe
         this.__giveUniqueNameToNode(node, node.getLabel());
         node.checkState();
@@ -406,50 +393,57 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __initNodeSignals: function(node) {
-      if (node) {
-        node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
-        node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
-        node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
-        node.addListener("filePickerRequested", e => {
-          const {
-            portId,
-            nodeId,
-            file
-          } = e.getData();
-          this.__filePickerNodeRequested(nodeId, portId, file);
-        }, this);
-        node.addListener("parameterRequested", e => {
-          const {
-            portId,
-            nodeId
-          } = e.getData();
-          this.__parameterNodeRequested(nodeId, portId);
-        }, this);
-        node.addListener("probeRequested", e => {
-          const {
-            portId,
-            nodeId
-          } = e.getData();
-          this.__probeNodeRequested(nodeId, portId);
-        }, this);
-        node.addListener("fileUploaded", () => {
-          // downstream nodes might have started downloading file picker's output.
-          // show feedback to the user
-          const downstreamNodes = this.__getDownstreamNodes(node);
-          downstreamNodes.forEach(downstreamNode => {
-            downstreamNode.getPortIds().forEach(portId => {
-              const link = downstreamNode.getLink(portId);
-              if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
-                // connected to file picker's output
-                setTimeout(() => {
-                  // start retrieving state after 2"
-                  downstreamNode.retrieveInputs(portId);
-                }, 2000);
-              }
-            });
-          });
-        }, this);
+      if (osparc.utils.Utils.eventDrivenPatch()) {
+        node.listenToChanges();
+        node.addListener("projectDocumentChanged", e => this.fireDataEvent("projectDocumentChanged", e.getData()), this);
       }
+      node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
+      node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
+      node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
+      node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
+
+      node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
+      node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
+      node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
+      node.addListener("filePickerRequested", e => {
+        const {
+          portId,
+          nodeId,
+          file
+        } = e.getData();
+        this.__filePickerNodeRequested(nodeId, portId, file);
+      }, this);
+      node.addListener("parameterRequested", e => {
+        const {
+          portId,
+          nodeId
+        } = e.getData();
+        this.__parameterNodeRequested(nodeId, portId);
+      }, this);
+      node.addListener("probeRequested", e => {
+        const {
+          portId,
+          nodeId
+        } = e.getData();
+        this.__probeNodeRequested(nodeId, portId);
+      }, this);
+      node.addListener("fileUploaded", () => {
+        // downstream nodes might have started downloading file picker's output.
+        // show feedback to the user
+        const downstreamNodes = this.__getDownstreamNodes(node);
+        downstreamNodes.forEach(downstreamNode => {
+          downstreamNode.getPortIds().forEach(portId => {
+            const link = downstreamNode.getLink(portId);
+            if (link && link["nodeUuid"] === node.getNodeId() && link["output"] === "outFile") {
+              // connected to file picker's output
+              setTimeout(() => {
+                // start retrieving state after 2"
+                downstreamNode.retrieveInputs(portId);
+              }, 2000);
+            }
+          });
+        });
+      }, this);
     },
 
     getFreePosition: function(node, toTheLeft = true) {
@@ -879,11 +873,13 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode) {
+      console.log("Adding nodes from patches:", nodesAdded, workbenchPatchesByNode);
+
       // not solved yet, log the user out to avoid issues
       qx.core.Init.getApplication().logout(qx.locale.Manager.tr("Potentially conflicting updates coming from a collaborator"));
       return;
 
-      const promises = nodesAdded.map(nodeId => {
+      nodesAdded.forEach(nodeId => {
         const addNodePatch = workbenchPatchesByNode[nodeId].find(workbenchPatch => {
           const pathParts = workbenchPatch.path.split("/");
           return pathParts.length === 3 && workbenchPatch.op === "add";
@@ -894,18 +890,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (index > -1) {
           workbenchPatchesByNode[nodeId].splice(index, 1);
         }
-        // this is an async operation with an await
-        return this.createNode(nodeData["key"], nodeData["version"]);
+        const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
+        node.fetchMetadataAndPopulate(nodeData, null);
+        // OM here: then maybe
+        node.checkState();
       });
-      return Promise.all(promises)
-        .then(nodes => {
-          // may populate it
-          // after adding nodes, we can apply the patches
-          this.__updateNodesFromPatches(workbenchPatchesByNode);
-        })
-        .catch(err => {
-          console.error("Error adding nodes from patches:", err);
-        });
     },
 
     __updateNodesFromPatches: function(workbenchPatchesByNode) {
