@@ -354,9 +354,6 @@ async def test_rpc_client_get_project_marked_as_job_not_found(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
 ):
-    from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
-        ProjectNotFoundRpcError,
-    )
 
     project_uuid = ProjectID(user_project["uuid"])
     user_id = logged_user["id"]
