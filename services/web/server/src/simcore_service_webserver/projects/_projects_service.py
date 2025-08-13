@@ -12,7 +12,7 @@ import collections
 import datetime
 import logging
 from collections import defaultdict
-from collections.abc import Generator, Iterable
+from collections.abc import Iterable
 from contextlib import suppress
 from decimal import Decimal
 from pprint import pformat
@@ -130,6 +130,7 @@ from ..wallets.errors import WalletNotEnoughCreditsError
 from ..workspaces import _workspaces_repository as workspaces_workspaces_repository
 from . import (
     _crud_api_delete,
+    _groups_service,
     _nodes_service,
     _projects_nodes_repository,
     _projects_repository,
@@ -2107,9 +2108,13 @@ async def notify_project_state_update(
             message=message,
         )
     else:
-        rooms_to_notify: Generator[GroupID, None, None] = (
-            gid for gid, rights in project["accessRights"].items() if rights["read"]
+        project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+            app, project_id=project["uuid"]
         )
+
+        rooms_to_notify = [
+            item.gid for item in project_group_get_list if item.read is True
+        ]
         for room in rooms_to_notify:
             await send_message_to_standard_group(app, group_id=room, message=message)
 
@@ -2123,9 +2128,10 @@ async def notify_project_node_update(
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
 
-    rooms_to_notify: list[GroupID] = [
-        gid for gid, rights in project["accessRights"].items() if rights["read"]
-    ]
+    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        app, project_id=project["uuid"]
+    )
+    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
 
     message = SocketMessageDict(
         event_type=SOCKET_IO_NODE_UPDATED_EVENT,
