@@ -1,4 +1,3 @@
-import asyncio
 from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, status
@@ -14,19 +13,16 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.utils import limited_gather
 from simcore_service_api_server._service_function_jobs import FunctionJobService
-from simcore_service_api_server.api.dependencies.functions import (
-    get_stored_job_status,  # Import UserID
-)
-from simcore_service_api_server.api.dependencies.functions import (
-    get_function_from_functionjobid,
-)
 
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.functions import get_stored_job_status  # Import UserID
+from ..dependencies.functions import get_function_from_functionjobid
 from ..dependencies.models_schemas_function_filters import (
     get_function_job_collections_filters,
 )
@@ -269,7 +265,7 @@ async def function_job_collection_status(
         product_name=product_name,
     )
 
-    job_statuses = await asyncio.gather(
+    job_statuses = await limited_gather(
         *[
             function_job_status(
                 function_job=await get_function_job(
@@ -286,9 +282,9 @@ async def function_job_collection_status(
                 ),
                 stored_job_status=await get_stored_job_status(
                     function_job_id=function_job_id,
+                    wb_api_rpc=wb_api_rpc,
                     user_id=user_id,
                     product_name=product_name,
-                    wb_api_rpc=wb_api_rpc,
                 ),
                 wb_api_rpc=wb_api_rpc,
                 director2_api=director2_api,

@@ -60,9 +60,6 @@ from ._constants import (
 )
 from .solvers_jobs import JOBS_STATUS_CODES
 
-# pylint: disable=too-many-arguments
-
-
 _logger = logging.getLogger(__name__)
 
 
