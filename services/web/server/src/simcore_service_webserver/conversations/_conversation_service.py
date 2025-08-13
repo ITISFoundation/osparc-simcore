@@ -82,10 +82,28 @@ async def get_conversation(
     app: web.Application,
     *,
     conversation_id: ConversationID,
+    # filters
+    type: ConversationType | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get(
         app,
         conversation_id=conversation_id,
+        type=type,
+    )
+
+
+async def get_conversation_for_user(
+    app: web.Application,
+    *,
+    conversation_id: ConversationID,
+    user_group_id: UserID,
+    type: ConversationType | None = None,
+) -> ConversationGetDB:
+    return await _conversation_repository.get_for_user(
+        app,
+        conversation_id=conversation_id,
+        user_group_id=user_group_id,
+        type=type,
     )
 
 
@@ -152,6 +170,35 @@ async def list_project_conversations(
         offset=offset,
         limit=limit,
         order_by=OrderBy(field=IDStr("conversation_id"), direction=OrderDirection.DESC),
+    )
+
+
+async def get_support_conversation_for_user(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    conversation_id: ConversationID,
+):
+    # Check if user is part of support group (in that case list all support conversations)
+    product = products_service.get_product(app, product_name=product_name)
+    _support_standard_group_id = product.support_standard_group_id
+    if _support_standard_group_id is not None:
+        _user_group_ids = await list_user_groups_ids_with_read_access(
+            app, user_id=user_id
+        )
+        if _support_standard_group_id in _user_group_ids:
+            # I am a support user
+            return await get_conversation(
+                app, conversation_id=conversation_id, type=ConversationType.SUPPORT
+            )
+
+    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+    return await get_conversation_for_user(
+        app,
+        conversation_id=conversation_id,
+        user_group_id=_user_group_id,
+        type=ConversationType.SUPPORT,
     )
 
 

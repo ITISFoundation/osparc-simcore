@@ -16,7 +16,7 @@ from ..products import ProductName
 from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema
 
-### PROJECT CONVERSATION -------------------------------------------------------------------
+### CONVERSATION -------------------------------------------------------------------
 
 
 class ConversationRestGet(OutputSchema):
@@ -47,7 +47,7 @@ class ConversationPatch(InputSchema):
     name: str | None = None
 
 
-###  PROJECT CONVERSATION MESSAGES ---------------------------------------------------------------
+### CONVERSATION MESSAGES ---------------------------------------------------------------
 
 
 class ConversationMessageRestGet(OutputSchema):

@@ -217,12 +217,44 @@ async def get(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
+    type: ConversationType | None = None,
 ) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(conversations.c.conversation_id == f"{conversation_id}")
     )
+
+    if type is not None:
+        select_query = select_query.where(conversations.c.type == type)
+
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(select_query)
+        row = result.one_or_none()
+        if row is None:
+            raise ConversationErrorNotFoundError(conversation_id=conversation_id)
+        return ConversationGetDB.model_validate(row)
+
+
+async def get_for_user(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    conversation_id: ConversationID,
+    user_group_id: GroupID,
+    type: ConversationType | None = None,
+) -> ConversationGetDB:
+    select_query = (
+        select(*_SELECTION_ARGS)
+        .select_from(conversations)
+        .where(
+            (conversations.c.conversation_id == f"{conversation_id}")
+            & (conversations.c.user_group_id == user_group_id)
+        )
+    )
+
+    if type is not None:
+        select_query = select_query.where(conversations.c.type == type)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)

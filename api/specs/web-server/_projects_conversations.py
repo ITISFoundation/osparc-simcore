@@ -12,7 +12,7 @@ This OAS are the source of truth
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from models_library.api_schemas_webserver.projects_conversations import (
+from models_library.api_schemas_webserver.conversations import (
     ConversationMessageRestGet,
     ConversationRestGet,
 )

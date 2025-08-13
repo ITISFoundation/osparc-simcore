@@ -2,7 +2,7 @@ import logging
 
 from aiohttp import web
 from models_library.api_schemas_webserver._base import InputSchema
-from models_library.api_schemas_webserver.projects_conversations import (
+from models_library.api_schemas_webserver.conversations import (
     ConversationMessageRestGet,
     ConversationRestGet,
 )
@@ -17,7 +17,7 @@ from models_library.rest_pagination import (
     PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -55,6 +55,16 @@ class _ListProjectConversationsQueryParams(PageQueryParameters): ...
 class _ProjectConversationsCreateBodyParams(InputSchema):
     name: str
     type: ConversationType
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, value):
+        if value is not None and value not in [
+            ConversationType.PROJECT_ANNOTATION,
+            ConversationType.PROJECT_STATIC,
+        ]:
+            raise ValueError("Only project conversations are allowed")
+        return value
 
 
 class _ProjectConversationsPutBodyParams(InputSchema):
