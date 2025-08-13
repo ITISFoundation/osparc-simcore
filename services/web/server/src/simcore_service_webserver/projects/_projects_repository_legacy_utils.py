@@ -8,7 +8,7 @@ from typing import Any, Literal, cast
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
-from models_library.projects import NodesDict, ProjectID, ProjectType
+from models_library.projects import ProjectID, ProjectType
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.utils.change_case import camel_to_snake, snake_to_camel
@@ -195,17 +195,17 @@ class BaseProjectDB:
     async def _get_workbench(
         connection: SAConnection,
         project_uuid: str,
-    ) -> NodesDict:
+    ) -> dict[str, Any]:
         project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
         exclude_fields = {"node_id", "required_resources", "created", "modified"}
-        workbench: NodesDict = {}
+        workbench: dict[str, Any] = {}
 
         project_nodes = await project_nodes_repo.list(connection)  # type: ignore
         for project_node in project_nodes:
             node_data = project_node.model_dump(
                 exclude=exclude_fields, exclude_none=True, exclude_unset=True
             )
-            workbench[f"{project_node.node_id}"] = Node.model_validate(node_data)
+            workbench[f"{project_node.node_id}"] = node_data
         return workbench
 
     async def _get_project(
