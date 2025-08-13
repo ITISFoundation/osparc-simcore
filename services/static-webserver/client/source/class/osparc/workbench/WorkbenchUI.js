@@ -351,16 +351,27 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       let nodeUI = null;
       try {
         const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
-        nodeUI = this._createNodeUI(node.getNodeId());
-        this._addNodeUIToWorkbench(nodeUI, pos);
-        qx.ui.core.queue.Layout.flush();
-        this.__createDragDropMechanism(nodeUI);
+        nodeUI = this.addNode(node, pos);
       } catch (err) {
         console.error(err);
       } finally {
         // remove temporary node
         this.__removeTemporaryNodeUI(dashedNodeUI);
       }
+      return nodeUI;
+    },
+
+    addNode: function(node, pos) {
+      if (pos === undefined) {
+        pos = {
+          x: 0,
+          y: 0,
+        };
+      }
+      const nodeUI = this._createNodeUI(node.getNodeId());
+      this._addNodeUIToWorkbench(nodeUI, pos);
+      qx.ui.core.queue.Layout.flush();
+      this.__createDragDropMechanism(nodeUI);
       return nodeUI;
     },
 

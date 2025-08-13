@@ -54,6 +54,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     "projectDocumentChanged": "qx.event.type.Data",
     "restartAutoSaveTimer": "qx.event.type.Event",
     "pipelineChanged": "qx.event.type.Event",
+    "nodeAdded": "qx.event.type.Data",
     "nodeRemoved": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -873,12 +874,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode) {
-      console.log("Adding nodes from patches:", nodesAdded, workbenchPatchesByNode);
-
-      // not solved yet, log the user out to avoid issues
-      qx.core.Init.getApplication().logout(qx.locale.Manager.tr("Potentially conflicting updates coming from a collaborator"));
-      return;
-
       nodesAdded.forEach(nodeId => {
         const addNodePatch = workbenchPatchesByNode[nodeId].find(workbenchPatch => {
           const pathParts = workbenchPatch.path.split("/");
@@ -891,9 +886,11 @@ qx.Class.define("osparc.data.model.Workbench", {
           workbenchPatchesByNode[nodeId].splice(index, 1);
         }
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
-        node.fetchMetadataAndPopulate(nodeData, null);
-        // OM here: then maybe
-        node.checkState();
+        node.fetchMetadataAndPopulate(nodeData, null)
+          .then(() => {
+            this.fireDataEvent("nodeAdded", node);
+            node.checkState();
+          });
       });
     },
 
