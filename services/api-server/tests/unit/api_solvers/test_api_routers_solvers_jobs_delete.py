@@ -278,5 +278,13 @@ async def test_delete_job_assets_endpoint(
     resp = await client.delete(url, auth=auth)
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
+    webserver_rest = mocked_backend_services_apis_for_delete_job_assets[
+        "webserver_rest"
+    ]
+    assert webserver_rest["patch_project"].called
+
     storage_rest = mocked_backend_services_apis_for_delete_job_assets["storage_rest"]
     assert storage_rest["delete_project_s3_assets"].called
+
+    webserver_rpc = mocked_backend_services_apis_for_delete_job_assets["webserver_rpc"]
+    assert webserver_rpc["mark_project_as_job"].called
