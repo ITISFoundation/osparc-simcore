@@ -46,7 +46,7 @@ qx.Class.define("osparc.widget.NodeOutputs", {
 
     this.set({
       node,
-      ports: node.getMetaData().outputs
+      ports: node.getMetadata().outputs
     });
 
     node.addListener("changeOutputs", () => this.__outputsChanged(), this);

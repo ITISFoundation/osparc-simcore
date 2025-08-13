@@ -233,7 +233,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           break;
         case "node-type-chip": {
           control = new osparc.ui.basic.Chip();
-          let nodeType = this.getNode().getMetaData().type;
+          let nodeType = this.getNode().getMetadata().type;
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
           } else if (this.getNode().isProbe()) {
@@ -330,7 +330,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
         }
       });
-      const metadata = node.getMetaData();
+      const metadata = node.getMetadata();
       this.__createPorts(true, Boolean((metadata && metadata.inputs && Object.keys(metadata.inputs).length)));
       this.__createPorts(false, Boolean((metadata && metadata.outputs && Object.keys(metadata.outputs).length)));
       if (node.isComputational() || node.isFilePicker()) {
@@ -433,7 +433,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
             textColor: osparc.service.StatusUI.getColor("deprecated")
           });
           let ttMsg = osparc.service.Utils.DEPRECATED_SERVICE_TEXT;
-          const deprecatedDateMsg = osparc.service.Utils.getDeprecationDateText(node.getMetaData());
+          const deprecatedDateMsg = osparc.service.Utils.getDeprecationDateText(node.getMetadata());
           if (deprecatedDateMsg) {
             ttMsg = ttMsg + "<br>" + deprecatedDateMsg;
           }
@@ -665,9 +665,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
             converter: outputs => {
               if (portKey in outputs && "value" in outputs[portKey] && outputs[portKey]["value"]) {
                 const val = outputs[portKey]["value"];
-                if (this.getNode().getMetaData()["key"].includes("probe/array")) {
+                if (this.getNode().getMetadata()["key"].includes("probe/array")) {
                   return "[" + val.join(",") + "]";
-                } else if (this.getNode().getMetaData()["key"].includes("probe/file")) {
+                } else if (this.getNode().getMetadata()["key"].includes("probe/file")) {
                   const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
                   populateLinkLabel(val);
                   return filename;

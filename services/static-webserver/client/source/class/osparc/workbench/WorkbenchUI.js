@@ -350,12 +350,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       let nodeUI = null;
       try {
-        let node = null;
-        if (service.getKey() === osparc.store.Services.UNKNOWN_SERVICE_KEY) {
-          node = this.__getWorkbench().createUnknownNode();
-        } else {
-          node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
-        }
+        const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
         nodeUI = this._createNodeUI(node.getNodeId());
         this._addNodeUIToWorkbench(nodeUI, pos);
         qx.ui.core.queue.Layout.flush();
@@ -1711,7 +1706,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __openNodeInfo: function(nodeId) {
       if (nodeId) {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const metadata = node.getMetaData();
+        const metadata = node.getMetadata();
         const serviceDetails = new osparc.info.ServiceLarge(metadata, {
           nodeId,
           label: node.getLabel(),

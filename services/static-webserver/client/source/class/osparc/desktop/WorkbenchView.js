@@ -1045,7 +1045,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.bind("width", vBox, "width");
 
       // HEADER
-      const nodeMetadata = node.getMetaData();
+      const nodeMetadata = node.getMetadata();
       const version = osparc.store.Services.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
       const header = new qx.ui.basic.Label(`${nodeMetadata["name"]} ${version}`).set({
         paddingLeft: 5

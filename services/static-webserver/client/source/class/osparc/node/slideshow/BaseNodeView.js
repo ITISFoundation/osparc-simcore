@@ -217,7 +217,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
     __openServiceDetails: function() {
       const node = this.getNode();
-      const metadata = node.getMetaData();
+      const metadata = node.getMetadata();
       const serviceDetails = new osparc.info.ServiceLarge(metadata, {
         nodeId: node.getNodeId(),
         label: node.getLabel(),
