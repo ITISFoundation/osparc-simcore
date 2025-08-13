@@ -303,6 +303,8 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __createNode2: function(key, version, nodeId, nodeData, nodeUiData) {
       const node = new osparc.data.model.Node(this.getStudy(), key, version, nodeId);
+      this.__addNode(node);
+      this.__initNodeSignals(node);
       return node.fetchMetadataAndPopulate(nodeData, nodeUiData)
         .then(() => {
           if (osparc.utils.Utils.eventDrivenPatch()) {
@@ -314,9 +316,6 @@ qx.Class.define("osparc.data.model.Workbench", {
           node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
           node.addListener("updateStudyDocument", () => this.fireEvent("updateStudyDocument"), this);
           osparc.utils.Utils.localCache.serviceToFavs(key);
-
-          this.__initNodeSignals(node);
-          this.__addNode(node);
         });
     },
 
