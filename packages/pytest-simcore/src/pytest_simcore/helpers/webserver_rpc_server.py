@@ -86,3 +86,25 @@ class WebserverRpcSideEffects:
             limit=limit,
             offset=offset,
         )
+
+    @validate_call(config={"arbitrary_types_allowed": True})
+    async def get_project_marked_as_job(
+        self,
+        rpc_client: RabbitMQRPCClient | MockType,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        job_parent_resource_name: str,
+    ) -> ProjectJobRpcGet:
+        assert rpc_client
+        assert product_name
+        assert user_id
+        assert project_uuid
+        assert job_parent_resource_name
+
+        # Return a valid example from the schema
+        example = ProjectJobRpcGet.model_json_schema()["examples"][0]
+        example["uuid"] = str(project_uuid)
+        example["job_parent_resource_name"] = job_parent_resource_name
+        return ProjectJobRpcGet.model_validate(example)
