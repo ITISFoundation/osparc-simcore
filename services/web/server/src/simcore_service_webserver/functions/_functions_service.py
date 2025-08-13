@@ -4,6 +4,7 @@ from models_library.functions import (
     FunctionClass,
     FunctionClassSpecificData,
     FunctionDB,
+    FunctionGroupAccessRights,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
@@ -445,8 +446,7 @@ async def set_function_group_permissions(
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-    permission_group_id: GroupID,
-    permissions: FunctionUserAccessRights,
+    permissions: FunctionGroupAccessRights,
 ) -> None:
     await _functions_repository.set_group_permissions(
         app=app,
@@ -454,7 +454,7 @@ async def set_function_group_permissions(
         product_name=product_name,
         object_ids=[function_id],
         object_type="function",
-        permission_group_id=permission_group_id,
+        permission_group_id=permissions.group_id,
         read=permissions.read,
         write=permissions.write,
         execute=permissions.execute,

@@ -4,7 +4,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from models_library.api_schemas_webserver.functions import ProjectFunction
-from models_library.functions import FunctionUserAccessRights
+from models_library.functions import FunctionGroupAccessRights
 from models_library.functions_errors import FunctionReadAccessDeniedError
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -58,10 +58,12 @@ async def test_set_and_remove_group_permissions(
         app=client.app,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
-        permission_group_id=int(other_logged_user["primary_gid"]),
         function_id=registered_function.uid,
-        permissions=FunctionUserAccessRights(
-            user_id=logged_user["id"], read=True, write=True, execute=False
+        permissions=FunctionGroupAccessRights(
+            group_id=int(other_logged_user["primary_gid"]),
+            read=True,
+            write=True,
+            execute=False,
         ),
     )
 
