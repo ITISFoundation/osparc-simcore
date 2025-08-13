@@ -90,10 +90,10 @@ def backend_url() -> AnyHttpUrl:
 @pytest.fixture
 async def mock_environment(
     mock_postgres_check: None,
+    mock_registry_service: AsyncMock,
     mock_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     rabbit_service: RabbitSettings,
-    mock_registry_service: AsyncMock,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
@@ -109,13 +109,14 @@ async def mock_environment(
 
 @pytest.fixture
 async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
-    lcal_app = create_app()
+    local_app = create_app()
     # add the client setup to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    client_setup(lcal_app)
-    async with LifespanManager(lcal_app):
-        yield lcal_app
+    client_setup(local_app)
+
+    async with LifespanManager(local_app):
+        yield local_app
 
 
 @pytest.fixture
