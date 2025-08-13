@@ -16,6 +16,7 @@ from aiodocker.containers import DockerContainer
 from aiodocker.utils import clean_filters
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
+from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
@@ -36,7 +37,9 @@ from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_r
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
+from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
+from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.docker_utils import get_container_states
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,
@@ -46,6 +49,10 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from tenacity import AsyncRetrying, TryAgain
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -81,26 +88,34 @@ def backend_url() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_environment(
+async def mock_environment(
     mock_postgres_check: None,
+    mock_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    mock_rabbitmq_envs: EnvVarsDict,
+    rabbit_service: RabbitSettings,
+    mock_registry_service: AsyncMock,
 ) -> EnvVarsDict:
-    setenvs_from_dict(
+    return setenvs_from_dict(
         monkeypatch,
-        {"RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"{_BASE_HEART_BEAT_INTERVAL}"},
+        {
+            **mock_environment,
+            "RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"{_BASE_HEART_BEAT_INTERVAL}",
+            "RABBIT_SETTINGS": json.dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            ),
+        },
     )
-    return mock_rabbitmq_envs
 
 
 @pytest.fixture
-async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
+async def app(mock_environment: EnvVarsDict) -> AsyncIterable[FastAPI]:
+    lcal_app = create_app()
     # add the client setup to the same application
     # this is only required for testing, in reality
     # this will be in a different process
-    client_setup(app)
-    async with LifespanManager(app):
-        yield app
+    client_setup(lcal_app)
+    async with LifespanManager(lcal_app):
+        yield lcal_app
 
 
 @pytest.fixture
@@ -122,7 +137,7 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-def client(
+async def client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
 ) -> Client:
     return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
@@ -141,6 +156,15 @@ def mock_user_services_fail_to_stop(mocker: MockerFixture) -> None:
     mocker.patch(
         "simcore_service_dynamic_sidecar.modules.long_running_tasks._retry_docker_compose_down",
         side_effect=RuntimeError(""),
+    )
+
+
+@pytest.fixture
+def mock_post_rabbit_message(mocker: MockerFixture) -> AsyncMock:
+    return mocker.patch(
+        "simcore_service_dynamic_sidecar.core.rabbitmq._post_rabbit_message",
+        return_value=None,
+        autospec=True,
     )
 
 
@@ -173,11 +197,11 @@ async def _get_task_id_docker_compose_down(httpx_async_client: AsyncClient) -> T
 
 
 def _get_resource_tracking_messages(
-    mock_core_rabbitmq: dict[str, AsyncMock],
+    mock_post_rabbit_message: AsyncMock,
 ) -> list[RabbitResourceTrackingMessages]:
     return [
         x[0][1]
-        for x in mock_core_rabbitmq["post_rabbit_message"].call_args_list
+        for x in mock_post_rabbit_message.call_args_list
         if isinstance(x[0][1], RabbitResourceTrackingMessages)
     ]
 
@@ -201,7 +225,7 @@ async def _wait_for_containers_to_be_running(app: FastAPI) -> None:
 
 
 async def test_service_starts_and_closes_as_expected(
-    mock_core_rabbitmq: dict[str, AsyncMock],
+    mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
@@ -235,7 +259,9 @@ async def test_service_starts_and_closes_as_expected(
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 10)
 
     # Ensure messages arrive in the expected order
-    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    resource_tracking_messages = _get_resource_tracking_messages(
+        mock_post_rabbit_message
+    )
     assert len(resource_tracking_messages) >= 3
 
     start_message = resource_tracking_messages[0]
@@ -252,7 +278,7 @@ async def test_service_starts_and_closes_as_expected(
 
 @pytest.mark.parametrize("with_compose_down", [True, False])
 async def test_user_services_fail_to_start(
-    mock_core_rabbitmq: dict[str, AsyncMock],
+    mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
@@ -284,12 +310,14 @@ async def test_user_services_fail_to_start(
             assert result is None
 
     # no messages were sent
-    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    resource_tracking_messages = _get_resource_tracking_messages(
+        mock_post_rabbit_message
+    )
     assert len(resource_tracking_messages) == 0
 
 
 async def test_user_services_fail_to_stop_or_save_data(
-    mock_core_rabbitmq: dict[str, AsyncMock],
+    mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
@@ -327,7 +355,9 @@ async def test_user_services_fail_to_stop_or_save_data(
                 ...
 
     # Ensure messages arrive in the expected order
-    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    resource_tracking_messages = _get_resource_tracking_messages(
+        mock_post_rabbit_message
+    )
     assert len(resource_tracking_messages) >= 3
 
     start_message = resource_tracking_messages[0]
@@ -384,7 +414,7 @@ def mock_one_container_oom_killed(mocker: MockerFixture) -> Callable[[], None]:
 
 @pytest.mark.parametrize("expected_platform_state", SimcorePlatformStatus)
 async def test_user_services_crash_when_running(
-    mock_core_rabbitmq: dict[str, AsyncMock],
+    mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
@@ -419,7 +449,9 @@ async def test_user_services_crash_when_running(
         await _simulate_container_crash(container_names)
 
     # check only start and heartbeats are present
-    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    resource_tracking_messages = _get_resource_tracking_messages(
+        mock_post_rabbit_message
+    )
     assert len(resource_tracking_messages) >= 2
 
     start_message = resource_tracking_messages[0]
@@ -431,11 +463,13 @@ async def test_user_services_crash_when_running(
 
     # reset mock
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
-    mock_core_rabbitmq["post_rabbit_message"].reset_mock()
+    mock_post_rabbit_message.reset_mock()
 
     # wait a bit more and check no further heartbeats are sent
     await asyncio.sleep(_BASE_HEART_BEAT_INTERVAL * 2)
-    new_resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    new_resource_tracking_messages = _get_resource_tracking_messages(
+        mock_post_rabbit_message
+    )
     assert len(new_resource_tracking_messages) == 0
 
     # sending stop events, and since there was an issue multiple stops
@@ -450,7 +484,9 @@ async def test_user_services_crash_when_running(
         ) as result:
             assert result is None
 
-    resource_tracking_messages = _get_resource_tracking_messages(mock_core_rabbitmq)
+    resource_tracking_messages = _get_resource_tracking_messages(
+        mock_post_rabbit_message
+    )
     # NOTE: only 1 stop event arrives here since the stopping of the containers
     # was successful
     assert len(resource_tracking_messages) == 1
