@@ -2221,15 +2221,12 @@ async def notify_project_node_update(
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
 
-    output_project_model = ProjectGet.from_domain_model(project)
     message = SocketMessageDict(
         event_type=SOCKET_IO_NODE_UPDATED_EVENT,
         data={
             "project_id": project["uuid"],
             "node_id": f"{node_id}",
-            "data": output_project_model.workbench[f"{node_id}"].model_dump(
-                **RESPONSE_MODEL_POLICY
-            ),
+            "data": project["workbench"][f"{node_id}"],
             "errors": errors,
         },
     )
