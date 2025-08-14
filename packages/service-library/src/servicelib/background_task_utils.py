@@ -3,11 +3,10 @@ import functools
 from collections.abc import Callable, Coroutine
 from typing import Any, ParamSpec, TypeVar
 
-from servicelib.exception_utils import suppress_exceptions
-from servicelib.redis._errors import CouldNotAcquireLockError
-
 from .background_task import periodic
+from .exception_utils import suppress_exceptions
 from .redis import RedisClientSDK, exclusive
+from .redis._errors import CouldNotAcquireLockError
 
 P = ParamSpec("P")
 R = TypeVar("R")

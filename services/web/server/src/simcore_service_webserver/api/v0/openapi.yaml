@@ -16078,6 +16078,9 @@ components:
         thumbnail:
           anyOf:
           - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
           - type: 'null'
           title: Thumbnail
       type: object
@@ -16127,18 +16130,18 @@ components:
             type: object
           - type: 'null'
           title: Defaultinputs
-        uid:
+        uuid:
           type: string
           format: uuid
-          title: Uid
-        createdAt:
+          title: Uuid
+        creationDate:
           type: string
           format: date-time
-          title: Createdat
-        modifiedAt:
+          title: Creationdate
+        lastChangeDate:
           type: string
           format: date-time
-          title: Modifiedat
+          title: Lastchangedate
         solverKey:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -16147,14 +16150,26 @@ components:
           type: string
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           title: Solverversion
+        accessRights:
+          anyOf:
+          - $ref: '#/components/schemas/FunctionAccessRights'
+          - type: 'null'
+        thumbnail:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
       type: object
       required:
       - inputSchema
       - outputSchema
       - defaultInputs
-      - uid
-      - createdAt
-      - modifiedAt
+      - uuid
+      - creationDate
+      - lastChangeDate
       - solverKey
       - solverVersion
       title: RegisteredSolverFunctionGet
@@ -17161,6 +17176,17 @@ components:
             const: hypertool
           - type: 'null'
           title: Templatetype
+        mode:
+          anyOf:
+          - type: string
+            enum:
+            - workbench
+            - app
+            - guided
+            - standalone
+            - pipeline
+          - type: 'null'
+          title: Mode
       additionalProperties: true
       type: object
       title: StudyUI
@@ -17201,6 +17227,17 @@ components:
             const: hypertool
           - type: 'null'
           title: Templatetype
+        mode:
+          anyOf:
+          - type: string
+            enum:
+            - workbench
+            - app
+            - guided
+            - standalone
+            - pipeline
+          - type: 'null'
+          title: Mode
       additionalProperties: true
       type: object
       title: StudyUI

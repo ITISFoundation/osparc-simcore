@@ -26,9 +26,6 @@ qx.Class.define("osparc.jobs.JobsButton", {
     osparc.utils.Utils.setIdToWidget(this, "jobsButton");
 
     this.set({
-      width: 30,
-      alignX: "center",
-      cursor: "pointer",
       toolTipText: this.tr("Activity Center"),
     });
 
@@ -53,12 +50,12 @@ qx.Class.define("osparc.jobs.JobsButton", {
       switch (id) {
         case "icon": {
           control = new qx.ui.basic.Image("@FontAwesome5Solid/tasks/22");
-
           const logoContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle"
-          }));
+          })).set({
+            paddingLeft: 5,
+          });
           logoContainer.add(control);
-
           this._add(logoContainer, {
             height: "100%"
           });
@@ -69,8 +66,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
             textColor: osparc.navigation.NavigationBar.BG_COLOR,
           });
           this._add(control, {
-            bottom: 10,
-            right: 2
+            bottom: -4,
+            right: -4,
           });
           break;
         case "is-active-icon":
@@ -78,8 +75,8 @@ qx.Class.define("osparc.jobs.JobsButton", {
             textColor: "strong-main",
           });
           this._add(control, {
-            bottom: 12,
-            right: 4
+            bottom: -2,
+            right: -2,
           });
           break;
       }
@@ -104,13 +101,10 @@ qx.Class.define("osparc.jobs.JobsButton", {
     __attachSocketListener: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
-      socket.on("projectStateUpdated", content => {
-        // for now, we can only access the activity of my user, not the whole project...
-        if (osparc.study.Utils.amIRunningTheStudy(content)) {
-          // we know that I am running at least one study
+      socket.on("projectStateUpdated", data => {
+        if (osparc.study.Utils.state.isPipelineRunning(data["data"])) {
           this.__updateJobsButton(true);
         }
-        // ...in the next iteration: listen to main store's "studyStateChanged", which will cover all users
       }, this);
     },
 

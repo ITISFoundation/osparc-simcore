@@ -8,8 +8,11 @@ from models_library.functions import (
     FunctionInputSchema,
     FunctionJob,
     FunctionJobCollection,
+    FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
+    FunctionJobStatus,
+    FunctionOutputs,
     FunctionOutputSchema,
     FunctionUpdate,
     FunctionUserApiAccessRights,
@@ -197,6 +200,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     return await _functions_service.list_function_jobs(
         app=app,
@@ -205,6 +210,8 @@ async def list_function_jobs(
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
         filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
 
 
@@ -383,6 +390,74 @@ async def get_function_input_schema(
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def get_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionJobStatus:
+    return await _functions_service.get_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def get_function_job_outputs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionOutputs:
+    return await _functions_service.get_function_job_outputs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def update_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    job_status: FunctionJobStatus,
+) -> FunctionJobStatus:
+    return await _functions_service.update_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+        job_status=job_status,
+    )
+
+
+@router.expose(reraise_if_error_type=(FunctionJobIDNotFoundError,))
+async def update_function_job_outputs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    outputs: FunctionOutputs,
+) -> FunctionOutputs:
+    return await _functions_service.update_function_job_outputs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+        outputs=outputs,
     )
 
 

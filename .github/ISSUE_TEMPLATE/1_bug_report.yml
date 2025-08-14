@@ -1,7 +1,20 @@
 name: 🐛 Bug
 description: File a bug/issue
-labels: ["bug", "t:bug"]
-assignees: ["pcrespov"]
+title: "[Bug]: "
+labels:
+  - bug
+  - "t:bug"
+assignees:
+  - bisgaard-itis
+  - giancarloromeo
+  - GitHK
+  - matusdrobuliak66
+  - odeimaiz
+  - pcrespov
+  - sanderegg
+projects:
+  - "ITISFoundation/projects/15"
+type: "Bug"
 body:
   - type: checkboxes
     attributes:
@@ -20,7 +33,7 @@ body:
         - "production aws (e.g. osparc.io)"
         - "staging aws (e.g. staging.osparc.io)"
         - "production on-premise (dalco)"
-        - "stating on-premise (dalco)"
+        - "staging on-premise (dalco)"
         - "development (master)"
         - "other (e.g. local)"
     validations:

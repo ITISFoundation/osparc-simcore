@@ -29,6 +29,7 @@ from ..socketio.messages import (
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_WALLET_OSPARC_CREDITS_UPDATED_EVENT,
+    send_message_to_project_room,
     send_message_to_standard_group,
     send_message_to_user,
 )
@@ -90,9 +91,9 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
         ).to_socket_dict()
 
     if message:
-        await send_message_to_user(
+        await send_message_to_project_room(
             app,
-            rabbit_message.user_id,
+            project_id=rabbit_message.project_id,
             message=message,
         )
     return True

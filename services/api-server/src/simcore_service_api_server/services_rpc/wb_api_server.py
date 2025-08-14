@@ -24,6 +24,8 @@ from models_library.api_schemas_api_server.functions import (
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.functions import (
+    FunctionJobStatus,
+    FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
 )
@@ -338,6 +340,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filter_by_function_id: FunctionID | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
+        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         return await functions_rpc_interface.list_function_jobs(
             self._client,
@@ -346,6 +350,8 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
         )
 
     async def list_function_job_collections(
@@ -470,6 +476,66 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
+        )
+
+    async def get_function_job_status(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
+    ) -> FunctionJobStatus:
+        return await functions_rpc_interface.get_function_job_status(
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_job_id=function_job_id,
+        )
+
+    async def get_function_job_outputs(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_id: FunctionJobID,
+    ) -> FunctionOutputs:
+        return await functions_rpc_interface.get_function_job_outputs(
+            self._client,
+            user_id=user_id,
+            product_name=product_name,
+            function_job_id=function_job_id,
+        )
+
+    async def update_function_job_status(
+        self,
+        *,
+        function_job_id: FunctionJobID,
+        user_id: UserID,
+        product_name: ProductName,
+        job_status: FunctionJobStatus,
+    ) -> FunctionJobStatus:
+        return await functions_rpc_interface.update_function_job_status(
+            self._client,
+            function_job_id=function_job_id,
+            user_id=user_id,
+            product_name=product_name,
+            job_status=job_status,
+        )
+
+    async def update_function_job_outputs(
+        self,
+        *,
+        function_job_id: FunctionJobID,
+        user_id: UserID,
+        product_name: ProductName,
+        outputs: FunctionOutputs,
+    ) -> FunctionOutputs:
+        return await functions_rpc_interface.update_function_job_outputs(
+            self._client,
+            function_job_id=function_job_id,
+            user_id=user_id,
+            product_name=product_name,
+            outputs=outputs,
         )
 
     async def find_cached_function_jobs(

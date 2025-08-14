@@ -31,18 +31,18 @@ qx.Class.define("osparc.data.model.Service", {
     this.set({
       key: serviceData.key,
       version: serviceData.version,
-      versionDisplay: serviceData.versionDisplay,
+      versionDisplay: serviceData.versionDisplay || null,
       name: serviceData.name,
-      description: serviceData.description,
-      thumbnail: serviceData.thumbnail,
-      serviceType: serviceData.type,
-      contact: serviceData.contact,
-      authors: serviceData.authors,
-      owner: serviceData.owner || "",
+      description: serviceData.description || null,
+      thumbnail: serviceData.thumbnail || null,
+      serviceType: serviceData.type || null,
+      contact: serviceData.contact || null,
+      authors: serviceData.authors || null,
+      owner: serviceData.owner || null,
       accessRights: serviceData.accessRights,
-      bootOptions: serviceData.bootOptions,
+      bootOptions: serviceData.bootOptions || null,
       classifiers: serviceData.classifiers || [],
-      quality: serviceData.quality || null,
+      quality: serviceData.quality || {},
       xType: serviceData.xType || null,
       hits: serviceData.hits || 0,
     });
@@ -147,7 +147,6 @@ qx.Class.define("osparc.data.model.Service", {
       nullable: false
     },
 
-    // ------ ignore for serializing ------
     xType: {
       check: "String",
       nullable: true,
@@ -160,30 +159,6 @@ qx.Class.define("osparc.data.model.Service", {
       init: 0,
       event: "changeHits",
       nullable: false
-    }
-    // ------ ignore for serializing ------
-  },
-
-  statics: {
-    IgnoreSerializationProps: [
-      "xType",
-      "hits",
-    ]
-  },
-
-  members: {
-    __serviceData: null,
-
-    serialize: function() {
-      let jsonObject = {};
-      const propertyKeys = this.self().getProperties();
-      propertyKeys.forEach(key => {
-        if (this.self().IgnoreSerializationProps.includes(key)) {
-          return;
-        }
-        jsonObject[key] = this.get(key);
-      });
-      return jsonObject;
     },
-  }
+  },
 });

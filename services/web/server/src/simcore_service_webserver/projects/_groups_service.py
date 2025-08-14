@@ -121,7 +121,7 @@ async def replace_project_group(
             raise ProjectInvalidRightsError(
                 user_id=user_id,
                 project_uuid=project_id,
-                reason=f"User does not have access to modify owner project group in project {project_id}",
+                details=f"User does not have access to modify owner project group in project {project_id}",
             )
 
     project_group_db: ProjectGroupGetDB = (
@@ -168,7 +168,7 @@ async def delete_project_group(
         raise ProjectInvalidRightsError(
             user_id=user_id,
             project_uuid=project_id,
-            reason=f"User does not have access to modify owner project group in project {project_id}",
+            details=f"User does not have access to modify owner project group in project {project_id}",
         )
 
     await _groups_repository.delete_project_group(
@@ -252,3 +252,20 @@ async def create_project_group_without_checking_permissions(
         write=write,
         delete=delete,
     )
+
+
+async def list_project_groups_by_project_without_checking_permissions(
+    app: web.Application,
+    *,
+    project_id: ProjectID,
+) -> list[ProjectGroupGet]:
+    project_groups_db: list[ProjectGroupGetDB] = (
+        await _groups_repository.list_project_groups(app=app, project_id=project_id)
+    )
+
+    project_groups_api: list[ProjectGroupGet] = [
+        ProjectGroupGet.model_validate(group.model_dump())
+        for group in project_groups_db
+    ]
+
+    return project_groups_api

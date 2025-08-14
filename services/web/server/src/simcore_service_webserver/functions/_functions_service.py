@@ -4,15 +4,19 @@ from models_library.functions import (
     FunctionClass,
     FunctionClassSpecificData,
     FunctionDB,
+    FunctionGroupAccessRights,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
     FunctionJob,
     FunctionJobClassSpecificData,
     FunctionJobCollection,
+    FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobDB,
     FunctionJobID,
+    FunctionJobStatus,
+    FunctionOutputs,
     FunctionOutputSchema,
     FunctionUpdate,
     FunctionUserAccessRights,
@@ -31,6 +35,7 @@ from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
@@ -201,6 +206,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     returned_function_jobs, page = await _functions_repository.list_function_jobs(
         app=app,
@@ -209,6 +216,8 @@ async def list_function_jobs(
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
         filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
     return [
         _decode_functionjob(returned_function_job)
@@ -428,6 +437,109 @@ async def get_function_user_permissions(
             write=False,
             execute=False,
         )
+    )
+
+
+async def set_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    permissions: FunctionGroupAccessRights,
+) -> None:
+    await _functions_repository.set_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+        permission_group_id=permissions.group_id,
+        read=permissions.read,
+        write=permissions.write,
+        execute=permissions.execute,
+    )
+
+
+async def remove_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    permission_group_id: GroupID,
+) -> None:
+    await _functions_repository.remove_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+        permission_group_id=permission_group_id,
+    )
+
+
+async def get_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionJobStatus:
+    return await _functions_repository.get_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+    )
+
+
+async def get_function_job_outputs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+) -> FunctionOutputs:
+    return await _functions_repository.get_function_job_outputs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+    )
+
+
+async def update_function_job_outputs(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    outputs: FunctionOutputs,
+) -> FunctionOutputs:
+    return await _functions_repository.update_function_job_outputs(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+        outputs=outputs,
+    )
+
+
+async def update_function_job_status(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_job_id: FunctionJobID,
+    job_status: FunctionJobStatus,
+) -> FunctionJobStatus:
+    return await _functions_repository.update_function_job_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_id,
+        job_status=job_status,
     )
 
 

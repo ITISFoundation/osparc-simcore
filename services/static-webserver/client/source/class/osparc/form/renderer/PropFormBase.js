@@ -48,6 +48,8 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     grid.setColumnFlex(this.self().GRID_POS.FIELD_LINK_UNLINK, 0);
     grid.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
     Object.keys(this.self().GRID_POS).forEach((_, idx) => grid.setColumnAlign(idx, "left", "middle"));
+
+    form.addListener("changeData", e => this.fireDataEvent("changeData", e.getData()), this);
   },
 
   properties: {
@@ -55,6 +57,11 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       check: "osparc.data.model.Node",
       nullable: true
     }
+  },
+
+  events: {
+    "changeData": "qx.event.type.Data",
+    "unitChanged": "qx.event.type.Data",
   },
 
   statics: {
@@ -67,13 +74,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
     },
 
     ROW_HEIGHT: 28,
-
-    getDisableables: function() {
-      return [
-        this.GRID_POS.LABEL,
-        this.GRID_POS.CTRL_FIELD
-      ];
-    },
 
     updateUnitLabelPrefix: function(item) {
       const {
@@ -225,7 +225,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       const changedXUnits = this.getChangedXUnits();
       Object.keys(changedXUnits).forEach(portId => {
         const ctrl = this._form.getControl(portId);
-        const nodeMD = this.getNode().getMetaData();
+        const nodeMD = this.getNode().getMetadata();
         const {
           unitPrefix
         } = osparc.utils.Units.decomposeXUnit(nodeMD.inputs[portId]["x_unit"]);
@@ -273,7 +273,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
         const ctrl = this._form.getControl(portId);
         xUnits[portId] = osparc.utils.Units.composeXUnit(ctrl.unit, ctrl.unitPrefix);
       }
-      const nodeMD = this.getNode().getMetaData();
+      const nodeMD = this.getNode().getMetadata();
       const changedXUnits = {};
       for (const portId in xUnits) {
         if (xUnits[portId] === null) {
@@ -319,13 +319,6 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       return false;
     },
 
-    /**
-      * @abstract
-      */
-    setAccessLevel: function() {
-      throw new Error("Abstract method called!");
-    },
-
     __createInfoWHint: function(hint) {
       const infoWHint = new osparc.form.PortInfoHint(hint);
       return infoWHint;
@@ -357,7 +350,7 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       if (unit && unitRegistered) {
         unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
         unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
-        const nodeMD = this.getNode().getMetaData();
+        const nodeMD = this.getNode().getMetadata();
         const originalUnit = "x_unit" in nodeMD.inputs[item.key] ? osparc.utils.Units.decomposeXUnit(nodeMD.inputs[item.key]["x_unit"]) : null;
         unitLabel.addListener("tap", () => {
           const nextPrefix = osparc.utils.Units.getNextPrefix(item.unitPrefix, originalUnit.unitPrefix);
@@ -376,6 +369,10 @@ qx.Class.define("osparc.form.renderer.PropFormBase", {
       }
       item.setValue(newValue);
       this.self().updateUnitLabelPrefix(item);
+      this.fireDataEvent("unitChanged", {
+        portId: item.key,
+        prefix: newPrefix,
+      });
     },
 
     _getLayoutChild: function(portId, column) {

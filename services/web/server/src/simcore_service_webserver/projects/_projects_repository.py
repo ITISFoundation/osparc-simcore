@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime
 from typing import cast
 
@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ..db.plugin import get_asyncpg_engine
 from .exceptions import ProjectNotFoundError
-from .models import ProjectDBGet
+from .models import ProjectDBGet, ProjectWithWorkbenchDBGet
 
 _logger = logging.getLogger(__name__)
 
@@ -115,6 +115,23 @@ async def get_project(
         return ProjectDBGet.model_validate(row)
 
 
+async def get_project_with_workbench(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: ProjectID,
+) -> ProjectWithWorkbenchDBGet:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        query = sql.select(*PROJECT_DB_COLS, projects.c.workbench).where(
+            projects.c.uuid == f"{project_uuid}"
+        )
+        result = await conn.execute(query)
+        row = result.one_or_none()
+        if row is None:
+            raise ProjectNotFoundError(project_uuid=project_uuid)
+        return ProjectWithWorkbenchDBGet.model_validate(row)
+
+
 async def batch_get_project_name(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -155,10 +172,10 @@ async def batch_get_projects(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    project_uuids: list[ProjectID],
-) -> list[ProjectDBGet]:
+    project_uuids: Iterable[ProjectID],
+) -> dict[ProjectID, ProjectDBGet]:
     if not project_uuids:
-        return []
+        return {}
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         query = (
             sql.select(projects)
@@ -166,7 +183,10 @@ async def batch_get_projects(
             .where(projects.c.uuid.in_([f"{uuid}" for uuid in project_uuids]))
         )
         result = await conn.stream(query)
-        return [ProjectDBGet.model_validate(row) async for row in result]
+        return {
+            ProjectID(row.uuid): ProjectDBGet.model_validate(row)
+            async for row in result
+        }
 
 
 def _select_trashed_by_primary_gid_query() -> sql.Select:

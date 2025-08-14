@@ -32,7 +32,7 @@
  */
 
 qx.Class.define("osparc.workbench.NodeUI", {
-  extend: osparc.workbench.BaseNodeUI,
+  extend: qx.ui.window.Window,
 
   /**
    * @param node {osparc.data.model.Node} Node owning the widget
@@ -40,9 +40,61 @@ qx.Class.define("osparc.workbench.NodeUI", {
   construct: function(node) {
     this.base(arguments);
 
+    const grid = new qx.ui.layout.Grid(4, 1);
+    grid.setColumnFlex(1, 1);
+
+    this.set({
+      appearance: "node-ui-cap",
+      layout: grid,
+      showMinimize: false,
+      showMaximize: false,
+      showClose: false,
+      showStatusbar: false,
+      resizable: false,
+      allowMaximize: false,
+      contentPadding: this.self().CONTENT_PADDING
+    });
+
+    this.getContentElement().setStyles({
+      "border-radius": "4px"
+    });
+
+    const captionBar = this.getChildControl("captionbar");
+    captionBar.set({
+      cursor: "move",
+      paddingRight: 0,
+      paddingLeft: this.self().PORT_DIAMETER - 6,
+    });
+
+    const menuBtn = this.__getMenuButton();
+    captionBar.add(menuBtn, {
+      row: 0,
+      column: this.self().CAPTION_POS.MENU
+    });
+
+    const captionTitle = this.getChildControl("title");
+    captionTitle.set({
+      rich: true,
+      cursor: "move"
+    });
+
+    this.__nodeMoving = false;
+
     this.setNode(node);
 
     this.__resetNodeUILayout();
+
+    captionTitle.addListener("appear", () => {
+      qx.event.Timer.once(() => {
+        const labelDom = captionTitle.getContentElement().getDomElement();
+        const maxWidth = parseInt(labelDom.style.width);
+        // eslint-disable-next-line no-underscore-dangle
+        const width = captionTitle.__contentSize.width;
+        if (width > maxWidth) {
+          this.getNode().bind("label", captionTitle, "toolTipText");
+        }
+      }, this, 50);
+    });
   },
 
   properties: {
@@ -53,8 +105,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     type: {
-      check: ["normal", "file", "parameter", "iterator", "probe"],
-      init: "normal",
+      check: ["computational", "dynamic", "file", "parameter", "iterator", "probe", "unknown"],
+      init: null,
       nullable: false,
       apply: "__applyType"
     },
@@ -63,16 +115,57 @@ qx.Class.define("osparc.workbench.NodeUI", {
       check: "String",
       nullable: true,
       apply: "__applyThumbnail"
-    }
+    },
+    scale: {
+      check: "Number",
+      event: "changeScale",
+      nullable: false
+    },
+
+    isMovable: {
+      check: "Boolean",
+      init: true,
+      nullable: false
+    },
   },
 
   statics: {
     NODE_WIDTH: 180,
     NODE_HEIGHT: 80,
     FILE_NODE_WIDTH: 120,
+    PORT_DIAMETER: 18,
+    PORT_MARGIN_TOP: 4,
+    CONTENT_PADDING: 2,
+    PORT_CONNECTED: "@FontAwesome5Regular/dot-circle/18",
+    PORT_DISCONNECTED: "@FontAwesome5Regular/circle/18",
+
+    CAPTION_POS: {
+      ICON: 0, // from qooxdoo
+      TITLE: 1, // from qooxdoo
+      LOCK: 2,
+      MARKER: 3,
+      DEPRECATED: 4,
+      MENU: 5
+    },
+
+    captionHeight: function() {
+      return osparc.theme.Appearance.appearances["node-ui-cap/captionbar"].style().height ||
+        osparc.theme.Appearance.appearances["node-ui-cap/captionbar"].style().minHeight;
+    },
   },
 
   events: {
+    "renameNode": "qx.event.type.Data",
+    "infoNode": "qx.event.type.Data",
+    "markerClicked": "qx.event.type.Data",
+    "removeNode": "qx.event.type.Data",
+    "edgeDragStart": "qx.event.type.Data",
+    "edgeDragOver": "qx.event.type.Data",
+    "edgeDrop": "qx.event.type.Data",
+    "edgeDragEnd": "qx.event.type.Data",
+    "nodeMovingStart": "qx.event.type.Event",
+    "nodeMoving": "qx.event.type.Data",
+    "nodeMovingStop": "qx.event.type.Event",
     "updateNodeDecorator": "qx.event.type.Event",
     "requestOpenLogger": "qx.event.type.Event",
   },
@@ -80,10 +173,12 @@ qx.Class.define("osparc.workbench.NodeUI", {
   members: {
     __thumbnail: null,
     __svgWorkbenchCanvas: null,
-
-    getNodeType: function() {
-      return "service";
-    },
+    __inputLayout: null,
+    __outputLayout: null,
+    __optionsMenu: null,
+    __markerBtn: null,
+    __deleteBtn: null,
+    __nodeMoving: null,
 
     getNodeId: function() {
       return this.getNode().getNodeId();
@@ -100,7 +195,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           this.getChildControl("captionbar").add(control, {
             row: 0,
-            column: osparc.workbench.BaseNodeUI.CAPTION_POS.LOCK
+            column: this.self().CAPTION_POS.LOCK
           });
           break;
         case "marker":
@@ -111,7 +206,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           this.getChildControl("captionbar").add(control, {
             row: 0,
-            column: osparc.workbench.BaseNodeUI.CAPTION_POS.MARKER
+            column: this.self().CAPTION_POS.MARKER
           });
           control.addListener("tap", () => this.fireDataEvent("markerClicked", this.getNode().getNodeId()));
           break;
@@ -122,16 +217,23 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           this.getChildControl("captionbar").add(control, {
             row: 0,
-            column: osparc.workbench.BaseNodeUI.CAPTION_POS.DEPRECATED
+            column: this.self().CAPTION_POS.DEPRECATED
           });
           break;
-        case "chips": {
+        case "middle-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
             alignY: "middle"
           })).set({
-            margin: [3, 4]
+            padding: [3, 4]
           });
-          let nodeType = this.getNode().getMetaData().type;
+          this.add(control, {
+            row: 0,
+            column: 1
+          });
+          break;
+        case "node-type-chip": {
+          control = new osparc.ui.basic.Chip();
+          let nodeType = this.getNode().getMetadata().type;
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
           } else if (this.getNode().isProbe()) {
@@ -139,32 +241,39 @@ qx.Class.define("osparc.workbench.NodeUI", {
           }
           const type = osparc.service.Utils.getType(nodeType);
           if (type) {
-            const chip = new osparc.ui.basic.Chip().set({
+            control.set({
               icon: type.icon + "14",
               toolTipText: type.label
             });
-            control.add(chip);
+          } else if (this.getNode().isUnknown()) {
+            control.set({
+              icon: "@FontAwesome5Solid/question/14",
+              toolTipText: "Unknown",
+            });
           }
-          const nodeStatus = new osparc.ui.basic.NodeStatusUI(this.getNode());
-          control.add(nodeStatus);
-          const statusLabel = nodeStatus.getChildControl("label");
+          this.getChildControl("middle-container").add(control);
+          break;
+        }
+        case "node-status-ui": {
+          control = new osparc.ui.basic.NodeStatusUI(this.getNode()).set({
+            maxHeight: 20,
+            font: "text-10",
+          });
+          const statusLabel = control.getChildControl("label");
           const requestOpenLogger = () => this.fireEvent("requestOpenLogger");
           const evaluateLabel = () => {
             const failed = statusLabel.getValue() === "Unsuccessful";
             statusLabel.setCursor(failed ? "pointer" : "auto");
-            if (nodeStatus.hasListener("tap")) {
-              nodeStatus.removeListener("tap", requestOpenLogger);
+            if (control.hasListener("tap")) {
+              control.removeListener("tap", requestOpenLogger);
             }
             if (failed) {
-              nodeStatus.addListener("tap", requestOpenLogger);
+              control.addListener("tap", requestOpenLogger);
             }
           };
           evaluateLabel();
           statusLabel.addListener("changeValue", evaluateLabel);
-          this.add(control, {
-            row: 0,
-            column: 1
-          });
+          this.getChildControl("middle-container").add(control);
           break;
         }
         case "progress":
@@ -198,16 +307,19 @@ qx.Class.define("osparc.workbench.NodeUI", {
       });
       this.resetThumbnail();
 
-      this.__createWindowLayout();
+      this.__createContentLayout();
     },
 
-    __createWindowLayout: function() {
+    __createContentLayout: function() {
       const node = this.getNode();
+      if (node) {
+        this.getChildControl("middle-container").removeAll();
+        this.getChildControl("node-type-chip");
+        this.getChildControl("node-status-ui");
 
-      this.getChildControl("chips").show();
-
-      if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
-        this.getChildControl("progress").show();
+        if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
+          this.getChildControl("progress");
+        }
       }
     },
 
@@ -218,7 +330,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
         }
       });
-      const metadata = node.getMetaData();
+      const metadata = node.getMetadata();
       this.__createPorts(true, Boolean((metadata && metadata.inputs && Object.keys(metadata.inputs).length)));
       this.__createPorts(false, Boolean((metadata && metadata.outputs && Object.keys(metadata.outputs).length)));
       if (node.isComputational() || node.isFilePicker()) {
@@ -226,7 +338,11 @@ qx.Class.define("osparc.workbench.NodeUI", {
           converter: val => val === null ? 0 : val
         });
       }
-      if (node.isFilePicker()) {
+      if (node.isComputational()) {
+        this.setType("computational");
+      } else if (node.isDynamic()) {
+        this.setType("dynamic");
+      } else if (node.isFilePicker()) {
         this.setType("file");
       } else if (node.isParameter()) {
         this.setType("parameter");
@@ -235,6 +351,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.setType("iterator");
       } else if (node.isProbe()) {
         this.setType("probe");
+      } else if (node.isUnknown()) {
+        this.setType("unknown");
       }
       this.addListener("resize", () => {
         setTimeout(() => this.fireEvent("updateNodeDecorator"), 50);
@@ -242,20 +360,25 @@ qx.Class.define("osparc.workbench.NodeUI", {
     },
 
     __applyNode: function(node) {
+      node.addListener("changePosition", e => {
+        this.moveNodeTo(e.getData());
+        this.fireEvent("nodeMovingStop");
+      });
+
       if (node.isDynamic()) {
         const startButton = new qx.ui.menu.Button().set({
           label: this.tr("Start"),
           icon: "@FontAwesome5Solid/play/10"
         });
         node.attachHandlersToStartButton(startButton);
-        this._optionsMenu.addAt(startButton, 0);
+        this.__optionsMenu.addAt(startButton, 0);
 
         const stopButton = new qx.ui.menu.Button().set({
           label: this.tr("Stop"),
           icon: "@FontAwesome5Solid/stop/10"
         });
         node.attachHandlersToStopButton(stopButton);
-        this._optionsMenu.addAt(stopButton, 1);
+        this.__optionsMenu.addAt(stopButton, 1);
       }
 
       if (node.getKey().includes("parameter/int")) {
@@ -264,27 +387,26 @@ qx.Class.define("osparc.workbench.NodeUI", {
           icon: "@FontAwesome5Solid/sync-alt/10"
         });
         makeIterator.addListener("execute", () => node.convertToIterator("int"), this);
-        this._optionsMenu.add(makeIterator);
+        this.__optionsMenu.add(makeIterator);
       } else if (node.getKey().includes("data-iterator/int-range")) {
         const convertToParameter = new qx.ui.menu.Button().set({
           label: this.tr("Convert to Parameter"),
           icon: "@FontAwesome5Solid/sync-alt/10"
         });
         convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
-        this._optionsMenu.add(convertToParameter);
+        this.__optionsMenu.add(convertToParameter);
       }
 
       const lock = this.getChildControl("lock");
-      if (node.getPropsForm()) {
-        node.getPropsForm().bind("enabled", lock, "visibility", {
-          converter: val => val ? "excluded" : "visible"
-        });
-      }
-      this._markerBtn.show();
-      this.getNode().bind("marker", this._markerBtn, "label", {
+      node.getStudy().bind("pipelineRunning", lock, "visibility", {
+        converter: pipelineRunning => pipelineRunning ? "visible" : "excluded"
+      });
+
+      this.__markerBtn.show();
+      this.getNode().bind("marker", this.__markerBtn, "label", {
         converter: val => val ? this.tr("Remove Marker") : this.tr("Add Marker")
       });
-      this._markerBtn.addListener("execute", () => node.toggleMarker());
+      this.__markerBtn.addListener("execute", () => node.toggleMarker());
 
       const marker = this.getChildControl("marker");
       const updateMarker = () => {
@@ -298,7 +420,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
 
-      node.getStudy().bind("pipelineRunning", this._deleteBtn, "enabled", {
+      node.getStudy().bind("pipelineRunning", this.__deleteBtn, "enabled", {
         converter: running => !running
       });
 
@@ -311,7 +433,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
             textColor: osparc.service.StatusUI.getColor("deprecated")
           });
           let ttMsg = osparc.service.Utils.DEPRECATED_SERVICE_TEXT;
-          const deprecatedDateMsg = osparc.service.Utils.getDeprecationDateText(node.getMetaData());
+          const deprecatedDateMsg = osparc.service.Utils.getDeprecationDateText(node.getMetadata());
           if (deprecatedDateMsg) {
             ttMsg = ttMsg + "<br>" + deprecatedDateMsg;
           }
@@ -368,6 +490,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
         case "probe":
           this.__turnIntoProbeUI();
           break;
+        case "unknown":
+          this.__turnIntoUnknownUI();
+          break;
       }
     },
 
@@ -393,8 +518,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const width = this.self().FILE_NODE_WIDTH;
       this.__setNodeUIWidth(width);
 
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.exclude();
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.exclude();
 
       if (this.hasChildControl("progress")) {
         this.getChildControl("progress").exclude();
@@ -427,8 +552,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const label = new qx.ui.basic.Label().set({
         font: "text-18"
       });
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.add(label);
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.add(label);
 
       this.getNode().bind("outputs", label, "value", {
         converter: outputs => {
@@ -478,11 +603,20 @@ qx.Class.define("osparc.workbench.NodeUI", {
         paddingLeft: 5,
         font: "text-12"
       });
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.add(linkLabel);
+      const middleContainer = this.getChildControl("middle-container");
+      middleContainer.add(linkLabel);
 
       this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(linkLabel), this);
       this.__setProbeValue(linkLabel);
+    },
+
+    __turnIntoUnknownUI: function() {
+      const width = 110;
+      this.__setNodeUIWidth(width);
+
+      this.setEnabled(false);
+
+      this.fireEvent("updateNodeDecorator");
     },
 
     __checkTurnIntoIteratorUI: function() {
@@ -531,9 +665,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
             converter: outputs => {
               if (portKey in outputs && "value" in outputs[portKey] && outputs[portKey]["value"]) {
                 const val = outputs[portKey]["value"];
-                if (this.getNode().getMetaData()["key"].includes("probe/array")) {
+                if (this.getNode().getMetadata()["key"].includes("probe/array")) {
                   return "[" + val.join(",") + "]";
-                } else if (this.getNode().getMetaData()["key"].includes("probe/file")) {
+                } else if (this.getNode().getMetadata()["key"].includes("probe/file")) {
                   const filename = val.filename || osparc.file.FilePicker.getFilenameFromPath(val);
                   populateLinkLabel(val);
                   return filename;
@@ -551,17 +685,17 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
     __createPorts: function(isInput, draw) {
       if (draw === false) {
-        this._createPort(isInput, true);
+        this.__createPort(isInput, true);
         return;
       }
-      const port = this._createPort(isInput);
+      const port = this.__createPort(isInput);
       port.addListener("mouseover", () => {
-        port.setSource(osparc.workbench.BaseNodeUI.PORT_CONNECTED);
+        port.setSource(this.self().PORT_CONNECTED);
       }, this);
       port.addListener("mouseout", () => {
         const isConnected = isInput ? this.getNode().getInputConnected() : this.getNode().getOutputConnected();
         port.set({
-          source: isConnected ? osparc.workbench.BaseNodeUI.PORT_CONNECTED : osparc.workbench.BaseNodeUI.PORT_DISCONNECTED
+          source: isConnected ? this.self().PORT_CONNECTED : this.self().PORT_DISCONNECTED
         });
       }, this);
       if (isInput) {
@@ -574,14 +708,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
           }
         });
         this.getNode().bind("inputConnected", port, "source", {
-          converter: isConnected => isConnected ? osparc.workbench.BaseNodeUI.PORT_CONNECTED : osparc.workbench.BaseNodeUI.PORT_DISCONNECTED
+          converter: isConnected => isConnected ? this.self().PORT_CONNECTED : this.self().PORT_DISCONNECTED
         });
       } else {
         this.getNode().getStatus().bind("output", port, "textColor", {
           converter: output => osparc.service.StatusUI.getColor(output)
         });
         this.getNode().bind("outputConnected", port, "source", {
-          converter: isConnected => isConnected ? osparc.workbench.BaseNodeUI.PORT_CONNECTED : osparc.workbench.BaseNodeUI.PORT_DISCONNECTED
+          converter: isConnected => isConnected ? this.self().PORT_CONNECTED : this.self().PORT_DISCONNECTED
         });
       }
 
@@ -610,21 +744,14 @@ qx.Class.define("osparc.workbench.NodeUI", {
       };
     },
 
-    // override qx.ui.core.MMovable
-    _onMovePointerMove: function(e) {
-      // Only react when dragging is active
-      if (!this.hasState("move") || !this.getIsMovable()) {
-        return;
-      }
-      const coords = this._setPositionFromEvent(e);
-      this.getNode().setPosition(coords);
-      this.base(arguments, e);
+    moveNodeTo: function(pos) {
+      this.moveTo(pos.x, pos.y);
     },
 
     setPosition: function(pos) {
       const node = this.getNode();
       node.setPosition(pos);
-      this.moveTo(node.getPosition().x, node.getPosition().y);
+      this.moveNodeTo(pos);
     },
 
     snapToGrid: function() {
@@ -636,11 +763,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
       const snapGrid = 20;
       const snapX = Math.round(x/snapGrid)*snapGrid;
       const snapY = Math.round(y/snapGrid)*snapGrid;
-      node.setPosition({
+      this.setPosition({
         x: snapX,
         y: snapY
       });
-      this.moveTo(node.getPosition().x, node.getPosition().y);
     },
 
     __applyThumbnail: function(thumbnailSrc) {
@@ -665,6 +791,187 @@ qx.Class.define("osparc.workbench.NodeUI", {
           column: 1
         });
       }
+    },
+
+    __getMenuButton: function() {
+      const optionsMenu = this.__optionsMenu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const renameBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Rename"),
+        icon: "@FontAwesome5Solid/i-cursor/10"
+      });
+      renameBtn.getChildControl("shortcut").setValue("F2");
+      renameBtn.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
+      optionsMenu.add(renameBtn);
+
+      const markerBtn = this.__markerBtn = new qx.ui.menu.Button().set({
+        icon: "@FontAwesome5Solid/bookmark/10",
+        visibility: "excluded"
+      });
+      optionsMenu.add(markerBtn);
+
+      const infoBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Information..."),
+        icon: "@FontAwesome5Solid/info/10"
+      });
+      infoBtn.getChildControl("shortcut").setValue("I");
+      infoBtn.addListener("execute", () => this.fireDataEvent("infoNode", this.getNodeId()));
+      optionsMenu.add(infoBtn);
+
+      const deleteBtn = this.__deleteBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Delete"),
+        icon: "@FontAwesome5Solid/trash/10"
+      });
+      deleteBtn.getChildControl("shortcut").setValue("Del");
+      deleteBtn.addListener("execute", () => this.fireDataEvent("removeNode", this.getNodeId()));
+      optionsMenu.add(deleteBtn);
+
+      const menuBtn = new qx.ui.form.MenuButton().set({
+        menu: optionsMenu,
+        icon: "@FontAwesome5Solid/ellipsis-v/9",
+        height: 18,
+        width: 18,
+        allowGrowX: false,
+        allowGrowY: false
+      });
+      return menuBtn;
+    },
+
+    getInputPort: function() {
+      return this.__inputLayout;
+    },
+
+    getOutputPort: function() {
+      return this.__outputLayout;
+    },
+
+    __createPort: function(isInput, placeholder = false) {
+      let port = null;
+      const width = this.self().PORT_DIAMETER;
+      if (placeholder) {
+        port = new qx.ui.core.Spacer(width, width);
+      } else {
+        port = new qx.ui.basic.Image().set({
+          source: this.self().PORT_DISCONNECTED, // disconnected by default
+          height: width,
+          width: width,
+          marginTop: this.self().PORT_MARGIN_TOP,
+          draggable: true,
+          droppable: true,
+          alignY: "top",
+          backgroundColor: "background-main"
+        });
+        port.setCursor("pointer");
+        port.getContentElement().setStyles({
+          "border-radius": width+"px"
+        });
+        port.isInput = isInput;
+      }
+      // make the ports exit the NodeUI
+      port.set({
+        marginLeft: isInput ? (-10 + this.self().CONTENT_PADDING) : 0,
+        marginRight: isInput ? 0 : (-10 - this.self().CONTENT_PADDING)
+      });
+
+      this.add(port, {
+        row: 0,
+        column: isInput ? 0 : 2
+      });
+
+      if (isInput) {
+        this.__inputLayout = port;
+      } else {
+        this.__outputLayout = port;
+      }
+
+      return port;
+    },
+
+    getEdgePoint: function(port) {
+      const bounds = this.getCurrentBounds();
+      const captionHeight = Math.max(this.getChildControl("captionbar").getSizeHint().height, this.self().captionHeight());
+      const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width - 1;
+      const y = bounds.top + captionHeight + this.self().PORT_DIAMETER/2 + this.self().PORT_MARGIN_TOP + 2;
+      return [x, y];
+    },
+
+    getCurrentBounds: function() {
+      let bounds = this.getBounds();
+      let cel = this.getContentElement();
+      if (cel) {
+        let domeEle = cel.getDomElement();
+        if (domeEle) {
+          bounds.left = parseInt(domeEle.style.left);
+          bounds.top = parseInt(domeEle.style.top);
+        }
+      }
+      return bounds;
+    },
+
+    __scaleCoordinates: function(x, y) {
+      return {
+        x: parseInt(x / this.getScale()),
+        y: parseInt(y / this.getScale())
+      };
+    },
+
+    __setPositionFromEvent: function(e) {
+      // this.__dragRange is defined in qx.ui.core.MMovable
+      const sideBarWidth = this.__dragRange.left;
+      const navigationBarHeight = this.__dragRange.top;
+      const native = e.getNativeEvent();
+      const x = native.clientX + this.__dragLeft - sideBarWidth;
+      const y = native.clientY + this.__dragTop - navigationBarHeight;
+      const coords = this.__scaleCoordinates(x, y);
+      const insets = this.getLayoutParent().getInsets();
+      this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
+      return coords;
+    },
+
+    // override qx.ui.core.MMovable
+    _onMovePointerMove: function(e) {
+      // Only react when dragging is active
+      if (!this.hasState("move") || !this.getIsMovable()) {
+        return;
+      }
+      const coords = this.__setPositionFromEvent(e);
+      e.stopPropagation();
+      if (this.__nodeMoving === false) {
+        this.__nodeMoving = true;
+        this.fireEvent("nodeMovingStart");
+      }
+      this.fireDataEvent("nodeMoving", coords);
+    },
+
+    // override qx.ui.core.MMovable
+    _onMovePointerUp : function(e) {
+      if (this.hasListener("roll")) {
+        this.removeListener("roll", this._onMoveRoll, this);
+      }
+
+      // Only react when dragging is active
+      if (!this.hasState("move") || !this.getIsMovable()) {
+        return;
+      }
+
+      this._onMovePointerMove(e);
+
+      this.__nodeMoving = false;
+
+      // Only consolidate position when it stops moving
+      const coords = this.__setPositionFromEvent(e);
+      this.getNode().setPosition(coords);
+
+      this.fireEvent("nodeMovingStop");
+
+      // Remove drag state
+      this.removeState("move");
+
+      this.releaseCapture();
+
+      e.stopPropagation();
     },
   }
 });

@@ -2,9 +2,9 @@ from typing import Annotated, Final
 
 from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi_pagination.api import create_page
+from fastapi_pagination.bases import AbstractPage
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.functions import (
-    Function,
     FunctionClass,
     FunctionJob,
     FunctionJobID,
@@ -12,15 +12,21 @@ from models_library.api_schemas_webserver.functions import (
     FunctionOutputs,
     RegisteredFunctionJob,
 )
+from models_library.functions import RegisteredFunction
 from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
 from models_library.products import ProductName
+from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
+from simcore_service_api_server.models.schemas.functions_filters import (
+    FunctionJobsListFilters,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..._service_function_jobs import FunctionJobService
 from ..._service_jobs import JobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -30,7 +36,18 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
-from ..dependencies.services import get_api_client, get_job_service
+from ..dependencies.functions import (
+    get_function_from_functionjob,
+    get_function_job_dependency,
+    get_stored_job_outputs,
+    get_stored_job_status,
+)
+from ..dependencies.models_schemas_function_filters import get_function_jobs_filters
+from ..dependencies.services import (
+    get_api_client,
+    get_function_job_service,
+    get_job_service,
+)
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, solvers_jobs_read, studies_jobs
@@ -43,6 +60,9 @@ from ._constants import (
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
 
+
+JOB_LIST_FILTER_PAGE_RELEASE_VERSION = "0.11.0"
+JOB_LOG_RELEASE_VERSION = "0.11.0"
 
 function_job_router = APIRouter()
 
@@ -73,6 +93,13 @@ for endpoint in ENDPOINTS:
                 "add `created_at` field in the registered function-related objects",
             )
         )
+    if endpoint == "list_function_jobs":
+        CHANGE_LOGS[endpoint].append(
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
+                JOB_LIST_FILTER_PAGE_RELEASE_VERSION,
+                "add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
+            )
+        )
 
 
 @function_job_router.get(
@@ -83,16 +110,18 @@ for endpoint in ENDPOINTS:
     ),
 )
 async def list_function_jobs(
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     page_params: Annotated[PaginationParams, Depends()],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
-):
-    function_jobs_list, meta = await wb_api_rpc.list_function_jobs(
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
+    filters: Annotated[FunctionJobsListFilters, Depends(get_function_jobs_filters)],
+) -> AbstractPage[RegisteredFunctionJob]:
+    function_jobs_list, meta = await function_job_service.list_function_jobs(
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
-        user_id=user_id,
-        product_name=product_name,
+        filter_by_function_job_ids=filters.function_job_ids,
+        filter_by_function_job_collection_id=filters.function_job_collection_id,
+        filter_by_function_id=filters.function_id,
     )
 
     return create_page(
@@ -171,19 +200,19 @@ async def delete_function_job(
     ),
 )
 async def function_job_status(
-    function_job_id: FunctionJobID,
+    function_job: Annotated[
+        RegisteredFunctionJob, Depends(get_function_job_dependency)
+    ],
+    function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
+    stored_job_status: Annotated[FunctionJobStatus, Depends(get_stored_job_status)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
 ) -> FunctionJobStatus:
 
-    function, function_job = await get_function_from_functionjobid(
-        wb_api_rpc=wb_api_rpc,
-        function_job_id=function_job_id,
-        user_id=user_id,
-        product_name=product_name,
-    )
+    if stored_job_status.status in (RunningState.SUCCESS, RunningState.FAILED):
+        return stored_job_status
 
     if (
         function.function_class == FunctionClass.PROJECT
@@ -195,9 +224,7 @@ async def function_job_status(
             user_id=user_id,
             director2_api=director2_api,
         )
-        return FunctionJobStatus(status=job_status.state)
-
-    if (function.function_class == FunctionClass.SOLVER) and (
+    elif (function.function_class == FunctionClass.SOLVER) and (
         function_job.function_class == FunctionClass.SOLVER
     ):
         job_status = await solvers_jobs.inspect_job(
@@ -207,11 +234,19 @@ async def function_job_status(
             user_id=user_id,
             director2_api=director2_api,
         )
-        return FunctionJobStatus(status=job_status.state)
+    else:
+        raise UnsupportedFunctionFunctionJobClassCombinationError(
+            function_class=function.function_class,
+            function_job_class=function_job.function_class,
+        )
 
-    raise UnsupportedFunctionFunctionJobClassCombinationError(
-        function_class=function.function_class,
-        function_job_class=function_job.function_class,
+    new_job_status = FunctionJobStatus(status=job_status.state)
+
+    return await wb_api_rpc.update_function_job_status(
+        function_job_id=function_job.uid,
+        user_id=user_id,
+        product_name=product_name,
+        job_status=new_job_status,
     )
 
 
@@ -220,7 +255,7 @@ async def get_function_from_functionjobid(
     function_job_id: FunctionJobID,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
-) -> tuple[Function, FunctionJob]:
+) -> tuple[RegisteredFunction, RegisteredFunctionJob]:
     function_job = await get_function_job(
         wb_api_rpc=wb_api_rpc,
         function_job_id=function_job_id,
@@ -251,26 +286,26 @@ async def get_function_from_functionjobid(
     ),
 )
 async def function_job_outputs(
-    function_job_id: FunctionJobID,
+    function_job: Annotated[
+        RegisteredFunctionJob, Depends(get_function_job_dependency)
+    ],
+    function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
+    stored_job_outputs: Annotated[FunctionOutputs, Depends(get_stored_job_outputs)],
 ) -> FunctionOutputs:
-    function, function_job = await get_function_from_functionjobid(
-        wb_api_rpc=wb_api_rpc,
-        function_job_id=function_job_id,
-        user_id=user_id,
-        product_name=product_name,
-    )
+    if stored_job_outputs is not None:
+        return stored_job_outputs
 
     if (
         function.function_class == FunctionClass.PROJECT
         and function_job.function_class == FunctionClass.PROJECT
     ):
-        return dict(
+        new_outputs = dict(
             (
                 await studies_jobs.get_study_job_outputs(
                     study_id=function.project_id,
@@ -281,12 +316,11 @@ async def function_job_outputs(
                 )
             ).results
         )
-
-    if (
+    elif (
         function.function_class == FunctionClass.SOLVER
         and function_job.function_class == FunctionClass.SOLVER
     ):
-        return dict(
+        new_outputs = dict(
             (
                 await solvers_jobs_read.get_job_outputs(
                     solver_key=function.solver_key,
@@ -299,7 +333,15 @@ async def function_job_outputs(
                 )
             ).results
         )
-    raise UnsupportedFunctionClassError(function_class=function.function_class)
+    else:
+        raise UnsupportedFunctionClassError(function_class=function.function_class)
+
+    return await wb_api_rpc.update_function_job_outputs(
+        function_job_id=function_job.uid,
+        user_id=user_id,
+        product_name=product_name,
+        outputs=new_outputs,
+    )
 
 
 @function_job_router.post(
@@ -309,7 +351,7 @@ async def function_job_outputs(
     description=create_route_description(
         base="Get function job logs task",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.10-rc1"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format(JOB_LOG_RELEASE_VERSION),
         ],
     ),
 )

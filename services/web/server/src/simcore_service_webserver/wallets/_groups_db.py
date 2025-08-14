@@ -105,7 +105,7 @@ async def get_wallet_group(
         row = await result.first()
         if row is None:
             raise WalletGroupNotFoundError(
-                reason=f"Wallet {wallet_id} group {group_id} not found"
+                details=f"Wallet {wallet_id} group {group_id} not found"
             )
         return WalletGroupGetDB.model_validate(row)
 
@@ -136,7 +136,7 @@ async def update_wallet_group(
         row = await result.first()
         if row is None:
             raise WalletGroupNotFoundError(
-                reason=f"Wallet {wallet_id} group {group_id} not found"
+                details=f"Wallet {wallet_id} group {group_id} not found"
             )
         return WalletGroupGetDB.model_validate(row)
 

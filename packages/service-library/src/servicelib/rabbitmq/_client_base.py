@@ -6,8 +6,9 @@ from typing import Any, Final
 
 import aio_pika
 import aiormq
-from servicelib.logging_utils import log_catch
 from settings_library.rabbit import RabbitSettings
+
+from ..logging_utils import log_catch
 
 _DEFAULT_RABBITMQ_SERVER_HEARTBEAT_S: Final[int] = 60
 
