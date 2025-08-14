@@ -125,5 +125,9 @@ qx.Class.define("osparc.store.Products", {
     getGroupedServicesUiConfig: function() {
       return this.__uiConfig["groupedServices"];
     },
+
+    getSupportCenterGroupId: function() {
+      return 2;
+    },
   }
 });
