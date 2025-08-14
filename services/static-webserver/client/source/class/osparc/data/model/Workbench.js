@@ -935,7 +935,11 @@ qx.Class.define("osparc.data.model.Workbench", {
       });
     },
 
-    /** DEPRECATED */
+    /**
+     * @deprecated This method is deprecated and will be removed in a future release.
+     * Please use `__deserialize` instead for deserializing workbench data.
+     * Migration: Replace calls to `__deserializeOld` with `__deserialize`.
+     */
     __deserializeOld: function(workbenchInitData, workbenchUIInitData) {
       this.__deserializeNodesOld(workbenchInitData, workbenchUIInitData)
         .then(() => {
