@@ -126,8 +126,15 @@ qx.Class.define("osparc.store.Products", {
       return this.__uiConfig["groupedServices"];
     },
 
-    getSupportCenterGroupId: function() {
+    getSupportGroupId: function() {
       return 23;
+    },
+
+    amIASupportUser: function() {
+      const supportGroupId = this.getSupportGroupId();
+      const groupsStore = osparc.store.Groups.getInstance();
+      const myGroupIds = groupsStore.getOrganizationIds();
+      return (supportGroupId && myGroupIds.includes(supportGroupId));
     },
   }
 });

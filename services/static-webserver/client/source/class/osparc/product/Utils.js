@@ -418,8 +418,8 @@ qx.Class.define("osparc.product.Utils", {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
     },
 
-    isSupportCenterEnabled: function() {
-      return Boolean(osparc.store.Products.getInstance().getSupportCenterGroupId());
+    isSupportEnabled: function() {
+      return Boolean(osparc.store.Products.getInstance().getSupportGroupId());
     },
   }
 });

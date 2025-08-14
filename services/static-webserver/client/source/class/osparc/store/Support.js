@@ -19,6 +19,21 @@ qx.Class.define("osparc.store.Support", {
       return osparc.store.VendorInfo.getInstance().getManuals();
     },
 
+    addSupportConversationsToMenu: function(menu) {
+      if (osparc.product.Utils.isSupportEnabled()) {
+        const supportCenterButton = new qx.ui.menu.Button().set({
+          label: qx.locale.Manager.tr("Ask a Question"),
+          icon: "@FontAwesome5Regular/question-circle/16",
+        });
+        if (osparc.store.Products.getInstance().amIASupportUser()) {
+          supportCenterButton.set({
+            label: qx.locale.Manager.tr("Support Center"),
+          });
+        }
+        menu.add(supportCenterButton);
+      }
+    },
+
     addQuickStartToMenu: function(menu) {
       const quickStart = osparc.product.quickStart.Utils.getQuickStart();
       if (quickStart) {

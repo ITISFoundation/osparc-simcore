@@ -72,6 +72,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
     preloadPromises.push(osparc.data.Permissions.getInstance().fetchPermissions());
     preloadPromises.push(osparc.data.Permissions.getInstance().fetchFunctionPermissions());
+    preloadPromises.push(osparc.store.Groups.getInstance().fetchGroups());
     Promise.all(preloadPromises)
       .then(() => {
         const mainStack = this.__createMainStack();
