@@ -351,7 +351,6 @@ async def get_function(
         return RegisteredFunctionDB.model_validate(row)
 
 
-@staticmethod
 def _create_list_functions_attributes_filters(
     *,
     filter_by_function_class: FunctionClass | None,
