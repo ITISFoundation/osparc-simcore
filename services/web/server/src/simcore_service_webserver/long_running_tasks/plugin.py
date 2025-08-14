@@ -4,12 +4,13 @@ from typing import Final
 
 from aiohttp import web
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from servicelib.aiohttp.application_setup import ensure_single_setup
+from servicelib.aiohttp.application_setup import app_module_setup
 from servicelib.aiohttp.long_running_tasks._constants import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
+from simcore_service_webserver.rabbitmq import ModuleCategory
 
 from .. import rabbitmq_settings, redis
 from .._meta import API_VTAG
@@ -41,7 +42,12 @@ def webserver_request_context_decorator(handler: Handler):
     return _test_task_context_decorator
 
 
-@ensure_single_setup(__name__, logger=_logger)
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    settings_name="WEBSERVER_LONG_RUNNING_TASKS",
+    logger=_logger,
+)
 def setup_long_running_tasks(app: web.Application) -> None:
     # register all long-running tasks from different modules
     register_projects_long_running_tasks(app)

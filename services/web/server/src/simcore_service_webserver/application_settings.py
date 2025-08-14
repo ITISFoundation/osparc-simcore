@@ -588,6 +588,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "WEBSERVER_TRASH": {
                     "TRASH_RETENTION_DAYS",
                 },
+                "WEBSERVER_LONG_RUNNING_TASKS": {
+                    "LONG_RUNNING_TASKS_NAMESPACE_SUFFIX",
+                },
             },
             exclude_none=True,
         )
