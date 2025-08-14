@@ -25,11 +25,15 @@ qx.Class.define("osparc.store.Support", {
           label: qx.locale.Manager.tr("Ask a Question"),
           icon: "@FontAwesome5Regular/question-circle/16",
         });
-        if (osparc.store.Products.getInstance().amIASupportUser()) {
-          supportCenterButton.set({
-            label: qx.locale.Manager.tr("Support Center"),
-          });
+        const amISupporter = () => {
+          if (osparc.store.Products.getInstance().amIASupportUser()) {
+            supportCenterButton.set({
+              label: qx.locale.Manager.tr("Support Center"),
+            });
+          }
         }
+        amISupporter();
+        osparc.store.Groups.getInstance().addListener("organizationsChanged", () => amISupporter());
         menu.add(supportCenterButton);
       }
     },
