@@ -51,7 +51,7 @@ async def add(
     node_id: NodeID,
     node: Node,
 ) -> None:
-    values = node.model_dump(mode="json", exclude_none=True, exclude_unset=True)
+    values = node.model_dump(mode="json", exclude_none=True)
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
