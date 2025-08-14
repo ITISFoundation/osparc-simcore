@@ -158,7 +158,7 @@ async def delete_job(
     description=create_route_description(
         base="Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable",
         changelog=[
-            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.11"),
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.12"),
         ],
     ),
 )
