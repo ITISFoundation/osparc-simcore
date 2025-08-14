@@ -94,9 +94,7 @@ def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGe
 def _get_dynamic_service_get_legacy_with(
     state: str, node_id: NodeID = _DEFAULT_NODE_ID
 ) -> DynamicServiceGet:
-    dict_data = deepcopy(
-        DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
-    )
+    dict_data = deepcopy(DynamicServiceGet.model_json_schema()["examples"][0])
     _add_to_dict(
         dict_data,
         [
@@ -110,9 +108,7 @@ def _get_dynamic_service_get_legacy_with(
 def _get_dynamic_service_get_new_style_with(
     state: str, node_id: NodeID = _DEFAULT_NODE_ID
 ) -> DynamicServiceGet:
-    dict_data = deepcopy(
-        DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
-    )
+    dict_data = deepcopy(DynamicServiceGet.model_json_schema()["examples"][1])
     _add_to_dict(
         dict_data,
         [
@@ -124,7 +120,7 @@ def _get_dynamic_service_get_new_style_with(
 
 
 def _get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
-    dict_data = NodeGetIdle.model_config["json_schema_extra"]["example"]
+    dict_data = NodeGetIdle.model_json_schema()["example"]
     _add_to_dict(
         dict_data,
         [
@@ -190,7 +186,6 @@ async def _assert_result(
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-
             assert deferred_status_spies["on_result"].call_count == len(timeline)
             assert [
                 x.args[0] for x in deferred_status_spies["on_result"].call_args_list

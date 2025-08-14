@@ -59,11 +59,9 @@ def dynamic_service_start() -> DynamicServiceStart:
             NodeGet.model_validate(x)
             for x in NodeGet.model_config["json_schema_extra"]["examples"]
         ],
-        NodeGetIdle.model_validate(
-            NodeGetIdle.model_config["json_schema_extra"]["example"]
-        ),
+        NodeGetIdle.model_validate(NodeGetIdle.model_json_schema()["example"]),
         DynamicServiceGet.model_validate(
-            DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
+            DynamicServiceGet.model_json_schema()["examples"][0]
         ),
     ],
 )
@@ -108,7 +106,7 @@ async def test_get_service_status_raises_rpc_server_error(
             for x in NodeGet.model_config["json_schema_extra"]["examples"]
         ],
         DynamicServiceGet.model_validate(
-            DynamicServiceGet.model_config["json_schema_extra"]["examples"][0]
+            DynamicServiceGet.model_json_schema()["examples"][0]
         ),
     ],
 )

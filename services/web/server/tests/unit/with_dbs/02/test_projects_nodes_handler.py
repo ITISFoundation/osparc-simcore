@@ -423,7 +423,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
         ) -> list[DynamicServiceGet]:
             return [
                 DynamicServiceGet.model_validate(
-                    DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
+                    DynamicServiceGet.model_json_schema()["examples"][1]
                     | {"service_uuid": service_uuid, "project_id": user_project["uuid"]}
                 )
                 for service_uuid in self.running_services_uuids
