@@ -12,8 +12,6 @@ from models_library.api_schemas_webserver.functions import (
     JSONFunctionOutputSchema,
     ProjectFunction,
 )
-
-# import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
 from models_library.functions import FunctionUserAccessRights
 from models_library.functions_errors import (
     FunctionIDNotFoundError,

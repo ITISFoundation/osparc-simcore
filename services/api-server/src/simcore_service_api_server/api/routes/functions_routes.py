@@ -36,11 +36,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
-from simcore_service_api_server._service_function_jobs import FunctionJobService
-from simcore_service_api_server._service_functions import FunctionService
-from simcore_service_api_server._service_jobs import JobService
-from simcore_service_api_server.api.dependencies.functions import get_stored_job_status
 
+from ..._service_function_jobs import FunctionJobService
+from ..._service_functions import FunctionService
+from ..._service_jobs import JobService
 from ..._service_solvers import SolverService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -49,6 +48,7 @@ from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.functions import get_stored_job_status
 from ..dependencies.services import (
     get_api_client,
     get_function_job_service,
