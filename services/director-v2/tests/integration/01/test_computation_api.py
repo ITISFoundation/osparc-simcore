@@ -521,9 +521,9 @@ async def test_run_partial_computation(
     # force run it this time.
     # the task are up-to-date but we force run them
     expected_pipeline_details_forced = _convert_to_pipeline_details(
-        sleepers_project,
-        params.exp_pipeline_adj_list_after_force_run,
-        params.exp_node_states_after_force_run,
+        workbench_node_uuids=list(sleepers_project.workbench.keys()),
+        expected_pipeline_adj_list=params.exp_pipeline_adj_list_after_force_run,
+        expected_node_states=params.exp_node_states_after_force_run,
     )
     task_out = await create_pipeline(
         async_client,
