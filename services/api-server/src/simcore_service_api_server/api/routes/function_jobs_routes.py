@@ -21,21 +21,12 @@ from models_library.products import ProductName
 from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_app
-from simcore_service_api_server._service_function_jobs import FunctionJobService
-from simcore_service_api_server.api.dependencies.functions import (
-    get_function_from_functionjob,
-    get_function_job_dependency,
-    get_stored_job_outputs,
-    get_stored_job_status,
-)
-from simcore_service_api_server.api.dependencies.models_schemas_function_filters import (
-    get_function_jobs_filters,
-)
 from simcore_service_api_server.models.schemas.functions_filters import (
     FunctionJobsListFilters,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from ..._service_function_jobs import FunctionJobService
 from ..._service_jobs import JobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
@@ -45,6 +36,13 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.database import get_db_asyncpg_engine
+from ..dependencies.functions import (
+    get_function_from_functionjob,
+    get_function_job_dependency,
+    get_stored_job_outputs,
+    get_stored_job_status,
+)
+from ..dependencies.models_schemas_function_filters import get_function_jobs_filters
 from ..dependencies.services import (
     get_api_client,
     get_function_job_service,
