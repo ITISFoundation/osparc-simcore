@@ -242,7 +242,7 @@ async def start_job(
     if job.storage_data_deleted:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Assets for job {job_id=} are missing",
+            detail=f"Assets for job job_id={job_id} are missing",
         )
 
     try:
