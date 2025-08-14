@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.11.0"
+    "version": "0.12.0"
   },
   "paths": {
     "/v0/meta": {
@@ -2767,7 +2767,7 @@
           "solvers"
         ],
         "summary": "Delete Job Assets",
-        "description": "Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable\n\nNew in *version 0.11*",
+        "description": "Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable\n\nNew in *version 0.12*",
         "operationId": "delete_job_assets",
         "security": [
           {
