@@ -33,7 +33,7 @@ async def create_message(
     app: web.Application,
     *,
     user_id: UserID,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     # Creation attributes
     content: str,
@@ -49,12 +49,13 @@ async def create_message(
         type_=type_,
     )
 
-    await notify_conversation_message_created(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        project_id=project_id,
-        conversation_message=created_message,
-    )
+    if project_id:
+        await notify_conversation_message_created(
+            app,
+            recipients=await _get_recipients(app, project_id),
+            project_id=project_id,
+            conversation_message=created_message,
+        )
 
     return created_message
 
