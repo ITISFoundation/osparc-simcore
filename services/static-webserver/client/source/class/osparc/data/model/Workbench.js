@@ -817,11 +817,17 @@ qx.Class.define("osparc.data.model.Workbench", {
       return Promise.all(promises);
     },
 
-    updateWorkbenchFromPatches: function(workbenchPatches) {
+    /**
+     * Update the workbench from the given patches.
+     * @param workbenchPatches {Array} Array of workbench patches.
+     * @param uiPatches {Array} Array of UI patches. They might contain info (position) about new nodes.
+     */
+    updateWorkbenchFromPatches: function(workbenchPatches, uiPatches) {
       // group the patches by nodeId
       const nodesAdded = [];
       const nodesRemoved = [];
       const workbenchPatchesByNode = {};
+      const workbenchUiPatchesByNode = {};
       workbenchPatches.forEach(workbenchPatch => {
         const nodeId = workbenchPatch.path.split("/")[2];
 
@@ -846,10 +852,20 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (nodesRemoved.length) {
         this.__removeNodesFromPatches(nodesRemoved, workbenchPatchesByNode);
       }
+
       // second, add nodes if any
       if (nodesAdded.length) {
         // this will call update nodes once finished
-        this.__addNodesFromPatches(nodesAdded, workbenchPatchesByNode);
+        nodesAdded.forEach(nodeId => {
+          const uiPatchFound = uiPatches.find(uiPatch => {
+            const pathParts = uiPatch.path.split("/");
+            return uiPatch.op === "add" && pathParts.length === 4 && pathParts[3] === nodeId;
+          });
+          if (uiPatchFound) {
+            workbenchUiPatchesByNode[nodeId] = uiPatchFound;
+          }
+        });
+        this.__addNodesFromPatches(nodesAdded, workbenchPatchesByNode, workbenchUiPatchesByNode);
       } else {
         // third, update nodes
         this.__updateNodesFromPatches(workbenchPatchesByNode);
@@ -873,7 +889,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       });
     },
 
-    __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode) {
+    __addNodesFromPatches: function(nodesAdded, workbenchPatchesByNode, workbenchUiPatchesByNode = {}) {
       nodesAdded.forEach(nodeId => {
         const addNodePatch = workbenchPatchesByNode[nodeId].find(workbenchPatch => {
           const pathParts = workbenchPatch.path.split("/");
@@ -885,8 +901,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (index > -1) {
           workbenchPatchesByNode[nodeId].splice(index, 1);
         }
+
+        const nodeUiData = workbenchUiPatchesByNode[nodeId] && workbenchUiPatchesByNode[nodeId]["value"] ? workbenchUiPatchesByNode[nodeId]["value"] : {};
+
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
-        node.fetchMetadataAndPopulate(nodeData, null)
+        node.fetchMetadataAndPopulate(nodeData, nodeUiData)
           .then(() => {
             this.fireDataEvent("nodeAdded", node);
             node.checkState();
