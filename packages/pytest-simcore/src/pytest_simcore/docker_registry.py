@@ -195,7 +195,7 @@ def _pull_push_service(
     new_image_tag = (
         f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
     )
-    assert image.tag(new_image_tag) == True
+    assert image.tag(new_image_tag)
 
     # push the image to the new location
     print(f"Pushing {pull_key}:{tag}  -> {new_image_tag}...")
