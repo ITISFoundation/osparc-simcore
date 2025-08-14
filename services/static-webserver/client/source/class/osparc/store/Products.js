@@ -127,7 +127,7 @@ qx.Class.define("osparc.store.Products", {
     },
 
     getSupportCenterGroupId: function() {
-      return 2;
+      return 23;
     },
   }
 });
