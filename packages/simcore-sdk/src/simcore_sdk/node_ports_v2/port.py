@@ -114,10 +114,9 @@ class Port(BaseServiceIOModel):
             and not isinstance(v, PortLink)
         ):
             if port_utils.is_file_type(property_type):
-                if not isinstance(v, (FileLink, DownloadLink)):
-                    raise ValueError(
-                        f"{property_type!r} value does not validate against any of FileLink, DownloadLink or PortLink schemas"
-                    )
+                if not isinstance(v, FileLink | DownloadLink):
+                    msg = f"{property_type!r} value does not validate against any of FileLink, DownloadLink or PortLink schemas"
+                    raise ValueError(msg)
             elif property_type == "ref_contentSchema":
                 v, _ = validate_port_content(
                     port_key=info.data.get("key"),
@@ -125,10 +124,11 @@ class Port(BaseServiceIOModel):
                     unit=None,
                     content_schema=info.data.get("content_schema", {}),
                 )
-            elif isinstance(v, (list, dict)):
-                raise TypeError(
+            elif isinstance(v, list | dict):
+                msg = (
                     f"Containers as {v} currently only supported within content_schema."
                 )
+                raise TypeError(msg)
         return v
 
     @field_validator("value_item", "value_concrete", mode="before")
@@ -196,26 +196,26 @@ class Port(BaseServiceIOModel):
         async def _evaluate() -> ItemValue | None:
             if isinstance(self.value, PortLink):
                 # this is a link to another node's port
-                other_port_itemvalue: None | (
-                    ItemValue
-                ) = await port_utils.get_value_link_from_port_link(
-                    self.value,
-                    # pylint: disable=protected-access
-                    self._node_ports._node_ports_creator_cb,
-                    file_link_type=file_link_type,
+                other_port_itemvalue: None | (ItemValue) = (
+                    await port_utils.get_value_link_from_port_link(
+                        self.value,
+                        # pylint: disable=protected-access
+                        self._node_ports._node_ports_creator_cb,
+                        file_link_type=file_link_type,
+                    )
                 )
 
                 return other_port_itemvalue
 
             if isinstance(self.value, FileLink):
                 # let's get the download/upload link from storage
-                url_itemvalue: None | (
-                    AnyUrl
-                ) = await port_utils.get_download_link_from_storage(
-                    # pylint: disable=protected-access
-                    user_id=self._node_ports.user_id,
-                    value=self.value,
-                    link_type=file_link_type,
+                url_itemvalue: None | (AnyUrl) = (
+                    await port_utils.get_download_link_from_storage(
+                        # pylint: disable=protected-access
+                        user_id=self._node_ports.user_id,
+                        value=self.value,
+                        link_type=file_link_type,
+                    )
                 )
                 return url_itemvalue
 
@@ -256,15 +256,15 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | (
-                    ItemConcreteValue
-                ) = await port_utils.get_value_from_link(
-                    # pylint: disable=protected-access
-                    key=self.key,
-                    value=self.value,
-                    file_to_key_map=self.file_to_key_map,
-                    node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
-                    progress_bar=progress_bar,
+                other_port_concretevalue: None | (ItemConcreteValue) = (
+                    await port_utils.get_value_from_link(
+                        # pylint: disable=protected-access
+                        key=self.key,
+                        value=self.value,
+                        file_to_key_map=self.file_to_key_map,
+                        node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
+                        progress_bar=progress_bar,
+                    )
                 )
                 value = other_port_concretevalue
 
