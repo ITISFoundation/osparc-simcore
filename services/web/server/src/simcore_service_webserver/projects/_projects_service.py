@@ -760,11 +760,12 @@ async def _start_dynamic_service(  # noqa: C901
         get_redis_lock_manager_client_sdk(request.app),
         lock_key=_nodes_service.get_service_start_lock_key(user_id, project_uuid),
         blocking=True,
-        blocking_timeout=datetime.timedelta(
-            seconds=_nodes_service.get_total_project_dynamic_nodes_creation_interval(
-                get_plugin_settings(request.app).PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
-            )
-        ),
+        blocking_timeout=None,
+        # blocking_timeout=datetime.timedelta(
+        #     seconds=_nodes_service.get_total_project_dynamic_nodes_creation_interval(
+        #         get_plugin_settings(request.app).PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+        #     )
+        # ),
     )
     async def _() -> None:
         project_running_nodes = await dynamic_scheduler_service.list_dynamic_services(
@@ -884,7 +885,7 @@ async def _start_dynamic_service(  # noqa: C901
                 service_version=service_version,
             )
 
-        service_resources: ServiceResourcesDict = await get_project_node_resources(
+        service_resources = await get_project_node_resources(
             request.app,
             user_id=user_id,
             project_id=project_uuid,
@@ -919,6 +920,7 @@ async def _start_dynamic_service(  # noqa: C901
         project = await get_project_for_user(
             request.app, f"{project_uuid}", user_id, include_state=True
         )
+
         await notify_project_node_update(request.app, project, node_uuid, errors=None)
 
     await _()
