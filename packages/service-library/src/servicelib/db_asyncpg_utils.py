@@ -30,7 +30,9 @@ async def create_async_engine_and_database_ready(
         raise_if_migration_not_ready,
     )
 
-    server_settings = {"jit": "off"}
+    server_settings = {
+        "jit": "off"
+    }  # see https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#disabling-the-postgresql-jit-to-improve-enum-datatype-handling
     if settings.POSTGRES_CLIENT_NAME:
         assert isinstance(settings.POSTGRES_CLIENT_NAME, str)  # nosec
         server_settings.update(
