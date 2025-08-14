@@ -2,6 +2,7 @@
 from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import ConfigDict, Field
+from pydantic.config import JsonDict
 
 from ..access_rights import ExecutableAccessRights
 from ..api_schemas_directorv2.dynamic_services import RetrieveDataOut
@@ -163,14 +164,20 @@ class NodeGetIdle(OutputSchema):
     def from_node_id(cls, node_id: NodeID) -> "NodeGetIdle":
         return cls(service_state="idle", service_uuid=node_id)
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "service_state": "idle",
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "service_uuid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "service_state": "idle",
+                    }
+                ]
             }
-        }
-    )
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
 
 class NodeGetUnknown(OutputSchema):
