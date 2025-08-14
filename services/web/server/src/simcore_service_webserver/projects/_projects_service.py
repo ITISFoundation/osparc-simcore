@@ -2156,6 +2156,33 @@ async def remove_project_dynamic_services(
     await _locked_stop_dynamic_serivces_in_project()
 
 
+_CONCURRENT_NOTIFICATIONS_LIMIT: Final[int] = 10
+
+
+async def _send_message_to_project_groups(
+    app: web.Application,
+    project_id: ProjectID,
+    message: SocketMessageDict,
+) -> None:
+    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        app, project_id=project_id
+    )
+    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
+
+    await limited_gather(
+        *(
+            send_message_to_standard_group(
+                app,
+                room,
+                message,
+            )
+            for room in rooms_to_notify
+        ),
+        log=_logger,
+        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
+    )
+
+
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
@@ -2182,15 +2209,7 @@ async def notify_project_state_update(
             message=message,
         )
     else:
-        project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-            app, project_id=project["uuid"]
-        )
-
-        rooms_to_notify = [
-            item.gid for item in project_group_get_list if item.read is True
-        ]
-        for room in rooms_to_notify:
-            await send_message_to_standard_group(app, group_id=room, message=message)
+        await _send_message_to_project_groups(app, project["uuid"], message)
 
 
 async def notify_project_node_update(
@@ -2202,23 +2221,20 @@ async def notify_project_node_update(
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
 
-    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-        app, project_id=project["uuid"]
-    )
-    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
-
+    output_project_model = ProjectGet.from_domain_model(project)
     message = SocketMessageDict(
         event_type=SOCKET_IO_NODE_UPDATED_EVENT,
         data={
             "project_id": project["uuid"],
             "node_id": f"{node_id}",
-            "data": project["workbench"][f"{node_id}"],
+            "data": output_project_model.workbench[f"{node_id}"].model_dump(
+                **RESPONSE_MODEL_POLICY
+            ),
             "errors": errors,
         },
     )
 
-    for room in rooms_to_notify:
-        await send_message_to_standard_group(app, room, message)
+    await _send_message_to_project_groups(app, project["uuid"], message)
 
 
 async def retrieve_and_notify_project_locked_state(
