@@ -305,7 +305,7 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "conversationsProject": {
+      "conversationsStudies": {
         useCache: false, // It has its own cache handler
         endpoints: {
           addConversation: {
@@ -1469,7 +1469,52 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/wallets/{walletId}/licensed-items-checkouts?offset={offset}&limit={limit}"
           },
         }
-      }
+      },
+
+      /*
+       * SUPPORT CONVERSATIONS
+       */
+      "conversationsSupport": {
+        useCache: false, // It has its own cache handler
+        endpoints: {
+          addConversation: {
+            method: "POST",
+            url: statics.API + "/conversations?type=support"
+          },
+          getConversationsPage: {
+            method: "GET",
+            url: statics.API + "/conversations?type=support&offset={offset}&limit={limit}"
+          },
+          getConversation: {
+            method: "GET",
+            url: statics.API + "/conversations/{conversationId}"
+          },
+          renameConversation: {
+            method: "PUT",
+            url: statics.API + "/conversations/{conversationId}"
+          },
+          deleteConversation: {
+            method: "DELETE",
+            url: statics.API + "/conversations/{conversationId}"
+          },
+          addMessage: {
+            method: "POST",
+            url: statics.API + "/conversations/{conversationId}/messages"
+          },
+          editMessage: {
+            method: "PUT",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}"
+          },
+          deleteMessage: {
+            method: "DELETE",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}"
+          },
+          getMessagesPage: {
+            method: "GET",
+            url: statics.API + "/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
+          },
+        }
+      },
     };
   },
 

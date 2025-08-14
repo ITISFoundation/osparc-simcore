@@ -33,7 +33,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           limit: 42,
         }
       };
-      return osparc.data.Resources.fetch("conversationsProject", "getConversationsPage", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "getConversationsPage", params)
         .then(conversations => {
           if (conversations.length) {
             // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           conversationId,
         }
       };
-      return osparc.data.Resources.fetch("conversationsProject", "getConversation", params);
+      return osparc.data.Resources.fetch("conversationsStudies", "getConversation", params);
     },
 
     addConversation: function(studyId, name = "new 1", type = osparc.study.Conversations.TYPES.PROJECT_STATIC) {
@@ -64,7 +64,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           type,
         }
       };
-      return osparc.data.Resources.fetch("conversationsProject", "addConversation", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "addConversation", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -75,7 +75,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           conversationId,
         },
       };
-      return osparc.data.Resources.fetch("conversationsProject", "deleteConversation", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "deleteConversation", params)
         .then(() => {
           this.fireDataEvent("conversationDeleted", {
             studyId,
@@ -95,7 +95,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           name,
         }
       };
-      return osparc.data.Resources.fetch("conversationsProject", "renameConversation", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "renameConversation", params)
         .then(() => {
           this.fireDataEvent("conversationRenamed", {
             studyId,
@@ -117,7 +117,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           "type": "MESSAGE",
         }
       };
-      return osparc.data.Resources.fetch("conversationsProject", "addMessage", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "addMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -132,7 +132,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           "content": message,
         },
       };
-      return osparc.data.Resources.fetch("conversationsProject", "editMessage", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "editMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -144,7 +144,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           messageId: message["messageId"],
         },
       };
-      return osparc.data.Resources.fetch("conversationsProject", "deleteMessage", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "deleteMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -159,7 +159,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           "type": "NOTIFICATION",
         }
       };
-      return osparc.data.Resources.fetch("conversationsProject", "addMessage", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "addMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
   }
