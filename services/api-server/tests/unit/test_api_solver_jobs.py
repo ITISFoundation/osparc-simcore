@@ -16,6 +16,7 @@ from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.generics import Envelope
 from pydantic import TypeAdapter
+from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
@@ -205,7 +206,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     mocked_directorv2_rest_api_base: MockRouter,
-    mocked_webserver_rpc_api: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -281,6 +282,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     mocked_directorv2_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -314,6 +316,7 @@ async def test_start_solver_job_conflict(
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     mocked_directorv2_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
