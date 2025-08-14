@@ -37,10 +37,6 @@ qx.Class.define("osparc.store.Services", {
 
         osparc.data.Resources.getInstance().getAllPages("services")
           .then(servicesArray => {
-            // OM testing purposes
-            const unknownMetadata = this.getUnknownServiceMetadata();
-            servicesArray.push(unknownMetadata); // add a dummy service to test the NodeUnknown class
-
             const servicesObj = osparc.service.Utils.convertArrayToObject(servicesArray);
             this.__addHits(servicesObj);
             this.__addTSRInfos(servicesObj);

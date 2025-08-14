@@ -362,7 +362,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // Reset the timer if it's already running
       if (this.__applyProjectDocumentTimer) {
-        console.log("ProjectDocument Discarded: Resetting applyProjectDocument timer");
+        console.debug("ProjectDocument Discarded: Resetting applyProjectDocument timer");
         clearTimeout(this.__applyProjectDocumentTimer);
       }
 
@@ -387,7 +387,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __applyProjectDocument: function(data) {
-      console.log("ProjectDocument applying:", data);
+      console.debug("ProjectDocument applying:", data);
       this.__lastSyncedProjectVersion = data["version"];
       const updatedProjectDocument = data["document"];
 

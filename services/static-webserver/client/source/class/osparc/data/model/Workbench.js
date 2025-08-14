@@ -370,11 +370,11 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         this.fireEvent("restartAutoSaveTimer");
         const node = this.__createNode(key, version, nodeId);
-        node.fetchMetadataAndPopulate();
-        // OM here: then maybe
-        this.__giveUniqueNameToNode(node, node.getLabel());
-        node.checkState();
-
+        node.fetchMetadataAndPopulate()
+          .then(() => {
+            this.__giveUniqueNameToNode(node, node.getLabel());
+            node.checkState();
+          });
         return node;
       } catch (err) {
         let errorMsg = "";
