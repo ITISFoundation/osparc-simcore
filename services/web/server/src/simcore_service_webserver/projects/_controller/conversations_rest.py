@@ -84,9 +84,6 @@ async def create_project_conversation(request: web.Request):
     body_params = await parse_request_body_as(
         _ProjectConversationsCreateBodyParams, request
     )
-    _extra_context = (
-        body_params.extra_context if body_params.extra_context is not None else {}
-    )
 
     conversation = await _conversations_service.create_project_conversation(
         app=request.app,
@@ -95,7 +92,6 @@ async def create_project_conversation(request: web.Request):
         project_uuid=path_params.project_id,
         name=body_params.name,
         conversation_type=body_params.type,
-        extra_context=_extra_context,
     )
     data = ConversationRestGet.from_domain_model(conversation)
 
