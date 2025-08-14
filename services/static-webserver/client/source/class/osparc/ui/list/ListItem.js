@@ -60,6 +60,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       padding: 5,
       minHeight: 48,
       alignY: "middle",
+      decorator: "rounded",
     });
 
     this.addListener("pointerover", this._onPointerOver, this);
