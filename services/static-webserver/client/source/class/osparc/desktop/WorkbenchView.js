@@ -1141,6 +1141,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchUI.addNode(node, node.getPosition());
     },
 
+    __nodeRemoved: function(nodeId, connectedEdgeIds) {
+      // remove first the connected edges
+      connectedEdgeIds.forEach(edgeId => {
+        this.__workbenchUI.clearEdge(edgeId);
+      });
+      // then remove the node
+      this.__workbenchUI.clearNode(nodeId);
+    },
+
     __removeNode: function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
       const node = workbench.getNode(nodeId);
@@ -1194,15 +1203,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if ([this.__currentNodeId, null].includes(this.__nodesTree.getCurrentNodeId())) {
         this.nodeSelected(this.getStudy().getUuid());
       }
-    },
-
-    __nodeRemoved: function(nodeId, connectedEdgeIds) {
-      // remove first the connected edges
-      connectedEdgeIds.forEach(edgeId => {
-        this.__workbenchUI.clearEdge(edgeId);
-      });
-      // then remove the node
-      this.__workbenchUI.clearNode(nodeId);
     },
 
     __removeEdge: function(edgeId) {
