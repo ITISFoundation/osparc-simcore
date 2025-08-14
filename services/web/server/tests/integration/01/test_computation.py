@@ -605,9 +605,9 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     mocker: MockerFixture,
 ):
     assert client.app
-    socket_io_conn, client_id = await create_socketio_connection(None, client)
-    mock_progress_handler = mocker.MagicMock()
-    socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_progress_handler)
+    socket_io_conn, _ = await create_socketio_connection(None, client)
+    mock_node_updated_handler = mocker.MagicMock()
+    socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_node_updated_handler)
 
     project_id = user_project["uuid"]
 
@@ -640,9 +640,9 @@ async def test_running_computation_sends_progress_updates_via_socketio(
     )
 
     # check that the progress updates were sent
-    assert mock_progress_handler.call_count > 0, (
+    assert mock_node_updated_handler.call_count > 0, (
         "expected progress updates to be sent via socketio, "
-        f"but got {mock_progress_handler.call_count} calls"
+        f"but got {mock_node_updated_handler.call_count} calls"
     )
 
     # Get all computational nodes from the workbench (exclude file-picker nodes)
@@ -654,7 +654,7 @@ async def test_running_computation_sends_progress_updates_via_socketio(
 
     # Collect all node IDs that received progress updates
     received_progress_node_ids = set()
-    for call_args in mock_progress_handler.call_args_list:
+    for call_args in mock_node_updated_handler.call_args_list:
         assert len(call_args[0]) == 1, (
             "expected the progress handler to be called with a single argument, "
             f"but got {len(call_args[0])} arguments"
