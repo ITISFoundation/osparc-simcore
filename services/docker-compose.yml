@@ -699,6 +699,8 @@ services:
       WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       WEBSERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
 
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: webserver
+
       # WEBSERVER_SERVER_HOST
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
@@ -927,6 +929,8 @@ services:
       WEBSERVER_STATICWEB: "null"
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
 
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb-api-server
+
     networks: *webserver_networks
 
   wb-db-event-listener:
@@ -935,6 +939,8 @@ services:
     hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
+
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb-db-event-listener
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
       WEBSERVER_PORT: ${WEBSERVER_PORT}
@@ -1032,6 +1038,8 @@ services:
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb-garbage-collector
+
       # WEBSERVER_DB
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
@@ -1123,6 +1131,8 @@ services:
       APP_NAME: "simcore_service_wb_auth"
       WEBSERVER_APP_FACTORY_NAME: WEBSERVER_AUTHZ_APP_FACTORY
       WEBSERVER_LOGLEVEL: ${WB_AUTH_LOGLEVEL}
+
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb-auth
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 

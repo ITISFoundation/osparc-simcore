@@ -40,6 +40,7 @@ from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .licenses.settings import LicensesSettings
 from .login.settings import LoginSettings
+from .long_running_tasks.settings import LongRunningTasksSettings
 from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
@@ -260,6 +261,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     WEBSERVER_LOGIN: Annotated[
         LoginSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="login plugin",
+        ),
+    ]
+
+    WEBSERVER_LONG_RUNNING_TASKS: Annotated[
+        LongRunningTasksSettings | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
             description="login plugin",

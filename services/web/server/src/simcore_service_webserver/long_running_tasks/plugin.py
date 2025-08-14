@@ -11,11 +11,12 @@ from servicelib.aiohttp.long_running_tasks._constants import (
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
 
-from . import rabbitmq_settings, redis
-from ._meta import API_VTAG
-from .login.decorators import login_required
-from .models import AuthenticatedRequestContext
-from .projects.plugin import register_projects_long_running_tasks
+from .. import rabbitmq_settings, redis
+from .._meta import API_VTAG
+from ..login.decorators import login_required
+from ..models import AuthenticatedRequestContext
+from ..projects.plugin import register_projects_long_running_tasks
+from . import settings as long_running_tasks_settings
 
 _logger = logging.getLogger(__name__)
 
@@ -45,14 +46,14 @@ def setup_long_running_tasks(app: web.Application) -> None:
     # register all long-running tasks from different modules
     register_projects_long_running_tasks(app)
 
-    namespace_suffix = "TODO"  # TODO recover from settings
+    settings = long_running_tasks_settings.get_plugin_settings(app)
 
     setup(
         app,
         redis_settings=redis.get_plugin_settings(app),
         rabbit_settings=rabbitmq_settings.get_plugin_settings(app),
-        redis_namespace=_get_namespace(namespace_suffix),
-        rabbit_namespace=_get_namespace(namespace_suffix),
+        redis_namespace=_get_namespace(settings.LONG_RUNNING_TASKS_NAMESPACE_SUFFIX),
+        rabbit_namespace=_get_namespace(settings.LONG_RUNNING_TASKS_NAMESPACE_SUFFIX),
         router_prefix=f"/{API_VTAG}/tasks-legacy",
         handler_check_decorator=login_required,
         task_request_context_decorator=webserver_request_context_decorator,
