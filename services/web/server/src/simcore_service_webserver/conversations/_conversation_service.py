@@ -81,12 +81,12 @@ async def get_conversation(
     *,
     conversation_id: ConversationID,
     # filters
-    type: ConversationType | None = None,
+    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get(
         app,
         conversation_id=conversation_id,
-        type=type,
+        type=type_,
     )
 
 
@@ -95,13 +95,13 @@ async def get_conversation_for_user(
     *,
     conversation_id: ConversationID,
     user_group_id: UserID,
-    type: ConversationType | None = None,
+    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get_for_user(
         app,
         conversation_id=conversation_id,
         user_group_id=user_group_id,
-        type=type,
+        type_=type_,
     )
 
 
@@ -190,7 +190,7 @@ async def get_support_conversation_for_user(
         if _support_standard_group_id in _user_group_ids:
             # I am a support user
             return await get_conversation(
-                app, conversation_id=conversation_id, type=ConversationType.SUPPORT
+                app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
             )
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
@@ -198,7 +198,7 @@ async def get_support_conversation_for_user(
         app,
         conversation_id=conversation_id,
         user_group_id=_user_group_id,
-        type=ConversationType.SUPPORT,
+        type_=ConversationType.SUPPORT,
     )
 
 
