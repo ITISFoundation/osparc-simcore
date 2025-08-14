@@ -48,7 +48,7 @@ def mock_rpc_client(
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
     return DynamicServiceStart.model_validate(
-        DynamicServiceStart.model_json_schema()["example"]
+        DynamicServiceStart.model_json_schema()["examples"]
     )
 
 
@@ -59,7 +59,7 @@ def dynamic_service_start() -> DynamicServiceStart:
             NodeGet.model_validate(x)
             for x in NodeGet.model_config["json_schema_extra"]["examples"]
         ],
-        NodeGetIdle.model_validate(NodeGetIdle.model_json_schema()["example"]),
+        NodeGetIdle.model_validate(NodeGetIdle.model_json_schema()["examples"]),
         DynamicServiceGet.model_validate(
             DynamicServiceGet.model_json_schema()["examples"][0]
         ),

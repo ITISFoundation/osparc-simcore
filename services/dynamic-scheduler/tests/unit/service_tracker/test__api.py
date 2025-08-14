@@ -128,7 +128,7 @@ async def test_services_tracer_workflow(
             DynamicServiceGet.model_validate(o)
             for o in DynamicServiceGet.model_json_schema()["examples"]
         ],
-        NodeGetIdle.model_validate(NodeGetIdle.model_json_schema()["example"]),
+        NodeGetIdle.model_validate(NodeGetIdle.model_json_schema()["examples"]),
     ],
 )
 async def test_set_if_status_changed(

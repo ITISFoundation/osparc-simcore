@@ -120,7 +120,7 @@ def _get_dynamic_service_get_new_style_with(
 
 
 def _get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
-    dict_data = NodeGetIdle.model_json_schema()["example"]
+    dict_data = NodeGetIdle.model_json_schema()["examples"]
     _add_to_dict(
         dict_data,
         [
