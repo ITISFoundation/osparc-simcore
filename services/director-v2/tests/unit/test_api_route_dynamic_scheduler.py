@@ -214,10 +214,7 @@ async def test_409_response(
     )
     assert response.status_code == status.HTTP_202_ACCEPTED
     task_id = response.json()
-    assert (
-        f"simcore_service_director_v2.api.routes.dynamic_scheduler.{task_name}"
-        in task_id
-    )
+    assert f"director-v2.functools.{task_name}" in task_id
 
     response = client.request(
         method,
