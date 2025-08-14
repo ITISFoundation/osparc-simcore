@@ -56,7 +56,7 @@ def model_classes_factory() -> Callable:
 
             POSTGRES_DB: str
             POSTGRES_MINSIZE: Annotated[int, Field(ge=2)] = 2
-            POSTGRES_MAXSIZE: Annotated[int, Field(ge=1)] = 50
+            POSTGRES_MAXSIZE: Annotated[int, Field(ge=2)] = 50
 
             POSTGRES_CLIENT_NAME: Annotated[
                 str | None,
