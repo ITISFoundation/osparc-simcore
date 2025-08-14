@@ -26,6 +26,14 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 class WebserverRpcSideEffects:
     # pylint: disable=no-self-use
 
+    def __init__(
+        self,
+        project_job_rpc_get: ProjectJobRpcGet = ProjectJobRpcGet.model_validate(
+            ProjectJobRpcGet.model_json_schema()["examples"][0]
+        ),
+    ):
+        self.project_job_rpc_get = project_job_rpc_get
+
     @validate_call(config={"arbitrary_types_allowed": True})
     async def mark_project_as_job(
         self,
@@ -104,7 +112,7 @@ class WebserverRpcSideEffects:
         assert job_parent_resource_name
 
         # Return a valid example from the schema
-        example = ProjectJobRpcGet.model_json_schema()["examples"][0]
-        example["uuid"] = str(project_uuid)
-        example["job_parent_resource_name"] = job_parent_resource_name
-        return ProjectJobRpcGet.model_validate(example)
+        _data = self.project_job_rpc_get.model_dump()
+        _data["uuid"] = str(project_uuid)
+        _data["job_parent_resource_name"] = job_parent_resource_name
+        return ProjectJobRpcGet.model_validate(_data)

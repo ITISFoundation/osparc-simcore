@@ -42,10 +42,11 @@ from models_library.generics import Envelope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
+from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.users import UserID
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
-from pydantic import EmailStr, HttpUrl, TypeAdapter
+from pydantic import EmailStr, HttpUrl, TypeAdapter, validate_call
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
 from pytest_simcore.helpers.director_v2_rpc_server import DirectorV2SideEffects
@@ -544,8 +545,16 @@ def mocked_catalog_rest_api_base(
 
 
 @pytest.fixture
+def project_job_rpc_get() -> ProjectJobRpcGet:
+    example = ProjectJobRpcGet.model_json_schema()["examples"][0]
+    return ProjectJobRpcGet.model_validate(example)
+
+
+@pytest.fixture
 def mocked_webserver_rpc_api(
-    mocked_app_dependencies: None, mocker: MockerFixture
+    mocked_app_dependencies: None,
+    mocker: MockerFixture,
+    project_job_rpc_get: ProjectJobRpcGet,
 ) -> dict[str, MockType]:
     """
     Mocks the webserver's simcore service RPC API for testing purposes.
@@ -554,7 +563,7 @@ def mocked_webserver_rpc_api(
         projects as projects_rpc,  # keep import here
     )
 
-    side_effects = WebserverRpcSideEffects()
+    side_effects = WebserverRpcSideEffects(project_job_rpc_get=project_job_rpc_get)
 
     return {
         "mark_project_as_job": mocker.patch.object(
@@ -576,6 +585,52 @@ def mocked_webserver_rpc_api(
             side_effect=side_effects.list_projects_marked_as_jobs,
         ),
     }
+
+
+@pytest.fixture
+def mocked_get_project_marked_as_job_storage_data_missing(
+    mocked_webserver_rpc_api: dict[str, MockType], mocker: MockerFixture
+) -> dict[str, MockType]:
+    from servicelib.rabbitmq.rpc_interfaces.webserver import (
+        projects as projects_rpc,  # keep import here
+    )
+
+    @validate_call(config={"arbitrary_types_allowed": True})
+    async def _get_project_marked_as_job(
+        rpc_client: RabbitMQRPCClient | MockType,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        job_parent_resource_name: str,
+    ) -> ProjectJobRpcGet:
+        assert rpc_client
+        assert product_name
+        assert user_id
+        assert project_uuid
+        assert job_parent_resource_name
+
+        # Return a valid example from the schema
+        example = ProjectJobRpcGet.model_json_schema()["examples"][0]
+        example["uuid"] = str(project_uuid)
+        example["job_parent_resource_name"] = job_parent_resource_name
+        example["storage_data_deleted"] = "true"
+        project_job_rpc_get = ProjectJobRpcGet.model_validate(example)
+        assert project_job_rpc_get.storage_data_deleted is True
+        return project_job_rpc_get
+
+    # Remove the previous patch if it exists
+    mocked_webserver_rpc_api["get_project_marked_as_job"].reset_mock()
+    del mocked_webserver_rpc_api["get_project_marked_as_job"]
+
+    # Add the new patch with the custom side effect
+    mocked_webserver_rpc_api["get_project_marked_as_job"] = mocker.patch.object(
+        projects_rpc,
+        "get_project_marked_as_job",
+        autospec=True,
+        side_effect=_get_project_marked_as_job,
+    )
+    return mocked_webserver_rpc_api
 
 
 @pytest.fixture
