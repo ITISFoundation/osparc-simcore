@@ -246,9 +246,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__connectEvents();
 
         study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesButtons());
+        study.getWorkbench().addListener("nodeAdded", e => {
+          const node = e.getData();
+          this.__nodeAdded(node);
+        });
         study.getWorkbench().addListener("nodeRemoved", e => {
           const {nodeId, connectedEdgeIds} = e.getData();
-          this.nodeRemoved(nodeId, connectedEdgeIds);
+          this.__nodeRemoved(nodeId, connectedEdgeIds);
         });
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
@@ -798,6 +802,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else if (node) {
         this.__populateSecondaryColumnNode(node);
       }
+
+      if (node instanceof osparc.data.model.Node) {
+        node.getStudy().bind("pipelineRunning", this.__serviceOptionsPage, "enabled", {
+          converter: pipelineRunning => !pipelineRunning
+        });
+      }
     },
 
     __populateSecondaryColumnStudy: function(study) {
@@ -1039,7 +1049,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__serviceOptionsPage.bind("width", vBox, "width");
 
       // HEADER
-      const nodeMetadata = node.getMetaData();
+      const nodeMetadata = node.getMetadata();
       const version = osparc.store.Services.getVersionDisplay(nodeMetadata["key"], nodeMetadata["version"]);
       const header = new qx.ui.basic.Label(`${nodeMetadata["name"]} ${version}`).set({
         paddingLeft: 5
@@ -1127,6 +1137,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.addListener("disappear", () => qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this), this);
     },
 
+    __nodeAdded: function(node) {
+      this.__workbenchUI.addNode(node, node.getPosition());
+    },
+
+    __nodeRemoved: function(nodeId, connectedEdgeIds) {
+      // remove first the connected edges
+      connectedEdgeIds.forEach(edgeId => {
+        this.__workbenchUI.clearEdge(edgeId);
+      });
+      // then remove the node
+      this.__workbenchUI.clearNode(nodeId);
+    },
+
     __removeNode: function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
       const node = workbench.getNode(nodeId);
@@ -1180,15 +1203,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if ([this.__currentNodeId, null].includes(this.__nodesTree.getCurrentNodeId())) {
         this.nodeSelected(this.getStudy().getUuid());
       }
-    },
-
-    nodeRemoved: function(nodeId, connectedEdgeIds) {
-      // remove first the connected edges
-      connectedEdgeIds.forEach(edgeId => {
-        this.__workbenchUI.clearEdge(edgeId);
-      });
-      // then remove the node
-      this.__workbenchUI.clearNode(nodeId);
     },
 
     __removeEdge: function(edgeId) {
