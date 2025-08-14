@@ -390,8 +390,10 @@ typing-inspection==0.4.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-tzdata==2025.1
-    # via faker
+tzdata==2025.2
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
