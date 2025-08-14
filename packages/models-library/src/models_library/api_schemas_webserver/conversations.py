@@ -28,6 +28,7 @@ class ConversationRestGet(OutputSchema):
     type: ConversationType
     created: datetime
     modified: datetime
+    extra_context: dict[str, str]
 
     @classmethod
     def from_domain_model(cls, domain: ConversationGetDB) -> Self:
@@ -40,6 +41,7 @@ class ConversationRestGet(OutputSchema):
             type=domain.type,
             created=domain.created,
             modified=domain.modified,
+            extra_context=domain.extra_context,
         )
 
 

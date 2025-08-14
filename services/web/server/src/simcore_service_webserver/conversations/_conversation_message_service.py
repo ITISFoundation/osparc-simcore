@@ -73,7 +73,7 @@ async def get_message(
 async def update_message(
     app: web.Application,
     *,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
     # Update attributes
@@ -86,12 +86,13 @@ async def update_message(
         updates=updates,
     )
 
-    await notify_conversation_message_updated(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        project_id=project_id,
-        conversation_message=updated_message,
-    )
+    if project_id:
+        await notify_conversation_message_updated(
+            app,
+            recipients=await _get_recipients(app, project_id),
+            project_id=project_id,
+            conversation_message=updated_message,
+        )
 
     return updated_message
 
@@ -100,7 +101,7 @@ async def delete_message(
     app: web.Application,
     *,
     user_id: UserID,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> None:
@@ -112,14 +113,15 @@ async def delete_message(
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
-    await notify_conversation_message_deleted(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        user_group_id=_user_group_id,
-        project_id=project_id,
-        conversation_id=conversation_id,
-        message_id=message_id,
-    )
+    if project_id:
+        await notify_conversation_message_deleted(
+            app,
+            recipients=await _get_recipients(app, project_id),
+            user_group_id=_user_group_id,
+            project_id=project_id,
+            conversation_id=conversation_id,
+            message_id=message_id,
+        )
 
 
 async def list_messages_for_conversation(

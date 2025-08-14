@@ -53,9 +53,6 @@ async def create_conversation(
     type_: ConversationType,
     extra_context: dict[str, Any],
 ) -> ConversationGetDB:
-    if project_uuid is None:
-        raise NotImplementedError
-
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     created_conversation = await _conversation_repository.create(
@@ -68,12 +65,13 @@ async def create_conversation(
         extra_context=extra_context,
     )
 
-    await notify_conversation_created(
-        app,
-        recipients=await _get_recipients(app, project_uuid),
-        project_id=project_uuid,
-        conversation=created_conversation,
-    )
+    if project_uuid:
+        await notify_conversation_created(
+            app,
+            recipients=await _get_recipients(app, project_uuid),
+            project_id=project_uuid,
+            conversation=created_conversation,
+        )
 
     return created_conversation
 
@@ -110,7 +108,7 @@ async def get_conversation_for_user(
 async def update_conversation(
     app: web.Application,
     *,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     # Update attributes
     updates: ConversationPatchDB,
@@ -121,12 +119,13 @@ async def update_conversation(
         updates=updates,
     )
 
-    await notify_conversation_updated(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        project_id=project_id,
-        conversation=updated_conversation,
-    )
+    if project_id:
+        await notify_conversation_updated(
+            app,
+            recipients=await _get_recipients(app, project_id),
+            project_id=project_id,
+            conversation=updated_conversation,
+        )
 
     return updated_conversation
 
@@ -136,7 +135,7 @@ async def delete_conversation(
     *,
     product_name: ProductName,
     user_id: UserID,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
 ) -> None:
     await _conversation_repository.delete(
@@ -146,14 +145,15 @@ async def delete_conversation(
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
-    await notify_conversation_deleted(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        product_name=product_name,
-        user_group_id=_user_group_id,
-        project_id=project_id,
-        conversation_id=conversation_id,
-    )
+    if project_id:
+        await notify_conversation_deleted(
+            app,
+            recipients=await _get_recipients(app, project_id),
+            product_name=product_name,
+            user_group_id=_user_group_id,
+            project_id=project_id,
+            conversation_id=conversation_id,
+        )
 
 
 async def list_project_conversations(
@@ -180,7 +180,7 @@ async def get_support_conversation_for_user(
     product_name: ProductName,
     conversation_id: ConversationID,
 ):
-    # Check if user is part of support group (in that case list all support conversations)
+    # Check if user is part of support group (in that case he has access to all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id
     if _support_standard_group_id is not None:

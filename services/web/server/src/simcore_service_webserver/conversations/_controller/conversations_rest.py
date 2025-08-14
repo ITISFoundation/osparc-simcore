@@ -65,7 +65,7 @@ class _GetConversationsQueryParams(BaseModel):
     type: ConversationType
     model_config = ConfigDict(extra="forbid")
 
-    @field_validator('type')
+    @field_validator("type")
     @classmethod
     def validate_type(cls, value):
         if value is not None and value != ConversationType.SUPPORT:
@@ -101,7 +101,9 @@ async def create_conversation(request: web.Request):
     """Create a new conversation (supports only type='support')"""
     try:
         req_ctx = AuthenticatedRequestContext.model_validate(request)
-        body_params = await parse_request_body_as(_ConversationsCreateBodyParams, request)
+        body_params = await parse_request_body_as(
+            _ConversationsCreateBodyParams, request
+        )
 
         # Ensure only support conversations are allowed
         if body_params.type != ConversationType.SUPPORT:
@@ -126,7 +128,9 @@ async def create_conversation(request: web.Request):
         raise
     except Exception as exc:
         _logger.exception("Failed to create conversation")
-        raise web.HTTPInternalServerError(reason="Failed to create conversation") from exc
+        raise web.HTTPInternalServerError(
+            reason="Failed to create conversation"
+        ) from exc
 
 
 @routes.get(
@@ -169,7 +173,9 @@ async def list_conversations(request: web.Request):
 
     except Exception as exc:
         _logger.exception("Failed to list conversations")
-        raise web.HTTPInternalServerError(reason="Failed to list conversations") from exc
+        raise web.HTTPInternalServerError(
+            reason="Failed to list conversations"
+        ) from exc
 
 
 @routes.get(
@@ -180,16 +186,17 @@ async def list_conversations(request: web.Request):
 async def get_conversation(request: web.Request):
     """Get a specific conversation"""
     try:
+        req_ctx = AuthenticatedRequestContext.model_validate(request)
         path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
         query_params = parse_request_query_parameters_as(
             _GetConversationsQueryParams, request
         )
-
-        # I need to check whether I have access to that conversation?
+        assert query_params.type == ConversationType.SUPPORT  # nosec
 
         conversation = await get_support_conversation_for_user(
             app=request.app,
-            user_id=
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
             conversation_id=path_params.conversation_id,
         )
 
@@ -209,17 +216,25 @@ async def get_conversation(request: web.Request):
 async def update_conversation(request: web.Request):
     """Update a conversation"""
     try:
+        req_ctx = AuthenticatedRequestContext.model_validate(request)
         path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
         body_params = await parse_request_body_as(ConversationPatch, request)
+        query_params = parse_request_query_parameters_as(
+            _GetConversationsQueryParams, request
+        )
 
-        # For support conversations, we need a dummy project_id since the service requires it
-        # but for support conversations it won't be used
-        from uuid import uuid4
-        dummy_project_id = uuid4()  # This won't be used for support conversations
+        assert query_params.type == ConversationType.SUPPORT  # nosec
+
+        await get_support_conversation_for_user(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            conversation_id=path_params.conversation_id,
+        )
 
         conversation = await conversations_service.update_conversation(
             app=request.app,
-            project_id=dummy_project_id,  # Support conversations don't use project_id
+            project_id=None,  # Support conversations don't use project_id
             conversation_id=path_params.conversation_id,
             updates=ConversationPatchDB(name=body_params.name),
         )
@@ -242,16 +257,23 @@ async def delete_conversation(request: web.Request):
     try:
         req_ctx = AuthenticatedRequestContext.model_validate(request)
         path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+        query_params = parse_request_query_parameters_as(
+            _GetConversationsQueryParams, request
+        )
+        assert query_params.type == ConversationType.SUPPORT  # nosec
 
-        # For support conversations, we need a dummy project_id since the service requires it
-        from uuid import uuid4
-        dummy_project_id = uuid4()  # This won't be used for support conversations
+        await get_support_conversation_for_user(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            conversation_id=path_params.conversation_id,
+        )
 
         await conversations_service.delete_conversation(
             app=request.app,
             product_name=req_ctx.product_name,
             user_id=req_ctx.user_id,
-            project_id=dummy_project_id,  # Support conversations don't use project_id
+            project_id=None,  # Support conversations don't use project_id
             conversation_id=path_params.conversation_id,
         )
 
@@ -281,6 +303,7 @@ async def create_conversation_message(request: web.Request):
 
         # For support conversations, we need a dummy project_id since the service requires it
         from uuid import uuid4
+
         dummy_project_id = uuid4()  # This won't be used for support conversations
 
         message = await conversations_service.create_message(
@@ -297,7 +320,9 @@ async def create_conversation_message(request: web.Request):
 
     except Exception as exc:
         _logger.exception("Failed to create conversation message")
-        raise web.HTTPInternalServerError(reason="Failed to create conversation message") from exc
+        raise web.HTTPInternalServerError(
+            reason="Failed to create conversation message"
+        ) from exc
 
 
 @routes.get(
@@ -339,7 +364,9 @@ async def list_conversation_messages(request: web.Request):
 
     except Exception as exc:
         _logger.exception("Failed to list conversation messages")
-        raise web.HTTPInternalServerError(reason="Failed to list conversation messages") from exc
+        raise web.HTTPInternalServerError(
+            reason="Failed to list conversation messages"
+        ) from exc
 
 
 @routes.get(
@@ -350,7 +377,9 @@ async def list_conversation_messages(request: web.Request):
 async def get_conversation_message(request: web.Request):
     """Get a specific message in a conversation"""
     try:
-        path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
+        path_params = parse_request_path_parameters_as(
+            _ConversationMessagePathParams, request
+        )
 
         message = await conversations_service.get_message(
             app=request.app,
@@ -374,16 +403,14 @@ async def get_conversation_message(request: web.Request):
 async def update_conversation_message(request: web.Request):
     """Update a message in a conversation"""
     try:
-        path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
+        path_params = parse_request_path_parameters_as(
+            _ConversationMessagePathParams, request
+        )
         body_params = await parse_request_body_as(ConversationMessagePatch, request)
-
-        # For support conversations, we need a dummy project_id since the service requires it
-        from uuid import uuid4
-        dummy_project_id = uuid4()  # This won't be used for support conversations
 
         message = await conversations_service.update_message(
             app=request.app,
-            project_id=dummy_project_id,  # Support conversations don't use project_id
+            project_id=None,  # Support conversations don't use project_id
             conversation_id=path_params.conversation_id,
             message_id=path_params.message_id,
             updates=ConversationMessagePatchDB(content=body_params.content),
@@ -406,16 +433,14 @@ async def delete_conversation_message(request: web.Request):
     """Delete a message in a conversation"""
     try:
         req_ctx = AuthenticatedRequestContext.model_validate(request)
-        path_params = parse_request_path_parameters_as(_ConversationMessagePathParams, request)
-
-        # For support conversations, we need a dummy project_id since the service requires it
-        from uuid import uuid4
-        dummy_project_id = uuid4()  # This won't be used for support conversations
+        path_params = parse_request_path_parameters_as(
+            _ConversationMessagePathParams, request
+        )
 
         await conversations_service.delete_message(
             app=request.app,
             user_id=req_ctx.user_id,
-            project_id=dummy_project_id,  # Support conversations don't use project_id
+            project_id=None,  # Support conversations don't use project_id
             conversation_id=path_params.conversation_id,
             message_id=path_params.message_id,
         )
