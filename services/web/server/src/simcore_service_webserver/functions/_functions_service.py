@@ -4,6 +4,7 @@ from models_library.functions import (
     FunctionClass,
     FunctionClassSpecificData,
     FunctionDB,
+    FunctionGroupAccessRights,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
@@ -34,6 +35,7 @@ from models_library.functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionJobClassError,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
@@ -435,6 +437,45 @@ async def get_function_user_permissions(
             write=False,
             execute=False,
         )
+    )
+
+
+async def set_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    permissions: FunctionGroupAccessRights,
+) -> None:
+    await _functions_repository.set_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+        permission_group_id=permissions.group_id,
+        read=permissions.read,
+        write=permissions.write,
+        execute=permissions.execute,
+    )
+
+
+async def remove_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+    permission_group_id: GroupID,
+) -> None:
+    await _functions_repository.remove_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+        permission_group_id=permission_group_id,
     )
 
 
