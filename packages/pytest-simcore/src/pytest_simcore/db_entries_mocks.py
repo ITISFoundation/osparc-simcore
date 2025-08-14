@@ -4,16 +4,20 @@
 # pylint:disable=no-value-for-parameter
 
 import contextlib
+from functools import partial
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any
 from uuid import uuid4
+import uuid
 
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from common_library.dict_tools import remap_keys
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects_nodes import Node
 from pytest_simcore.helpers.logging_tools import log_context
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -78,6 +82,9 @@ async def with_product(
     ) as created_product:
         yield created_product
 
+class _NodeWithId(Node):
+    node_id: uuid.UUID
+
 
 @pytest.fixture
 async def create_project(
@@ -128,29 +135,43 @@ async def create_project(
                     {**project_db_rows, "workbench": project_workbench}
                 )
 
+                nodes = []
                 async with sqlalchemy_async_engine.connect() as con, con.begin():
                     project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
 
                     for node_id, node_data in project_workbench.items():
                         # NOTE: workbench node have a lot of camecase fields. We validate with Node and
                         # export to ProjectNodeCreate with alias=False
-                        node_model = ProjectNodeCreate.model_validate({"node_id": node_id, **node_data}, from_attributes=True)
+
+                        node_model = Node.model_validate(node_data).model_dump(mode="json", by_alias=True)
+
+                        field_mapping = {
+                            "inputAccess": "input_access",
+                            "inputNodes": "input_nodes",
+                            "inputsRequired": "inputs_required",
+                            "inputsUnits": "inputs_units",
+                            "outputNodes": "output_nodes",
+                            "runHash": "run_hash",
+                            "bootOptions": "boot_options",
+                        }
+
+                        node = remap_keys(node_model, field_mapping)
 
                         # NOTE: currently no resources is passed until it becomes necessary
                         project_workbench_node = {
                             "required_resources": {},
-                            **node_model.model_dump(mode="json"),
+                            **node,
                         }
 
                         if project_nodes_overrides:
                             project_workbench_node.update(project_nodes_overrides)
 
-                        await project_nodes_repo.add(
-                            con,
-                            nodes=[
-                                node_model
-                            ],
-                        )
+                        nodes.append(ProjectNodeCreate(node_id=node_id, **project_workbench_node))
+
+                    await project_nodes_repo.add(
+                        con,
+                        nodes=nodes,
+                    )
 
                     await con.execute(
                         projects_to_products.insert().values(
