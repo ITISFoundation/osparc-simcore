@@ -205,6 +205,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     mocked_directorv2_rest_api_base: MockRouter,
+    mocked_webserver_rpc_api: MockRouter,
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
