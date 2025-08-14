@@ -142,10 +142,7 @@ async def create_project(
                         # NOTE: currently no resources is passed until it becomes necessary
                         project_workbench_node = {
                             "required_resources": {},
-                            "key": random_service_key(fake=faker),
-                            "version": random_service_version(fake=faker),
-                            "label": faker.pystr(),
-                            **node_model.model_dump(mode="json", by_alias=False),
+                            **node_model.model_dump(mode="json"),
                         }
 
                         if project_nodes_overrides:
