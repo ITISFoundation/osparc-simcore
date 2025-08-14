@@ -128,7 +128,10 @@ async def test_services_tracer_workflow(
             DynamicServiceGet.model_validate(o)
             for o in DynamicServiceGet.model_json_schema()["examples"]
         ],
-        NodeGetIdle.model_validate(NodeGetIdle.model_json_schema()["examples"]),
+        *[
+            NodeGetIdle.model_validate(o)
+            for o in NodeGetIdle.model_json_schema()["examples"]
+        ],
     ],
 )
 async def test_set_if_status_changed(
@@ -182,12 +185,13 @@ async def test_set_service_status_task_uid(
             )
             for o in DynamicServiceGet.model_json_schema()["examples"]
         ],
-        (
-            TypeAdapter(NodeGetIdle).validate_python(
-                NodeGetIdle.model_json_schema()["example"]
-            ),
-            _LOW_RATE_POLL_INTERVAL,
-        ),
+        *[
+            (
+                TypeAdapter(NodeGetIdle).validate_python(o),
+                _LOW_RATE_POLL_INTERVAL,
+            )
+            for o in NodeGetIdle.model_json_schema()["examples"]
+        ],
     ],
 )
 def test__get_poll_interval(
@@ -214,7 +218,7 @@ def _get_dynamic_service_get_from(
 
 def _get_node_get_idle() -> NodeGetIdle:
     return TypeAdapter(NodeGetIdle).validate_python(
-        NodeGetIdle.model_json_schema()["example"]
+        NodeGetIdle.model_json_schema()["examples"][0]
     )
 
 
