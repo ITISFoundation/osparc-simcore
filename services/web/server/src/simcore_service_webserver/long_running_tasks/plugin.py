@@ -4,13 +4,12 @@ from typing import Final
 
 from aiohttp import web
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from servicelib.aiohttp.application_setup import app_module_setup
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.long_running_tasks._constants import (
     RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
 )
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
-from simcore_service_webserver.rabbitmq import ModuleCategory
 
 from .. import rabbitmq_settings, redis
 from .._meta import API_VTAG
