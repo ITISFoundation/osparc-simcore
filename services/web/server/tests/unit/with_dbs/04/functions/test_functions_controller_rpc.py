@@ -13,7 +13,11 @@ from models_library.api_schemas_webserver.functions import (
     ProjectFunction,
 )
 from models_library.basic_types import IDStr
-from models_library.functions import FunctionUserAccessRights
+from models_library.functions import (
+    FunctionClass,
+    FunctionUserAccessRights,
+    SolverFunction,
+)
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
@@ -420,6 +424,76 @@ async def test_list_functions_search(
                 function.uid
                 for function in registered_functions[mock_function_dummy2.title]
             ]
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_functions_with_filters(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
+):
+    N_OF_PROJECT_FUNCTIONS = 3
+    N_OF_SOLVER_FUNCTIONS = 4
+    # Register the function first
+    registered_functions = [
+        await functions_rpc.register_function(
+            rabbitmq_rpc_client=rpc_client,
+            function=mock_function,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
+        for _ in range(N_OF_PROJECT_FUNCTIONS)
+    ]
+
+    solver_function = SolverFunction(
+        title="Solver Function",
+        description="A function that solves problems",
+        function_class=FunctionClass.SOLVER,
+        input_schema=JSONFunctionInputSchema(),
+        output_schema=JSONFunctionOutputSchema(),
+        default_inputs=None,
+        solver_key="simcore/services/comp/foo.bar-baz_/sub-dir_1/my-service1",
+        solver_version="0.0.0",
+    )
+    registered_functions.extend(
+        [
+            await functions_rpc.register_function(
+                rabbitmq_rpc_client=rpc_client,
+                function=solver_function,
+                user_id=logged_user["id"],
+                product_name=osparc_product_name,
+            )
+            for _ in range(N_OF_SOLVER_FUNCTIONS)
+        ]
+    )
+
+    for function_class in [FunctionClass.PROJECT, FunctionClass.SOLVER]:
+        # List functions with filters
+        functions, _ = await functions_rpc.list_functions(
+            rabbitmq_rpc_client=rpc_client,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            filter_by_function_class=function_class,
+            pagination_limit=10,
+            pagination_offset=0,
+        )
+
+        # Assert the function is found
+        assert len(functions) == (
+            N_OF_PROJECT_FUNCTIONS
+            if function_class == FunctionClass.PROJECT
+            else N_OF_SOLVER_FUNCTIONS
+        )
+        assert all(
+            function.uid in [f.uid for f in registered_functions]
+            for function in functions
+        )
 
 
 @pytest.mark.parametrize(
