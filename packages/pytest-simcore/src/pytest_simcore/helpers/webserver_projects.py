@@ -214,7 +214,8 @@ async def assert_get_same_project(
     # without our control
 
     if not error:
-        assert not DeepDiff(
+        diff = DeepDiff(
             data, {k: project[k] for k in data}, exclude_paths="root['lastChangeDate']"
         )
+        assert not diff, diff.pretty()
     return data
