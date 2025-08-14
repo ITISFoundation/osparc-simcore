@@ -910,6 +910,15 @@ qx.Class.define("osparc.data.model.Workbench", {
           .then(() => {
             this.fireDataEvent("nodeAdded", node);
             node.checkState();
+            // check it was already linked
+            if (nodeData.inputNodes && nodeData.inputNodes.length > 0) {
+              nodeData.inputNodes.forEach(inputNodeId => {
+                node.fireDataEvent("edgeCreated", {
+                  nodeId1: inputNodeId,
+                  nodeId2: nodeId,
+                });
+              });
+            }
           });
       });
     },
