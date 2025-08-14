@@ -12,8 +12,8 @@ class LongRunningTasksSettings(BaseCustomSettings):
         str,
         Field(
             description=(
-                "suffic to distinguis the service inside "
-                "the long_running_tasks framework"
+                "suffix to distinguish between the various services based on this image "
+                "inside the long_running_tasks framework"
             ),
         ),
     ]
