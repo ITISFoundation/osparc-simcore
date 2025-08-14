@@ -155,7 +155,7 @@ def _pull_push_service(
     if owner_email:
         with log_context(
             logging.INFO,
-            msg=(f"Overriding labels to take ownership as {owner_email} ...",),
+            msg=f"Overriding labels to take ownership as {owner_email} ...",
         ):
             # By overriding these labels, user owner_email gets ownership of the service
             # and the catalog service automatically gives full access rights for testing it
