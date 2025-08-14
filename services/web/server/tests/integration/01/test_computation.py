@@ -18,7 +18,9 @@ import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from common_library.json_serialization import json_dumps
 from faker import Faker
+from models_library.projects_nodes import Node
 from models_library.projects_state import RunningState
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from servicelib.aiohttp import status
@@ -609,12 +611,7 @@ async def test_running_computation_sends_progress_updates_via_socketio(
 
     project_id = user_project["uuid"]
 
-    # url_open = client.app.router["open_project"].url_for(
-    #     project_id=user_project["uuid"]
-    # )
-    # resp = await client.post(f"{url_open}", json=client_id)
-    # await assert_status(resp, status.HTTP_200_OK)
-
+    # NOTE: no need to open the project, since the messages are sent to the user groups
     url_start = client.app.router["start_computation"].url_for(project_id=project_id)
     assert url_start == URL(f"/{API_VTAG}/computations/{project_id}:start")
 
@@ -663,18 +660,13 @@ async def test_running_computation_sends_progress_updates_via_socketio(
             f"but got {len(call_args[0])} arguments"
         )
         message = call_args[0][0]
-        assert isinstance(
-            message, dict
-        ), f"expected message to be dict, got {type(message)}"
-        assert (
-            "node_id" in message
-        ), f"expected 'node_id' in message, got {message.keys()}"
-        assert (
-            "project_id" in message
-        ), f"expected 'project_id' in message, got {message.keys()}"
-        assert (
-            message["project_id"] == project_id
-        ), f"expected project_id to match {project_id}, got {message['project_id']}"
+        assert "node_id" in message
+        assert "project_id" in message
+        assert "data" in message
+        assert "errors" in message
+        node_data = TypeAdapter(Node).validate_python(message["data"])
+        assert node_data
+
         received_progress_node_ids.add(message["node_id"])
 
     # Verify that progress updates were sent for ALL computational nodes
