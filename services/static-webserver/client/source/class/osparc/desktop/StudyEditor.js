@@ -378,7 +378,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__pendingProjectData = null;
 
         this.__applyProjectDocument(latestData);
-      }, 6*this.self().THROTTLE_PATCH_TIME);
+      }, 3*this.self().THROTTLE_PATCH_TIME);
+      // make it 3 times longer.
+      // when another client adds a node:
+      // - there is a POST call
+      // - then (after the throttle) a PATCH on its position
+      // without waiting for it 3 times, this client might place it on the default 0,0
     },
 
     __applyProjectDocument: function(data) {
