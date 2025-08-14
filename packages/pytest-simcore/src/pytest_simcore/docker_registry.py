@@ -62,7 +62,7 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     docker_client.login(registry=url, username="simcore")
     # tag the image
     repo = url + "/hello-world:dev"
-    assert hello_world_image.tag(repo) == True
+    assert hello_world_image.tag(repo)
     # push the image to the private registry
     docker_client.images.push(repo)
     # wipe the images
