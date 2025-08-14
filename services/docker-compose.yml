@@ -1530,7 +1530,7 @@ services:
   #
   # use fallback routes to return proper 503 (instead of 404)
   # this service must be running at all times
-  traefik-configuration-placeholder:
+  traefik-config-placeholder:
     image: busybox:1.35.0
     command: sleep infinity
     networks:
