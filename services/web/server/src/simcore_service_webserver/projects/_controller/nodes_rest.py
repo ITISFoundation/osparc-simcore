@@ -311,6 +311,15 @@ async def _stop_dynamic_service_task(
         await dynamic_scheduler_service.stop_dynamic_service(
             app, dynamic_service_stop=dynamic_service_stop
         )
+        project = await _projects_service.get_project_for_user(
+            app,
+            f"{dynamic_service_stop.project_id}",
+            dynamic_service_stop.user_id,
+            include_state=True,
+        )
+        await _projects_service.notify_project_node_update(
+            app, project, dynamic_service_stop.node_id, errors=None
+        )
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
