@@ -148,15 +148,8 @@ qx.Class.define("osparc.data.model.Workbench", {
       return node;
     },
 
-
-    __deserializeEdges: function(workbenchData) {
-      for (const nodeId in workbenchData) {
-        const node = this.getNode(nodeId);
-        if (node === null) {
-          continue;
-        }
-        const nodeData = workbenchData[nodeId];
-        const inputNodeIds = nodeData.inputNodes || [];
+    __deserializeEdge: function(node, inputNodes = []) {
+        const inputNodeIds = inputNodes || [];
         inputNodeIds.forEach(inputNodeId => {
           const inputNode = this.getNode(inputNodeId);
           if (inputNode === null) {
@@ -166,6 +159,17 @@ qx.Class.define("osparc.data.model.Workbench", {
           this.addEdge(edge);
           node.addInputNode(inputNodeId);
         });
+    },
+
+    __deserializeEdges: function(workbenchData) {
+      for (const nodeId in workbenchData) {
+        const node = this.getNode(nodeId);
+        if (node === null) {
+          continue;
+        }
+        const nodeData = workbenchData[nodeId];
+        const inputNodeIds = nodeData.inputNodes || [];
+        this.__deserializeEdge(node, inputNodeIds);
       }
     },
 
@@ -907,6 +911,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
         node.fetchMetadataAndPopulate(nodeData, nodeUiData)
           .then(() => {
+            this.__deserializeEdges(workbenchData);
             this.fireDataEvent("nodeAdded", node);
             node.checkState();
           });
