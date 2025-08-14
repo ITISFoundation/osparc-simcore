@@ -179,7 +179,7 @@ qx.Class.define("osparc.study.Conversations", {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      osparc.store.Conversations.getInstance().getConversations(studyData["uuid"])
+      osparc.store.ConversationsProject.getInstance().getConversations(studyData["uuid"])
         .then(conversations => {
           if (conversations.length) {
             conversations.forEach(conversation => this.__addConversationPage(conversation));
@@ -208,7 +208,7 @@ qx.Class.define("osparc.study.Conversations", {
         const conversationId = conversationData["conversationId"];
         conversationPage = new osparc.conversation.Conversation(studyData, conversationId);
         conversationPage.setLabel(conversationData["name"]);
-        osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+        osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
           if (conversationId === data["conversationId"]) {
             this.__removeConversationPage(conversationId, true);
@@ -264,7 +264,7 @@ qx.Class.define("osparc.study.Conversations", {
           enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
         });
         newConversationButton.addListener("execute", () => {
-          osparc.store.Conversations.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
+          osparc.store.ConversationsProject.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
             .then(conversationDt => {
               this.__addConversationPage(conversationDt);
               const newConversationPage = this.__getConversationPage(conversationDt["conversationId"]);

@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.store.Conversations", {
+qx.Class.define("osparc.store.ConversationsProject", {
   extend: qx.core.Object,
   type: "singleton",
 
@@ -33,7 +33,7 @@ qx.Class.define("osparc.store.Conversations", {
           limit: 42,
         }
       };
-      return osparc.data.Resources.fetch("conversations", "getConversationsPage", params)
+      return osparc.data.Resources.fetch("conversationsProject", "getConversationsPage", params)
         .then(conversations => {
           if (conversations.length) {
             // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
@@ -51,7 +51,7 @@ qx.Class.define("osparc.store.Conversations", {
           conversationId,
         }
       };
-      return osparc.data.Resources.fetch("conversations", "getConversation", params);
+      return osparc.data.Resources.fetch("conversationsProject", "getConversation", params);
     },
 
     addConversation: function(studyId, name = "new 1", type = osparc.study.Conversations.TYPES.PROJECT_STATIC) {
@@ -64,7 +64,7 @@ qx.Class.define("osparc.store.Conversations", {
           type,
         }
       };
-      return osparc.data.Resources.fetch("conversations", "addConversation", params)
+      return osparc.data.Resources.fetch("conversationsProject", "addConversation", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -75,7 +75,7 @@ qx.Class.define("osparc.store.Conversations", {
           conversationId,
         },
       };
-      return osparc.data.Resources.fetch("conversations", "deleteConversation", params)
+      return osparc.data.Resources.fetch("conversationsProject", "deleteConversation", params)
         .then(() => {
           this.fireDataEvent("conversationDeleted", {
             studyId,
@@ -95,7 +95,7 @@ qx.Class.define("osparc.store.Conversations", {
           name,
         }
       };
-      return osparc.data.Resources.fetch("conversations", "renameConversation", params)
+      return osparc.data.Resources.fetch("conversationsProject", "renameConversation", params)
         .then(() => {
           this.fireDataEvent("conversationRenamed", {
             studyId,
@@ -117,7 +117,7 @@ qx.Class.define("osparc.store.Conversations", {
           "type": "MESSAGE",
         }
       };
-      return osparc.data.Resources.fetch("conversations", "addMessage", params)
+      return osparc.data.Resources.fetch("conversationsProject", "addMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -132,7 +132,7 @@ qx.Class.define("osparc.store.Conversations", {
           "content": message,
         },
       };
-      return osparc.data.Resources.fetch("conversations", "editMessage", params)
+      return osparc.data.Resources.fetch("conversationsProject", "editMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -144,7 +144,7 @@ qx.Class.define("osparc.store.Conversations", {
           messageId: message["messageId"],
         },
       };
-      return osparc.data.Resources.fetch("conversations", "deleteMessage", params)
+      return osparc.data.Resources.fetch("conversationsProject", "deleteMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -159,47 +159,8 @@ qx.Class.define("osparc.store.Conversations", {
           "type": "NOTIFICATION",
         }
       };
-      return osparc.data.Resources.fetch("conversations", "addMessage", params)
+      return osparc.data.Resources.fetch("conversationsProject", "addMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
-    __addToCache: function(pricingPlanData) {
-      let pricingPlan = this.__pricingPlansCached.find(f => f.getPricingPlanId() === pricingPlanData["pricingPlanId"]);
-      if (pricingPlan) {
-        // put
-        pricingPlan.set({
-          pricingPlanKey: pricingPlanData["pricingPlanKey"],
-          name: pricingPlanData["displayName"],
-          description: pricingPlanData["description"],
-          classification: pricingPlanData["classification"],
-          isActive: pricingPlanData["isActive"],
-        });
-      } else {
-        // get and post
-        pricingPlan = new osparc.data.model.PricingPlan(pricingPlanData);
-        this.__pricingPlansCached.unshift(pricingPlan);
-      }
-      return pricingPlan;
-    },
-
-    __addPricingUnitToCache: function(pricingPlan, pricingUnitData) {
-      const pricingUnits = pricingPlan.getPricingUnits();
-      let pricingUnit = pricingUnits ? pricingUnits.find(unit => ("getPricingUnitId" in unit) && unit.getPricingUnitId() === pricingUnitData["pricingUnitId"]) : null;
-      if (pricingUnit) {
-        const props = Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.PricingPlan));
-        // put
-        Object.keys(pricingUnitData).forEach(key => {
-          if (props.includes(key)) {
-            pricingPlan.set(key, pricingUnitData[key]);
-          }
-        });
-      } else {
-        // get and post
-        pricingUnit = new osparc.data.model.PricingUnit(pricingUnitData);
-        pricingPlan.bind("classification", pricingUnit, "classification");
-        pricingUnits.push(pricingUnit);
-      }
-      return pricingUnit;
     },
   }
 });

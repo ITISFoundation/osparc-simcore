@@ -305,7 +305,7 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "conversations": {
+      "conversationsProject": {
         useCache: false, // It has its own cache handler
         endpoints: {
           addConversation: {

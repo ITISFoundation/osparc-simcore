@@ -2049,7 +2049,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         }
         case annotationTypes.CONVERSATION: {
           const conversationTitle = `${initPos.x}, ${initPos.y}`;
-          osparc.store.Conversations.getInstance().addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.TYPES.PROJECT_ANNOTATION)
+          osparc.store.ConversationsProject.getInstance().addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.TYPES.PROJECT_ANNOTATION)
             .then(conversationData => {
               serializeData.attributes.conversationId = conversationData["conversationId"];
               serializeData.attributes.text = conversationData["name"];
@@ -2079,7 +2079,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__annotations[annotation.getId()] = annotation;
 
       if (annotation.getType() === osparc.workbench.Annotation.TYPES.CONVERSATION) {
-        osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+        osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
           if (annotation.getAttributes()["conversationId"] === data["conversationId"]) {
             this.__removeAnnotation(annotation.getId());
@@ -2100,7 +2100,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationId);
 
       // Check if conversation still exists, if not, ask to remove annotation
-      osparc.store.Conversations.getInstance().getConversation(this.getStudy().getUuid(), conversationId)
+      osparc.store.ConversationsProject.getInstance().getConversation(this.getStudy().getUuid(), conversationId)
         .catch(err => {
           if ("status" in err && err.status === 404) {
             const win = new osparc.ui.window.Confirmation(this.tr("Do you want to remove the annotation?")).set({
