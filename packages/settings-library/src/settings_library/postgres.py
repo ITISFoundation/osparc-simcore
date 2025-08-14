@@ -124,7 +124,7 @@ class PostgresSettings(BaseCustomSettings):
                         "POSTGRES_USER": "usr",
                         "POSTGRES_PASSWORD": "secret",
                         "POSTGRES_DB": "db",
-                        "POSTGRES_MINSIZE": 1,
+                        "POSTGRES_MINSIZE": 2,
                         "POSTGRES_MAXSIZE": 50,
                         "POSTGRES_CLIENT_NAME": "my_app",  # first-choice
                         "HOST": "should be ignored",

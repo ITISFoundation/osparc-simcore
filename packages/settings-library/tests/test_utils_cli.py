@@ -74,7 +74,7 @@ def fake_granular_env_file_content() -> str:
         POSTGRES_USER=foo
         POSTGRES_PASSWORD=secret
         POSTGRES_DB=foodb
-        POSTGRES_MINSIZE=1
+        POSTGRES_MINSIZE=2
         POSTGRES_MAXSIZE=50
         POSTGRES_CLIENT_NAME=None
         MODULE_VALUE=10
@@ -188,7 +188,7 @@ def test_cli_default_settings_envs(
                 "POSTGRES_USER": "foo",
                 "POSTGRES_PASSWORD": "secret",
                 "POSTGRES_DB": "foodb",
-                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MINSIZE": 2,
                 "POSTGRES_MAXSIZE": 50,
                 "POSTGRES_CLIENT_NAME": None,
             },
@@ -219,7 +219,7 @@ def test_cli_compact_settings_envs(
                 "POSTGRES_USER": "foo",
                 "POSTGRES_PASSWORD": "secret",
                 "POSTGRES_DB": "foodb",
-                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MINSIZE": 2,
                 "POSTGRES_MAXSIZE": 50,
                 "POSTGRES_CLIENT_NAME": None,
             },
