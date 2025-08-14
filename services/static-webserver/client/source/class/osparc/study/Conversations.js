@@ -125,7 +125,9 @@ qx.Class.define("osparc.study.Conversations", {
           if (conversation) {
             switch (eventName) {
               case this.self().CHANNELS.CONVERSATION_CREATED:
-                this.__addConversationPage(conversation);
+                if (conversation["projectId"] === this.getStudyData()["uuid"]) {
+                  this.__addConversationPage(conversation);
+                }
                 break;
               case this.self().CHANNELS.CONVERSATION_UPDATED:
                 this.__updateConversationName(conversation);
