@@ -14,8 +14,6 @@ import sqlalchemy as sa
 from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes import Node
-from models_library.projects_nodes_io import NodeID
 from pytest_simcore.helpers.logging_tools import log_context
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
