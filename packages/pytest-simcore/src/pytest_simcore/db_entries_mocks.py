@@ -4,7 +4,6 @@
 # pylint:disable=no-value-for-parameter
 
 import contextlib
-from functools import partial
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any
