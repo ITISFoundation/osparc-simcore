@@ -510,6 +510,303 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+  /v0/conversations:
+    post:
+      tags:
+      - conversations
+      summary: Create Conversation
+      operationId: create_conversation
+      parameters:
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Name
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+              - type: object
+                additionalProperties: true
+              - type: 'null'
+              title: Extracontext
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    get:
+      tags:
+      - conversations
+      summary: List Conversations
+      operationId: list_conversations
+      parameters:
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationRestGet_'
+  /v0/conversations/{conversation_id}:
+    put:
+      tags:
+      - conversations
+      summary: Update Conversation
+      operationId: update_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: name
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    delete:
+      tags:
+      - conversations
+      summary: Delete Conversation
+      operationId: delete_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - conversations
+      summary: Get Conversation
+      operationId: get_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+  /v0/conversations/{conversation_id}/messages:
+    post:
+      tags:
+      - conversations
+      summary: Create Conversation Message
+      operationId: create_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ConversationMessageCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    get:
+      tags:
+      - conversations
+      summary: List Conversation Messages
+      operationId: list_conversation_messages
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationMessageRestGet_'
+  /v0/conversations/{conversation_id}/messages/{message_id}:
+    put:
+      tags:
+      - conversations
+      summary: Update Conversation Message
+      operationId: update_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationMessagePatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    delete:
+      tags:
+      - conversations
+      summary: Delete Conversation Message
+      operationId: delete_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - conversations
+      summary: Get Conversation Message
+      operationId: get_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
   /v0/groups:
     get:
       tags:
@@ -9859,6 +10156,15 @@ components:
       - serviceKey
       - serviceVersion
       title: ConnectServiceToPricingPlanBodyParams
+    ConversationMessagePatch:
+      properties:
+        content:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content
+      type: object
+      title: ConversationMessagePatch
     ConversationMessageRestGet:
       properties:
         messageId:
@@ -9938,6 +10244,11 @@ components:
           type: string
           format: date-time
           title: Modified
+        extraContext:
+          additionalProperties:
+            type: string
+          type: object
+          title: Extracontext
       type: object
       required:
       - conversationId
@@ -9948,12 +10259,14 @@ components:
       - type
       - created
       - modified
+      - extraContext
       title: ConversationRestGet
     ConversationType:
       type: string
       enum:
       - PROJECT_STATIC
       - PROJECT_ANNOTATION
+      - SUPPORT
       title: ConversationType
     CountryInfoDict:
       properties:
@@ -18451,6 +18764,19 @@ components:
       - write
       - delete
       title: WorkspacesGroupsBodyParams
+    _ConversationMessageCreateBodyParams:
+      properties:
+        content:
+          type: string
+          title: Content
+        type:
+          $ref: '#/components/schemas/ConversationMessageType'
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      - type
+      title: _ConversationMessageCreateBodyParams
     _InvitationDetails:
       properties:
         trialAccountDays:

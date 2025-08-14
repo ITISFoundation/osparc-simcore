@@ -8,8 +8,6 @@ from models_library.api_schemas_webserver.conversations import (
     ConversationRestGet,
 )
 from models_library.conversations import (
-    ConversationID,
-    ConversationMessageID,
     ConversationPatchDB,
     ConversationType,
 )
@@ -37,22 +35,12 @@ from .._conversation_service import (
     get_support_conversation_for_user,
     list_support_conversations_for_user,
 )
-from ._common import raise_unsupported_type
+from ._common import ConversationPathParams, raise_unsupported_type
 from ._rest_exceptions import _handle_exceptions
 
 _logger = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
-
-
-class _ConversationPathParams(BaseModel):
-    conversation_id: ConversationID
-    model_config = ConfigDict(extra="forbid")
-
-
-class _ConversationMessagePathParams(_ConversationPathParams):
-    message_id: ConversationMessageID
-    model_config = ConfigDict(extra="forbid")
 
 
 class _GetConversationsQueryParams(BaseModel):
@@ -157,7 +145,7 @@ async def list_conversations(request: web.Request):
 async def get_conversation(request: web.Request):
     """Get a specific conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     query_params = parse_request_query_parameters_as(
         _GetConversationsQueryParams, request
     )
@@ -183,7 +171,7 @@ async def get_conversation(request: web.Request):
 async def update_conversation(request: web.Request):
     """Update a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     body_params = await parse_request_body_as(ConversationPatch, request)
     query_params = parse_request_query_parameters_as(
         _GetConversationsQueryParams, request
@@ -217,7 +205,7 @@ async def update_conversation(request: web.Request):
 async def delete_conversation(request: web.Request):
     """Delete a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     query_params = parse_request_query_parameters_as(
         _GetConversationsQueryParams, request
     )

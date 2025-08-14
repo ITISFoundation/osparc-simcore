@@ -6,7 +6,6 @@ from models_library.api_schemas_webserver.conversations import (
     ConversationMessageRestGet,
 )
 from models_library.conversations import (
-    ConversationID,
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
@@ -17,7 +16,7 @@ from models_library.rest_pagination import (
     PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -33,7 +32,7 @@ from ...models import AuthenticatedRequestContext
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
 from .. import _conversation_message_service, _conversation_service
-from ._common import raise_unsupported_type
+from ._common import ConversationPathParams, raise_unsupported_type
 from ._rest_exceptions import _handle_exceptions
 
 _logger = logging.getLogger(__name__)
@@ -41,29 +40,12 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class _ConversationPathParams(BaseModel):
-    conversation_id: ConversationID
-    model_config = ConfigDict(extra="forbid")
-
-
-class _ConversationMessagePathParams(_ConversationPathParams):
+class _ConversationMessagePathParams(ConversationPathParams):
     message_id: ConversationMessageID
     model_config = ConfigDict(extra="forbid")
 
 
-class _GetConversationsQueryParams(BaseModel):
-    type: ConversationType
-    model_config = ConfigDict(extra="forbid")
-
-    @field_validator("type")
-    @classmethod
-    def validate_type(cls, value):
-        if value is not None and value != ConversationType.SUPPORT:
-            raise ValueError("Only support conversations are allowed")
-        return value
-
-
-class _ListConversationsQueryParams(PageQueryParameters, _GetConversationsQueryParams):
+class _ListConversationMessageQueryParams(PageQueryParameters):
 
     model_config = ConfigDict(extra="forbid")
 
@@ -83,7 +65,7 @@ class _ConversationMessageCreateBodyParams(BaseModel):
 async def create_conversation_message(request: web.Request):
     """Create a new message in a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     body_params = await parse_request_body_as(
         _ConversationMessageCreateBodyParams, request
     )
@@ -122,9 +104,9 @@ async def create_conversation_message(request: web.Request):
 async def list_conversation_messages(request: web.Request):
     """List messages in a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     query_params = parse_request_query_parameters_as(
-        _ListConversationsQueryParams, request
+        _ListConversationMessageQueryParams, request
     )
 
     user_primary_gid = await users_service.get_user_primary_group_id(
