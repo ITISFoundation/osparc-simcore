@@ -731,7 +731,7 @@ async def _start_dynamic_service(  # noqa: C901
 
     # this is a dynamic node, let's gather its resources and start it
 
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
+    db = ProjectDBAPI.get_from_app_context(request.app)
 
     try:
         await _check_project_node_has_all_required_inputs(
@@ -916,6 +916,10 @@ async def _start_dynamic_service(  # noqa: C901
                 hardware_info=hardware_info,
             ),
         )
+        project = await get_project_for_user(
+            request.app, f"{project_uuid}", user_id, include_state=True
+        )
+        await notify_project_node_update(request.app, project, node_uuid, errors=None)
 
     await _()
 
@@ -2105,8 +2109,6 @@ async def remove_project_dynamic_services(
     :raises ProjectLockError
     """
 
-    # NOTE: during the closing process, which might take awhile,
-    # the project is locked so no one opens it at the same time
     _logger.debug(
         "removing project interactive services for project [%s] and user [%s]",
         project_uuid,
