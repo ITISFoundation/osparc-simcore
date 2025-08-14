@@ -15,14 +15,19 @@ from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.generics import Envelope
-from pydantic import TypeAdapter
-from pytest_mock import MockType
+from models_library.products import ProductName
+from models_library.projects import ProjectID
+from models_library.rpc.webserver.projects import ProjectJobRpcGet
+from models_library.users import UserID
+from pydantic import TypeAdapter, validate_call
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
     HttpApiCallCaptureModel,
     SideEffectCallback,
 )
 from respx import MockRouter
+from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobStatus
 from simcore_service_api_server.models.schemas.model_adapter import (
@@ -345,6 +350,84 @@ async def test_start_solver_job_conflict(
     assert response.status_code == status.HTTP_200_OK
     job_status = JobStatus.model_validate(response.json())
     assert f"{job_status.job_id}" == _job_id
+
+
+@pytest.fixture
+def mocked_get_project_marked_as_job_storage_data_missing(
+    mocked_app_dependencies: None, mocker: MockerFixture
+) -> dict[str, MockType]:
+    """
+    Mocks the webserver's simcore service RPC API for testing purposes.
+    """
+    from servicelib.rabbitmq.rpc_interfaces.webserver import (
+        projects as projects_rpc,  # keep import here
+    )
+
+    @validate_call(config={"arbitrary_types_allowed": True})
+    async def _get_project_marked_as_job(
+        rpc_client: RabbitMQRPCClient | MockType,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        project_uuid: ProjectID,
+        job_parent_resource_name: str,
+    ) -> ProjectJobRpcGet:
+        assert rpc_client
+        assert product_name
+        assert user_id
+        assert project_uuid
+        assert job_parent_resource_name
+
+        # Return a valid example from the schema
+        example = ProjectJobRpcGet.model_json_schema()["examples"][0]
+        example["uuid"] = str(project_uuid)
+        example["job_parent_resource_name"] = job_parent_resource_name
+        example["storage_data_deleted"] = "true"
+        project_job_rpc_get = ProjectJobRpcGet.model_validate(example)
+        assert project_job_rpc_get.storage_data_deleted is True
+        return project_job_rpc_get
+
+    return {
+        "get_project_marked_as_job": mocker.patch.object(
+            projects_rpc,
+            "get_project_marked_as_job",
+            autospec=True,
+            side_effect=_get_project_marked_as_job,
+        ),
+    }
+
+
+async def test_start_solver_job_storage_data_missing(
+    client: AsyncClient,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_directorv2_rest_api_base: MockRouter,
+    mocked_get_project_marked_as_job_storage_data_missing: dict[str, MockType],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    _solver_key: str = "simcore/services/comp/itis/sleeper"
+    _version: str = "2.0.2"
+    _job_id: str = "b9faf8d8-4928-4e50-af40-3690712c5481"
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_directorv2_rest_api_base,
+            mocked_webserver_rest_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "start_solver_job.json",
+        side_effects_callbacks=[
+            _start_job_side_effect,
+            _get_inspect_job_side_effect(job_id=_job_id),
+        ],
+    )
+
+    response = await client.post(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}:start",
+        auth=auth,
+    )
+
+    assert response.status_code == status.HTTP_409_CONFLICT
 
 
 async def test_stop_job(
