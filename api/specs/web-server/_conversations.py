@@ -44,7 +44,7 @@ router = APIRouter(
 
 
 #
-# API entrypoints PROJECTS/*/CONVERSATIONS/*
+# API entrypoints CONVERSATIONS
 #
 
 
@@ -99,7 +99,9 @@ async def get_conversation(
 ): ...
 
 
-### Conversation Messages
+#
+# API entrypoints CONVERSATION MESSAGES
+#
 
 
 @router.post(
