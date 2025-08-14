@@ -136,7 +136,7 @@ async def create_project(
                     for node_id, node_data in project_workbench.items():
                         # NOTE: workbench node have a lot of camecase fields. We validate with Node and
                         # export to ProjectNodeCreate with alias=False
-                        node_model = Node.model_validate(node_data)
+                        node_model = ProjectNodeCreate.model_validate({"node_id": node_id, **node_data}, from_attributes=True)
 
                         # NOTE: currently no resources is passed until it becomes necessary
                         project_workbench_node = {
@@ -150,9 +150,7 @@ async def create_project(
                         await project_nodes_repo.add(
                             con,
                             nodes=[
-                                ProjectNodeCreate(
-                                    node_id=NodeID(node_id), **project_workbench_node
-                                )
+                                node_model
                             ],
                         )
 
