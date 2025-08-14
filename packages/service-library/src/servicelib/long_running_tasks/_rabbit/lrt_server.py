@@ -1,9 +1,6 @@
 import logging
 from typing import Any
 
-from common_library.error_codes import create_error_code
-
-from ...logging_errors import create_troubleshootting_log_kwargs
 from ...rabbitmq import RPCRouter
 from .._serialization import object_to_string
 from ..base_long_running_manager import BaseLongRunningManager
@@ -74,15 +71,7 @@ async def _get_transferarble_task_result(
         return task_result
     except (TaskNotFoundError, TaskNotCompletedError):
         raise
-    except Exception as exc:
-        _logger.exception(
-            **create_troubleshootting_log_kwargs(
-                user_error_msg=f"{task_id=} raised an exception while getting its result",
-                error=exc,
-                error_code=create_error_code(exc),
-                error_context={"task_context": task_context, "task_id": task_id},
-            ),
-        )
+    except Exception:
         # the task shall be removed in this case
         await long_running_manager.tasks_manager.remove_task(
             task_id, with_task_context=task_context, reraise_errors=False

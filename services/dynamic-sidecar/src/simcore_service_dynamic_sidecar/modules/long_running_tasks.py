@@ -672,6 +672,6 @@ def setup_long_running_tasks(app: FastAPI) -> None:
         }
 
         for handler, context in task_context.items():
-            TaskRegistry.register_partial(handler, **context)
+            TaskRegistry.register(handler, **context)
 
     app.add_event_handler("startup", on_startup)

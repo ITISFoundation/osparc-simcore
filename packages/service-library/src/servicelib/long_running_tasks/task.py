@@ -60,15 +60,10 @@ class TaskProtocol(Protocol):
 class TaskRegistry:
     REGISTERED_TASKS: ClassVar[dict[RegisteredTaskName, TaskProtocol]] = {}
 
-    # TODO: maybe only use one method to register
     @classmethod
-    def register(cls, task: TaskProtocol) -> None:
-        cls.REGISTERED_TASKS[task.__name__] = task
-
-    @classmethod
-    def register_partial(cls, task: TaskProtocol, **partial_kwargs) -> None:
+    def register(cls, task: TaskProtocol, **partial_kwargs) -> None:
         partail_task = functools.partial(task, **partial_kwargs)
-        # allows to call via the partial of via the orignal method
+        # allows to call the partial via it's original name
         partail_task.__name__ = task.__name__  # type: ignore[attr-defined]
         cls.REGISTERED_TASKS[task.__name__] = partail_task  # type: ignore[assignment]
 

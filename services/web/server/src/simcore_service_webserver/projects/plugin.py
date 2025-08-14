@@ -37,6 +37,11 @@ from ._security_service import setup_projects_access
 logger = logging.getLogger(__name__)
 
 
+def register_projects_long_running_tasks(app: web.Application) -> None:
+    register_create_project_task(app)
+    register_stop_dynamic_service_task(app)
+
+
 @app_module_setup(
     "simcore_service_webserver.projects",
     ModuleCategory.ADDON,
@@ -76,8 +81,5 @@ def setup_projects(app: web.Application) -> bool:
     app.router.add_routes(nodes_pricing_unit_rest.routes)
     app.router.add_routes(workspaces_rest.routes)
     app.router.add_routes(trash_rest.routes)
-
-    register_create_project_task(app)
-    register_stop_dynamic_service_task(app)
 
     return True
