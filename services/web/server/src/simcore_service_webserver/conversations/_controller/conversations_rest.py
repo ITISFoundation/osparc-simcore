@@ -37,6 +37,8 @@ from .._conversation_service import (
     get_support_conversation_for_user,
     list_support_conversations_for_user,
 )
+from ._common import raise_unsupported_type
+from ._rest_exceptions import _handle_exceptions
 
 _logger = logging.getLogger(__name__)
 
@@ -76,53 +78,34 @@ class _ConversationsCreateBodyParams(InputSchema):
     extra_context: dict[str, Any] | None = None
 
 
-class _ConversationsPutBodyParams(InputSchema):
-    name: str
-
-
-def _raise_bad_request(reason: str):
-    raise web.HTTPBadRequest(reason=reason)
-
-
 @routes.post(
     f"/{VTAG}/conversations",
     name="create_conversation",
 )
 @login_required
+@_handle_exceptions
 async def create_conversation(request: web.Request):
     """Create a new conversation (supports only type='support')"""
-    try:
-        req_ctx = AuthenticatedRequestContext.model_validate(request)
-        body_params = await parse_request_body_as(
-            _ConversationsCreateBodyParams, request
-        )
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    body_params = await parse_request_body_as(_ConversationsCreateBodyParams, request)
+    # Ensure only support conversations are allowed
+    if body_params.type != ConversationType.SUPPORT:
+        raise_unsupported_type(body_params.type)
 
-        # Ensure only support conversations are allowed
-        if body_params.type != ConversationType.SUPPORT:
-            _raise_bad_request("Only support conversations are allowed")
+    _extra_context = body_params.extra_context or {}
 
-        _extra_context = body_params.extra_context or {}
+    conversation = await conversations_service.create_conversation(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_uuid=None,  # Support conversations are not tied to projects
+        name=body_params.name,
+        type_=body_params.type,
+        extra_context=_extra_context,
+    )
+    data = ConversationRestGet.from_domain_model(conversation)
 
-        conversation = await conversations_service.create_conversation(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            project_uuid=None,  # Support conversations are not tied to projects
-            name=body_params.name,
-            type_=body_params.type,
-            extra_context=_extra_context,
-        )
-        data = ConversationRestGet.from_domain_model(conversation)
-
-        return envelope_json_response(data, web.HTTPCreated)
-
-    except web.HTTPError:
-        raise
-    except Exception as exc:
-        _logger.exception("Failed to create conversation")
-        raise web.HTTPInternalServerError(
-            reason="Failed to create conversation"
-        ) from exc
+    return envelope_json_response(data, web.HTTPCreated)
 
 
 @routes.get(
@@ -130,44 +113,39 @@ async def create_conversation(request: web.Request):
     name="list_conversations",
 )
 @login_required
+@_handle_exceptions
 async def list_conversations(request: web.Request):
     """List conversations for the authenticated user (supports only type='support')"""
-    try:
-        req_ctx = AuthenticatedRequestContext.model_validate(request)
-        query_params = parse_request_query_parameters_as(
-            _ListConversationsQueryParams, request
-        )
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    query_params = parse_request_query_parameters_as(
+        _ListConversationsQueryParams, request
+    )
+    assert query_params.type == ConversationType.SUPPORT  # nosec
 
-        total, conversations = await list_support_conversations_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            offset=query_params.offset,
+    total, conversations = await list_support_conversations_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        offset=query_params.offset,
+        limit=query_params.limit,
+    )
+
+    page = Page[ConversationRestGet].model_validate(
+        paginate_data(
+            chunk=[
+                ConversationRestGet.from_domain_model(conversation)
+                for conversation in conversations
+            ],
+            request_url=request.url,
+            total=total,
             limit=query_params.limit,
+            offset=query_params.offset,
         )
-
-        page = Page[ConversationRestGet].model_validate(
-            paginate_data(
-                chunk=[
-                    ConversationRestGet.from_domain_model(conversation)
-                    for conversation in conversations
-                ],
-                request_url=request.url,
-                total=total,
-                limit=query_params.limit,
-                offset=query_params.offset,
-            )
-        )
-        return web.Response(
-            text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
-            content_type=MIMETYPE_APPLICATION_JSON,
-        )
-
-    except Exception as exc:
-        _logger.exception("Failed to list conversations")
-        raise web.HTTPInternalServerError(
-            reason="Failed to list conversations"
-        ) from exc
+    )
+    return web.Response(
+        text=page.model_dump_json(**RESPONSE_MODEL_POLICY),
+        content_type=MIMETYPE_APPLICATION_JSON,
+    )
 
 
 @routes.get(
@@ -175,29 +153,25 @@ async def list_conversations(request: web.Request):
     name="get_conversation",
 )
 @login_required
+@_handle_exceptions
 async def get_conversation(request: web.Request):
     """Get a specific conversation"""
-    try:
-        req_ctx = AuthenticatedRequestContext.model_validate(request)
-        path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
-        query_params = parse_request_query_parameters_as(
-            _GetConversationsQueryParams, request
-        )
-        assert query_params.type == ConversationType.SUPPORT  # nosec
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    query_params = parse_request_query_parameters_as(
+        _GetConversationsQueryParams, request
+    )
+    assert query_params.type == ConversationType.SUPPORT  # nosec
 
-        conversation = await get_support_conversation_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            conversation_id=path_params.conversation_id,
-        )
+    conversation = await get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
+    )
 
-        data = ConversationRestGet.from_domain_model(conversation)
-        return envelope_json_response(data)
-
-    except Exception as exc:
-        _logger.exception("Failed to get conversation")
-        raise web.HTTPNotFound(reason="Conversation not found") from exc
+    data = ConversationRestGet.from_domain_model(conversation)
+    return envelope_json_response(data)
 
 
 @routes.put(
@@ -205,38 +179,33 @@ async def get_conversation(request: web.Request):
     name="update_conversation",
 )
 @login_required
+@_handle_exceptions
 async def update_conversation(request: web.Request):
     """Update a conversation"""
-    try:
-        req_ctx = AuthenticatedRequestContext.model_validate(request)
-        path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
-        body_params = await parse_request_body_as(ConversationPatch, request)
-        query_params = parse_request_query_parameters_as(
-            _GetConversationsQueryParams, request
-        )
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    body_params = await parse_request_body_as(ConversationPatch, request)
+    query_params = parse_request_query_parameters_as(
+        _GetConversationsQueryParams, request
+    )
+    assert query_params.type == ConversationType.SUPPORT  # nosec
 
-        assert query_params.type == ConversationType.SUPPORT  # nosec
+    await get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
+    )
 
-        await get_support_conversation_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            conversation_id=path_params.conversation_id,
-        )
+    conversation = await conversations_service.update_conversation(
+        app=request.app,
+        project_id=None,  # Support conversations don't use project_id
+        conversation_id=path_params.conversation_id,
+        updates=ConversationPatchDB(name=body_params.name),
+    )
 
-        conversation = await conversations_service.update_conversation(
-            app=request.app,
-            project_id=None,  # Support conversations don't use project_id
-            conversation_id=path_params.conversation_id,
-            updates=ConversationPatchDB(name=body_params.name),
-        )
-
-        data = ConversationRestGet.from_domain_model(conversation)
-        return envelope_json_response(data)
-
-    except Exception as exc:
-        _logger.exception("Failed to update conversation")
-        raise web.HTTPNotFound(reason="Conversation not found") from exc
+    data = ConversationRestGet.from_domain_model(conversation)
+    return envelope_json_response(data)
 
 
 @routes.delete(
@@ -244,33 +213,29 @@ async def update_conversation(request: web.Request):
     name="delete_conversation",
 )
 @login_required
+@_handle_exceptions
 async def delete_conversation(request: web.Request):
     """Delete a conversation"""
-    try:
-        req_ctx = AuthenticatedRequestContext.model_validate(request)
-        path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
-        query_params = parse_request_query_parameters_as(
-            _GetConversationsQueryParams, request
-        )
-        assert query_params.type == ConversationType.SUPPORT  # nosec
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(_ConversationPathParams, request)
+    query_params = parse_request_query_parameters_as(
+        _GetConversationsQueryParams, request
+    )
+    assert query_params.type == ConversationType.SUPPORT  # nosec
 
-        await get_support_conversation_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            conversation_id=path_params.conversation_id,
-        )
+    await get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
+    )
 
-        await conversations_service.delete_conversation(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            project_id=None,  # Support conversations don't use project_id
-            conversation_id=path_params.conversation_id,
-        )
+    await conversations_service.delete_conversation(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=None,  # Support conversations don't use project_id
+        conversation_id=path_params.conversation_id,
+    )
 
-        return web.json_response(status=status.HTTP_204_NO_CONTENT)
-
-    except Exception as exc:
-        _logger.exception("Failed to delete conversation")
-        raise web.HTTPNotFound(reason="Conversation not found") from exc
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
