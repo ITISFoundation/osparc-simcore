@@ -30,7 +30,6 @@ from simcore_postgres_database.utils_projects_nodes import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from .helpers.faker_factories import random_service_key, random_service_version
 from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import sync_insert_and_get_user_and_secrets_lifespan
 
