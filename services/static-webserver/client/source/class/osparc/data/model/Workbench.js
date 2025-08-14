@@ -593,12 +593,13 @@ qx.Class.define("osparc.data.model.Workbench", {
     __addNode: function(node) {
       const nodeId = node.getNodeId();
       this.__nodes[nodeId] = node;
-      if (node.getMetadata()) {
+      const nodeAdded = () => {
         this.fireEvent("pipelineChanged");
+      };
+      if (node.getMetadata()) {
+        nodeAdded();
       } else {
-        node.addListenerOnce("changeMetadata", () => {
-          this.fireEvent("pipelineChanged");
-        }, this);
+        node.addListenerOnce("changeMetadata", () => nodeAdded(), this);
       }
     },
 
