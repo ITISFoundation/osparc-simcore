@@ -1,4 +1,5 @@
 import logging
+import traceback
 from typing import Any
 
 from ...rabbitmq import RPCRouter
@@ -7,6 +8,7 @@ from ..base_long_running_manager import BaseLongRunningManager
 from ..errors import BaseLongRunningError, TaskNotCompletedError, TaskNotFoundError
 from ..models import TaskBase, TaskContext, TaskId, TaskStatus
 from ..task import RegisteredTaskName
+from ._models import RPCErrorResponse
 
 _logger = logging.getLogger(__name__)
 
@@ -85,7 +87,7 @@ async def get_task_result(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-) -> str:
+) -> RPCErrorResponse | str:
     try:
         return object_to_string(
             await _get_transferarble_task_result(
@@ -93,7 +95,10 @@ async def get_task_result(
             )
         )
     except Exception as exc:  # pylint:disable=broad-exception-caught
-        return object_to_string(exc)
+        return RPCErrorResponse(
+            str_traceback="".join(traceback.format_tb(exc.__traceback__)),
+            error_object=object_to_string(exc),
+        )
 
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))

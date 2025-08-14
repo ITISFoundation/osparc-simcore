@@ -10,6 +10,7 @@ from ...long_running_tasks.task import RegisteredTaskName
 from ...rabbitmq._client_rpc import RabbitMQRPCClient
 from .._serialization import string_to_object
 from ..models import RabbitNamespace, TaskBase, TaskContext, TaskId, TaskStatus
+from ._models import RPCErrorResponse
 from .namespace import get_namespace
 
 _logger = logging.getLogger(__name__)
@@ -99,12 +100,18 @@ async def get_task_result(
         task_id=task_id,
         timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
     )
-    assert isinstance(serialized_result, str)  # nosec
-    task_result = string_to_object(serialized_result)
+    assert isinstance(serialized_result, RPCErrorResponse | str)  # nosec
+    if isinstance(serialized_result, RPCErrorResponse):
+        error = string_to_object(serialized_result.error_object)
+        _logger.warning(
+            "Remote task finished with error: '%s: %s'\n%s",
+            error.__class__.__name__,
+            error,
+            serialized_result.str_traceback,
+        )
+        raise error
 
-    if isinstance(task_result, Exception):
-        raise task_result
-    return task_result
+    return string_to_object(serialized_result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
