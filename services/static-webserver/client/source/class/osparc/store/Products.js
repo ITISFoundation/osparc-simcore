@@ -133,7 +133,7 @@ qx.Class.define("osparc.store.Products", {
     amIASupportUser: function() {
       const supportGroupId = this.getSupportGroupId();
       const groupsStore = osparc.store.Groups.getInstance();
-      const myGroupIds = groupsStore.getOrganizationIds();
+      const myGroupIds = groupsStore.getOrganizationIds().map(gId => parseInt(gId));
       return (supportGroupId && myGroupIds.includes(supportGroupId));
     },
   }
