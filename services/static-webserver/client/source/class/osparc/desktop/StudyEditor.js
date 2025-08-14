@@ -378,7 +378,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__pendingProjectData = null;
 
         this.__applyProjectDocument(latestData);
-      }, 10*this.self().THROTTLE_PATCH_TIME);
+      }, 6*this.self().THROTTLE_PATCH_TIME);
     },
 
     __applyProjectDocument: function(data) {

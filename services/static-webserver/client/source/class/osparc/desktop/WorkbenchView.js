@@ -1138,7 +1138,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __nodeAdded: function(node) {
-      this.__workbenchUI.addNode(node);
+      this.__workbenchUI.addNode(node, node.getPosition());
     },
 
     __removeNode: function(nodeId) {
