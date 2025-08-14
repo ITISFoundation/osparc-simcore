@@ -21,8 +21,10 @@ from ...models.schemas.errors import ErrorGet
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.functions import get_stored_job_status  # Import UserID
-from ..dependencies.functions import get_function_from_functionjobid
+from ..dependencies.functions import (
+    get_function_from_functionjobid,
+    get_stored_job_status,
+)
 from ..dependencies.models_schemas_function_filters import (
     get_function_job_collections_filters,
 )
