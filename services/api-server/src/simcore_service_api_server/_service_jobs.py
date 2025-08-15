@@ -5,7 +5,11 @@ from pathlib import Path
 
 from common_library.exclude import as_dict_exclude_none
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
-from models_library.api_schemas_webserver.projects import ProjectCreateNew, ProjectGet
+from models_library.api_schemas_webserver.projects import (
+    ProjectCreateNew,
+    ProjectGet,
+    ProjectPatch,
+)
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -13,6 +17,7 @@ from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
     PageOffsetInt,
 )
+from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
@@ -22,6 +27,7 @@ from ._service_solvers import (
     SolverService,
 )
 from .exceptions.custom_errors import SolverServiceListJobsFiltersError
+from .models.api_resources import RelativeResourceName
 from .models.basic_types import NameValueTuple, VersionStr
 from .models.schemas.jobs import Job, JobID, JobInputs, compose_resource_name
 from .models.schemas.programs import Program
@@ -35,6 +41,7 @@ from .services_http.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
 )
+from .services_http.storage import StorageApi
 from .services_http.webserver import AuthSession
 from .services_rpc.director_v2 import DirectorV2Service
 from .services_rpc.storage import StorageService
@@ -49,6 +56,7 @@ class JobService:
     _web_rpc_client: WbApiRpcClient
     _storage_rpc_client: StorageService
     _director2_api: DirectorV2Api
+    _storage_rest_client: StorageApi
     _directorv2_rpc_client: DirectorV2Service
     _solver_service: SolverService
     user_id: UserID
@@ -205,6 +213,7 @@ class JobService:
                 user_id=self.user_id,
                 project_uuid=new_project.uuid,
                 job_parent_resource_name=pre_job.runner_name,
+                storage_assets_deleted=False,
             )
 
         assert new_project  # nosec
@@ -235,6 +244,35 @@ class JobService:
             ],
         )
         return async_job_get
+
+    async def get_job(
+        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
+    ) -> ProjectJobRpcGet:
+        """This method can be used to check that the project exists and has the correct parent resource."""
+        return await self._web_rpc_client.get_project_marked_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_id=job_id,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+
+    async def delete_job_assets(
+        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
+    ):
+        """Marks job project as hidden and deletes S3 assets associated it"""
+        await self._web_rest_client.patch_project(
+            project_id=job_id, patch_params=ProjectPatch(hidden=True)
+        )
+        await self._storage_rest_client.delete_project_s3_assets(
+            user_id=self.user_id, project_id=job_id
+        )
+        await self._web_rpc_client.mark_project_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_uuid=job_id,
+            job_parent_resource_name=job_parent_resource_name,
+            storage_assets_deleted=True,
+        )
 
     async def create_solver_job(
         self,

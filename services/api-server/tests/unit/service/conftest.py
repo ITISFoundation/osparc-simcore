@@ -20,6 +20,7 @@ from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server._service_solvers import SolverService
 from simcore_service_api_server.services_http.director_v2 import DirectorV2Api
+from simcore_service_api_server.services_http.storage import StorageApi
 from simcore_service_api_server.services_http.webserver import AuthSession
 from simcore_service_api_server.services_rpc.catalog import CatalogService
 from simcore_service_api_server.services_rpc.director_v2 import DirectorV2Service
@@ -114,6 +115,14 @@ def director2_api(mocker: MockerFixture) -> DirectorV2Api:
 
 
 @pytest.fixture
+def storage_rest_client(
+    mocker: MockerFixture,
+) -> StorageApi:
+    mock = mocker.AsyncMock(spec=StorageApi)
+    return mock
+
+
+@pytest.fixture
 def catalog_service(
     mocked_rpc_client: MockType,
     product_name: ProductName,
@@ -151,6 +160,7 @@ def job_service(
     storage_rpc_client: StorageService,
     wb_api_rpc_client: WbApiRpcClient,
     director2_api: DirectorV2Api,
+    storage_rest_client: StorageApi,
     product_name: ProductName,
     user_id: UserID,
     solver_service: SolverService,
@@ -159,6 +169,7 @@ def job_service(
         _web_rest_client=auth_session,
         _web_rpc_client=wb_api_rpc_client,
         _storage_rpc_client=storage_rpc_client,
+        _storage_rest_client=storage_rest_client,
         _directorv2_rpc_client=director_v2_rpc_client,
         _director2_api=director2_api,
         _solver_service=solver_service,

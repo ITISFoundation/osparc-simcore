@@ -228,6 +228,7 @@ async def test_get_function_job_outputs(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
+    mocked_webserver_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     job_outputs: dict[str, Any],
 ) -> None:
