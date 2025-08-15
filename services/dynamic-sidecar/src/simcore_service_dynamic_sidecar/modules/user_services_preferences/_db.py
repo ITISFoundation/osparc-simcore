@@ -15,6 +15,7 @@ from simcore_postgres_database.utils_user_preferences import (
 # The same connection context manager is utilized here as well!
 from simcore_sdk.node_ports_common.dbmanager import DBContextManager
 
+from ..._meta import PROJECT_NAME
 from ._packaging import dir_from_bytes, dir_to_bytes
 from ._user_preference import get_model_class
 
@@ -40,9 +41,10 @@ async def save_preferences(
         service_key=service_key, service_version=service_version, value=dir_content
     )
 
-    async with DBContextManager(
-        application_name="simcore_dynamic_sidecar"
-    ) as engine, engine.begin() as conn:
+    async with (
+        DBContextManager(application_name=PROJECT_NAME) as engine,
+        engine.begin() as conn,
+    ):
         await UserServicesUserPreferencesRepo.save(
             conn,
             user_id=user_id,
@@ -63,9 +65,10 @@ async def load_preferences(
 ) -> None:
     preference_class = get_model_class(service_key)
 
-    async with DBContextManager(
-        application_name="simcore_dynamic_sidecar"
-    ) as engine, engine.connect() as conn:
+    async with (
+        DBContextManager(application_name=PROJECT_NAME) as engine,
+        engine.connect() as conn,
+    ):
         payload = await UserServicesUserPreferencesRepo.load(
             conn,
             user_id=user_id,
