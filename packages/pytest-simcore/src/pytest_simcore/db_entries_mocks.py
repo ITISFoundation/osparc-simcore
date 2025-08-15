@@ -81,9 +81,6 @@ async def with_product(
     ) as created_product:
         yield created_product
 
-class _NodeWithId(Node):
-    node_id: uuid.UUID
-
 
 @pytest.fixture
 async def create_project(
