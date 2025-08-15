@@ -5,7 +5,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
-    make_workbench_subquery,
+    create_workbench_subquery,
 )
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ProjectsRepository(BaseRepository):
     async def get_project(self, project_id: ProjectID) -> ProjectAtDB:
-        workbench_subquery = make_workbench_subquery()
+        workbench_subquery = create_workbench_subquery()
 
         async with self.db_engine.connect() as conn:
             query = (

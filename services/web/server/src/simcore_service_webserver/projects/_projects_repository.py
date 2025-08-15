@@ -17,7 +17,7 @@ from pydantic import NonNegativeInt, PositiveInt, TypeAdapter
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import users
-from simcore_postgres_database.utils_projects_nodes import make_workbench_subquery
+from simcore_postgres_database.utils_projects_nodes import create_workbench_subquery
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -143,7 +143,7 @@ async def get_project_with_workbench(
     project_uuid: ProjectID,
 ) -> ProjectWithWorkbenchDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        workbench_subquery = make_workbench_subquery()
+        workbench_subquery = create_workbench_subquery()
         query = (
             sql.select(
                 *PROJECT_DB_COLS,

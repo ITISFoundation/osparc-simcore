@@ -60,7 +60,7 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
     ProjectNodesRepo,
-    make_workbench_subquery,
+    create_workbench_subquery,
 )
 from simcore_postgres_database.webserver_models import (
     ProjectType,
@@ -395,7 +395,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .group_by(project_to_groups.c.project_uuid)
             ).subquery("my_access_rights_subquery")
 
-            workbench_subquery = make_workbench_subquery()
+            workbench_subquery = create_workbench_subquery()
 
             private_workspace_query = (
                 sa.select(
@@ -462,7 +462,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .group_by(workspaces_access_rights.c.workspace_id)
             ).subquery("my_workspace_access_rights_subquery")
 
-            workbench_subquery = make_workbench_subquery()
+            workbench_subquery = create_workbench_subquery()
 
             shared_workspace_query = (
                 sa.select(

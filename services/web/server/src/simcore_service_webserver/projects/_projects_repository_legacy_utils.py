@@ -16,7 +16,7 @@ from pydantic import ValidationError
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.utils_projects_nodes import (
     ProjectNodesRepo,
-    make_workbench_subquery,
+    create_workbench_subquery,
 )
 from simcore_postgres_database.webserver_models import (
     ProjectTemplateType as ProjectTemplateTypeDB,
@@ -242,7 +242,7 @@ class BaseProjectDB:
             .group_by(project_to_groups.c.project_uuid)
         ).subquery("access_rights_subquery")
 
-        workbench_subquery = make_workbench_subquery()
+        workbench_subquery = create_workbench_subquery()
 
         query = (
             sa.select(

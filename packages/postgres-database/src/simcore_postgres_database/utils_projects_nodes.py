@@ -116,7 +116,7 @@ class ProjectNode(ProjectNodeCreate):
         )
 
 
-def make_workbench_subquery() -> Subquery:
+def create_workbench_subquery() -> Subquery:
     return (
         sa.select(
             projects_nodes.c.project_uuid,
