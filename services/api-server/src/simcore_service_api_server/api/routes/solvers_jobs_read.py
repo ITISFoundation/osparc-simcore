@@ -21,7 +21,7 @@ from servicelib.logging_utils import log_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
-from ..._service_jobs import JobService
+from ..._service_jobs import JobService, compose_job_resource_name
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -69,8 +69,6 @@ from ._constants import (
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
-    JobService,
-    compose_job_resource_name,
 )
 from .wallets import WALLET_STATUS_CODES
 

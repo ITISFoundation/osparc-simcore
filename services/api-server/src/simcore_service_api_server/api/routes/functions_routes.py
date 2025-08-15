@@ -452,6 +452,7 @@ async def run_function(  # noqa: PLR0913
                 user_id=user_id,
                 director2_api=director2_api,
                 product_name=product_name,
+                job_service=job_service,
             )
             if job_status.status == RunningState.SUCCESS:
                 return cached_function_job
@@ -492,7 +493,6 @@ async def run_function(  # noqa: PLR0913
             solver_key=to_run_function.solver_key,
             version=to_run_function.solver_version,
             inputs=JobInputs(values=joined_inputs or {}),
-            solver_service=solver_service,
             job_service=job_service,
             url_for=url_for,
             x_simcore_parent_project_uuid=parent_project_uuid,
@@ -503,9 +503,6 @@ async def run_function(  # noqa: PLR0913
             solver_key=to_run_function.solver_key,
             version=to_run_function.solver_version,
             job_id=solver_job.id,
-            user_id=user_id,
-            webserver_api=webserver_api,
-            director2_api=director2_api,
             job_service=job_service,
         )
         return await register_function_job(

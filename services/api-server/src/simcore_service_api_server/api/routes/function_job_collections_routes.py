@@ -16,6 +16,7 @@ from models_library.users import UserID
 from servicelib.utils import limited_gather
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 
+from ..._service_jobs import JobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...services_http.director_v2 import DirectorV2Api
@@ -28,7 +29,11 @@ from ..dependencies.functions import (
 from ..dependencies.models_schemas_function_filters import (
     get_function_job_collections_filters,
 )
-from ..dependencies.services import get_api_client, get_function_job_service
+from ..dependencies.services import (
+    get_api_client,
+    get_function_job_service,
+    get_job_service,
+)
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -259,6 +264,7 @@ async def function_job_collection_status(
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
     product_name: Annotated[ProductName, Depends(get_product_name)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> FunctionJobCollectionStatus:
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
@@ -292,6 +298,7 @@ async def function_job_collection_status(
                 director2_api=director2_api,
                 user_id=user_id,
                 product_name=product_name,
+                job_service=job_service,
             )
             for function_job_id in function_job_collection.job_ids
         ]

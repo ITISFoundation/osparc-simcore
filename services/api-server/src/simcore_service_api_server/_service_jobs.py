@@ -32,14 +32,14 @@ from ._service_solvers import (
 )
 from .exceptions.backend_errors import JobAssetsMissingError
 from .exceptions.custom_errors import SolverServiceListJobsFiltersError
-from .models.api_resources import RelativeResourceName
+from .models.api_resources import RelativeResourceName, compose_resource_name
 from .models.basic_types import NameValueTuple, VersionStr
 from .models.schemas.jobs import (
     Job,
     JobID,
     JobInputs,
     JobPricingSpecification,
-    compose_resource_name,
+    JobStatus,
 )
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver, SolverKeyId
@@ -47,7 +47,6 @@ from .models.schemas.studies import StudyID
 from .services_http.director_v2 import DirectorV2Api
 from .services_http.jobs import start_project
 from .services_http.solver_job_models_converters import (
-    JobStatus,
     create_job_from_project,
     create_job_inputs_from_node_inputs,
     create_jobstatus_from_task,

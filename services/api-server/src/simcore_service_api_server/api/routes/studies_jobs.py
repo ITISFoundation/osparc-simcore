@@ -12,6 +12,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
+from ..._service_jobs import JobService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.api_resources import parse_resources_ids
 from ...models.pagination import Page, PaginationParams
@@ -49,7 +50,7 @@ from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-from .solvers_jobs import JOBS_STATUS_CODES, JobService
+from .solvers_jobs import JOBS_STATUS_CODES
 
 _logger = logging.getLogger(__name__)
 
