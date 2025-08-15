@@ -15703,9 +15703,10 @@ components:
           - $ref: '#/components/schemas/ProjectTemplateType'
           - type: 'null'
         hidden:
-          type: boolean
+          anyOf:
+          - type: boolean
+          - type: 'null'
           title: Hidden
-          default: false
       type: object
       title: ProjectPatch
     ProjectPermalink:

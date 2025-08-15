@@ -3902,6 +3902,16 @@
               }
             }
           },
+          "409": {
+            "description": "Job assets missing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
