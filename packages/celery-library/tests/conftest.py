@@ -34,14 +34,15 @@ pytest_plugins = [
 
 
 class FakeAppServer(BaseAppServer):
-    def __init__(self, app=None) -> None:
+    def __init__(self, app, settings: CelerySettings) -> None:
         super().__init__(app)
         self._task_manager = None  # Initialize to avoid AttributeError
+        self._settings = settings
 
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
         async with create_task_manager(
             app=self.app,
-            settings=CelerySettings.create_from_envs(),
+            settings=self._settings,
         ) as task_manager:
             self._task_manager = task_manager
             startup_completed_event.set()
@@ -99,8 +100,8 @@ def celery_config() -> dict[str, Any]:
 
 
 @pytest.fixture
-def app_server() -> BaseAppServer:
-    return FakeAppServer(app=None)
+def app_server(celery_settings) -> BaseAppServer:
+    return FakeAppServer(app=None, settings=celery_settings)
 
 
 @pytest.fixture
