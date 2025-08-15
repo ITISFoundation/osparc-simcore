@@ -1,7 +1,7 @@
 """modify conversations
 
 Revision ID: b566f1b29012
-Revises: 5679165336c8
+Revises: 5b998370916a
 Create Date: 2025-08-14 15:02:54.784186+00:00
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "b566f1b29012"
-down_revision = "5679165336c8"
+down_revision = "5b998370916a"
 branch_labels = None
 depends_on = None
 
