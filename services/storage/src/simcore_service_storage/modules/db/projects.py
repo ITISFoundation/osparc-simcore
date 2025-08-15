@@ -42,7 +42,7 @@ class ProjectRepository(BaseRepository):
         connection: AsyncConnection | None = None,
         project_uuids: list[ProjectID],
     ) -> dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]]:
-        names_map = {}
+        names_map: dict[ProjectID, dict[ProjectIDStr | NodeIDStr, str]] = {}
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
                 sa.select(projects.c.uuid, projects.c.name).where(
