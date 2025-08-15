@@ -22,7 +22,7 @@ from models_library.api_schemas_directorv2.computations import TaskLogFileGet
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID, ProjectIDStr
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_types import ServiceRunID
@@ -92,7 +92,7 @@ async def create_node_ports(
         db_manager = node_ports_v2.DBManager(db_engine, application_name=APP_NAME)
         return await node_ports_v2.ports(
             user_id=user_id,
-            project_id=ProjectIDStr(f"{project_id}"),
+            project_id=f"{project_id}",
             node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{node_id}"),
             db_manager=db_manager,
         )
