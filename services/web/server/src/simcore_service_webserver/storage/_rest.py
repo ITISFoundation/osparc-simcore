@@ -22,6 +22,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.api_schemas_webserver.storage import (
     BatchDeletePathsBodyParams,
     DataExportPost,
+    SearchBodyParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
@@ -44,7 +45,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     delete_paths as remote_delete_paths,
 )
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
+from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data, start_search
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -498,6 +499,48 @@ async def export_data(request: web.Request) -> web.Response:
         product_name=_req_ctx.product_name,
         paths_to_export=export_data_post.paths,
         export_as="path",
+    )
+    _job_id = f"{async_job_rpc_get.job_id}"
+    return create_data_response(
+        TaskGet(
+            task_id=_job_id,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
+            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
+        ),
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@routes.post(
+    _storage_locations_prefix + "/{location_id}/search", name="search"
+)
+@login_required
+@permission_required("storage.files.*")
+@handle_export_data_exceptions
+async def search(request: web.Request) -> web.Response:
+    class _PathParams(BaseModel):
+        location_id: LocationID
+
+        @field_validator("location_id")
+        @classmethod
+        def allow_only_simcore(cls, v: int) -> int:
+            if v != 0:
+                msg = f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
+                raise ValueError(msg)
+            return v
+
+    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    _ = parse_request_path_parameters_as(_PathParams, request)
+    search_body = await parse_request_body_as(
+        model_schema_cls=SearchBodyParams, request=request
+    )
+    async_job_rpc_get, _ = await start_search(
+        rabbitmq_rpc_client=rabbitmq_rpc_client,
+        user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
+        name_pattern=search_body.name_pattern,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
