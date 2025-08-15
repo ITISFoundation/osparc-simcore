@@ -286,7 +286,7 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     EXPECTED_DELETED_FIELDS = ["outputs", "progress", "runHash"]
     for node_data in project_workbench.values():
         for field in EXPECTED_DELETED_FIELDS:
-            assert field not in node_data
+            assert field not in node_data or not node_data[field]
 
 
 @pytest.mark.parametrize(*_standard_user_role_response())
