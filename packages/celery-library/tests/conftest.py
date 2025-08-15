@@ -34,9 +34,18 @@ pytest_plugins = [
 
 
 class FakeAppServer(BaseAppServer):
+    def __init__(self, app=None) -> None:
+        super().__init__(app)
+        self._task_manager = None  # Initialize to avoid AttributeError
+
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
-        startup_completed_event.set()
-        await self.shutdown_event.wait()  # wait for shutdown
+        async with create_task_manager(
+            app=self.app,
+            settings=CelerySettings.create_from_envs(),
+        ) as task_manager:
+            self._task_manager = task_manager
+            startup_completed_event.set()
+            await self.shutdown_event.wait()  # wait for shutdown
 
 
 @pytest.fixture
@@ -61,7 +70,7 @@ def app_environment(
             "REDIS_SECURE": redis_service.REDIS_SECURE,
             "REDIS_HOST": redis_service.REDIS_HOST,
             "REDIS_PORT": f"{redis_service.REDIS_PORT}",
-            "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value(),
+            "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value() if redis_service.REDIS_PASSWORD else "",
         },
     )
 
@@ -71,11 +80,6 @@ def celery_settings(
     app_environment: EnvVarsDict,
 ) -> CelerySettings:
     return CelerySettings.create_from_envs()
-
-
-@pytest.fixture
-def app_server() -> BaseAppServer:
-    return FakeAppServer(app=None)
 
 
 @pytest.fixture(scope="session")
@@ -92,6 +96,11 @@ def celery_config() -> dict[str, Any]:
         "task_track_started": True,
         "worker_send_task_events": True,
     }
+
+
+@pytest.fixture
+def app_server() -> BaseAppServer:
+    return FakeAppServer(app=None)
 
 
 @pytest.fixture
@@ -125,6 +134,7 @@ async def celery_task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
     with_celery_worker: TestWorkController,
+    app_server: BaseAppServer,
 ) -> AsyncIterator[CeleryTaskManager]:
     register_celery_types()
 
