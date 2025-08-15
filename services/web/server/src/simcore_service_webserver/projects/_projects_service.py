@@ -2218,6 +2218,29 @@ async def notify_project_state_update(
         await _send_message_to_project_groups(app, project["uuid"], message)
 
 
+async def notify_node_update(
+    app: web.Application,
+    project_id: ProjectID,
+    node_id: NodeID,
+    node: Node,
+    errors: list[ErrorDict] | None,
+) -> None:
+    if await is_project_hidden(app, project_id):
+        return
+
+    message = SocketMessageDict(
+        event_type=SOCKET_IO_NODE_UPDATED_EVENT,
+        data={
+            "project_id": f"{project_id}",
+            "node_id": f"{node_id}",
+            "data": node.model_dump(mode="json"),
+            "errors": errors,
+        },
+    )
+
+    await _send_message_to_project_groups(app, project_id, message)
+
+
 async def notify_project_node_update(
     app: web.Application,
     project: dict,
