@@ -1,4 +1,3 @@
-# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
@@ -10,17 +9,11 @@ from typing import Any, Final
 import pytest
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeInt
-from pytest_mock import MockerFixture
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
 from servicelib.long_running_tasks.errors import TaskNotFoundError
 from servicelib.long_running_tasks.models import TaskContext
-from servicelib.long_running_tasks.task import (
-    RedisNamespace,
-    TaskId,
-    TaskRegistry,
-    TasksManager,
-)
+from servicelib.long_running_tasks.task import RedisNamespace, TaskId, TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -67,15 +60,6 @@ TaskRegistry.register(_task_takes_too_long)
 @pytest.fixture
 def managers_count() -> NonNegativeInt:
     return 5
-
-
-@pytest.fixture
-def disable_stale_tasks_monitor(mocker: MockerFixture) -> None:
-    # no need to autoremove stale tasks in these tests
-    async def _to_replace(self: TasksManager) -> None:
-        self._started_event_task_stale_tasks_monitor.set()
-
-    mocker.patch.object(TasksManager, "_stale_tasks_monitor", _to_replace)
 
 
 @pytest.fixture

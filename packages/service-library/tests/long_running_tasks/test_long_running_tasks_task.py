@@ -22,7 +22,10 @@ from servicelib.long_running_tasks.errors import (
     TaskNotRegisteredError,
 )
 from servicelib.long_running_tasks.models import TaskContext, TaskProgress, TaskStatus
-from servicelib.long_running_tasks.task import RedisNamespace, TaskRegistry
+from servicelib.long_running_tasks.task import (
+    RedisNamespace,
+    TaskRegistry,
+)
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -529,6 +532,7 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
 
 
 async def test_list_tasks(
+    disable_stale_tasks_monitor: None,
     rabbitmq_rpc_client: RabbitMQRPCClient,
     long_running_manager: NoWebAppLongRunningManager,
     empty_context: TaskContext,

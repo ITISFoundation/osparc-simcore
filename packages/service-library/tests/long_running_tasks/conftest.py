@@ -1,11 +1,14 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+
 import logging
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from datetime import timedelta
 
 import pytest
 from faker import Faker
+from pytest_mock import MockerFixture
 from servicelib.logging_utils import log_catch
 from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
 from servicelib.long_running_tasks.task import (
@@ -91,3 +94,12 @@ async def rabbitmq_rpc_client(
     )
     yield client
     await client.close()
+
+
+@pytest.fixture
+def disable_stale_tasks_monitor(mocker: MockerFixture) -> None:
+    # no need to autoremove stale tasks in these tests
+    async def _to_replace(self: TasksManager) -> None:
+        self._started_event_task_stale_tasks_monitor.set()
+
+    mocker.patch.object(TasksManager, "_stale_tasks_monitor", _to_replace)

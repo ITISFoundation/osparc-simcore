@@ -293,25 +293,25 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     # already done and updatet data in redis
                     continue
 
-                # update and store in Redis
-                task_data.is_done = is_done
-
+                result_field: ResultField | None = None
                 # get task result
                 try:
-                    task_data.result_field = ResultField(
-                        result=object_to_string(task.result())
-                    )
+                    result_field = ResultField(result=object_to_string(task.result()))
                 except asyncio.InvalidStateError:
                     # task was not completed try again next time and see if it is done
                     continue
                 except asyncio.CancelledError:
-                    task_data.result_field = ResultField(
+                    result_field = ResultField(
                         error=object_to_string(TaskCancelledError(task_id=task_id))
                     )
                 except Exception as e:  # pylint:disable=broad-except
-                    task_data.result_field = ResultField(error=object_to_string(e))
+                    result_field = ResultField(error=object_to_string(e))
 
-                await self._tasks_data.set_task_data(task_id, task_data)
+                # update and store in Redis
+                updates = {"is_done": is_done, "result_field": task_data.result_field}
+                if result_field is not None:
+                    updates["result_field"] = result_field
+                await self._tasks_data.update_task_data(task_id, updates=updates)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
@@ -348,10 +348,12 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         raises TaskNotFoundError if the task cannot be found
         """
-        task_data: TaskData = await self._get_tracked_task(task_id, with_task_context)
-        task_data.last_status_check = datetime.datetime.now(tz=datetime.UTC)
-        await self._tasks_data.set_task_data(task_id, task_data)
+        task_data = await self._get_tracked_task(task_id, with_task_context)
 
+        await self._tasks_data.update_task_data(
+            task_id,
+            updates={"last_status_check": datetime.datetime.now(tz=datetime.UTC)},
+        )
         return TaskStatus.model_validate(
             {
                 "task_progress": task_data.task_progress,
@@ -442,7 +444,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         try:
             tracked_data = await self._get_tracked_task(task_id, task_context)
             tracked_data.task_progress = task_progress
-            await self._tasks_data.set_task_data(task_id=task_id, value=tracked_data)
+            await self._tasks_data.update_task_data(
+                task_id, updates={"task_progress": task_progress.model_dump()}
+            )
         except TaskNotFoundError:
             _logger.debug(
                 "Task '%s' not found while updating progress %s",
@@ -508,7 +512,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             task_context=context_to_use,
             fire_and_forget=fire_and_forget,
         )
-        await self._tasks_data.set_task_data(task_id, tracked_task)
+        await self._tasks_data.add_task_data(task_id, tracked_task)
         return tracked_task.task_id
 
 
