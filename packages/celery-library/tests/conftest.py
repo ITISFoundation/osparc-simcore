@@ -135,7 +135,6 @@ async def celery_task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
     with_celery_worker: TestWorkController,
-    app_server: BaseAppServer,
 ) -> AsyncIterator[CeleryTaskManager]:
     register_celery_types()
 
