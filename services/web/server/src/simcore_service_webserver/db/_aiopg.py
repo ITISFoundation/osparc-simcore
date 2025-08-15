@@ -40,7 +40,7 @@ async def _ensure_pg_ready(
         minsize=settings.POSTGRES_MINSIZE,
         maxsize=settings.POSTGRES_MAXSIZE,
     )
-
+    assert isinstance(engine, Engine)  # nosec
     try:
         await raise_if_migration_not_ready(engine)
     except (DBMigrationError, DBAPIError):
