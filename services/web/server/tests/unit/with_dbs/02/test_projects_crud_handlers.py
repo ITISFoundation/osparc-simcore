@@ -414,7 +414,6 @@ async def test_list_projects_with_innaccessible_services(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
-@pytest.mark.testit
 async def test_get_project(
     client: TestClient,
     logged_user: UserInfoDict,
