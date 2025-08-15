@@ -639,7 +639,7 @@ async def test_new_template_from_project(
         )
 
         assert len(templates) == 1
-        assert_equal_ignoring_none(template_project, templates[0], user_project)
+        assert_equal_ignoring_none(template_project, templates[0])
 
         assert template_project["name"] == user_project["name"]
         assert template_project["description"] == user_project["description"]

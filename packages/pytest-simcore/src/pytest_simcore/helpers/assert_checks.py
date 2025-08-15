@@ -97,3 +97,15 @@ def _do_assert_error(
         assert expected_error_code in codes
 
     return data, error
+
+
+def assert_equal_ignoring_none(expected: dict, actual: dict):
+    for key, exp_value in expected.items():
+        if exp_value is None:
+            continue
+        assert key in actual, f"Missing key {key}"
+        act_value = actual[key]
+        if isinstance(exp_value, dict) and isinstance(act_value, dict):
+            assert_equal_ignoring_none(exp_value, act_value)
+        else:
+            assert act_value == exp_value, f"Mismatch in {key}: {act_value} != {exp_value}"
