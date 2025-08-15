@@ -32,7 +32,9 @@ async def create_async_engine_and_database_ready(
 
     server_settings = {
         "jit": "off",
-        "application_name": settings.client_name(f"{application_name}-asyncpg"),
+        "application_name": settings.client_name(
+            f"{application_name}", suffix="asyncpg"
+        ),
     }
 
     engine = create_async_engine(
@@ -69,7 +71,7 @@ async def check_postgres_liveness(engine: AsyncEngine) -> LivenessResult:
 
 @contextlib.asynccontextmanager
 async def with_async_pg_engine(
-    settings: PostgresSettings,
+    settings: PostgresSettings, *, application_name: str
 ) -> AsyncIterator[AsyncEngine]:
     """
     Creates an asyncpg engine and ensures it is properly closed after use.
@@ -81,7 +83,9 @@ async def with_async_pg_engine(
             f"connection to db {settings.dsn_with_async_sqlalchemy}",
         ):
             server_settings = {
-                "application_name": settings.client_name("-asyncpg"),
+                "application_name": settings.client_name(
+                    application_name, suffix="asyncpg"
+                ),
             }
 
             engine = create_async_engine(

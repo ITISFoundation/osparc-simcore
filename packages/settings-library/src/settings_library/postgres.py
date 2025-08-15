@@ -82,18 +82,18 @@ class PostgresSettings(BaseCustomSettings):
         )
         return f"{url}"
 
-    def dsn_with_query(self, application_name: str) -> str:
+    def dsn_with_query(self, application_name: str, *, suffix: str | None) -> str:
         """Some clients do not support queries in the dsn"""
         dsn = self.dsn
-        return self._update_query(dsn, application_name)
+        return self._update_query(dsn, application_name, suffix=suffix)
 
-    def client_name(self, application_name: str) -> str:
-        return f"{application_name}{'-' if self.POSTGRES_CLIENT_NAME else ''}{self.POSTGRES_CLIENT_NAME or ''}"
+    def client_name(self, application_name: str, *, suffix: str | None) -> str:
+        return f"{application_name}{'-' if self.POSTGRES_CLIENT_NAME else ''}{self.POSTGRES_CLIENT_NAME or ''}{'-' + suffix if suffix else ''}"
 
-    def _update_query(self, uri: str, application_name: str) -> str:
+    def _update_query(self, uri: str, application_name: str, suffix: str | None) -> str:
         # SEE https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
         new_params: dict[str, str] = {
-            "application_name": self.client_name(application_name),
+            "application_name": self.client_name(application_name, suffix=suffix),
         }
 
         if new_params:

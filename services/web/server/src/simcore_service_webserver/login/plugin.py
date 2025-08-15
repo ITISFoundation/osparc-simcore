@@ -57,7 +57,7 @@ async def _setup_login_storage_ctx(app: web.Application):
     settings: PostgresSettings = get_db_plugin_settings(app)
 
     async with asyncpg.create_pool(
-        dsn=settings.dsn_with_query(f"{APP_NAME}-login-asyncpg"),
+        dsn=settings.dsn_with_query(f"{APP_NAME}-login", suffix="asyncpg"),
         min_size=settings.POSTGRES_MINSIZE,
         max_size=settings.POSTGRES_MAXSIZE,
         loop=asyncio.get_event_loop(),

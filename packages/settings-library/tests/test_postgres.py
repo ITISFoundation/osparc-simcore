@@ -25,7 +25,6 @@ def mock_environment(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPa
 
 
 def test_cached_property_dsn(mock_environment: EnvVarsDict):
-
     settings = PostgresSettings.create_from_envs()
 
     # all are upper-case
@@ -46,8 +45,8 @@ def test_dsn_with_query(
     assert settings.dsn == "postgresql://foo:secret@localhost:5432/foodb"
     app_name = faker.pystr()
     assert (
-        settings.dsn_with_query(app_name)
-        == f"postgresql://foo:secret@localhost:5432/foodb?application_name={app_name}-Some+%2643+funky+name"
+        settings.dsn_with_query(app_name, suffix="my-suffix")
+        == f"postgresql://foo:secret@localhost:5432/foodb?application_name={app_name}-Some+%2643+funky+name-my-suffix"
     )
 
     with monkeypatch.context() as patch:
@@ -56,7 +55,7 @@ def test_dsn_with_query(
 
         assert not settings.POSTGRES_CLIENT_NAME
         assert f"{settings.dsn}?application_name=blah" == settings.dsn_with_query(
-            "blah"
+            "blah", suffix=None
         )
 
 

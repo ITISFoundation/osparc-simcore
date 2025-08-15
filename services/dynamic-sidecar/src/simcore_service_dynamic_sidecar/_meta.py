@@ -1,10 +1,9 @@
-""" Package Metadata
-
-"""
+"""Package Metadata"""
 
 from importlib.metadata import distribution, version
 
 _current_distribution = distribution("simcore-service-dynamic-sidecar")
+
 
 PROJECT_NAME: str = _current_distribution.metadata["Name"]
 
