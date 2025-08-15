@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 import asyncio
-import contextlib
 from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
 from typing import Final
@@ -59,9 +58,7 @@ async def mock_container_with_data(
 
         yield None
 
-        with contextlib.suppress(aiodocker.DockerError):
-            await container.kill()
-        await container.delete()
+        await container.delete(force=True)
 
 
 @pytest.fixture

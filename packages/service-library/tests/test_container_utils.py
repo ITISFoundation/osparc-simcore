@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
 
-import contextlib
 from collections.abc import AsyncIterable
 
 import aiodocker
@@ -26,9 +25,7 @@ async def running_container_name() -> AsyncIterable[str]:
 
         yield container_inspect["Name"][1:]
 
-        with contextlib.suppress(aiodocker.DockerError):
-            await container.kill()
-        await container.delete()
+        await container.delete(force=True)
 
 
 async def test_run_command_in_container_container_not_found():

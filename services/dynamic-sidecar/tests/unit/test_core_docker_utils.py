@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from collections.abc import AsyncIterable, AsyncIterator
-from contextlib import suppress
 
 import aiodocker
 import pytest
@@ -73,9 +72,7 @@ async def started_services(container_names: list[str]) -> AsyncIterator[None]:
         yield
 
         for container in started_containers:
-            with suppress(aiodocker.DockerError):
-                await container.kill()
-            await container.delete()
+            await container.delete(force=True)
 
 
 async def test_volume_with_label(
