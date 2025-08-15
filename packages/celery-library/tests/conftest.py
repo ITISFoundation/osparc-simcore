@@ -3,7 +3,7 @@
 
 import datetime
 import threading
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterable, AsyncIterator, Callable
 from functools import partial
 from typing import Any
 
@@ -12,7 +12,7 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
-from celery_library.common import create_task_manager
+from celery_library.backends._redis import RedisTaskInfoStore
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
@@ -20,7 +20,9 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
 from settings_library.celery import CelerySettings
-from settings_library.redis import RedisSettings
+from settings_library.redis import RedisDatabase, RedisSettings
+
+from servicelib.redis import RedisClientSDK
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -40,13 +42,20 @@ class FakeAppServer(BaseAppServer):
         self._settings = settings
 
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
-        async with create_task_manager(
-            app=self.app,
-            settings=self._settings,
-        ) as task_manager:
-            self._task_manager = task_manager
-            startup_completed_event.set()
-            await self.shutdown_event.wait()  # wait for shutdown
+        sdk = RedisClientSDK(
+            self._settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
+            client_name="pytest-celery-tasks-worker",
+        )
+        await sdk.setup()
+        self._task_manager = CeleryTaskManager(
+            self._app,
+            self._settings,
+            RedisTaskInfoStore(sdk)
+        )
+
+        startup_completed_event.set()
+        await self.shutdown_event.wait()  # wait for shutdown
+        await sdk.shutdown()
 
 
 @pytest.fixture
@@ -74,6 +83,20 @@ def app_environment(
             "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value() if redis_service.REDIS_PASSWORD else "",
         },
     )
+
+
+@pytest.fixture
+async def redis_client_sdk(
+    redis_service: RedisSettings,
+) -> AsyncIterable[RedisClientSDK]:
+    sdk = RedisClientSDK(
+        redis_service.build_redis_dsn(RedisDatabase.CELERY_TASKS),
+        decode_responses=False,
+        client_name="pytest-celery-tasks",
+    )
+    await sdk.setup()
+    yield sdk
+    await sdk.shutdown()
 
 
 @pytest.fixture
@@ -134,12 +157,13 @@ async def with_celery_worker(
 async def celery_task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
+    redis_client_sdk: RedisClientSDK,
     with_celery_worker: TestWorkController,
-) -> AsyncIterator[CeleryTaskManager]:
+) -> CeleryTaskManager:
     register_celery_types()
 
-    async with create_task_manager(
+    return CeleryTaskManager(
         celery_app,
         celery_settings,
-    ) as task_manager:
-        yield task_manager
+        RedisTaskInfoStore(redis_client_sdk)
+    )
