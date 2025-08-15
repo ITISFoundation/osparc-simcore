@@ -13,7 +13,6 @@ from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
 from ..._service_jobs import JobService
-from ..._service_solvers import SolverService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -29,12 +28,9 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
-from ...services_http.solver_job_models_converters import (
-    create_jobstatus_from_task,
-)
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
-from ..dependencies.services import get_api_client, get_job_service, get_solver_service
+from ..dependencies.services import get_api_client, get_job_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -97,7 +93,6 @@ async def create_solver_job(  # noqa: PLR0913
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     hidden: Annotated[bool, Query()] = True,
@@ -109,23 +104,15 @@ async def create_solver_job(  # noqa: PLR0913
     NOTE: This operation does **not** start the job
     """
 
-    # ensures user has access to solver
-    solver = await solver_service.get_solver(
+    return await job_service.create_solver_job(
         solver_key=solver_key,
-        solver_version=version,
-    )
-    job, _ = await job_service.create_project_marked_as_job(
-        project_name=None,
-        description=None,
-        solver_or_program=solver,
+        version=version,
         inputs=inputs,
-        url_for=url_for,
         hidden=hidden,
-        parent_project_uuid=x_simcore_parent_project_uuid,
-        parent_node_id=x_simcore_parent_node_id,
+        x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
+        x_simcore_parent_node_id=x_simcore_parent_node_id,
+        url_for=url_for,
     )
-
-    return job
 
 
 @router.delete(
@@ -193,6 +180,7 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None, Query(deprecated=True)
     ] = None,
@@ -212,8 +200,7 @@ async def start_job(
             solver_key=solver_key,
             version=version,
             job_id=job_id,
-            user_id=user_id,
-            director2_api=director2_api,
+            job_service=job_service,
         )
         return JSONResponse(
             status_code=status.HTTP_200_OK, content=jsonable_encoder(job_status)
@@ -222,8 +209,7 @@ async def start_job(
         solver_key=solver_key,
         version=version,
         job_id=job_id,
-        user_id=user_id,
-        director2_api=director2_api,
+        job_service=job_service,
     )
 
 
@@ -268,15 +254,14 @@ async def inspect_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> JobStatus:
     job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
-    task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    return job_status
+    return await job_service.inspect_solver_job(
+        solver_key=solver_key, version=version, job_id=job_id
+    )
 
 
 @router.patch(

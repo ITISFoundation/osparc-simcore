@@ -178,6 +178,7 @@ async def test_list_function_jobs_with_job_id_filter(
 
 @pytest.mark.parametrize("job_status", ["SUCCESS", "FAILED", "STARTED"])
 async def test_get_function_job_status(
+    mocked_app_dependencies: None,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,

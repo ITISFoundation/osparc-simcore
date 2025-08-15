@@ -27,9 +27,12 @@ from .models.schemas.jobs import Job, JobID, JobInputs, compose_resource_name
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver, SolverKeyId
 from .models.schemas.studies import StudyID
+from .services_http.director_v2 import DirectorV2Api
 from .services_http.solver_job_models_converters import (
+    JobStatus,
     create_job_from_project,
     create_job_inputs_from_node_inputs,
+    create_jobstatus_from_task,
     create_new_project_for_job,
 )
 from .services_http.webserver import AuthSession
@@ -45,6 +48,7 @@ class JobService:
     _web_rest_client: AuthSession
     _web_rpc_client: WbApiRpcClient
     _storage_rpc_client: StorageService
+    _director2_api: DirectorV2Api
     _directorv2_rpc_client: DirectorV2Service
     _solver_service: SolverService
     user_id: UserID
@@ -260,3 +264,18 @@ class JobService:
         )
 
         return job
+
+    async def inspect_solver_job(
+        self,
+        *,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        job_id: JobID,
+    ):
+        assert solver_key  # nosec
+        assert version  # nosec
+        task = await self._director2_api.get_computation(
+            project_id=job_id, user_id=self.user_id
+        )
+        job_status: JobStatus = create_jobstatus_from_task(task)
+        return job_status

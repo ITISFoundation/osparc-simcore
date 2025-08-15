@@ -202,6 +202,7 @@ async def test_get_solver_job_pricing_unit(
     ],
 )
 async def test_start_solver_job_pricing_unit_with_payment(
+    mocked_app_dependencies: None,
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     mocked_directorv2_rest_api_base: MockRouter,
@@ -277,6 +278,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
 
 
 async def test_get_solver_job_pricing_unit_no_payment(
+    mocked_app_dependencies: None,
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     mocked_directorv2_rest_api_base: MockRouter,
@@ -310,6 +312,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
 
 
 async def test_start_solver_job_conflict(
+    mocked_app_dependencies: None,
     client: AsyncClient,
     mocked_webserver_rest_api_base: MockRouter,
     mocked_directorv2_rest_api_base: MockRouter,

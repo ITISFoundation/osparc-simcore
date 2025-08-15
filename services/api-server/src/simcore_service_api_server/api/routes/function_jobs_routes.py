@@ -206,6 +206,7 @@ async def function_job_status(
     function: Annotated[RegisteredFunction, Depends(get_function_from_functionjob)],
     stored_job_status: Annotated[FunctionJobStatus, Depends(get_stored_job_status)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
@@ -231,8 +232,7 @@ async def function_job_status(
             solver_key=function.solver_key,
             version=function.solver_version,
             job_id=function_job.solver_job_id,
-            user_id=user_id,
-            director2_api=director2_api,
+            job_service=job_service,
         )
     else:
         raise UnsupportedFunctionFunctionJobClassCombinationError(

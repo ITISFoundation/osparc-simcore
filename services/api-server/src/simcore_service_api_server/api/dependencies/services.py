@@ -7,12 +7,13 @@ from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RabbitMQRPCClient
-from simcore_service_api_server._service_function_jobs import FunctionJobService
-from simcore_service_api_server._service_functions import FunctionService
 
+from ..._service_function_jobs import FunctionJobService
+from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
 from ..._service_programs import ProgramService
 from ..._service_solvers import SolverService
+from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.webserver import AuthSession
 from ...services_rpc.catalog import CatalogService
 from ...services_rpc.director_v2 import DirectorV2Service
@@ -111,6 +112,7 @@ def get_job_service(
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     storage_service: Annotated[StorageService, Depends(get_storage_service)],
     directorv2_service: Annotated[DirectorV2Service, Depends(get_directorv2_service)],
+    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
@@ -124,6 +126,7 @@ def get_job_service(
         _web_rpc_client=web_rpc_api,
         _storage_rpc_client=storage_service,
         _directorv2_rpc_client=directorv2_service,
+        _director2_api=director2_api,
         _solver_service=solver_service,
         user_id=user_id,
         product_name=product_name,
