@@ -166,7 +166,7 @@ async def delete_all_projects(app: web.Application):
 
 
 @asynccontextmanager
-async def new_project(
+async def NewProject(
     params_override: dict | None = None,
     app: web.Application | None = None,
     *,

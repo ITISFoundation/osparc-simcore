@@ -30,7 +30,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
-from pytest_simcore.helpers.webserver_projects import delete_all_projects, new_project
+from pytest_simcore.helpers.webserver_projects import delete_all_projects, NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -104,7 +104,7 @@ async def published_project(
         # everyone HAS read access
         "1": {"read": True, "write": False, "delete": False}
     }
-    async with new_project(
+    async with NewProject(
         project_data,
         client.app,
         user_id=user["id"],
@@ -130,7 +130,7 @@ async def unpublished_project(
     project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
     project_data["published"] = False  # <--
 
-    async with new_project(
+    async with NewProject(
         project_data,
         client.app,
         user_id=user["id"],

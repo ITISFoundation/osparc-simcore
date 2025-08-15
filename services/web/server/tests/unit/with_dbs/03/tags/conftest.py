@@ -10,7 +10,7 @@ import pytest
 from aioresponses import aioresponses
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from pytest_simcore.helpers.webserver_projects import delete_all_projects, new_project
+from pytest_simcore.helpers.webserver_projects import delete_all_projects, NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
@@ -110,7 +110,7 @@ async def shared_project(
             },
         },
     )
-    async with new_project(
+    async with NewProject(
         fake_project,
         client.app,
         user_id=logged_user["id"],
@@ -139,7 +139,7 @@ async def template_project(
         str(all_group["gid"]): {"read": True, "write": False, "delete": False}
     }
 
-    async with new_project(
+    async with NewProject(
         project_data,
         client.app,
         user_id=user["id"],

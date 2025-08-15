@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 from models_library.projects import ProjectID
-from pytest_simcore.helpers.webserver_projects import new_project
+from pytest_simcore.helpers.webserver_projects import NewProject
 
 
 @pytest.fixture(scope="session")
@@ -45,7 +45,7 @@ async def user_project(
     fake_project["prjOwner"] = logged_user["name"]
     fake_project["uuid"] = f"{project_id}"
 
-    async with new_project(
+    async with NewProject(
         fake_project,
         client.app,
         user_id=logged_user["id"],
