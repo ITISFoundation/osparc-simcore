@@ -253,7 +253,7 @@ def _get_project_workbench_from_db(
             )
             .mappings()
             .all()
-        )  # list[dict]
+        )
 
     return {row["node_id"]: dict(row) for row in rows}
 
