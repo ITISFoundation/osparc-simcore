@@ -10,6 +10,7 @@
 import random
 from collections.abc import Awaitable, Callable
 from pathlib import Path
+import secrets
 from typing import Any, TypeAlias
 from urllib.parse import quote
 
@@ -327,9 +328,9 @@ async def test_list_paths(
     )
 
     # ls with only some part of the path should return only the projects that match
-    selected_project, selected_nodes, selected_project_files = random.choice(
+    selected_project, selected_nodes, selected_project_files = secrets.choice(
         project_to_files_mapping
-    )  # noqa: S311
+    )
     partial_file_filter = Path(
         selected_project["uuid"][: len(selected_project["uuid"]) // 2]
     )
