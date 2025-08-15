@@ -12,9 +12,12 @@ from models_library.api_schemas_webserver.functions import (
     JSONFunctionOutputSchema,
     ProjectFunction,
 )
-
-# import simcore_service_webserver.functions._functions_controller_rpc as functions_rpc
-from models_library.functions import FunctionUserAccessRights
+from models_library.basic_types import IDStr
+from models_library.functions import (
+    FunctionClass,
+    FunctionUserAccessRights,
+    SolverFunction,
+)
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
@@ -22,6 +25,7 @@ from models_library.functions_errors import (
     FunctionWriteAccessDeniedError,
 )
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy, OrderDirection
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
@@ -274,11 +278,24 @@ async def test_list_functions_mixed_user(
     )
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
+    "order_by",
+    [
+        None,
+        OrderBy(field=IDStr("uid"), direction=OrderDirection.ASC),
+        OrderBy(field=IDStr("uid"), direction=OrderDirection.DESC),
+    ],
 )
-async def test_list_functions_with_pagination(
+@pytest.mark.parametrize(
+    "test_pagination_limit, test_pagination_offset",
+    [
+        (5, 0),
+        (2, 2),
+        (12, 4),
+    ],
+)
+async def test_list_functions_with_pagination_ordering(
     client: TestClient,
     add_user_function_api_access_rights: None,
     rpc_client: RabbitMQRPCClient,
@@ -286,52 +303,197 @@ async def test_list_functions_with_pagination(
     clean_functions: None,
     osparc_product_name: ProductName,
     logged_user: UserInfoDict,
+    order_by: OrderBy | None,
+    test_pagination_limit: int,
+    test_pagination_offset: int,
 ):
     # Register multiple functions
-    TOTAL_FUNCTIONS = 3
-    for _ in range(TOTAL_FUNCTIONS):
+    TOTAL_FUNCTIONS = 10
+    registered_functions = [
         await functions_rpc.register_function(
             rabbitmq_rpc_client=rpc_client,
             function=mock_function,
             user_id=logged_user["id"],
             product_name=osparc_product_name,
         )
-
-    functions, page_info = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client,
-        pagination_limit=2,
-        pagination_offset=0,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-    )
+        for _ in range(TOTAL_FUNCTIONS)
+    ]
 
     # List functions with pagination
     functions, page_info = await functions_rpc.list_functions(
         rabbitmq_rpc_client=rpc_client,
-        pagination_limit=2,
-        pagination_offset=0,
+        pagination_limit=test_pagination_limit,
+        pagination_offset=test_pagination_offset,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
+        order_by=order_by,
     )
 
     # Assert the list contains the correct number of functions
-    assert len(functions) == 2
-    assert page_info.count == 2
+    assert len(functions) == min(
+        test_pagination_limit, max(0, TOTAL_FUNCTIONS - test_pagination_offset)
+    )
+    assert all(f.uid in [rf.uid for rf in registered_functions] for f in functions)
+    assert page_info.count == len(functions)
     assert page_info.total == TOTAL_FUNCTIONS
 
-    # List the next page of functions
-    functions, page_info = await functions_rpc.list_functions(
-        rabbitmq_rpc_client=rpc_client,
-        pagination_limit=2,
-        pagination_offset=2,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
+    # Verify the functions are sorted correctly based on the order_by parameter
+    if order_by:
+        field = order_by.field
+        direction = order_by.direction
+        sorted_functions = sorted(
+            functions,
+            key=lambda f: getattr(f, field),
+            reverse=(direction == OrderDirection.DESC),
+        )
+        assert functions == sorted_functions
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_functions_search(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
+):
+    mock_function_dummy1 = mock_function.copy()
+    mock_function_dummy1.title = "Function TitleDummy1"
+    mock_function_dummy1.description = "Function DescriptionDummy1"
+
+    mock_function_dummy2 = mock_function.copy()
+    mock_function_dummy2.title = "Function TitleDummy2"
+    mock_function_dummy2.description = "Function DescriptionDummy2"
+
+    registered_functions = {}
+    for function in [mock_function_dummy1, mock_function_dummy2]:
+        registered_functions[function.title] = []
+        for _ in range(5):
+            registered_functions[function.title].append(
+                await functions_rpc.register_function(
+                    rabbitmq_rpc_client=rpc_client,
+                    function=function,
+                    user_id=logged_user["id"],
+                    product_name=osparc_product_name,
+                )
+            )
+
+    for search_term, expected_number in [("Dummy", 10), ("Dummy2", 5)]:
+        # Search for the function by title
+        functions, _ = await functions_rpc.list_functions(
+            rabbitmq_rpc_client=rpc_client,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            search_by_function_title=search_term,
+            pagination_limit=10,
+            pagination_offset=0,
+        )
+
+        # Assert the function is found
+        assert len(functions) == expected_number
+        if search_term == "Dummy2":
+            assert functions[0].uid in [
+                function.uid
+                for function in registered_functions[mock_function_dummy2.title]
+            ]
+
+    for search_term, expected_number in [
+        ("Dummy", 10),
+        ("Dummy2", 5),
+        (str(registered_functions[mock_function_dummy2.title][0].uid)[:8], 1),
+        ("DescriptionDummy2", 5),
+    ]:
+        # Search for the function by name, description, or UUID (multi-column search)
+        functions, _ = await functions_rpc.list_functions(
+            rabbitmq_rpc_client=rpc_client,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            search_by_multi_columns=search_term,
+            pagination_limit=10,
+            pagination_offset=0,
+        )
+
+        # Assert the function is found
+        assert len(functions) == expected_number
+        if search_term == "Dummy2":
+            assert functions[0].uid in [
+                function.uid
+                for function in registered_functions[mock_function_dummy2.title]
+            ]
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_list_functions_with_filters(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    mock_function: ProjectFunction,
+    logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    add_user_function_api_access_rights: None,
+):
+    N_OF_PROJECT_FUNCTIONS = 3
+    N_OF_SOLVER_FUNCTIONS = 4
+    # Register the function first
+    registered_functions = [
+        await functions_rpc.register_function(
+            rabbitmq_rpc_client=rpc_client,
+            function=mock_function,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+        )
+        for _ in range(N_OF_PROJECT_FUNCTIONS)
+    ]
+
+    solver_function = SolverFunction(
+        title="Solver Function",
+        description="A function that solves problems",
+        function_class=FunctionClass.SOLVER,
+        input_schema=JSONFunctionInputSchema(),
+        output_schema=JSONFunctionOutputSchema(),
+        default_inputs=None,
+        solver_key="simcore/services/comp/foo.bar-baz_/sub-dir_1/my-service1",
+        solver_version="0.0.0",
+    )
+    registered_functions.extend(
+        [
+            await functions_rpc.register_function(
+                rabbitmq_rpc_client=rpc_client,
+                function=solver_function,
+                user_id=logged_user["id"],
+                product_name=osparc_product_name,
+            )
+            for _ in range(N_OF_SOLVER_FUNCTIONS)
+        ]
     )
 
-    # Assert the list contains the correct number of functions
-    assert len(functions) == 1
-    assert page_info.count == 1
-    assert page_info.total == TOTAL_FUNCTIONS
+    for function_class in [FunctionClass.PROJECT, FunctionClass.SOLVER]:
+        # List functions with filters
+        functions, _ = await functions_rpc.list_functions(
+            rabbitmq_rpc_client=rpc_client,
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            filter_by_function_class=function_class,
+            pagination_limit=10,
+            pagination_offset=0,
+        )
+
+        # Assert the function is found
+        assert len(functions) == (
+            N_OF_PROJECT_FUNCTIONS
+            if function_class == FunctionClass.PROJECT
+            else N_OF_SOLVER_FUNCTIONS
+        )
+        assert all(
+            function.uid in [f.uid for f in registered_functions]
+            for function in functions
+        )
 
 
 @pytest.mark.parametrize(

@@ -141,7 +141,7 @@ async def client(
     monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:
     app_config["storage"]["enabled"] = False
-
+    app_config["db"]["postgres"]["minsize"] = 2
     monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
 

@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionJobCollection,
 )
 from models_library.functions import (
+    FunctionClass,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
@@ -24,6 +25,7 @@ from models_library.functions import (
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -135,6 +137,10 @@ async def list_functions(
     product_name: ProductName,
     pagination_offset: int,
     pagination_limit: int,
+    order_by: OrderBy | None = None,
+    filter_by_function_class: FunctionClass | None = None,
+    search_by_function_title: str | None = None,
+    search_by_multi_columns: str | None = None,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     result: tuple[list[RegisteredFunction], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
@@ -144,6 +150,10 @@ async def list_functions(
             pagination_limit=pagination_limit,
             user_id=user_id,
             product_name=product_name,
+            order_by=order_by,
+            filter_by_function_class=filter_by_function_class,
+            search_by_function_title=search_by_function_title,
+            search_by_multi_columns=search_by_multi_columns,
         )
     )
     return TypeAdapter(
@@ -160,6 +170,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     result: tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset] = (
         await rabbitmq_rpc_client.request(
@@ -170,6 +182,8 @@ async def list_function_jobs(
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,
             filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
         )
     )
     return TypeAdapter(

@@ -27,7 +27,7 @@ jobs:
     env:
       TO_TAG_PREFIX: release-github
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: find branch name
