@@ -81,11 +81,12 @@ async def list_project_conversations(
         .where(
             (conversations.c.project_uuid == f"{project_uuid}")
             & (
-                conversations.c.type
-                in [
-                    ConversationType.PROJECT_STATIC,
-                    ConversationType.PROJECT_ANNOTATION,
-                ]
+                conversations.c.type.in_(
+                    (
+                        ConversationType.PROJECT_STATIC,
+                        ConversationType.PROJECT_ANNOTATION,
+                    )
+                )
             )
         )
     )
