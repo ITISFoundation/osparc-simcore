@@ -18,8 +18,8 @@ _logger = logging.getLogger(__name__)
 _RPC_TIMEOUT_VERY_LONG_REQUEST: Final[PositiveInt] = int(
     timedelta(minutes=60).total_seconds()
 )
-_RPC_TIMEOUT_NORMAL_REQUEST: Final[PositiveInt] = int(
-    timedelta(seconds=30).total_seconds()
+_RPC_TIMEOUT_SHORT_REQUESTS: Final[PositiveInt] = int(
+    timedelta(seconds=20).total_seconds()
 )
 
 
@@ -44,7 +44,7 @@ async def start_task(
         task_name=task_name,
         fire_and_forget=fire_and_forget,
         **task_kwargs,
-        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
+        timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
     )
     assert isinstance(result, TaskId)  # nosec
     return result
@@ -61,7 +61,7 @@ async def list_tasks(
         get_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("list_tasks"),
         task_context=task_context,
-        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
+        timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
     )
     return TypeAdapter(list[TaskBase]).validate_python(result)
 
@@ -79,7 +79,7 @@ async def get_task_status(
         TypeAdapter(RPCMethodName).validate_python("get_task_status"),
         task_context=task_context,
         task_id=task_id,
-        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
+        timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
     )
     assert isinstance(result, TaskStatus)  # nosec
     return result
@@ -98,7 +98,7 @@ async def get_task_result(
         TypeAdapter(RPCMethodName).validate_python("get_task_result"),
         task_context=task_context,
         task_id=task_id,
-        timeout_s=_RPC_TIMEOUT_NORMAL_REQUEST,
+        timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
     )
     assert isinstance(serialized_result, RPCErrorResponse | str)  # nosec
     if isinstance(serialized_result, RPCErrorResponse):
