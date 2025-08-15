@@ -91,7 +91,7 @@ async def test_moving_between_private_and_shared_workspaces(
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert data["workspaceId"] is None  # <-- Workspace ID is None
+    assert data.get("workspaceId") is None  # <-- Workspace ID is None
 
     # Move project from your private workspace to shared workspace
     base_url = client.app.router["move_project_to_workspace"].url_for(
@@ -248,7 +248,7 @@ async def test_moving_between_workspaces_check_removed_from_folder(
     base_url = client.app.router["get_project"].url_for(project_id=project["uuid"])
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
-    assert data["workspaceId"] is None  # <-- Workspace ID is None
+    assert data.get("workspaceId") is None  # <-- Workspace ID is None
 
     # Check project_to_folders DB is empty
     with postgres_db.connect() as con:

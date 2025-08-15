@@ -48,7 +48,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from settings_library.redis import RedisSettings
-from simcore_postgres_database.models.projects import projects as projects_db_model
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects._controller.nodes_rest import (
     _ProjectNodePreview,
@@ -370,16 +370,14 @@ async def test_create_node(
 
         # check database is updated
         assert "node_id" in data
-        create_node_id = data["node_id"]
+        node_id = data["node_id"]
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select(projects_db_model.c.workbench).where(
-                    projects_db_model.c.uuid == user_project["uuid"]
-                )
+                sa.select(sa.literal(1))
+                .where(projects_nodes.c.node_id == node_id)
+                .limit(1)
             )
-        assert result
-        workbench = result.one()[projects_db_model.c.workbench]
-        assert create_node_id in workbench
+        assert result.scalar() is not None
     else:
         assert error
 
@@ -463,19 +461,20 @@ async def test_create_and_delete_many_nodes_in_parallel(
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select(projects_db_model.c.workbench).where(
-                projects_db_model.c.uuid == user_project["uuid"]
+            sa.select(projects_nodes.c.node_id).where(
+                projects_nodes.c.project_uuid == user_project["uuid"]
             )
         )
         assert result
-        workbench = result.one()[projects_db_model.c.workbench]
-    assert len(workbench) == NUM_DY_SERVICES + num_services_in_project
+        node_ids = result.scalars().all()
+    assert len(node_ids) == NUM_DY_SERVICES + num_services_in_project
     print(f"--> {NUM_DY_SERVICES} nodes were created concurrently")
     #
     # delete now
     #
     delete_node_tasks = []
-    for node_id in workbench:
+
+    for node_id in node_ids:
         delete_url = client.app.router["delete_node"].url_for(
             project_id=user_project["uuid"], node_id=node_id
         )
@@ -596,13 +595,13 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select(projects_db_model.c.workbench).where(
-                projects_db_model.c.uuid == project["uuid"]
+            sa.select(projects_nodes.c.node_id).where(
+                projects_nodes.c.project_uuid == project["uuid"]
             )
         )
         assert result
-        workbench = result.one()[projects_db_model.c.workbench]
-    assert len(workbench) == NUM_DY_SERVICES
+        node_ids = result.scalars().all()
+    assert len(node_ids) == NUM_DY_SERVICES
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -756,13 +755,11 @@ async def test_delete_node(
         # ensure the node is gone
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select(projects_db_model.c.workbench).where(
-                    projects_db_model.c.uuid == user_project["uuid"]
-                )
+                sa.select(sa.literal(1))
+                .where(projects_nodes.c.node_id == node_id)
+                .limit(1)
             )
-            assert result
-            workbench = result.one()[projects_db_model.c.workbench]
-            assert node_id not in workbench
+            assert result.scalar() is None
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)

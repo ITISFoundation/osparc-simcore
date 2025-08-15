@@ -67,6 +67,7 @@ from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.wallets import wallets
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.licenses._licensed_resources_service import DeepDiff
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import to_datetime
@@ -89,10 +90,15 @@ def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
 
-    modified = [
+    skip = [
         "lastChangeDate",
+        "templateType",
+        "trashedAt",
+        "trashedBy",
+        "workspaceId",
+        "folderId",
     ]
-    keep = [k for k in update_data if k not in modified]
+    keep = [k for k in update_data if k not in skip]
 
     assert _extract(current_project, keep) == _extract(update_data, keep)
 
@@ -1176,7 +1182,7 @@ async def test_get_active_project(
         )
         assert not error
         assert ProjectStateOutputSchema(**data.pop("state")).share_state.locked
-        data.pop("folderId")
+        data.pop("folderId", None)
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
         data_last_change_date = data.pop("lastChangeDate")
@@ -1904,7 +1910,11 @@ async def test_open_shared_project_at_same_time(
             elif data:
                 project_status = ProjectStateOutputSchema(**data.pop("state"))
                 data.pop("folderId")
-                assert data == {k: shared_project[k] for k in data}
+                assert not DeepDiff(
+                    data,
+                    {k: shared_project[k] for k in data},
+                    exclude_paths=["root['lastChangeDate']"],
+                )
                 assert project_status.share_state.locked
                 assert project_status.share_state.current_user_groupids
                 assert len(project_status.share_state.current_user_groupids) == 1

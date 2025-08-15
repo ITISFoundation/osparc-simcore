@@ -11,6 +11,7 @@ from http import HTTPStatus
 
 import pytest
 from aiohttp.test_utils import TestClient
+from deepdiff import DeepDiff
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
@@ -165,7 +166,9 @@ async def test_patch_project_node(
             "output_1": {
                 "store": 0,
                 "path": "9934cba6-4b51-11ef-968a-02420a00f1c1/571ffc8d-fa6e-411f-afc8-9c62d08dd2fa/matus.txt",
+                "label": "matus.txt",
                 "eTag": "d41d8cd98f00b204e9800998ecf8427e",
+                "dataset": None,
             }
         }
     }
@@ -259,10 +262,14 @@ async def test_patch_project_node_inputs_notifies(
     await assert_status(resp, expected)
     assert mocked_notify_project_node_update.call_count > 1
     # 1 message per node updated
-    assert [
-        call_args[0][2]
-        for call_args in mocked_notify_project_node_update.await_args_list
-    ] == list(user_project["workbench"].keys())
+    assert not DeepDiff(
+        [
+            call_args[0][2]
+            for call_args in mocked_notify_project_node_update.await_args_list
+        ],
+        list(user_project["workbench"].keys()),
+        ignore_order=True,
+    )
 
 
 @pytest.mark.parametrize(

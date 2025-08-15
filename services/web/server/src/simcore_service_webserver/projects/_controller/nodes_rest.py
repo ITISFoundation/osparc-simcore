@@ -111,18 +111,12 @@ async def create_node(request: web.Request) -> web.Response:
             text=f"Service {body.service_key}:{body.service_version} is deprecated"
         )
 
-    # ensure the project exists
-    project_data = await _projects_service.get_project_for_user(
-        request.app,
-        project_uuid=f"{path_params.project_id}",
-        user_id=req_ctx.user_id,
-    )
     data = {
         "node_id": await _projects_service.add_project_node(
             request,
-            project_data,
             req_ctx.user_id,
             req_ctx.product_name,
+            path_params.project_id,
             get_api_base_url(request),
             body.service_key,
             body.service_version,

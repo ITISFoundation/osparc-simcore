@@ -92,7 +92,6 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from servicelib.utils import fire_and_forget_task, limited_gather, logged_gather
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import (
-    ProjectNodeCreate,
     ProjectNodesNodeNotFoundError,
 )
 from simcore_postgres_database.webserver_models import ProjectType
@@ -163,11 +162,40 @@ from .exceptions import (
     ProjectTooManyUserSessionsError,
     ProjectTypeAndTemplateIncompatibilityError,
 )
-from .models import ProjectDBGet, ProjectDict, ProjectPatchInternalExtended
+from .models import (
+    ProjectDBGet,
+    ProjectDict,
+    ProjectPatchInternalExtended,
+    ProjectWithWorkbenchDBGet,
+)
 from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
 _logger = logging.getLogger(__name__)
+
+
+async def _create_project_document_and_notify(
+    app,
+    *,
+    project_id: ProjectID,
+    user_id: UserID,
+    client_session_id: ClientSessionID | None,
+):
+    (
+        project_document,
+        document_version,
+    ) = await create_project_document_and_increment_version(app, project_id)
+
+    user_primary_gid = await users_service.get_user_primary_group_id(app, user_id)
+
+    await notify_project_document_updated(
+        app=app,
+        project_id=project_id,
+        user_primary_gid=user_primary_gid,
+        client_session_id=client_session_id,
+        version=document_version,
+        document=project_document,
+    )
 
 
 async def patch_project_and_notify_users(
@@ -241,7 +269,10 @@ async def get_project_for_user(
     """
     db = ProjectDBAPI.get_from_app_context(app)
 
-    product_name = await db.get_project_product(ProjectID(project_uuid))
+    product_name = await _projects_repository.get_project_product(
+        app, project_uuid=ProjectID(project_uuid)
+    )
+
     user_project_access = await check_user_project_permission(
         app,
         project_id=ProjectID(project_uuid),
@@ -654,11 +685,11 @@ async def _check_project_node_has_all_required_inputs(
         permission="read",
     )
 
-    project_dict, _ = await db.get_project_dict_and_type(f"{project_uuid}")
+    nodes = await _projects_nodes_repository.get_by_project(
+        app, project_id=project_uuid
+    )
 
-    nodes_map: dict[NodeID, Node] = {
-        NodeID(k): Node(**v) for k, v in project_dict["workbench"].items()
-    }
+    nodes_map = dict(nodes)
     node = nodes_map[node_id]
 
     unset_required_inputs: list[str] = []
@@ -685,8 +716,9 @@ async def _check_project_node_has_all_required_inputs(
         if output_entry is None:
             unset_outputs_in_upstream.append((source_output_key, source_node.label))
 
-    for required_input in node.inputs_required:
-        _check_required_input(required_input)
+    if node.inputs_required:
+        for required_input in node.inputs_required:
+            _check_required_input(required_input)
 
     node_with_required_inputs = node.label
     if unset_required_inputs:
@@ -909,9 +941,9 @@ async def _start_dynamic_service(  # noqa: C901
 
 async def add_project_node(
     request: web.Request,
-    project: dict[str, Any],
     user_id: UserID,
     product_name: str,
+    project_id: ProjectID,
     product_api_base_url: str,
     service_key: ServiceKey,
     service_version: ServiceVersion,
@@ -922,14 +954,14 @@ async def add_project_node(
         "starting node %s:%s in project %s for user %s",
         service_key,
         service_version,
-        project["uuid"],
+        project_id,
         user_id,
         extra=get_log_record_extra(user_id=user_id),
     )
 
     await check_user_project_permission(
         request.app,
-        project_id=project["uuid"],
+        project_id=project_id,
         user_id=user_id,
         product_name=product_name,
         permission="write",
@@ -939,26 +971,23 @@ async def add_project_node(
     default_resources = await catalog_service.get_service_resources(
         request.app, user_id, service_key, service_version
     )
-    db_legacy: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-    assert db_legacy  # nosec
-    await db_legacy.add_project_node(
-        user_id,
-        ProjectID(project["uuid"]),
-        ProjectNodeCreate(
-            node_id=node_uuid,
-            required_resources=jsonable_encoder(default_resources),
+
+    await _projects_nodes_repository.add(
+        request.app,
+        project_id=project_id,
+        node_id=node_uuid,
+        node=Node(
             key=service_key,
             version=service_version,
             label=service_key.split("/")[-1],
+            required_resources=jsonable_encoder(default_resources),
         ),
-        Node.model_validate(
-            {
-                "key": service_key,
-                "version": service_version,
-                "label": service_key.split("/")[-1],
-            }
-        ),
-        product_name,
+    )
+
+    await _create_project_document_and_notify(
+        request.app,
+        project_id=project_id,
+        user_id=user_id,
         client_session_id=client_session_id,
     )
 
@@ -967,12 +996,12 @@ async def add_project_node(
     await director_v2_service.create_or_update_pipeline(
         request.app,
         user_id,
-        project["uuid"],
+        project_id,
         product_name,
         product_api_base_url,
     )
     await dynamic_scheduler_service.update_projects_networks(
-        request.app, project_id=ProjectID(project["uuid"])
+        request.app, project_id=project_id
     )
 
     if _is_node_dynamic(service_key):
@@ -985,7 +1014,7 @@ async def add_project_node(
                 product_name=product_name,
                 product_api_base_url=product_api_base_url,
                 user_id=user_id,
-                project_uuid=ProjectID(project["uuid"]),
+                project_uuid=project_id,
                 node_uuid=node_uuid,
             )
 
@@ -1000,16 +1029,14 @@ async def start_project_node(
     project_id: ProjectID,
     node_id: NodeID,
 ):
-    project = await get_project_for_user(request.app, f"{project_id}", user_id)
-    workbench = project.get("workbench", {})
-    if not workbench.get(f"{node_id}"):
-        raise NodeNotFoundError(project_uuid=f"{project_id}", node_uuid=f"{node_id}")
-    node_details = Node.model_construct(**workbench[f"{node_id}"])
+    node = await _projects_nodes_repository.get(
+        request.app, project_id=project_id, node_id=node_id
+    )
 
     await _start_dynamic_service(
         request,
-        service_key=node_details.key,
-        service_version=node_details.version,
+        service_key=node.key,
+        service_version=node.version,
         product_name=product_name,
         product_api_base_url=product_api_base_url,
         user_id=user_id,
@@ -1092,12 +1119,19 @@ async def delete_project_node(
         fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
     )
 
-    # remove the node from the db
-    db_legacy: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
-    assert db_legacy  # nosec
-    await db_legacy.remove_project_node(
-        user_id, project_uuid, NodeID(node_uuid), client_session_id=client_session_id
+    await _projects_nodes_repository.delete(
+        request.app,
+        project_id=project_uuid,
+        node_id=NodeID(node_uuid),
     )
+
+    await _create_project_document_and_notify(
+        request.app,
+        project_id=project_uuid,
+        user_id=user_id,
+        client_session_id=client_session_id,
+    )
+
     # also ensure the project is updated by director-v2 since services
     product_name = products_web.get_product_name(request)
     await director_v2_service.create_or_update_pipeline(
@@ -1133,25 +1167,15 @@ async def update_project_node_state(
         user_id,
     )
 
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    product_name = await db_legacy.get_project_product(project_id)
+    product_name = await _projects_repository.get_project_product(
+        app, project_uuid=project_id
+    )
     await check_user_project_permission(
         app,
         project_id=project_id,
         user_id=user_id,
         product_name=product_name,
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
-    )
-
-    # Delete this once workbench is removed from the projects table
-    # See: https://github.com/ITISFoundation/osparc-simcore/issues/7046
-    await db_legacy.update_project_node_data(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_id=node_id,
-        product_name=None,
-        new_node_data={"state": {"currentStatus": new_state}},
-        client_session_id=client_session_id,
     )
 
     await _projects_nodes_repository.update(
@@ -1162,6 +1186,14 @@ async def update_project_node_state(
             state=NodeState(current_status=RunningState(new_state))
         ),
     )
+
+    await _create_project_document_and_notify(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        client_session_id=client_session_id,
+    )
+
     return await get_project_for_user(
         app, user_id=user_id, project_uuid=f"{project_id}", include_state=True
     )
@@ -1187,8 +1219,6 @@ async def patch_project_node(
         mode="json", exclude_unset=True, by_alias=True
     )
 
-    _projects_repository_legacy = ProjectDBAPI.get_from_app_context(app)
-
     # 1. Check user permissions
     await check_user_project_permission(
         app,
@@ -1200,14 +1230,15 @@ async def patch_project_node(
 
     # 2. If patching service key or version make sure it's valid
     if _node_patch_exclude_unset.get("key") or _node_patch_exclude_unset.get("version"):
-        _project, _ = await _projects_repository_legacy.get_project_dict_and_type(
-            project_uuid=f"{project_id}"
+        _project_node = await _projects_nodes_repository.get(
+            app,
+            project_id=project_id,
+            node_id=node_id,
         )
-        _project_node_data = _project["workbench"][f"{node_id}"]
 
-        _service_key = _node_patch_exclude_unset.get("key", _project_node_data["key"])
+        _service_key = _node_patch_exclude_unset.get("key", _project_node.key)
         _service_version = _node_patch_exclude_unset.get(
-            "version", _project_node_data["version"]
+            "version", _project_node.version
         )
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
         await catalog_rpc.check_for_service(
@@ -1219,20 +1250,18 @@ async def patch_project_node(
         )
 
     # 3. Patch the project node
-    updated_project, _ = await _projects_repository_legacy.update_project_node_data(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_id=node_id,
-        product_name=product_name,
-        new_node_data=_node_patch_exclude_unset,
-        client_session_id=client_session_id,
-    )
-
     await _projects_nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
         partial_node=partial_node,
+    )
+
+    await _create_project_document_and_notify(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        client_session_id=client_session_id,
     )
 
     # 4. Make calls to director-v2 to keep data in sync (ex. comp_* DB tables)
@@ -1248,18 +1277,29 @@ async def patch_project_node(
             app, project_id=project_id
         )
 
+    updated_project: ProjectWithWorkbenchDBGet = (
+        await _projects_repository.get_project_with_workbench(
+            app, project_uuid=project_id
+        )
+    )
+
     # 5. Updates project states for user, if inputs/outputs have been changed
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
-        updated_project = await add_project_states_for_user(
-            user_id=user_id, project=updated_project, is_template=False, app=app
+        updated_project_with_states = await add_project_states_for_user(
+            user_id=user_id,
+            project=updated_project.model_dump(mode="json"),
+            is_template=False,
+            app=app,
         )
-        for node_uuid in updated_project["workbench"]:
+        for node_uuid in updated_project_with_states["workbench"]:
             await notify_project_node_update(
-                app, updated_project, node_uuid, errors=None
+                app, updated_project_with_states, node_uuid, errors=None
             )
         return
 
-    await notify_project_node_update(app, updated_project, node_id, errors=None)
+    await notify_project_node_update(
+        app, updated_project.model_dump(mode="json"), node_id, errors=None
+    )
 
 
 async def update_project_node_outputs(
@@ -1285,8 +1325,9 @@ async def update_project_node_outputs(
     )
     new_outputs = new_outputs or {}
 
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
-    product_name = await db_legacy.get_project_product(project_id)
+    product_name = await _projects_repository.get_project_product(
+        app, project_uuid=project_id
+    )
     await check_user_project_permission(
         app,
         project_id=project_id,
@@ -1295,16 +1336,7 @@ async def update_project_node_outputs(
         permission="write",  # NOTE: MD: before only read was sufficient, double check this
     )
 
-    updated_project, changed_entries = await db_legacy.update_project_node_data(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_id=node_id,
-        product_name=None,
-        new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
-        client_session_id=client_session_id,
-    )
-
-    await _projects_nodes_repository.update(
+    updated_node = await _projects_nodes_repository.update(
         app,
         project_id=project_id,
         node_id=node_id,
@@ -1313,23 +1345,31 @@ async def update_project_node_outputs(
         ),
     )
 
+    await _create_project_document_and_notify(
+        app,
+        project_id=project_id,
+        user_id=user_id,
+        client_session_id=client_session_id,
+    )
+
     _logger.debug(
         "patched project %s, following entries changed: %s",
         project_id,
-        pformat(changed_entries),
-    )
-    updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, is_template=False, app=app
+        pformat(updated_node),
     )
 
-    # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
-    # we do want only the key names
-    changed_keys = (
-        changed_entries.get(TypeAdapter(NodeIDStr).validate_python(f"{node_id}"), {})
-        .get("outputs", {})
-        .keys()
+    updated_project = await _projects_repository.get_project_with_workbench(
+        app, project_uuid=project_id
     )
-    return updated_project, changed_keys
+
+    updated_project_with_states = await add_project_states_for_user(
+        user_id=user_id,
+        project=updated_project.model_dump(mode="json"),
+        is_template=False,
+        app=app,
+    )
+
+    return updated_project_with_states, list(new_outputs.keys())
 
 
 async def list_node_ids_in_project(
@@ -1830,9 +1870,9 @@ async def add_project_states_for_user(
             node_state_dict = json_loads(
                 node_state.model_dump_json(by_alias=True, exclude_unset=True)
             )
-            prj_node.setdefault("state", {}).update(node_state_dict)
+            prj_node["state"] = NodeState.model_validate(node_state_dict)
             prj_node_progress = node_state_dict.get("progress", None) or 0
-            prj_node.update({"progress": round(prj_node_progress * 100.0)})
+            prj_node["progress"] = round(prj_node_progress * 100.0)
 
     project["state"] = ProjectState(
         share_state=share_state, state=ProjectRunningState(value=running_state)

@@ -40,7 +40,7 @@ from servicelib.aiohttp.monitor_services import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
-from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
@@ -437,20 +437,18 @@ async def test_progress_computational_workflow(
 
     # check the database. doing it after the waiting calls above is safe
     async with aiopg_engine.acquire() as conn:
-        assert projects is not None
+        assert projects_nodes is not None
         result = await conn.execute(
-            sa.select(projects.c.workbench).where(
-                projects.c.uuid == str(user_project_id)
+            sa.select(projects_nodes).where(
+                projects_nodes.c.project_uuid == f"{user_project_id}"
             )
         )
-        row = await result.fetchone()
-        assert row
-        project_workbench = dict(row[projects.c.workbench])
+        rows = await result.fetchall()
+        assert rows
+        node_dict = {row["node_id"]: dict(row) for row in rows}
+
         # NOTE: the progress might still be present but is not used anymore
-        assert (
-            project_workbench[f"{random_node_id_in_user_project}"].get("progress", 0)
-            == 0
-        )
+        assert node_dict[f"{random_node_id_in_user_project}"].get("progress", 0) == 0
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
