@@ -364,7 +364,7 @@ async def test_start_solver_job_conflict(
                 job_parent_resource_name="studies/96642f2a-a72c-11ef-8776-02420a00087d",
                 storage_assets_deleted=True,
             ),
-            id="storage_data_deleted",
+            id="storage_assets_deleted",
         )
     ],
 )

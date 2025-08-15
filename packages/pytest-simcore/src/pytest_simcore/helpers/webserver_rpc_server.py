@@ -43,14 +43,14 @@ class WebserverRpcSideEffects:
         user_id: UserID,
         project_uuid: ProjectID,
         job_parent_resource_name: str,
-        storage_data_deleted: bool,
+        storage_assets_deleted: bool,
     ) -> None:
         assert rpc_client
 
         assert not job_parent_resource_name.startswith("/")  # nosec
         assert "/" in job_parent_resource_name  # nosec
         assert not job_parent_resource_name.endswith("/")  # nosec
-        assert isinstance(storage_data_deleted, bool)
+        assert isinstance(storage_assets_deleted, bool)
 
         assert product_name
         assert user_id

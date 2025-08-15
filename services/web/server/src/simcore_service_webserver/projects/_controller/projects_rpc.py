@@ -38,7 +38,7 @@ async def mark_project_as_job(
     user_id: UserID,
     project_uuid: ProjectID,
     job_parent_resource_name: str,
-    storage_data_deleted: bool,
+    storage_assets_deleted: bool,
 ) -> None:
 
     try:
@@ -49,7 +49,7 @@ async def mark_project_as_job(
             user_id=user_id,
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
-            storage_data_deleted=storage_data_deleted,
+            storage_assets_deleted=storage_assets_deleted,
         )
     except ProjectInvalidRightsError as err:
         raise ProjectForbiddenRpcError.from_domain_error(err) from err
@@ -99,7 +99,7 @@ async def list_projects_marked_as_jobs(
             created_at=project.creation_date,
             modified_at=project.last_change_date,
             job_parent_resource_name=project.job_parent_resource_name,
-            storage_assets_deleted=project.storage_data_deleted,
+            storage_assets_deleted=project.storage_assets_deleted,
         )
         for project in projects
     ]
@@ -153,7 +153,7 @@ async def get_project_marked_as_job(
         created_at=project.creation_date,
         modified_at=project.last_change_date,
         job_parent_resource_name=project.job_parent_resource_name,
-        storage_assets_deleted=project.storage_data_deleted,
+        storage_assets_deleted=project.storage_assets_deleted,
     )
 
 

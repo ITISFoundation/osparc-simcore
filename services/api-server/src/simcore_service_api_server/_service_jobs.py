@@ -145,7 +145,7 @@ class JobService:
                 user_id=self.user_id,
                 project_uuid=new_project.uuid,
                 job_parent_resource_name=pre_job.runner_name,
-                storage_data_deleted=False,
+                storage_assets_deleted=False,
             )
 
         assert new_project  # nosec
@@ -203,5 +203,5 @@ class JobService:
             user_id=self.user_id,
             project_uuid=job_id,
             job_parent_resource_name=job_parent_resource_name,
-            storage_data_deleted=True,
+            storage_assets_deleted=True,
         )

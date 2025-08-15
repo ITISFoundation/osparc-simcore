@@ -249,7 +249,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         project_uuid: ProjectID,
         job_parent_resource_name: RelativeResourceName,
-        storage_data_deleted: bool,
+        storage_assets_deleted: bool,
     ):
         await projects_rpc.mark_project_as_job(
             rpc_client=self._client,
@@ -257,7 +257,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             user_id=user_id,
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
-            storage_data_deleted=storage_data_deleted,
+            storage_assets_deleted=storage_assets_deleted,
         )
 
     @_exception_mapper(
