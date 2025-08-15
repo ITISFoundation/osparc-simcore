@@ -130,7 +130,7 @@ class ProjectGet(OutputSchema):
     thumbnail: HttpUrl | Literal[""]
 
     type: ProjectType
-    template_type: ProjectTemplateType | None
+    template_type: ProjectTemplateType | None = None
 
     workbench: NodesDict
 
@@ -141,10 +141,10 @@ class ProjectGet(OutputSchema):
     creation_date: DateTimeStr
     last_change_date: DateTimeStr
     state: ProjectStateOutputSchema | None = None
-    trashed_at: datetime | None
+    trashed_at: datetime | None = None
     trashed_by: Annotated[
         GroupID | None, Field(description="The primary gid of the user who trashed")
-    ]
+    ] = None
 
     # labeling
     tags: list[int]
@@ -163,8 +163,8 @@ class ProjectGet(OutputSchema):
 
     permalink: ProjectPermalink | None = None
 
-    workspace_id: WorkspaceID | None
-    folder_id: FolderID | None
+    workspace_id: WorkspaceID | None = None
+    folder_id: FolderID | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
