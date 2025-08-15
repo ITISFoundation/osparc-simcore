@@ -106,7 +106,7 @@ class ProjectJobRpcGet(BaseModel):
                         "created_at": "2023-01-01T00:00:00Z",
                         "modified_at": "2023-01-01T00:00:00Z",
                         "job_parent_resource_name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
-                        "storage_data_deleted": "false",
+                        "storage_assets_deleted": "false",
                     },
                     {
                         "uuid": "00000000-1234-5678-1234-123456789012",
@@ -116,7 +116,7 @@ class ProjectJobRpcGet(BaseModel):
                         "created_at": "2023-02-01T00:00:00Z",
                         "modified_at": "2023-02-01T00:00:00Z",
                         "job_parent_resource_name": "studies/96642f2a-a72c-11ef-8776-02420a00087d",
-                        "storage_data_deleted": "true",
+                        "storage_assets_deleted": "true",
                     },
                     {
                         "uuid": "00000000-0000-5678-1234-123456789012",
@@ -126,7 +126,7 @@ class ProjectJobRpcGet(BaseModel):
                         "created_at": "2023-03-01T00:00:00Z",
                         "modified_at": "2023-03-01T00:00:00Z",
                         "job_parent_resource_name": "program/simcore%2Fservices%2Fdynamic%2Fjupyter/releases/5.0.2",
-                        "storage_data_deleted": "false",
+                        "storage_assets_deleted": "false",
                     },
                 ]
             }
