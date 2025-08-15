@@ -6,7 +6,6 @@
 from typing import Any
 
 import pytest
-from common_library.dict_tools import assert_equal_ignoring_none
 from common_library.dict_tools import (
     copy_from_dict,
     get_from_dict,
