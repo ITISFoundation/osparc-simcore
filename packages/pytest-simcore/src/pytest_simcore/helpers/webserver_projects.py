@@ -77,6 +77,9 @@ async def create_project(
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
 
     raw_workbench: dict[str, Any] = project_data.pop("workbench", {})
+    for raw_node in raw_workbench.values():  # back-compatibility with old format
+        if "position" in raw_node:
+            del raw_node["position"]
 
     # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
     valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
