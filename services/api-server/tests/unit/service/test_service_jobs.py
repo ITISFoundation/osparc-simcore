@@ -15,7 +15,7 @@ async def test_list_jobs_by_resource_prefix(
     job_service: JobService,
 ):
     # Test with default pagination parameters
-    jobs, page_meta = await job_service.list_jobs(
+    jobs, page_meta = await job_service._list_jobs(
         job_parent_resource_name="solvers/some-solver"
     )
 
@@ -54,7 +54,7 @@ async def test_create_job(
         return "https://example.com/api/v1/jobs/test-job"
 
     # Test job creation
-    job, project = await job_service.create_job(
+    job, project = await job_service.create_project_marked_as_job(
         solver_or_program=solver,
         inputs=inputs,
         parent_project_uuid=None,

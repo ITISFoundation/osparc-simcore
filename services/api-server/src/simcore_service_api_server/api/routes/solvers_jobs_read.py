@@ -21,7 +21,7 @@ from servicelib.logging_utils import log_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
-from ..._service_jobs import JobService
+from ..._service_jobs import JobService, compose_job_resource_name
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -69,7 +69,6 @@ from ._constants import (
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
-    compose_job_resource_name,
 )
 from .wallets import WALLET_STATUS_CODES
 
@@ -141,11 +140,11 @@ async def list_all_solvers_jobs(
     filter_job_metadata_params: Annotated[
         JobMetadataFilter | None, Depends(get_job_metadata_filter)
     ],
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
 
-    jobs, meta = await solver_service.list_jobs(
+    jobs, meta = await job_service.list_solver_jobs(
         filter_any_custom_metadata=(
             [
                 NameValueTuple(filter_metadata.name, filter_metadata.pattern)

@@ -452,6 +452,7 @@ async def run_function(  # noqa: PLR0913
                 user_id=user_id,
                 director2_api=director2_api,
                 product_name=product_name,
+                job_service=job_service,
             )
             if job_status.status == RunningState.SUCCESS:
                 return cached_function_job
@@ -460,21 +461,17 @@ async def run_function(  # noqa: PLR0913
         study_job = await studies_jobs.create_study_job(
             study_id=to_run_function.project_id,
             job_inputs=JobInputs(values=joined_inputs or {}),
-            webserver_api=webserver_api,
-            wb_api_rpc=wb_api_rpc,
             url_for=url_for,
+            job_service=job_service,
             x_simcore_parent_project_uuid=parent_project_uuid,
             x_simcore_parent_node_id=parent_node_id,
-            user_id=user_id,
-            product_name=product_name,
         )
         await studies_jobs.start_study_job(
             request=request,
             study_id=to_run_function.project_id,
             job_id=study_job.id,
-            user_id=user_id,
             webserver_api=webserver_api,
-            director2_api=director2_api,
+            job_service=job_service,
         )
         return await register_function_job(
             wb_api_rpc=wb_api_rpc,
@@ -495,7 +492,6 @@ async def run_function(  # noqa: PLR0913
             solver_key=to_run_function.solver_key,
             version=to_run_function.solver_version,
             inputs=JobInputs(values=joined_inputs or {}),
-            solver_service=solver_service,
             job_service=job_service,
             url_for=url_for,
             x_simcore_parent_project_uuid=parent_project_uuid,
@@ -506,9 +502,6 @@ async def run_function(  # noqa: PLR0913
             solver_key=to_run_function.solver_key,
             version=to_run_function.solver_version,
             job_id=solver_job.id,
-            user_id=user_id,
-            webserver_api=webserver_api,
-            director2_api=director2_api,
             job_service=job_service,
         )
         return await register_function_job(

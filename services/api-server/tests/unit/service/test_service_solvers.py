@@ -46,10 +46,10 @@ async def test_get_solver(
 
 async def test_list_jobs(
     mocked_rpc_client: MockType,
-    solver_service: SolverService,
+    job_service: JobService,
 ):
     # Test default parameters
-    jobs, page_meta = await solver_service.list_jobs()
+    jobs, page_meta = await job_service.list_solver_jobs()
 
     assert jobs
     assert len(jobs) == page_meta.count
@@ -77,7 +77,6 @@ async def test_solver_service_init_raises_configuration_error(
     with pytest.raises(ServiceConfigurationError, match="SolverService"):
         SolverService(
             catalog_service=catalog_service,
-            job_service=job_service,
             user_id=user_id,
             product_name=invalid_product_name,
         )
