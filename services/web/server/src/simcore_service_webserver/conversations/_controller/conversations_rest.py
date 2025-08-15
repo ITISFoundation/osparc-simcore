@@ -51,7 +51,8 @@ class _GetConversationsQueryParams(BaseModel):
     @classmethod
     def validate_type(cls, value):
         if value is not None and value != ConversationType.SUPPORT:
-            raise ValueError("Only support conversations are allowed")
+            msg = "Only support type conversations are allowed"
+            raise ValueError(msg)
         return value
 
 
