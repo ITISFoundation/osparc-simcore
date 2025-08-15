@@ -4,12 +4,14 @@ import functools
 import inspect
 import logging
 import urllib.parse
+from contextlib import suppress
 from typing import Any, ClassVar, Final, Protocol, TypeAlias
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
+from servicelib.logging_utils import log_catch
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -21,7 +23,7 @@ from tenacity import (
 
 from ..background_task import create_periodic_task
 from ..redis import RedisClientSDK, exclusive
-from ._redis_serialization import object_to_string, string_to_object
+from ._serialization import object_to_string, string_to_object
 from ._store.base import BaseStore
 from ._store.redis import RedisStore
 from .errors import (
@@ -38,7 +40,7 @@ _logger = logging.getLogger(__name__)
 
 _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=5)
 _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
-
+_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 
 
@@ -59,8 +61,11 @@ class TaskRegistry:
     REGISTERED_TASKS: ClassVar[dict[RegisteredTaskName, TaskProtocol]] = {}
 
     @classmethod
-    def register(cls, task: TaskProtocol) -> None:
-        cls.REGISTERED_TASKS[task.__name__] = task
+    def register(cls, task: TaskProtocol, **partial_kwargs) -> None:
+        partial_task = functools.partial(task, **partial_kwargs)
+        # allows to call the partial via it's original name
+        partial_task.__name__ = task.__name__  # type: ignore[attr-defined]
+        cls.REGISTERED_TASKS[task.__name__] = partial_task  # type: ignore[assignment]
 
     @classmethod
     def unregister(cls, task: TaskProtocol) -> None:
@@ -189,7 +194,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         # stale_tasks_monitor
         if self._task_stale_tasks_monitor:
-            await cancel_wait_task(self._task_stale_tasks_monitor)
+            # since the task is using a redis lock if the lock could not be acquired
+            # trying to cancel the task will hang, this avoids hanging
+            # there are no sideeffects in timing out this cancellation
+            with log_catch(_logger, reraise=False):
+                await cancel_wait_task(
+                    self._task_stale_tasks_monitor,
+                    max_delay=_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT,
+                )
 
         # cancelled_tasks_removal
         if self._task_cancelled_tasks_removal:
@@ -234,16 +246,19 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             # - finished with a result
             # - finished with errors
             # we just print the status from where one can infer the above
-            _logger.warning(
-                "Removing stale task '%s' with status '%s'",
-                task_id,
-                (
-                    await self.get_task_status(task_id, with_task_context=task_context)
-                ).model_dump_json(),
-            )
-            await self.remove_task(
-                task_id, with_task_context=task_context, reraise_errors=False
-            )
+            with suppress(TaskNotFoundError):
+                _logger.warning(
+                    "Removing stale task '%s' with status '%s'",
+                    task_id,
+                    (
+                        await self.get_task_status(
+                            task_id, with_task_context=task_context
+                        )
+                    ).model_dump_json(),
+                )
+                await self.remove_task(
+                    task_id, with_task_context=task_context, reraise_errors=False
+                )
 
     async def _cancelled_tasks_removal(self) -> None:
         """
@@ -255,8 +270,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         self._started_event_task_cancelled_tasks_removal.set()
 
         cancelled_tasks = await self._tasks_data.get_cancelled()
-        for task_id, task_context in cancelled_tasks.items():
-            await self.remove_task(task_id, task_context, reraise_errors=False)
+        for task_id in cancelled_tasks:
+            await self._cancel_and_remove_local_task(task_id)
 
     async def _status_update(self) -> None:
         """
@@ -278,25 +293,25 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     # already done and updatet data in redis
                     continue
 
-                # update and store in Redis
-                task_data.is_done = is_done
-
+                result_field: ResultField | None = None
                 # get task result
                 try:
-                    task_data.result_field = ResultField(
-                        result=object_to_string(task.result())
-                    )
+                    result_field = ResultField(result=object_to_string(task.result()))
                 except asyncio.InvalidStateError:
                     # task was not completed try again next time and see if it is done
                     continue
                 except asyncio.CancelledError:
-                    task_data.result_field = ResultField(
+                    result_field = ResultField(
                         error=object_to_string(TaskCancelledError(task_id=task_id))
                     )
                 except Exception as e:  # pylint:disable=broad-except
-                    task_data.result_field = ResultField(error=object_to_string(e))
+                    result_field = ResultField(error=object_to_string(e))
 
-                await self._tasks_data.set_task_data(task_id, task_data)
+                # update and store in Redis
+                updates = {"is_done": is_done, "result_field": task_data.result_field}
+                if result_field is not None:
+                    updates["result_field"] = result_field
+                await self._tasks_data.update_task_data(task_id, updates=updates)
 
     async def list_tasks(self, with_task_context: TaskContext | None) -> list[TaskBase]:
         if not with_task_context:
@@ -333,10 +348,12 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         raises TaskNotFoundError if the task cannot be found
         """
-        task_data: TaskData = await self._get_tracked_task(task_id, with_task_context)
-        task_data.last_status_check = datetime.datetime.now(tz=datetime.UTC)
-        await self._tasks_data.set_task_data(task_id, task_data)
+        task_data = await self._get_tracked_task(task_id, with_task_context)
 
+        await self._tasks_data.update_task_data(
+            task_id,
+            updates={"last_status_check": datetime.datetime.now(tz=datetime.UTC)},
+        )
         return TaskStatus.model_validate(
             {
                 "task_progress": task_data.task_progress,
@@ -368,19 +385,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         return string_to_object(tracked_task.result_field.result)
 
-    async def _cancel_tracked_task(
-        self, task: asyncio.Task, task_id: TaskId, with_task_context: TaskContext
-    ) -> None:
-        try:
-            await self._tasks_data.set_as_cancelled(task_id, with_task_context)
-            await cancel_wait_task(task)
-        except Exception as e:  # pylint:disable=broad-except
-            _logger.info(
-                "Task %s cancellation failed with error: %s",
-                task_id,
-                e,
-                stack_info=True,
-            )
+    async def _cancel_and_remove_local_task(self, task_id: TaskId) -> None:
+        """cancels task and removes if from local tracker if this is the worke that started it"""
+
+        task_to_cancel = self._created_tasks.pop(task_id, None)
+        if task_to_cancel is not None:
+            await cancel_wait_task(task_to_cancel)
+            await self._tasks_data.delete_set_as_cancelled(task_id)
+            await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
         self,
@@ -397,26 +409,22 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 raise
             return
 
-        if tracked_task.task_id in self._created_tasks:
-            task_to_cancel = self._created_tasks.pop(tracked_task.task_id, None)
-            if task_to_cancel is not None:
-                # canceling the task affects the worker that started it.
-                # awaiting the cancelled task is a must since if the CancelledError
-                # was intercepted, those actions need to finish
-                await cancel_wait_task(task_to_cancel)
-
-            await self._tasks_data.delete_task_data(task_id)
+        await self._tasks_data.set_as_cancelled(
+            tracked_task.task_id, tracked_task.task_context
+        )
 
         # wait for task to be removed since it might not have been running
         # in this process
         async for attempt in AsyncRetrying(
-            wait=wait_exponential(max=2),
+            wait=wait_exponential(max=1),
             stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
             retry=retry_if_exception_type(TryAgain),
         ):
             with attempt:
                 try:
-                    await self._get_tracked_task(task_id, with_task_context)
+                    await self._get_tracked_task(
+                        tracked_task.task_id, tracked_task.task_context
+                    )
                     raise TryAgain
                 except TaskNotFoundError:
                     pass
@@ -436,7 +444,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         try:
             tracked_data = await self._get_tracked_task(task_id, task_context)
             tracked_data.task_progress = task_progress
-            await self._tasks_data.set_task_data(task_id=task_id, value=tracked_data)
+            await self._tasks_data.update_task_data(
+                task_id, updates={"task_progress": task_progress.model_dump()}
+            )
         except TaskNotFoundError:
             _logger.debug(
                 "Task '%s' not found while updating progress %s",
@@ -455,7 +465,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         **task_kwargs: Any,
     ) -> TaskId:
         if registered_task_name not in TaskRegistry.REGISTERED_TASKS:
-            raise TaskNotRegisteredError(task_name=registered_task_name)
+            raise TaskNotRegisteredError(
+                task_name=registered_task_name, tasks=TaskRegistry.REGISTERED_TASKS
+            )
 
         task = TaskRegistry.REGISTERED_TASKS[registered_task_name]
 
@@ -500,7 +512,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             task_context=context_to_use,
             fire_and_forget=fire_and_forget,
         )
-        await self._tasks_data.set_task_data(task_id, tracked_task)
+        await self._tasks_data.add_task_data(task_id, tracked_task)
         return tracked_task.task_id
 
 

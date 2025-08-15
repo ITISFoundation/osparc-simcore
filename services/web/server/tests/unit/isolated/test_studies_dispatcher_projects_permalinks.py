@@ -91,7 +91,9 @@ def test_create_permalink(fake_get_project_request: web.Request, is_public: bool
     project_uuid: str = fake_get_project_request.match_info["project_uuid"]
 
     permalink = create_permalink_for_study(
-        fake_get_project_request,
+        fake_get_project_request.app,
+        url=fake_get_project_request.url,
+        headers=dict(fake_get_project_request.headers),
         project_uuid=project_uuid,
         project_type=ProjectType.TEMPLATE,
         project_access_rights={"1": {"read": True, "write": False, "delete": False}},
@@ -119,7 +121,9 @@ def test_permalink_only_for_template_projects(
 ):
     with pytest.raises(PermalinkNotAllowedError):
         create_permalink_for_study(
-            fake_get_project_request,
+            fake_get_project_request.app,
+            url=fake_get_project_request.url,
+            headers=dict(fake_get_project_request.headers),
             **{**valid_project_kwargs, "project_type": ProjectType.STANDARD}
         )
 
@@ -129,7 +133,9 @@ def test_permalink_only_when_read_access_to_everyone(
 ):
     with pytest.raises(PermalinkNotAllowedError):
         create_permalink_for_study(
-            fake_get_project_request,
+            fake_get_project_request.app,
+            url=fake_get_project_request.url,
+            headers=dict(fake_get_project_request.headers),
             **{
                 **valid_project_kwargs,
                 "project_access_rights": {
@@ -140,7 +146,9 @@ def test_permalink_only_when_read_access_to_everyone(
 
     with pytest.raises(PermalinkNotAllowedError):
         create_permalink_for_study(
-            fake_get_project_request,
+            fake_get_project_request.app,
+            url=fake_get_project_request.url,
+            headers=dict(fake_get_project_request.headers),
             **{
                 **valid_project_kwargs,
                 "project_access_rights": {

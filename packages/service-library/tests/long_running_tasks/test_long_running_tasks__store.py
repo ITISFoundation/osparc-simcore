@@ -42,7 +42,7 @@ async def test_workflow(store: BaseStore, task_data: TaskData) -> None:
     assert await store.list_tasks_data() == []
     assert await store.get_task_data("missing") is None
 
-    await store.set_task_data(task_data.task_id, task_data)
+    await store.add_task_data(task_data.task_id, task_data)
 
     assert await store.list_tasks_data() == [task_data]
 
@@ -91,7 +91,7 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
         assert await store.get_cancelled() == {}
 
     for store in redis_stores:
-        await store.set_task_data(task_data.task_id, task_data)
+        await store.add_task_data(task_data.task_id, task_data)
         await store.set_as_cancelled(task_data.task_id, None)
 
     for store in redis_stores:

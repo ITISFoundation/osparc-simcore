@@ -4,6 +4,7 @@ from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from yarl import URL
 
 from .. import _permalink_service
 from .._crud_api_read import _paralell_update
@@ -11,13 +12,17 @@ from ..models import ProjectDict
 
 
 async def aggregate_data_to_projects_from_request(
-    request: web.Request,
+    app: web.Application,
+    url: URL,
+    headers: dict[str, str],
     projects: list[ProjectDict],
 ) -> list[ProjectDict]:
 
     update_permalink_per_project = [
         # permalink
-        _permalink_service.aggregate_permalink_in_project(request, project=prj)
+        _permalink_service.aggregate_permalink_in_project(
+            app, url, headers, project=prj
+        )
         for prj in projects
     ]
 

@@ -1,18 +1,20 @@
 import logging
 from typing import Any
 
-from common_library.error_codes import create_error_code
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ..logging_errors import create_troubleshootting_log_kwargs
-from .errors import TaskNotCompletedError, TaskNotFoundError
+from ._rabbit import lrt_client, lrt_server
+from ._rabbit.namespace import get_namespace
+from .base_long_running_manager import BaseLongRunningManager
 from .models import TaskBase, TaskContext, TaskId, TaskStatus
-from .task import RegisteredTaskName, TasksManager
+from .task import RegisteredTaskName
 
 _logger = logging.getLogger(__name__)
 
 
 async def start_task(
-    tasks_manager: TasksManager,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    long_running_manager: BaseLongRunningManager,
     registered_task_name: RegisteredTaskName,
     *,
     unique: bool = False,
@@ -46,8 +48,11 @@ async def start_task(
     Returns:
         TaskId: the task unique identifier
     """
-    return await tasks_manager.start_task(
-        registered_task_name,
+
+    return await lrt_client.start_task(
+        rabbitmq_rpc_client,
+        long_running_manager.rabbit_namespace,
+        registered_task_name=registered_task_name,
         unique=unique,
         task_context=task_context,
         task_name=task_name,
@@ -57,51 +62,65 @@ async def start_task(
 
 
 async def list_tasks(
-    tasks_manager: TasksManager, task_context: TaskContext
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    long_running_manager: BaseLongRunningManager,
+    task_context: TaskContext,
 ) -> list[TaskBase]:
-    return await tasks_manager.list_tasks(with_task_context=task_context)
+    return await lrt_client.list_tasks(
+        rabbitmq_rpc_client,
+        long_running_manager.rabbit_namespace,
+        task_context=task_context,
+    )
 
 
 async def get_task_status(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    long_running_manager: BaseLongRunningManager,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> TaskStatus:
     """returns the status of a task"""
-    return await tasks_manager.get_task_status(
-        task_id=task_id, with_task_context=task_context
+    return await lrt_client.get_task_status(
+        rabbitmq_rpc_client,
+        long_running_manager.rabbit_namespace,
+        task_id=task_id,
+        task_context=task_context,
     )
 
 
 async def get_task_result(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    long_running_manager: BaseLongRunningManager,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> Any:
-    try:
-        task_result = await tasks_manager.get_task_result(
-            task_id, with_task_context=task_context
-        )
-        await tasks_manager.remove_task(
-            task_id, with_task_context=task_context, reraise_errors=False
-        )
-        return task_result
-    except (TaskNotFoundError, TaskNotCompletedError):
-        raise
-    except Exception as exc:
-        _logger.exception(
-            **create_troubleshootting_log_kwargs(
-                user_error_msg=f"{task_id=} raised an exception while getting its result",
-                error=exc,
-                error_code=create_error_code(exc),
-                error_context={"task_context": task_context, "task_id": task_id},
-            ),
-        )
-        # the task shall be removed in this case
-        await tasks_manager.remove_task(
-            task_id, with_task_context=task_context, reraise_errors=False
-        )
-        raise
+    return await lrt_client.get_task_result(
+        rabbitmq_rpc_client,
+        long_running_manager.rabbit_namespace,
+        task_context=task_context,
+        task_id=task_id,
+    )
 
 
 async def remove_task(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    long_running_manager: BaseLongRunningManager,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> None:
     """cancels and removes the task"""
-    await tasks_manager.remove_task(task_id, with_task_context=task_context)
+    await lrt_client.remove_task(
+        rabbitmq_rpc_client,
+        long_running_manager.rabbit_namespace,
+        task_id=task_id,
+        task_context=task_context,
+    )
+
+
+async def register_rabbit_routes(long_running_manager: BaseLongRunningManager) -> None:
+    rpc_server = long_running_manager.rpc_server
+    await rpc_server.register_router(
+        lrt_server.router,
+        get_namespace(long_running_manager.rabbit_namespace),
+        long_running_manager,
+    )

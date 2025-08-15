@@ -15,13 +15,20 @@ from servicelib.aiohttp.long_running_tasks.client import (
     long_running_task_request,
 )
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from yarl import URL
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 
 @pytest.fixture
 def app(
-    server_routes: web.RouteTableDef, use_in_memory_redis: RedisSettings
+    server_routes: web.RouteTableDef,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
@@ -31,6 +38,8 @@ def app(
         app,
         redis_settings=use_in_memory_redis,
         redis_namespace="test",
+        rabbit_settings=rabbit_service,
+        rabbit_namespace="test",
         router_prefix="/futures",
     )
 
@@ -58,7 +67,7 @@ async def test_long_running_task_request_raises_400(
     client: TestClient, long_running_task_url: URL
 ):
     # missing parameters raises
-    with pytest.raises(ClientResponseError):
+    with pytest.raises(ClientResponseError):  # noqa: PT012
         async for _ in long_running_task_request(
             client.session, long_running_task_url, None
         ):
@@ -95,7 +104,7 @@ async def test_long_running_task_request_timeout(
 ):
     assert client.app
     task: LRTask | None = None
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(asyncio.TimeoutError):  # noqa: PT012
         async for task in long_running_task_request(
             client.session,
             long_running_task_url.with_query(num_strings=10, sleep_time=1),

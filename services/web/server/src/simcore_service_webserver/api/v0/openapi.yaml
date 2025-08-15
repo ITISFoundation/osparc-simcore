@@ -3564,8 +3564,8 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
+      summary: Remove Task
+      description: Cancels and removes a task
       operationId: cancel_async_job
       parameters:
       - name: task_id
@@ -3684,9 +3684,9 @@ paths:
     delete:
       tags:
       - long-running-tasks-legacy
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
-      operationId: cancel_and_delete_task
+      summary: Remove Task
+      description: Cancels and removes a task
+      operationId: remove_task
       parameters:
       - name: task_id
         in: path

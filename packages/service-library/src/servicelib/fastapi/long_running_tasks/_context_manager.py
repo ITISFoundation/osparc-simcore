@@ -121,7 +121,7 @@ async def periodic_task_result(
 
         yield result
     except TimeoutError as e:
-        await client.cancel_and_delete_task(task_id)
+        await client.remove_task(task_id)
         raise TaskClientTimeoutError(
             task_id=task_id,
             timeout=task_timeout,

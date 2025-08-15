@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Any
 
 from ..models import TaskContext, TaskData, TaskId
 
@@ -10,8 +11,14 @@ class BaseStore:
         """Retrieve a tracked task"""
 
     @abstractmethod
-    async def set_task_data(self, task_id: TaskId, value: TaskData) -> None:
+    async def add_task_data(self, task_id: TaskId, value: TaskData) -> None:
         """Set a tracked task's data"""
+
+    @abstractmethod
+    async def update_task_data(
+        self, task_id: TaskId, *, updates: dict[str, Any]
+    ) -> None:
+        """Update a tracked task's data by specifying each single field to update"""
 
     @abstractmethod
     async def list_tasks_data(self) -> list[TaskData]:
@@ -26,6 +33,10 @@ class BaseStore:
         self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
         """Mark a tracked task as cancelled."""
+
+    @abstractmethod
+    async def delete_set_as_cancelled(self, task_id: TaskId) -> None:
+        """Remove a task from the cancelled tasks."""
 
     @abstractmethod
     async def get_cancelled(self) -> dict[TaskId, TaskContext]:

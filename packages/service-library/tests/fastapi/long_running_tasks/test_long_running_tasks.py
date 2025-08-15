@@ -33,12 +33,17 @@ from servicelib.long_running_tasks.models import (
     TaskStatus,
 )
 from servicelib.long_running_tasks.task import TaskContext, TaskRegistry
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
@@ -81,7 +86,8 @@ def server_routes() -> APIRouter:
         fail: bool = False,
     ) -> TaskId:
         return await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager.rpc_client,
+            long_running_manager,
             _string_list_task.__name__,
             num_strings=num_strings,
             sleep_time=sleep_time,
@@ -93,14 +99,22 @@ def server_routes() -> APIRouter:
 
 @pytest.fixture
 async def app(
-    server_routes: APIRouter, use_in_memory_redis: RedisSettings
+    server_routes: APIRouter,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> AsyncIterator[FastAPI]:
     # overrides fastapi/conftest.py:app
     app = FastAPI(title="test app")
     app.include_router(server_routes)
-    setup_server(app, redis_settings=use_in_memory_redis, redis_namespace="test")
+    setup_server(
+        app,
+        redis_settings=use_in_memory_redis,
+        redis_namespace="test",
+        rabbit_settings=rabbit_service,
+        rabbit_namespace="test",
+    )
     setup_client(app)
-    async with LifespanManager(app):
+    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
 
@@ -188,7 +202,15 @@ async def test_workflow(
         ("generated item", 0.8),
         ("finished", 1.0),
     ]
-    assert all(x in progress_updates for x in EXPECTED_MESSAGES)
+
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(10),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now check the result
     result_url = app.url_path_for("get_task_result", task_id=task_id)
     result = await client.get(f"{result_url}")
@@ -205,7 +227,7 @@ async def test_workflow(
     [
         ("GET", "get_task_status"),
         ("GET", "get_task_result"),
-        ("DELETE", "cancel_and_delete_task"),
+        ("DELETE", "remove_task"),
     ],
 )
 async def test_get_task_wrong_task_id_raises_not_found(
@@ -254,7 +276,7 @@ async def test_cancel_task(
     task_id = await start_long_running_task(app, client)
 
     # cancel the task
-    delete_url = app.url_path_for("cancel_and_delete_task", task_id=task_id)
+    delete_url = app.url_path_for("remove_task", task_id=task_id)
     result = await client.delete(f"{delete_url}")
     assert result.status_code == status.HTTP_204_NO_CONTENT
 

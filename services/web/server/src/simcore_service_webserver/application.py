@@ -40,7 +40,7 @@ from .invitations.plugin import setup_invitations
 from .licenses.plugin import setup_licenses
 from .login.plugin import setup_login
 from .login_auth.plugin import setup_login_auth
-from .long_running_tasks import setup_long_running_tasks
+from .long_running_tasks.plugin import setup_long_running_tasks
 from .notifications.plugin import setup_notifications
 from .payments.plugin import setup_payments
 from .products.plugin import setup_products

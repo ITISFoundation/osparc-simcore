@@ -32,6 +32,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
@@ -46,6 +47,10 @@ from simcore_service_webserver.projects.projects_permalink_service import (
 )
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 API_PREFIX = "/" + api_version_prefix
 
@@ -189,6 +194,7 @@ async def _assert_get_same_project(
     ],
 )
 async def test_list_projects(
+    rabbit_settings: RabbitSettings,
     client: TestClient,
     logged_user: dict[str, Any],
     user_project: dict[str, Any],

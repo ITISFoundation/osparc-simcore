@@ -10,13 +10,18 @@ from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_fake_services_data import list_fake_file_consumers
 from pytest_simcore.helpers.webserver_login import NewUser
 from pytest_simcore.helpers.webserver_projects import delete_all_projects
+from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver.groups.api import auto_add_user_to_groups
 from simcore_service_webserver.projects._projects_service import get_project_for_user
 from simcore_service_webserver.studies_dispatcher._models import ServiceInfo
@@ -29,7 +34,28 @@ from simcore_service_webserver.studies_dispatcher._projects import (
 )
 from simcore_service_webserver.users.users_service import get_user
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
+
 FAKE_FILE_VIEWS = list_fake_file_consumers()
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    rabbit_service: RabbitSettings,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_RABBITMQ": json_dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            )
+        },
+    )
 
 
 @pytest.fixture

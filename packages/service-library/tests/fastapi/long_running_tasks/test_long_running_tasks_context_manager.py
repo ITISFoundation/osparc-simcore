@@ -28,7 +28,12 @@ from servicelib.long_running_tasks.models import (
     TaskProgress,
 )
 from servicelib.long_running_tasks.task import TaskRegistry
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -72,7 +77,7 @@ def user_routes() -> APIRouter:
         ],
     ) -> TaskId:
         return await lrt_api.start_task(
-            long_running_manager.tasks_manager, a_test_task.__name__
+            long_running_manager.rpc_client, long_running_manager, a_test_task.__name__
         )
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
@@ -82,7 +87,9 @@ def user_routes() -> APIRouter:
         ],
     ) -> TaskId:
         return await lrt_api.start_task(
-            long_running_manager.tasks_manager, a_failing_test_task.__name__
+            long_running_manager.rpc_client,
+            long_running_manager,
+            a_failing_test_task.__name__,
         )
 
     return router
@@ -90,7 +97,10 @@ def user_routes() -> APIRouter:
 
 @pytest.fixture
 async def bg_task_app(
-    user_routes: APIRouter, router_prefix: str, use_in_memory_redis: RedisSettings
+    user_routes: APIRouter,
+    router_prefix: str,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> AsyncIterable[FastAPI]:
     app = FastAPI()
 
@@ -101,6 +111,8 @@ async def bg_task_app(
         router_prefix=router_prefix,
         redis_settings=use_in_memory_redis,
         redis_namespace="test",
+        rabbit_settings=rabbit_service,
+        rabbit_namespace="test",
     )
     setup_client(app, router_prefix=router_prefix)
 
