@@ -28,6 +28,7 @@ from ...models.schemas.jobs import (
     JobMetadata,
     JobMetadataUpdate,
     JobOutputs,
+    JobPricingSpecification,
     JobStatus,
 )
 from ...models.schemas.studies import JobLogsMap, Study, StudyID
@@ -288,14 +289,16 @@ async def start_study_job(
         ),
     ] = None,
 ):
+    pricing_spec = JobPricingSpecification.create_from_headers(headers=request.headers)
+
     job_name = _compose_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
         try:
             await start_project(
-                request=request,
                 job_id=job_id,
                 expected_job_name=job_name,
                 webserver_api=webserver_api,
+                pricing_spec=pricing_spec,
             )
         except ProjectAlreadyStartedError:
             job_status: JobStatus = await inspect_study_job(

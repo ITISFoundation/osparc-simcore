@@ -22,12 +22,11 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
-from simcore_service_api_server.api.routes.solvers_jobs import compose_job_resource_name
 
 from ._service_solvers import (
     SolverService,
 )
-from .exceptions.backend_errors import JobAssetsMissingError, ProjectAlreadyStartedError
+from .exceptions.backend_errors import JobAssetsMissingError
 from .exceptions.custom_errors import SolverServiceListJobsFiltersError
 from .models.api_resources import RelativeResourceName
 from .models.basic_types import NameValueTuple, VersionStr
@@ -57,6 +56,14 @@ from .services_rpc.storage import StorageService
 from .services_rpc.wb_api_server import WbApiRpcClient
 
 _logger = logging.getLogger(__name__)
+
+
+def compose_job_resource_name(solver_key, solver_version, job_id) -> str:
+    """Creates a unique resource name for solver's jobs"""
+    return Job.compose_resource_name(
+        parent_name=Solver.compose_resource_name(solver_key, solver_version),
+        job_id=job_id,
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -335,6 +342,9 @@ class JobService:
         job_id: JobID,
         pricing_spec: JobPricingSpecification | None,
     ):
+        """
+        Raises ProjectAlreadyStartedError if the project is already started
+        """
         job_name = compose_job_resource_name(solver_key, version, job_id)
         _logger.debug("Start Job '%s'", job_name)
         job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
@@ -343,20 +353,12 @@ class JobService:
         )
         if job.storage_assets_deleted:
             raise JobAssetsMissingError(job_id=job_id)
-        try:
-            await start_project(
-                pricing_spec=pricing_spec,
-                job_id=job_id,
-                expected_job_name=job_name,
-                webserver_api=self._web_rest_client,
-            )
-        except ProjectAlreadyStartedError:
-            job_status = await self.inspect_solver_job(
-                solver_key=solver_key,
-                version=version,
-                job_id=job_id,
-            )
-            return job_status
+        await start_project(
+            pricing_spec=pricing_spec,
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=self._web_rest_client,
+        )
         return await self.inspect_solver_job(
             solver_key=solver_key,
             version=version,

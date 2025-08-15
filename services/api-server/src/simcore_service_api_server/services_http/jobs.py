@@ -1,14 +1,11 @@
 import logging
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
 from models_library.api_schemas_webserver.projects import ProjectGet
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
-from ..api.dependencies.authentication import get_current_user_id
-from ..api.dependencies.services import get_api_client
+from ..exceptions.backend_errors import InvalidInputError
 from ..models.schemas.jobs import (
     JobID,
     JobMetadata,
@@ -27,10 +24,7 @@ def raise_if_job_not_associated_with_solver(
     expected_project_name: str, project: ProjectGet
 ) -> None:
     if expected_project_name != project.name:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid input data for job {project.uuid}",
-        )
+        raise InvalidInputError()
 
 
 async def start_project(
@@ -59,8 +53,8 @@ async def start_project(
 async def stop_project(
     *,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    user_id: PositiveInt,
+    director2_api: DirectorV2Api,
 ) -> JobStatus:
     await director2_api.stop_computation(project_id=job_id, user_id=user_id)
 

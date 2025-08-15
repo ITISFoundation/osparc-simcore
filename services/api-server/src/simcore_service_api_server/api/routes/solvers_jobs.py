@@ -5,12 +5,14 @@ from collections.abc import Callable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi.responses import JSONResponse
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service_jobs import JobService
+from ..._service_jobs import JobService, compose_job_resource_name
+from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -40,14 +42,6 @@ from ._constants import (
 _logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-def compose_job_resource_name(solver_key, solver_version, job_id) -> str:
-    """Creates a unique resource name for solver's jobs"""
-    return Job.compose_resource_name(
-        parent_name=Solver.compose_resource_name(solver_key, solver_version),
-        job_id=job_id,
-    )
 
 
 # JOBS ---------------
@@ -216,9 +210,20 @@ async def start_job(
 ):
     pricing_spec = JobPricingSpecification.create_from_headers(headers=request.headers)
 
-    return await job_service.start_solver_job(
-        solver_key=solver_key, version=version, job_id=job_id, pricing_spec=pricing_spec
-    )
+    try:
+        return await job_service.start_solver_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
+            pricing_spec=pricing_spec,
+        )
+    except ProjectAlreadyStartedError:
+        job_status = await job_service.inspect_solver_job(
+            solver_key=solver_key, version=version, job_id=job_id
+        )
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content=job_status.model_dump(mode="json")
+        )
 
 
 @router.post(
