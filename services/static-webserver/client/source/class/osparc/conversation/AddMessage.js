@@ -153,7 +153,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         this.__postMessage();
       } else {
         // create new conversation first
-        osparc.store.Conversations.getInstance().addConversation(this.__studyData["uuid"])
+        osparc.store.ConversationsProject.getInstance().addConversation(this.__studyData["uuid"])
           .then(data => {
             this.__conversationId = data["conversationId"];
             this.__postMessage();
@@ -220,7 +220,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         this.__postNotify(userGid);
       } else {
         // create new conversation first
-        osparc.store.Conversations.getInstance().addConversation(this.__studyData["uuid"])
+        osparc.store.ConversationsProject.getInstance().addConversation(this.__studyData["uuid"])
           .then(data => {
             this.__conversationId = data["conversationId"];
             this.__postNotify(userGid);
@@ -232,7 +232,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        osparc.store.Conversations.getInstance().addMessage(this.__studyData["uuid"], this.__conversationId, content)
+        osparc.store.ConversationsProject.getInstance().addMessage(this.__studyData["uuid"], this.__conversationId, content)
           .then(data => {
             this.fireDataEvent("messageAdded", data);
             commentField.getChildControl("text-area").setValue("");
@@ -244,7 +244,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        osparc.store.Conversations.getInstance().editMessage(this.__studyData["uuid"], this.__conversationId, this.__message["messageId"], content)
+        osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], this.__conversationId, this.__message["messageId"], content)
           .then(data => {
             this.fireDataEvent("messageUpdated", data);
             commentField.getChildControl("text-area").setValue("");
@@ -254,7 +254,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
 
     __postNotify: function(userGid) {
       if (userGid) {
-        osparc.store.Conversations.getInstance().notifyUser(this.__studyData["uuid"], this.__conversationId, userGid)
+        osparc.store.ConversationsProject.getInstance().notifyUser(this.__studyData["uuid"], this.__conversationId, userGid)
           .then(data => {
             this.fireDataEvent("messageAdded", data);
             const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
