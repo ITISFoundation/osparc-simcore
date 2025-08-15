@@ -184,7 +184,7 @@ def auth(
     # mock engine if db was not init
     if app.state.settings.API_SERVER_POSTGRES is None:
         engine = mocker.MagicMock()
-        engine.minsize = 1
+        engine.minsize = 2
         engine.size = 10
         engine.freesize = 3
         engine.maxsize = 10
