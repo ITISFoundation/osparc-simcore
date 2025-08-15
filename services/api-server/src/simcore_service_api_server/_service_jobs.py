@@ -439,3 +439,10 @@ class JobService:
                 project_id=project.uuid, new_inputs=new_project_inputs
             )
         return job
+
+    async def inspect_study_job(self, *, job_id: JobID) -> JobStatus:
+        task = await self._director2_api.get_computation(
+            project_id=job_id, user_id=self.user_id
+        )
+        job_status: JobStatus = create_jobstatus_from_task(task)
+        return job_status

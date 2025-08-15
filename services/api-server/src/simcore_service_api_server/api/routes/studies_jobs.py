@@ -35,7 +35,6 @@ from ...services_http.jobs import (
     start_project,
     stop_project,
 )
-from ...services_http.solver_job_models_converters import create_jobstatus_from_task
 from ...services_http.storage import StorageApi
 from ...services_http.study_job_models_converters import (
     create_job_outputs_from_project_outputs,
@@ -283,15 +282,12 @@ async def stop_study_job(
 async def inspect_study_job(
     study_id: StudyID,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> JobStatus:
     job_name = _compose_job_resource_name(study_id, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
-    task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    return job_status
+    return await job_service.inspect_study_job(job_id=job_id)
 
 
 @router.post(
