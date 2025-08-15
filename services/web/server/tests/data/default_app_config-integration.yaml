@@ -27,7 +27,7 @@ db:
     endpoint: ${POSTGRES_ENDPOINT}
     host: ${POSTGRES_HOST}
     maxsize: 50
-    minsize: 1
+    minsize: 2
     password: ${POSTGRES_PASSWORD}
     port: ${POSTGRES_PORT}
     user: ${POSTGRES_USER}
