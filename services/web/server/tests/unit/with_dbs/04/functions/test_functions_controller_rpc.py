@@ -383,7 +383,7 @@ async def test_list_functions_search(
             )
 
     for search_term, expected_number in [("Dummy", 10), ("Dummy2", 5)]:
-        # Search for the function by name
+        # Search for the function by title
         functions, _ = await functions_rpc.list_functions(
             rabbitmq_rpc_client=rpc_client,
             user_id=logged_user["id"],
