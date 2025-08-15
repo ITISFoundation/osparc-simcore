@@ -26,6 +26,7 @@ from models_library.projects import (
     ProjectTemplateType,
 )
 from models_library.projects_comments import CommentID, ProjectsCommentsDB
+from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.resource_tracker import (
     PricingPlanAndUnitIdsTuple,
@@ -325,7 +326,7 @@ class ProjectDBAPI(BaseProjectDB):
                 node_id=NodeID(node_id),
                 **{
                     str(field_mapping.get(field, field)): value
-                    for field, value in project_workbench_node.items()
+                    for field, value in Node.model_validate(project_workbench_node).model_dump(mode="json", by_alias=True).items()
                     if field_mapping.get(field, field) in valid_fields
                 },
             )
