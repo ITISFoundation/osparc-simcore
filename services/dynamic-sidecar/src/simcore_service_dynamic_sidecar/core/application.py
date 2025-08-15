@@ -135,7 +135,7 @@ def create_base_app() -> FastAPI:
     assert app_settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
         debug=app_settings.SC_BOOT_MODE.is_devel_mode(),
-        title=f"{APP_NAME}-{app_settings.DY_SIDECAR_NODE_ID}",
+        title=APP_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
