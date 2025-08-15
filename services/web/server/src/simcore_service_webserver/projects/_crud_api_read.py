@@ -10,7 +10,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
-from models_library.projects import ProjectTemplateType, ProjectType
+from models_library.projects import ProjectTemplateType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
@@ -75,7 +75,6 @@ async def _aggregate_data_to_projects_from_other_sources(
         _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=prj,
-            is_template=prj["type"] == ProjectType.TEMPLATE.value,
             app=app,
         )
         for prj in db_projects

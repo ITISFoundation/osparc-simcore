@@ -63,7 +63,7 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     docker_client.login(registry=url, username="simcore")
     # tag the image
     repo = url + "/hello-world:dev"
-    assert hello_world_image.tag(repo) == True
+    assert hello_world_image.tag(repo)
     # push the image to the private registry
     docker_client.images.push(repo)
     # wipe the images
@@ -145,40 +145,45 @@ def _pull_push_service(
 ) -> dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
-    print(f"Pulling {pull_key}:{tag} ...")
-    image = client.images.pull(pull_key, tag=tag)
-    assert image, f"image {pull_key}:{tag} could NOT be pulled!"
+    with log_context(logging.INFO, msg=f"Pulling {pull_key}:{tag} ..."):
+        image = client.images.pull(pull_key, tag=tag)
+        assert image, f"image {pull_key}:{tag} could NOT be pulled!"
 
     # get io.simcore.* labels
     image_labels: dict = dict(image.labels)
 
     if owner_email:
-        print(f"Overriding labels to take ownership as {owner_email} ...")
-        # By overriding these labels, user owner_email gets ownership of the service
-        # and the catalog service automatically gives full access rights for testing it
-        # otherwise it does not even get read rights
+        with log_context(
+            logging.INFO,
+            msg=f"Overriding labels to take ownership as {owner_email} ...",
+        ):
+            # By overriding these labels, user owner_email gets ownership of the service
+            # and the catalog service automatically gives full access rights for testing it
+            # otherwise it does not even get read rights
 
-        image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
-        image_labels.update(
-            {
-                "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
-            }
-        )
-        image_labels.update({"maintainer": f"{owner_email}"})
-
-        df_path = Path("Dockerfile").resolve()
-        df_path.write_text(f"FROM {pull_key}:{tag}")
-
-        try:
-            # Rebuild to override image labels AND re-tag
-            image2, _ = client.images.build(
-                path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned"
+            image_labels.update(
+                {"io.simcore.contact": f'{{"contact": "{owner_email}"}}'}
             )
-            print(json.dumps(image2.labels, indent=2))
-            image = image2
+            image_labels.update(
+                {
+                    "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
+                }
+            )
+            image_labels.update({"maintainer": f"{owner_email}"})
 
-        finally:
-            df_path.unlink()
+            df_path = Path("Dockerfile").resolve()
+            df_path.write_text(f"FROM {pull_key}:{tag}")
+
+            try:
+                # Rebuild to override image labels AND re-tag
+                image2, _ = client.images.build(
+                    path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned"
+                )
+                print(json.dumps(image2.labels, indent=2))
+                image = image2
+
+            finally:
+                df_path.unlink()
 
     assert image_labels
     io_simcore_labels = {
@@ -195,11 +200,14 @@ def _pull_push_service(
     new_image_tag = (
         f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
     )
-    assert image.tag(new_image_tag) == True
+    assert image.tag(new_image_tag)
 
     # push the image to the new location
-    print(f"Pushing {pull_key}:{tag}  -> {new_image_tag}...")
-    client.images.push(new_image_tag)
+    with log_context(
+        logging.INFO,
+        msg=f"Pushing {pull_key}:{tag}  -> {new_image_tag} ...",
+    ):
+        client.images.push(new_image_tag)
 
     # return image io.simcore.* labels
     image_labels = dict(image.labels)

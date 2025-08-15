@@ -12,6 +12,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
+from unittest import mock
 
 import pytest
 import redis.asyncio as aioredis
@@ -302,6 +303,7 @@ async def test_access_to_forbidden_study(
 
 
 async def test_access_study_anonymously(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
@@ -349,6 +351,7 @@ async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 async def test_access_study_by_logged_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     published_project: ProjectDict,
@@ -382,6 +385,7 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
@@ -463,6 +467,7 @@ async def test_access_cookie_of_expired_user(
     ],
 )
 async def test_guest_user_is_not_garbage_collected(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     number_of_simultaneous_requests: int,
     web_server: TestServer,
     aiohttp_client: Callable,

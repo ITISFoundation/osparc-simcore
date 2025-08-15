@@ -4,6 +4,7 @@
 from typing import Any
 
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from servicelib.redis import ProjectLockError
 
@@ -106,13 +107,26 @@ class ProjectRunningConflictError(ProjectTrashError):
 
 
 class ProjectNotTrashedError(ProjectTrashError):
-    msg_template = "Cannot delete project {project_uuid} since it was not trashed first: {details}"
+    msg_template = (
+        "Cannot delete project {project_uuid} since it was not trashed first: {details}"
+    )
 
 
 class NodeNotFoundError(BaseProjectError):
     msg_template = "Node '{node_uuid}' not found in project '{project_uuid}'"
 
     def __init__(self, *, project_uuid: str, node_uuid: str, **ctx):
+        super().__init__(**ctx)
+        self.node_uuid = node_uuid
+        self.project_uuid = project_uuid
+
+
+class NodeShareStateCannotBeComputedError(BaseProjectError):
+    msg_template = (
+        "Node '{node_uuid}' share state cannot be computed in project '{project_uuid}'"
+    )
+
+    def __init__(self, *, project_uuid: ProjectID | None, node_uuid: NodeID, **ctx):
         super().__init__(**ctx)
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid

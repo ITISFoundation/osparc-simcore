@@ -12,6 +12,8 @@ from unittest import mock
 import pytest
 from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.workspaces import WorkspaceGet
+from models_library.groups import GroupID
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
@@ -23,7 +25,8 @@ from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
-async def test_workspaces_full_workflow_with_folders_and_projects(
+async def test_workspaces_full_workflow_with_folders_and_projects(  # noqa: PLR0915
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -139,7 +142,9 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
         await update_or_insert_workspace_group(
             client.app,
             workspace_id=added_workspace.workspace_id,
-            group_id=new_logged_user["primary_gid"],
+            group_id=TypeAdapter(GroupID).validate_python(
+                new_logged_user["primary_gid"]
+            ),
             read=True,
             write=True,
             delete=False,
@@ -203,7 +208,9 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
         await update_or_insert_workspace_group(
             client.app,
             workspace_id=added_workspace.workspace_id,
-            group_id=new_logged_user["primary_gid"],
+            group_id=TypeAdapter(GroupID).validate_python(
+                new_logged_user["primary_gid"]
+            ),
             read=True,
             write=False,
             delete=False,
@@ -233,10 +240,6 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
 @pytest.fixture
 def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
     mocker.patch(
-        "simcore_service_webserver.dynamic_scheduler.api.list_dynamic_services",
-        autospec=True,
-    )
-    mocker.patch(
         "simcore_service_webserver.projects._projects_service.remove_project_dynamic_services",
         autospec=True,
     )
@@ -252,6 +255,7 @@ def mock_storage_delete_data_folders(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_workspaces_delete_folders(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -361,6 +365,7 @@ async def test_workspaces_delete_folders(
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_listing_folders_and_projects_in_workspace__multiple_workspaces_created(
     request: pytest.FixtureRequest,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
