@@ -188,7 +188,7 @@ async def _delete_legacy_archive(
     )
 
 
-async def push(
+async def push(  # pylint: disable=too-many-arguments
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
