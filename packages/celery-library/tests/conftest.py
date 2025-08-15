@@ -36,7 +36,7 @@ pytest_plugins = [
 class FakeAppServer(BaseAppServer):
     def __init__(self, app, settings: CelerySettings) -> None:
         super().__init__(app)
-        self._task_manager = None  # Initialize to avoid AttributeError
+        self._task_manager = None
         self._settings = settings
 
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
