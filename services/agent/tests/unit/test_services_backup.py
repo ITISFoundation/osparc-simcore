@@ -1,12 +1,14 @@
 # pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from pathlib import Path
 from typing import Final
 from uuid import uuid4
 
 import aioboto3
+import aiodocker
 import pytest
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -38,6 +40,28 @@ def volume_content(tmpdir: Path) -> Path:
 
 
 @pytest.fixture
+async def mock_container_with_data(
+    volume_content: Path, monkeypatch: pytest.MonkeyPatch
+) -> AsyncIterable[None]:
+    async with aiodocker.Docker() as client:
+        container = await client.containers.run(
+            config={
+                "Image": "alpine:latest",
+                "Cmd": ["/bin/ash", "-c", "sleep 10000"],
+                "HostConfig": {"Binds": [f"{volume_content}:{volume_content}:rw"]},
+            }
+        )
+        container_inspect = await container.show()
+
+        container_name = container_inspect["Name"][1:]
+        monkeypatch.setenv("HOSTNAME", container_name)
+
+        yield None
+
+        await container.delete(force=True)
+
+
+@pytest.fixture
 def downlaoded_from_s3(tmpdir: Path) -> Path:
     path = Path(tmpdir) / "downloaded_from_s3"
     path.mkdir(parents=True, exist_ok=True)
@@ -45,6 +69,7 @@ def downlaoded_from_s3(tmpdir: Path) -> Path:
 
 
 async def test_backup_volume(
+    mock_container_with_data: None,
     volume_content: Path,
     project_id: ProjectID,
     swarm_stack_name: str,
