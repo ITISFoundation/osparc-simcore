@@ -25,7 +25,7 @@ from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.clusters import ClusterAuthentication
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.users import UserID
@@ -415,7 +415,7 @@ async def test_run_partial_computation(
     )
 
     def _convert_to_pipeline_details(
-        workbench_node_uuids: list[str],
+        workbench_node_uuids: list[NodeIDStr],
         expected_pipeline_adj_list: dict[int, list[int]],
         expected_node_states: dict[int, dict[str, Any]],
     ) -> PipelineDetails:
