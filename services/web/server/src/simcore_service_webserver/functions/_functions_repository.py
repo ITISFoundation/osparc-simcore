@@ -377,7 +377,7 @@ def _create_list_functions_attributes_filters(
 
     if search_by_function_title is not None:
         attributes_filters.append(
-            functions_table.c.title.like(f"%{search_by_function_title}%")
+            functions_table.c.title.ilike(f"%{search_by_function_title}%")
         )
 
     return attributes_filters
