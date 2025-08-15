@@ -25,7 +25,6 @@ from servicelib.common_headers import (
     X_SIMCORE_USER_AGENT,
 )
 from servicelib.redis import get_project_locked_state
-from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
@@ -250,7 +249,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         # updates project's permalink field
         await update_or_pop_permalink_in_project(request, project)
 
-        data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
+        data = ProjectGet.from_domain_model(project).model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
 
     return envelope_json_response(data)
 
@@ -282,7 +281,7 @@ async def get_project(request: web.Request):
 
     # Adds permalink
     await update_or_pop_permalink_in_project(request, project)
-    data = ProjectGet.from_domain_model(project).model_dump(**RESPONSE_MODEL_POLICY)
+    data = ProjectGet.from_domain_model(project).model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
     return envelope_json_response(data)
 
 

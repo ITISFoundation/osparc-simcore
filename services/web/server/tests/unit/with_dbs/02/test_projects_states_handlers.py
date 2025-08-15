@@ -1177,7 +1177,7 @@ async def test_get_active_project(
         )
         assert not error
         assert ProjectStateOutputSchema(**data.pop("state")).share_state.locked
-        data.pop("folderId")
+        data.pop("folderId", None)
 
         user_project_last_change_date = user_project.pop("lastChangeDate")
         data_last_change_date = data.pop("lastChangeDate")
