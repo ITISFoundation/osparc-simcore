@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import UUID
 
 from common_library.exclude import as_dict_exclude_none
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
@@ -10,8 +11,11 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectPatch,
 )
+from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
+from models_library.function_services_catalog.services import file_picker
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from models_library.rest_pagination import (
     PageMetaInfoLimitOffset,
@@ -50,6 +54,10 @@ from .services_http.solver_job_models_converters import (
     create_new_project_for_job,
 )
 from .services_http.storage import StorageApi
+from .services_http.study_job_models_converters import (
+    create_job_from_study,
+    get_project_and_file_inputs_from_job_inputs,
+)
 from .services_http.webserver import AuthSession
 from .services_rpc.director_v2 import DirectorV2Service
 from .services_rpc.storage import StorageService
@@ -274,7 +282,7 @@ class JobService:
 
     async def delete_job_assets(
         self, job_parent_resource_name: RelativeResourceName, job_id: JobID
-    ):
+    ) -> None:
         """Marks job project as hidden and deletes S3 assets associated it"""
         await self._web_rest_client.patch_project(
             project_id=job_id, patch_params=ProjectPatch(hidden=True)
@@ -325,7 +333,7 @@ class JobService:
         solver_key: SolverKeyId,
         version: VersionStr,
         job_id: JobID,
-    ):
+    ) -> JobStatus:
         assert solver_key  # nosec
         assert version  # nosec
         task = await self._director2_api.get_computation(
@@ -341,7 +349,7 @@ class JobService:
         version: VersionStr,
         job_id: JobID,
         pricing_spec: JobPricingSpecification | None,
-    ):
+    ) -> JobStatus:
         """
         Raises ProjectAlreadyStartedError if the project is already started
         """
@@ -364,3 +372,71 @@ class JobService:
             version=version,
             job_id=job_id,
         )
+
+    async def create_studies_job(
+        self,
+        *,
+        study_id: StudyID,
+        job_inputs: JobInputs,
+        x_simcore_parent_project_uuid: ProjectID | None,
+        x_simcore_parent_node_id: NodeID | None,
+        hidden: bool,
+    ) -> Job:
+
+        project = await self._web_rest_client.clone_project(
+            project_id=study_id,
+            hidden=hidden,
+            parent_project_uuid=x_simcore_parent_project_uuid,
+            parent_node_id=x_simcore_parent_node_id,
+        )
+        job = create_job_from_study(
+            study_key=study_id, project=project, job_inputs=job_inputs
+        )
+
+        await self._web_rest_client.patch_project(
+            project_id=job.id,
+            patch_params=ProjectPatch(name=job.name),
+        )
+
+        await self._web_rpc_client.mark_project_as_job(
+            product_name=self.product_name,
+            user_id=self.user_id,
+            project_uuid=job.id,
+            job_parent_resource_name=job.runner_name,
+            storage_assets_deleted=False,
+        )
+
+        project_inputs = await self._web_rest_client.get_project_inputs(
+            project_id=project.uuid
+        )
+
+        file_param_nodes = {}
+        for node_id, node in project.workbench.items():
+            if (
+                node.key == file_picker.META.key
+                and node.outputs is not None
+                and len(node.outputs) == 0
+            ):
+                file_param_nodes[node.label] = node_id
+
+        file_inputs: dict[InputID, InputTypes] = {}
+
+        (
+            new_project_inputs,
+            new_project_file_inputs,
+        ) = get_project_and_file_inputs_from_job_inputs(
+            project_inputs, file_inputs, job_inputs
+        )
+
+        for node_label, file_link in new_project_file_inputs.items():
+            await self._web_rest_client.update_node_outputs(
+                project_id=project.uuid,
+                node_id=UUID(file_param_nodes[node_label]),
+                new_node_outputs=NodeOutputs(outputs={"outFile": file_link}),
+            )
+
+        if len(new_project_inputs) > 0:
+            await self._web_rest_client.update_project_inputs(
+                project_id=project.uuid, new_inputs=new_project_inputs
+            )
+        return job

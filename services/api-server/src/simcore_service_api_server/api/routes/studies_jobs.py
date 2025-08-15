@@ -1,18 +1,13 @@
 import logging
 from collections.abc import Callable
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi_pagination.api import create_page
-from models_library.api_schemas_webserver.projects import ProjectPatch
-from models_library.api_schemas_webserver.projects_nodes import NodeOutputs
 from models_library.clusters import ClusterID
-from models_library.function_services_catalog.services import file_picker
 from models_library.projects import ProjectID
-from models_library.projects_nodes import InputID, InputTypes
 from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
@@ -42,17 +37,13 @@ from ...services_http.jobs import (
 from ...services_http.solver_job_models_converters import create_jobstatus_from_task
 from ...services_http.storage import StorageApi
 from ...services_http.study_job_models_converters import (
-    create_job_from_study,
     create_job_outputs_from_project_outputs,
-    get_project_and_file_inputs_from_job_inputs,
 )
 from ...services_http.webserver import AuthSession
-from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client, get_job_service
 from ..dependencies.webserver_http import get_webserver_session
-from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_CHANGED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -121,11 +112,8 @@ async def list_study_jobs(
 async def create_study_job(
     study_id: StudyID,
     job_inputs: JobInputs,
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    product_name: Annotated[str, Depends(get_product_name)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     hidden: Annotated[bool, Query()] = True,  # noqa: FBT002
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
@@ -133,15 +121,15 @@ async def create_study_job(
     """
     hidden -- if True (default) hides project from UI
     """
-    project = await webserver_api.clone_project(
-        project_id=study_id,
+
+    job = await job_service.create_studies_job(
+        study_id=study_id,
+        job_inputs=job_inputs,
+        x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
+        x_simcore_parent_node_id=x_simcore_parent_node_id,
         hidden=hidden,
-        parent_project_uuid=x_simcore_parent_project_uuid,
-        parent_node_id=x_simcore_parent_node_id,
     )
-    job = create_job_from_study(
-        study_key=study_id, project=project, job_inputs=job_inputs
-    )
+    assert job.name == _compose_job_resource_name(study_id, job.id)
     job.url = url_for(
         "get_study_job",
         study_id=study_id,
@@ -153,54 +141,6 @@ async def create_study_job(
         study_id=study_id,
         job_id=job.id,
     )
-
-    await webserver_api.patch_project(
-        project_id=job.id,
-        patch_params=ProjectPatch(name=job.name),
-    )
-
-    await wb_api_rpc.mark_project_as_job(
-        product_name=product_name,
-        user_id=user_id,
-        project_uuid=job.id,
-        job_parent_resource_name=job.runner_name,
-        storage_assets_deleted=False,
-    )
-
-    project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)
-
-    file_param_nodes = {}
-    for node_id, node in project.workbench.items():
-        if (
-            node.key == file_picker.META.key
-            and node.outputs is not None
-            and len(node.outputs) == 0
-        ):
-            file_param_nodes[node.label] = node_id
-
-    file_inputs: dict[InputID, InputTypes] = {}
-
-    (
-        new_project_inputs,
-        new_project_file_inputs,
-    ) = get_project_and_file_inputs_from_job_inputs(
-        project_inputs, file_inputs, job_inputs
-    )
-
-    for node_label, file_link in new_project_file_inputs.items():
-        await webserver_api.update_node_outputs(
-            project_id=project.uuid,
-            node_id=UUID(file_param_nodes[node_label]),
-            new_node_outputs=NodeOutputs(outputs={"outFile": file_link}),
-        )
-
-    if len(new_project_inputs) > 0:
-        await webserver_api.update_project_inputs(
-            project_id=project.uuid, new_inputs=new_project_inputs
-        )
-
-    assert job.name == _compose_job_resource_name(study_id, job.id)
-
     return job
 
 

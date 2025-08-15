@@ -460,13 +460,10 @@ async def run_function(  # noqa: PLR0913
         study_job = await studies_jobs.create_study_job(
             study_id=to_run_function.project_id,
             job_inputs=JobInputs(values=joined_inputs or {}),
-            webserver_api=webserver_api,
-            wb_api_rpc=wb_api_rpc,
             url_for=url_for,
+            job_service=job_service,
             x_simcore_parent_project_uuid=parent_project_uuid,
             x_simcore_parent_node_id=parent_node_id,
-            user_id=user_id,
-            product_name=product_name,
         )
         await studies_jobs.start_study_job(
             request=request,
