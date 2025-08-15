@@ -13523,6 +13523,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -13530,6 +13531,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -13656,6 +13658,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -13663,6 +13666,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
