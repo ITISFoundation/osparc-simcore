@@ -107,8 +107,6 @@ class BaseProjectModel(BaseModel):
     last_change_date: datetime
 
     # Pipeline of nodes (SEE projects_nodes.py)
-    # FIXME: pedro checks this one
-    # NOTE: GCR: a validation failed (See: services/storage/src/simcore_service_storage/modules/db/projects.py)
     workbench: Annotated[NodesDict, Field(description="Project's pipeline")]
 
 
