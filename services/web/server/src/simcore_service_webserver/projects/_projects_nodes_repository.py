@@ -113,23 +113,23 @@ async def get_by_project(
             projects_nodes.c.project_uuid == f"{project_id}"
         )
 
-        result = await conn.stream(query)
-        assert result  # nosec
+        stream = await conn.stream(query)
+        assert stream  # nosec
 
-        rows = await result.all()
-        return [
-            (
-                NodeID(row.node_id),
-                Node.model_validate(
-                    ProjectNode.model_validate(row, from_attributes=True).model_dump(
-                        exclude_none=True,
-                        exclude_unset=True,
-                        exclude={"node_id", "created", "modified"},
-                    )
-                ),
+        result: list[tuple[NodeID, Node]] = []
+        async for row in stream:
+            # build Model only once on top of row
+            pn = ProjectNode.model_validate(row, from_attributes=True)
+            node = Node.model_validate(
+                pn.model_dump(
+                    exclude_none=True,
+                    exclude_unset=True,
+                    exclude={"node_id", "created", "modified"},
+                )
             )
-            for row in rows
-        ]
+            result.append((NodeID(row.node_id), node))
+
+        return result
 
 
 async def get_by_projects(
@@ -145,10 +145,8 @@ async def get_by_projects(
             projects_nodes.c.project_uuid.in_([f"{pid}" for pid in project_ids])
         )
 
-        result = await conn.stream(query)
-        assert result  # nosec
-
-        rows = await result.all()
+        stream = await conn.stream(query)
+        assert stream  # nosec
 
         # Initialize dict with empty lists for all requested project_ids
         projects_to_nodes: dict[ProjectID, list[tuple[NodeID, Node]]] = {
@@ -156,7 +154,7 @@ async def get_by_projects(
         }
 
         # Fill in the actual data
-        for row in rows:
+        async for row in stream:
             node = Node.model_validate(
                 ProjectNode.model_validate(row).model_dump(
                     exclude_none=True,
