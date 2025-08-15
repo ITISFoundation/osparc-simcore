@@ -31,6 +31,7 @@ from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt
+from models_library.users import UserID
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
 from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutError
@@ -287,7 +288,7 @@ class StorageApi(BaseServiceClientApi):
 
     @_exception_mapper(http_status_map={})
     async def delete_project_s3_assets(
-        self, user_id: int, project_id: ProjectID
+        self, user_id: UserID, project_id: ProjectID
     ) -> None:
         response = await self.client.delete(
             f"/simcore-s3/folders/{project_id}",
