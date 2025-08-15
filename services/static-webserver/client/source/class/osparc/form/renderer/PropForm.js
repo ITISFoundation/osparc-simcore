@@ -908,6 +908,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
+
       const ctrlLink = this.getControlLink(toPortId);
       ctrlLink.setEnabled(false);
       this._form.getControl(toPortId)["link"] = {
@@ -926,21 +927,28 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       ctrlLink.addListener("mouseover", () => highlightEdgeUI(true));
       ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
 
-      const workbench = study.getWorkbench();
-      const fromNode = workbench.getNode(fromNodeId);
-      const port = fromNode.getOutput(fromPortId);
-      const fromPortLabel = port ? port.label : null;
-      fromNode.bind("label", ctrlLink, "value", {
-        converter: label => label + ": " + fromPortLabel
-      });
-      // Hack: Show tooltip if element is disabled
-      const addToolTip = () => {
-        ctrlLink.getContentElement().removeAttribute("title");
-        const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
-        ctrlLink.getContentElement().setAttribute("title", toolTipText);
-      };
-      fromNode.addListener("changeLabel", () => addToolTip());
-      addToolTip();
+      const fromNode = study.getWorkbench().getNode(fromNodeId);
+      const prettifyLinkString = () => {
+        const port = fromNode.getOutput(fromPortId);
+        const fromPortLabel = port ? port.label : null;
+        fromNode.bind("label", ctrlLink, "value", {
+          converter: label => label + ": " + fromPortLabel
+        });
+
+        // Hack: Show tooltip if element is disabled
+        const addToolTip = () => {
+          ctrlLink.getContentElement().removeAttribute("title");
+          const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
+          ctrlLink.getContentElement().setAttribute("title", toolTipText);
+        };
+        fromNode.addListener("changeLabel", () => addToolTip());
+        addToolTip();
+      }
+      if (fromNode.getMetadata()) {
+        prettifyLinkString();
+      } else {
+        fromNode.addListenerOnce("changeMetadata", () => prettifyLinkString(), this);
+      }
 
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
 
