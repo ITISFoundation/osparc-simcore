@@ -2,19 +2,25 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+
 import asyncio
 import subprocess
 import sys
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import NamedTuple
+from unittest.mock import AsyncMock
 
 import pytest
 import requests
 from fastapi import FastAPI, Query, Request
+from servicelib.async_utils import TaskCancelCallback
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+
+POLLER_CLEANUP_DELAY_S = 100.0
+
 
 CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 CURRENT_DIR = CURRENT_FILE.parent
@@ -120,3 +126,65 @@ def test_cancel_on_disconnect(get_unused_port: Callable[[], int]):
         # INFO:     127.0.0.1:35134 - "GET /example?wait=1 HTTP/1.1" 200 OK
 
         assert MESSAGE_ON_HANDLER_CANCELLATION in server_log
+
+
+@pytest.fixture
+def long_running_poller_mock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> Callable[[asyncio.Event, TaskCancelCallback, float], Awaitable]:
+
+    async def _mock_disconnect_poller(
+        close_event: asyncio.Event,
+        cancel_awaitable: TaskCancelCallback,
+        poll_interval: float,
+    ):
+        _mock_disconnect_poller.called = True
+        while not await cancel_awaitable():
+            await asyncio.sleep(2)
+            if close_event.is_set():
+                break
+
+    monkeypatch.setattr(
+        "servicelib.async_utils._poller_for_task_group",
+        _mock_disconnect_poller,
+    )
+    return _mock_disconnect_poller
+
+
+async def test_decorator_waits_for_poller_cleanup(
+    long_running_poller_mock: Callable[
+        [asyncio.Event, TaskCancelCallback, float], Awaitable
+    ],
+):
+    """
+    Tests that the decorator's wrapper waits for the poller task to finish
+    its cleanup, even if the handler finishes first, without needing a full server.
+    """
+    long_running_poller_mock.called = False
+    handler_was_called = False
+
+    @cancel_on_disconnect
+    async def my_handler(request: Request):
+        nonlocal handler_was_called
+        handler_was_called = True
+        await asyncio.sleep(0.1)  # Simulate quick work
+        return "Success"
+
+    # Mock a fastapi.Request object
+    mock_request = AsyncMock(spec=Request)
+    mock_request.is_disconnected.return_value = False
+
+    # ---
+    tasks_before = asyncio.all_tasks()
+
+    # Call the decorated handler
+    _ = await my_handler(mock_request)
+
+    tasks_after = asyncio.all_tasks()
+    # ---
+
+    assert handler_was_called
+    assert long_running_poller_mock.called == True
+
+    # Check that no background tasks were left orphaned
+    assert tasks_before == tasks_after
