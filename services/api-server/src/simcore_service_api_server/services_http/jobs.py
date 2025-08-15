@@ -2,14 +2,13 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from models_library.api_schemas_webserver.projects import ProjectGet
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
 from ..api.dependencies.authentication import get_current_user_id
 from ..api.dependencies.services import get_api_client
-from ..api.dependencies.webserver_http import get_webserver_session
 from ..models.schemas.jobs import (
     JobID,
     JobMetadata,
@@ -36,12 +35,12 @@ def raise_if_job_not_associated_with_solver(
 
 async def start_project(
     *,
-    request: Request,
     job_id: JobID,
     expected_job_name: str,
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    pricing_spec: JobPricingSpecification | None,
+    webserver_api: AuthSession,
 ) -> None:
-    if pricing_spec := JobPricingSpecification.create_from_headers(request.headers):
+    if pricing_spec is not None:
         with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
             project: ProjectGet = await webserver_api.get_project(project_id=job_id)
             raise_if_job_not_associated_with_solver(expected_job_name, project)

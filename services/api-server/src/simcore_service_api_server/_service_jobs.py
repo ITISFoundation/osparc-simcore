@@ -22,18 +22,27 @@ from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
+from simcore_service_api_server.api.routes.solvers_jobs import compose_job_resource_name
 
 from ._service_solvers import (
     SolverService,
 )
+from .exceptions.backend_errors import JobAssetsMissingError, ProjectAlreadyStartedError
 from .exceptions.custom_errors import SolverServiceListJobsFiltersError
 from .models.api_resources import RelativeResourceName
 from .models.basic_types import NameValueTuple, VersionStr
-from .models.schemas.jobs import Job, JobID, JobInputs, compose_resource_name
+from .models.schemas.jobs import (
+    Job,
+    JobID,
+    JobInputs,
+    JobPricingSpecification,
+    compose_resource_name,
+)
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver, SolverKeyId
 from .models.schemas.studies import StudyID
 from .services_http.director_v2 import DirectorV2Api
+from .services_http.jobs import start_project
 from .services_http.solver_job_models_converters import (
     JobStatus,
     create_job_from_project,
@@ -317,3 +326,39 @@ class JobService:
         )
         job_status: JobStatus = create_jobstatus_from_task(task)
         return job_status
+
+    async def start_solver_job(
+        self,
+        *,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        job_id: JobID,
+        pricing_spec: JobPricingSpecification | None,
+    ):
+        job_name = compose_job_resource_name(solver_key, version, job_id)
+        _logger.debug("Start Job '%s'", job_name)
+        job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
+        job = await self.get_job(
+            job_id=job_id, job_parent_resource_name=job_parent_resource_name
+        )
+        if job.storage_assets_deleted:
+            raise JobAssetsMissingError(job_id=job_id)
+        try:
+            await start_project(
+                pricing_spec=pricing_spec,
+                job_id=job_id,
+                expected_job_name=job_name,
+                webserver_api=self._web_rest_client,
+            )
+        except ProjectAlreadyStartedError:
+            job_status = await self.inspect_solver_job(
+                solver_key=solver_key,
+                version=version,
+                job_id=job_id,
+            )
+            return job_status
+        return await self.inspect_solver_job(
+            solver_key=solver_key,
+            version=version,
+            job_id=job_id,
+        )

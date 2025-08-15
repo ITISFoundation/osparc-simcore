@@ -4,16 +4,13 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
 from ..._service_jobs import JobService
-from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -23,11 +20,12 @@ from ...models.schemas.jobs import (
     JobInputs,
     JobMetadata,
     JobMetadataUpdate,
+    JobPricingSpecification,
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services_http.director_v2 import DirectorV2Api
-from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
+from ...services_http.jobs import replace_custom_metadata, stop_project
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client, get_job_service
@@ -211,49 +209,15 @@ async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
-    _logger.debug("Start Job '%s'", job_name)
+    pricing_spec = JobPricingSpecification.create_from_headers(headers=request.headers)
 
-    job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
-    job = await job_service.get_job(
-        job_id=job_id, job_parent_resource_name=job_parent_resource_name
-    )
-    if job.storage_assets_deleted:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Assets for job job_id={job_id} are missing",
-        )
-
-    try:
-        await start_project(
-            request=request,
-            job_id=job_id,
-            expected_job_name=job_name,
-            webserver_api=webserver_api,
-        )
-    except ProjectAlreadyStartedError:
-        job_status = await inspect_job(
-            solver_key=solver_key,
-            version=version,
-            job_id=job_id,
-            job_service=job_service,
-        )
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content=jsonable_encoder(job_status)
-        )
-    return await inspect_job(
-        solver_key=solver_key,
-        version=version,
-        job_id=job_id,
-        job_service=job_service,
+    return await job_service.start_solver_job(
+        solver_key=solver_key, version=version, job_id=job_id, pricing_spec=pricing_spec
     )
 
 
