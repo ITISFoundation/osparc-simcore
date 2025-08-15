@@ -19,19 +19,20 @@ class UserServicesPreferencesManager:
     service_version: ServiceVersion
     user_id: UserID
     product_name: ProductName
+    application_name: str
     _preferences_already_saved: bool = False
 
-    async def load_preferences(self, application_name: str) -> None:
+    async def load_preferences(self) -> None:
         await _db.load_preferences(
             user_preferences_path=self.user_preferences_path,
             service_key=self.service_key,
             service_version=self.service_version,
             user_id=self.user_id,
             product_name=self.product_name,
-            application_name=application_name,
+            application_name=self.application_name,
         )
 
-    async def save_preferences(self, application_name: str) -> None:
+    async def save_preferences(self) -> None:
         if self._preferences_already_saved:
             _logger.warning("Preferences were already saved, will not save them again")
             return
@@ -42,7 +43,7 @@ class UserServicesPreferencesManager:
             service_version=self.service_version,
             user_id=self.user_id,
             product_name=self.product_name,
-            application_name=application_name,
+            application_name=self.application_name,
         )
 
         self._preferences_already_saved = True
@@ -52,11 +53,11 @@ async def save_user_services_preferences(app: FastAPI) -> None:
     user_services_preferences_manager: UserServicesPreferencesManager = (
         app.state.user_services_preferences_manager
     )
-    await user_services_preferences_manager.save_preferences(app.title)
+    await user_services_preferences_manager.save_preferences()
 
 
 async def load_user_services_preferences(app: FastAPI) -> None:
     user_services_preferences_manager: UserServicesPreferencesManager = (
         app.state.user_services_preferences_manager
     )
-    await user_services_preferences_manager.load_preferences(app.title)
+    await user_services_preferences_manager.load_preferences()

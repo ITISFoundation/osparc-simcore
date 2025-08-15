@@ -33,6 +33,7 @@ def setup_user_services_preferences(app: FastAPI) -> None:
                         service_version=settings.DY_SIDECAR_SERVICE_VERSION,
                         user_id=settings.DY_SIDECAR_USER_ID,
                         product_name=settings.DY_SIDECAR_PRODUCT_NAME,
+                        application_name=app.title,
                     )
                 )
             else:
