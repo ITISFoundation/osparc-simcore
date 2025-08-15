@@ -8,7 +8,6 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from typing import Any
 from uuid import uuid4
-import uuid
 
 import pytest
 import sqlalchemy as sa
