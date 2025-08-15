@@ -67,7 +67,7 @@ class ProjectJobsRepository(BaseRepository):
         *,
         project_uuid: ProjectID,
         job_parent_resource_name: str,
-        storage_data_deleted: bool,
+        storage_assets_deleted: bool,
     ) -> None:
         async with transaction_context(self.engine, connection) as conn:
             stmt = (
@@ -75,13 +75,13 @@ class ProjectJobsRepository(BaseRepository):
                 .values(
                     project_uuid=f"{project_uuid}",
                     job_parent_resource_name=job_parent_resource_name,
-                    storage_data_deleted=storage_data_deleted,
+                    storage_assets_deleted=storage_assets_deleted,
                 )
                 .on_conflict_do_update(
                     index_elements=["project_uuid", "job_parent_resource_name"],
                     set_={
                         "job_parent_resource_name": job_parent_resource_name,
-                        "storage_data_deleted": storage_data_deleted,
+                        "storage_assets_deleted": storage_assets_deleted,
                     },
                 )
             )
@@ -180,7 +180,7 @@ class ProjectJobsRepository(BaseRepository):
                 *_PROJECT_DB_COLS,
                 projects.c.workbench,
                 base_query.c.job_parent_resource_name,
-                base_query.c.storage_data_deleted,
+                base_query.c.storage_assets_deleted,
             )
             .select_from(
                 base_query.join(
@@ -223,7 +223,7 @@ class ProjectJobsRepository(BaseRepository):
                 *_PROJECT_DB_COLS,
                 projects.c.workbench,
                 projects_to_jobs.c.job_parent_resource_name,
-                projects_to_jobs.c.storage_data_deleted,
+                projects_to_jobs.c.storage_assets_deleted,
             )
             .select_from(
                 projects_to_jobs.join(

@@ -48,7 +48,7 @@ async def set_project_as_job(
     await repo.set_project_as_job(
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
-        storage_data_deleted=storage_data_deleted,
+        storage_assets_deleted=storage_data_deleted,
     )
 
 
