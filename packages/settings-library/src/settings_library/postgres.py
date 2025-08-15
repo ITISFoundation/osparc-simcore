@@ -31,10 +31,10 @@ class PostgresSettings(BaseCustomSettings):
 
     # pool connection limits
     POSTGRES_MINSIZE: Annotated[
-        int, Field(description="Minimum number of connections in the pool", ge=1)
-    ] = 1
+        int, Field(description="Minimum number of connections in the pool", ge=2)
+    ] = 2  # see https://github.com/ITISFoundation/osparc-simcore/pull/8199
     POSTGRES_MAXSIZE: Annotated[
-        int, Field(description="Maximum number of connections in the pool", ge=1)
+        int, Field(description="Maximum number of connections in the pool", ge=2)
     ] = 50
 
     POSTGRES_CLIENT_NAME: Annotated[
@@ -124,7 +124,7 @@ class PostgresSettings(BaseCustomSettings):
                         "POSTGRES_USER": "usr",
                         "POSTGRES_PASSWORD": "secret",
                         "POSTGRES_DB": "db",
-                        "POSTGRES_MINSIZE": 1,
+                        "POSTGRES_MINSIZE": 2,
                         "POSTGRES_MAXSIZE": 50,
                         "POSTGRES_CLIENT_NAME": "my_app",  # first-choice
                         "HOST": "should be ignored",

@@ -16015,6 +16015,11 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ProjectTemplateType'
           - type: 'null'
+        hidden:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hidden
       type: object
       title: ProjectPatch
     ProjectPermalink:
