@@ -6,6 +6,7 @@ _current_distribution = distribution("simcore-service-dynamic-sidecar")
 
 
 PROJECT_NAME: str = _current_distribution.metadata["Name"]
+APP_NAME: str = _current_distribution.metadata["Name"]
 
 API_VERSION: str = version("simcore-service-dynamic-sidecar")
 MAJOR, MINOR, PATCH = API_VERSION.split(".")
