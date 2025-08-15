@@ -278,7 +278,7 @@ class ProjectPatch(InputSchema):
     ] = None
     quality: dict[str, Any] | None = None
     template_type: ProjectTemplateType | None = None
-    hidden: bool = False
+    hidden: bool | None = None
 
     def to_domain_model(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)
