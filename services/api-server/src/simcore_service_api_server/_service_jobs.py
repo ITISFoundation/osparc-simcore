@@ -50,7 +50,7 @@ class JobService:
     user_id: UserID
     product_name: ProductName
 
-    async def list_jobs(
+    async def _list_jobs(
         self,
         job_parent_resource_name: str,
         *,
@@ -129,7 +129,7 @@ class JobService:
         job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
         # 2. list jobs under job_parent_resource_name
-        return await self.list_jobs(
+        return await self._list_jobs(
             job_parent_resource_name=job_parent_resource_name,
             filter_any_custom_metadata=filter_any_custom_metadata,
             pagination_offset=pagination_offset,
@@ -155,7 +155,7 @@ class JobService:
         job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
 
         # 2. list jobs under job_parent_resource_name
-        return await self.list_jobs(
+        return await self._list_jobs(
             job_parent_resource_name=job_parent_resource_name,
             pagination_offset=pagination_offset,
             pagination_limit=pagination_limit,

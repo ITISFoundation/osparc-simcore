@@ -15,7 +15,7 @@ async def test_list_jobs_by_resource_prefix(
     job_service: JobService,
 ):
     # Test with default pagination parameters
-    jobs, page_meta = await job_service.list_jobs(
+    jobs, page_meta = await job_service._list_jobs(
         job_parent_resource_name="solvers/some-solver"
     )
 
