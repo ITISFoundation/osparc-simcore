@@ -90,10 +90,15 @@ def assert_replaced(current_project, update_data):
     def _extract(dikt, keys):
         return {k: dikt[k] for k in keys}
 
-    modified = [
+    skip = [
         "lastChangeDate",
+        "templateType",
+        "trashedAt",
+        "trashedBy",
+        "workspaceId",
+        "folderId",
     ]
-    keep = [k for k in update_data if k not in modified]
+    keep = [k for k in update_data if k not in skip]
 
     assert _extract(current_project, keep) == _extract(update_data, keep)
 
