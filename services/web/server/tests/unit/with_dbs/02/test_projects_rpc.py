@@ -436,7 +436,7 @@ async def test_mark_and_get_project_job_storage_data_deleted(
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
     )
-    assert project_job.storage_data_deleted is True
+    assert project_job.storage_assets_deleted is True
 
     # Mark again as job with storage_data_deleted=False
     await projects_rpc.mark_project_as_job(
@@ -456,4 +456,4 @@ async def test_mark_and_get_project_job_storage_data_deleted(
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
     )
-    assert project_job.storage_data_deleted is False
+    assert project_job.storage_assets_deleted is False

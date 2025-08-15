@@ -99,7 +99,7 @@ async def list_projects_marked_as_jobs(
             created_at=project.creation_date,
             modified_at=project.last_change_date,
             job_parent_resource_name=project.job_parent_resource_name,
-            storage_data_deleted=project.storage_data_deleted,
+            storage_assets_deleted=project.storage_data_deleted,
         )
         for project in projects
     ]
@@ -153,7 +153,7 @@ async def get_project_marked_as_job(
         created_at=project.creation_date,
         modified_at=project.last_change_date,
         job_parent_resource_name=project.job_parent_resource_name,
-        storage_data_deleted=project.storage_data_deleted,
+        storage_assets_deleted=project.storage_data_deleted,
     )
 
 

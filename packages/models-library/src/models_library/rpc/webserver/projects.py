@@ -90,7 +90,7 @@ class ProjectJobRpcGet(BaseModel):
 
     # Specific to jobs
     job_parent_resource_name: str
-    storage_data_deleted: bool
+    storage_assets_deleted: bool
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

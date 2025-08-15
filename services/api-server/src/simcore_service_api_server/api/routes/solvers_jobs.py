@@ -239,7 +239,7 @@ async def start_job(
     job = await job_service.get_job(
         job_id=job_id, job_parent_resource_name=job_parent_resource_name
     )
-    if job.storage_data_deleted:
+    if job.storage_assets_deleted:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Assets for job job_id={job_id} are missing",

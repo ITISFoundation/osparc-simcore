@@ -325,7 +325,7 @@ async def get_job_outputs(
     node_ids = list(project_marked_as_job.workbench.keys())
     assert len(node_ids) == 1  # nosec
 
-    if project_marked_as_job.storage_data_deleted:
+    if project_marked_as_job.storage_assets_deleted:
         _logger.warning("Storage data for job '%s' has been deleted", job_name)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Assets have been deleted"

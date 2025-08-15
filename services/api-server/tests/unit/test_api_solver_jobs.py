@@ -362,7 +362,7 @@ async def test_start_solver_job_conflict(
                 created_at=datetime.fromisoformat("2023-02-01T00:00:00Z"),
                 modified_at=datetime.fromisoformat("2023-02-01T00:00:00Z"),
                 job_parent_resource_name="studies/96642f2a-a72c-11ef-8776-02420a00087d",
-                storage_data_deleted=True,
+                storage_assets_deleted=True,
             ),
             id="storage_data_deleted",
         )
@@ -518,7 +518,7 @@ async def test_get_solver_job_outputs(
             created_at=datetime.fromisoformat("2023-01-01T00:00:00Z"),
             modified_at=datetime.fromisoformat("2023-01-01T00:00:00Z"),
             job_parent_resource_name="solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
-            storage_data_deleted=True,
+            storage_assets_deleted=True,
         )
     ],
 )
