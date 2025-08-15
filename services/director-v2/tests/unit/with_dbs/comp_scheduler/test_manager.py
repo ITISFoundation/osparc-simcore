@@ -412,9 +412,7 @@ async def test_empty_pipeline_is_not_scheduled(
             collection_run_id=fake_collection_run_id,
         )
 
-    warning_log_regs = [
-        log_rec for log_rec in caplog.records if log_rec.levelname == "WARNING"
-    ]
+    warning_log_regs = list(caplog.records)
     assert len(warning_log_regs) == 1
     assert "no computational dag defined" in warning_log_regs[0].message
 
