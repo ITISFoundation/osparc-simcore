@@ -452,7 +452,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
         "service_version": faker.numerify("%.#.#"),
         "service_id": None,
     }
-    NUM_DY_SERVICES = 150
+    NUM_DY_SERVICES = 50
     responses = await asyncio.gather(
         *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
     )

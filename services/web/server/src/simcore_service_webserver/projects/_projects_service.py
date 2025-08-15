@@ -917,6 +917,8 @@ async def _start_dynamic_service(  # noqa: C901
                 hardware_info=hardware_info,
             ),
         )
+        # TODO: this is actually stupid, we get all nodes inside the project with this, and we only need that one.
+        # change this and most probably this will fix the issue
         project = await get_project_for_user(
             request.app, f"{project_uuid}", user_id, include_state=True
         )
