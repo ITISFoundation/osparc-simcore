@@ -116,7 +116,7 @@ async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
     self_container = os.environ["HOSTNAME"]
     await run_command_in_container(
         self_container,
-        command=f"chmod --recursive o+rX '{source_dir}'",
+        command=f"chmod -R o+rX '{source_dir}'",
         timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
     )
 
