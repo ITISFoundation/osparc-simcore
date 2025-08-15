@@ -38,6 +38,7 @@ async def mark_project_as_job(
     user_id: UserID,
     project_uuid: ProjectID,
     job_parent_resource_name: str,
+    storage_assets_deleted: bool,
 ) -> None:
 
     try:
@@ -48,6 +49,7 @@ async def mark_project_as_job(
             user_id=user_id,
             project_uuid=project_uuid,
             job_parent_resource_name=job_parent_resource_name,
+            storage_assets_deleted=storage_assets_deleted,
         )
     except ProjectInvalidRightsError as err:
         raise ProjectForbiddenRpcError.from_domain_error(err) from err
@@ -97,6 +99,7 @@ async def list_projects_marked_as_jobs(
             created_at=project.creation_date,
             modified_at=project.last_change_date,
             job_parent_resource_name=project.job_parent_resource_name,
+            storage_assets_deleted=project.storage_assets_deleted,
         )
         for project in projects
     ]
@@ -109,6 +112,49 @@ async def list_projects_marked_as_jobs(
     )
 
     return page
+
+
+@router.expose(
+    reraise_if_error_type=(
+        ValidationError,
+        ProjectForbiddenRpcError,
+        ProjectNotFoundRpcError,
+    )
+)
+@validate_call(config={"arbitrary_types_allowed": True})
+async def get_project_marked_as_job(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    job_parent_resource_name: str,
+) -> ProjectJobRpcGet:
+
+    try:
+        project = await _jobs_service.get_project_marked_as_job(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+    except ProjectInvalidRightsError as err:
+        raise ProjectForbiddenRpcError.from_domain_error(err) from err
+
+    except ProjectNotFoundError as err:
+        raise ProjectNotFoundRpcError.from_domain_error(err) from err
+
+    return ProjectJobRpcGet(
+        uuid=project.uuid,
+        name=project.name,
+        description=project.description,
+        workbench=project.workbench,
+        created_at=project.creation_date,
+        modified_at=project.last_change_date,
+        job_parent_resource_name=project.job_parent_resource_name,
+        storage_assets_deleted=project.storage_assets_deleted,
+    )
 
 
 async def register_rpc_routes_on_startup(app: web.Application):

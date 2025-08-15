@@ -20,6 +20,7 @@ from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server._service_solvers import SolverService
 from simcore_service_api_server._service_studies import StudyService
+from simcore_service_api_server.services_http.storage import StorageApi
 from simcore_service_api_server.services_http.webserver import AuthSession
 from simcore_service_api_server.services_rpc.catalog import CatalogService
 from simcore_service_api_server.services_rpc.director_v2 import DirectorV2Service
@@ -109,10 +110,19 @@ def auth_session(
 
 
 @pytest.fixture
+def storage_rest_client(
+    mocker: MockerFixture,
+) -> StorageApi:
+    mock = mocker.AsyncMock(spec=StorageApi)
+    return mock
+
+
+@pytest.fixture
 def job_service(
     auth_session: AuthSession,
     director_v2_rpc_client: DirectorV2Service,
     storage_rpc_client: StorageService,
+    storage_rest_client: StorageApi,
     wb_api_rpc_client: WbApiRpcClient,
     product_name: ProductName,
     user_id: UserID,
@@ -121,6 +131,7 @@ def job_service(
         _web_rest_client=auth_session,
         _web_rpc_client=wb_api_rpc_client,
         _storage_rpc_client=storage_rpc_client,
+        _storage_rest_client=storage_rest_client,
         _directorv2_rpc_client=director_v2_rpc_client,
         user_id=user_id,
         product_name=product_name,
