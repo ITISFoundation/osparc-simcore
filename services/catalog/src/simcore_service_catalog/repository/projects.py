@@ -1,4 +1,5 @@
 import logging
+from typing import Final
 
 import sqlalchemy as sa
 from models_library.services import ServiceKeyVersion
@@ -11,7 +12,7 @@ from ._base import BaseRepository
 _logger = logging.getLogger(__name__)
 
 
-_IGNORED_SERVICE_KEYS: set[str] = {
+_IGNORED_SERVICE_KEYS: Final[set[str]] = {
     # NOTE: frontend only nodes
     "simcore/services/frontend/file-picker",
     "simcore/services/frontend/nodes-group",
