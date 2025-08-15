@@ -40,6 +40,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .._meta import APP_NAME
 from ..constants import LOGS_FILE_NAME, UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -88,7 +89,7 @@ async def create_node_ports(
     :raises PortsValidationError: if any of the ports assigned values are invalid
     """
     try:
-        db_manager = node_ports_v2.DBManager(db_engine)
+        db_manager = node_ports_v2.DBManager(db_engine, application_name=APP_NAME)
         return await node_ports_v2.ports(
             user_id=user_id,
             project_id=ProjectIDStr(f"{project_id}"),

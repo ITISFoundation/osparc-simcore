@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
 async def create_async_engine_and_database_ready(
-    settings: PostgresSettings,
+    settings: PostgresSettings, application_name: str
 ) -> AsyncEngine:
     """
     - creates asyncio engine
@@ -31,15 +31,9 @@ async def create_async_engine_and_database_ready(
     )
 
     server_settings = {
-        "jit": "off"
-    }  # see https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#disabling-the-postgresql-jit-to-improve-enum-datatype-handling
-    if settings.POSTGRES_CLIENT_NAME:
-        assert isinstance(settings.POSTGRES_CLIENT_NAME, str)  # nosec
-        server_settings.update(
-            {
-                "application_name": settings.POSTGRES_CLIENT_NAME,
-            }
-        )
+        "jit": "off",
+        "application_name": settings.client_name(f"{application_name}-asyncpg"),
+    }
 
     engine = create_async_engine(
         settings.dsn_with_async_sqlalchemy,
@@ -86,9 +80,9 @@ async def with_async_pg_engine(
             logging.DEBUG,
             f"connection to db {settings.dsn_with_async_sqlalchemy}",
         ):
-            server_settings = None
-            if settings.POSTGRES_CLIENT_NAME:
-                assert isinstance(settings.POSTGRES_CLIENT_NAME, str)
+            server_settings = {
+                "application_name": settings.client_name("-asyncpg"),
+            }
 
             engine = create_async_engine(
                 settings.dsn_with_async_sqlalchemy,

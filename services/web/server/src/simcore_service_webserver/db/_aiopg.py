@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
     engine: Engine = await create_engine(
         settings.dsn,
-        application_name=settings.POSTGRES_CLIENT_NAME,
+        application_name=settings.client_name("-aiopg"),
         minsize=settings.POSTGRES_MINSIZE,
         maxsize=settings.POSTGRES_MAXSIZE,
     )

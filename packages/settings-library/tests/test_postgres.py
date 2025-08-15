@@ -6,6 +6,7 @@
 from urllib.parse import urlparse
 
 import pytest
+from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.postgres import PostgresSettings
@@ -36,14 +37,17 @@ def test_cached_property_dsn(mock_environment: EnvVarsDict):
     assert "dsn" not in settings.model_dump()
 
 
-def test_dsn_with_query(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+def test_dsn_with_query(
+    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+):
     settings = PostgresSettings()
 
     assert settings.POSTGRES_CLIENT_NAME
     assert settings.dsn == "postgresql://foo:secret@localhost:5432/foodb"
+    app_name = faker.pystr()
     assert (
-        settings.dsn_with_query
-        == "postgresql://foo:secret@localhost:5432/foodb?application_name=Some+%2643+funky+name"
+        settings.dsn_with_query(app_name)
+        == f"postgresql://foo:secret@localhost:5432/foodb?application_name={app_name}-Some+%2643+funky+name"
     )
 
     with monkeypatch.context() as patch:
@@ -51,7 +55,9 @@ def test_dsn_with_query(mock_environment: EnvVarsDict, monkeypatch: pytest.Monke
         settings = PostgresSettings()
 
         assert not settings.POSTGRES_CLIENT_NAME
-        assert settings.dsn == settings.dsn_with_query
+        assert f"{settings.dsn}?application_name=blah" == settings.dsn_with_query(
+            "blah"
+        )
 
 
 def test_dsn_with_async_sqlalchemy_has_query(
