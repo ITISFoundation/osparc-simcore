@@ -64,6 +64,6 @@ async def ensure_read_permissions_on_user_service_data(
     ):
         await run_command_in_container(
             self_container,
-            command=f"chmod -R o+rX '{path_to_store}'",
+            command=f"chmod --recursive o+rX '{path_to_store}'",
             timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
         )
