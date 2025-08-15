@@ -3,13 +3,13 @@ from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to
 from servicelib.fastapi.lifespan_utils import LifespanOnStartupError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .._meta import APP_NAME
 from ..core.settings import ApplicationSettings
 
 
 class PostgresNotConfiguredError(LifespanOnStartupError):
     msg_template = LifespanOnStartupError.msg_template + (
-        "Postgres settings are not configured. "
-        "Please check your application settings. "
+        "Postgres settings are not configured. Please check your application settings. "
     )
 
 
@@ -30,7 +30,9 @@ def setup_postgres(app: FastAPI):
                 settings=settings,
             )
 
-        await connect_to_db(app, settings.API_SERVER_POSTGRES)
+        await connect_to_db(
+            app, settings.API_SERVER_POSTGRES, application_name=APP_NAME
+        )
         assert app.state.engine  # nosec
         assert isinstance(app.state.engine, AsyncEngine)  # nosec
 
