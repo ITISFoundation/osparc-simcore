@@ -215,6 +215,7 @@ async def start_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None,
         Query(
@@ -244,8 +245,7 @@ async def start_study_job(
             job_status: JobStatus = await inspect_study_job(
                 study_id=study_id,
                 job_id=job_id,
-                user_id=user_id,
-                director2_api=director2_api,
+                job_service=job_service,
             )
             return JSONResponse(
                 content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK
@@ -253,8 +253,7 @@ async def start_study_job(
         return await inspect_study_job(
             study_id=study_id,
             job_id=job_id,
-            user_id=user_id,
-            director2_api=director2_api,
+            job_service=job_service,
         )
 
 

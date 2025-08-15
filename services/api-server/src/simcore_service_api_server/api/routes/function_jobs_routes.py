@@ -222,8 +222,7 @@ async def function_job_status(
         job_status = await studies_jobs.inspect_study_job(
             study_id=function.project_id,
             job_id=function_job.project_job_id,
-            user_id=user_id,
-            director2_api=director2_api,
+            job_service=job_service,
         )
     elif (function.function_class == FunctionClass.SOLVER) and (
         function_job.function_class == FunctionClass.SOLVER
