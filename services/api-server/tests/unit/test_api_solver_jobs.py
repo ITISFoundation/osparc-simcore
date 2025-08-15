@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Final
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 import pytest
@@ -16,6 +16,7 @@ from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient
 from models_library.generics import Envelope
+from models_library.projects_nodes import Node
 from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from pydantic import TypeAdapter
 from pytest_mock import MockType
@@ -450,6 +451,7 @@ async def test_get_solver_job_outputs(
     mocked_webserver_rest_api_base: MockRouter,
     mocked_storage_rest_api_base: MockRouter,
     mocked_solver_job_outputs: None,
+    mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
@@ -499,3 +501,59 @@ async def test_get_solver_job_outputs(
     )
 
     assert response.status_code == expected_status_code
+
+
+@pytest.mark.parametrize(
+    "project_job_rpc_get",
+    [
+        ProjectJobRpcGet(
+            uuid=UUID("12345678-1234-5678-1234-123456789012"),
+            name="A solver job",
+            description="A description of a solver job with a single node",
+            workbench={
+                f"{uuid4()}": Node.model_validate(
+                    Node.model_json_schema()["examples"][0]
+                )
+            },
+            created_at=datetime.fromisoformat("2023-01-01T00:00:00Z"),
+            modified_at=datetime.fromisoformat("2023-01-01T00:00:00Z"),
+            job_parent_resource_name="solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
+            storage_data_deleted=True,
+        )
+    ],
+)
+async def test_get_solver_job_outputs_assets_deleted(
+    client: AsyncClient,
+    mocked_webserver_rest_api_base: MockRouter,
+    mocked_storage_rest_api_base: MockRouter,
+    mocked_solver_job_outputs: None,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    create_respx_mock_from_capture: CreateRespxMockCallback,
+    auth: httpx.BasicAuth,
+    project_tests_dir: Path,
+):
+    def _sf(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
+    create_respx_mock_from_capture(
+        respx_mocks=[
+            mocked_webserver_rest_api_base,
+            mocked_storage_rest_api_base,
+        ],
+        capture_path=project_tests_dir / "mocks" / "get_solver_outputs.json",
+        side_effects_callbacks=[_sf, _sf, _sf, _sf, _sf],
+    )
+
+    _solver_key: Final[str] = "simcore/services/comp/isolve"
+    _version: Final[str] = "2.1.24"
+    _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"
+    response = await client.get(
+        f"{API_VTAG}/solvers/{_solver_key}/releases/{_version}/jobs/{_job_id}/outputs",
+        auth=auth,
+    )
+
+    assert response.status_code == status.HTTP_409_CONFLICT
