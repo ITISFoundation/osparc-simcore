@@ -41,6 +41,13 @@ def upgrade():
         onupdate="CASCADE",
         ondelete="SET NULL",
     )
+
+    op.execute(
+        """
+        ALTER TYPE conversationtype ADD VALUE 'SUPPORT';
+        """
+    )
+
     # ### end Alembic commands ###
 
 

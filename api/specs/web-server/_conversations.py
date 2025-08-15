@@ -24,12 +24,12 @@ from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.conversations._controller._common import (
     ConversationPathParams,
 )
-from simcore_service_webserver.conversations._controller.conversations_messages_rest import (
+from simcore_service_webserver.conversations._controller._conversations_messages_rest import (
     _ConversationMessageCreateBodyParams,
     _ConversationMessagePathParams,
     _ListConversationMessageQueryParams,
 )
-from simcore_service_webserver.conversations._controller.conversations_rest import (
+from simcore_service_webserver.conversations._controller._conversations_rest import (
     _ConversationsCreateBodyParams,
     _GetConversationsQueryParams,
     _ListConversationsQueryParams,

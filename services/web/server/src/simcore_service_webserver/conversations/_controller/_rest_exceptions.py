@@ -14,6 +14,7 @@ from ...exception_handling import (
 from ..errors import (
     ConversationErrorNotFoundError,
     ConversationMessageErrorNotFoundError,
+    ConversationUnsupportedTypeError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -31,6 +32,13 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
         status.HTTP_404_NOT_FOUND,
         user_message(
             "Conversation not found.",
+            _version=1,
+        ),
+    ),
+    ConversationUnsupportedTypeError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "Unsupported conversation type.",
             _version=1,
         ),
     ),

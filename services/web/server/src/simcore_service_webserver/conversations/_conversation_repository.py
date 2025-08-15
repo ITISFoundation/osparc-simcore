@@ -14,7 +14,9 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from pydantic import NonNegativeInt
-from simcore_postgres_database.models.conversations import conversations
+from simcore_postgres_database.models.conversations import (
+    conversations,
+)
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
