@@ -11,7 +11,7 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from simcore_service_webserver.db.plugin import get_asyncpg_engine
+from ..db.plugin import get_asyncpg_engine
 
 
 async def get_project_nodes_services(
