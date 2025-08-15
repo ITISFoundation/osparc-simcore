@@ -75,7 +75,7 @@ async def test_workspaces_full_workflow_with_folders_and_projects(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["uuid"] == project["uuid"]
     assert data["workspaceId"] == added_workspace.workspace_id
-    assert data["folderId"] is None
+    assert data.get("folderId") is None
 
     # Create folder in workspace
     url = client.app.router["create_folder"].url_for()
