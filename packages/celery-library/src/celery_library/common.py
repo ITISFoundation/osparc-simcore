@@ -1,4 +1,6 @@
 import ssl
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from celery import Celery  # type: ignore[import-untyped]
@@ -38,20 +40,23 @@ def create_app(settings: CelerySettings) -> Celery:
     )
 
 
+@asynccontextmanager
 async def create_task_manager(
     app: Celery, settings: CelerySettings
-) -> CeleryTaskManager:
-    redis_client_sdk = RedisClientSDK(
-        settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
-            RedisDatabase.CELERY_TASKS
-        ),
-        client_name="celery_tasks",
-    )
-    await redis_client_sdk.setup()
-    # GCR please address https://github.com/ITISFoundation/osparc-simcore/issues/8159
+) -> AsyncIterator[CeleryTaskManager]:
+    try:
+        redis_client_sdk = RedisClientSDK(
+            settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
+                RedisDatabase.CELERY_TASKS
+            ),
+            client_name="celery_tasks",
+        )
+        await redis_client_sdk.setup()
 
-    return CeleryTaskManager(
-        app,
-        settings,
-        RedisTaskInfoStore(redis_client_sdk),
-    )
+        yield CeleryTaskManager(
+            app,
+            settings,
+            RedisTaskInfoStore(redis_client_sdk),
+        )
+    finally:
+        await redis_client_sdk.shutdown()

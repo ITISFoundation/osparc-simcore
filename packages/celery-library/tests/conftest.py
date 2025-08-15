@@ -125,10 +125,11 @@ async def celery_task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
     with_celery_worker: TestWorkController,
-) -> CeleryTaskManager:
+) -> AsyncIterator[CeleryTaskManager]:
     register_celery_types()
 
-    return await create_task_manager(
+    async with create_task_manager(
         celery_app,
         celery_settings,
-    )
+    ) as task_manager:
+        yield task_manager

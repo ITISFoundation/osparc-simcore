@@ -30,11 +30,6 @@ def on_worker_init(
             assert sender.app  # nosec
             assert isinstance(sender.app, Celery)  # nosec
 
-            app_server.task_manager = await create_task_manager(
-                sender.app,
-                celery_settings,
-            )
-
             set_app_server(sender.app, app_server)
 
         app_server.event_loop = loop
