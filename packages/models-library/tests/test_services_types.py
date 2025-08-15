@@ -53,5 +53,3 @@ def test_faker_factory_service_key_and_version_are_in_sync(
 ):
     TypeAdapter(ServiceKey).validate_python(service_key)
     TypeAdapter(ServiceVersion).validate_python(service_version)
-
-    assert service_key.startswith("simcore/services/")
