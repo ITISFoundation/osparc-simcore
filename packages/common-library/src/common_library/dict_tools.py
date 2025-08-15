@@ -58,3 +58,15 @@ def update_dict(obj: dict, **updates):
             {key: update_value(obj[key]) if callable(update_value) else update_value}
         )
     return obj
+
+
+def assert_equal_ignoring_none(expected: dict, actual: dict):
+    for key, exp_value in expected.items():
+        if exp_value is None:
+            continue
+        assert key in actual, f"Missing key {key}"
+        act_value = actual[key]
+        if isinstance(exp_value, dict) and isinstance(act_value, dict):
+            assert_equal_ignoring_none(exp_value, act_value)
+        else:
+            assert act_value == exp_value, f"Mismatch in {key}: {act_value} != {exp_value}"
