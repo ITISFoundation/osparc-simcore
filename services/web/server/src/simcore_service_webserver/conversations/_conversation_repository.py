@@ -217,7 +217,7 @@ async def get(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
-    type: ConversationType | None = None,
+    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
@@ -225,8 +225,8 @@ async def get(
         .where(conversations.c.conversation_id == f"{conversation_id}")
     )
 
-    if type is not None:
-        select_query = select_query.where(conversations.c.type == type)
+    if type_ is not None:
+        select_query = select_query.where(conversations.c.type == type_)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)

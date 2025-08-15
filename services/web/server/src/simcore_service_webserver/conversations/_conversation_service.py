@@ -86,7 +86,7 @@ async def get_conversation(
     return await _conversation_repository.get(
         app,
         conversation_id=conversation_id,
-        type=type_,
+        type_=type_,
     )
 
 
