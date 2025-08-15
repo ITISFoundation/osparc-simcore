@@ -14,7 +14,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from common_library.dict_tools import assert_equal_ignoring_none
+from pytest_simcore.helpers.assert_checks import assert_equal_ignoring_none
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
