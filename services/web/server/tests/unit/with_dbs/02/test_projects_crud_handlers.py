@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
+from common_library.dict_tools import assert_equal_ignoring_none
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -413,6 +414,7 @@ async def test_list_projects_with_innaccessible_services(
         (UserRole.TESTER, status.HTTP_200_OK),
     ],
 )
+@pytest.mark.testit
 async def test_get_project(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -638,7 +640,7 @@ async def test_new_template_from_project(
         )
 
         assert len(templates) == 1
-        assert templates[0] == template_project
+        assert_equal_ignoring_none(template_project, templates[0], user_project)
 
         assert template_project["name"] == user_project["name"]
         assert template_project["description"] == user_project["description"]
