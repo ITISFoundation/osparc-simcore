@@ -470,9 +470,8 @@ async def run_function(  # noqa: PLR0913
             request=request,
             study_id=to_run_function.project_id,
             job_id=study_job.id,
-            user_id=user_id,
             webserver_api=webserver_api,
-            director2_api=director2_api,
+            job_service=job_service,
         )
         return await register_function_job(
             wb_api_rpc=wb_api_rpc,
