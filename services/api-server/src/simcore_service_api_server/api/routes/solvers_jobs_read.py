@@ -58,7 +58,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
-from ..dependencies.services import get_api_client, get_solver_service
+from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -68,6 +68,7 @@ from ._constants import (
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
+    JobService,
     compose_job_resource_name,
 )
 from .wallets import WALLET_STATUS_CODES
@@ -140,11 +141,11 @@ async def list_all_solvers_jobs(
     filter_job_metadata_params: Annotated[
         JobMetadataFilter | None, Depends(get_job_metadata_filter)
     ],
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
 
-    jobs, meta = await solver_service.list_jobs(
+    jobs, meta = await job_service.list_solver_jobs(
         filter_any_custom_metadata=(
             [
                 NameValueTuple(filter_metadata.name, filter_metadata.pattern)

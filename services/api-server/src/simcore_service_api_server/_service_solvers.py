@@ -10,18 +10,11 @@ from models_library.rest_pagination import (
 from models_library.rpc_pagination import PageLimitInt
 from models_library.services_enums import ServiceType
 from models_library.users import UserID
-from simcore_service_api_server.models.basic_types import NameValueTuple
 
-from ._service_jobs import JobService
 from ._service_utils import check_user_product_consistency
 from .exceptions.backend_errors import (
     ProgramOrSolverOrStudyNotFoundError,
 )
-from .exceptions.custom_errors import (
-    SolverServiceListJobsFiltersError,
-)
-from .models.api_resources import compose_resource_name
-from .models.schemas.jobs import Job
 from .models.schemas.solvers import Solver, SolverKeyId
 from .services_rpc.catalog import CatalogService
 
@@ -29,7 +22,6 @@ from .services_rpc.catalog import CatalogService
 @dataclass(frozen=True, kw_only=True)
 class SolverService:
     catalog_service: CatalogService
-    job_service: JobService
     user_id: UserID
     product_name: ProductName
 
@@ -37,13 +29,6 @@ class SolverService:
         check_user_product_consistency(
             service_cls_name=self.__class__.__name__,
             service_provider=self.catalog_service,
-            user_id=self.user_id,
-            product_name=self.product_name,
-        )
-
-        check_user_product_consistency(
-            service_cls_name=self.__class__.__name__,
-            service_provider=self.job_service,
             user_id=self.user_id,
             product_name=self.product_name,
         )
@@ -83,39 +68,6 @@ class SolverService:
         )
 
         return Solver.create_from_service(service)
-
-    async def list_jobs(
-        self,
-        *,
-        pagination_offset: PageOffsetInt | None = None,
-        pagination_limit: PageLimitInt | None = None,
-        filter_by_solver_key: SolverKeyId | None = None,
-        filter_by_solver_version: VersionStr | None = None,
-        filter_any_custom_metadata: list[NameValueTuple] | None = None,
-    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
-        """Lists all solver jobs for a user with pagination"""
-
-        # 1. Compose job parent resource name prefix
-        collection_or_resource_ids = [
-            "solvers",  # solver_id, "releases", solver_version, "jobs",
-        ]
-        if filter_by_solver_key:
-            collection_or_resource_ids.append(filter_by_solver_key)
-            if filter_by_solver_version:
-                collection_or_resource_ids.append("releases")
-                collection_or_resource_ids.append(filter_by_solver_version)
-        elif filter_by_solver_version:
-            raise SolverServiceListJobsFiltersError
-
-        job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
-
-        # 2. list jobs under job_parent_resource_name
-        return await self.job_service.list_jobs(
-            job_parent_resource_name=job_parent_resource_name,
-            filter_any_custom_metadata=filter_any_custom_metadata,
-            pagination_offset=pagination_offset,
-            pagination_limit=pagination_limit,
-        )
 
     async def solver_release_history(
         self,

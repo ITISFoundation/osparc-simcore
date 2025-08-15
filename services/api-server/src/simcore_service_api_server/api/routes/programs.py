@@ -172,7 +172,7 @@ async def create_program_job(
         version=version,
     )
 
-    job, project = await job_service.create_job(
+    job, project = await job_service.create_project_marked_as_job(
         project_name=name,
         description=description,
         solver_or_program=program,

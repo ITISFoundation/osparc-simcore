@@ -4,16 +4,15 @@
 # pylint: disable=unused-variable
 
 from pytest_mock import MockType
-from simcore_service_api_server._service_studies import StudyService
+from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server.models.schemas.studies import StudyID
 
 
 async def test_list_jobs_no_study_id(
-    mocked_rpc_client: MockType,
-    study_service: StudyService,
+    mocked_rpc_client: MockType, job_service: JobService
 ):
     # Test with default parameters
-    jobs, page_meta = await study_service.list_jobs()
+    jobs, page_meta = await job_service.list_study_jobs()
 
     assert isinstance(jobs, list)
     assert mocked_rpc_client.request.call_args.args == (
@@ -41,11 +40,11 @@ async def test_list_jobs_no_study_id(
 
 async def test_list_jobs_with_study_id(
     mocked_rpc_client: MockType,
-    study_service: StudyService,
+    job_service: JobService,
 ):
     # Test with a specific study ID
     study_id = StudyID("914c7c33-8fb6-4164-9787-7b88b5c148bf")
-    jobs, page_meta = await study_service.list_jobs(filter_by_study_id=study_id)
+    jobs, page_meta = await job_service.list_study_jobs(filter_by_study_id=study_id)
 
     assert isinstance(jobs, list)
 

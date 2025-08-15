@@ -18,10 +18,15 @@ from models_library.users import UserID
 from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
-from .models.basic_types import NameValueTuple
-from .models.schemas.jobs import Job, JobID, JobInputs
+from ._service_solvers import (
+    SolverService,
+)
+from .exceptions.custom_errors import SolverServiceListJobsFiltersError
+from .models.basic_types import NameValueTuple, VersionStr
+from .models.schemas.jobs import Job, JobID, JobInputs, compose_resource_name
 from .models.schemas.programs import Program
-from .models.schemas.solvers import Solver
+from .models.schemas.solvers import Solver, SolverKeyId
+from .models.schemas.studies import StudyID
 from .services_http.solver_job_models_converters import (
     create_job_from_project,
     create_job_inputs_from_node_inputs,
@@ -41,6 +46,7 @@ class JobService:
     _web_rpc_client: WbApiRpcClient
     _storage_rpc_client: StorageService
     _directorv2_rpc_client: DirectorV2Service
+    _solver_service: SolverService
     user_id: UserID
     product_name: ProductName
 
@@ -97,7 +103,65 @@ class JobService:
 
         return jobs, projects_page.meta
 
-    async def create_job(
+    async def list_solver_jobs(
+        self,
+        *,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
+        filter_by_solver_key: SolverKeyId | None = None,
+        filter_by_solver_version: VersionStr | None = None,
+        filter_any_custom_metadata: list[NameValueTuple] | None = None,
+    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+        """Lists all solver jobs for a user with pagination"""
+
+        # 1. Compose job parent resource name prefix
+        collection_or_resource_ids = [
+            "solvers",  # solver_id, "releases", solver_version, "jobs",
+        ]
+        if filter_by_solver_key:
+            collection_or_resource_ids.append(filter_by_solver_key)
+            if filter_by_solver_version:
+                collection_or_resource_ids.append("releases")
+                collection_or_resource_ids.append(filter_by_solver_version)
+        elif filter_by_solver_version:
+            raise SolverServiceListJobsFiltersError
+
+        job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
+
+        # 2. list jobs under job_parent_resource_name
+        return await self.list_jobs(
+            job_parent_resource_name=job_parent_resource_name,
+            filter_any_custom_metadata=filter_any_custom_metadata,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def list_study_jobs(
+        self,
+        *,
+        filter_by_study_id: StudyID | None = None,
+        pagination_offset: PageOffsetInt | None = None,
+        pagination_limit: PageLimitInt | None = None,
+    ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
+        """Lists all solver jobs for a user with pagination"""
+
+        # 1. Compose job parent resource name prefix
+        collection_or_resource_ids: list[str] = [
+            "study",  # study_id, "jobs",
+        ]
+        if filter_by_study_id:
+            collection_or_resource_ids.append(f"{filter_by_study_id}")
+
+        job_parent_resource_name = compose_resource_name(*collection_or_resource_ids)
+
+        # 2. list jobs under job_parent_resource_name
+        return await self.list_jobs(
+            job_parent_resource_name=job_parent_resource_name,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+        )
+
+    async def create_project_marked_as_job(
         self,
         *,
         solver_or_program: Solver | Program,
@@ -167,3 +231,32 @@ class JobService:
             ],
         )
         return async_job_get
+
+    async def create_solver_job(
+        self,
+        *,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        inputs: JobInputs,
+        url_for: Callable,
+        hidden: bool,
+        x_simcore_parent_project_uuid: ProjectID | None,
+        x_simcore_parent_node_id: NodeID | None,
+    ) -> Job:
+
+        solver = await self._solver_service.get_solver(
+            solver_key=solver_key,
+            solver_version=version,
+        )
+        job, _ = await self.create_project_marked_as_job(
+            project_name=None,
+            description=None,
+            solver_or_program=solver,
+            inputs=inputs,
+            url_for=url_for,
+            hidden=hidden,
+            parent_project_uuid=x_simcore_parent_project_uuid,
+            parent_node_id=x_simcore_parent_node_id,
+        )
+
+        return job

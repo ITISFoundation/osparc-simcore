@@ -17,7 +17,6 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
-from ..._service_studies import StudyService
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.api_resources import parse_resources_ids
 from ...models.pagination import Page, PaginationParams
@@ -50,7 +49,7 @@ from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.services import get_api_client, get_study_service
+from ..dependencies.services import get_api_client, get_job_service
 from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
@@ -58,7 +57,7 @@ from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-from .solvers_jobs import JOBS_STATUS_CODES
+from .solvers_jobs import JOBS_STATUS_CODES, JobService
 
 _logger = logging.getLogger(__name__)
 
@@ -88,13 +87,13 @@ def _compose_job_resource_name(study_key, job_id) -> str:
 async def list_study_jobs(
     study_id: StudyID,
     page_params: Annotated[PaginationParams, Depends()],
-    study_service: Annotated[StudyService, Depends(get_study_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
     msg = f"list study jobs study_id={study_id!r} with pagination={page_params!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     _logger.debug(msg)
 
-    jobs, meta = await study_service.list_jobs(
+    jobs, meta = await job_service.list_study_jobs(
         filter_by_study_id=study_id,
         pagination_offset=page_params.offset,
         pagination_limit=page_params.limit,
@@ -218,9 +217,7 @@ async def create_study_job(
 async def get_study_job(
     study_id: StudyID,
     job_id: JobID,
-    study_service: Annotated[StudyService, Depends(get_study_service)],
 ):
-    assert study_service  # nosec
     msg = f"get study job study_id={study_id!r} job_id={job_id!r}. SEE https://github.com/ITISFoundation/osparc-simcore/issues/4177"
     raise NotImplementedError(msg)
 

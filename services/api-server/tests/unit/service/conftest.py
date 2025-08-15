@@ -19,7 +19,6 @@ from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server._service_solvers import SolverService
-from simcore_service_api_server._service_studies import StudyService
 from simcore_service_api_server.services_http.webserver import AuthSession
 from simcore_service_api_server.services_rpc.catalog import CatalogService
 from simcore_service_api_server.services_rpc.director_v2 import DirectorV2Service
@@ -109,25 +108,6 @@ def auth_session(
 
 
 @pytest.fixture
-def job_service(
-    auth_session: AuthSession,
-    director_v2_rpc_client: DirectorV2Service,
-    storage_rpc_client: StorageService,
-    wb_api_rpc_client: WbApiRpcClient,
-    product_name: ProductName,
-    user_id: UserID,
-) -> JobService:
-    return JobService(
-        _web_rest_client=auth_session,
-        _web_rpc_client=wb_api_rpc_client,
-        _storage_rpc_client=storage_rpc_client,
-        _directorv2_rpc_client=director_v2_rpc_client,
-        user_id=user_id,
-        product_name=product_name,
-    )
-
-
-@pytest.fixture
 def catalog_service(
     mocked_rpc_client: MockType,
     product_name: ProductName,
@@ -141,27 +121,11 @@ def catalog_service(
 @pytest.fixture
 def solver_service(
     catalog_service: CatalogService,
-    job_service: JobService,
     product_name: ProductName,
     user_id: UserID,
 ) -> SolverService:
     return SolverService(
         catalog_service=catalog_service,
-        job_service=job_service,
-        user_id=user_id,
-        product_name=product_name,
-    )
-
-
-@pytest.fixture
-def study_service(
-    job_service: JobService,
-    product_name: ProductName,
-    user_id: UserID,
-) -> StudyService:
-
-    return StudyService(
-        job_service=job_service,
         user_id=user_id,
         product_name=product_name,
     )
@@ -172,3 +136,24 @@ def program_service(
     catalog_service: CatalogService,
 ) -> ProgramService:
     return ProgramService(catalog_service=catalog_service)
+
+
+@pytest.fixture
+def job_service(
+    auth_session: AuthSession,
+    director_v2_rpc_client: DirectorV2Service,
+    storage_rpc_client: StorageService,
+    wb_api_rpc_client: WbApiRpcClient,
+    product_name: ProductName,
+    user_id: UserID,
+    solver_service: SolverService,
+) -> JobService:
+    return JobService(
+        _web_rest_client=auth_session,
+        _web_rpc_client=wb_api_rpc_client,
+        _storage_rpc_client=storage_rpc_client,
+        _directorv2_rpc_client=director_v2_rpc_client,
+        _solver_service=solver_service,
+        user_id=user_id,
+        product_name=product_name,
+    )

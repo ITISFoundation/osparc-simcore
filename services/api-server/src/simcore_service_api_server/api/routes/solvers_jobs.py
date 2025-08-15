@@ -114,7 +114,7 @@ async def create_solver_job(  # noqa: PLR0913
         solver_key=solver_key,
         solver_version=version,
     )
-    job, _ = await job_service.create_job(
+    job, _ = await job_service.create_project_marked_as_job(
         project_name=None,
         description=None,
         solver_or_program=solver,
