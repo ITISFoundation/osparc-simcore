@@ -407,7 +407,7 @@ async def test_list_functions_search(
         (str(registered_functions[mock_function_dummy2.title][0].uid)[:8], 1),
         ("DescriptionDummy2", 5),
     ]:
-        # Search for the function by name
+        # Search for the function by name, description, or UUID (multi-column search)
         functions, _ = await functions_rpc.list_functions(
             rabbitmq_rpc_client=rpc_client,
             user_id=logged_user["id"],
