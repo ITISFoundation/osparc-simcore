@@ -21,6 +21,7 @@ openapi_modules = [
         # core ---
         "_auth",
         "_auth_api_keys",
+        "_conversations",
         "_groups",
         "_tags",
         "_tags_groups",  # after _tags

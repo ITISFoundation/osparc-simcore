@@ -15,7 +15,7 @@ import simcore_service_webserver.conversations._conversation_message_service as 
 import simcore_service_webserver.conversations._conversation_service as conversation_service
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver.projects_conversations import (
+from models_library.api_schemas_webserver.conversations import (
     ConversationMessageRestGet,
     ConversationRestGet,
 )

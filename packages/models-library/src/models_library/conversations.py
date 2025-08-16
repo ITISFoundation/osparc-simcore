@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import auto
-from typing import Annotated, TypeAlias
+from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
 from models_library.groups import GroupID
@@ -23,6 +23,7 @@ class ConversationType(StrAutoEnum):
     PROJECT_ANNOTATION = (
         auto()  # Something like sticky note, can be located anywhere in the pipeline UI
     )
+    SUPPORT = auto()  # Support conversation
 
 
 class ConversationMessageType(StrAutoEnum):
@@ -44,6 +45,7 @@ class ConversationGetDB(BaseModel):
     project_uuid: ProjectID | None
     user_group_id: GroupID
     type: ConversationType
+    extra_context: dict[str, Any]
 
     # states
     created: datetime

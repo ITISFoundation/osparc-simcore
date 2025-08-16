@@ -52,6 +52,7 @@ async def create_project_conversation(
         project_uuid=project_uuid,
         name=name,
         type_=conversation_type,
+        extra_context={},
     )
 
 
@@ -72,7 +73,7 @@ async def list_project_conversations(
         project_id=project_uuid,
         permission="read",
     )
-    return await conversations_service.list_conversations_for_project(
+    return await conversations_service.list_project_conversations(
         app,
         project_uuid=project_uuid,
         offset=offset,
