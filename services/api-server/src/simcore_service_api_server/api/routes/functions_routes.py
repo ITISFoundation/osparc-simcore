@@ -9,55 +9,39 @@ from fastapi_pagination.bases import AbstractPage
 from jsonschema import ValidationError
 from models_library.api_schemas_api_server.functions import (
     Function,
-    FunctionClass,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
     FunctionInputsList,
-    FunctionJobCollection,
     FunctionOutputSchema,
     FunctionSchemaClass,
-    ProjectFunctionJob,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
-    SolverFunctionJob,
-)
-from models_library.functions import FunctionUserAccessRights
-from models_library.functions_errors import (
-    FunctionExecuteAccessDeniedError,
-    FunctionInputsValidationError,
-    FunctionsExecuteApiAccessDeniedError,
-    UnsupportedFunctionClassError,
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from models_library.users import UserID
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
-from ..._service_jobs import JobService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...models.schemas.jobs import JobInputs
+from ...models.schemas.jobs import JobPricingSpecification
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import (
     get_function_job_service,
     get_function_service,
-    get_job_service,
 )
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
-from . import solvers_jobs, studies_jobs
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-from .function_jobs_routes import register_function_job
 
 # pylint: disable=too-many-arguments
 # pylint: disable=cyclic-import
@@ -254,20 +238,6 @@ async def update_function_description(
     return returned_function
 
 
-def _join_inputs(
-    default_inputs: FunctionInputs | None,
-    function_inputs: FunctionInputs | None,
-) -> FunctionInputs:
-    if default_inputs is None:
-        return function_inputs
-
-    if function_inputs is None:
-        return default_inputs
-
-    # last dict will override defaults
-    return {**default_inputs, **function_inputs}
-
-
 @function_router.get(
     "/{function_id:uuid}/input_schema",
     response_model=FunctionInputSchema,
@@ -362,17 +332,12 @@ async def validate_function_inputs(
 )
 async def run_function(  # noqa: PLR0913
     request: Request,
-    function_id: FunctionID,
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     function_inputs: FunctionInputs,
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[str, Depends(get_product_name)],
     function_jobs_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
-    job_service: Annotated[JobService, Depends(get_job_service)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJob:
@@ -386,119 +351,14 @@ async def run_function(  # noqa: PLR0913
         if isinstance(x_simcore_parent_node_id, NodeID)
         else None
     )
-
-    user_api_access_rights = await wb_api_rpc.get_functions_user_api_access_rights(
-        user_id=user_id, product_name=product_name
-    )
-    if not user_api_access_rights.execute_functions:
-        raise FunctionsExecuteApiAccessDeniedError(
-            user_id=user_id,
-            function_id=function_id,
-        )
-
-    user_permissions: FunctionUserAccessRights = (
-        await wb_api_rpc.get_function_user_permissions(
-            function_id=function_id, user_id=user_id, product_name=product_name
-        )
-    )
-    if not user_permissions.execute:
-        raise FunctionExecuteAccessDeniedError(
-            user_id=user_id,
-            function_id=function_id,
-        )
-
-    joined_inputs = _join_inputs(
-        to_run_function.default_inputs,
-        function_inputs,
-    )
-
-    if to_run_function.input_schema is not None:
-        is_valid, validation_str = await validate_function_inputs(
-            function_id=to_run_function.uid,
-            inputs=joined_inputs,
-            wb_api_rpc=wb_api_rpc,
-            user_id=user_id,
-            product_name=product_name,
-        )
-        if not is_valid:
-            raise FunctionInputsValidationError(error=validation_str)
-
-    if cached_function_jobs := await wb_api_rpc.find_cached_function_jobs(
-        function_id=to_run_function.uid,
-        inputs=joined_inputs,
-        user_id=user_id,
-        product_name=product_name,
-    ):
-        for cached_function_job in cached_function_jobs:
-            job_status = await function_jobs_service.inspect_function_job(
-                function=to_run_function,
-                function_job=cached_function_job,
-            )
-            if job_status.status == RunningState.SUCCESS:
-                return cached_function_job
-
-    if to_run_function.function_class == FunctionClass.PROJECT:
-        study_job = await studies_jobs.create_study_job(
-            study_id=to_run_function.project_id,
-            job_inputs=JobInputs(values=joined_inputs or {}),
-            url_for=url_for,
-            job_service=job_service,
-            x_simcore_parent_project_uuid=parent_project_uuid,
-            x_simcore_parent_node_id=parent_node_id,
-        )
-        await studies_jobs.start_study_job(
-            request=request,
-            study_id=to_run_function.project_id,
-            job_id=study_job.id,
-            job_service=job_service,
-        )
-        return await register_function_job(
-            wb_api_rpc=wb_api_rpc,
-            function_job=ProjectFunctionJob(
-                function_uid=to_run_function.uid,
-                title=f"Function job of function {to_run_function.uid}",
-                description=to_run_function.description,
-                inputs=joined_inputs,
-                outputs=None,
-                project_job_id=study_job.id,
-            ),
-            user_id=user_id,
-            product_name=product_name,
-        )
-
-    if to_run_function.function_class == FunctionClass.SOLVER:
-        solver_job = await solvers_jobs.create_solver_job(
-            solver_key=to_run_function.solver_key,
-            version=to_run_function.solver_version,
-            inputs=JobInputs(values=joined_inputs or {}),
-            job_service=job_service,
-            url_for=url_for,
-            x_simcore_parent_project_uuid=parent_project_uuid,
-            x_simcore_parent_node_id=parent_node_id,
-        )
-        await solvers_jobs.start_job(
-            request=request,
-            solver_key=to_run_function.solver_key,
-            version=to_run_function.solver_version,
-            job_id=solver_job.id,
-            job_service=job_service,
-        )
-        return await register_function_job(
-            wb_api_rpc=wb_api_rpc,
-            function_job=SolverFunctionJob(
-                function_uid=to_run_function.uid,
-                title=f"Function job of function {to_run_function.uid}",
-                description=to_run_function.description,
-                inputs=joined_inputs,
-                outputs=None,
-                solver_job_id=solver_job.id,
-            ),
-            user_id=user_id,
-            product_name=product_name,
-        )
-
-    raise UnsupportedFunctionClassError(
-        function_class=to_run_function.function_class,
+    pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
+    return await function_jobs_service.run_function(
+        function=to_run_function,
+        function_inputs=function_inputs,
+        pricing_spec=pricing_spec,
+        url_for=url_for,
+        x_simcore_parent_project_uuid=parent_project_uuid,
+        x_simcore_parent_node_id=parent_node_id,
     )
 
 
@@ -541,49 +401,33 @@ _COMMON_FUNCTION_JOB_ERROR_RESPONSES: Final[dict] = {
 )
 async def map_function(  # noqa: PLR0913
     request: Request,
-    function_id: FunctionID,
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     function_inputs_list: FunctionInputsList,
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[str, Depends(get_product_name)],
-    job_service: Annotated[JobService, Depends(get_job_service)],
     function_jobs_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
-    function_jobs = [
-        await run_function(
-            wb_api_rpc=wb_api_rpc,
-            function_id=function_id,
-            to_run_function=to_run_function,
-            function_inputs=function_inputs,
-            product_name=product_name,
-            user_id=user_id,
-            url_for=url_for,
-            request=request,
-            job_service=job_service,
-            function_jobs_service=function_jobs_service,
-            x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
-            x_simcore_parent_node_id=x_simcore_parent_node_id,
-        )
-        for function_inputs in function_inputs_list
-    ]
 
-    function_job_collection_description = f"Function job collection of map of function {function_id} with {len(function_inputs_list)} inputs"
-    # Import here to avoid circular import
-    from .function_job_collections_routes import register_function_job_collection
+    parent_project_uuid = (
+        x_simcore_parent_project_uuid
+        if isinstance(x_simcore_parent_project_uuid, ProjectID)
+        else None
+    )
+    parent_node_id = (
+        x_simcore_parent_node_id
+        if isinstance(x_simcore_parent_node_id, NodeID)
+        else None
+    )
+    pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
 
-    return await register_function_job_collection(
-        wb_api_rpc=wb_api_rpc,
-        function_job_collection=FunctionJobCollection(
-            title="Function job collection of function map",
-            description=function_job_collection_description,
-            job_ids=[function_job.uid for function_job in function_jobs],
-        ),
-        user_id=user_id,
-        product_name=product_name,
+    return await function_jobs_service.map_function(
+        function=to_run_function,
+        function_inputs_list=function_inputs_list,
+        pricing_spec=pricing_spec,
+        url_for=url_for,
+        x_simcore_parent_project_uuid=parent_project_uuid,
+        x_simcore_parent_node_id=parent_node_id,
     )
