@@ -47,11 +47,6 @@ qx.Class.define("osparc.study.Conversations", {
   },
 
   statics: {
-    TYPES: {
-      PROJECT_STATIC: "PROJECT_STATIC",
-      PROJECT_ANNOTATION: "PROJECT_ANNOTATION",
-    },
-
     CHANNELS: {
       CONVERSATION_CREATED: "conversation:created",
       CONVERSATION_UPDATED: "conversation:updated",

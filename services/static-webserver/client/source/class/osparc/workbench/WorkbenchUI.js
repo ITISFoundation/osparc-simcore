@@ -2049,7 +2049,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         }
         case annotationTypes.CONVERSATION: {
           const conversationTitle = `${initPos.x}, ${initPos.y}`;
-          osparc.store.ConversationsProject.getInstance().addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.TYPES.PROJECT_ANNOTATION)
+          osparc.store.ConversationsProject.getInstance().addConversation(this.getStudy().getUuid(), conversationTitle, osparc.store.ConversationsProject.TYPES.PROJECT_ANNOTATION)
             .then(conversationData => {
               serializeData.attributes.conversationId = conversationData["conversationId"];
               serializeData.attributes.text = conversationData["name"];

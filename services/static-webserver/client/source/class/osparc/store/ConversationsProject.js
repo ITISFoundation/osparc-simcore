@@ -24,6 +24,13 @@ qx.Class.define("osparc.store.ConversationsProject", {
     "conversationDeleted": "qx.event.type.Data",
   },
 
+  statics: {
+    TYPES: {
+      PROJECT_STATIC: "PROJECT_STATIC",
+      PROJECT_ANNOTATION: "PROJECT_ANNOTATION",
+    },
+  },
+
   members: {
     getConversations: function(studyId) {
       const params = {
@@ -54,7 +61,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
       return osparc.data.Resources.fetch("conversationsStudies", "getConversation", params);
     },
 
-    addConversation: function(studyId, name = "new 1", type = osparc.study.Conversations.TYPES.PROJECT_STATIC) {
+    addConversation: function(studyId, name = "new 1", type = osparc.store.ConversationsProject.TYPES.PROJECT_STATIC) {
       const params = {
         url: {
           studyId,
