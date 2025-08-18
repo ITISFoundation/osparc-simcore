@@ -12433,21 +12433,19 @@ components:
     FunctionGroupUpdate:
       properties:
         read:
-          anyOf:
-          - type: boolean
-          - type: 'null'
+          type: boolean
           title: Read
         write:
-          anyOf:
-          - type: boolean
-          - type: 'null'
+          type: boolean
           title: Write
         execute:
-          anyOf:
-          - type: boolean
-          - type: 'null'
+          type: boolean
           title: Execute
       type: object
+      required:
+      - read
+      - write
+      - execute
       title: FunctionGroupUpdate
     GetProjectInactivityResponse:
       properties:
