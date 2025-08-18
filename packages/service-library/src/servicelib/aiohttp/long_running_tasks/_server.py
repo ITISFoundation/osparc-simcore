@@ -64,7 +64,6 @@ async def start_long_running_task(
     task_id = None
     try:
         task_id = await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             registerd_task_name,
             fire_and_forget=fire_and_forget,

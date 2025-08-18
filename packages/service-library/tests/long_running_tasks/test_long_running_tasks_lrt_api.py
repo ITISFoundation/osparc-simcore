@@ -193,7 +193,6 @@ async def test_workflow_with_result(
     task_ids: list[TaskId] = []
     for _ in range(task_count):
         task_id = await lrt_api.start_task(
-            rabbitmq_rpc_client,
             _get_task_manager(long_running_managers),
             _task_echo_input.__name__,
             unique=is_unique,
@@ -248,7 +247,6 @@ async def test_workflow_raises_error(
     task_ids: list[TaskId] = []
     for _ in range(task_count):
         task_id = await lrt_api.start_task(
-            rabbitmq_rpc_client,
             _get_task_manager(long_running_managers),
             _task_always_raise.__name__,
             unique=is_unique,
@@ -295,7 +293,6 @@ async def test_remove_task(
     task_context: TaskContext | None,
 ):
     task_id = await lrt_api.start_task(
-        rabbitmq_rpc_client,
         _get_task_manager(long_running_managers),
         _task_takes_too_long.__name__,
         unique=is_unique,

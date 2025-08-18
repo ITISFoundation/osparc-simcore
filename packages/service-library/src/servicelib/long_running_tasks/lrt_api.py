@@ -8,7 +8,6 @@ from .task import RegisteredTaskName
 
 
 async def start_task(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
     long_running_manager: BaseLongRunningManager,
     registered_task_name: RegisteredTaskName,
     *,
@@ -45,7 +44,7 @@ async def start_task(
     """
 
     return await lrt_client.start_task(
-        rabbitmq_rpc_client,
+        long_running_manager.rpc_client,
         long_running_manager.rabbit_namespace,
         registered_task_name=registered_task_name,
         unique=unique,

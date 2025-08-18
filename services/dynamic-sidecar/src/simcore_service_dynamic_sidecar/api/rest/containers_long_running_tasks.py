@@ -50,7 +50,6 @@ async def pull_user_servcices_docker_images(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_pull_user_servcices_docker_images.__name__,
             unique=True,
@@ -88,7 +87,6 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_create_service_containers.__name__,
             unique=True,
@@ -118,7 +116,6 @@ async def runs_docker_compose_down_task(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_runs_docker_compose_down.__name__,
             unique=True,
@@ -146,7 +143,6 @@ async def state_restore_task(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_restore_state.__name__,
             unique=True,
@@ -174,7 +170,6 @@ async def state_save_task(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_save_state.__name__,
             unique=True,
@@ -204,7 +199,6 @@ async def ports_inputs_pull_task(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_ports_inputs_pull.__name__,
             unique=True,
@@ -234,7 +228,6 @@ async def ports_outputs_pull_task(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_ports_outputs_pull.__name__,
             unique=True,
@@ -261,7 +254,6 @@ async def ports_outputs_push_task(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_ports_outputs_push.__name__,
             unique=True,
@@ -288,7 +280,6 @@ async def containers_restart_task(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             task_containers_restart.__name__,
             unique=True,

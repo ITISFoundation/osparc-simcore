@@ -86,7 +86,6 @@ def server_routes() -> APIRouter:
         fail: bool = False,
     ) -> TaskId:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             _string_list_task.__name__,
             num_strings=num_strings,

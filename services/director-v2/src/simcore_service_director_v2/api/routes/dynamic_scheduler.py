@@ -116,7 +116,6 @@ async def delete_service_containers(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             _task_remove_service_containers.__name__,
             unique=True,
@@ -182,7 +181,6 @@ async def save_service_state(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             _task_save_service_state.__name__,
             unique=True,
@@ -230,7 +228,6 @@ async def push_service_outputs(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             _task_push_service_outputs.__name__,
             unique=True,
@@ -273,7 +270,6 @@ async def delete_service_docker_resources(
 
     try:
         return await lrt_api.start_task(
-            long_running_manager.rpc_client,
             long_running_manager,
             _task_cleanup_service_docker_resources.__name__,
             unique=True,
