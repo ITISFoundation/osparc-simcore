@@ -97,6 +97,10 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "conversations-list": {
           control = new osparc.support.Conversations();
+          control.addListener("openConversation", e => {
+            const conversationId = e.getData();
+            this.__openConversation(conversationId);
+          }, this);
           const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
           this.getChildControl("conversations-layout").add(scroll, {
@@ -150,16 +154,19 @@ qx.Class.define("osparc.support.SupportCenter", {
     },
 
     __openConversation: function(conversationId) {
-      const conversationContent = this.getChildControl("conversation-content");
-      if (conversationId) {
+      const openConversation = conversationId => {
+        this.getChildControl("conversation-back-button");
+        const conversationContent = this.getChildControl("conversation-content");
         conversationContent.setConversationId(conversationId);
         this.__showConversation();
+      }
+      if (conversationId) {
+        openConversation(conversationId);
       } else {
         this.getChildControl("ask-a-question-button").setFetching(true);
         osparc.store.ConversationsSupport.getInstance().addConversation()
           .then(data => {
-            conversationContent.setConversationId(data["conversationId"]);
-            this.__showConversation();
+            openConversation(data["conversationId"]);
           })
           .finally(() => {
             this.getChildControl("ask-a-question-button").setFetching(false);

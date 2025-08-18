@@ -27,15 +27,13 @@ qx.Class.define("osparc.support.Conversation", {
 
     this.__messages = [];
 
-    if (conversationId) {
-      this.setConversationId(conversationId);
-    }
-
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.__buildLayout();
 
-    this.__reloadMessages();
+    if (conversationId) {
+      this.setConversationId(conversationId);
+    }
   },
 
   properties: {
@@ -43,7 +41,8 @@ qx.Class.define("osparc.support.Conversation", {
       check: "String",
       init: null,
       nullable: true,
-      event: "changeConversationId"
+      event: "changeConversationId",
+      apply: "__applyConversationId",
     },
   },
 
@@ -84,6 +83,10 @@ qx.Class.define("osparc.support.Conversation", {
       this._add(addMessages);
     },
 
+    __applyConversationId: function(value) {
+      this.__reloadMessages(true);
+    },
+
     __getNextRequest: function() {
       const params = {
         url: {
@@ -100,7 +103,7 @@ qx.Class.define("osparc.support.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("conversationsStudies", "getMessagesPage", params, options)
+      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 

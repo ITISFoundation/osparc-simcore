@@ -22,7 +22,7 @@ qx.Class.define("osparc.support.Conversations", {
   construct: function(openConversationId = null) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__conversationListItems = [];
     this.__openConversationId = openConversationId;
@@ -46,6 +46,10 @@ qx.Class.define("osparc.support.Conversations", {
     },
   },
 
+  events: {
+    "openConversation": "qx.event.type.Data",
+  },
+
   members: {
     __conversationListItems: null,
     __openConversationId: null,
@@ -59,7 +63,7 @@ qx.Class.define("osparc.support.Conversations", {
           this._add(control);
           break;
         case "conversations-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this._add(control, {
             flex: 1
           });
@@ -167,6 +171,7 @@ qx.Class.define("osparc.support.Conversations", {
 
       const conversationListItem = new osparc.support.ConversationListItem();
       conversationListItem.setConversationId(conversationData["conversationId"]);
+      conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationData["conversationId"]), this);
 
       const conversationsLayout = this.getChildControl("conversations-layout");
       conversationsLayout.add(conversationListItem);
