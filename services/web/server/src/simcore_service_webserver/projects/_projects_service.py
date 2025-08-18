@@ -910,17 +910,11 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
             ),
         )
         # change this and most probably this will fix the issue
-        try:
-            project = await get_project_for_user(
-                request.app, f"{project_uuid}", user_id, include_state=True
-            )
+        project = await get_project_for_user(
+            request.app, f"{project_uuid}", user_id, include_state=True
+        )
 
-            await notify_project_node_update(
-                request.app, project, node_uuid, errors=None
-            )
-        except:
-            _logger.exception("Unexpected error:")
-            raise
+        await notify_project_node_update(request.app, project, node_uuid, errors=None)
 
     await _safe_service_start()
 
