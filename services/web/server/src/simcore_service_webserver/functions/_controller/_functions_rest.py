@@ -389,11 +389,11 @@ async def get_function_groups(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         {
-            access_rights.group_id: {
-                "read": access_rights.read,
-                "write": access_rights.write,
-                "execute": access_rights.execute,
-            }
+            access_rights.group_id: FunctionGroupAccessRightsGet(
+                read=access_rights.read,
+                write=access_rights.write,
+                execute=access_rights.execute,
+            )
             for access_rights in access_rights_list
         }
     )
