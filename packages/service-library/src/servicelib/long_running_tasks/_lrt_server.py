@@ -1,19 +1,22 @@
 import traceback
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..rabbitmq import RPCRouter
 from ._serialization import object_to_string
-from .base_long_running_manager import BaseLongRunningManager
 from .errors import BaseLongRunningError, TaskNotCompletedError, TaskNotFoundError
 from .models import RPCErrorResponse, TaskBase, TaskContext, TaskId, TaskStatus
 from .task import RegisteredTaskName
+
+if TYPE_CHECKING:
+    from .base_long_running_manager import BaseLongRunningManager
+
 
 router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def start_task(
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: "BaseLongRunningManager",
     *,
     registered_task_name: RegisteredTaskName,
     unique: bool = False,
@@ -34,7 +37,7 @@ async def start_task(
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def list_tasks(
-    long_running_manager: BaseLongRunningManager, *, task_context: TaskContext
+    long_running_manager: "BaseLongRunningManager", *, task_context: TaskContext
 ) -> list[TaskBase]:
     return await long_running_manager.tasks_manager.list_tasks(
         with_task_context=task_context
@@ -43,7 +46,7 @@ async def list_tasks(
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def get_task_status(
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: "BaseLongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
@@ -54,7 +57,7 @@ async def get_task_status(
 
 
 async def _get_transferarble_task_result(
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: "BaseLongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
@@ -79,7 +82,7 @@ async def _get_transferarble_task_result(
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError, Exception))
 async def get_task_result(
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: "BaseLongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
@@ -99,7 +102,7 @@ async def get_task_result(
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def remove_task(
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: "BaseLongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,

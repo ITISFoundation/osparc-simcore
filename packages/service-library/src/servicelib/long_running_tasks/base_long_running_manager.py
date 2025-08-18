@@ -4,6 +4,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
+from ._lrt_server import router
 from ._rabbit_namespace import get_rabbit_namespace
 from .models import LRTNamespace
 from .task import TasksManager
@@ -61,7 +62,6 @@ class BaseLongRunningManager:
             client_name=f"lrt-client-{self.lrt_namespace}",
             settings=self.rabbit_settings,
         )
-        from ._lrt_server import router
 
         await self.rpc_server.register_router(
             router,
