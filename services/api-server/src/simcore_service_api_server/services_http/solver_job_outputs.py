@@ -1,13 +1,14 @@
 import logging
 from typing import Any, TypeAlias
 
-from models_library.projects import ProjectID, ProjectIDStr
-from models_library.projects_nodes_io import BaseFileLink, NodeID, NodeIDStr
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import BaseFileLink, NodeID
 from pydantic import StrictBool, StrictFloat, StrictInt, TypeAdapter
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .._meta import APP_NAME
 from ..exceptions.backend_errors import SolverOutputNotFoundError
 
 log = logging.getLogger(__name__)
@@ -26,13 +27,13 @@ async def get_solver_output_results(
     """
 
     # get the DB engine
-    db_manager = DBManager(db_engine=db_engine)
+    db_manager = DBManager(db_engine=db_engine, application_name=APP_NAME)
 
     try:
         solver: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
-            project_id=ProjectIDStr(f"{project_uuid}"),
-            node_uuid=NodeIDStr(f"{node_uuid}"),
+            project_id=f"{project_uuid}",
+            node_uuid=f"{node_uuid}",
             db_manager=db_manager,
         )
         solver_output_results: dict[str, Any] = {}
