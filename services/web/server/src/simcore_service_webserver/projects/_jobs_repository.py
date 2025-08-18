@@ -4,14 +4,12 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 from simcore_postgres_database.models.projects_to_products import projects_to_products
-from simcore_postgres_database.utils_projects_nodes import create_workbench_subquery
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -19,6 +17,8 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
+
+from simcore_service_webserver.projects._projects_repository_legacy_utils import get_project_workbench
 
 from ..db.base_repository import BaseRepository
 from .models import ProjectDBGet, ProjectJobDBGet
@@ -170,25 +170,16 @@ class ProjectJobsRepository(BaseRepository):
         # Step 5: Query to get the total count
         total_query = sa.select(sa.func.count()).select_from(base_query)
 
-        # Step 6: Create subquery to aggregate project nodes into workbench structure
-        workbench_subquery = create_workbench_subquery()
-
-        # Step 7: Query to get the paginated list with full selection
+        # Step 6: Query to get the paginated list with full selection
         list_query = (
             sa.select(
                 *_PROJECT_DB_COLS,
-                sa.func.coalesce(
-                    workbench_subquery.c.workbench, sa.text("'{}'::json")
-                ).label("workbench"),
                 base_query.c.job_parent_resource_name,
             )
             .select_from(
                 base_query.join(
                     projects,
                     projects.c.uuid == base_query.c.project_uuid,
-                ).outerjoin(
-                    workbench_subquery,
-                    projects.c.uuid == workbench_subquery.c.project_uuid,
                 )
             )
             .order_by(
@@ -204,9 +195,9 @@ class ProjectJobsRepository(BaseRepository):
             total_count = await conn.scalar(total_query)
             assert isinstance(total_count, int)  # nosec
 
-            result = await conn.execute(list_query)
-            projects_list = TypeAdapter(list[ProjectJobDBGet]).validate_python(
-                result.fetchall()
-            )
+            projects_list = []
+            async for project_row in await conn.stream(list_query):
+                workbench = await get_project_workbench(conn, project_row.uuid)
+                projects_list.append(ProjectJobDBGet.model_validate({**project_row, "workbench": workbench}))
 
             return total_count, projects_list

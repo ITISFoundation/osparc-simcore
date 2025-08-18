@@ -143,7 +143,7 @@ async def get_project_with_workbench(
     project_uuid: ProjectID,
 ) -> ProjectWithWorkbenchDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        workbench_subquery = create_workbench_subquery()
+        workbench_subquery = create_workbench_subquery(f"{project_uuid}")
         query = (
             sql.select(
                 *PROJECT_DB_COLS,

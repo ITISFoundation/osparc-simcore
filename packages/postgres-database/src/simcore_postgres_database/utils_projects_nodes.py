@@ -116,7 +116,7 @@ class ProjectNode(ProjectNodeCreate):
         )
 
 
-def create_workbench_subquery() -> Subquery:
+def create_workbench_subquery(project_id: str) -> Subquery:
     return (
         sa.select(
             projects_nodes.c.project_uuid,
@@ -163,6 +163,7 @@ def create_workbench_subquery() -> Subquery:
                 projects, projects_nodes.c.project_uuid == projects.c.uuid
             )
         )
+        .where(projects.c.uuid == project_id)
         .group_by(projects_nodes.c.project_uuid)
         .subquery()
     )

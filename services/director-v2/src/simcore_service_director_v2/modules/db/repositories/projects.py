@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ProjectsRepository(BaseRepository):
     async def get_project(self, project_id: ProjectID) -> ProjectAtDB:
-        workbench_subquery = create_workbench_subquery()
+        workbench_subquery = create_workbench_subquery(f"{project_id}")
 
         async with self.db_engine.connect() as conn:
             query = (

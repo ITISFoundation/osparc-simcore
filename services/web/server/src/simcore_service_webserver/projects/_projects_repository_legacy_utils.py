@@ -191,23 +191,6 @@ class BaseProjectDB:
                 .on_conflict_do_nothing()
             )
 
-    @staticmethod
-    async def _get_workbench(
-        connection: SAConnection,
-        project_uuid: str,
-    ) -> dict[str, Any]:
-        project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
-        exclude_fields = {"node_id", "required_resources", "created", "modified"}
-        workbench: dict[str, Any] = {}
-
-        project_nodes = await project_nodes_repo.list(connection)  # type: ignore
-        for project_node in project_nodes:
-            node_data = project_node.model_dump(
-                exclude=exclude_fields, exclude_none=True, exclude_unset=True
-            )
-            workbench[f"{project_node.node_id}"] = node_data
-        return workbench
-
     async def _get_project(
         self,
         connection: SAConnection,
@@ -238,11 +221,11 @@ class BaseProjectDB:
                     ),
                 ).label("access_rights"),
             )
-            .where(project_to_groups.c.project_uuid == f"{project_uuid}")
+            .where(project_to_groups.c.project_uuid == project_uuid)
             .group_by(project_to_groups.c.project_uuid)
         ).subquery("access_rights_subquery")
 
-        workbench_subquery = create_workbench_subquery()
+        workbench_subquery = create_workbench_subquery(project_uuid)
 
         query = (
             sa.select(
@@ -393,3 +376,20 @@ def patch_workbench(
             # patch
             current_node_data.update(new_node_data)
     return (patched_project, changed_entries)
+
+
+async def get_project_workbench(
+    connection: SAConnection,
+    project_uuid: str,
+) -> dict[str, Any]:
+    project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
+    exclude_fields = {"node_id", "required_resources", "created", "modified"}
+    workbench: dict[str, Any] = {}
+
+    project_nodes = await project_nodes_repo.list(connection)  # type: ignore
+    for project_node in project_nodes:
+        node_data = project_node.model_dump(
+            exclude=exclude_fields, exclude_none=True, exclude_unset=True
+        )
+        workbench[f"{project_node.node_id}"] = node_data
+    return workbench

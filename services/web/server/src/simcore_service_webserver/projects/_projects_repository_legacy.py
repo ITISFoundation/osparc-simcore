@@ -60,7 +60,6 @@ from simcore_postgres_database.utils_projects_nodes import (
     ProjectNode,
     ProjectNodeCreate,
     ProjectNodesRepo,
-    create_workbench_subquery,
 )
 from simcore_postgres_database.webserver_models import (
     ProjectType,
@@ -96,6 +95,7 @@ from ._projects_repository_legacy_utils import (
     convert_to_schema_names,
     create_project_access_rights,
     patch_workbench,
+    get_project_workbench
 )
 from ._socketio_service import notify_project_document_updated
 from .exceptions import (
@@ -395,14 +395,9 @@ class ProjectDBAPI(BaseProjectDB):
                 .group_by(project_to_groups.c.project_uuid)
             ).subquery("my_access_rights_subquery")
 
-            workbench_subquery = create_workbench_subquery()
-
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    sa.func.coalesce(
-                        workbench_subquery.c.workbench, sa.text("'{}'::json")
-                    ).label("workbench"),
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -416,10 +411,6 @@ class ProjectDBAPI(BaseProjectDB):
                             & (projects_to_folders.c.user_id == user_id)
                         ),
                         isouter=True,
-                    )
-                    .outerjoin(
-                        workbench_subquery,
-                        workbench_subquery.c.project_uuid == projects.c.uuid,
                     )
                 )
                 .where(
@@ -462,14 +453,9 @@ class ProjectDBAPI(BaseProjectDB):
                 .group_by(workspaces_access_rights.c.workspace_id)
             ).subquery("my_workspace_access_rights_subquery")
 
-            workbench_subquery = create_workbench_subquery()
-
             shared_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    sa.func.coalesce(
-                        workbench_subquery.c.workbench, sa.text("'{}'::json")
-                    ).label("workbench"),
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -487,10 +473,6 @@ class ProjectDBAPI(BaseProjectDB):
                             & (projects_to_folders.c.user_id.is_(None))
                         ),
                         isouter=True,
-                    )
-                    .outerjoin(
-                        workbench_subquery,
-                        workbench_subquery.c.project_uuid == projects.c.uuid,
                     )
                 )
                 .where(projects_to_products.c.product_name == product_name)
@@ -698,7 +680,7 @@ class ProjectDBAPI(BaseProjectDB):
                 # with the frontend. The frontend would need to check and adapt how it handles default values in
                 # Workbench nodes, which are currently not returned if not set in the DB.
                 prj_dict = dict(row.items()) | {
-                    "workbench": await self._get_workbench(conn, row.uuid),
+                    "workbench": await get_project_workbench(conn, row.uuid),
                 }
                 ProjectListAtDB.model_validate(prj_dict)
                 prjs_output.append(prj_dict)
