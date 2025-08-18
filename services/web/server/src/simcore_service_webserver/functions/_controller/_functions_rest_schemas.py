@@ -28,16 +28,16 @@ class FunctionGetQueryParams(_FunctionQueryParams): ...
 
 _FunctionOrderQueryParams: type[RequestParameters] = create_ordering_query_model_class(
     ordering_fields={
-        "name",
         "created_at",
         "modified_at",
+        "name",
     },
     default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
 )
 
 
 class FunctionsListQueryParams(
-    PageQueryParameters, _FunctionOrderQueryParams, _FunctionQueryParams
+    PageQueryParameters, _FunctionOrderQueryParams, _FunctionQueryParams  # type: ignore[misc, valid-type]
 ): ...
 
 
