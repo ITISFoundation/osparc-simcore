@@ -22,11 +22,12 @@ qx.Class.define("osparc.support.Conversations", {
   construct: function(openConversationId = null) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__conversationsPages = [];
+    this.__conversationListItems = [];
     this.__openConversationId = openConversationId;
 
+    this.__fetchConversations();
     this.__listenToConversationWS();
   },
 
@@ -46,9 +47,8 @@ qx.Class.define("osparc.support.Conversations", {
   },
 
   members: {
+    __conversationListItems: null,
     __openConversationId: null,
-    __conversations: null,
-    __newConversationButton: null,
     __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
@@ -59,7 +59,7 @@ qx.Class.define("osparc.support.Conversations", {
           this._add(control);
           break;
         case "conversations-layout":
-          control = new qx.ui.tabview.TabView();
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           this._add(control, {
             flex: 1
           });
@@ -84,14 +84,14 @@ qx.Class.define("osparc.support.Conversations", {
             switch (eventName) {
               case this.self().CHANNELS.CONVERSATION_CREATED:
                 if (!conversation["projectId"]) {
-                  this.__addConversationPage(conversation);
+                  this.__addConversation(conversation);
                 }
                 break;
               case this.self().CHANNELS.CONVERSATION_UPDATED:
                 this.__updateConversationName(conversation);
                 break;
               case this.self().CHANNELS.CONVERSATION_DELETED:
-                this.__removeConversationPage(conversation["conversationId"]);
+                this.__removeConversationItem(conversation["conversationId"]);
                 break;
             }
           }
@@ -108,7 +108,7 @@ qx.Class.define("osparc.support.Conversations", {
         const eventHandler = message => {
           if (message) {
             const conversationId = message["conversationId"];
-            const conversationPage = this.__getConversationPage(conversationId);
+            const conversationPage = this.__getConversationItem(conversationId);
             if (conversationPage) {
               switch (eventName) {
                 case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
@@ -129,18 +129,18 @@ qx.Class.define("osparc.support.Conversations", {
       });
     },
 
-    __getConversationPage: function(conversationId) {
-      return this.__conversationsPages.find(conversation => conversation.getConversationId() === conversationId);
+    __getConversationItem: function(conversationId) {
+      return this.__conversationListItems.find(conversation => conversation.getConversationId() === conversationId);
     },
 
-    __applyStudyData: function(studyData) {
+    __fetchConversations: function() {
       const loadMoreButton = this.getChildControl("loading-button");
       loadMoreButton.setFetching(true);
 
-      osparc.store.ConversationsProject.getInstance().getConversations(studyData["uuid"])
+      osparc.store.ConversationsSupport.getInstance().getConversations()
         .then(conversations => {
           if (conversations.length) {
-            conversations.forEach(conversation => this.__addConversationPage(conversation));
+            conversations.forEach(conversation => this.__addConversation(conversation));
             if (this.__openConversationId) {
               const conversationsLayout = this.getChildControl("conversations-layout");
               const conversation = conversationsLayout.getSelectables().find(c => c.getConversationId() === this.__openConversationId);
@@ -149,8 +149,6 @@ qx.Class.define("osparc.support.Conversations", {
               }
               this.__openConversationId = null; // reset it so it does not open again
             }
-          } else {
-            this.__addTempConversationPage();
           }
         })
         .finally(() => {
@@ -159,105 +157,37 @@ qx.Class.define("osparc.support.Conversations", {
         });
     },
 
-    __createConversationPage: function(conversationData) {
-      const studyData = this.getStudyData();
-      let conversationPage = null;
-      if (conversationData) {
-        const conversationId = conversationData["conversationId"];
-        conversationPage = new osparc.conversation.Conversation(studyData, conversationId);
-        conversationPage.setLabel(conversationData["name"]);
-        osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
-          const data = e.getData();
-          if (conversationId === data["conversationId"]) {
-            this.__removeConversationPage(conversationId, true);
-          }
-        });
-      } else {
-        // create a temporary conversation
-        conversationPage = new osparc.conversation.Conversation(studyData);
-        conversationPage.setLabel(this.tr("new"));
-      }
-      return conversationPage;
-    },
-
-    __addTempConversationPage: function() {
-      const temporaryConversationPage = this.__createConversationPage();
-      this.__addToPages(temporaryConversationPage);
-    },
-
-    __addConversationPage: function(conversationData) {
+    __addConversation: function(conversationData) {
       // ignore it if it was already there
       const conversationId = conversationData["conversationId"];
-      const conversationPageFound = this.__getConversationPage(conversationId);
-      if (conversationPageFound) {
+      const conversationItemFound = this.__getConversationItem(conversationId);
+      if (conversationItemFound) {
         return null;
       }
 
-      const conversationPage = this.__createConversationPage(conversationData);
-      this.__addToPages(conversationPage);
-
-      this.__conversationsPages.push(conversationPage);
-
-      return conversationPage;
-    },
-
-    __addToPages: function(conversationPage) {
+      const conversationListItem = new osparc.support.ConversationListItem(conversationData["conversationId"]);
       const conversationsLayout = this.getChildControl("conversations-layout");
-      if (conversationsLayout.getChildren().length === 1) {
-        // remove the temporary conversation page
-        if (conversationsLayout.getChildren()[0].getConversationId() === null) {
-          conversationsLayout.remove(conversationsLayout.getChildren()[0]);
-        }
-      }
-      conversationsLayout.add(conversationPage);
+      conversationsLayout.add(conversationListItem);
 
-      if (this.__newConversationButton === null) {
-          const studyData = this.getStudyData();
-        // initialize the new button only once
-        const newConversationButton = this.__newConversationButton = new qx.ui.form.Button().set({
-          icon: "@FontAwesome5Solid/plus/12",
-          toolTipText: this.tr("Add new conversation"),
-          allowGrowX: false,
-          backgroundColor: "transparent",
-          enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
-        });
-        newConversationButton.addListener("execute", () => {
-          osparc.store.ConversationsProject.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
-            .then(conversationDt => {
-              this.__addConversationPage(conversationDt);
-              const newConversationPage = this.__getConversationPage(conversationDt["conversationId"]);
-              if (newConversationPage) {
-                conversationsLayout.setSelection([newConversationPage]);
-              }
-            });
-        });
-        conversationsLayout.getChildControl("bar").add(newConversationButton);
-      }
-      // remove and add to move to last position
-      const bar = conversationsLayout.getChildControl("bar");
-      if (bar.indexOf(this.__newConversationButton) > -1) {
-        bar.remove(this.__newConversationButton);
-      }
-      bar.add(this.__newConversationButton);
+      this.__conversationListItems.push(conversationListItem);
+
+      return conversationListItem;
     },
 
-    __removeConversationPage: function(conversationId, changeSelection = false) {
-      const conversationPage = this.__getConversationPage(conversationId);
-      if (conversationPage) {
+    __removeConversationItem: function(conversationId, changeSelection = false) {
+      const conversationItem = this.__getConversationItem(conversationId);
+      if (conversationItem) {
         const conversationsLayout = this.getChildControl("conversations-layout");
-        if (conversationsLayout.indexOf(conversationPage) > -1) {
-          conversationsLayout.remove(conversationPage);
+        if (conversationsLayout.indexOf(conversationItem) > -1) {
+          conversationsLayout.remove(conversationItem);
         }
-        this.__conversationsPages = this.__conversationsPages.filter(c => c !== conversationPage);
+        this.__conversationListItems = this.__conversationListItems.filter(c => c !== conversationItem);
         const conversationPages = conversationsLayout.getSelectables();
         if (conversationPages.length) {
           if (changeSelection) {
             // change selection to the first conversation
             conversationsLayout.setSelection([conversationPages[0]]);
           }
-        } else {
-          // no conversations left, add a temporary one
-          this.__addTempConversationPage();
         }
       }
     },
@@ -265,7 +195,7 @@ qx.Class.define("osparc.support.Conversations", {
     // it can only be renamed, not updated
     __updateConversationName: function(conversationData) {
       const conversationId = conversationData["conversationId"];
-      const conversationPage = this.__getConversationPage(conversationId);
+      const conversationPage = this.__getConversationItem(conversationId);
       if (conversationPage) {
         conversationPage.renameConversation(conversationData["name"]);
       }
