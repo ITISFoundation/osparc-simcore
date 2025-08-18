@@ -267,14 +267,12 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
     async def _cancelled_tasks_removal(self) -> None:
         """
-        A task can be cancelled by the client, which implies it does not for sure
-        run in the same process as the one processing the request.
-
-        This is a periodic task that ensures the cancellation occurred.
+        Periodicallu checks which tasks are maked for removal and attempts to remove the
+        task if it's handled by this process.
         """
         self._started_event_task_cancelled_tasks_removal.set()
 
-        cancelled_tasks = await self._tasks_data.get_all_to_cancel()
+        cancelled_tasks = await self._tasks_data.get_all_to_remove()
         for task_id in cancelled_tasks:
             await self._attempt_cancel_and_remove_local_task(task_id)
 
@@ -396,7 +394,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
             await cancel_wait_task(task_to_cancel)
-            await self._tasks_data.remove_to_cancel(task_id)
+            await self._tasks_data.delete_to_remove(task_id)
             await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
@@ -414,7 +412,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 raise
             return
 
-        await self._tasks_data.set_to_cancel(
+        await self._tasks_data.set_to_remove(
             tracked_task.task_id, tracked_task.task_context
         )
 

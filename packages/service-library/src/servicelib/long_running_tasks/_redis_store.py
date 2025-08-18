@@ -55,7 +55,7 @@ class RedisStore:
     def _get_redis_key_task_data_hash(self, task_id: TaskId) -> str:
         return f"{self.namespace}:{_STORE_TYPE_TASK_DATA}:{task_id}"
 
-    def _get_key_cancelled_tasks(self) -> str:
+    def _get_key_to_remove(self) -> str:
         return f"{self.namespace}:{_STORE_TYPE_CANCELLED_TASKS}"
 
     # TaskData
@@ -120,25 +120,25 @@ class RedisStore:
 
     # to cancel
 
-    async def set_to_cancel(
+    async def set_to_remove(
         self, task_id: TaskId, with_task_context: TaskContext
     ) -> None:
-        """marks a task_id to be cancelled"""
+        """marks a task_id to be removed"""
         await handle_redis_returns_union_types(
             self._redis.hset(
-                self._get_key_cancelled_tasks(), task_id, json_dumps(with_task_context)
+                self._get_key_to_remove(), task_id, json_dumps(with_task_context)
             )
         )
 
-    async def remove_to_cancel(self, task_id: TaskId) -> None:
-        """removes a task_id from the ones to be cancelled"""
+    async def delete_to_remove(self, task_id: TaskId) -> None:
+        """deletes a task_id from the ones to be removed"""
         await handle_redis_returns_union_types(
-            self._redis.hdel(self._get_key_cancelled_tasks(), task_id)
+            self._redis.hdel(self._get_key_to_remove(), task_id)
         )
 
-    async def get_all_to_cancel(self) -> dict[TaskId, TaskContext]:
-        """returns all task_ids that are to be cancelled"""
+    async def get_all_to_remove(self) -> dict[TaskId, TaskContext]:
+        """returns all task_ids that are to be removed"""
         result: dict[str, str | None] = await handle_redis_returns_union_types(
-            self._redis.hgetall(self._get_key_cancelled_tasks())
+            self._redis.hgetall(self._get_key_to_remove())
         )
         return {task_id: json_loads(context) for task_id, context in result.items()}
