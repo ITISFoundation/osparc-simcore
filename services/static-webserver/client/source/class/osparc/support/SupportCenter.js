@@ -117,7 +117,11 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         case "conversation-content":
           control = new osparc.support.Conversation();
-          this.getChildControl("conversation-layout").add(control);
+          const scroll = new qx.ui.container.Scroll();
+          scroll.add(control);
+          this.getChildControl("conversation-layout").add(scroll, {
+            flex: 1,
+          });
           break;
       }
       return control || this.base(arguments, id);
@@ -125,7 +129,7 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     __newConversation: function() {
       this.getChildControl("conversation-intro-text").setValue(this.tr("New conversation"));
-      const conversation = this.getChildControl("conversation-content");
+      this.getChildControl("conversation-content");
       this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-layout")]);
     },
   }
