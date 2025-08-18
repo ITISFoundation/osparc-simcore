@@ -17,6 +17,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredFunctionUpdate,
 )
 from models_library.generics import Envelope
+from models_library.groups import GroupID
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.functions._controller._functions_rest import (
     FunctionGroupPathParams,
@@ -78,6 +79,15 @@ async def update_function(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_function(
+    _path: Annotated[FunctionPathParams, Depends()],
+): ...
+
+
+@router.get(
+    "/functions/{function_id}/groups",
+    response_model=Envelope[dict[GroupID, FunctionGroupAccessRightsGet]],
+)
+async def get_function_groups(
     _path: Annotated[FunctionPathParams, Depends()],
 ): ...
 

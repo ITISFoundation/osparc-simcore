@@ -3478,6 +3478,27 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/functions/{function_id}/groups:
+    get:
+      tags:
+      - functions
+      summary: Get Function Groups
+      operationId: get_function_groups
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__'
   /v0/functions/{function_id}/groups/{group_id}:
     put:
       tags:
@@ -11275,6 +11296,22 @@ components:
           title: Error
       type: object
       title: Envelope[_ProjectNodePreview]
+    Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__:
+      properties:
+        data:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            type: object
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[dict[Annotated[int, Gt], FunctionGroupAccessRightsGet]]
     Envelope_dict_Annotated_str__StringConstraints___ImageResources__:
       properties:
         data:

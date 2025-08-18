@@ -368,6 +368,37 @@ async def delete_function(request: web.Request) -> web.Response:
 #
 
 
+@routes.get(
+    f"/{VTAG}/functions/{{function_id}}/groups",
+    name="update_function_group",
+)
+@login_required
+@permission_required("function.read")
+@handle_rest_requests_exceptions
+async def get_function_group(request: web.Request) -> web.Response:
+    path_params = parse_request_path_parameters_as(FunctionPathParams, request)
+    function_id = path_params.function_id
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    access_rights_list = await _functions_service.get_function_group_permissions(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+    )
+
+    return envelope_json_response(
+        {
+            access_rights.group_id: {
+                "read": access_rights.read,
+                "write": access_rights.write,
+                "execute": access_rights.execute,
+            }
+            for access_rights in access_rights_list
+        }
+    )
+
+
 @routes.put(
     f"/{VTAG}/functions/{{function_id}}/groups/{{group_id}}",
     name="update_function_group",
