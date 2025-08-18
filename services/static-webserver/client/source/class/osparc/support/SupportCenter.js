@@ -19,7 +19,11 @@ qx.Class.define("osparc.support.SupportCenter", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "support-center", "Support Center");
+    this.base(arguments, "support-center", "Messages");
+
+    this.getChildControl("title").set({
+      textAlign: "center",
+    });
 
     this.set({
       layout: new qx.ui.layout.VBox(10),
@@ -84,7 +88,11 @@ qx.Class.define("osparc.support.SupportCenter", {
           this.getChildControl("stack-layout").add(control);
           break;
         case "conversations-intro-text":
-          control = new qx.ui.basic.Label(this.tr("Welcome to the Support Center"));
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Welcome to the Support Center<br>Ask us anything, or share your feedback."),
+            rich: true,
+            font: "text-14",
+          });
           this.getChildControl("conversations-layout").add(control);
           break;
         case "conversations-list": {
