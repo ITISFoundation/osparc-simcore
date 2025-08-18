@@ -1,4 +1,5 @@
 from aiohttp import web
+from models_library.basic_types import IDStr
 from models_library.functions import (
     Function,
     FunctionClass,
@@ -37,6 +38,7 @@ from models_library.functions_errors import (
 )
 from models_library.groups import GroupID
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
@@ -185,6 +187,10 @@ async def list_functions(
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
+    order_by: OrderBy | None = None,
+    filter_by_function_class: FunctionClass | None = None,
+    search_by_function_title: str | None = None,
+    search_by_multi_columns: str | None = None,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     returned_functions, page = await _functions_repository.list_functions(
         app=app,
@@ -192,6 +198,17 @@ async def list_functions(
         product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
+        order_by=(
+            OrderBy(
+                field=IDStr("uuid") if order_by.field == "uid" else order_by.field,
+                direction=order_by.direction,
+            )
+            if order_by
+            else None
+        ),
+        filter_by_function_class=filter_by_function_class,
+        search_by_function_title=search_by_function_title,
+        search_by_multi_columns=search_by_multi_columns,
     )
     return [
         _decode_function(returned_function) for returned_function in returned_functions

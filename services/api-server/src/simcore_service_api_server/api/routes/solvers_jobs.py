@@ -4,7 +4,7 @@ import logging
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from models_library.clusters import ClusterID
@@ -151,6 +151,36 @@ async def delete_job(
     await webserver_api.delete_project(project_id=job_id)
 
 
+@router.delete(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/assets",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.12"),
+        ],
+    ),
+)
+async def delete_job_assets(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    job_service: Annotated[JobService, Depends(get_job_service)],
+):
+    job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
+
+    # check that job exists and is accessible to user
+    project_job_rpc_get = await job_service.get_job(
+        job_parent_resource_name=job_parent_resource_name, job_id=job_id
+    )
+    assert project_job_rpc_get.uuid == job_id  # nosec
+
+    await job_service.delete_job_assets(
+        job_parent_resource_name=job_parent_resource_name, job_id=job_id
+    )
+
+
 @router.post(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}:start",
     status_code=status.HTTP_202_ACCEPTED,
@@ -163,6 +193,10 @@ async def delete_job(
         },
         status.HTTP_406_NOT_ACCEPTABLE: {
             "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Job assets missing",
             "model": ErrorGet,
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
@@ -193,12 +227,23 @@ async def start_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
     job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Start Job '%s'", job_name)
+
+    job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
+    job = await job_service.get_job(
+        job_id=job_id, job_parent_resource_name=job_parent_resource_name
+    )
+    if job.storage_assets_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Assets for job job_id={job_id} are missing",
+        )
 
     try:
         await start_project(
