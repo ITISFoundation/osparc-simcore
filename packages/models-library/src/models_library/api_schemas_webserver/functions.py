@@ -158,6 +158,6 @@ class FunctionGroupGet(OutputSchema):
 
 
 class FunctionGroupUpdate(InputSchema):
-    read: bool | None = None
-    write: bool | None = None
-    execute: bool | None = None
+    read: bool
+    write: bool
+    execute: bool
