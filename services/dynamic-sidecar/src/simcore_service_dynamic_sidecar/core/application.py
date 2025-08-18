@@ -17,7 +17,7 @@ from servicelib.fastapi.tracing import (
 )
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY, __version__
+from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY, __version__
 from ..api.rest import get_main_router
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..models.schemas.application_health import ApplicationHealth
@@ -135,7 +135,7 @@ def create_base_app() -> FastAPI:
     assert app_settings.SC_BOOT_MODE  # nosec
     app = FastAPI(
         debug=app_settings.SC_BOOT_MODE.is_devel_mode(),
-        title=PROJECT_NAME,
+        title=APP_NAME,
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",

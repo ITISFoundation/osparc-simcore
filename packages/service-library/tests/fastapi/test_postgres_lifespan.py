@@ -83,7 +83,6 @@ async def test_lifespan_postgres_database_in_an_app(
     mock_create_async_engine_and_database_ready: MockType,
     app_lifespan: LifespanManager,
 ):
-
     app = FastAPI(lifespan=app_lifespan)
 
     async with ASGILifespanManager(
@@ -93,7 +92,7 @@ async def test_lifespan_postgres_database_in_an_app(
     ) as asgi_manager:
         # Verify that the async engine was created
         mock_create_async_engine_and_database_ready.assert_called_once_with(
-            app.state.settings.CATALOG_POSTGRES
+            app.state.settings.CATALOG_POSTGRES, app.title
         )
 
         # Verify that the async engine is in the lifespan manager state
