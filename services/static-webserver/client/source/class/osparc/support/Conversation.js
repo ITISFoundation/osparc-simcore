@@ -72,6 +72,8 @@ qx.Class.define("osparc.support.Conversation", {
         padding: 5,
       });
       this.bind("conversationId", addMessages, "conversationId");
+      addMessages.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
+      addMessages.getChildControl("comment-field").getChildControl("subtitle").exclude();
       addMessages.addListener("messageAdded", e => {
         const data = e.getData();
         if (data["conversationId"]) {
