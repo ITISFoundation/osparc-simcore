@@ -272,9 +272,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         """
         self._started_event_task_cancelled_tasks_removal.set()
 
-        cancelled_tasks = await self._tasks_data.get_all_to_remove()
-        for task_id in cancelled_tasks:
-            await self._attempt_cancel_and_remove_local_task(task_id)
+        to_remove = await self._tasks_data.get_all_to_remove()
+        for task_id in to_remove:
+            await self._attempt_to_remove_local_task(task_id)
 
     async def _status_update(self) -> None:
         """
@@ -388,8 +388,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         return string_to_object(tracked_task.result_field.result)
 
-    async def _attempt_cancel_and_remove_local_task(self, task_id: TaskId) -> None:
-        """if task is running in the local process, cancel it and remove it"""
+    async def _attempt_to_remove_local_task(self, task_id: TaskId) -> None:
+        """if task is running in the local process, try to remove it"""
 
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
