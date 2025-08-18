@@ -23,7 +23,6 @@ from ..api.rpc.routes import setup_rpc_api_routes
 from ..models.schemas.application_health import ApplicationHealth
 from ..models.shared_store import SharedStore, setup_shared_store
 from ..modules.attribute_monitor import setup_attribute_monitor
-from ..modules.inputs import setup_inputs
 from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.notifications import setup_notifications
 from ..modules.outputs import setup_outputs
@@ -31,6 +30,7 @@ from ..modules.prometheus_metrics import setup_prometheus_metrics
 from ..modules.resource_tracking import setup_resource_tracking
 from ..modules.system_monitor import setup_system_monitor
 from ..modules.user_services_preferences import setup_user_services_preferences
+from ..services.inputs import setup_inputs
 from .docker_compose_utils import docker_compose_down
 from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler

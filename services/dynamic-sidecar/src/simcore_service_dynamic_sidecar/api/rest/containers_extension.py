@@ -10,13 +10,10 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ...core.docker_utils import docker_client
-from ...modules.inputs import disable_inputs_pulling, enable_inputs_pulling
 from ...modules.mounted_fs import MountedVolumes
-from ...modules.outputs import (
-    OutputsContext,
-    disable_event_propagation,
-    enable_event_propagation,
-)
+from ...modules.outputs import OutputsContext
+from ...services.inputs import disable_inputs_pulling, enable_inputs_pulling
+from ...services.outputs import disable_event_propagation, enable_event_propagation
 from ._dependencies import get_application, get_mounted_volumes, get_outputs_context
 
 _logger = logging.getLogger(__name__)
