@@ -40,23 +40,16 @@ from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
-from ..._service_solvers import SolverService
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobInputs
-from ...services_http.director_v2 import DirectorV2Api
-from ...services_http.webserver import AuthSession
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.functions import get_stored_job_status
 from ..dependencies.services import (
-    get_api_client,
     get_function_job_service,
     get_function_service,
     get_job_service,
-    get_solver_service,
 )
-from ..dependencies.webserver_http import get_webserver_session
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from . import solvers_jobs, studies_jobs
 from ._constants import (
@@ -372,13 +365,13 @@ async def run_function(  # noqa: PLR0913
     function_id: FunctionID,
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     function_inputs: FunctionInputs,
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    function_jobs_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
     job_service: Annotated[JobService, Depends(get_job_service)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
@@ -414,8 +407,6 @@ async def run_function(  # noqa: PLR0913
             function_id=function_id,
         )
 
-    from .function_jobs_routes import function_job_status
-
     joined_inputs = _join_inputs(
         to_run_function.default_inputs,
         function_inputs,
@@ -439,20 +430,9 @@ async def run_function(  # noqa: PLR0913
         product_name=product_name,
     ):
         for cached_function_job in cached_function_jobs:
-            job_status = await function_job_status(
+            job_status = await function_jobs_service.inspect_function_job(
                 function=to_run_function,
                 function_job=cached_function_job,
-                stored_job_status=await get_stored_job_status(
-                    function_job_id=cached_function_job.uid,
-                    user_id=user_id,
-                    product_name=product_name,
-                    wb_api_rpc=wb_api_rpc,
-                ),
-                wb_api_rpc=wb_api_rpc,
-                user_id=user_id,
-                director2_api=director2_api,
-                product_name=product_name,
-                job_service=job_service,
             )
             if job_status.status == RunningState.SUCCESS:
                 return cached_function_job
@@ -565,13 +545,13 @@ async def map_function(  # noqa: PLR0913
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     function_inputs_list: FunctionInputsList,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[str, Depends(get_product_name)],
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
+    function_jobs_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
@@ -583,12 +563,10 @@ async def map_function(  # noqa: PLR0913
             function_inputs=function_inputs,
             product_name=product_name,
             user_id=user_id,
-            webserver_api=webserver_api,
             url_for=url_for,
-            director2_api=director2_api,
             request=request,
-            solver_service=solver_service,
             job_service=job_service,
+            function_jobs_service=function_jobs_service,
             x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
             x_simcore_parent_node_id=x_simcore_parent_node_id,
         )

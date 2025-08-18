@@ -150,11 +150,13 @@ def get_function_service(
 
 def get_function_job_service(
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ) -> FunctionJobService:
     return FunctionJobService(
         _web_rpc_client=web_rpc_api,
+        _job_service=job_service,
         user_id=user_id,
         product_name=product_name,
     )
