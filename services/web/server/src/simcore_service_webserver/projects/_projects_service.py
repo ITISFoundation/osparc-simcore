@@ -913,7 +913,7 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
                 hardware_info=hardware_info,
             ),
         )
-        # change this and most probably this will fix the issue
+
         project = await get_project_for_user(
             request.app, f"{project_uuid}", user_id, include_state=True
         )
