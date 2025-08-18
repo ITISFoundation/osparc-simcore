@@ -105,7 +105,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           break;
         }
         case "ask-a-question-button":
-          control = new qx.ui.form.Button(this.tr("Ask a Question")).set({
+          control = new osparc.ui.form.FetchButton(this.tr("Ask a Question")).set({
             appearance: "strong-button",
             center: true,
           });
@@ -150,14 +150,21 @@ qx.Class.define("osparc.support.SupportCenter", {
     },
 
     __openConversation: function(conversationId) {
-      this.getChildControl("conversation-back-button").show();
       const conversationContent = this.getChildControl("conversation-content");
       if (conversationId) {
         conversationContent.setConversationId(conversationId);
+        this.__showConversation();
       } else {
-        conversationContent.setConversationId(null);
+        this.getChildControl("ask-a-question-button").setFetching(true);
+        osparc.store.ConversationsSupport.getInstance().addConversation()
+          .then(data => {
+            conversationContent.setConversationId(data["conversationId"]);
+            this.__showConversation();
+          })
+          .finally(() => {
+            this.getChildControl("ask-a-question-button").setFetching(false);
+          });
       }
-      this.__showConversation();
     },
   }
 });

@@ -24,6 +24,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     "conversationDeleted": "qx.event.type.Data",
   },
 
+  statics: {
+    TYPES: {
+      SUPPORT: "SUPPORT",
+    },
+  },
+
   members: {
     getConversations: function() {
       const params = {
@@ -52,7 +58,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params);
     },
 
-    addConversation: function(name = "new 1", type = osparc.study.Conversations.TYPES.PROJECT_STATIC) {
+    addConversation: function(name = "", type = osparc.store.ConversationsSupport.TYPES.SUPPORT) {
       const params = {
         data: {
           name,
