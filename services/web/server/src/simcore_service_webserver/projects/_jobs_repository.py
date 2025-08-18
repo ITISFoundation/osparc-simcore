@@ -221,7 +221,6 @@ class ProjectJobsRepository(BaseRepository):
         query = (
             sa.select(
                 *_PROJECT_DB_COLS,
-                projects.c.workbench,
                 projects_to_jobs.c.job_parent_resource_name,
                 projects_to_jobs.c.storage_assets_deleted,
             )
@@ -244,4 +243,6 @@ class ProjectJobsRepository(BaseRepository):
             row = result.first()
             if row is None:
                 return None
-            return TypeAdapter(ProjectJobDBGet).validate_python(row)
+
+            workbench = await get_project_workbench(conn, row.uuid)
+            return ProjectJobDBGet.model_validate({**row, "workbench": workbench})

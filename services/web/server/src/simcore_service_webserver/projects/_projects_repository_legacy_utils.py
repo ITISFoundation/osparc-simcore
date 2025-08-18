@@ -387,7 +387,7 @@ async def get_project_workbench(
     exclude_fields = {"node_id", "required_resources", "created", "modified"}
     workbench: dict[str, Any] = {}
 
-    project_nodes = await project_nodes_repo.list(connection)  # type: ignore
+    project_nodes = await project_nodes_repo.list(connection)
     for project_node in project_nodes:
         node_data = project_node.model_dump(
             exclude=exclude_fields, exclude_none=True, exclude_unset=True
