@@ -714,7 +714,7 @@ async def _check_project_node_has_all_required_inputs(
         )
 
 
-async def _start_dynamic_service(  # noqa: C901, PLR0915
+async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa: C901, PLR0915
     request: web.Request,
     *,
     service_key: ServiceKey,
