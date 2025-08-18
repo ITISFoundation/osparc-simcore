@@ -36,6 +36,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
       apply: "__applyConversationId",
     },
 
+    /*
     thumbnail: {
       check: "String",
       init: null,
@@ -63,6 +64,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
       nullable: false,
       event: "changeLastModified",
     },
+    */
   },
 
   statics: {
@@ -94,69 +96,53 @@ qx.Class.define("osparc.support.ConversationListItem", {
   },
 
   members: {
+    /*
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "card-holder-name":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14"
+        case "thumbnail":
+          control = new qx.ui.basic.Image().set({
+            alignY: "middle",
+            scale: true,
+            allowGrowX: true,
+            allowGrowY: true,
+            allowShrinkX: true,
+            allowShrinkY: true,
+            maxWidth: 32,
+            maxHeight: 32
           });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID_POS.NAME
-          });
+          this._add(control, this.self().GRID_POS.THUMBNAIL);
           break;
-        case "card-type":
+        case "title":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-14",
+            alignY: "middle",
           });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID_POS.TYPE
-          });
+          this._add(control, this.self().GRID_POS.TITLE);
           break;
-        case "card-number-masked":
+        case "author":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-13"
           });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID_POS.MASKED_NUMBER
-          });
+          this._add(control, this.self().GRID_POS.AUTHOR);
           break;
-        case "expiration-date":
+        case "author":
           control = new qx.ui.basic.Label().set({
-            font: "text-14"
+            font: "text-13"
           });
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID_POS.EXPIRATION_DATE
-          });
+          this._add(control, this.self().GRID_POS.LAST_MODIFIED);
           break;
-        case "details-button":
+        case "enter-button":
           control = new qx.ui.form.Button().set({
             icon: "@FontAwesome5Solid/info/14"
           });
-          control.addListener("execute", () => this.fireDataEvent("openPaymentMethodDetails", this.getKey()));
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID_POS.INFO_BUTTON
-          });
-          break;
-        case "delete-button":
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/trash/14"
-          });
-          control.addListener("execute", () => this.__deletePressed());
-          this._add(control, {
-            row: 0,
-            column: this.self().GRID_POS.DELETE_BUTTON
-          });
+          this._add(control, this.self().GRID_POS.BUTTON);
           break;
       }
 
       return control || this.base(arguments, id);
     },
+    */
 
     __applyConversationId: function(conversationId) {
       osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
