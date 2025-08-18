@@ -33,16 +33,6 @@ qx.Class.define("osparc.support.Conversation", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.set({
-      padding: 10,
-      showCloseButton: false,
-    });
-
-    this.getChildControl("button").set({
-      font: "text-13",
-    });
-    this.__addConversationButtons();
-
     this.__buildLayout();
 
     this.__reloadMessages();
@@ -60,94 +50,11 @@ qx.Class.define("osparc.support.Conversation", {
   members: {
     __messages: null,
     __nextRequestParams: null,
-    __messagesTitle: null,
     __messageScroll: null,
     __messagesList: null,
     __loadMoreMessages: null,
 
-    __addConversationButtons: function() {
-      const tabButton = this.getChildControl("button");
-
-      const buttonsAesthetics = {
-        focusable: false,
-        keepActive: true,
-        padding: 0,
-        backgroundColor: "transparent",
-      };
-      const renameButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/10").set({
-        ...buttonsAesthetics,
-      });
-      renameButton.addListener("execute", () => {
-        const titleEditor = new osparc.widget.Renamer(tabButton.getLabel());
-        titleEditor.addListener("labelChanged", e => {
-          titleEditor.close();
-          const newLabel = e.getData()["newLabel"];
-          if (this.getConversationId()) {
-            osparc.store.ConversationsProject.getInstance().renameConversation(this.getConversationId(), newLabel)
-              .then(() => this.renameConversation(newLabel));
-          } else {
-            // create new conversation first
-            osparc.store.ConversationsProject.getInstance().addConversation(newLabel)
-              .then(data => {
-                this.setConversationId(data["conversationId"]);
-                this.getChildControl("button").setLabel(newLabel);
-              });
-          }
-        }, this);
-        titleEditor.center();
-        titleEditor.open();
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      tabButton._add(renameButton, {
-        row: 0,
-        column: 3
-      });
-
-      const closeButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/times/12").set({
-        ...buttonsAesthetics,
-        paddingLeft: 4, // adds spacing between buttons
-      });
-      closeButton.addListener("execute", () => {
-        if (this.__messagesList.getChildren().length === 0) {
-          osparc.store.ConversationsProject.getInstance().deleteConversation(this.getConversationId());
-        } else {
-          const msg = this.tr("Are you sure you want to delete the conversation?");
-          const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
-            caption: this.tr("Delete Conversation"),
-            confirmText: this.tr("Delete"),
-            confirmAction: "delete"
-          });
-          confirmationWin.open();
-          confirmationWin.addListener("close", () => {
-            if (confirmationWin.getConfirmed()) {
-              osparc.store.ConversationsProject.getInstance().deleteConversation(this.getConversationId());
-            }
-          }, this);
-        }
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      tabButton._add(closeButton, {
-        row: 0,
-        column: 4
-      });
-      this.bind("conversationId", closeButton, "visibility", {
-        converter: value => value ? "visible" : "excluded"
-      });
-    },
-
-    renameConversation: function(newName) {
-      this.getChildControl("button").setLabel(newName);
-    },
-
     __buildLayout: function() {
-      this.__messagesTitle = new qx.ui.basic.Label();
-      this._add(this.__messagesTitle);
-
-      // add spacer to keep the messages list at the bottom
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 100 // high number to keep even a one message list at the bottom
-      });
-
       this.__messagesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
         alignY: "middle"
       });
@@ -196,8 +103,6 @@ qx.Class.define("osparc.support.Conversation", {
 
     __reloadMessages: function(removeMessages = true) {
       if (this.getConversationId() === null) {
-        // temporary conversation page
-        this.__messagesTitle.setValue(this.tr("No Messages yet"));
         this.__messagesList.hide();
         this.__loadMoreMessages.hide();
         return;
@@ -222,17 +127,6 @@ qx.Class.define("osparc.support.Conversation", {
           }
         })
         .finally(() => this.__loadMoreMessages.setFetching(false));
-    },
-
-    __updateMessagesNumber: function() {
-      const nMessages = this.__messages.filter(msg => msg["type"] === "MESSAGE").length;
-      if (nMessages === 0) {
-        this.__messagesTitle.setValue(this.tr("No Messages yet"));
-      } else if (nMessages === 1) {
-        this.__messagesTitle.setValue(this.tr("1 Message"));
-      } else if (nMessages > 1) {
-        this.__messagesTitle.setValue(nMessages + this.tr(" Messages"));
-      }
     },
 
     addMessage: function(message) {
