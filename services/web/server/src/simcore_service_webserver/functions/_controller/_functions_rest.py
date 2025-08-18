@@ -3,7 +3,8 @@ from typing import Any
 from aiohttp import web
 from models_library.api_schemas_webserver.functions import (
     Function,
-    FunctionGroupUpdate,
+    FunctionGroupAccessRightsGet,
+    FunctionGroupAccessRightsUpdate,
     FunctionToRegister,
     RegisteredFunction,
     RegisteredFunctionGet,
@@ -378,24 +379,32 @@ async def update_function_group(request: web.Request) -> web.Response:
 
     req_ctx = AuthenticatedRequestContext.model_validate(request)
 
-    function_group_update = FunctionGroupUpdate.model_validate(await request.json())
-
-    await _functions_service.set_function_group_permissions(
-        request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-        function_id=function_id,
-        permissions=FunctionGroupAccessRights(
-            group_id=group_id,
-            read=function_group_update.read,
-            write=function_group_update.write,
-            execute=function_group_update.execute,
-        ),
+    function_group_update = FunctionGroupAccessRightsUpdate.model_validate(
+        await request.json()
     )
 
-    # TODO: return updated permissions
+    updated_function_access_rights = (
+        await _functions_service.set_function_group_permissions(
+            request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            function_id=function_id,
+            permissions=FunctionGroupAccessRights(
+                group_id=group_id,
+                read=function_group_update.read,
+                write=function_group_update.write,
+                execute=function_group_update.execute,
+            ),
+        )
+    )
 
-    return web.json_response(status=status.HTTP_202_ACCEPTED)
+    return envelope_json_response(
+        FunctionGroupAccessRightsGet(
+            read=updated_function_access_rights.read,
+            write=updated_function_access_rights.write,
+            execute=updated_function_access_rights.execute,
+        )
+    )
 
 
 @routes.delete(

@@ -10,8 +10,8 @@ from typing import Annotated
 from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.functions import (
-    FunctionGroupGet,
-    FunctionGroupUpdate,
+    FunctionGroupAccessRightsGet,
+    FunctionGroupAccessRightsUpdate,
     FunctionToRegister,
     RegisteredFunctionGet,
     RegisteredFunctionUpdate,
@@ -84,11 +84,11 @@ async def delete_function(
 
 @router.put(
     "/functions/{function_id}/groups/{group_id}",
-    response_model=Envelope[FunctionGroupGet],
+    response_model=Envelope[FunctionGroupAccessRightsGet],
 )
 async def update_function_group(
     _path: Annotated[FunctionGroupPathParams, Depends()],
-    _body: FunctionGroupUpdate,
+    _body: FunctionGroupAccessRightsUpdate,
 ): ...
 
 
