@@ -42,7 +42,7 @@ qx.Class.define("osparc.support.Conversation", {
     conversationId: {
       check: "String",
       init: null,
-      nullable: false,
+      nullable: true,
       event: "changeConversationId"
     },
   },
@@ -69,7 +69,7 @@ qx.Class.define("osparc.support.Conversation", {
       this._add(this.__loadMoreMessages);
 
       const addMessages = new osparc.conversation.AddMessage().set({
-        padding: 5,
+        padding: 10,
       });
       this.bind("conversationId", addMessages, "conversationId");
       addMessages.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();

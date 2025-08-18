@@ -62,7 +62,6 @@ qx.Class.define("osparc.support.SupportCenter", {
         supportCenterWindow.moveTo(posX, posY);
       };
       supportCenterWindow.open();
-
       positionWindow();
       window.addEventListener("resize", positionWindow);
 
@@ -76,7 +75,7 @@ qx.Class.define("osparc.support.SupportCenter", {
       switch (id) {
         case "stack-layout":
           control = new qx.ui.container.Stack();
-          this._add(control, {
+          this.add(control, {
             flex: 1
           });
           break;
@@ -102,18 +101,25 @@ qx.Class.define("osparc.support.SupportCenter", {
             appearance: "strong-button",
             center: true,
           });
-          control.addListener("execute", () => {
-            this.__newConversation();
-          });
+          control.addListener("execute", () => this.__openConversation(), this);
           this.getChildControl("conversations-layout").add(control);
           break;
         case "conversation-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.getChildControl("stack-layout").add(control);
           break;
-        case "conversation-intro-text":
-          control = new qx.ui.basic.Label(this.tr("One conversation"));
+        case "conversation-header":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this.getChildControl("conversation-layout").add(control);
+          break;
+        case "conversation-back-button":
+          control = new qx.ui.form.Button().set({
+            toolTipText: this.tr("Return to Messages"),
+            icon: "@FontAwesome5Solid/arrow-left/16",
+            backgroundColor: "transparent"
+          });
+          control.addListener("execute", () => this.__showConversations());
+          this.getChildControl("conversation-header").add(control);
           break;
         case "conversation-content":
           control = new osparc.support.Conversation();
@@ -127,10 +133,23 @@ qx.Class.define("osparc.support.SupportCenter", {
       return control || this.base(arguments, id);
     },
 
-    __newConversation: function() {
-      this.getChildControl("conversation-intro-text").setValue(this.tr("New conversation"));
-      this.getChildControl("conversation-content");
+    __showConversations: function() {
+      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversations-layout")]);
+    },
+
+    __showConversation: function() {
       this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-layout")]);
+    },
+
+    __openConversation: function(conversationId) {
+      this.getChildControl("conversation-back-button").show();
+      const conversationContent = this.getChildControl("conversation-content");
+      if (conversationId) {
+        conversationContent.setConversationId(conversationId);
+      } else {
+        conversationContent.setConversationId(null);
+      }
+      this.__showConversation();
     },
   }
 });

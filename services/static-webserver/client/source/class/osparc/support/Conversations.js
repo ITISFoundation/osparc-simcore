@@ -32,8 +32,7 @@ qx.Class.define("osparc.support.Conversations", {
 
   statics: {
     TYPES: {
-      PROJECT_STATIC: "PROJECT_STATIC",
-      PROJECT_ANNOTATION: "PROJECT_ANNOTATION",
+      SUPPORT: "SUPPORT",
     },
 
     CHANNELS: {
@@ -57,17 +56,6 @@ qx.Class.define("osparc.support.Conversations", {
         conversations.destroy();
       }, this);
       return win;
-    },
-
-    makeButtonBlink: function(button) {
-      const socket = osparc.wrapper.WebSocket.getInstance();
-      Object.values(osparc.study.Conversations.CHANNELS).forEach(eventName => {
-        socket.on(eventName, () => {
-          if (button) {
-            osparc.utils.Utils.makeButtonBlink(button);
-          }
-        });
-      });
     },
   },
 
