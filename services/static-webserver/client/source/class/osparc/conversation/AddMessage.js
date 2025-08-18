@@ -193,6 +193,26 @@ qx.Class.define("osparc.conversation.AddMessage", {
       }
     },
 
+    __postMessage: function() {
+      const commentField = this.getChildControl("comment-field");
+      const content = commentField.getChildControl("text-area").getValue();
+      let promise = null;
+      if (content) {
+        const studyData = this.getStudyData();
+        const conversationId = this.getConversationId();
+        if (studyData) {
+          promise = osparc.store.ConversationsProject.getInstance().addMessage(studyData["uuid"], conversationId, content);;
+        } else {
+          promise = osparc.store.ConversationsSupport.getInstance().addMessage(conversationId, content);
+        }
+        promise
+          .then(data => {
+            this.fireDataEvent("messageAdded", data);
+            commentField.getChildControl("text-area").setValue("");
+          });
+      }
+    },
+
     __editComment: function() {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
@@ -320,23 +340,5 @@ qx.Class.define("osparc.conversation.AddMessage", {
       }
     },
     /* NOTIFY USERS */
-
-    __postMessage: function() {
-      const commentField = this.getChildControl("comment-field");
-      const content = commentField.getChildControl("text-area").getValue();
-      if (content) {
-        const studyData = this.getStudyData();
-        const conversationId = this.getConversationId();
-        if (studyData) {
-          osparc.store.ConversationsProject.getInstance().addMessage(studyData["uuid"], conversationId, content)
-            .then(data => {
-              this.fireDataEvent("messageAdded", data);
-              commentField.getChildControl("text-area").setValue("");
-            });
-        } else {
-          // Support
-        }
-      }
-    },
   }
 });
