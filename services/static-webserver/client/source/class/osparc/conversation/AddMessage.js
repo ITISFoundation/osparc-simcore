@@ -32,7 +32,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       check: "String",
       init: null,
       nullable: true,
-      event: "changeConversationId"
+      event: "changeConversationId",
     },
 
     studyData: {
@@ -150,7 +150,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
 
     __applyStudyData: function(studyData) {
       if (studyData) {
-        const canIWrite = osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])
+        const canIWrite = osparc.data.model.Study.canIWrite(studyData["accessRights"])
         this.getChildControl("add-comment-button").setEnabled(canIWrite);
         this.getChildControl("notify-user-button").show();
         this.getChildControl("notify-user-button").setEnabled(canIWrite);
@@ -175,15 +175,21 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __addComment: function() {
-      if (this.__conversationId) {
+      const conversationId = this.getConversationId();
+      if (conversationId) {
         this.__postMessage();
       } else {
-        // create new conversation first
-        osparc.store.ConversationsProject.getInstance().addConversation(this.__studyData["uuid"])
-          .then(data => {
-            this.__conversationId = data["conversationId"];
-            this.__postMessage();
-          })
+        const studyData = this.getStudyData();
+        if (studyData) {
+          // create new conversation first
+          osparc.store.ConversationsProject.getInstance().addConversation(studyData)
+            .then(data => {
+              this.setConversationId(data["conversationId"]);
+              this.__postMessage();
+            });
+        } else {
+          // support conversation
+        }
       }
     },
 
@@ -191,19 +197,31 @@ qx.Class.define("osparc.conversation.AddMessage", {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], this.__conversationId, this.__message["messageId"], content)
-          .then(data => {
-            this.fireDataEvent("messageUpdated", data);
-            commentField.getChildControl("text-area").setValue("");
-          });
+        const studyData = this.getStudyData();
+        const conversationId = this.getConversationId();
+        const message = this.getMessage();
+        if (studyData) {
+          osparc.store.ConversationsProject.getInstance().editMessage(studyData["uuid"], conversationId, message["messageId"], content)
+            .then(data => {
+              this.fireDataEvent("messageUpdated", data);
+              commentField.getChildControl("text-area").setValue("");
+            });
+        } else {
+          // support comment editing
+        }
       }
     },
 
     /* NOTIFY USERS */
     __notifyUserTapped: function() {
+      const studyData = this.getStudyData();
+      if (!studyData) {
+        return;
+      }
+
       const showOrganizations = false;
       const showAccessRights = false;
-      const userManager = new osparc.share.NewCollaboratorsManager(this.__studyData, showOrganizations, showAccessRights).set({
+      const userManager = new osparc.share.NewCollaboratorsManager(studyData, showOrganizations, showAccessRights).set({
         acceptOnlyOne: true,
       });
       userManager.setCaption(this.tr("Notify user"));
@@ -220,10 +238,15 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __notifyUser: function(userGid) {
+      const studyData = this.getStudyData();
+      if (!studyData) {
+        return;
+      }
+
       // Note!
       // This check only works if the project is directly shared with the user.
       // If it's shared through a group, it might be a bit confusing
-      if (userGid in this.__studyData["accessRights"]) {
+      if (userGid in studyData["accessRights"]) {
         this.__addNotify(userGid);
       } else {
         const msg = this.tr("This user has no access to the project. Do you want to share it?");
@@ -239,13 +262,13 @@ qx.Class.define("osparc.conversation.AddMessage", {
             const newCollaborators = {
               [userGid]: osparc.data.Roles.STUDY["write"].accessRights
             };
-            osparc.store.Study.getInstance().addCollaborators(this.__studyData, newCollaborators)
+            osparc.store.Study.getInstance().addCollaborators(studyData, newCollaborators)
               .then(() => {
                 this.__addNotify(userGid);
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
                 if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
                   const uid = potentialCollaborators[userGid].getUserId();
-                  osparc.notification.Notifications.pushStudyShared(uid, this.__studyData["uuid"]);
+                  osparc.notification.Notifications.pushStudyShared(uid, studyData["uuid"]);
                 }
               })
               .catch(err => osparc.FlashMessenger.logError(err));
@@ -255,14 +278,44 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __addNotify: function(userGid) {
-      if (this.__conversationId) {
+      const studyData = this.getStudyData();
+      if (!studyData) {
+        return;
+      }
+
+      const conversationId = this.getConversationId();
+      if (conversationId) {
         this.__postNotify(userGid);
       } else {
         // create new conversation first
-        osparc.store.ConversationsProject.getInstance().addConversation(this.__studyData["uuid"])
+        osparc.store.ConversationsProject.getInstance().addConversation(studyData["uuid"])
           .then(data => {
-            this.__conversationId = data["conversationId"];
+            this.setConversationId(data["conversationId"]);
             this.__postNotify(userGid);
+          });
+      }
+    },
+
+    __postNotify: function(userGid) {
+      const studyData = this.getStudyData();
+      if (!studyData) {
+        return;
+      }
+
+      if (userGid) {
+        const conversationId = this.getConversationId();
+        osparc.store.ConversationsProject.getInstance().notifyUser(studyData["uuid"], conversationId, userGid)
+          .then(data => {
+            this.fireDataEvent("messageAdded", data);
+            const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
+            if (userGid in potentialCollaborators) {
+              if ("getUserId" in potentialCollaborators[userGid]) {
+                const uid = potentialCollaborators[userGid].getUserId();
+                osparc.notification.Notifications.pushConversationNotification(uid, studyData["uuid"]);
+              }
+              const msg = "getLabel" in potentialCollaborators[userGid] ? potentialCollaborators[userGid].getLabel() + this.tr(" was notified") : this.tr("Notification sent");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+            }
           });
       }
     },
@@ -272,8 +325,10 @@ qx.Class.define("osparc.conversation.AddMessage", {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        if (this.__studyData) {
-          osparc.store.ConversationsProject.getInstance().addMessage(this.__studyData["uuid"], this.__conversationId, content)
+        const studyData = this.getStudyData();
+        const conversationId = this.getConversationId();
+        if (studyData) {
+          osparc.store.ConversationsProject.getInstance().addMessage(studyData["uuid"], conversationId, content)
             .then(data => {
               this.fireDataEvent("messageAdded", data);
               commentField.getChildControl("text-area").setValue("");
@@ -281,24 +336,6 @@ qx.Class.define("osparc.conversation.AddMessage", {
         } else {
           // Support
         }
-      }
-    },
-
-    __postNotify: function(userGid) {
-      if (userGid) {
-        osparc.store.ConversationsProject.getInstance().notifyUser(this.__studyData["uuid"], this.__conversationId, userGid)
-          .then(data => {
-            this.fireDataEvent("messageAdded", data);
-            const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
-            if (userGid in potentialCollaborators) {
-              if ("getUserId" in potentialCollaborators[userGid]) {
-                const uid = potentialCollaborators[userGid].getUserId();
-                osparc.notification.Notifications.pushConversationNotification(uid, this.__studyData["uuid"]);
-              }
-              const msg = "getLabel" in potentialCollaborators[userGid] ? potentialCollaborators[userGid].getLabel() + this.tr(" was notified") : this.tr("Notification sent");
-              osparc.FlashMessenger.logAs(msg, "INFO");
-            }
-          });
       }
     },
   }
