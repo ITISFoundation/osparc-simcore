@@ -10,10 +10,9 @@ from pydantic.main import BaseModel
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ...core.docker_utils import docker_client
-from ...modules.inputs import disable_inputs_pulling, enable_inputs_pulling
 from ...modules.mounted_fs import MountedVolumes
 from ...modules.outputs import OutputsContext
-from ...services.outputs import disable_event_propagation, enable_event_propagation
+from ...services import container_extensions
 from ._dependencies import get_application, get_mounted_volumes, get_outputs_context
 
 _logger = logging.getLogger(__name__)
@@ -56,15 +55,11 @@ async def toggle_ports_io(
     patch_ports_io_item: PatchPortsIOItem,
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> None:
-    if patch_ports_io_item.enable_outputs:
-        await enable_event_propagation(app)
-    else:
-        await disable_event_propagation(app)
-
-    if patch_ports_io_item.enable_inputs:
-        enable_inputs_pulling(app)
-    else:
-        disable_inputs_pulling(app)
+    await container_extensions.toggle_ports_io(
+        app,
+        enable_outputs=patch_ports_io_item.enable_outputs,
+        enable_inputs=patch_ports_io_item.enable_inputs,
+    )
 
 
 @router.post(
