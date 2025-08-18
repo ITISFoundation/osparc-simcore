@@ -756,7 +756,11 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         get_redis_lock_manager_client_sdk(request.app),
         lock_key=_nodes_service.get_service_start_lock_key(user_id, project_uuid),
         blocking=True,
-        blocking_timeout=None,
+        blocking_timeout=datetime.timedelta(
+            seconds=_nodes_service.get_total_project_dynamic_nodes_creation_interval(
+                get_plugin_settings(request.app).PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
+            )
+        ),
     )
     async def _safe_service_start() -> None:
         """In case of concurrent requests, this guarantees that only one service can be started at a time"""
