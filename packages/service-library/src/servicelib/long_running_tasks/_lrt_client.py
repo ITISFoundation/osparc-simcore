@@ -8,10 +8,16 @@ from pydantic import PositiveInt, TypeAdapter
 from ..logging_errors import create_troubleshootting_log_kwargs
 from ..logging_utils import log_decorator
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
-from ._models import RPCErrorResponse
 from ._rabbit_namespace import get_rabbit_namespace
 from ._serialization import string_to_object
-from .models import LRTNamespace, TaskBase, TaskContext, TaskId, TaskStatus
+from .models import (
+    LRTNamespace,
+    RPCErrorResponse,
+    TaskBase,
+    TaskContext,
+    TaskId,
+    TaskStatus,
+)
 from .task import RegisteredTaskName
 
 _logger = logging.getLogger(__name__)
