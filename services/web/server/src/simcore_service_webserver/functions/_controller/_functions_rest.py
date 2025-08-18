@@ -404,7 +404,7 @@ async def get_function_groups(request: web.Request) -> web.Response:
     name="update_function_group",
 )
 @login_required
-@permission_required("function.write")
+@permission_required("function.update")
 @handle_rest_requests_exceptions
 async def update_function_group(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionGroupPathParams, request)
@@ -446,7 +446,7 @@ async def update_function_group(request: web.Request) -> web.Response:
     name="delete_function_group",
 )
 @login_required
-@permission_required("function.write")
+@permission_required("function.update")
 @handle_rest_requests_exceptions
 async def delete_function_group(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionGroupPathParams, request)
