@@ -145,9 +145,20 @@ qx.Class.define("osparc.support.ConversationListItem", {
     */
 
     __applyConversationId: function(conversationId) {
-      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
-        .then(lastMessages => {
-          if (lastMessages && lastMessages.length) {
+      Promise.all([
+        osparc.store.ConversationsSupport.getInstance().getConversation(conversationId),
+        osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
+      ])
+      .then(([conversation, lastMessages]) => {
+        if (conversation) {
+          this.set({
+            thumbnail: conversation.thumbnail,
+            title: conversation.title,
+            author: conversation.author,
+            lastModified: conversation.lastModified,
+          });
+        }
+        if (lastMessages && lastMessages.length) {
             this.set({
               title: lastMessages[0].title,
               author: lastMessages[0].author,

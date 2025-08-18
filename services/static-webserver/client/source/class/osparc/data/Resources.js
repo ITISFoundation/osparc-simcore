@@ -1483,7 +1483,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           getConversationsPage: {
             method: "GET",
-            url: statics.API + "/conversations?type=support&offset={offset}&limit={limit}"
+            url: statics.API + "/conversations?type=SUPPORT&offset={offset}&limit={limit}"
           },
           getConversation: {
             method: "GET",
