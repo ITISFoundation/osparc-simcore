@@ -151,7 +151,13 @@ RegisteredFunctionGet: TypeAlias = Annotated[
 class RegisteredFunctionUpdate(FunctionUpdate, InputSchema): ...
 
 
-class FunctionGroupUpdate(InputSchema):
+class FunctionGroupGet(OutputSchema):
     read: bool
     write: bool
     execute: bool
+
+
+class FunctionGroupUpdate(InputSchema):
+    read: bool | None = None
+    write: bool | None = None
+    execute: bool | None = None

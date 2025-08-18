@@ -3478,6 +3478,65 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/functions/{function_id}/groups/{group_id}:
+    put:
+      tags:
+      - functions
+      summary: Update Function Group
+      operationId: update_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionGroupUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FunctionGroupGet_'
+    delete:
+      tags:
+      - functions
+      summary: Delete Function Group
+      operationId: delete_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      responses:
+        '204':
+          description: Successful Response
   /v0/tasks:
     get:
       tags:
@@ -10494,6 +10553,19 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
+    Envelope_FunctionGroupGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/FunctionGroupGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[FunctionGroupGet]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -12341,6 +12413,42 @@ components:
       additionalProperties: false
       type: object
       title: FunctionAccessRights
+    FunctionGroupGet:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        execute:
+          type: boolean
+          title: Execute
+      type: object
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupGet
+    FunctionGroupUpdate:
+      properties:
+        read:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Read
+        write:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Write
+        execute:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Execute
+      type: object
+      title: FunctionGroupUpdate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
