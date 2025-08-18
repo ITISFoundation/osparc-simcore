@@ -24,6 +24,7 @@ from ...models.schemas.jobs import (
     JobMetadataUpdate,
     JobPricingSpecification,
     JobStatus,
+    get_solver_job_rest_interface_links,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services_http.director_v2 import DirectorV2Api
@@ -103,7 +104,9 @@ async def create_solver_job(  # noqa: PLR0913
         hidden=hidden,
         x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
         x_simcore_parent_node_id=x_simcore_parent_node_id,
-        url_for=url_for,
+        job_rest_interface_links=get_solver_job_rest_interface_links(
+            url_for=url_for, solver_key=solver_key, version=version
+        ),
     )
 
 

@@ -4,7 +4,6 @@ services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
 
 import uuid
-from collections.abc import Callable
 from datetime import UTC, datetime
 from functools import lru_cache
 
@@ -14,7 +13,8 @@ from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.basic_types import KeyIDStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
-from pydantic import HttpUrl, TypeAdapter
+from pydantic import TypeAdapter
+from simcore_service_api_server.models.api_resources import JobRestInterfaceLinks
 
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
 from ..models.schemas.files import File
@@ -24,9 +24,6 @@ from ..models.schemas.jobs import (
     JobInputs,
     JobStatus,
     PercentageInt,
-    get_outputs_url,
-    get_runner_url,
-    get_url,
 )
 from ..models.schemas.programs import Program
 from ..models.schemas.solvers import Solver
@@ -188,7 +185,7 @@ def create_job_from_project(
     *,
     solver_or_program: Solver | Program,
     project: ProjectGet | Project,
-    url_for: Callable[..., HttpUrl],
+    job_rest_interface_links: JobRestInterfaceLinks,
 ) -> Job:
     """
     Given a project, creates a job
@@ -218,13 +215,9 @@ def create_job_from_project(
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
         runner_name=solver_or_program_name,
-        url=get_url(
-            solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
-        ),
-        runner_url=get_runner_url(solver_or_program=solver_or_program, url_for=url_for),
-        outputs_url=get_outputs_url(
-            solver_or_program=solver_or_program, url_for=url_for, job_id=job_id
-        ),
+        url=job_rest_interface_links.url(job_id=job_id),
+        runner_url=job_rest_interface_links.runner_url(job_id=job_id),
+        outputs_url=job_rest_interface_links.outputs_url(job_id=job_id),
     )
 
 

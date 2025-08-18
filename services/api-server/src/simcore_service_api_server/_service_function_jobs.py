@@ -36,7 +36,11 @@ from models_library.users import UserID
 from pydantic import ValidationError
 
 from ._service_jobs import JobService
-from .models.schemas.jobs import JobInputs, JobPricingSpecification
+from .models.schemas.jobs import (
+    JobInputs,
+    JobPricingSpecification,
+    get_solver_job_rest_interface_links,
+)
 from .services_rpc.wb_api_server import WbApiRpcClient
 
 
@@ -244,11 +248,16 @@ class FunctionJobService:
             )
 
         if function.function_class == FunctionClass.SOLVER:
+            job_rest_interface_links = get_solver_job_rest_interface_links(
+                url_for=url_for,
+                solver_key=function.solver_key,
+                version=function.solver_version,
+            )
             solver_job = await self._job_service.create_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,
                 inputs=JobInputs(values=joined_inputs or {}),
-                url_for=url_for,
+                job_rest_interface_links=job_rest_interface_links,
                 hidden=True,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,

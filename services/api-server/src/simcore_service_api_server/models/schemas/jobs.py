@@ -28,6 +28,7 @@ from pydantic import (
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
+from ...models.api_resources import JobRestInterfaceLinks
 from ...models.schemas.files import File, UserFile
 from .._utils_pydantic import UriSchema
 from ..api_resources import (
@@ -47,8 +48,8 @@ from .base import ApiServerInputSchema
 #  - Input/outputs are defined in service metadata
 #  - custom metadata
 #
-from .programs import Program, ProgramKeyId
-from .solvers import Solver
+from .programs import ProgramKeyId
+from .solvers import SolverKeyId
 
 JobID: TypeAlias = UUID
 
@@ -324,42 +325,28 @@ class Job(BaseModel):
         return self.name
 
 
-def get_url(
-    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
-) -> HttpUrl | None:
-    if isinstance(solver_or_program, Solver):
-        return url_for(
+def get_solver_job_rest_interface_links(
+    *, url_for: Callable, solver_key: SolverKeyId, version: VersionStr
+) -> JobRestInterfaceLinks:
+    return JobRestInterfaceLinks(
+        url_template=url_for(
             "get_job",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-            job_id=job_id,
-        )
-    return None
-
-
-def get_runner_url(
-    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl]
-) -> HttpUrl | None:
-    if isinstance(solver_or_program, Solver):
-        return url_for(
+            solver_key=solver_key,
+            version=version,
+            job_id="{job_id}",
+        ),
+        runner_url_template=url_for(
             "get_solver_release",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-        )
-    return None
-
-
-def get_outputs_url(
-    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
-) -> HttpUrl | None:
-    if isinstance(solver_or_program, Solver):
-        return url_for(
+            solver_key=solver_key,
+            version=version,
+        ),
+        outputs_url_template=url_for(
             "get_job_outputs",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-            job_id=job_id,
-        )
-    return None
+            solver_key=solver_key,
+            version=version,
+            job_id="{job_id}",
+        ),
+    )
 
 
 PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]

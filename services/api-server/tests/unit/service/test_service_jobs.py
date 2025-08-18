@@ -4,10 +4,14 @@
 # pylint: disable=unused-variable
 
 
+from faker import Faker
 from pytest_mock import MockType
 from simcore_service_api_server._service_jobs import JobService
+from simcore_service_api_server.models.api_resources import JobRestInterfaceLinks
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
+
+_faker = Faker()
 
 
 async def test_list_jobs_by_resource_prefix(
@@ -53,13 +57,19 @@ async def test_create_job(
     def mock_url_for(*args, **kwargs):
         return "https://example.com/api/v1/jobs/test-job"
 
+    job_rest_interface_links = JobRestInterfaceLinks(
+        url_template=_faker.url() + "/{job_id}",
+        runner_url_template=_faker.url(),
+        outputs_url_template=_faker.url() + "/{job_id}",
+    )
+
     # Test job creation
     job, project = await job_service.create_project_marked_as_job(
         solver_or_program=solver,
         inputs=inputs,
         parent_project_uuid=None,
         parent_node_id=None,
-        url_for=mock_url_for,
+        job_rest_interface_links=job_rest_interface_links,
         hidden=False,
         project_name="Test Job Project",
         description="Test description",

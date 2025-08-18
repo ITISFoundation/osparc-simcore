@@ -6,7 +6,8 @@ import pytest
 from faker import Faker
 from models_library.projects import Project
 from models_library.projects_nodes import InputsDict, InputTypes, SimCoreFileLink
-from pydantic import HttpUrl, RootModel, TypeAdapter, create_model
+from pydantic import RootModel, TypeAdapter, create_model
+from simcore_service_api_server.models.api_resources import JobRestInterfaceLinks
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentTypes, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -208,8 +209,11 @@ def test_create_job_from_project(faker: Faker):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "2.0.2"
 
-    def fake_url_for(*args, **kwargs) -> HttpUrl:
-        return HttpUrl(faker.url())
+    fake_job_rest_interface_links = JobRestInterfaceLinks(
+        url_template=faker.url() + "/{job_id}",
+        runner_url_template=faker.url(),
+        outputs_url_template=faker.url() + "/{job_id}",
+    )
 
     solver = Solver(
         id=solver_key,
@@ -221,7 +225,9 @@ def test_create_job_from_project(faker: Faker):
     )
 
     job = create_job_from_project(
-        solver_or_program=solver, project=project, url_for=fake_url_for
+        solver_or_program=solver,
+        project=project,
+        job_rest_interface_links=fake_job_rest_interface_links,
     )
 
     assert job.id == project.uuid

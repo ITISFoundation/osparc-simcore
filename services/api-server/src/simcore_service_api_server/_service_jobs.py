@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -24,7 +23,6 @@ from models_library.rest_pagination import (
 from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
-from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
 from ._service_solvers import (
@@ -32,7 +30,11 @@ from ._service_solvers import (
 )
 from .exceptions.backend_errors import JobAssetsMissingError
 from .exceptions.custom_errors import SolverServiceListJobsFiltersError
-from .models.api_resources import RelativeResourceName, compose_resource_name
+from .models.api_resources import (
+    JobRestInterfaceLinks,
+    RelativeResourceName,
+    compose_resource_name,
+)
 from .models.basic_types import NameValueTuple, VersionStr
 from .models.schemas.jobs import (
     Job,
@@ -211,7 +213,7 @@ class JobService:
         inputs: JobInputs,
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
-        url_for: Callable[..., HttpUrl],
+        job_rest_interface_links: JobRestInterfaceLinks,
         hidden: bool,
         project_name: str | None,
         description: str | None,
@@ -252,7 +254,9 @@ class JobService:
 
         # for consistency, it rebuild job
         job = create_job_from_project(
-            solver_or_program=solver_or_program, project=new_project, url_for=url_for
+            solver_or_program=solver_or_program,
+            project=new_project,
+            job_rest_interface_links=job_rest_interface_links,
         )
         assert job.id == pre_job.id  # nosec
         assert job.name == pre_job.name  # nosec
@@ -311,8 +315,8 @@ class JobService:
         solver_key: SolverKeyId,
         version: VersionStr,
         inputs: JobInputs,
-        url_for: Callable,
         hidden: bool,
+        job_rest_interface_links: JobRestInterfaceLinks,
         x_simcore_parent_project_uuid: ProjectID | None,
         x_simcore_parent_node_id: NodeID | None,
     ) -> Job:
@@ -326,10 +330,10 @@ class JobService:
             description=None,
             solver_or_program=solver,
             inputs=inputs,
-            url_for=url_for,
             hidden=hidden,
             parent_project_uuid=x_simcore_parent_project_uuid,
             parent_node_id=x_simcore_parent_node_id,
+            job_rest_interface_links=job_rest_interface_links,
         )
 
         return job

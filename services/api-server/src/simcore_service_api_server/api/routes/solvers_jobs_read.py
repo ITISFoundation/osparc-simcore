@@ -38,6 +38,7 @@ from ...models.schemas.jobs import (
     JobLog,
     JobMetadata,
     JobOutputs,
+    get_solver_job_rest_interface_links,
 )
 from ...models.schemas.jobs_filters import JobMetadataFilter
 from ...models.schemas.model_adapter import (
@@ -203,9 +204,14 @@ async def list_jobs(
     )
 
     jobs: deque[Job] = deque()
+    job_rest_interface_links = get_solver_job_rest_interface_links(
+        url_for=url_for, solver_key=solver_key, version=solver.version
+    )
     for prj in projects_page.data:
         job = create_job_from_project(
-            solver_or_program=solver, project=prj, url_for=url_for
+            solver_or_program=solver,
+            project=prj,
+            job_rest_interface_links=job_rest_interface_links,
         )
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
@@ -247,9 +253,16 @@ async def list_jobs_paginated(
     projects_page = await webserver_api.get_projects_w_solver_page(
         solver_name=solver.name, limit=page_params.limit, offset=page_params.offset
     )
+    job_rest_interface_links = get_solver_job_rest_interface_links(
+        url_for=url_for, solver_key=solver_key, version=version
+    )
 
     jobs: list[Job] = [
-        create_job_from_project(solver_or_program=solver, project=prj, url_for=url_for)
+        create_job_from_project(
+            solver_or_program=solver,
+            project=prj,
+            job_rest_interface_links=job_rest_interface_links,
+        )
         for prj in projects_page.data
     ]
 
@@ -285,8 +298,14 @@ async def get_job(
     )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
+    job_rest_interface_links = get_solver_job_rest_interface_links(
+        url_for=url_for, solver_key=solver_key, version=version
+    )
+
     job = create_job_from_project(
-        solver_or_program=solver, project=project, url_for=url_for
+        solver_or_program=solver,
+        project=project,
+        job_rest_interface_links=job_rest_interface_links,
     )
     assert job.id == job_id  # nosec
     return job  # nosec
