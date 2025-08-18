@@ -33,7 +33,15 @@ from .errors import (
     TaskNotFoundError,
     TaskNotRegisteredError,
 )
-from .models import ResultField, TaskBase, TaskContext, TaskData, TaskId, TaskStatus
+from .models import (
+    RedisNamespace,
+    ResultField,
+    TaskBase,
+    TaskContext,
+    TaskData,
+    TaskId,
+    TaskStatus,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +53,6 @@ _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 
 
 RegisteredTaskName: TypeAlias = str
-RedisNamespace: TypeAlias = str
 
 
 class TaskProtocol(Protocol):

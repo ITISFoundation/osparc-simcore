@@ -29,6 +29,7 @@ RequestBody: TypeAlias = Any
 TaskContext: TypeAlias = dict[str, Any]
 
 RabbitNamespace: TypeAlias = str
+RedisNamespace: TypeAlias = str
 
 
 class ResultField(BaseModel):

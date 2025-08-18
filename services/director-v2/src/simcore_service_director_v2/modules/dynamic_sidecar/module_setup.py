@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from servicelib.fastapi import long_running_tasks
-from servicelib.long_running_tasks.models import RabbitNamespace
-from servicelib.long_running_tasks.task import RedisNamespace
+from servicelib.long_running_tasks.models import RabbitNamespace, RedisNamespace
 
 from ...core.settings import AppSettings
 from . import api_client, scheduler

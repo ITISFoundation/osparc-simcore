@@ -2,8 +2,7 @@ from typing import Final
 
 from fastapi import FastAPI
 from servicelib.fastapi.long_running_tasks._server import setup
-from servicelib.long_running_tasks.models import RabbitNamespace
-from servicelib.long_running_tasks.task import RedisNamespace
+from servicelib.long_running_tasks.models import RabbitNamespace, RedisNamespace
 
 from .._meta import API_VTAG
 from ..core.settings import get_application_settings

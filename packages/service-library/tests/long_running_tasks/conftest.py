@@ -14,10 +14,8 @@ from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
 from servicelib.long_running_tasks.base_long_running_manager import (
     BaseLongRunningManager,
 )
-from servicelib.long_running_tasks.task import (
-    RedisNamespace,
-    TasksManager,
-)
+from servicelib.long_running_tasks.models import RedisNamespace
+from servicelib.long_running_tasks.task import TasksManager
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings

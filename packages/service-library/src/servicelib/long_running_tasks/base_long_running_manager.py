@@ -5,8 +5,8 @@ from settings_library.redis import RedisSettings
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._rabbit.namespace import get_namespace
-from .models import RabbitNamespace
-from .task import RedisNamespace, TasksManager
+from .models import RabbitNamespace, RedisNamespace
+from .task import TasksManager
 
 
 class BaseLongRunningManager:
