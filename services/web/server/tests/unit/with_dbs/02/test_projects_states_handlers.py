@@ -8,6 +8,7 @@
 import asyncio
 import contextlib
 import logging
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -146,7 +147,7 @@ class _SocketHandlers(TypedDict):
 @pytest.fixture
 async def create_socketio_connection_with_handlers(
     create_socketio_connection: Callable[
-        [TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
     ],
     mocker: MockerFixture,
 ) -> Callable[
@@ -1536,14 +1537,14 @@ async def test_open_shared_project_multiple_users(
         )
         other_users.append((user_i, client_i, client_i_tab_id, sio_i, sio_i_handlers))
 
-    # create an additional user, opening the project again shall raise
+    #
+    # TEST more user sessions cannot be opened: create an additional user, opening the project again shall raise
     client_n = client_on_running_server_factory()
 
     user_n = await exit_stack.enter_async_context(
         LoggedUser(client_n, {"role": logged_user["role"]})
     )
     assert user_n
-
     (
         sio_n,
         client_n_tab_id,
@@ -1558,7 +1559,56 @@ async def test_open_shared_project_multiple_users(
         sio_n_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT], shared_project, []
     )
 
-    # close project from a random user shall trigger an event for all the other users
+    #
+    # TEST refreshing tab of some user shall work
+    #
+    refreshing_user_index = secrets.randbelow(len(other_users))
+    user_x, client_x, _, closed_sio_x, _ = other_users.pop(refreshing_user_index)
+    # close tab of user x
+    await closed_sio_x.disconnect()
+    await asyncio.sleep(5)  # wait for the disconnect to be processed
+    (
+        new_sio_x,
+        new_client_x_tab_id,
+        new_sio_x_handlers,
+    ) = await create_socketio_connection_with_handlers(client_x)
+    await _assert_project_state_updated(
+        new_sio_x_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [],
+    )
+
+    await _open_project(client_x, new_client_x_tab_id, shared_project, expected.ok)
+
+    await _assert_project_state_updated(
+        new_sio_x_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state],
+    )
+
+    # this triggers the new opening of the same users
+    for _user_j, client_j, _, _sio_j, sio_j_handlers in other_users:
+        # check already opened  by other users which should also notify
+        await _assert_project_state_updated(
+            sio_j_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+            shared_project,
+            [opened_project_state],
+        )
+        await _state_project(
+            client_j, shared_project, expected.ok, opened_project_state
+        )
+    # put back the refreshed user in the list of other users
+    other_users.append(
+        (user_x, client_x, new_client_x_tab_id, new_sio_x, new_sio_x_handlers)
+    )
+    await _assert_project_state_updated(
+        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state]
+        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+    )
+
+    # close project from base user shall trigger an event for all the other users
     await _close_project(
         base_client, base_client_tab_id, shared_project, expected.no_content
     )

@@ -1593,6 +1593,31 @@ async def try_open_project_for_user(
                     len(sessions_with_project)
                     >= max_number_of_user_sessions_per_project
                 ):
+                    # we need to check has an inactive session in which case we can steal the project
+                    this_user_other_sessions = [
+                        s
+                        for s in sessions_with_project
+                        if s.user_id == user_id and s != user_session
+                    ]
+                    for session in this_user_other_sessions:
+                        with managed_resource(
+                            session.user_id, session.client_session_id, app
+                        ) as other_user_session:
+                            if await other_user_session.get_socket_id() is None:
+                                # this user has an inactive session, we can steal the project
+                                _logger.debug(
+                                    "stealing project %s from user %s/%s",
+                                    project_uuid,
+                                    session.user_id,
+                                    session.client_session_id,
+                                )
+                                await user_session.add(
+                                    PROJECT_ID_KEY, f"{project_uuid}"
+                                )
+                                await other_user_session.remove(PROJECT_ID_KEY)
+
+                                return True
+
                     raise ProjectTooManyUserSessionsError(
                         max_num_sessions=max_number_of_user_sessions_per_project,
                         user_id=user_id,
