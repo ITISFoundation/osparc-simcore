@@ -16,7 +16,7 @@ from .namespace import get_rabbit_namespace
 
 _logger = logging.getLogger(__name__)
 
-_RPC_TIMEOUT_VERY_LONG_REQUEST: Final[PositiveInt] = int(
+_RPC_TIMEOUT_TASK_REMOVAL: Final[PositiveInt] = int(
     timedelta(minutes=60).total_seconds()
 )
 _RPC_TIMEOUT_SHORT_REQUESTS: Final[PositiveInt] = int(
@@ -136,6 +136,6 @@ async def remove_task(
         task_context=task_context,
         task_id=task_id,
         reraise_errors=reraise_errors,
-        timeout_s=_RPC_TIMEOUT_VERY_LONG_REQUEST,
+        timeout_s=_RPC_TIMEOUT_TASK_REMOVAL,
     )
     assert result is None  # nosec

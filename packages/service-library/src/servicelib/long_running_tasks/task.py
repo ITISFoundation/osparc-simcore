@@ -419,14 +419,12 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
             retry=retry_if_exception_type(TryAgain),
         ):
-            with attempt:
-                try:
+            with attempt:  # noqa: SIM117
+                with suppress(TaskNotFoundError):
                     await self._get_tracked_task(
                         tracked_task.task_id, tracked_task.task_context
                     )
                     raise TryAgain
-                except TaskNotFoundError:
-                    pass
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         id_part = "unique" if is_unique else f"{uuid4()}"
