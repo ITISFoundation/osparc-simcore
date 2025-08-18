@@ -1,4 +1,11 @@
+from models_library.basic_types import IDStr
 from models_library.functions import FunctionID
+from models_library.rest_base import RequestParameters
+from models_library.rest_ordering import (
+    OrderBy,
+    OrderDirection,
+    create_ordering_query_model_class,
+)
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import BaseModel, ConfigDict
 
@@ -19,7 +26,19 @@ class _FunctionQueryParams(BaseModel):
 class FunctionGetQueryParams(_FunctionQueryParams): ...
 
 
-class FunctionsListQueryParams(PageQueryParameters, _FunctionQueryParams): ...
+_FunctionOrderQueryParams: type[RequestParameters] = create_ordering_query_model_class(
+    ordering_fields={
+        "name",
+        "created_at",
+        "modified_at",
+    },
+    default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+)
+
+
+class FunctionsListQueryParams(
+    PageQueryParameters, _FunctionOrderQueryParams, _FunctionQueryParams
+): ...
 
 
 __all__: tuple[str, ...] = ("AuthenticatedRequestContext",)

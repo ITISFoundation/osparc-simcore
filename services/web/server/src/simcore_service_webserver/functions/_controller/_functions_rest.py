@@ -17,6 +17,7 @@ from models_library.functions import (
     RegisteredSolverFunction,
 )
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
@@ -164,6 +165,7 @@ async def list_functions(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     chunk: list[RegisteredFunctionGet] = []
