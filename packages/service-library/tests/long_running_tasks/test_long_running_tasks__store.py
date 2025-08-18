@@ -50,11 +50,13 @@ async def test_workflow(store: RedisStore, task_data: TaskData) -> None:
     assert await store.list_tasks_data() == []
 
     # cancelled tasks
-    assert await store.get_cancelled() == {}
+    assert await store.get_all_to_cancel() == {}
 
-    await store.set_as_cancelled(task_data.task_id, task_data.task_context)
+    await store.set_to_cancel(task_data.task_id, task_data.task_context)
 
-    assert await store.get_cancelled() == {task_data.task_id: task_data.task_context}
+    assert await store.get_all_to_cancel() == {
+        task_data.task_id: task_data.task_context
+    }
 
 
 @pytest.fixture
@@ -87,15 +89,15 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
 
     for store in redis_stores:
         assert await store.list_tasks_data() == []
-        assert await store.get_cancelled() == {}
+        assert await store.get_all_to_cancel() == {}
 
     for store in redis_stores:
         await store.add_task_data(task_data.task_id, task_data)
-        await store.set_as_cancelled(task_data.task_id, None)
+        await store.set_to_cancel(task_data.task_id, {})
 
     for store in redis_stores:
         assert await store.list_tasks_data() == [task_data]
-        assert await store.get_cancelled() == {task_data.task_id: None}
+        assert await store.get_all_to_cancel() == {task_data.task_id: {}}
 
     for store in redis_stores:
         await store.delete_task_data(task_data.task_id)
