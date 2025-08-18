@@ -14,7 +14,6 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import ProgressMessage
 from servicelib.long_running_tasks import lrt_api
-from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
 from servicelib.long_running_tasks.base_long_running_manager import (
     BaseLongRunningManager,
 )
@@ -25,7 +24,7 @@ from servicelib.long_running_tasks.errors import (
     TaskNotRegisteredError,
 )
 from servicelib.long_running_tasks.models import (
-    RedisNamespace,
+    LRTNamespace,
     TaskContext,
     TaskProgress,
     TaskStatus,
@@ -95,12 +94,12 @@ async def long_running_manager(
     use_in_memory_redis: RedisSettings,
     rabbit_service: RabbitSettings,
     get_long_running_manager: Callable[
-        [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
+        [RedisSettings, RabbitSettings, LRTNamespace | None],
         Awaitable[BaseLongRunningManager],
     ],
 ) -> BaseLongRunningManager:
     return await get_long_running_manager(
-        use_in_memory_redis, None, rabbit_service, "rabbit-namespace"
+        use_in_memory_redis, rabbit_service, "rabbit-namespace"
     )
 
 
@@ -359,19 +358,19 @@ async def test_cancel_task_from_different_manager(
     rabbit_service: RabbitSettings,
     use_in_memory_redis: RedisSettings,
     get_long_running_manager: Callable[
-        [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
+        [RedisSettings, RabbitSettings, LRTNamespace | None],
         Awaitable[BaseLongRunningManager],
     ],
     empty_context: TaskContext,
 ):
     manager_1 = await get_long_running_manager(
-        use_in_memory_redis, "test-namespace", rabbit_service, "test-namespace"
+        use_in_memory_redis, rabbit_service, "test-namespace"
     )
     manager_2 = await get_long_running_manager(
-        use_in_memory_redis, "test-namespace", rabbit_service, "test-namespace"
+        use_in_memory_redis, rabbit_service, "test-namespace"
     )
     manager_3 = await get_long_running_manager(
-        use_in_memory_redis, "test-namespace", rabbit_service, "test-namespace"
+        use_in_memory_redis, rabbit_service, "test-namespace"
     )
 
     task_id = await lrt_api.start_task(

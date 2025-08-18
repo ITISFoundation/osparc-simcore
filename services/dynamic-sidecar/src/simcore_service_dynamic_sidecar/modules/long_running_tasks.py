@@ -635,9 +635,8 @@ def setup_long_running_tasks(app: FastAPI) -> None:
     long_running_tasks.server.setup(
         app,
         redis_settings=app_settings.REDIS_SETTINGS,
-        redis_namespace=f"dy_sidecar-{app_settings.DY_SIDECAR_RUN_ID}",
         rabbit_settings=app_settings.RABBIT_SETTINGS,
-        rabbit_namespace=f"dy_sidecar-{app_settings.DY_SIDECAR_RUN_ID}",
+        lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
     )
 
     async def on_startup() -> None:

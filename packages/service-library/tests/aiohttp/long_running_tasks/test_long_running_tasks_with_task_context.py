@@ -78,9 +78,8 @@ def app_with_task_context(
     long_running_tasks.server.setup(
         app,
         redis_settings=use_in_memory_redis,
-        redis_namespace="test",
         rabbit_settings=rabbit_service,
-        rabbit_namespace="test",
+        lrt_namespace="test",
         router_prefix="/futures_with_task_context",
         task_request_context_decorator=task_context_decorator,
     )

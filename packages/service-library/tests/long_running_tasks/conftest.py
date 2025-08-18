@@ -10,11 +10,10 @@ import pytest
 from faker import Faker
 from pytest_mock import MockerFixture
 from servicelib.logging_utils import log_catch
-from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
 from servicelib.long_running_tasks.base_long_running_manager import (
     BaseLongRunningManager,
 )
-from servicelib.long_running_tasks.models import RedisNamespace
+from servicelib.long_running_tasks.models import LRTNamespace
 from servicelib.long_running_tasks.task import TasksManager
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
@@ -29,7 +28,7 @@ async def get_long_running_manager(
     fast_long_running_tasks_cancellation: None, faker: Faker
 ) -> AsyncIterator[
     Callable[
-        [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
+        [RedisSettings, RabbitSettings, LRTNamespace | None],
         Awaitable[BaseLongRunningManager],
     ]
 ]:
@@ -37,17 +36,15 @@ async def get_long_running_manager(
 
     async def _(
         redis_settings: RedisSettings,
-        namespace: RedisNamespace | None,
         rabbit_settings: RabbitSettings,
-        rabbit_namespace: RabbitNamespace,
+        lrt_namespace: LRTNamespace | None,
     ) -> BaseLongRunningManager:
         manager = BaseLongRunningManager(
             stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
             stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
-            redis_namespace=namespace or f"test{faker.uuid4()}",
             redis_settings=redis_settings,
-            rabbit_namespace=rabbit_namespace,
             rabbit_settings=rabbit_settings,
+            lrt_namespace=lrt_namespace or f"test{faker.uuid4()}",
         )
         await manager.setup()
         managers.append(manager)

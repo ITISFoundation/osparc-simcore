@@ -23,9 +23,8 @@ async def bg_task_app(
     long_running_tasks.server.setup(
         app,
         redis_settings=redis_service,
-        redis_namespace="test",
         rabbit_settings=rabbit_service,
-        rabbit_namespace="test",
+        lrt_namespace="test",
         router_prefix=router_prefix,
     )
     return app

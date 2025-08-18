@@ -21,12 +21,7 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_CHECK_INTERVAL,
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
-from ...long_running_tasks.models import (
-    RabbitNamespace,
-    RedisNamespace,
-    TaskContext,
-    TaskGet,
-)
+from ...long_running_tasks.models import LRTNamespace, TaskContext, TaskGet
 from ...long_running_tasks.task import RegisteredTaskName
 from ..typing_extension import Handler
 from . import _routes
@@ -152,9 +147,8 @@ def setup(
     *,
     router_prefix: str,
     redis_settings: RedisSettings,
-    redis_namespace: RedisNamespace,
     rabbit_settings: RabbitSettings,
-    rabbit_namespace: RabbitNamespace,
+    lrt_namespace: LRTNamespace,
     handler_check_decorator: Callable = _no_ops_decorator,
     task_request_context_decorator: Callable = _no_task_context_decorator,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
@@ -183,8 +177,7 @@ def setup(
                 stale_task_detect_timeout=stale_task_detect_timeout,
                 redis_settings=redis_settings,
                 rabbit_settings=rabbit_settings,
-                redis_namespace=redis_namespace,
-                rabbit_namespace=rabbit_namespace,
+                lrt_namespace=lrt_namespace,
             )
         )
 

@@ -108,9 +108,8 @@ async def app(
     setup_server(
         app,
         redis_settings=use_in_memory_redis,
-        redis_namespace="test",
         rabbit_settings=rabbit_service,
-        rabbit_namespace="test",
+        lrt_namespace="test",
     )
     setup_client(app)
     async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):

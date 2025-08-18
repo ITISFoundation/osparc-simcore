@@ -4,8 +4,8 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
-from ._rabbit.namespace import get_namespace
-from .models import RabbitNamespace, RedisNamespace
+from ._rabbit.namespace import get_rabbit_namespace
+from .models import LRTNamespace
 from .task import TasksManager
 
 
@@ -20,16 +20,15 @@ class BaseLongRunningManager:
         stale_task_detect_timeout: datetime.timedelta,
         redis_settings: RedisSettings,
         rabbit_settings: RabbitSettings,
-        redis_namespace: RedisNamespace,
-        rabbit_namespace: RabbitNamespace,
+        lrt_namespace: LRTNamespace,
     ):
         self._tasks_manager = TasksManager(
             stale_task_check_interval=stale_task_check_interval,
             stale_task_detect_timeout=stale_task_detect_timeout,
             redis_settings=redis_settings,
-            redis_namespace=redis_namespace,
+            lrt_namespace=lrt_namespace,
         )
-        self._rabbit_namespace = rabbit_namespace
+        self._lrt_namespace = lrt_namespace
         self.rabbit_settings = rabbit_settings
         self._rpc_server: RabbitMQRPCClient | None = None
         self._rpc_client: RabbitMQRPCClient | None = None
@@ -49,17 +48,17 @@ class BaseLongRunningManager:
         return self._rpc_client
 
     @property
-    def rabbit_namespace(self) -> RabbitNamespace:
-        return self._rabbit_namespace
+    def lrt_namespace(self) -> LRTNamespace:
+        return self._lrt_namespace
 
     async def setup(self) -> None:
         await self._tasks_manager.setup()
         self._rpc_server = await RabbitMQRPCClient.create(
-            client_name=f"lrt-server-{self.rabbit_namespace}",
+            client_name=f"lrt-server-{self.lrt_namespace}",
             settings=self.rabbit_settings,
         )
         self._rpc_client = await RabbitMQRPCClient.create(
-            client_name=f"lrt-client-{self.rabbit_namespace}",
+            client_name=f"lrt-client-{self.lrt_namespace}",
             settings=self.rabbit_settings,
         )
 
@@ -67,7 +66,7 @@ class BaseLongRunningManager:
 
         await self.rpc_server.register_router(
             router,
-            get_namespace(self.rabbit_namespace),
+            get_rabbit_namespace(self.lrt_namespace),
             self,
         )
 

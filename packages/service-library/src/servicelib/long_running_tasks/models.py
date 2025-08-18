@@ -28,8 +28,7 @@ ProgressCallback: TypeAlias = Callable[
 RequestBody: TypeAlias = Any
 TaskContext: TypeAlias = dict[str, Any]
 
-RabbitNamespace: TypeAlias = str
-RedisNamespace: TypeAlias = str
+LRTNamespace: TypeAlias = str
 
 
 class ResultField(BaseModel):

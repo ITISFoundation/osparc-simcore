@@ -106,9 +106,8 @@ async def bg_task_app(
         app,
         router_prefix=router_prefix,
         redis_settings=use_in_memory_redis,
-        redis_namespace="test",
         rabbit_settings=rabbit_service,
-        rabbit_namespace="test",
+        lrt_namespace="test",
     )
     setup_client(app, router_prefix=router_prefix)
 

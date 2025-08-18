@@ -10,12 +10,11 @@ import pytest
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeInt
 from servicelib.long_running_tasks import lrt_api
-from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
 from servicelib.long_running_tasks.base_long_running_manager import (
     BaseLongRunningManager,
 )
 from servicelib.long_running_tasks.errors import TaskNotFoundError
-from servicelib.long_running_tasks.models import RedisNamespace, TaskContext
+from servicelib.long_running_tasks.models import LRTNamespace, TaskContext
 from servicelib.long_running_tasks.task import TaskId, TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
@@ -71,14 +70,14 @@ async def long_running_managers(
     use_in_memory_redis: RedisSettings,
     rabbit_service: RabbitSettings,
     get_long_running_manager: Callable[
-        [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
+        [RedisSettings, RabbitSettings, LRTNamespace | None],
         Awaitable[BaseLongRunningManager],
     ],
 ) -> list[BaseLongRunningManager]:
     maanagers: list[BaseLongRunningManager] = []
     for _ in range(managers_count):
         long_running_manager = await get_long_running_manager(
-            use_in_memory_redis, "same-service", rabbit_service, "some-service"
+            use_in_memory_redis, rabbit_service, "some-service"
         )
         maanagers.append(long_running_manager)
 
