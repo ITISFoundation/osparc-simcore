@@ -14,7 +14,7 @@ from ...models.schemas.application_health import ApplicationHealth
 from ...models.shared_store import SharedStore
 from ...modules.inputs import InputsState
 from ...modules.mounted_fs import MountedVolumes
-from ...modules.outputs import OutputsContext, OutputsManager
+from ...modules.outputs import OutputsManager
 from ...modules.prometheus_metrics import UserServicesMetrics
 
 
@@ -60,12 +60,6 @@ def get_outputs_manager(
     app_state: Annotated[State, Depends(get_app_state)],
 ) -> OutputsManager:
     return cast(OutputsManager, app_state.outputs_manager)
-
-
-def get_outputs_context(
-    app_state: Annotated[State, Depends(get_app_state)],
-) -> OutputsContext:
-    return cast(OutputsContext, app_state.outputs_context)
 
 
 def get_inputs_state(
