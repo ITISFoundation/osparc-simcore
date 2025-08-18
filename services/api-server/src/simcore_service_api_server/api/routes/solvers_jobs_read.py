@@ -21,7 +21,7 @@ from servicelib.logging_utils import log_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
-from ..._service_jobs import JobService, compose_job_resource_name
+from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -275,7 +275,8 @@ async def get_job(
 ):
     """Gets job of a given solver"""
     _logger.debug(
-        "Getting Job '%s'", compose_job_resource_name(solver_key, version, job_id)
+        "Getting Job '%s'",
+        compose_solver_job_resource_name(solver_key, version, job_id),
     )
 
     solver = await solver_service.get_solver(
@@ -312,7 +313,7 @@ async def get_job_outputs(
     job_service: Annotated[JobService, Depends(get_job_service)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs", job_name)
 
     project_marked_as_job = await job_service.get_job(
@@ -395,7 +396,7 @@ async def get_job_output_logfile(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs logfile", job_name)
 
     project_id = job_id
@@ -451,7 +452,7 @@ async def get_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
     return await get_custom_metadata(
@@ -481,7 +482,7 @@ async def get_job_wallet(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> WalletGetWithAvailableCreditsLegacy:
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
     if project_wallet := await webserver_api.get_project_wallet(project_id=job_id):
@@ -504,7 +505,7 @@ async def get_job_pricing_unit(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     with log_context(_logger, logging.DEBUG, "Get pricing unit"):
         _logger.debug("job: %s", job_name)
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
@@ -535,7 +536,7 @@ async def get_log_stream(
 ):
     assert request  # nosec
 
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     with log_context(
         _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"
     ):

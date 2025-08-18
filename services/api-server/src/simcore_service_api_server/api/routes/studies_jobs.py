@@ -12,7 +12,7 @@ from models_library.projects_nodes_io import NodeID
 from pydantic import HttpUrl, PositiveInt
 from servicelib.logging_utils import log_context
 
-from ..._service_jobs import JobService
+from ..._service_jobs import JobService, compose_study_job_resource_name
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...models.api_resources import parse_resources_ids
 from ...models.pagination import Page, PaginationParams
@@ -27,12 +27,11 @@ from ...models.schemas.jobs import (
     JobPricingSpecification,
     JobStatus,
 )
-from ...models.schemas.studies import JobLogsMap, Study, StudyID
+from ...models.schemas.studies import JobLogsMap, StudyID
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import (
     get_custom_metadata,
     replace_custom_metadata,
-    start_project,
     stop_project,
 )
 from ...services_http.storage import StorageApi
@@ -55,14 +54,6 @@ _logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
-
-
-def _compose_job_resource_name(study_key, job_id) -> str:
-    """Creates a unique resource name for solver's jobs"""
-    return Job.compose_resource_name(
-        parent_name=Study.compose_resource_name(study_key),
-        job_id=job_id,
-    )
 
 
 @router.get(
@@ -129,7 +120,7 @@ async def create_study_job(
         x_simcore_parent_node_id=x_simcore_parent_node_id,
         hidden=hidden,
     )
-    assert job.name == _compose_job_resource_name(study_id, job.id)
+    assert job.name == compose_study_job_resource_name(study_id, job.id)
     job.url = url_for(
         "get_study_job",
         study_id=study_id,
@@ -175,7 +166,7 @@ async def delete_study_job(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
     """Deletes an existing study job"""
-    job_name = _compose_job_resource_name(study_id, job_id)
+    job_name = compose_study_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Deleting Job '{job_name}'"):
         await webserver_api.delete_project(project_id=job_id)
 
@@ -212,7 +203,6 @@ async def start_study_job(
     request: Request,
     study_id: StudyID,
     job_id: JobID,
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None,
@@ -230,29 +220,21 @@ async def start_study_job(
 ):
     pricing_spec = JobPricingSpecification.create_from_headers(headers=request.headers)
 
-    job_name = _compose_job_resource_name(study_id, job_id)
+    job_name = compose_study_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Starting Job '{job_name}'"):
         try:
-            await start_project(
+            return await job_service.start_study_job(
+                study_id=study_id,
                 job_id=job_id,
-                expected_job_name=job_name,
-                webserver_api=webserver_api,
                 pricing_spec=pricing_spec,
             )
         except ProjectAlreadyStartedError:
-            job_status: JobStatus = await inspect_study_job(
-                study_id=study_id,
+            job_status: JobStatus = await job_service.inspect_study_job(
                 job_id=job_id,
-                job_service=job_service,
             )
             return JSONResponse(
                 content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK
             )
-        return await inspect_study_job(
-            study_id=study_id,
-            job_id=job_id,
-            job_service=job_service,
-        )
 
 
 @router.post(
@@ -265,7 +247,7 @@ async def stop_study_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = _compose_job_resource_name(study_id, job_id)
+    job_name = compose_study_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Stopping Job '{job_name}'"):
         return await stop_project(
             job_id=job_id, user_id=user_id, director2_api=director2_api
@@ -281,7 +263,7 @@ async def inspect_study_job(
     job_id: JobID,
     job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> JobStatus:
-    job_name = _compose_job_resource_name(study_id, job_id)
+    job_name = compose_study_job_resource_name(study_id, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
     return await job_service.inspect_study_job(job_id=job_id)
@@ -298,7 +280,7 @@ async def get_study_job_outputs(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    job_name = _compose_job_resource_name(study_id, job_id)
+    job_name = compose_study_job_resource_name(study_id, job_id)
     _logger.debug("Getting Job Outputs for '%s'", job_name)
 
     project_outputs = await webserver_api.get_project_outputs(project_id=job_id)
@@ -345,7 +327,7 @@ async def get_study_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = _compose_job_resource_name(study_id, job_id)
+    job_name = compose_study_job_resource_name(study_id, job_id)
     msg = f"Gets metadata attached to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     _logger.debug(msg)
 
@@ -376,7 +358,7 @@ async def replace_study_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = _compose_job_resource_name(study_id, job_id)
+    job_name = compose_study_job_resource_name(study_id, job_id)
 
     msg = f"Attaches metadata={replace.metadata!r} to study_id={study_id!r} job_id={job_id!r}.\njob_name={job_name!r}.\nSEE https://github.com/ITISFoundation/osparc-simcore/issues/4313"
     _logger.debug(msg)

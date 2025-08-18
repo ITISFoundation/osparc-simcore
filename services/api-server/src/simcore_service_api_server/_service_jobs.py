@@ -43,7 +43,7 @@ from .models.schemas.jobs import (
 )
 from .models.schemas.programs import Program
 from .models.schemas.solvers import Solver, SolverKeyId
-from .models.schemas.studies import StudyID
+from .models.schemas.studies import Study, StudyID
 from .services_http.director_v2 import DirectorV2Api
 from .services_http.jobs import start_project
 from .services_http.solver_job_models_converters import (
@@ -65,10 +65,18 @@ from .services_rpc.wb_api_server import WbApiRpcClient
 _logger = logging.getLogger(__name__)
 
 
-def compose_job_resource_name(solver_key, solver_version, job_id) -> str:
+def compose_solver_job_resource_name(solver_key, solver_version, job_id) -> str:
     """Creates a unique resource name for solver's jobs"""
     return Job.compose_resource_name(
         parent_name=Solver.compose_resource_name(solver_key, solver_version),
+        job_id=job_id,
+    )
+
+
+def compose_study_job_resource_name(study_key, job_id) -> str:
+    """Creates a unique resource name for study's jobs"""
+    return Job.compose_resource_name(
+        parent_name=Study.compose_resource_name(study_key),
         job_id=job_id,
     )
 
@@ -352,7 +360,7 @@ class JobService:
         """
         Raises ProjectAlreadyStartedError if the project is already started
         """
-        job_name = compose_job_resource_name(solver_key, version, job_id)
+        job_name = compose_solver_job_resource_name(solver_key, version, job_id)
         _logger.debug("Start Job '%s'", job_name)
         job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
         job = await self.get_job(
@@ -446,3 +454,21 @@ class JobService:
         )
         job_status: JobStatus = create_jobstatus_from_task(task)
         return job_status
+
+    async def start_study_job(
+        self,
+        *,
+        job_id: JobID,
+        study_id: StudyID,
+        pricing_spec: JobPricingSpecification | None,
+    ):
+        job_name = compose_study_job_resource_name(study_id, job_id)
+        await start_project(
+            job_id=job_id,
+            expected_job_name=job_name,
+            webserver_api=self._web_rest_client,
+            pricing_spec=pricing_spec,
+        )
+        return await self.inspect_study_job(
+            job_id=job_id,
+        )
