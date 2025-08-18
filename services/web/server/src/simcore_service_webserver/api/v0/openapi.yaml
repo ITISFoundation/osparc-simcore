@@ -593,19 +593,17 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: name
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Name
       - name: type
         in: query
         required: true
         schema:
           $ref: '#/components/schemas/ConversationType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationPatch'
       responses:
         '200':
           description: Successful Response
@@ -704,8 +702,6 @@ paths:
         required: false
         schema:
           type: integer
-          maximum: 50
-          minimum: 1
           default: 20
           title: Limit
       - name: offset
@@ -713,7 +709,6 @@ paths:
         required: false
         schema:
           type: integer
-          minimum: 0
           default: 0
           title: Offset
       responses:
@@ -10210,6 +10205,15 @@ components:
       - MESSAGE
       - NOTIFICATION
       title: ConversationMessageType
+    ConversationPatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+      type: object
+      title: ConversationPatch
     ConversationRestGet:
       properties:
         conversationId:

@@ -11,6 +11,7 @@ This OAS are the source of truth
 
 from typing import Annotated
 
+from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.conversations import (
     ConversationMessagePatch,
@@ -74,8 +75,8 @@ async def list_conversations(
 )
 async def update_conversation(
     _params: Annotated[ConversationPathParams, Depends()],
-    _body: Annotated[ConversationPatch, Depends()],
-    _query: Annotated[_GetConversationsQueryParams, Depends()],
+    _body: ConversationPatch,
+    _query: Annotated[as_query(_GetConversationsQueryParams), Depends()],
 ): ...
 
 
@@ -85,7 +86,7 @@ async def update_conversation(
 )
 async def delete_conversation(
     _params: Annotated[ConversationPathParams, Depends()],
-    _query: Annotated[_GetConversationsQueryParams, Depends()],
+    _query: Annotated[as_query(_GetConversationsQueryParams), Depends()],
 ): ...
 
 
@@ -95,7 +96,7 @@ async def delete_conversation(
 )
 async def get_conversation(
     _params: Annotated[ConversationPathParams, Depends()],
-    _query: Annotated[_GetConversationsQueryParams, Depends()],
+    _query: Annotated[as_query(_GetConversationsQueryParams), Depends()],
 ): ...
 
 
@@ -121,7 +122,7 @@ async def create_conversation_message(
 )
 async def list_conversation_messages(
     _params: Annotated[ConversationPathParams, Depends()],
-    _query: Annotated[_ListConversationMessageQueryParams, Depends()],
+    _query: Annotated[as_query(_ListConversationMessageQueryParams), Depends()],
 ): ...
 
 
