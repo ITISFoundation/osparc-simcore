@@ -3,7 +3,7 @@ Models Node as a central element in a project's pipeline
 """
 
 from enum import auto
-from typing import Annotated, Any, TypeAlias, Union
+from typing import Annotated, Any, Self, TypeAlias, Union
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
@@ -104,7 +104,7 @@ class NodeShareState(BaseModel):
     ] = None
 
     @model_validator(mode="after")
-    def _validate_lock_state(self) -> "NodeShareState":
+    def _validate_lock_state(self) -> Self:
         if self.locked and (self.current_user_groupids is None or self.status is None):
             msg = "If the node is locked, both 'current_user_groupids' and 'status' must be set"
             raise ValueError(msg)
