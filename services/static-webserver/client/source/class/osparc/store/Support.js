@@ -22,18 +22,19 @@ qx.Class.define("osparc.store.Support", {
     addSupportConversationsToMenu: function(menu) {
       if (osparc.product.Utils.isSupportEnabled()) {
         const supportCenterButton = new qx.ui.menu.Button().set({
-          label: qx.locale.Manager.tr("Ask a Question"),
           icon: "@FontAwesome5Regular/question-circle/16",
         });
         const amISupporter = () => {
-          if (osparc.store.Products.getInstance().amIASupportUser()) {
-            supportCenterButton.set({
-              label: qx.locale.Manager.tr("Support Center"),
-            });
-          }
-        }
+          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
+          supportCenterButton.set({
+            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Ask a Question"),
+          });
+        };
         amISupporter();
         osparc.store.Groups.getInstance().addListener("organizationsChanged", () => amISupporter());
+        supportCenterButton.addListener("execute", () => {
+          osparc.support.SupportCenter.openWindow();
+        });
         menu.add(supportCenterButton);
       }
     },
