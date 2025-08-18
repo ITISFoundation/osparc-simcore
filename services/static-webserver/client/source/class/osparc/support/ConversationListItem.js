@@ -29,141 +29,39 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
   properties: {
     conversationId: {
-      check: "Number",
+      check: "String",
       init: null,
       nullable: false,
       event: "changeConversationId",
       apply: "__applyConversationId",
     },
-
-    /*
-    thumbnail: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeThumbnail",
-    },
-
-    title: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeTitle",
-    },
-
-    author: {
-      check: "String",
-      init: null,
-      nullable: false,
-      event: "changeAuthor",
-    },
-
-    lastModified: {
-      check: "Date",
-      init: null,
-      nullable: false,
-      event: "changeLastModified",
-    },
-    */
-  },
-
-  statics: {
-    GRID_POS: {
-      THUMBNAIL: {
-        row: 0,
-        column: 0,
-        rowSpan: 2,
-      },
-      TITLE: {
-        row: 0,
-        column: 1,
-        colSpan: 2,
-      },
-      AUTHOR: {
-        row: 1,
-        column: 1,
-      },
-      LAST_MODIFIED: {
-        row: 1,
-        column: 2,
-      },
-      BUTTON: {
-        row: 0,
-        column: 3,
-        rowSpan: 2
-      },
-    }
   },
 
   members: {
-    /*
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "thumbnail":
-          control = new qx.ui.basic.Image().set({
-            alignY: "middle",
-            scale: true,
-            allowGrowX: true,
-            allowGrowY: true,
-            allowShrinkX: true,
-            allowShrinkY: true,
-            maxWidth: 32,
-            maxHeight: 32
-          });
-          this._add(control, this.self().GRID_POS.THUMBNAIL);
-          break;
-        case "title":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14",
-            alignY: "middle",
-          });
-          this._add(control, this.self().GRID_POS.TITLE);
-          break;
-        case "author":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13"
-          });
-          this._add(control, this.self().GRID_POS.AUTHOR);
-          break;
-        case "author":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13"
-          });
-          this._add(control, this.self().GRID_POS.LAST_MODIFIED);
-          break;
-        case "enter-button":
-          control = new qx.ui.form.Button().set({
-            icon: "@FontAwesome5Solid/info/14"
-          });
-          this._add(control, this.self().GRID_POS.BUTTON);
-          break;
-      }
-
-      return control || this.base(arguments, id);
-    },
-    */
-
     __applyConversationId: function(conversationId) {
-      Promise.all([
-        osparc.store.ConversationsSupport.getInstance().getConversation(conversationId),
-        osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
-      ])
-      .then(([conversation, lastMessages]) => {
-        if (conversation) {
-          this.set({
-            thumbnail: conversation.thumbnail,
-            title: conversation.title,
-            author: conversation.author,
-            lastModified: conversation.lastModified,
-          });
-        }
-        if (lastMessages && lastMessages.length) {
-            this.set({
-              title: lastMessages[0].title,
-              author: lastMessages[0].author,
-              lastModified: lastMessages[0].lastModified,
+      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
+        .then(lastMessages => {
+          if (lastMessages && lastMessages.length) {
+            this.getChildControl("thumbnail").set({
+              decorator: "rounded",
             });
+            const lastMessage = lastMessages[0];
+            const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
+            this.set({
+              title: lastMessage.content,
+              subtitle: date,
+            });
+
+            const userGroupId = lastMessage.userGroupId;
+            osparc.store.Users.getInstance().getUser(userGroupId)
+              .then(user => {
+                if (user) {
+                  this.set({
+                    thumbnail: user.getThumbnail(),
+                    subtitle: user.getLabel() + " - " + date,
+                  });
+                }
+              });
           }
         });
     },

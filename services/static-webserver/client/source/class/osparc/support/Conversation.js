@@ -171,8 +171,6 @@ qx.Class.define("osparc.support.Conversation", {
       setTimeout(() => {
         this.__messageScroll.scrollToY(this.__messageScroll.getChildControl("pane").getScrollMaxY());
       }, 50);
-
-      this.__updateMessagesNumber();
     },
 
     deleteMessage: function(message) {
@@ -191,8 +189,6 @@ qx.Class.define("osparc.support.Conversation", {
       if (controlIndex > -1) {
         this.__messagesList.remove(children[controlIndex]);
       }
-
-      this.__updateMessagesNumber();
     },
 
     updateMessage: function(message) {

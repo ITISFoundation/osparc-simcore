@@ -165,7 +165,9 @@ qx.Class.define("osparc.support.Conversations", {
         return null;
       }
 
-      const conversationListItem = new osparc.support.ConversationListItem(conversationData["conversationId"]);
+      const conversationListItem = new osparc.support.ConversationListItem();
+      conversationListItem.setConversationId(conversationData["conversationId"]);
+
       const conversationsLayout = this.getChildControl("conversations-layout");
       conversationsLayout.add(conversationListItem);
 
