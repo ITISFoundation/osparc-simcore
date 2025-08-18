@@ -1,11 +1,7 @@
 import base64
-import logging
 import pickle
 from abc import ABC, abstractmethod
 from typing import Any, Final, Generic, TypeVar
-
-_logger = logging.getLogger(__name__)
-
 
 T = TypeVar("T")
 

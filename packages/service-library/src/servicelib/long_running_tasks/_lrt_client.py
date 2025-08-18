@@ -5,14 +5,14 @@ from typing import Any, Final
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import PositiveInt, TypeAdapter
 
-from ...logging_errors import create_troubleshootting_log_kwargs
-from ...logging_utils import log_decorator
-from ...long_running_tasks.task import RegisteredTaskName
-from ...rabbitmq._client_rpc import RabbitMQRPCClient
-from .._serialization import string_to_object
-from ..models import LRTNamespace, TaskBase, TaskContext, TaskId, TaskStatus
+from ..logging_errors import create_troubleshootting_log_kwargs
+from ..logging_utils import log_decorator
+from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._models import RPCErrorResponse
-from .namespace import get_rabbit_namespace
+from ._rabbit_namespace import get_rabbit_namespace
+from ._serialization import string_to_object
+from .models import LRTNamespace, TaskBase, TaskContext, TaskId, TaskStatus
+from .task import RegisteredTaskName
 
 _logger = logging.getLogger(__name__)
 
