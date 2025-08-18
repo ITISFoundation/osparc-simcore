@@ -145,17 +145,17 @@ qx.Class.define("osparc.conversation.AddMessage", {
       this.getChildControl("thumbnail");
       this.getChildControl("comment-field");
       this.getChildControl("add-comment-button");
-      this.getChildControl("notify-user-button");
     },
 
     __applyStudyData: function(studyData) {
+      const notifyUserButton = this.getChildControl("notify-user-button");
       if (studyData) {
         const canIWrite = osparc.data.model.Study.canIWrite(studyData["accessRights"])
         this.getChildControl("add-comment-button").setEnabled(canIWrite);
-        this.getChildControl("notify-user-button").show();
-        this.getChildControl("notify-user-button").setEnabled(canIWrite);
+        notifyUserButton.show();
+        notifyUserButton.setEnabled(canIWrite);
       } else {
-        this.getChildControl("notify-user-button").exclude();
+        notifyUserButton.exclude();
       }
     },
 
