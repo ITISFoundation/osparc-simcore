@@ -863,6 +863,7 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
         "dynamic_scheduler.api.get_dynamic_service"
     ].return_value = DynamicServiceGet.model_validate(
         DynamicServiceGet.model_json_schema()["examples"][0]
+        | {"user_id": logged_user["id"], "project_id": project["uuid"]}
     )
 
     response = await client.post(f"{url}")
@@ -897,6 +898,7 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
         "dynamic_scheduler.api.get_dynamic_service"
     ].return_value = NodeGetIdle.model_validate(
         NodeGetIdle.model_json_schema()["examples"][0]
+        | {"user_id": logged_user["id"], "project_id": project["uuid"]}
     )
     response = await client.post(f"{url}")
     await assert_status(response, expected.accepted)
