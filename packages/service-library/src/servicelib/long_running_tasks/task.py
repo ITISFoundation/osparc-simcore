@@ -21,7 +21,6 @@ from tenacity import (
 )
 
 from ..background_task import create_periodic_task
-from ..logging_utils import log_catch
 from ..redis import RedisClientSDK, exclusive
 from ._redis_store import RedisStore
 from ._serialization import object_to_string, string_to_object
@@ -203,11 +202,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             # since the task is using a redis lock if the lock could not be acquired
             # trying to cancel the task will hang, this avoids hanging
             # there are no sideeffects in timing out this cancellation
-            with log_catch(_logger, reraise=False):
-                await cancel_wait_task(
-                    self._task_stale_tasks_monitor,
-                    max_delay=_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT,
-                )
+            # with log_catch(_logger, reraise=False):
+            await cancel_wait_task(
+                self._task_stale_tasks_monitor,
+                max_delay=_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT,
+            )
 
         # cancelled_tasks_removal
         if self._task_cancelled_tasks_removal:
@@ -277,7 +276,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         cancelled_tasks = await self._tasks_data.get_all_to_cancel()
         for task_id in cancelled_tasks:
-            await self._cancel_and_remove_local_task(task_id)
+            await self._attempt_cancel_and_remove_local_task(task_id)
 
     async def _status_update(self) -> None:
         """
@@ -391,8 +390,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         return string_to_object(tracked_task.result_field.result)
 
-    async def _cancel_and_remove_local_task(self, task_id: TaskId) -> None:
-        """cancels task and removes if from local tracker if this is the worke that started it"""
+    async def _attempt_cancel_and_remove_local_task(self, task_id: TaskId) -> None:
+        """if task is running in the local process, cancel it and remove it"""
 
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
