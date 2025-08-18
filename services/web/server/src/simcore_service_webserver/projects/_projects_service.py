@@ -1565,6 +1565,17 @@ async def try_open_project_for_user(
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
+                # check if the project is already opened
+                if (
+                    current_project_ids := await user_session.find(PROJECT_ID_KEY)
+                ) and current_project_ids == [f"{project_uuid}"]:
+                    _logger.debug(
+                        "project %s is already opened by user %s/%s",
+                        project_uuid,
+                        user_id,
+                        client_session_id,
+                    )
+                    return True
                 # Enforce per-user open project limit
                 if max_number_of_opened_projects_per_user is not None and (
                     len(
@@ -1585,7 +1596,7 @@ async def try_open_project_for_user(
                         client_session_id=client_session_id,
                     )
 
-                # Assign project_id to current_session
+                # try to assign project_id to current_session
                 sessions_with_project = await user_session.find_users_of_resource(
                     app, PROJECT_ID_KEY, f"{project_uuid}"
                 )
