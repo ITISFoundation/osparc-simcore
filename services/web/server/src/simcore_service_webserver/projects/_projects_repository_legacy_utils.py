@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Any, Literal, cast
 
 import sqlalchemy as sa
+from sqlalchemy.ext.asyncio import AsyncConnection
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID, ProjectType
@@ -379,7 +380,7 @@ def patch_workbench(
 
 
 async def get_project_workbench(
-    connection: SAConnection,
+    connection: AsyncConnection,
     project_uuid: str,
 ) -> dict[str, Any]:
     project_nodes_repo = ProjectNodesRepo(project_uuid=ProjectID(project_uuid))
