@@ -1,11 +1,10 @@
 # pylint: disable=redefined-outer-name
 
-import contextlib
 from collections.abc import AsyncIterable
 
 import aiodocker
 import pytest
-from simcore_service_dynamic_sidecar.modules.container_utils import (
+from servicelib.container_utils import (
     ContainerExecCommandFailedError,
     ContainerExecContainerNotFoundError,
     ContainerExecTimeoutError,
@@ -26,9 +25,7 @@ async def running_container_name() -> AsyncIterable[str]:
 
         yield container_inspect["Name"][1:]
 
-        with contextlib.suppress(aiodocker.DockerError):
-            await container.kill()
-        await container.delete()
+        await container.delete(force=True)
 
 
 async def test_run_command_in_container_container_not_found():
