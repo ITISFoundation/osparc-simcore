@@ -97,6 +97,17 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    getLastMessage: function(conversationId) {
+      const params = {
+        url: {
+          conversationId,
+          offset: 0,
+          limit: 1,
+        }
+      };
+      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params);
+    },
+
     addMessage: function(conversationId, message) {
       const params = {
         url: {

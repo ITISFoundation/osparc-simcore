@@ -159,13 +159,15 @@ qx.Class.define("osparc.support.ConversationListItem", {
     },
 
     __applyConversationId: function(conversationId) {
-      osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
-        .then(conversation => {
-          this.set({
-            title: conversation.title,
-            author: conversation.author,
-            lastModified: conversation.lastModified,
-          });
+      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
+        .then(lastMessages => {
+          if (lastMessages && lastMessages.length) {
+            this.set({
+              title: lastMessages[0].title,
+              author: lastMessages[0].author,
+              lastModified: lastMessages[0].lastModified,
+            });
+          }
         });
     },
   }
