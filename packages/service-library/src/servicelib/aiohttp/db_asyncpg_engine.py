@@ -38,23 +38,22 @@ def get_async_engine(app: web.Application) -> AsyncEngine:
     return engine
 
 
-async def connect_to_db(app: web.Application, settings: PostgresSettings) -> None:
+async def connect_to_db(
+    app: web.Application, settings: PostgresSettings, application_name: str
+) -> None:
     """
     - db services up, data migrated and ready to use
     - sets an engine in app state (use `get_async_engine(app)` to retrieve)
     """
-    if settings.POSTGRES_CLIENT_NAME:
-        settings = settings.model_copy(
-            update={"POSTGRES_CLIENT_NAME": settings.POSTGRES_CLIENT_NAME + "-asyncpg"}
-        )
-
     with log_context(
         _logger,
         logging.INFO,
         "Connecting app[APP_DB_ASYNC_ENGINE_KEY] to postgres with %s",
         f"{settings=}",
     ):
-        engine = await create_async_engine_and_database_ready(settings)
+        engine = await create_async_engine_and_database_ready(
+            settings, application_name
+        )
         _set_async_engine_to_app_state(app, engine)
 
     _logger.info(

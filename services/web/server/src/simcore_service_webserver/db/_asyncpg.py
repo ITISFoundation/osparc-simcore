@@ -15,6 +15,7 @@ from servicelib.aiohttp.db_asyncpg_engine import (
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .._meta import APP_NAME
 from .settings import PostgresSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ _logger = logging.getLogger(__name__)
 
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     settings: PostgresSettings = get_plugin_settings(app)
-    await connect_to_db(app, settings)
+    await connect_to_db(app, settings, application_name=APP_NAME)
 
     assert get_async_engine(app)  # nosec
     assert isinstance(get_async_engine(app), AsyncEngine)  # nosec

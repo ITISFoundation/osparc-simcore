@@ -21,6 +21,7 @@ from servicelib.logging_utils import log_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
+from ..._service_jobs import JobService
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -43,7 +44,7 @@ from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
     WalletGetWithAvailableCreditsLegacy,
 )
-from ...models.schemas.solvers import SolverKeyId
+from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import (
     get_custom_metadata,
@@ -58,7 +59,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
-from ..dependencies.services import get_api_client, get_solver_service
+from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -294,7 +295,13 @@ async def get_job(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs",
     response_model=JobOutputs,
-    responses=_OUTPUTS_STATUS_CODES,
+    responses=_OUTPUTS_STATUS_CODES
+    | {
+        status.HTTP_409_CONFLICT: {
+            "description": "Job assets missing",
+            "model": ErrorGet,
+        },
+    },
 )
 async def get_job_outputs(
     solver_key: SolverKeyId,
@@ -303,20 +310,34 @@ async def get_job_outputs(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
     job_name = compose_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs", job_name)
 
-    project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-    node_ids = list(project.workbench.keys())
+    project_marked_as_job = await job_service.get_job(
+        job_id=job_id,
+        job_parent_resource_name=Solver.compose_resource_name(
+            key=solver_key, version=version
+        ),
+    )
+    node_ids = list(project_marked_as_job.workbench.keys())
     assert len(node_ids) == 1  # nosec
+
+    if project_marked_as_job.storage_assets_deleted:
+        _logger.warning("Storage data for job '%s' has been deleted", job_name)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Assets have been deleted"
+        )
 
     product_price = await webserver_api.get_product_price()
     if product_price.usd_per_credit is not None:
-        wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
+        wallet = await webserver_api.get_project_wallet(
+            project_id=project_marked_as_job.uuid
+        )
         if wallet is None:
-            raise MissingWalletError(job_id=project.uuid)
+            raise MissingWalletError(job_id=project_marked_as_job.uuid)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
         if wallet_with_credits.available_credits <= ZERO_CREDITS:
             raise InsufficientCreditsError(
