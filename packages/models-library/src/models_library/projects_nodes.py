@@ -263,7 +263,7 @@ class Node(BaseModel):
     ] = DEFAULT_FACTORY
 
     inputs_required: Annotated[
-        list[InputID] | None,
+        list[InputID],
         Field(
             default_factory=list,
             description="Defines inputs that are required in order to run the service",
