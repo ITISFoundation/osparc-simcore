@@ -31,8 +31,11 @@ qx.Class.define("osparc.support.SupportCenter", {
       showClose: true,
     });
 
-    this.getChildControl("intro-text");
+    this.getChildControl("conversations-intro-text");
     this.getChildControl("conversations-list");
+    // if (!osparc.store.Products.getInstance().amIASupportUser()) {
+      this.getChildControl("ask-a-question-button")
+    // }
   },
 
   statics: {
@@ -81,14 +84,12 @@ qx.Class.define("osparc.support.SupportCenter", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
           this.getChildControl("stack-layout").add(control);
           break;
-        case "intro-text":
+        case "conversations-intro-text":
           control = new qx.ui.basic.Label(this.tr("Welcome to the Support Center"));
           this.getChildControl("conversations-layout").add(control);
           break;
         case "conversations-list": {
-          control = new osparc.support.Conversations().set({
-            minHeight: 300,
-          });
+          control = new osparc.support.Conversations();
           const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
           this.getChildControl("conversations-layout").add(scroll, {
@@ -96,8 +97,36 @@ qx.Class.define("osparc.support.SupportCenter", {
           });
           break;
         }
+        case "ask-a-question-button":
+          control = new qx.ui.form.Button(this.tr("Ask a Question")).set({
+            appearance: "strong-button",
+            center: true,
+          });
+          control.addListener("execute", () => {
+            this.__newConversation();
+          });
+          this.getChildControl("conversations-layout").add(control);
+          break;
+        case "conversation-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this.getChildControl("stack-layout").add(control);
+          break;
+        case "conversation-intro-text":
+          control = new qx.ui.basic.Label(this.tr("One conversation"));
+          this.getChildControl("conversation-layout").add(control);
+          break;
+        case "conversation-content":
+          control = new osparc.support.Conversation();
+          this.getChildControl("conversation-layout").add(control);
+          break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __newConversation: function() {
+      this.getChildControl("conversation-intro-text").setValue(this.tr("New conversation"));
+      const conversation = this.getChildControl("conversation-content");
+      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-layout")]);
     },
   }
 });
