@@ -370,7 +370,7 @@ async def delete_function(request: web.Request) -> web.Response:
 
 @routes.get(
     f"/{VTAG}/functions/{{function_id}}/groups",
-    name="update_function_group",
+    name="get_function_group",
 )
 @login_required
 @permission_required("function.read")
