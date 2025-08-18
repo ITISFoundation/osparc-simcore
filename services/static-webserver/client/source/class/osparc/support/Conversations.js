@@ -43,20 +43,6 @@ qx.Class.define("osparc.support.Conversations", {
       CONVERSATION_MESSAGE_UPDATED: "conversation:message:updated",
       CONVERSATION_MESSAGE_DELETED: "conversation:message:deleted",
     },
-
-    popUpInWindow: function(studyData, openConversationId = null) {
-      const conversations = new osparc.study.Conversations(studyData, openConversationId);
-      const title = qx.locale.Manager.tr("Conversations");
-      const viewWidth = 600;
-      const viewHeight = 700;
-      const win = osparc.ui.window.Window.popUpInWindow(conversations, title, viewWidth, viewHeight).set({
-        maxHeight: viewHeight,
-      });
-      win.addListener("close", () => {
-        conversations.destroy();
-      }, this);
-      return win;
-    },
   },
 
   members: {
@@ -97,7 +83,7 @@ qx.Class.define("osparc.support.Conversations", {
           if (conversation) {
             switch (eventName) {
               case this.self().CHANNELS.CONVERSATION_CREATED:
-                if (conversation["projectId"] === this.getStudyData()["uuid"]) {
+                if (!conversation["projectId"]) {
                   this.__addConversationPage(conversation);
                 }
                 break;
