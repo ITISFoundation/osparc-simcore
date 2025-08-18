@@ -271,7 +271,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         LongRunningTasksSettings | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
-            description="login plugin",
+            description="long running tasks plugin",
         ),
     ]
 
