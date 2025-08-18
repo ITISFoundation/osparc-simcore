@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 import datetime
 from collections.abc import Callable
 from typing import Any
