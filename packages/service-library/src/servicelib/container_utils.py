@@ -1,19 +1,35 @@
 import asyncio
 import logging
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Final
 
 from aiodocker import Docker, DockerError
 from aiodocker.execs import Exec
 from aiodocker.stream import Stream
+from common_library.errors_classes import OsparcErrorMixin
 from pydantic import NonNegativeFloat
-from starlette import status
 
-from ..core.errors import (
-    ContainerExecCommandFailedError,
-    ContainerExecContainerNotFoundError,
-    ContainerExecTimeoutError,
-)
+
+class BaseContainerUtilsError(OsparcErrorMixin, Exception):
+    pass
+
+
+class ContainerExecContainerNotFoundError(BaseContainerUtilsError):
+    msg_template = "Container '{container_name}' was not found"
+
+
+class ContainerExecTimeoutError(BaseContainerUtilsError):
+    msg_template = "Timed out after {timeout} while executing: '{command}'"
+
+
+class ContainerExecCommandFailedError(BaseContainerUtilsError):
+    msg_template = (
+        "Command '{command}' exited with code '{exit_code}'"
+        "and output: '{command_result}'"
+    )
+
+
+_HTTP_404_NOT_FOUND: Final[int] = 404
 
 _logger = logging.getLogger(__name__)
 
@@ -77,10 +93,10 @@ async def run_command_in_container(
             _execute_command(container_name, command), timeout
         )
     except DockerError as e:
-        if e.status == status.HTTP_404_NOT_FOUND:
+        if e.status == _HTTP_404_NOT_FOUND:
             raise ContainerExecContainerNotFoundError(
                 container_name=container_name
             ) from e
         raise
-    except asyncio.TimeoutError as e:
+    except TimeoutError as e:
         raise ContainerExecTimeoutError(timeout=timeout, command=command) from e
