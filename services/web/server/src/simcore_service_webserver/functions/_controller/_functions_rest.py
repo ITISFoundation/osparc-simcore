@@ -3,6 +3,7 @@ from typing import Any
 from aiohttp import web
 from models_library.api_schemas_webserver.functions import (
     Function,
+    FunctionGroupUpdate,
     FunctionToRegister,
     RegisteredFunction,
     RegisteredFunctionGet,
@@ -12,6 +13,7 @@ from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from models_library.functions import (
     FunctionAccessRights,
     FunctionClass,
+    FunctionGroupAccessRights,
     FunctionID,
     RegisteredProjectFunction,
     RegisteredSolverFunction,
@@ -41,6 +43,7 @@ from .._services_metadata.proxy import ServiceMetadata
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import (
     FunctionGetQueryParams,
+    FunctionGroupPathParams,
     FunctionPathParams,
     FunctionsListQueryParams,
 )
@@ -354,6 +357,43 @@ async def delete_function(request: web.Request) -> web.Response:
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+#
+# /functions/{function_id}/groups/*
+#
+
+
+@routes.put(
+    f"/{VTAG}/functions/{{function_id}}/groups/{{group_id}}",
+    name="update_function_group",
+)
+@login_required
+@permission_required("function.write")
+@handle_rest_requests_exceptions
+async def update_function_group(request: web.Request) -> web.Response:
+    path_params = parse_request_path_parameters_as(FunctionGroupPathParams, request)
+    function_id = path_params.function_id
+    group_id = path_params.group_id
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+
+    function_group_update = FunctionGroupUpdate.model_validate(await request.json())
+
+    await _functions_service.set_function_group_permissions(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+        permissions=FunctionGroupAccessRights(
+            group_id=group_id,
+            read=function_group_update.read,
+            write=function_group_update.write,
+            execute=function_group_update.execute,
+        ),
+    )
+
+    return web.json_response(status=status.HTTP_202_ACCEPTED)
 
 
 #
