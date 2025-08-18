@@ -4,11 +4,11 @@ from typing import Any, Final
 import redis.asyncio as aioredis
 from common_library.json_serialization import json_dumps, json_loads
 from pydantic import TypeAdapter
-from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ...redis._client import RedisClientSDK
 from ...redis._utils import handle_redis_returns_union_types
+from ...utils import limited_gather
 from ..models import TaskContext, TaskData, TaskId
 from .base import BaseStore
 

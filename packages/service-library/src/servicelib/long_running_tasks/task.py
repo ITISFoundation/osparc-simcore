@@ -11,7 +11,6 @@ from uuid import uuid4
 from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
-from servicelib.logging_utils import log_catch
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -22,6 +21,7 @@ from tenacity import (
 )
 
 from ..background_task import create_periodic_task
+from ..logging_utils import log_catch
 from ..redis import RedisClientSDK, exclusive
 from ._serialization import object_to_string, string_to_object
 from ._store.base import BaseStore

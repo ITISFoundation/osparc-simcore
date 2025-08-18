@@ -1,7 +1,6 @@
 from typing import Any
 
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-
+from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._rabbit import lrt_client
 from .base_long_running_manager import BaseLongRunningManager
 from .models import TaskBase, TaskContext, TaskId, TaskStatus
