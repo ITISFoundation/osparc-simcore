@@ -393,7 +393,34 @@ async def update_function_group(request: web.Request) -> web.Response:
         ),
     )
 
+    # TODO: return updated permissions
+
     return web.json_response(status=status.HTTP_202_ACCEPTED)
+
+
+@routes.delete(
+    f"/{VTAG}/functions/{{function_id}}/groups/{{group_id}}",
+    name="delete_function_group",
+)
+@login_required
+@permission_required("function.write")
+@handle_rest_requests_exceptions
+async def delete_function_group(request: web.Request) -> web.Response:
+    path_params = parse_request_path_parameters_as(FunctionGroupPathParams, request)
+    function_id = path_params.function_id
+    group_id = path_params.group_id
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+
+    await _functions_service.remove_function_group_permissions(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+        permission_group_id=group_id,
+    )
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
 #
