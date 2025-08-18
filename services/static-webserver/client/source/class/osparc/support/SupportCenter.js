@@ -84,7 +84,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           });
           break;
         case "conversations-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
           this.getChildControl("stack-layout").add(control);
           break;
         case "conversations-intro-text":
