@@ -55,7 +55,7 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_conversation(
-    _body: Annotated[_ConversationsCreateBodyParams, Depends()],
+    _body: _ConversationsCreateBodyParams,
     _query: Annotated[_GetConversationsQueryParams, Depends()],
 ): ...
 

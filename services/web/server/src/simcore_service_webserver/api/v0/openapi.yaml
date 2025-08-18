@@ -517,26 +517,17 @@ paths:
       summary: Create Conversation
       operationId: create_conversation
       parameters:
-      - name: name
-        in: query
-        required: true
-        schema:
-          type: string
-          title: Name
       - name: type
         in: query
         required: true
         schema:
           $ref: '#/components/schemas/ConversationType'
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              anyOf:
-              - type: object
-                additionalProperties: true
-              - type: 'null'
-              title: Extracontext
+              $ref: '#/components/schemas/_ConversationsCreateBodyParams'
       responses:
         '201':
           description: Successful Response
@@ -18786,6 +18777,24 @@ components:
       - content
       - type
       title: _ConversationMessageCreateBodyParams
+    _ConversationsCreateBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+        type:
+          $ref: '#/components/schemas/ConversationType'
+        extraContext:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Extracontext
+      type: object
+      required:
+      - name
+      - type
+      title: _ConversationsCreateBodyParams
     _InvitationDetails:
       properties:
         trialAccountDays:
