@@ -1,18 +1,13 @@
-import logging
 from typing import Annotated
 
-from aiodocker.networks import DockerNetwork
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi import Path as PathParam
 from fastapi import Request, Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 
-from ...core.docker_utils import docker_client
 from ...services import container_extensions
 from ._dependencies import get_application
-
-_logger = logging.getLogger(__name__)
 
 
 class CreateDirsRequestItem(BaseModel):
@@ -91,33 +86,11 @@ async def attach_container_to_network(
     container_id: Annotated[str, PathParam(..., alias="id")],
 ) -> None:
     assert request  # nosec
-
-    async with docker_client() as docker:
-        container_instance = await docker.containers.get(container_id)
-        container_inspect = await container_instance.show()
-
-        attached_network_ids: set[str] = {
-            x["NetworkID"]
-            for x in container_inspect["NetworkSettings"]["Networks"].values()
-        }
-
-        if item.network_id in attached_network_ids:
-            _logger.debug(
-                "Container %s already attached to network %s",
-                container_id,
-                item.network_id,
-            )
-            return
-
-        # NOTE: A docker network is only visible on a docker node when it is
-        # used by a container
-        network = DockerNetwork(docker=docker, id_=item.network_id)
-        await network.connect(
-            {
-                "Container": container_id,
-                "EndpointConfig": {"Aliases": item.network_aliases},
-            }
-        )
+    await container_extensions.attach_container_to_network(
+        container_id=container_id,
+        network_id=item.network_id,
+        network_aliases=item.network_aliases,
+    )
 
 
 @router.post(
@@ -130,23 +103,7 @@ async def detach_container_from_network(
     item: DetachContainerFromNetworkItem,
     container_id: Annotated[str, PathParam(..., alias="id")],
 ) -> None:
-    async with docker_client() as docker:
-        container_instance = await docker.containers.get(container_id)
-        container_inspect = await container_instance.show()
-
-        attached_network_ids: set[str] = set(
-            container_inspect["NetworkSettings"]["Networks"].keys()
-        )
-
-        if item.network_id not in attached_network_ids:
-            _logger.debug(
-                "Container %s already detached from network %s",
-                container_id,
-                item.network_id,
-            )
-            return
-
-        # NOTE: A docker network is only visible on a docker node when it is
-        # used by a container
-        network = DockerNetwork(docker=docker, id_=item.network_id)
-        await network.disconnect({"Container": container_id, "Force": True})
+    await container_extensions.detach_container_from_network(
+        container_id=container_id,
+        network_id=item.network_id,
+    )
