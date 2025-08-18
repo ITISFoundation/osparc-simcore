@@ -102,7 +102,7 @@ def _url_missing_only_job_id(url: str | None) -> str | None:
     return url
 
 
-class JobRestInterfaceLinks(BaseModel):
+class JobLinks(BaseModel):
     url_template: Annotated[str | None, AfterValidator(_url_missing_only_job_id)]
     runner_url_template: str | None
     outputs_url_template: Annotated[

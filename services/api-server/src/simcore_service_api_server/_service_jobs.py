@@ -31,7 +31,7 @@ from ._service_solvers import (
 from .exceptions.backend_errors import JobAssetsMissingError
 from .exceptions.custom_errors import SolverServiceListJobsFiltersError
 from .models.api_resources import (
-    JobRestInterfaceLinks,
+    JobLinks,
     RelativeResourceName,
     compose_resource_name,
 )
@@ -213,7 +213,7 @@ class JobService:
         inputs: JobInputs,
         parent_project_uuid: ProjectID | None,
         parent_node_id: NodeID | None,
-        job_rest_interface_links: JobRestInterfaceLinks,
+        job_links: JobLinks,
         hidden: bool,
         project_name: str | None,
         description: str | None,
@@ -256,7 +256,7 @@ class JobService:
         job = create_job_from_project(
             solver_or_program=solver_or_program,
             project=new_project,
-            job_rest_interface_links=job_rest_interface_links,
+            job_links=job_links,
         )
         assert job.id == pre_job.id  # nosec
         assert job.name == pre_job.name  # nosec
@@ -316,7 +316,7 @@ class JobService:
         version: VersionStr,
         inputs: JobInputs,
         hidden: bool,
-        job_rest_interface_links: JobRestInterfaceLinks,
+        job_links: JobLinks,
         x_simcore_parent_project_uuid: ProjectID | None,
         x_simcore_parent_node_id: NodeID | None,
     ) -> Job:
@@ -333,7 +333,7 @@ class JobService:
             hidden=hidden,
             parent_project_uuid=x_simcore_parent_project_uuid,
             parent_node_id=x_simcore_parent_node_id,
-            job_rest_interface_links=job_rest_interface_links,
+            job_links=job_links,
         )
 
         return job

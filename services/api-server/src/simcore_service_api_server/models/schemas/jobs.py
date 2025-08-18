@@ -28,7 +28,7 @@ from pydantic import (
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
-from ...models.api_resources import JobRestInterfaceLinks
+from ...models.api_resources import JobLinks
 from ...models.schemas.files import File, UserFile
 from .._utils_pydantic import UriSchema
 from ..api_resources import (
@@ -327,8 +327,8 @@ class Job(BaseModel):
 
 def get_solver_job_rest_interface_links(
     *, url_for: Callable, solver_key: SolverKeyId, version: VersionStr
-) -> JobRestInterfaceLinks:
-    return JobRestInterfaceLinks(
+) -> JobLinks:
+    return JobLinks(
         url_template=url_for(
             "get_job",
             solver_key=solver_key,

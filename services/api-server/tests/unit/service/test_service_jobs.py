@@ -7,7 +7,7 @@
 from faker import Faker
 from pytest_mock import MockType
 from simcore_service_api_server._service_jobs import JobService
-from simcore_service_api_server.models.api_resources import JobRestInterfaceLinks
+from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
 
@@ -57,7 +57,7 @@ async def test_create_job(
     def mock_url_for(*args, **kwargs):
         return "https://example.com/api/v1/jobs/test-job"
 
-    job_rest_interface_links = JobRestInterfaceLinks(
+    job_rest_interface_links = JobLinks(
         url_template=_faker.url() + "/{job_id}",
         runner_url_template=_faker.url(),
         outputs_url_template=_faker.url() + "/{job_id}",
@@ -69,7 +69,7 @@ async def test_create_job(
         inputs=inputs,
         parent_project_uuid=None,
         parent_node_id=None,
-        job_rest_interface_links=job_rest_interface_links,
+        job_links=job_rest_interface_links,
         hidden=False,
         project_name="Test Job Project",
         description="Test description",

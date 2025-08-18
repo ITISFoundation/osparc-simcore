@@ -16,7 +16,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
-from simcore_service_api_server.models.api_resources import JobRestInterfaceLinks
+from simcore_service_api_server.models.api_resources import JobLinks
 
 from ..._service_jobs import JobService
 from ..._service_programs import ProgramService
@@ -172,7 +172,7 @@ async def create_program_job(
         name=program_key,
         version=version,
     )
-    job_rest_interface_links = JobRestInterfaceLinks(
+    job_rest_interface_links = JobLinks(
         url_template=None,
         runner_url_template=None,
         outputs_url_template=None,
@@ -185,7 +185,7 @@ async def create_program_job(
         inputs=inputs,
         parent_project_uuid=x_simcore_parent_project_uuid,
         parent_node_id=x_simcore_parent_node_id,
-        job_rest_interface_links=job_rest_interface_links,
+        job_links=job_rest_interface_links,
         hidden=False,
     )
 

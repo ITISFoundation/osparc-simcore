@@ -257,7 +257,7 @@ class FunctionJobService:
                 solver_key=function.solver_key,
                 version=function.solver_version,
                 inputs=JobInputs(values=joined_inputs or {}),
-                job_rest_interface_links=job_rest_interface_links,
+                job_links=job_rest_interface_links,
                 hidden=True,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,

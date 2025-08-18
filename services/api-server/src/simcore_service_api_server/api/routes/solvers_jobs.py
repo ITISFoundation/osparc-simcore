@@ -104,7 +104,7 @@ async def create_solver_job(  # noqa: PLR0913
         hidden=hidden,
         x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
         x_simcore_parent_node_id=x_simcore_parent_node_id,
-        job_rest_interface_links=get_solver_job_rest_interface_links(
+        job_links=get_solver_job_rest_interface_links(
             url_for=url_for, solver_key=solver_key, version=version
         ),
     )

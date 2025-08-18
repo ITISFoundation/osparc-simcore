@@ -211,7 +211,7 @@ async def list_jobs(
         job = create_job_from_project(
             solver_or_program=solver,
             project=prj,
-            job_rest_interface_links=job_rest_interface_links,
+            job_links=job_rest_interface_links,
         )
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
@@ -261,7 +261,7 @@ async def list_jobs_paginated(
         create_job_from_project(
             solver_or_program=solver,
             project=prj,
-            job_rest_interface_links=job_rest_interface_links,
+            job_links=job_rest_interface_links,
         )
         for prj in projects_page.data
     ]
@@ -305,7 +305,7 @@ async def get_job(
     job = create_job_from_project(
         solver_or_program=solver,
         project=project,
-        job_rest_interface_links=job_rest_interface_links,
+        job_links=job_rest_interface_links,
     )
     assert job.id == job_id  # nosec
     return job  # nosec
