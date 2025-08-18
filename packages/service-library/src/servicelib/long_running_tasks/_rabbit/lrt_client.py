@@ -5,6 +5,7 @@ from typing import Any, Final
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import PositiveInt, TypeAdapter
 
+from ...logging_errors import create_troubleshootting_log_kwargs
 from ...logging_utils import log_decorator
 from ...long_running_tasks.task import RegisteredTaskName
 from ...rabbitmq._client_rpc import RabbitMQRPCClient
@@ -104,10 +105,16 @@ async def get_task_result(
     if isinstance(serialized_result, RPCErrorResponse):
         error = string_to_object(serialized_result.error_object)
         _logger.warning(
-            "Remote task finished with error: '%s: %s'\n%s",
-            error.__class__.__name__,
-            error,
-            serialized_result.str_traceback,
+            **create_troubleshootting_log_kwargs(
+                f"Remote task finished with error '{error.__class__.__name__}: {error}'\n{serialized_result.str_traceback}",
+                error=error,
+                error_context={
+                    "task_id": task_id,
+                    "task_context": task_context,
+                    "namespace": namespace,
+                },
+                tip=f"Raised where the lrt_server was running, you can figure this out via {namespace=}",
+            )
         )
         raise error
 
