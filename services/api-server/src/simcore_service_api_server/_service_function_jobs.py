@@ -199,9 +199,6 @@ class FunctionJobService:
             is_valid, validation_str = await self.validate_function_inputs(
                 function_id=function.uid,
                 inputs=joined_inputs,
-                wb_api_rpc=self._web_rpc_client,
-                user_id=self.user_id,
-                product_name=self.product_name,
             )
             if not is_valid:
                 raise FunctionInputsValidationError(error=validation_str)
