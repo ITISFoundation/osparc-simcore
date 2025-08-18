@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
+import jsonschema
 from common_library.exclude import as_dict_exclude_none
 from models_library.functions import (
     FunctionClass,
@@ -11,6 +12,7 @@ from models_library.functions import (
     FunctionJobCollectionID,
     FunctionJobID,
     FunctionJobStatus,
+    FunctionSchemaClass,
     ProjectFunctionJob,
     RegisteredFunction,
     RegisteredFunctionJob,
@@ -31,6 +33,7 @@ from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
+from pydantic import ValidationError
 
 from ._service_jobs import JobService
 from .models.schemas.jobs import JobInputs, JobPricingSpecification
@@ -82,8 +85,34 @@ class FunctionJobService:
             **pagination_kwargs,
         )
 
-    async def validate_function_inputs(self, *args, **kwargs) -> tuple[bool, str]:
-        return True, ""
+    async def validate_function_inputs(
+        self, *, function_id: FunctionID, inputs: FunctionInputs
+    ) -> tuple[bool, str]:
+        function = await self._web_rpc_client.get_function(
+            function_id=function_id,
+            user_id=self.user_id,
+            product_name=self.product_name,
+        )
+
+        if (
+            function.input_schema is None
+            or function.input_schema.schema_content is None
+        ):
+            return True, "No input schema defined for this function"
+
+        if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
+            try:
+                jsonschema.validate(
+                    instance=inputs, schema=function.input_schema.schema_content
+                )
+            except ValidationError as err:
+                return False, str(err)
+            return True, "Inputs are valid"
+
+        return (
+            False,
+            f"Unsupported function schema class {function.input_schema.schema_class}",
+        )
 
     async def inspect_function_job(
         self, function: RegisteredFunction, function_job: RegisteredFunctionJob

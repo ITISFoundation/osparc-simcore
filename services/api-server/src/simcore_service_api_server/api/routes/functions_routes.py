@@ -2,11 +2,9 @@
 from collections.abc import Callable
 from typing import Annotated, Final, Literal
 
-import jsonschema
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi_pagination.api import create_page
 from fastapi_pagination.bases import AbstractPage
-from jsonschema import ValidationError
 from models_library.api_schemas_api_server.functions import (
     Function,
     FunctionID,
@@ -14,7 +12,6 @@ from models_library.api_schemas_api_server.functions import (
     FunctionInputSchema,
     FunctionInputsList,
     FunctionOutputSchema,
-    FunctionSchemaClass,
     RegisteredFunction,
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
@@ -295,29 +292,13 @@ async def get_function_outputschema(
 async def validate_function_inputs(
     function_id: FunctionID,
     inputs: FunctionInputs,
-    wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    user_id: Annotated[UserID, Depends(get_current_user_id)],
-    product_name: Annotated[ProductName, Depends(get_product_name)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
 ) -> tuple[bool, str]:
-    function = await wb_api_rpc.get_function(
-        function_id=function_id, user_id=user_id, product_name=product_name
-    )
-
-    if function.input_schema is None or function.input_schema.schema_content is None:
-        return True, "No input schema defined for this function"
-
-    if function.input_schema.schema_class == FunctionSchemaClass.json_schema:
-        try:
-            jsonschema.validate(
-                instance=inputs, schema=function.input_schema.schema_content
-            )
-        except ValidationError as err:
-            return False, str(err)
-        return True, "Inputs are valid"
-
-    return (
-        False,
-        f"Unsupported function schema class {function.input_schema.schema_class}",
+    return await function_job_service.validate_function_inputs(
+        function_id=function_id,
+        inputs=inputs,
     )
 
 
