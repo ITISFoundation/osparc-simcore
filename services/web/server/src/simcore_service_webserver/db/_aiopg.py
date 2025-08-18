@@ -24,20 +24,23 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
+from .._meta import APP_NAME
 from .settings import PostgresSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
-    engine: Engine = await create_engine(
+async def _ensure_pg_ready(
+    settings: PostgresSettings, *, application_name: str
+) -> Engine:
+    engine = await create_engine(
         settings.dsn,
-        application_name=settings.POSTGRES_CLIENT_NAME,
+        application_name=settings.client_name(f"{application_name}", suffix="aiopg"),
         minsize=settings.POSTGRES_MINSIZE,
         maxsize=settings.POSTGRES_MAXSIZE,
     )
-
+    assert isinstance(engine, Engine)  # nosec
     try:
         await raise_if_migration_not_ready(engine)
     except (DBMigrationError, DBAPIError):
@@ -48,7 +51,6 @@ async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
 
 
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
-
     settings = get_plugin_settings(app)
 
     with log_context(
@@ -57,7 +59,7 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
         "Connecting app[APP_AIOPG_ENGINE_KEY] to postgres with %s",
         f"{settings=}",
     ):
-        aiopg_engine = await _ensure_pg_ready(settings)
+        aiopg_engine = await _ensure_pg_ready(settings, application_name=APP_NAME)
         app[APP_AIOPG_ENGINE_KEY] = aiopg_engine
 
     _logger.info(

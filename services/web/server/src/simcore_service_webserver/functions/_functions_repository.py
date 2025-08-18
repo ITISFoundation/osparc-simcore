@@ -6,6 +6,7 @@ from uuid import UUID
 
 import sqlalchemy
 from aiohttp import web
+from models_library.basic_types import IDStr
 from models_library.functions import (
     FunctionAccessRightsDB,
     FunctionClass,
@@ -54,6 +55,7 @@ from models_library.functions_errors import (
 )
 from models_library.groups import GroupID
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -84,10 +86,10 @@ from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
     transaction_context,
 )
-from sqlalchemy import Text, cast
+from sqlalchemy import String, Text, cast
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncConnection
-from sqlalchemy.sql import func
+from sqlalchemy.sql import ColumnElement, func
 
 from ..db.plugin import get_asyncpg_engine
 from ..groups.api import list_all_user_groups_ids
@@ -109,6 +111,8 @@ _FUNCTION_JOBS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
 _FUNCTION_JOB_COLLECTIONS_ACCESS_RIGHTS_TABLE_COLS = get_columns_from_db_model(
     function_job_collections_access_rights_table, FunctionJobCollectionAccessRightsDB
 )
+
+DEFAULT_ORDER_BY = OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC)
 
 
 async def create_function(  # noqa: PLR0913
@@ -347,6 +351,38 @@ async def get_function(
         return RegisteredFunctionDB.model_validate(row)
 
 
+def _create_list_functions_attributes_filters(
+    *,
+    filter_by_function_class: FunctionClass | None,
+    search_by_multi_columns: str | None,
+    search_by_function_title: str | None,
+) -> list[ColumnElement]:
+    attributes_filters: list[ColumnElement] = []
+
+    if filter_by_function_class is not None:
+        attributes_filters.append(
+            functions_table.c.function_class == filter_by_function_class.value
+        )
+
+    if search_by_multi_columns is not None:
+        attributes_filters.append(
+            (functions_table.c.title.ilike(f"%{search_by_multi_columns}%"))
+            | (functions_table.c.description.ilike(f"%{search_by_multi_columns}%"))
+            | (
+                cast(functions_table.c.uuid, String).ilike(
+                    f"%{search_by_multi_columns}%"
+                )
+            )
+        )
+
+    if search_by_function_title is not None:
+        attributes_filters.append(
+            functions_table.c.title.ilike(f"%{search_by_function_title}%")
+        )
+
+    return attributes_filters
+
+
 async def list_functions(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -355,7 +391,12 @@ async def list_functions(
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
+    order_by: OrderBy | None = None,
+    filter_by_function_class: FunctionClass | None = None,
+    search_by_multi_columns: str | None = None,
+    search_by_function_title: str | None = None,
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
+
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_api_access_rights(
             app,
@@ -365,39 +406,59 @@ async def list_functions(
             api_access_rights=[FunctionsApiAccessRights.READ_FUNCTIONS],
         )
         user_groups = await list_all_user_groups_ids(app, user_id=user_id)
+        attributes_filters = _create_list_functions_attributes_filters(
+            filter_by_function_class=filter_by_function_class,
+            search_by_multi_columns=search_by_multi_columns,
+            search_by_function_title=search_by_function_title,
+        )
 
-        subquery = (
-            functions_access_rights_table.select()
-            .with_only_columns(functions_access_rights_table.c.function_uuid)
+        # Build the base query with join to access rights table
+        base_query = (
+            functions_table.select()
+            .join(
+                functions_access_rights_table,
+                functions_table.c.uuid == functions_access_rights_table.c.function_uuid,
+            )
             .where(
                 functions_access_rights_table.c.group_id.in_(user_groups),
                 functions_access_rights_table.c.product_name == product_name,
                 functions_access_rights_table.c.read,
+                *attributes_filters,
             )
         )
 
-        total_count_result = await conn.scalar(
-            func.count()
-            .select()
-            .select_from(functions_table)
-            .where(functions_table.c.uuid.in_(subquery))
+        # Get total count
+        total_count = await conn.scalar(
+            func.count().select().select_from(base_query.subquery())
         )
-        if total_count_result == 0:
+        if total_count == 0:
             return [], PageMetaInfoLimitOffset(
                 total=0, offset=pagination_offset, limit=pagination_limit, count=0
             )
+
+        if order_by is None:
+            order_by = DEFAULT_ORDER_BY
+        # Apply ordering and pagination
+        if order_by.direction == OrderDirection.ASC:
+            base_query = base_query.order_by(
+                sqlalchemy.asc(getattr(functions_table.c, order_by.field)),
+                functions_table.c.uuid,
+            )
+        else:
+            base_query = base_query.order_by(
+                sqlalchemy.desc(getattr(functions_table.c, order_by.field)),
+                functions_table.c.uuid,
+            )
+
         function_rows = [
             RegisteredFunctionDB.model_validate(row)
             async for row in await conn.stream(
-                functions_table.select()
-                .where(functions_table.c.uuid.in_(subquery))
-                .offset(pagination_offset)
-                .limit(pagination_limit)
+                base_query.offset(pagination_offset).limit(pagination_limit)
             )
         ]
 
         return function_rows, PageMetaInfoLimitOffset(
-            total=total_count_result,
+            total=total_count,
             offset=pagination_offset,
             limit=pagination_limit,
             count=len(function_rows),
