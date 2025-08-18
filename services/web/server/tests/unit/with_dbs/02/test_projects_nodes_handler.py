@@ -480,7 +480,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
         assert result
         workbench = result.one()[projects_db_model.c.workbench]
     assert len(workbench) == NUM_DY_SERVICES + num_services_in_project
-    node_ids_in_db = set(list(workbench))
+    node_ids_in_db = set(workbench.keys())
     set(running_services.running_services_uuids).issubset(node_ids_in_db)
     print(f"--> {NUM_DY_SERVICES} nodes were created concurrently")
     #

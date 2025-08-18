@@ -714,7 +714,7 @@ async def _check_project_node_has_all_required_inputs(
         )
 
 
-async def _start_dynamic_service(  # noqa: C901
+async def _start_dynamic_service(
     request: web.Request,
     *,
     service_key: ServiceKey,
@@ -727,12 +727,10 @@ async def _start_dynamic_service(  # noqa: C901
     graceful_start: bool = False,
 ) -> None:
     if not _is_node_dynamic(service_key):
+        # not dynamic, nothing to do
         return
 
-    # this is a dynamic node, let's gather its resources and start it
-
     db = ProjectDBAPI.get_from_app_context(request.app)
-
     try:
         await _check_project_node_has_all_required_inputs(
             request.app, db, user_id, project_uuid, node_uuid
@@ -748,9 +746,7 @@ async def _start_dynamic_service(  # noqa: C901
         raise
 
     save_state = False
-    user_role: UserRole = await users_service.get_user_role(
-        request.app, user_id=user_id
-    )
+    user_role = await users_service.get_user_role(request.app, user_id=user_id)
     if user_role > UserRole.GUEST:
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
@@ -761,13 +757,9 @@ async def _start_dynamic_service(  # noqa: C901
         lock_key=_nodes_service.get_service_start_lock_key(user_id, project_uuid),
         blocking=True,
         blocking_timeout=None,
-        # blocking_timeout=datetime.timedelta(
-        #     seconds=_nodes_service.get_total_project_dynamic_nodes_creation_interval(
-        #         get_plugin_settings(request.app).PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
-        #     )
-        # ),
     )
-    async def _() -> None:
+    async def _safe_service_start() -> None:
+        """In case of concurrent requests, this guarantees that only one service can be started at a time"""
         project_running_nodes = await dynamic_scheduler_service.list_dynamic_services(
             request.app, user_id=user_id, project_id=project_uuid
         )
@@ -917,15 +909,20 @@ async def _start_dynamic_service(  # noqa: C901
                 hardware_info=hardware_info,
             ),
         )
-        # TODO: this is actually stupid, we get all nodes inside the project with this, and we only need that one.
         # change this and most probably this will fix the issue
-        project = await get_project_for_user(
-            request.app, f"{project_uuid}", user_id, include_state=True
-        )
+        try:
+            project = await get_project_for_user(
+                request.app, f"{project_uuid}", user_id, include_state=True
+            )
 
-        await notify_project_node_update(request.app, project, node_uuid, errors=None)
+            await notify_project_node_update(
+                request.app, project, node_uuid, errors=None
+            )
+        except:
+            _logger.exception("Unexpected error:")
+            raise
 
-    await _()
+    await _safe_service_start()
 
 
 async def add_project_node(
@@ -2216,29 +2213,6 @@ async def notify_project_state_update(
         )
     else:
         await _send_message_to_project_groups(app, project["uuid"], message)
-
-
-async def notify_node_update(
-    app: web.Application,
-    project_id: ProjectID,
-    node_id: NodeID,
-    node: Node,
-    errors: list[ErrorDict] | None,
-) -> None:
-    if await is_project_hidden(app, project_id):
-        return
-
-    message = SocketMessageDict(
-        event_type=SOCKET_IO_NODE_UPDATED_EVENT,
-        data={
-            "project_id": f"{project_id}",
-            "node_id": f"{node_id}",
-            "data": node.model_dump(mode="json"),
-            "errors": errors,
-        },
-    )
-
-    await _send_message_to_project_groups(app, project_id, message)
 
 
 async def notify_project_node_update(
