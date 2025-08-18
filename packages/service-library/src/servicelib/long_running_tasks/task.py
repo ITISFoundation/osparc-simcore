@@ -199,10 +199,6 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         # stale_tasks_monitor
         if self._task_stale_tasks_monitor:
-            # since the task is using a redis lock if the lock could not be acquired
-            # trying to cancel the task will hang, this avoids hanging
-            # there are no sideeffects in timing out this cancellation
-            # with log_catch(_logger, reraise=False):
             await cancel_wait_task(
                 self._task_stale_tasks_monitor,
                 max_delay=_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT,
