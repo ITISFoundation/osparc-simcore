@@ -458,6 +458,32 @@ async def get_function_user_permissions(
     )
 
 
+async def get_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+) -> list[FunctionGroupAccessRights]:
+    access_rights_list = await _functions_repository.get_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+    )
+
+    for object_id, access_rights in access_rights_list:
+        if object_id == function_id:
+            return access_rights
+
+    raise FunctionGroupAccessRightsNotFoundError(
+        product_name=product_name,
+        object_id=function_id,
+        object_type="function",
+    )
+
+
 async def set_function_group_permissions(
     app: web.Application,
     *,
@@ -482,7 +508,6 @@ async def set_function_group_permissions(
             return access_rights
 
     raise FunctionGroupAccessRightsNotFoundError(
-        group_id=permissions.group_id,
         product_name=product_name,
         object_id=function_id,
         object_type="function",

@@ -12,13 +12,13 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from models_library.functions import (
-    FunctionAccessRights,
     FunctionClass,
     FunctionGroupAccessRights,
     FunctionID,
     RegisteredProjectFunction,
     RegisteredSolverFunction,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
@@ -52,24 +52,27 @@ from ._functions_rest_schemas import (
 routes = web.RouteTableDef()
 
 
-async def _build_function_access_rights(
+async def _build_function_group_access_rights(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-) -> FunctionAccessRights:
-    access_rights = await _functions_service.get_function_user_permissions(
+) -> dict[GroupID, FunctionGroupAccessRightsGet]:
+    access_rights_list = await _functions_service.get_function_group_permissions(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
     )
 
-    return FunctionAccessRights(
-        read=access_rights.read,
-        write=access_rights.write,
-        execute=access_rights.execute,
-    )
+    return {
+        access_rights.group_id: FunctionGroupAccessRightsGet(
+            read=access_rights.read,
+            write=access_rights.write,
+            execute=access_rights.execute,
+        )
+        for access_rights in access_rights_list
+    }
 
 
 def _build_project_function_extras_dict(
@@ -221,7 +224,7 @@ async def list_functions(request: web.Request) -> web.Response:
                     )
 
     for function in functions:
-        access_rights = await _build_function_access_rights(
+        access_rights = await _build_function_group_access_rights(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -271,7 +274,7 @@ async def get_function(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
     )
 
-    access_rights = await _build_function_access_rights(
+    access_rights = await _build_function_group_access_rights(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -319,7 +322,7 @@ async def update_function(request: web.Request) -> web.Response:
         function=function_update,
     )
 
-    access_rights = await _build_function_access_rights(
+    access_rights = await _build_function_group_access_rights(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,

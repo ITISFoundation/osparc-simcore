@@ -3505,14 +3505,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FunctionGroupUpdate'
+              $ref: '#/components/schemas/FunctionGroupAccessRightsUpdate'
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_FunctionGroupGet_'
+                $ref: '#/components/schemas/Envelope_FunctionGroupAccessRightsGet_'
     delete:
       tags:
       - functions
@@ -10553,11 +10553,11 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
-    Envelope_FunctionGroupGet_:
+    Envelope_FunctionGroupAccessRightsGet_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/FunctionGroupGet'
+          - $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
           - type: 'null'
         error:
           anyOf:
@@ -10565,7 +10565,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[FunctionGroupGet]
+      title: Envelope[FunctionGroupAccessRightsGet]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -12396,24 +12396,7 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
-    FunctionAccessRights:
-      properties:
-        read:
-          type: boolean
-          title: Read
-          default: false
-        write:
-          type: boolean
-          title: Write
-          default: false
-        execute:
-          type: boolean
-          title: Execute
-          default: false
-      additionalProperties: false
-      type: object
-      title: FunctionAccessRights
-    FunctionGroupGet:
+    FunctionGroupAccessRightsGet:
       properties:
         read:
           type: boolean
@@ -12429,8 +12412,8 @@ components:
       - read
       - write
       - execute
-      title: FunctionGroupGet
-    FunctionGroupUpdate:
+      title: FunctionGroupAccessRightsGet
+    FunctionGroupAccessRightsUpdate:
       properties:
         read:
           type: boolean
@@ -12446,7 +12429,7 @@ components:
       - read
       - write
       - execute
-      title: FunctionGroupUpdate
+      title: FunctionGroupAccessRightsUpdate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -16184,8 +16167,11 @@ components:
           title: Templateid
         accessRights:
           anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            type: object
           - type: 'null'
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
@@ -16263,8 +16249,11 @@ components:
           title: Solverversion
         accessRights:
           anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            type: object
           - type: 'null'
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
