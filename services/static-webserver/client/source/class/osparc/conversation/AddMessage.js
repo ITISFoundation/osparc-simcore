@@ -19,20 +19,37 @@
 qx.Class.define("osparc.conversation.AddMessage", {
   extend: qx.ui.core.Widget,
 
-  /**
-    * @param studyData {Object} serialized Study Data
-    * @param conversationId {String} Conversation Id
-    */
-  construct: function(studyData, conversationId = null, message = null) {
+  construct: function() {
     this.base(arguments);
-
-    this.__studyData = studyData;
-    this.__conversationId = conversationId;
-    this.__message = message;
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.__buildLayout();
+  },
+
+  properties: {
+    conversationId: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeConversationId"
+    },
+
+    studyData: {
+      check: "Object",
+      init: null,
+      nullable: true,
+      event: "changeStudyData",
+      apply: "__applyStudyData",
+    },
+
+    message: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeMessage",
+      apply: "__applyMessage",
+    }
   },
 
   events: {
@@ -41,10 +58,6 @@ qx.Class.define("osparc.conversation.AddMessage", {
   },
 
   members: {
-    __studyData: null,
-    __conversationId: null,
-    __message: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -111,7 +124,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             allowGrowX: false,
             alignX: "right"
           });
-          control.setEnabled(osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]));
+          control.addListener("execute", this.__addCommentPressed, this);
           this._add(control);
           break;
         case "notify-user-button":
@@ -120,7 +133,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             allowGrowX: false,
             alignX: "right"
           });
-          control.setEnabled(osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]));
+          control.addListener("execute", () => this.__notifyUserTapped());
           this._add(control);
           break;
       }
@@ -130,22 +143,35 @@ qx.Class.define("osparc.conversation.AddMessage", {
 
     __buildLayout: function() {
       this.getChildControl("thumbnail");
-      const commentField = this.getChildControl("comment-field");
+      this.getChildControl("comment-field");
+      this.getChildControl("add-comment-button");
+      this.getChildControl("notify-user-button");
+    },
 
-      const addMessageButton = this.getChildControl("add-comment-button");
-      if (this.__message) {
-        // edit mode
-        addMessageButton.setLabel(this.tr("Edit message"));
-        addMessageButton.addListener("execute", () => this.__editComment());
-
-        commentField.setText(this.__message["content"]);
+    __applyStudyData: function(studyData) {
+      if (studyData) {
+        const canIWrite = osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])
+        this.getChildControl("add-comment-button").setEnabled(canIWrite);
+        this.getChildControl("notify-user-button").show();
+        this.getChildControl("notify-user-button").setEnabled(canIWrite);
       } else {
-        // new message
-        addMessageButton.addListener("execute", () => this.__addComment());
-
-        const notifyUserButton = this.getChildControl("notify-user-button");
-        notifyUserButton.addListener("execute", () => this.__notifyUserTapped());
+        this.getChildControl("notify-user-button").exclude();
       }
+    },
+
+    __applyMessage: function(message) {
+      if (message) {
+        // edit mode
+        const commentField = this.getChildControl("comment-field");
+        commentField.setText(message["content"]);
+
+        const addMessageButton = this.getChildControl("add-comment-button");
+        addMessageButton.setLabel(this.tr("Edit message"));
+      }
+    },
+
+    __addCommentPressed: function() {
+      this.getMessage() ? this.__editComment() : this.__addComment();
     },
 
     __addComment: function() {
@@ -161,6 +187,19 @@ qx.Class.define("osparc.conversation.AddMessage", {
       }
     },
 
+    __editComment: function() {
+      const commentField = this.getChildControl("comment-field");
+      const content = commentField.getChildControl("text-area").getValue();
+      if (content) {
+        osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], this.__conversationId, this.__message["messageId"], content)
+          .then(data => {
+            this.fireDataEvent("messageUpdated", data);
+            commentField.getChildControl("text-area").setValue("");
+          });
+      }
+    },
+
+    /* NOTIFY USERS */
     __notifyUserTapped: function() {
       const showOrganizations = false;
       const showAccessRights = false;
@@ -227,28 +266,21 @@ qx.Class.define("osparc.conversation.AddMessage", {
           });
       }
     },
+    /* NOTIFY USERS */
 
     __postMessage: function() {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        osparc.store.ConversationsProject.getInstance().addMessage(this.__studyData["uuid"], this.__conversationId, content)
-          .then(data => {
-            this.fireDataEvent("messageAdded", data);
-            commentField.getChildControl("text-area").setValue("");
-          });
-      }
-    },
-
-    __editComment: function() {
-      const commentField = this.getChildControl("comment-field");
-      const content = commentField.getChildControl("text-area").getValue();
-      if (content) {
-        osparc.store.ConversationsProject.getInstance().editMessage(this.__studyData["uuid"], this.__conversationId, this.__message["messageId"], content)
-          .then(data => {
-            this.fireDataEvent("messageUpdated", data);
-            commentField.getChildControl("text-area").setValue("");
-          });
+        if (this.__studyData) {
+          osparc.store.ConversationsProject.getInstance().addMessage(this.__studyData["uuid"], this.__conversationId, content)
+            .then(data => {
+              this.fireDataEvent("messageAdded", data);
+              commentField.getChildControl("text-area").setValue("");
+            });
+        } else {
+          // Support
+        }
       }
     },
 

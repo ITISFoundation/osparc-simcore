@@ -166,7 +166,9 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
-      const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId()).set({
+      const addMessages = new osparc.conversation.AddMessage().set({
+        studyData: this.__studyData,
+        conversationId: this.getConversationId(),
         enabled: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
         paddingLeft: 10,
       });

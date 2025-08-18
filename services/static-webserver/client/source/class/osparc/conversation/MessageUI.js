@@ -203,7 +203,11 @@ qx.Class.define("osparc.conversation.MessageUI", {
     __editMessage: function() {
       const message = this.getMessage();
 
-      const addMessage = new osparc.conversation.AddMessage(this.__studyData, message["conversationId"], message);
+      const addMessage = new osparc.conversation.AddMessage().set({
+        studyData: this.__studyData,
+        conversationId: message["conversationId"],
+        message,
+      });
       const title = this.tr("Edit message");
       const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
         clickAwayClose: false,
