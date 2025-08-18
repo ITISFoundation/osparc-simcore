@@ -69,9 +69,9 @@ qx.Class.define("osparc.support.Conversation", {
       this._add(this.__loadMoreMessages);
 
       const addMessages = new osparc.conversation.AddMessage().set({
-        conversationId: this.getConversationId(),
-        paddingLeft: 10,
+        padding: 5,
       });
+      this.bind("conversationId", addMessages, "conversationId");
       addMessages.addListener("messageAdded", e => {
         const data = e.getData();
         if (data["conversationId"]) {
