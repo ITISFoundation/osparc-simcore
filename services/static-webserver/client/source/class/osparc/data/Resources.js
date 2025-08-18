@@ -1479,7 +1479,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           addConversation: {
             method: "POST",
-            url: statics.API + "/conversations?type=support"
+            url: statics.API + "/conversations"
           },
           getConversationsPage: {
             method: "GET",

@@ -58,7 +58,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params);
     },
 
-    addConversation: function(name = "", type = osparc.store.ConversationsSupport.TYPES.SUPPORT) {
+    addConversation: function(name = "null", type = osparc.store.ConversationsSupport.TYPES.SUPPORT) {
       const params = {
         data: {
           name,
