@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.conversation.Conversation", {
+qx.Class.define("osparc.study.Conversation", {
   extend: qx.ui.tabview.Page,
 
   /**
