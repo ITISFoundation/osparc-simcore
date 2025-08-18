@@ -82,22 +82,25 @@ async def _update_comp_run_snapshot_tasks_if_computational(
 
 
 class DBContextManager:
-    def __init__(self, db_engine: AsyncEngine | None = None) -> None:
+    def __init__(
+        self, db_engine: AsyncEngine | None = None, *, application_name: str
+    ) -> None:
         self._db_engine: AsyncEngine | None = db_engine
         self._db_engine_created: bool = False
+        self._application_name: str = application_name
 
     @staticmethod
-    async def _create_db_engine() -> AsyncEngine:
+    async def _create_db_engine(application_name: str) -> AsyncEngine:
         settings = NodePortsSettings.create_from_envs()
         engine = await create_async_engine_and_database_ready(
-            settings.POSTGRES_SETTINGS
+            settings.POSTGRES_SETTINGS, f"{application_name}-simcore-sdk"
         )
         assert isinstance(engine, AsyncEngine)  # nosec
         return engine
 
     async def __aenter__(self) -> AsyncEngine:
         if not self._db_engine:
-            self._db_engine = await self._create_db_engine()
+            self._db_engine = await self._create_db_engine(self._application_name)
             self._db_engine_created = True
         return self._db_engine
 
@@ -107,8 +110,9 @@ class DBContextManager:
 
 
 class DBManager:
-    def __init__(self, db_engine: AsyncEngine | None = None):
+    def __init__(self, db_engine: AsyncEngine | None = None, *, application_name: str):
         self._db_engine = db_engine
+        self._application_name = application_name
 
     async def write_ports_configuration(
         self,
@@ -124,7 +128,9 @@ class DBManager:
 
         node_configuration = json_loads(json_configuration)
         async with (
-            DBContextManager(self._db_engine) as engine,
+            DBContextManager(
+                self._db_engine, application_name=self._application_name
+            ) as engine,
             engine.begin() as connection,
         ):
             # 1. Update comp_tasks table
@@ -154,7 +160,9 @@ class DBManager:
             "Getting ports configuration of node %s from comp_tasks table", node_uuid
         )
         async with (
-            DBContextManager(self._db_engine) as engine,
+            DBContextManager(
+                self._db_engine, application_name=self._application_name
+            ) as engine,
             engine.connect() as connection,
         ):
             node = await _get_node_from_db(project_id, node_uuid, connection)
@@ -171,7 +179,9 @@ class DBManager:
 
     async def get_project_owner_user_id(self, project_id: ProjectID) -> UserID:
         async with (
-            DBContextManager(self._db_engine) as engine,
+            DBContextManager(
+                self._db_engine, application_name=self._application_name
+            ) as engine,
             engine.connect() as connection,
         ):
             prj_owner = await connection.scalar(

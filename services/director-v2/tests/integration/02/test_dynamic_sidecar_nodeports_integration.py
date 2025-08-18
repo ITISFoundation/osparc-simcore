@@ -34,7 +34,6 @@ from models_library.projects import (
     NodesDict,
     ProjectAtDB,
     ProjectID,
-    ProjectIDStr,
 )
 from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
@@ -70,6 +69,7 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
+from simcore_service_director_v2._meta import APP_NAME
 from simcore_service_director_v2.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from simcore_service_director_v2.core.dynamic_services_settings.sidecar import (
     RCloneSettings,
@@ -327,7 +327,7 @@ def workbench_dynamic_services(
 
 @pytest.fixture
 async def db_manager(sqlalchemy_async_engine: AsyncEngine) -> DBManager:
-    return DBManager(sqlalchemy_async_engine)
+    return DBManager(sqlalchemy_async_engine, application_name=APP_NAME)
 
 
 def _is_docker_r_clone_plugin_installed() -> bool:
@@ -510,7 +510,7 @@ async def _get_mapped_nodeports_values(
     for node_uuid in workbench:
         PORTS: Nodeports = await node_ports_v2.ports(
             user_id=user_id,
-            project_id=ProjectIDStr(project_id),
+            project_id=project_id,
             node_uuid=TypeAdapter(NodeIDStr).validate_python(node_uuid),
             db_manager=db_manager,
         )

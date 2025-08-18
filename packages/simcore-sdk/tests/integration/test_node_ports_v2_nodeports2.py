@@ -34,6 +34,7 @@ from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_common.dbmanager import DBManager
 from simcore_sdk.node_ports_common.exceptions import UnboundPortError
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue, PortLink
@@ -162,12 +163,18 @@ async def option_r_clone_settings(
     return None
 
 
+@pytest.fixture
+def default_db_manager(faker: Faker) -> DBManager:
+    return node_ports_v2.DBManager(application_name=f"pytest_{faker.pystr()}")
+
+
 async def test_default_configuration(
     user_id: int,
     project_id: str,
     node_uuid: NodeIDStr,
     default_configuration: dict[str, Any],
     option_r_clone_settings: RCloneSettings | None,
+    default_db_manager: DBManager,
 ):
     config_dict = default_configuration
     await check_config_valid(
@@ -176,6 +183,7 @@ async def test_default_configuration(
             project_id=project_id,
             node_uuid=node_uuid,
             r_clone_settings=option_r_clone_settings,
+            db_manager=default_db_manager,
         ),
         config_dict,
     )
@@ -187,6 +195,7 @@ async def test_invalid_ports(
     node_uuid: NodeIDStr,
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     option_r_clone_settings: RCloneSettings | None,
+    default_db_manager: DBManager,
 ):
     config_dict, _, _ = await create_special_configuration()
     PORTS = await node_ports_v2.ports(
@@ -194,6 +203,7 @@ async def test_invalid_ports(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -228,6 +238,7 @@ async def test_port_value_accessors(
     item_value: ItemConcreteValue,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
+    default_db_manager: DBManager,
 ):  # pylint: disable=W0613, W0621
     item_key = TypeAdapter(ServicePortKey).validate_python("some_key")
     config_dict, _, _ = await create_special_configuration(
@@ -240,6 +251,7 @@ async def test_port_value_accessors(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -279,6 +291,7 @@ async def test_port_file_accessors(
     option_r_clone_settings: RCloneSettings | None,
     request: pytest.FixtureRequest,
     constant_uuid4: None,
+    default_db_manager: DBManager,
 ):
     if item_value == "symlink_path":
         item_value = request.getfixturevalue("symlink_path")
@@ -300,6 +313,7 @@ async def test_port_file_accessors(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
     assert (
@@ -370,6 +384,7 @@ async def test_adding_new_ports(
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: RCloneSettings | None,
+    default_db_manager: DBManager,
 ):
     config_dict, project_id, node_uuid = await create_special_configuration()
     PORTS = await node_ports_v2.ports(
@@ -377,6 +392,7 @@ async def test_adding_new_ports(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -421,6 +437,7 @@ async def test_removing_ports(
     create_special_configuration: Callable[..., Awaitable[tuple[dict, str, str]]],
     postgres_db: sa.engine.Engine,
     option_r_clone_settings: RCloneSettings | None,
+    default_db_manager: DBManager,
 ):
     config_dict, project_id, node_uuid = await create_special_configuration(
         inputs=[("in_14", "integer", 15), ("in_17", "boolean", False)],
@@ -431,6 +448,7 @@ async def test_removing_ports(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
     # let's remove the first input
@@ -475,6 +493,7 @@ async def test_get_value_from_previous_node(
     item_value: ItemConcreteValue,
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
+    default_db_manager: DBManager,
 ):
     config_dict, _, _ = await create_2nodes_configuration(
         prev_node_inputs=None,
@@ -491,6 +510,7 @@ async def test_get_value_from_previous_node(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
 
     await check_config_valid(PORTS, config_dict)
@@ -526,6 +546,7 @@ async def test_get_file_from_previous_node(
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
     constant_uuid4: None,
+    default_db_manager: DBManager,
 ):
     config_dict, _, _ = await create_2nodes_configuration(
         prev_node_inputs=None,
@@ -543,6 +564,7 @@ async def test_get_file_from_previous_node(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
     file_path = await (await PORTS.inputs)[
@@ -585,6 +607,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     item_pytype: type,
     option_r_clone_settings: RCloneSettings | None,
     constant_uuid4: None,
+    default_db_manager: DBManager,
 ):
     config_dict, _, this_node_uuid = await create_2nodes_configuration(
         prev_node_inputs=None,
@@ -600,6 +623,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
     # add a filetokeymap
@@ -649,6 +673,7 @@ async def test_file_mapping(
     option_r_clone_settings: RCloneSettings | None,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     constant_uuid4: None,
+    default_db_manager: DBManager,
 ):
     config_dict, project_id, node_uuid = await create_special_configuration(
         inputs=[("in_1", item_type, await create_store_link(item_value))],
@@ -661,6 +686,7 @@ async def test_file_mapping(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
     # add a filetokeymap
@@ -740,6 +766,7 @@ async def test_regression_concurrent_port_update_fails(
     parallel_int_item_value: int,
     port_count: int,
     option_r_clone_settings: RCloneSettings | None,
+    default_db_manager: DBManager,
 ) -> None:
     """
     when using `await PORTS.outputs` test will fail
@@ -754,6 +781,7 @@ async def test_regression_concurrent_port_update_fails(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
 
@@ -831,6 +859,7 @@ async def test_batch_update_inputs_outputs(
     output_callbacks: _Callbacks,
     spy_outputs_callbaks: dict[str, AsyncMock],
     use_output_callbacks: bool,
+    default_db_manager: DBManager,
 ) -> None:
     callbacks = output_callbacks if use_output_callbacks else None
 
@@ -845,6 +874,7 @@ async def test_batch_update_inputs_outputs(
         project_id=project_id,
         node_uuid=node_uuid,
         r_clone_settings=option_r_clone_settings,
+        db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
 

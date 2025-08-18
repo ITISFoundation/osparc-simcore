@@ -164,6 +164,7 @@ async def create_study_job(
         user_id=user_id,
         project_uuid=job.id,
         job_parent_resource_name=job.runner_name,
+        storage_assets_deleted=False,
     )
 
     project_inputs = await webserver_api.get_project_inputs(project_id=project.uuid)

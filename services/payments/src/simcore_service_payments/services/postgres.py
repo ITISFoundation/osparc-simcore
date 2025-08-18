@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .._meta import APP_NAME
 from ..core.settings import ApplicationSettings
 
 
@@ -16,7 +17,7 @@ def setup_postgres(app: FastAPI):
 
     async def _on_startup() -> None:
         settings: ApplicationSettings = app.state.settings
-        await connect_to_db(app, settings.PAYMENTS_POSTGRES)
+        await connect_to_db(app, settings.PAYMENTS_POSTGRES, application_name=APP_NAME)
         assert app.state.engine  # nosec
         assert isinstance(app.state.engine, AsyncEngine)  # nosec
 
