@@ -370,12 +370,12 @@ async def delete_function(request: web.Request) -> web.Response:
 
 @routes.get(
     f"/{VTAG}/functions/{{function_id}}/groups",
-    name="get_function_group",
+    name="get_function_groups",
 )
 @login_required
 @permission_required("function.read")
 @handle_rest_requests_exceptions
-async def get_function_group(request: web.Request) -> web.Response:
+async def get_function_groups(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
 
