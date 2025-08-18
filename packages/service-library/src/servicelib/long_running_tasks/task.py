@@ -23,9 +23,8 @@ from tenacity import (
 from ..background_task import create_periodic_task
 from ..logging_utils import log_catch
 from ..redis import RedisClientSDK, exclusive
+from ._redis_store import RedisStore
 from ._serialization import object_to_string, string_to_object
-from ._store.base import BaseStore
-from ._store.redis import RedisStore
 from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -81,7 +80,7 @@ class TaskRegistry:
 
 
 async def _get_tasks_to_remove(
-    tracked_tasks: BaseStore,
+    tracked_tasks: RedisStore,
     stale_task_detect_timeout_s: PositiveFloat,
 ) -> list[tuple[TaskId, TaskContext]]:
     utc_now = datetime.datetime.now(tz=datetime.UTC)
@@ -122,7 +121,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         lrt_namespace: LRTNamespace,
     ):
         # Task groups: Every taskname maps to multiple asyncio.Task within TrackedTask model
-        self._tasks_data: BaseStore = RedisStore(redis_settings, lrt_namespace)
+        self._tasks_data = RedisStore(redis_settings, lrt_namespace)
         self._created_tasks: dict[TaskId, asyncio.Task] = {}
 
         self.stale_task_check_interval = stale_task_check_interval

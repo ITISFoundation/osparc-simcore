@@ -5,8 +5,7 @@ from contextlib import AbstractAsyncContextManager
 
 import pytest
 from pydantic import TypeAdapter
-from servicelib.long_running_tasks._store.base import BaseStore
-from servicelib.long_running_tasks._store.redis import RedisStore
+from servicelib.long_running_tasks._redis_store import RedisStore
 from servicelib.long_running_tasks.models import TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -25,7 +24,7 @@ async def store(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
-) -> AsyncIterable[BaseStore]:
+) -> AsyncIterable[RedisStore]:
     store = RedisStore(redis_settings=use_in_memory_redis, namespace="test")
 
     await store.setup()
@@ -37,7 +36,7 @@ async def store(
         pass
 
 
-async def test_workflow(store: BaseStore, task_data: TaskData) -> None:
+async def test_workflow(store: RedisStore, task_data: TaskData) -> None:
     # task data
     assert await store.list_tasks_data() == []
     assert await store.get_task_data("missing") is None
