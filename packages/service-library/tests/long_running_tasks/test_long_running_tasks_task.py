@@ -15,6 +15,9 @@ from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import ProgressMessage
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
+from servicelib.long_running_tasks.base_long_running_manager import (
+    BaseLongRunningManager,
+)
 from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
     TaskNotCompletedError,
@@ -34,7 +37,7 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from utils import TEST_CHECK_STALE_INTERVAL_S, NoWebAppLongRunningManager
+from utils import TEST_CHECK_STALE_INTERVAL_S
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -91,9 +94,9 @@ async def long_running_manager(
     rabbit_service: RabbitSettings,
     get_long_running_manager: Callable[
         [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
-        Awaitable[NoWebAppLongRunningManager],
+        Awaitable[BaseLongRunningManager],
     ],
-) -> NoWebAppLongRunningManager:
+) -> BaseLongRunningManager:
     return await get_long_running_manager(
         use_in_memory_redis, None, rabbit_service, "rabbit-namespace"
     )
@@ -102,7 +105,7 @@ async def long_running_manager(
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
 async def test_task_is_auto_removed(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     check_task_presence_before: bool,
     empty_context: TaskContext,
 ):
@@ -127,9 +130,9 @@ async def test_task_is_auto_removed(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             if (
-                await long_running_manager.tasks_manager._tasks_data.get_task_data(
+                await long_running_manager.tasks_manager._tasks_data.get_task_data(  # noqa: SLF001
                     task_id
-                )  # noqa: SLF001
+                )
                 is not None
             ):
                 msg = "wait till no element is found any longer"
@@ -147,7 +150,7 @@ async def test_task_is_auto_removed(
 
 async def test_checked_task_is_not_auto_removed(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -172,7 +175,7 @@ async def test_checked_task_is_not_auto_removed(
 
 async def test_fire_and_forget_task_is_not_auto_removed(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -201,7 +204,7 @@ async def test_fire_and_forget_task_is_not_auto_removed(
 
 async def test_get_result_of_unfinished_task_raises(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -220,7 +223,7 @@ async def test_get_result_of_unfinished_task_raises(
 
 async def test_unique_task_already_running(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     async def unique_task(progress: TaskProgress):
@@ -253,7 +256,7 @@ async def test_unique_task_already_running(
 
 async def test_start_multiple_not_unique_tasks(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     async def not_unique_task(progress: TaskProgress):
@@ -274,7 +277,7 @@ async def test_start_multiple_not_unique_tasks(
 
 @pytest.mark.parametrize("is_unique", [True, False])
 async def test_get_task_id(
-    long_running_manager: NoWebAppLongRunningManager, faker: Faker, is_unique: bool
+    long_running_manager: BaseLongRunningManager, faker: Faker, is_unique: bool
 ):
     obj1 = long_running_manager.tasks_manager._get_task_id(
         faker.word(), is_unique=is_unique
@@ -287,7 +290,7 @@ async def test_get_task_id(
 
 async def test_get_status(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -309,7 +312,7 @@ async def test_get_status(
 
 
 async def test_get_status_missing(
-    long_running_manager: NoWebAppLongRunningManager, empty_context: TaskContext
+    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     with pytest.raises(TaskNotFoundError) as exec_info:
         await long_running_manager.tasks_manager.get_task_status(
@@ -320,7 +323,7 @@ async def test_get_status_missing(
 
 async def test_get_result(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -344,7 +347,7 @@ async def test_get_result(
 
 
 async def test_get_result_missing(
-    long_running_manager: NoWebAppLongRunningManager, empty_context: TaskContext
+    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     with pytest.raises(TaskNotFoundError) as exec_info:
         await long_running_manager.tasks_manager.get_task_result(
@@ -355,7 +358,7 @@ async def test_get_result_missing(
 
 async def test_get_result_finished_with_error(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -385,7 +388,7 @@ async def test_cancel_task_from_different_manager(
     use_in_memory_redis: RedisSettings,
     get_long_running_manager: Callable[
         [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
-        Awaitable[NoWebAppLongRunningManager],
+        Awaitable[BaseLongRunningManager],
     ],
     empty_context: TaskContext,
 ):
@@ -431,7 +434,7 @@ async def test_cancel_task_from_different_manager(
 
 async def test_remove_task(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -460,7 +463,7 @@ async def test_remove_task(
 
 async def test_remove_task_with_task_context(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -491,7 +494,7 @@ async def test_remove_task_with_task_context(
 
 
 async def test_remove_unknown_task(
-    long_running_manager: NoWebAppLongRunningManager, empty_context: TaskContext
+    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     with pytest.raises(TaskNotFoundError):
         await long_running_manager.tasks_manager.remove_task(
@@ -505,7 +508,7 @@ async def test_remove_unknown_task(
 
 async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_different_process(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
@@ -534,7 +537,7 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
 async def test_list_tasks(
     disable_stale_tasks_monitor: None,
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     assert (
@@ -578,7 +581,7 @@ async def test_list_tasks(
 
 async def test_list_tasks_filtering(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     empty_context: TaskContext,
 ):
     await lrt_api.start_task(
@@ -641,7 +644,7 @@ async def test_list_tasks_filtering(
 
 async def test_define_task_name(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     faker: Faker,
 ):
     task_name = faker.name()
@@ -658,7 +661,7 @@ async def test_define_task_name(
 
 async def test_start_not_registered_task(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
 ):
     with pytest.raises(TaskNotRegisteredError):
         await lrt_api.start_task(

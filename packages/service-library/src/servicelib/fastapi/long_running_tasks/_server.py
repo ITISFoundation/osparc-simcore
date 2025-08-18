@@ -46,7 +46,6 @@ def setup(
         # add components to state
         app.state.long_running_manager = long_running_manager = (
             FastAPILongRunningManager(
-                app=app,
                 stale_task_check_interval=stale_task_check_interval,
                 stale_task_detect_timeout=stale_task_detect_timeout,
                 redis_settings=redis_settings,

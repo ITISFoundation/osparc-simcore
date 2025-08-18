@@ -11,6 +11,9 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeInt
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks._rabbit.lrt_client import RabbitNamespace
+from servicelib.long_running_tasks.base_long_running_manager import (
+    BaseLongRunningManager,
+)
 from servicelib.long_running_tasks.errors import TaskNotFoundError
 from servicelib.long_running_tasks.models import TaskContext
 from servicelib.long_running_tasks.task import RedisNamespace, TaskId, TaskRegistry
@@ -24,7 +27,6 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
-from utils import NoWebAppLongRunningManager
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -70,10 +72,10 @@ async def long_running_managers(
     rabbit_service: RabbitSettings,
     get_long_running_manager: Callable[
         [RedisSettings, RedisNamespace | None, RabbitSettings, RabbitNamespace],
-        Awaitable[NoWebAppLongRunningManager],
+        Awaitable[BaseLongRunningManager],
     ],
-) -> list[NoWebAppLongRunningManager]:
-    maanagers: list[NoWebAppLongRunningManager] = []
+) -> list[BaseLongRunningManager]:
+    maanagers: list[BaseLongRunningManager] = []
     for _ in range(managers_count):
         long_running_manager = await get_long_running_manager(
             use_in_memory_redis, "same-service", rabbit_service, "some-service"
@@ -84,14 +86,14 @@ async def long_running_managers(
 
 
 def _get_task_manager(
-    long_running_managers: list[NoWebAppLongRunningManager],
-) -> NoWebAppLongRunningManager:
+    long_running_managers: list[BaseLongRunningManager],
+) -> BaseLongRunningManager:
     return secrets.choice(long_running_managers)
 
 
 async def _assert_task_status(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: NoWebAppLongRunningManager,
+    long_running_manager: BaseLongRunningManager,
     task_id: TaskId,
     *,
     is_done: bool
@@ -104,7 +106,7 @@ async def _assert_task_status(
 
 async def _assert_task_status_on_random_manager(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_managers: list[NoWebAppLongRunningManager],
+    long_running_managers: list[BaseLongRunningManager],
     task_ids: list[TaskId],
     *,
     is_done: bool = True
@@ -121,7 +123,7 @@ async def _assert_task_status_on_random_manager(
 
 async def _assert_task_status_done_on_all_managers(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_managers: list[NoWebAppLongRunningManager],
+    long_running_managers: list[BaseLongRunningManager],
     task_id: TaskId,
     *,
     is_done: bool = True
@@ -144,7 +146,7 @@ async def _assert_task_status_done_on_all_managers(
 
 async def _assert_list_tasks_from_all_managers(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_managers: list[NoWebAppLongRunningManager],
+    long_running_managers: list[BaseLongRunningManager],
     task_context: TaskContext,
     task_count: int,
 ) -> None:
@@ -155,7 +157,7 @@ async def _assert_list_tasks_from_all_managers(
 
 async def _assert_task_is_no_longer_present(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_managers: list[NoWebAppLongRunningManager],
+    long_running_managers: list[BaseLongRunningManager],
     task_context: TaskContext,
     task_id: TaskId,
 ) -> None:
@@ -178,7 +180,7 @@ _TASK_COUNT: Final[list[int]] = [5]
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 @pytest.mark.parametrize("to_return", [{"key": "value"}])
 async def test_workflow_with_result(
-    long_running_managers: list[NoWebAppLongRunningManager],
+    long_running_managers: list[BaseLongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
     is_unique: bool,
@@ -234,7 +236,7 @@ async def test_workflow_with_result(
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 async def test_workflow_raises_error(
-    long_running_managers: list[NoWebAppLongRunningManager],
+    long_running_managers: list[BaseLongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     task_count: int,
     is_unique: bool,
@@ -287,7 +289,7 @@ async def test_workflow_raises_error(
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
 @pytest.mark.parametrize("is_unique", _IS_UNIQUE)
 async def test_remove_task(
-    long_running_managers: list[NoWebAppLongRunningManager],
+    long_running_managers: list[BaseLongRunningManager],
     rabbitmq_rpc_client: RabbitMQRPCClient,
     is_unique: bool,
     task_context: TaskContext | None,

@@ -1,4 +1,3 @@
-import logging
 import traceback
 from typing import Any
 
@@ -9,8 +8,6 @@ from ..errors import BaseLongRunningError, TaskNotCompletedError, TaskNotFoundEr
 from ..models import TaskBase, TaskContext, TaskId, TaskStatus
 from ..task import RegisteredTaskName
 from ._models import RPCErrorResponse
-
-_logger = logging.getLogger(__name__)
 
 router = RPCRouter()
 

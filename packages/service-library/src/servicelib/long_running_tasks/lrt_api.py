@@ -1,15 +1,11 @@
-import logging
 from typing import Any
 
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ._rabbit import lrt_client, lrt_server
-from ._rabbit.namespace import get_namespace
+from ._rabbit import lrt_client
 from .base_long_running_manager import BaseLongRunningManager
 from .models import TaskBase, TaskContext, TaskId, TaskStatus
 from .task import RegisteredTaskName
-
-_logger = logging.getLogger(__name__)
 
 
 async def start_task(
@@ -114,13 +110,4 @@ async def remove_task(
         long_running_manager.rabbit_namespace,
         task_id=task_id,
         task_context=task_context,
-    )
-
-
-async def register_rabbit_routes(long_running_manager: BaseLongRunningManager) -> None:
-    rpc_server = long_running_manager.rpc_server
-    await rpc_server.register_router(
-        lrt_server.router,
-        get_namespace(long_running_manager.rabbit_namespace),
-        long_running_manager,
     )

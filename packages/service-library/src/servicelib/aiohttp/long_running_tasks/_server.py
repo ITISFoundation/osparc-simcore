@@ -175,7 +175,6 @@ def setup(
         # add components to state
         app[APP_LONG_RUNNING_MANAGER_KEY] = long_running_manager = (
             AiohttpLongRunningManager(
-                app=app,
                 stale_task_check_interval=stale_task_check_interval,
                 stale_task_detect_timeout=stale_task_detect_timeout,
                 redis_settings=redis_settings,

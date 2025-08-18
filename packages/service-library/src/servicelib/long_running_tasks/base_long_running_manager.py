@@ -1,34 +1,83 @@
-from abc import ABC, abstractmethod
+import datetime
+
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
+from ._rabbit.namespace import get_namespace
 from .models import RabbitNamespace
-from .task import TasksManager
+from .task import RedisNamespace, TasksManager
 
 
-class BaseLongRunningManager(ABC):
+class BaseLongRunningManager:
     """
     Provides a commond inteface for aiohttp and fastapi services
     """
 
+    def __init__(
+        self,
+        stale_task_check_interval: datetime.timedelta,
+        stale_task_detect_timeout: datetime.timedelta,
+        redis_settings: RedisSettings,
+        rabbit_settings: RabbitSettings,
+        redis_namespace: RedisNamespace,
+        rabbit_namespace: RabbitNamespace,
+    ):
+        self._tasks_manager = TasksManager(
+            stale_task_check_interval=stale_task_check_interval,
+            stale_task_detect_timeout=stale_task_detect_timeout,
+            redis_settings=redis_settings,
+            redis_namespace=redis_namespace,
+        )
+        self._rabbit_namespace = rabbit_namespace
+        self.rabbit_settings = rabbit_settings
+        self._rpc_server: RabbitMQRPCClient | None = None
+        self._rpc_client: RabbitMQRPCClient | None = None
+
     @property
-    @abstractmethod
     def tasks_manager(self) -> TasksManager:
-        pass
+        return self._tasks_manager
 
     @property
-    @abstractmethod
     def rpc_server(self) -> RabbitMQRPCClient:
-        pass
+        assert self._rpc_server is not None  # nosec
+        return self._rpc_server
 
     @property
-    @abstractmethod
+    def rpc_client(self) -> RabbitMQRPCClient:
+        assert self._rpc_client is not None  # nosec
+        return self._rpc_client
+
+    @property
     def rabbit_namespace(self) -> RabbitNamespace:
-        pass
+        return self._rabbit_namespace
 
-    @abstractmethod
     async def setup(self) -> None:
-        pass
+        await self._tasks_manager.setup()
+        self._rpc_server = await RabbitMQRPCClient.create(
+            client_name=f"lrt-server-{self.rabbit_namespace}",
+            settings=self.rabbit_settings,
+        )
+        self._rpc_client = await RabbitMQRPCClient.create(
+            client_name=f"lrt-client-{self.rabbit_namespace}",
+            settings=self.rabbit_settings,
+        )
 
-    @abstractmethod
+        from ._rabbit.lrt_server import router
+
+        await self.rpc_server.register_router(
+            router,
+            get_namespace(self.rabbit_namespace),
+            self,
+        )
+
     async def teardown(self) -> None:
-        pass
+        await self._tasks_manager.teardown()
+
+        if self._rpc_server is not None:
+            await self._rpc_server.close()
+            self._rpc_server = None
+
+        if self._rpc_client is not None:
+            await self._rpc_client.close()
+            self._rpc_client = None
