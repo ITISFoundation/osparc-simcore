@@ -13782,10 +13782,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -13915,10 +13917,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
