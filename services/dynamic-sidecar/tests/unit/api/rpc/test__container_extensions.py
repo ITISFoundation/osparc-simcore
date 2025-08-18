@@ -9,8 +9,8 @@ from pytest_mock import MockerFixture
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import container_extensions
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
+from simcore_service_dynamic_sidecar.modules.inputs import InputsState
 from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
-from simcore_service_dynamic_sidecar.services.inputs import InputsState
 
 pytest_simcore_core_services_selection = [
     "rabbit",

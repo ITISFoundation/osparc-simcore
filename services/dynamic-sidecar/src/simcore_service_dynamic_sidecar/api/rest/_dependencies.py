@@ -12,10 +12,10 @@ from ...core import rabbitmq
 from ...core.settings import ApplicationSettings
 from ...models.schemas.application_health import ApplicationHealth
 from ...models.shared_store import SharedStore
+from ...modules.inputs import InputsState
 from ...modules.mounted_fs import MountedVolumes
 from ...modules.outputs import OutputsContext, OutputsManager
 from ...modules.prometheus_metrics import UserServicesMetrics
-from ...services.inputs import InputsState
 
 
 def get_application(request: Request) -> FastAPI:

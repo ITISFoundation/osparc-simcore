@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from servicelib.rabbitmq import RPCRouter
 
-from ...services.inputs import disable_inputs_pulling, enable_inputs_pulling
+from ...modules.inputs import disable_inputs_pulling, enable_inputs_pulling
 from ...services.outputs import disable_event_propagation, enable_event_propagation
 
 router = RPCRouter()
