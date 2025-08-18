@@ -13782,12 +13782,10 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          anyOf:
-          - items:
-              type: string
-              pattern: ^[-_a-zA-Z0-9]+$
-            type: array
-          - type: 'null'
+          items:
+            type: string
+            pattern: ^[-_a-zA-Z0-9]+$
+          type: array
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -13917,12 +13915,10 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          anyOf:
-          - items:
-              type: string
-              pattern: ^[-_a-zA-Z0-9]+$
-            type: array
-          - type: 'null'
+          items:
+            type: string
+            pattern: ^[-_a-zA-Z0-9]+$
+          type: array
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -14130,9 +14126,6 @@ components:
       - serviceState
       - serviceUuid
       title: NodeGetIdle
-      example:
-        service_state: idle
-        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
     NodeGetUnknown:
       properties:
         serviceState:
