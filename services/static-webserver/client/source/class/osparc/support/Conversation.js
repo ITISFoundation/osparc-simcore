@@ -49,23 +49,34 @@ qx.Class.define("osparc.support.Conversation", {
   members: {
     __messages: null,
     __nextRequestParams: null,
-    __messageScroll: null,
-    __messagesList: null,
-    __loadMoreMessages: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "messages-container-scroll":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "messages-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            alignY: "middle"
+          });
+          this.getChildControl("messages-container-scroll").add(control);
+          break;
+        case "load-more-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
+          control.addListener("execute", () => this.__reloadMessages(false));
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     __buildLayout: function() {
-      this.__messagesList = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-        alignY: "middle"
-      });
-      const scrollView = this.__messageScroll = new qx.ui.container.Scroll();
-      scrollView.add(this.__messagesList);
-      this._add(scrollView, {
-        flex: 1
-      });
-
-      this.__loadMoreMessages = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-      this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
-      this._add(this.__loadMoreMessages);
+      this.getChildControl("messages-container");
+      this.getChildControl("load-more-button");
 
       const addMessages = new osparc.conversation.AddMessage().set({
         padding: 10,
@@ -108,19 +119,21 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __reloadMessages: function(removeMessages = true) {
+      const messagesContainer = this.getChildControl("messages-container");
+      const loadMoreMessages = this.getChildControl("load-more-button");
       if (this.getConversationId() === null) {
-        this.__messagesList.hide();
-        this.__loadMoreMessages.hide();
+        messagesContainer.hide();
+        loadMoreMessages.hide();
         return;
       }
 
-      this.__messagesList.show();
-      this.__loadMoreMessages.show();
-      this.__loadMoreMessages.setFetching(true);
+      messagesContainer.show();
+      loadMoreMessages.show();
+      loadMoreMessages.setFetching(true);
 
       if (removeMessages) {
         this.__messages = [];
-        this.__messagesList.removeAll();
+        messagesContainer.removeAll();
       }
 
       this.__getNextRequest()
@@ -128,11 +141,11 @@ qx.Class.define("osparc.support.Conversation", {
           const messages = resp["data"];
           messages.forEach(message => this.addMessage(message));
           this.__nextRequestParams = resp["_links"]["next"];
-          if (this.__nextRequestParams === null && this.__loadMoreMessages) {
-            this.__loadMoreMessages.exclude();
+          if (this.__nextRequestParams === null && loadMoreMessages) {
+            loadMoreMessages.exclude();
           }
         })
-        .finally(() => this.__loadMoreMessages.setFetching(false));
+        .finally(() => loadMoreMessages.setFetching(false));
     },
 
     addMessage: function(message) {
@@ -166,13 +179,15 @@ qx.Class.define("osparc.support.Conversation", {
       }
       if (control) {
         // insert into the UI at the same position
-        this.__messagesList.addAt(control, insertAt);
+        const messagesContainer = this.getChildControl("messages-container");
+        messagesContainer.addAt(control, insertAt);
       }
 
       // scroll to bottom
       // add timeout to ensure the scroll happens after the UI is updated
       setTimeout(() => {
-        this.__messageScroll.scrollToY(this.__messageScroll.getChildControl("pane").getScrollMaxY());
+        const messagesScroll = this.getChildControl("messages-container-scroll");
+        messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
       }, 50);
     },
 
@@ -185,12 +200,13 @@ qx.Class.define("osparc.support.Conversation", {
       this.__messages.splice(messageIndex, 1);
 
       // Remove the UI element from the messages list
-      const children = this.__messagesList.getChildren();
+      const messagesContainer = this.getChildControl("messages-container");
+      const children = messagesContainer.getChildren();
       const controlIndex = children.findIndex(
         ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === message["messageId"])
       );
       if (controlIndex > -1) {
-        this.__messagesList.remove(children[controlIndex]);
+        messagesContainer.remove(children[controlIndex]);
       }
     },
 
@@ -203,7 +219,8 @@ qx.Class.define("osparc.support.Conversation", {
       this.__messages[messageIndex] = message;
 
       // Update the UI element from the messages list
-      this.__messagesList.getChildren().forEach(control => {
+      const messagesContainer = this.getChildControl("messages-container");
+      messagesContainer.getChildren().forEach(control => {
         if ("getMessage" in control && control.getMessage()["messageId"] === message["messageId"]) {
           control.setMessage(message);
           return;

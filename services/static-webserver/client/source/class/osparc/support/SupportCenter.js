@@ -119,7 +119,8 @@ qx.Class.define("osparc.support.SupportCenter", {
             center: true,
             alignX: "center",
           });
-          control.addListener("execute", () => this.__createConversation(), this);
+          // control.addListener("execute", () => this.__createConversation(), this);
+          control.addListener("execute", () => this.__openConversation(null), this);
           this.getChildControl("conversations-layout").add(control);
           break;
         case "conversation-page":
