@@ -281,6 +281,7 @@ async def get_project_for_user(
             user_id=user_id,
             project=project,
             app=app,
+            product_name=product_name,
         )
 
     # adds `trashed_by_primary_gid`
@@ -1265,7 +1266,7 @@ async def patch_project_node(
         )
 
     updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, app=app
+        user_id=user_id, project=updated_project, app=app, product_name=product_name
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
@@ -1335,7 +1336,7 @@ async def update_project_node_outputs(
         pformat(changed_entries),
     )
     updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, app=app
+        user_id=user_id, project=updated_project, app=app, product_name=product_name
     )
 
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
@@ -1910,6 +1911,7 @@ async def add_project_states_for_user(
     user_id: int,
     project: ProjectDict,
     app: web.Application,
+    product_name: ProductName,
 ) -> ProjectDict:
     _logger.debug(
         "adding project states for %s with project %s",
@@ -1945,6 +1947,7 @@ async def add_project_states_for_user(
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_id=NodeID(node_uuid),
+                product_name=product_name,
             )
         if NodeID(node_uuid) in computational_node_states:
             node_state = computational_node_states[NodeID(node_uuid)].model_copy(

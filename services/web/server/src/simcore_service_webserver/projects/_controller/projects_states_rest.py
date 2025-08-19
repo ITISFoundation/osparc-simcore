@@ -165,6 +165,7 @@ async def open_project(request: web.Request) -> web.Response:
             user_id=req_ctx.user_id,
             project=project,
             app=request.app,
+            product_name=req_ctx.product_name,
         )
         await _projects_service.notify_project_state_update(request.app, project)
 

@@ -10,6 +10,7 @@ from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
+from models_library.products import ProductName
 from models_library.projects import ProjectTemplateType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
@@ -51,6 +52,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     *,
     db_projects: list[ProjectDict],
     user_id: UserID,
+    product_name: ProductName,
 ) -> list[ProjectDict]:
     """
     Aggregates data to each project from other sources, first as a batch-update and then as a parallel-update.
@@ -73,9 +75,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     # udpating `project.state`
     update_state_per_project = [
         _projects_service.add_project_states_for_user(
-            user_id=user_id,
-            project=prj,
-            app=app,
+            user_id=user_id, project=prj, app=app, product_name=product_name
         )
         for prj in db_projects
     ]
@@ -188,7 +188,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     )
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=api_projects, user_id=user_id
+        app, db_projects=api_projects, user_id=user_id, product_name=product_name
     )
 
     return final_projects, total_number_projects
@@ -235,7 +235,7 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments
     )
 
     final_projects = await _aggregate_data_to_projects_from_other_sources(
-        app, db_projects=api_projects, user_id=user_id
+        app, db_projects=api_projects, user_id=user_id, product_name=product_name
     )
 
     return final_projects, total_number_projects

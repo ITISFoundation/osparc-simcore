@@ -433,6 +433,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             user_id=user_id,
             project=new_project,
             app=request.app,
+            product_name=product_name,
         )
         await progress.update()
 
