@@ -1487,7 +1487,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           getConversation: {
             method: "GET",
-            url: statics.API + "/conversations/{conversationId}"
+            url: statics.API + "/conversations/{conversationId}?type=SUPPORT"
           },
           renameConversation: {
             method: "PUT",

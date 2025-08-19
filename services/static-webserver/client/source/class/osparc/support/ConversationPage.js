@@ -27,8 +27,10 @@ qx.Class.define("osparc.support.ConversationPage", {
     this._setLayout(new qx.ui.layout.VBox(5));
 
     this.getChildControl("back-button");
+
     const conversation = this.getChildControl("conversation");
     this.bind("conversationId", conversation, "conversationId");
+    conversation.bind("conversationId", this, "conversationId");
   },
 
   properties: {
@@ -37,6 +39,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       init: null,
       nullable: true,
       event: "changeConversationId",
+      apply: "__applyConversationId",
     },
   },
 
@@ -48,7 +51,7 @@ qx.Class.define("osparc.support.ConversationPage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "conversation-header":
+        case "conversation-header-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._add(control);
           break;
@@ -59,7 +62,23 @@ qx.Class.define("osparc.support.ConversationPage", {
             backgroundColor: "transparent"
           });
           control.addListener("execute", () => this.fireEvent("showConversations"));
-          this.getChildControl("conversation-header").add(control);
+          this.getChildControl("conversation-header-layout").add(control);
+          break;
+        case "conversation-title":
+          control = new qx.ui.basic.Label().set({
+            alignY: "middle",
+          });
+          this.getChildControl("conversation-header-layout").add(control);
+          break;
+        case "conversation-options":
+          control = new qx.ui.form.MenuButton().set({
+            maxWidth: 22,
+            maxHeight: 22,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
+          });
+          this.getChildControl("conversation-header-layout").add(control);
           break;
         case "conversation":
           control = new osparc.support.Conversation();
@@ -72,5 +91,25 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
       return control || this.base(arguments, id);
     },
+
+    __applyConversationId: function(conversationId) {
+      const title = this.getChildControl("conversation-title");
+      const options = this.getChildControl("conversation-options");
+      if (conversationId) {
+        osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
+          .then(conversation => {
+            let titleText = "";
+            if (conversation["name"] === "null") {
+              titleText = this.tr("Conversation: {id}", { id: conversationId });
+            } else {
+              title.setValue(titleText);
+            }
+            options.show();
+          });
+      } else {
+        title.setValue("");
+        options.exclude();
+      }
+    }
   }
 });
