@@ -147,14 +147,17 @@ async def test_task_is_auto_removed(
         )
 
 
+@pytest.mark.parametrize("wait_multiplier", [1, 2, 3, 4, 5, 6])
 async def test_checked_task_is_not_auto_removed(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: BaseLongRunningManager,
+    empty_context: TaskContext,
+    wait_multiplier: int,
 ):
     task_id = await lrt_api.start_task(
         long_running_manager,
         a_background_task.__name__,
         raise_when_finished=False,
-        total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
+        total_sleep=wait_multiplier * TEST_CHECK_STALE_INTERVAL_S,
         task_context=empty_context,
     )
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
