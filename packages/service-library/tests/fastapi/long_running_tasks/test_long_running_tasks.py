@@ -200,15 +200,7 @@ async def test_workflow(
         ("generated item", 0.8),
         ("finished", 1.0),
     ]
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(10),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert all(x in progress_updates for x in EXPECTED_MESSAGES)
+    assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now check the result
     result_url = app.url_path_for("get_task_result", task_id=task_id)
     result = await client.get(f"{result_url}")

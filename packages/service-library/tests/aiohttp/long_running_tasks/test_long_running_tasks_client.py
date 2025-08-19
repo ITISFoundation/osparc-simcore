@@ -17,6 +17,12 @@ from servicelib.aiohttp.long_running_tasks.client import (
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
@@ -112,12 +118,20 @@ async def test_long_running_task_request_timeout(
         ):
             print(f"<-- received {task=}")
 
-    # check the task was properly aborted by the client
-    list_url = client.app.router["list_tasks"].url_for()
-    result = await client.get(f"{list_url}")
-    data, error = await assert_status(result, status.HTTP_200_OK)
-    assert not error
-    assert data == []
+    # does not wait for removal any longer
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            # check the task was properly aborted by the client
+            list_url = client.app.router["list_tasks"].url_for()
+            result = await client.get(f"{list_url}")
+            data, error = await assert_status(result, status.HTTP_200_OK)
+            assert not error
+            assert data == []
 
 
 async def test_long_running_task_request_error(
