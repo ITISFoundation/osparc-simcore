@@ -76,8 +76,10 @@ class DummyRpcClient(RabbitMQRPCClient):
 async def mock_rabbitmq_rpc_client(
     app: FastAPI, mocker: MockerFixture
 ) -> MockerFixture:
-    # mock_rpc_client = mocker.patch("simcore_service_api_server.services_rpc.rabbitmq.RabbitMQRPCClient")
-    app.dependency_overrides[get_rabbitmq_rpc_client] = lambda: DummyRpcClient()
+    def _():
+        return DummyRpcClient()
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = _
     return mocker
 
 
