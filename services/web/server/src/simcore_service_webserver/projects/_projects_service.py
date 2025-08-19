@@ -1376,7 +1376,11 @@ async def _is_service_collaborative(
     product_name: ProductName,
 ) -> bool:
     service = await catalog_service.get_service(
-        app, user_id=user_id, key=key, version=version, product_name=product_name
+        app,
+        user_id=user_id,
+        service_key=key,
+        service_version=version,
+        product_name=product_name,
     )
 
     return service.get("collaborative", False) is True
