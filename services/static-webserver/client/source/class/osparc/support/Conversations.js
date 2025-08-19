@@ -19,13 +19,12 @@
 qx.Class.define("osparc.support.Conversations", {
   extend: qx.ui.core.Widget,
 
-  construct: function(openConversationId = null) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__conversationListItems = [];
-    this.__openConversationId = openConversationId;
 
     this.__fetchConversations();
   },
@@ -51,8 +50,6 @@ qx.Class.define("osparc.support.Conversations", {
 
   members: {
     __conversationListItems: null,
-    __openConversationId: null,
-    __wsHandlers: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -82,16 +79,9 @@ qx.Class.define("osparc.support.Conversations", {
 
       osparc.store.ConversationsSupport.getInstance().getConversations()
         .then(conversations => {
-          if (Object.values(conversations).length) {
-            Object.values(conversations).forEach(conversation => this.__addConversation(conversation));
-            if (this.__openConversationId) {
-              const conversationsLayout = this.getChildControl("conversations-layout");
-              const conversation = conversationsLayout.getSelectables().find(c => c.getConversationId() === this.__openConversationId);
-              if (conversation) {
-                conversationsLayout.setSelection([conversation]);
-              }
-              this.__openConversationId = null; // reset it so it does not open again
-            }
+          const conversationsList = Object.values(conversations);
+          if (conversationsList.length) {
+            conversationsList.forEach(conversation => this.__addConversation(conversation));
           }
         })
         .finally(() => {
