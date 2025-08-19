@@ -132,7 +132,6 @@ qx.Class.define("osparc.utils.Utils", {
 
     getThumbnailProps: function(size = 32) {
       return {
-        alignX: "center",
         alignY: "middle",
         scale: true,
         allowGrowX: true,

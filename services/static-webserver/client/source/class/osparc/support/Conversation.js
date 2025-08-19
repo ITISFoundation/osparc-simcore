@@ -55,7 +55,7 @@ qx.Class.define("osparc.support.Conversation", {
       switch (id) {
         case "messages-container-scroll":
           control = new qx.ui.container.Scroll();
-          this._add(control, {
+          this._addAt(control, 0, {
             flex: 1
           });
           break;
@@ -68,7 +68,13 @@ qx.Class.define("osparc.support.Conversation", {
         case "load-more-button":
           control = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
           control.addListener("execute", () => this.__reloadMessages(false));
-          this._add(control);
+          this._addAt(control, 1);
+          break;
+        case "support-suggestion":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+            alignY: "middle"
+          });
+          this._addAt(control, 2);
           break;
         case "add-message":
           control = new osparc.conversation.AddMessage().set({
@@ -78,7 +84,7 @@ qx.Class.define("osparc.support.Conversation", {
           // make it more compact
           control.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
           control.getChildControl("comment-field").getChildControl("subtitle").exclude();
-          this._add(control);
+          this._addAt(control, 3);
           break;
       }
       return control || this.base(arguments, id);
@@ -96,8 +102,15 @@ qx.Class.define("osparc.support.Conversation", {
       });
     },
 
-    __applyConversationId: function(value) {
-      this.__reloadMessages(true);
+    __applyConversationId: function(conversationId) {
+      const supportSuggestion = this.getChildControl("support-suggestion");
+      if (conversationId) {
+        supportSuggestion.exclude();
+        this.__reloadMessages(true);
+      } else {
+        // new conversation, collect context data
+        supportSuggestion.show();
+      }
     },
 
     __getNextRequest: function() {

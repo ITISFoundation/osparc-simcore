@@ -20,7 +20,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param message {Object} message
+    * @param message {Object} message data
     * @param studyData {Object?null} serialized Study Data
     */
   construct: function(message, studyData = null) {
