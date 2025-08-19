@@ -163,7 +163,7 @@ async def get_conversation(request: web.Request):
     return envelope_json_response(data)
 
 
-@routes.put(
+@routes.patch(
     f"/{VTAG}/conversations/{{conversation_id}}",
     name="update_conversation",
 )
@@ -190,7 +190,9 @@ async def update_conversation(request: web.Request):
         app=request.app,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
-        updates=ConversationPatchDB(name=body_params.name),
+        updates=ConversationPatchDB(
+            name=body_params.name, extra_context=body_params.extra_context
+        ),
     )
 
     data = ConversationRestGet.from_domain_model(conversation)
