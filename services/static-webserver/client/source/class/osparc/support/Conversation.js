@@ -70,20 +70,23 @@ qx.Class.define("osparc.support.Conversation", {
           control.addListener("execute", () => this.__reloadMessages(false));
           this._add(control);
           break;
+        case "add-message":
+          control = new osparc.conversation.AddMessage().set({
+            padding: 10,
+          });
+          this.bind("conversationId", control, "conversationId");
+          // make it more compact
+          control.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
+          control.getChildControl("comment-field").getChildControl("subtitle").exclude();
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
 
     __buildLayout: function() {
       this.getChildControl("messages-container");
-      this.getChildControl("load-more-button");
-
-      const addMessages = new osparc.conversation.AddMessage().set({
-        padding: 10,
-      });
-      this.bind("conversationId", addMessages, "conversationId");
-      addMessages.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
-      addMessages.getChildControl("comment-field").getChildControl("subtitle").exclude();
+      const addMessages = this.getChildControl("add-message");
       addMessages.addListener("messageAdded", e => {
         const data = e.getData();
         if (data["conversationId"]) {
@@ -91,7 +94,6 @@ qx.Class.define("osparc.support.Conversation", {
           this.addMessage(data);
         }
       });
-      this._add(addMessages);
     },
 
     __applyConversationId: function(value) {
