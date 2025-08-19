@@ -310,6 +310,7 @@ async def test_remove_task(
         _get_task_manager(long_running_managers),
         saved_context,
         task_id,
+        wait_for_removal=True,
     )
 
     await _assert_task_is_no_longer_present(

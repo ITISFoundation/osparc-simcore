@@ -419,7 +419,7 @@ async def test_remove_task(
         task_id, with_task_context=empty_context
     )
     await long_running_manager.tasks_manager.remove_task(
-        task_id, with_task_context=empty_context
+        task_id, with_task_context=empty_context, wait_for_removal=True
     )
     with pytest.raises(TaskNotFoundError):
         await long_running_manager.tasks_manager.get_task_status(
@@ -453,10 +453,10 @@ async def test_remove_task_with_task_context(
     # removing task fails if wrong task context given
     with pytest.raises(TaskNotFoundError):
         await long_running_manager.tasks_manager.remove_task(
-            task_id, with_task_context={"wrong_task_context": 12}
+            task_id, with_task_context={"wrong_task_context": 12}, wait_for_removal=True
         )
     await long_running_manager.tasks_manager.remove_task(
-        task_id, with_task_context=empty_context
+        task_id, with_task_context=empty_context, wait_for_removal=True
     )
 
 
@@ -465,11 +465,14 @@ async def test_remove_unknown_task(
 ):
     with pytest.raises(TaskNotFoundError):
         await long_running_manager.tasks_manager.remove_task(
-            "invalid_id", with_task_context=empty_context
+            "invalid_id", with_task_context=empty_context, wait_for_removal=True
         )
 
     await long_running_manager.tasks_manager.remove_task(
-        "invalid_id", with_task_context=empty_context, reraise_errors=False
+        "invalid_id",
+        with_task_context=empty_context,
+        wait_for_removal=True,
+        reraise_errors=False,
     )
 
 
@@ -532,7 +535,7 @@ async def test_list_tasks(
     )
     for task_index, task_id in enumerate(task_ids):
         await long_running_manager.tasks_manager.remove_task(
-            task_id, with_task_context=empty_context
+            task_id, with_task_context=empty_context, wait_for_removal=True
         )
         assert len(
             await long_running_manager.tasks_manager.list_tasks(
