@@ -3695,7 +3695,7 @@ paths:
           type: string
           contentMediaType: application/json
           contentSchema: {}
-          default: '{"field":"modified_at","direction":"desc"}'
+          default: '{"field":"modified","direction":"desc"}'
           title: Order By
       - name: limit
         in: query
