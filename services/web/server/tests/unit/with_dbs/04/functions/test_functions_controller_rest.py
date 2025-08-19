@@ -3,8 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
-import json
 from collections.abc import AsyncIterator
 from http import HTTPStatus
 from typing import Any
@@ -12,6 +10,7 @@ from uuid import uuid4
 
 import pytest
 from aiohttp.test_utils import TestClient
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.functions import (
     FunctionClass,
     JSONFunctionInputSchema,
@@ -143,7 +142,7 @@ async def test_function_workflow(
     url = client.app.router["list_functions"].url_for()
     response = await client.get(
         url,
-        params={"order_by": json.dumps({"field": "created_at", "direction": "asc"})},
+        params={"order_by": json_dumps({"field": "created_at", "direction": "asc"})},
     )
     data, error = await assert_status(response, expected_list)
     if not error:
@@ -179,7 +178,7 @@ async def test_function_workflow(
     # List existing functions (searching by title)
     url = client.app.router["list_functions"].url_for()
     response = await client.get(
-        url, params={"filters": json.dumps({"search_by_title": "duplicate"})}
+        url, params={"filters": json_dumps({"search_by_title": "duplicate"})}
     )
     data, error = await assert_status(response, expected_list)
     if not error:
