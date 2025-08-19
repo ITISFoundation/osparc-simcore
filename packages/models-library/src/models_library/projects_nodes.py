@@ -300,8 +300,6 @@ class Node(BaseModel):
             # the old version of state was a enum of RunningState
             running_state_value = _convert_old_enum_name(v)
             return NodeState(current_status=running_state_value)
-        if v is None:
-            return NodeState(current_status=RunningState.NOT_STARTED)
         return v
 
     @staticmethod
