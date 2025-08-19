@@ -38,7 +38,6 @@ from ...models.schemas.jobs import (
     JobLog,
     JobMetadata,
     JobOutputs,
-    get_solver_job_rest_interface_links,
 )
 from ...models.schemas.jobs_filters import JobMetadataFilter
 from ...models.schemas.model_adapter import (
@@ -52,7 +51,10 @@ from ...services_http.jobs import (
     raise_if_job_not_associated_with_solver,
 )
 from ...services_http.log_streaming import LogDistributor, LogStreamer
-from ...services_http.solver_job_models_converters import create_job_from_project
+from ...services_http.solver_job_models_converters import (
+    create_job_from_project,
+    get_solver_job_rest_interface_links,
+)
 from ...services_http.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper

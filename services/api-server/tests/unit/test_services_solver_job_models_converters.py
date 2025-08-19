@@ -209,7 +209,7 @@ def test_create_job_from_project(faker: Faker):
     solver_key = "simcore/services/comp/itis/sleeper"
     solver_version = "2.0.2"
 
-    fake_job_rest_interface_links = JobLinks(
+    fake_job_links = JobLinks(
         url_template=faker.url() + "/{job_id}",
         runner_url_template=faker.url(),
         outputs_url_template=faker.url() + "/{job_id}",
@@ -227,7 +227,7 @@ def test_create_job_from_project(faker: Faker):
     job = create_job_from_project(
         solver_or_program=solver,
         project=project,
-        job_links=fake_job_rest_interface_links,
+        job_links=fake_job_links,
     )
 
     assert job.id == project.uuid

@@ -39,6 +39,8 @@ from ._service_jobs import JobService
 from .models.schemas.jobs import (
     JobInputs,
     JobPricingSpecification,
+)
+from .services_http.solver_job_models_converters import (
     get_solver_job_rest_interface_links,
 )
 from .services_rpc.wb_api_server import WbApiRpcClient

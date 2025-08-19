@@ -24,11 +24,13 @@ from ...models.schemas.jobs import (
     JobMetadataUpdate,
     JobPricingSpecification,
     JobStatus,
-    get_solver_job_rest_interface_links,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import replace_custom_metadata, stop_project
+from ...services_http.solver_job_models_converters import (
+    get_solver_job_rest_interface_links,
+)
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client, get_job_service
