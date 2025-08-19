@@ -33,9 +33,7 @@ qx.Class.define("osparc.support.SuggestedQuestion", {
   },
 
   members: {
-    isProjectRelated: function(answers) {
-      this._removeAll();
-
+    __addProductThumbnail: function() {
       const thumbnail = osparc.utils.Utils.createThumbnail(32).set({
         source: osparc.product.Utils.getIconUrl(),
       });
@@ -43,14 +41,18 @@ qx.Class.define("osparc.support.SuggestedQuestion", {
         row: 0,
         column: 0,
       });
+    },
 
-      const question = new qx.ui.basic.Label(this.tr("Is your question related to this project?"));
+    __addQuestionLabel: function(text) {
+      const question = new qx.ui.basic.Label(text);
       this._add(question, {
         row: 0,
         column: 1,
       });
+    },
 
-      const answersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    __addAnswers: function(answers) {
+      const answersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       answers.forEach(answer => {
         const button = new qx.ui.form.Button(answer.label).set({
           appearance: "strong-button",
@@ -63,6 +65,20 @@ qx.Class.define("osparc.support.SuggestedQuestion", {
         row: 1,
         column: 1,
       });
+    },
+
+    isProjectRelated: function(answers) {
+      this._removeAll();
+      this.__addProductThumbnail();
+      this.__addQuestionLabel(this.tr("Is your question related to the current project?"));
+      this.__addAnswers(answers);
+    },
+
+    shareProject: function() {
+      this._removeAll();
+      this.__addProductThumbnail();
+      this.__addQuestionLabel(this.tr("Do you want to share this project with Support?"));
+      this.__addAnswers(answers);
     },
   }
 });
