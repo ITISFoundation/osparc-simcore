@@ -321,16 +321,16 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
 
                 # if this one is in, the other should also be but let's check it carefully
                 assert node_values.run_hash
-                assert "runHash" in node_in_project_table
-                assert node_values.run_hash == node_in_project_table["runHash"]
+                assert "run_hash" in node_in_project_table
+                assert node_values.run_hash == node_in_project_table["run_hash"]
 
                 assert node_values.state
                 assert "state" in node_in_project_table
-                assert "currentStatus" in node_in_project_table["state"]
+                assert "current_status" in node_in_project_table["state"]
                 # NOTE: beware that the comp_tasks has StateType and Workbench has RunningState (sic)
                 assert (
                     DB_TO_RUNNING_STATE[node_values.state].value
-                    == node_in_project_table["state"]["currentStatus"]
+                    == node_in_project_table["state"]["current_status"]
                 )
             print(
                 "--> tasks were properly transferred! "
