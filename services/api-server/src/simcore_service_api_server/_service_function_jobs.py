@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from dataclasses import dataclass
 
 import jsonschema
@@ -36,15 +35,10 @@ from models_library.users import UserID
 from pydantic import ValidationError
 
 from ._service_jobs import JobService
+from .models.api_resources import JobLinks
 from .models.schemas.jobs import (
     JobInputs,
     JobPricingSpecification,
-)
-from .services_http.solver_job_models_converters import (
-    get_solver_job_rest_interface_links,
-)
-from .services_http.study_job_models_converters import (
-    get_study_job_rest_interface_links,
 )
 from .services_rpc.wb_api_server import WbApiRpcClient
 
@@ -172,7 +166,7 @@ class FunctionJobService:
         function: RegisteredFunction,
         function_inputs: FunctionInputs,
         pricing_spec: JobPricingSpecification | None,
-        url_for: Callable,
+        job_links: JobLinks,
         x_simcore_parent_project_uuid: NodeID | None,
         x_simcore_parent_node_id: NodeID | None,
     ) -> RegisteredFunctionJob:
@@ -227,9 +221,6 @@ class FunctionJobService:
                     return cached_function_job
 
         if function.function_class == FunctionClass.PROJECT:
-            job_links = get_study_job_rest_interface_links(
-                url_for=url_for, study_id=function.project_id
-            )
             study_job = await self._job_service.create_studies_job(
                 study_id=function.project_id,
                 job_inputs=JobInputs(values=joined_inputs or {}),
@@ -257,16 +248,11 @@ class FunctionJobService:
             )
 
         if function.function_class == FunctionClass.SOLVER:
-            job_rest_interface_links = get_solver_job_rest_interface_links(
-                url_for=url_for,
-                solver_key=function.solver_key,
-                version=function.solver_version,
-            )
             solver_job = await self._job_service.create_solver_job(
                 solver_key=function.solver_key,
                 version=function.solver_version,
                 inputs=JobInputs(values=joined_inputs or {}),
-                job_links=job_rest_interface_links,
+                job_links=job_links,
                 hidden=True,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
@@ -299,8 +285,8 @@ class FunctionJobService:
         *,
         function: RegisteredFunction,
         function_inputs_list: FunctionInputsList,
+        job_links: JobLinks,
         pricing_spec: JobPricingSpecification | None,
-        url_for: Callable,
         x_simcore_parent_project_uuid: ProjectID | None,
         x_simcore_parent_node_id: NodeID | None,
     ) -> RegisteredFunctionJobCollection:
@@ -310,7 +296,7 @@ class FunctionJobService:
                 function=function,
                 function_inputs=function_inputs,
                 pricing_spec=pricing_spec,
-                url_for=url_for,
+                job_links=job_links,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )

@@ -316,6 +316,7 @@ async def run_function(  # noqa: PLR0913
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     function_inputs: FunctionInputs,
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
     function_jobs_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
@@ -333,11 +334,13 @@ async def run_function(  # noqa: PLR0913
         else None
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
+    job_links = await function_service.get_function_job_links(to_run_function, url_for)
+
     return await function_jobs_service.run_function(
         function=to_run_function,
         function_inputs=function_inputs,
         pricing_spec=pricing_spec,
-        url_for=url_for,
+        job_links=job_links,
         x_simcore_parent_project_uuid=parent_project_uuid,
         x_simcore_parent_node_id=parent_node_id,
     )
@@ -388,6 +391,7 @@ async def map_function(  # noqa: PLR0913
     function_jobs_service: Annotated[
         FunctionJobService, Depends(get_function_job_service)
     ],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> RegisteredFunctionJobCollection:
@@ -404,11 +408,13 @@ async def map_function(  # noqa: PLR0913
     )
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
 
+    job_links = await function_service.get_function_job_links(to_run_function, url_for)
+
     return await function_jobs_service.map_function(
         function=to_run_function,
         function_inputs_list=function_inputs_list,
         pricing_spec=pricing_spec,
-        url_for=url_for,
+        job_links=job_links,
         x_simcore_parent_project_uuid=parent_project_uuid,
         x_simcore_parent_node_id=parent_node_id,
     )
