@@ -1568,7 +1568,7 @@ async def try_open_project_for_user(
                 # check if the project is already opened
                 if (
                     current_project_ids := await user_session.find(PROJECT_ID_KEY)
-                ) and current_project_ids == [f"{project_uuid}"]:
+                ) and f"{project_uuid}" in current_project_ids:
                     _logger.debug(
                         "project %s is already opened by user %s/%s",
                         project_uuid,
