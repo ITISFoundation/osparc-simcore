@@ -89,13 +89,15 @@ qx.Class.define("osparc.conversation.MessageUI", {
           break;
         case "user-name":
           control = new qx.ui.basic.Label().set({
-            font: "text-12"
+            font: "text-12",
+            textColor: "text-disabled",
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 2 : 0);
           break;
         case "last-updated":
           control = new qx.ui.basic.Label().set({
-            font: "text-12"
+            font: "text-12",
+            textColor: "text-disabled",
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;

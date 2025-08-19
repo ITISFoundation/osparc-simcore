@@ -23,9 +23,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
     const layout = this._getLayout();
     layout.setSpacingX(10);
-    layout.setSpacingY(4);
-
-    this.setMinHeight(32);
+    layout.setSpacingY(0);
   },
 
   properties: {
@@ -43,8 +41,12 @@ qx.Class.define("osparc.support.ConversationListItem", {
       osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
         .then(lastMessages => {
           if (lastMessages && lastMessages.length) {
+            // decorate
             this.getChildControl("thumbnail").getContentElement().setStyles({
               "border-radius": "16px"
+            });
+            this.getChildControl("subtitle").set({
+              textColor: "text-disabled",
             });
             const lastMessage = lastMessages[0];
             const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
