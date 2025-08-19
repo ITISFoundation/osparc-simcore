@@ -3786,8 +3786,8 @@ paths:
     put:
       tags:
       - functions
-      summary: Create or Update Function Group
-      operationId: update_function_group
+      summary: Create or update a Function Group
+      operationId: create_or_update_function_group
       parameters:
       - name: function_id
         in: path
@@ -3820,7 +3820,7 @@ paths:
     delete:
       tags:
       - functions
-      summary: Delete Function Group
+      summary: Delete a Function Group
       operationId: delete_function_group
       parameters:
       - name: function_id

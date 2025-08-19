@@ -94,9 +94,10 @@ async def get_function_groups(
 
 @router.put(
     "/functions/{function_id}/groups/{group_id}",
+    summary="Create or update a Function Group",
     response_model=Envelope[FunctionGroupAccessRightsGet],
 )
-async def update_function_group(
+async def create_or_update_function_group(
     _path: Annotated[FunctionGroupPathParams, Depends()],
     _body: FunctionGroupAccessRightsUpdate,
 ): ...
@@ -104,6 +105,7 @@ async def update_function_group(
 
 @router.delete(
     "/functions/{function_id}/groups/{group_id}",
+    summary="Delete a Function Group",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_function_group(

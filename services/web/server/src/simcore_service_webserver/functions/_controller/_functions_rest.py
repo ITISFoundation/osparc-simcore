@@ -409,12 +409,12 @@ async def get_function_groups(request: web.Request) -> web.Response:
 
 @routes.put(
     f"/{VTAG}/functions/{{function_id}}/groups/{{group_id}}",
-    name="update_function_group",
+    name="create_or_update_function_group",
 )
 @login_required
 @permission_required("function.update")
 @handle_rest_requests_exceptions
-async def update_function_group(request: web.Request) -> web.Response:
+async def create_or_update_function_group(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionGroupPathParams, request)
     function_id = path_params.function_id
     group_id = path_params.group_id

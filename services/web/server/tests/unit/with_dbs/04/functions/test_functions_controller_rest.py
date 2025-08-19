@@ -123,7 +123,7 @@ async def test_function_workflow(
     new_group_id = other_logged_user["primary_gid"]
     new_group_access_rights = {"read": True, "write": True, "execute": False}
 
-    url = client.app.router["update_function_group"].url_for(
+    url = client.app.router["create_or_update_function_group"].url_for(
         function_id=f"{returned_function_uid}", group_id=f"{new_group_id}"
     )
 
