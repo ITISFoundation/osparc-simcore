@@ -3,7 +3,7 @@ import urllib.parse
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-import parse
+import parse  # type: ignore[import-untyped]
 from pydantic import AfterValidator, BaseModel, Field, HttpUrl, TypeAdapter
 from pydantic.types import StringConstraints
 
