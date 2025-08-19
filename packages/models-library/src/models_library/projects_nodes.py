@@ -295,7 +295,7 @@ class Node(BaseModel):
     @field_validator("state", mode="before")
     @classmethod
     def _convert_from_enum(cls, v):
-        if isinstance(v, str):
+        if isinstance(v, str | None):
 
             # the old version of state was a enum of RunningState
             running_state_value = _convert_old_enum_name(v)
