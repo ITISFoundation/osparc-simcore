@@ -98,12 +98,10 @@ qx.Class.define("osparc.support.ConversationPage", {
       if (conversationId) {
         osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
           .then(conversation => {
-            let titleText = "";
-            if (conversation["name"] === "null") {
-              titleText = this.tr("Conversation: {id}", { id: conversationId });
-            } else {
-              title.setValue(titleText);
-            }
+            const name = conversation.getName();
+            title.set({
+              value: name && name !== "null" ? name : lastMessage.content,
+            });
             options.show();
           });
       } else {

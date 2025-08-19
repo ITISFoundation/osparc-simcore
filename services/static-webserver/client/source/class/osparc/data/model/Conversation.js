@@ -100,8 +100,22 @@ qx.Class.define("osparc.data.model.Conversation", {
       init: null,
       event: "changeExtraContent",
     },
+
+    messages: {
+      check: "Array",
+      nullable: false,
+      init: null,
+    },
   },
 
   statics: {
+  },
+
+  members: {
+    addMessage: function(message) {
+      const messages = this.getMessages() || [];
+      messages.push(message);
+      this.setMessages(messages);
+    },
   },
 });

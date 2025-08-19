@@ -46,12 +46,17 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "getConversationsPage", params)
         .then(conversationsData => {
+          const conversations = [];
           if (conversationsData.length) {
             // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
             conversationsData.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
           }
-          conversationsData.forEach(conversationData => this.__addToCache(conversationData));
-          return this.__conversationsCached;
+          conversationsData.forEach(conversationData => {
+            const conversation = new osparc.data.model.Conversation(conversationData);
+            this.__addToCache(conversation);
+            conversations.push(conversation);
+          });
+          return conversations;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
@@ -62,7 +67,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           conversationId,
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params);
+      return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params)
+        .then(conversationData => {
+          const conversation = new osparc.data.model.Conversation(conversationData);
+          this.__addToCache(conversation);
+          return conversation;
+        });
     },
 
     addConversation: function(extraContext = {}) {
@@ -127,7 +137,11 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           limit: 1,
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params);
+      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params)
+        .then(messagesData => {
+          messagesData.forEach(messageData => this.__addMessageToCache(conversationId, messageData));
+          return messagesData;
+        });
     },
 
     addMessage: function(conversationId, message) {
@@ -169,9 +183,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    __addToCache: function(conversationData) {
-      const conversation = new osparc.data.model.Conversation(conversationData);
+    __addToCache: function(conversation) {
       this.__conversationsCached[conversation.getConversationId()] = conversation;
+    },
+
+    __addMessageToCache: function(conversationId, messageData) {
+      this.__conversationsCached[conversationId].addMessage(messageData);
     },
   }
 });

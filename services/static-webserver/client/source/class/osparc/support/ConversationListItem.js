@@ -24,6 +24,14 @@ qx.Class.define("osparc.support.ConversationListItem", {
     const layout = this._getLayout();
     layout.setSpacingX(10);
     layout.setSpacingY(0);
+
+    // decorate
+    this.getChildControl("thumbnail").getContentElement().setStyles({
+      "border-radius": "16px"
+    });
+    this.getChildControl("subtitle").set({
+      textColor: "text-disabled",
+    });
   },
 
   properties: {
@@ -39,36 +47,39 @@ qx.Class.define("osparc.support.ConversationListItem", {
   members: {
     __applyConversation: function(conversation) {
       const conversationId = conversation.getConversationId();
-      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
-        .then(lastMessages => {
-          if (lastMessages && lastMessages.length) {
-            // decorate
-            this.getChildControl("thumbnail").getContentElement().setStyles({
-              "border-radius": "16px"
-            });
-            this.getChildControl("subtitle").set({
-              textColor: "text-disabled",
-            });
-            const lastMessage = lastMessages[0];
-            const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
-            const name = conversation.getName();
-            this.set({
-              title: name && name !== "null" ? name : lastMessage.content,
-              subtitle: date,
-            });
+      if (conversation.getMessages()) {
+        this.__populateListItem();
+      } else {
+        osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
+          .then(() => {
+            this.__populateListItem();
+          });
+      }
+    },
 
-            const userGroupId = lastMessage.userGroupId;
-            osparc.store.Users.getInstance().getUser(userGroupId)
-              .then(user => {
-                if (user) {
-                  this.set({
-                    thumbnail: user.getThumbnail(),
-                    subtitle: user.getLabel() + " - " + date,
-                  });
-                }
-              });
-          }
+    __populateListItem: function() {
+      const conversation = this.getConversation();
+      const messages = conversation.getMessages();
+      if (messages && messages.length) {
+        const lastMessage = messages[0];
+        const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
+        const name = conversation.getName();
+        this.set({
+          title: name && name !== "null" ? name : lastMessage.content,
+          subtitle: date,
         });
+
+        const userGroupId = lastMessage.userGroupId;
+        osparc.store.Users.getInstance().getUser(userGroupId)
+          .then(user => {
+            if (user) {
+              this.set({
+                thumbnail: user.getThumbnail(),
+                subtitle: user.getLabel() + " - " + date,
+              });
+            }
+          });
+      }
     },
   }
 });

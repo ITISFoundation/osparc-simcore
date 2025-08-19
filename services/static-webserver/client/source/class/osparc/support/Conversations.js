@@ -79,9 +79,8 @@ qx.Class.define("osparc.support.Conversations", {
 
       osparc.store.ConversationsSupport.getInstance().getConversations()
         .then(conversations => {
-          const conversationsList = Object.values(conversations);
-          if (conversationsList.length) {
-            conversationsList.forEach(conversation => this.__addConversation(conversation));
+          if (conversations.length) {
+            conversations.forEach(conversation => this.__addConversation(conversation));
           }
         })
         .finally(() => {
