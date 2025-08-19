@@ -10,6 +10,7 @@ from models_library.basic_types import IDStr
 from models_library.functions import (
     FunctionAccessRightsDB,
     FunctionClass,
+    FunctionGroupAccessRights,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
@@ -1063,6 +1064,36 @@ async def delete_function_job_collection(
         )
 
 
+async def get_group_permissions(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[UUID],
+) -> list[tuple[UUID, list[FunctionGroupAccessRights]]]:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        for object_id in object_ids:
+            await check_user_permissions(
+                app,
+                connection=conn,
+                user_id=user_id,
+                product_name=product_name,
+                object_id=object_id,
+                object_type=object_type,
+                permissions=["read"],
+            )
+
+        return await _internal_get_group_permissions(
+            app,
+            connection=connection,
+            product_name=product_name,
+            object_type=object_type,
+            object_ids=object_ids,
+        )
+
+
 async def set_group_permissions(
     app: web.Application,
     connection: AsyncConnection | None = None,
@@ -1075,7 +1106,7 @@ async def set_group_permissions(
     read: bool | None = None,
     write: bool | None = None,
     execute: bool | None = None,
-) -> None:
+) -> list[tuple[UUID, FunctionGroupAccessRights]]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         for object_id in object_ids:
             await check_user_permissions(
@@ -1088,7 +1119,7 @@ async def set_group_permissions(
                 permissions=["write"],
             )
 
-        await _internal_set_group_permissions(
+        return await _internal_set_group_permissions(
             app,
             connection=connection,
             permission_group_id=permission_group_id,
@@ -1169,18 +1200,14 @@ async def _internal_remove_group_permissions(
             )
 
 
-async def _internal_set_group_permissions(
+async def _internal_get_group_permissions(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    permission_group_id: GroupID,
     product_name: ProductName,
     object_type: Literal["function", "function_job", "function_job_collection"],
     object_ids: list[UUID],
-    read: bool | None = None,
-    write: bool | None = None,
-    execute: bool | None = None,
-) -> None:
+) -> list[tuple[UUID, list[FunctionGroupAccessRights]]]:
     access_rights_table = None
     field_name = None
     if object_type == "function":
@@ -1196,6 +1223,60 @@ async def _internal_set_group_permissions(
     assert access_rights_table is not None  # nosec
     assert field_name is not None  # nosec
 
+    access_rights_list: list[tuple[UUID, list[FunctionGroupAccessRights]]] = []
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        for object_id in object_ids:
+            rows = [
+                row
+                async for row in await conn.stream(
+                    access_rights_table.select().where(
+                        getattr(access_rights_table.c, field_name) == object_id,
+                        access_rights_table.c.product_name == product_name,
+                    )
+                )
+            ]
+            group_permissions = [
+                FunctionGroupAccessRights(
+                    group_id=row.group_id,
+                    read=row.read,
+                    write=row.write,
+                    execute=row.execute,
+                )
+                for row in rows
+            ]
+            access_rights_list.append((object_id, group_permissions))
+
+        return access_rights_list
+
+
+async def _internal_set_group_permissions(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    permission_group_id: GroupID,
+    product_name: ProductName,
+    object_type: Literal["function", "function_job", "function_job_collection"],
+    object_ids: list[UUID],
+    read: bool | None = None,
+    write: bool | None = None,
+    execute: bool | None = None,
+) -> list[tuple[UUID, FunctionGroupAccessRights]]:
+    access_rights_table = None
+    field_name = None
+    if object_type == "function":
+        access_rights_table = functions_access_rights_table
+        field_name = "function_uuid"
+    elif object_type == "function_job":
+        access_rights_table = function_jobs_access_rights_table
+        field_name = "function_job_uuid"
+    elif object_type == "function_job_collection":
+        access_rights_table = function_job_collections_access_rights_table
+        field_name = "function_job_collection_uuid"
+
+    assert access_rights_table is not None  # nosec
+    assert field_name is not None  # nosec
+
+    access_rights_list: list[tuple[UUID, FunctionGroupAccessRights]] = []
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         for object_id in object_ids:
             # Check if the group already has access rights for the function
@@ -1209,8 +1290,9 @@ async def _internal_set_group_permissions(
 
             if row is None:
                 # Insert new access rights if the group does not have any
-                await transaction.execute(
-                    access_rights_table.insert().values(
+                result = await transaction.execute(
+                    access_rights_table.insert()
+                    .values(
                         **{field_name: object_id},
                         group_id=permission_group_id,
                         product_name=product_name,
@@ -1218,7 +1300,15 @@ async def _internal_set_group_permissions(
                         write=write if write is not None else False,
                         execute=execute if execute is not None else False,
                     )
+                    .returning(
+                        access_rights_table.c.group_id,
+                        access_rights_table.c.read,
+                        access_rights_table.c.write,
+                        access_rights_table.c.execute,
+                    )
                 )
+                row = result.one()
+                access_rights_list.append((object_id, FunctionGroupAccessRights(**row)))
             else:
                 # Update existing access rights only for non-None values
                 update_values = {
@@ -1227,14 +1317,26 @@ async def _internal_set_group_permissions(
                     "execute": execute if execute is not None else row["execute"],
                 }
 
-                await transaction.execute(
+                update_result = await transaction.execute(
                     access_rights_table.update()
                     .where(
                         getattr(access_rights_table.c, field_name) == object_id,
                         access_rights_table.c.group_id == permission_group_id,
                     )
                     .values(**update_values)
+                    .returning(
+                        access_rights_table.c.group_id,
+                        access_rights_table.c.read,
+                        access_rights_table.c.write,
+                        access_rights_table.c.execute,
+                    )
                 )
+                updated_row = update_result.one()
+                access_rights_list.append(
+                    (object_id, FunctionGroupAccessRights(**updated_row))
+                )
+
+        return access_rights_list
 
 
 async def get_user_api_access_rights(

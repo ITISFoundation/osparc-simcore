@@ -508,3 +508,19 @@ def with_enabled_rtc_collaboration(
             )
         },
     )
+
+
+@pytest.fixture
+def with_enabled_rtc_collaboration_limited_to_1_user(
+    app_environment: EnvVarsDict,
+    with_dev_features_enabled: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_REALTIME_COLLABORATION": json_dumps(
+                {"RTC_MAX_NUMBER_OF_USERS": 1}
+            )
+        },
+    )

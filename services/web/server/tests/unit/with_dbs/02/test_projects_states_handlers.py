@@ -152,16 +152,19 @@ class _SocketHandlers(TypedDict):
 @pytest.fixture
 async def create_socketio_connection_with_handlers(
     create_socketio_connection: Callable[
-        [TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
     ],
     mocker: MockerFixture,
 ) -> Callable[
-    [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+    [str | None, TestClient],
+    Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
 ]:
     async def _(
-        client: TestClient,
+        client_session_id: str | None, client: TestClient
     ) -> tuple[socketio.AsyncClient, str, _SocketHandlers]:
-        sio, received_client_id = await create_socketio_connection(None, client)
+        sio, received_client_id = await create_socketio_connection(
+            client_session_id, client
+        )
         assert sio.sid
 
         event_handlers = _SocketHandlers(
@@ -461,7 +464,8 @@ async def test_open_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: HTTPStatus,
     save_state: bool,
@@ -480,7 +484,7 @@ async def test_open_project(
     # Only create socketio connection for non-anonymous users
     client_id = None
     if expected != status.HTTP_401_UNAUTHORIZED:
-        _, client_id, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
@@ -553,7 +557,8 @@ async def test_open_project__in_debt(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -593,7 +598,7 @@ async def test_open_project__in_debt(
     # POST /v0/projects/{project_id}:open
     assert client.app
 
-    _, client_id, _ = await create_socketio_connection_with_handlers(client)
+    _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
@@ -616,7 +621,8 @@ async def test_open_template_project_for_edition(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: HTTPStatus,
     save_state: bool,
@@ -641,7 +647,7 @@ async def test_open_template_project_for_edition(
     # Only create socketio connection for non-anonymous users
     client_id = None
     if expected != status.HTTP_401_UNAUTHORIZED:
-        _, client_id, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
@@ -702,7 +708,8 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     logged_user: UserInfoDict,
     create_template_project: Callable[..., Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: HTTPStatus,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -723,7 +730,7 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     # Only create socketio connection for non-anonymous users
     client_id = None
     if expected != status.HTTP_401_UNAUTHORIZED:
-        _, client_id, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
     url = client.app.router["open_project"].url_for(project_id=template_project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected)
@@ -735,7 +742,8 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -765,7 +773,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     # Only create socketio connection for non-anonymous users
     client_id = ""
     if expected.ok:
-        _, client_id, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
@@ -787,7 +795,8 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -811,7 +820,9 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
         # Only create socketio connection for non-anonymous users
         client_id = ""
         if expected.ok:
-            sio, client_id, *_ = await create_socketio_connection_with_handlers(client)
+            sio, client_id, *_ = await create_socketio_connection_with_handlers(
+                None, client
+            )
         url = (
             client.app.router["open_project"]
             .url_for(project_id=project["uuid"])
@@ -837,7 +848,8 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -869,7 +881,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     # Only create socketio connection for non-anonymous users
     client_id = ""
     if expected.ok:
-        _, client_id, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
@@ -890,7 +902,8 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     logged_user: UserInfoDict,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -925,7 +938,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     # Only create socketio connection for non-anonymous users
     client_id = ""
     if expected.ok:
-        _, client_id, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
@@ -944,7 +957,8 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     logged_user,
     user_project,
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     expected: ExpectedResponse,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
@@ -959,7 +973,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     # Only create socketio connection for non-anonymous users
     client_id = ""
     if expected.ok:
-        _, client_id, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id, _ = await create_socketio_connection_with_handlers(None, client)
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.ok)
@@ -1002,7 +1016,8 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     client: TestClient,
     logged_user,
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     user_project: ProjectDict,
     shared_project: ProjectDict,
@@ -1015,7 +1030,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     # Only create socketio connection for non-anonymous users
     client_id_1 = ""
     if user_role != UserRole.ANONYMOUS:
-        _, client_id_1, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id_1, _ = await create_socketio_connection_with_handlers(None, client)
     await _open_project(
         client,
         client_id_1,
@@ -1026,7 +1041,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
     # Only create socketio connection for non-anonymous users
     client_id_2 = ""
     if user_role != UserRole.ANONYMOUS:
-        _, client_id_2, _ = await create_socketio_connection_with_handlers(client)
+        _, client_id_2, _ = await create_socketio_connection_with_handlers(None, client)
     await _open_project(
         client,
         client_id_2,
@@ -1429,6 +1444,7 @@ def clean_redis_table(redis_client) -> None:
     """this just ensures the redis table is cleaned up between test runs"""
 
 
+@pytest.mark.acceptance_test
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_multiple_users(
     max_number_of_user_sessions: int,
@@ -1440,7 +1456,8 @@ async def test_open_shared_project_multiple_users(
     expected: ExpectedResponse,
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
@@ -1450,7 +1467,7 @@ async def test_open_shared_project_multiple_users(
         sio_base,
         base_client_tab_id,
         sio_base_handlers,
-    ) = await create_socketio_connection_with_handlers(base_client)
+    ) = await create_socketio_connection_with_handlers(None, base_client)
 
     # current state is closed and unlocked
     closed_project_state = ProjectStateOutputSchema(
@@ -1495,7 +1512,7 @@ async def test_open_shared_project_multiple_users(
             sio_i,
             client_i_tab_id,
             sio_i_handlers,
-        ) = await create_socketio_connection_with_handlers(client_i)
+        ) = await create_socketio_connection_with_handlers(None, client_i)
         assert sio_i
 
         # user i opens the shared project
@@ -1543,19 +1560,19 @@ async def test_open_shared_project_multiple_users(
         )
         other_users.append((user_i, client_i, client_i_tab_id, sio_i, sio_i_handlers))
 
-    # create an additional user, opening the project again shall raise
+    #
+    # TEST more user sessions cannot be opened: create an additional user, opening the project again shall raise
     client_n = client_on_running_server_factory()
 
     user_n = await exit_stack.enter_async_context(
         LoggedUser(client_n, {"role": logged_user["role"]})
     )
     assert user_n
-
     (
         sio_n,
         client_n_tab_id,
         sio_n_handlers,
-    ) = await create_socketio_connection_with_handlers(client_n)
+    ) = await create_socketio_connection_with_handlers(None, client_n)
     assert sio_n
     assert sio_n_handlers
 
@@ -1565,7 +1582,7 @@ async def test_open_shared_project_multiple_users(
         sio_n_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT], shared_project, []
     )
 
-    # close project from a random user shall trigger an event for all the other users
+    # close project from base user shall trigger an event for all the other users
     await _close_project(
         base_client, base_client_tab_id, shared_project, expected.no_content
     )
@@ -1601,6 +1618,182 @@ async def test_open_shared_project_multiple_users(
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
+async def test_refreshing_tab_of_opened_project_multiple_users(
+    with_enabled_rtc_collaboration_limited_to_1_user: None,
+    client: TestClient,
+    client_on_running_server_factory: Callable[[], TestClient],
+    logged_user: dict,
+    shared_project: dict,
+    expected: ExpectedResponse,
+    create_socketio_connection_with_handlers: Callable[
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+    ],
+    mocked_dynamic_services_interface: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
+):
+    # This test is a simplified version of the test_open_shared_project_multiple_users
+    # It only tests refreshing the tab of an already opened project
+    (
+        original_socketio,
+        client_tab_id,
+        original_socket_handlers,
+    ) = await create_socketio_connection_with_handlers(None, client)
+
+    # current state is closed and unlocked
+    closed_project_state = ProjectStateOutputSchema(
+        share_state=ProjectShareStateOutputSchema(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
+    )
+    await _state_project(client, shared_project, expected.ok, closed_project_state)
+
+    # now user opens the project
+    await _open_project(client, client_tab_id, shared_project, expected.ok)
+    opened_project_state = closed_project_state.model_copy(
+        update={
+            "share_state": ProjectShareStateOutputSchema(
+                locked=True,
+                status=ProjectStatus.OPENED,
+                current_user_groupids=[logged_user["primary_gid"]],
+            ),
+        }
+    )
+    await _assert_project_state_updated(
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state]
+        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+    )
+    await _state_project(client, shared_project, expected.ok, opened_project_state)
+    # opening a second time should also work as this is a no-op
+    await _open_project(client, client_tab_id, shared_project, expected.ok)
+    await _assert_project_state_updated(
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state]
+        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+    )
+    await _state_project(client, shared_project, expected.ok, opened_project_state)
+
+    # now we simulate refreshing the tab of the base user (the client session id remains the same), by disconnecting and reconnecting the socket.io
+    await original_socketio.disconnect()
+    await _assert_project_state_updated(
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [],
+    )
+
+    # now we connect again the socket.io with a new socket
+    (
+        new_socketio,
+        new_client_tab_id,
+        new_socket_handlers,
+    ) = await create_socketio_connection_with_handlers(client_tab_id, client)
+    assert new_socketio
+    assert new_client_tab_id == client_tab_id, "refreshing changed the tab id!"
+
+    await _open_project(client, client_tab_id, shared_project, expected.ok)
+
+    await _assert_project_state_updated(
+        new_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state]
+        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+    )
+    # check old socket is silent
+    await _assert_project_state_updated(
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [],
+    )
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
+    with_enabled_rtc_collaboration_limited_to_1_user: None,
+    client: TestClient,
+    client_on_running_server_factory: Callable[[], TestClient],
+    logged_user: dict,
+    shared_project: dict,
+    expected: ExpectedResponse,
+    exit_stack: contextlib.AsyncExitStack,
+    create_socketio_connection_with_handlers: Callable[
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
+    ],
+    mocked_dynamic_services_interface: dict[str, mock.Mock],
+    mock_catalog_api: dict[str, mock.Mock],
+):
+    # This test is a simplified version of the test_open_shared_project_multiple_users
+    # It only tests closing and reopening the tab of an already opened project which should still open
+    (
+        original_socketio,
+        original_client_tab_id,
+        original_socket_handlers,
+    ) = await create_socketio_connection_with_handlers(None, client)
+
+    # current state is closed and unlocked
+    closed_project_state = ProjectStateOutputSchema(
+        share_state=ProjectShareStateOutputSchema(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
+    )
+    await _state_project(client, shared_project, expected.ok, closed_project_state)
+
+    # now user opens the project
+    await _open_project(client, original_client_tab_id, shared_project, expected.ok)
+    opened_project_state = closed_project_state.model_copy(
+        update={
+            "share_state": ProjectShareStateOutputSchema(
+                locked=True,
+                status=ProjectStatus.OPENED,
+                current_user_groupids=[logged_user["primary_gid"]],
+            ),
+        }
+    )
+    await _assert_project_state_updated(
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state]
+        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+    )
+    await _state_project(client, shared_project, expected.ok, opened_project_state)
+
+    # now we simulate refreshing the tab of the base user (the client session id DOES NOT remain the same)
+    await original_socketio.disconnect()
+    await asyncio.sleep(5)  # wait for the disconnect to be processed
+    (
+        new_socketio,
+        new_client_session_id,
+        new_socketio_handlers,
+    ) = await create_socketio_connection_with_handlers(None, client)
+    assert original_client_tab_id != new_client_session_id
+    await _assert_project_state_updated(
+        new_socketio_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [],
+    )
+    # re-open the project with the new socket / tab id
+    await _open_project(client, new_client_session_id, shared_project, expected.ok)
+
+    await _assert_project_state_updated(
+        new_socketio_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state]
+        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+    )
+    # check old socket is silent
+    await _assert_project_state_updated(
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [],
+    )
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_is_defaulted(
     client: TestClient,
     client_on_running_server_factory: Callable[[], TestClient],
@@ -1616,7 +1809,8 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
 ):
     # Use-case: user 1 opens a shared project, user 2 tries to open it as well
@@ -1626,7 +1820,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
 
     # 1. user 1 opens project
     sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(
-        client_1
+        None, client_1
     )
     # expected is that the project is closed and unlocked
     expected_project_state_client_1 = ProjectStateOutputSchema(
@@ -1683,7 +1877,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         exit_stack=exit_stack,
     )
     sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(
-        client_2
+        None, client_2
     )
     await _open_project(
         client_2,
@@ -1855,13 +2049,16 @@ async def test_open_shared_project_at_same_time(
     mocked_notifications_plugin: dict[str, mock.Mock],
     exit_stack: contextlib.AsyncExitStack,
     create_socketio_connection_with_handlers: Callable[
-        [TestClient], Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]]
+        [str | None, TestClient],
+        Awaitable[tuple[socketio.AsyncClient, str, _SocketHandlers]],
     ],
 ):
     NUMBER_OF_ADDITIONAL_CLIENTS = 10
     # log client 1
     client_1 = client
-    sio_1, client_id1, _ = await create_socketio_connection_with_handlers(client_1)
+    sio_1, client_id1, _ = await create_socketio_connection_with_handlers(
+        None, client_1
+    )
     clients = [
         {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
     ]
@@ -1874,7 +2071,9 @@ async def test_open_shared_project_at_same_time(
             enable_check=user_role != UserRole.ANONYMOUS,
             exit_stack=exit_stack,
         )
-        sio, client_id, _ = await create_socketio_connection_with_handlers(new_client)
+        sio, client_id, _ = await create_socketio_connection_with_handlers(
+            None, new_client
+        )
         clients.append(
             {"client": new_client, "user": user, "client_id": client_id, "sio": sio}
         )

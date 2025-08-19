@@ -1,8 +1,10 @@
 import re
 import urllib.parse
 from typing import Annotated, TypeAlias
+from uuid import UUID
 
-from pydantic import Field, TypeAdapter
+import parse  # type: ignore[import-untyped]
+from pydantic import AfterValidator, BaseModel, Field, HttpUrl, TypeAdapter
 from pydantic.types import StringConstraints
 
 # RESOURCE NAMES https://google.aip.dev/122
@@ -25,7 +27,6 @@ from pydantic.types import StringConstraints
 #
 # SEE https://tools.ietf.org/html/rfc3986#appendix-B
 #
-
 
 _RELATIVE_RESOURCE_NAME_RE = r"^([^\s/]+/?){1,10}$"
 
@@ -91,3 +92,39 @@ def split_resource_name_as_dict(
     """
     parts = split_resource_name(resource_name)
     return dict(zip(parts[::2], parts[1::2], strict=False))
+
+
+def _url_missing_only_job_id(url: str | None) -> str | None:
+    if url is None:
+        return None
+    if set(parse.compile(url).named_fields) != {"job_id"}:
+        raise ValueError(f"Missing job_id in {url=}")
+    return url
+
+
+class JobLinks(BaseModel):
+    url_template: Annotated[str | None, AfterValidator(_url_missing_only_job_id)]
+    runner_url_template: str | None
+    outputs_url_template: Annotated[
+        str | None, AfterValidator(_url_missing_only_job_id)
+    ]
+
+    def url(self, job_id: UUID) -> HttpUrl | None:
+        if self.url_template is None:
+            return None
+        return TypeAdapter(HttpUrl).validate_python(
+            self.url_template.format(job_id=job_id)
+        )
+
+    def runner_url(self, job_id: UUID) -> HttpUrl | None:
+        assert job_id  # nosec
+        if self.runner_url_template is None:
+            return None
+        return TypeAdapter(HttpUrl).validate_python(self.runner_url_template)
+
+    def outputs_url(self, job_id: UUID) -> HttpUrl | None:
+        if self.outputs_url_template is None:
+            return None
+        return TypeAdapter(HttpUrl).validate_python(
+            self.outputs_url_template.format(job_id=job_id)
+        )

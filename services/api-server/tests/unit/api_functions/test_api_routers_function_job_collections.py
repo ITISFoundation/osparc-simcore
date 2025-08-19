@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 import datetime
 from collections.abc import Callable
 from typing import Any
@@ -12,6 +13,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
+from pytest_mock import MockerFixture
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
 
@@ -105,6 +107,7 @@ async def test_delete_function_job_collection(
 @pytest.mark.parametrize("response_type", ["page", "list"])
 async def test_get_function_job_collection_jobs(
     client: AsyncClient,
+    mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_function_job_collection: RegisteredFunctionJobCollection,
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
