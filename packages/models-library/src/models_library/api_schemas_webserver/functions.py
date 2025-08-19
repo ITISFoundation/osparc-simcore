@@ -5,7 +5,6 @@ from pydantic import Field, HttpUrl
 
 from ..functions import (
     Function,
-    FunctionAccessRights,
     FunctionBase,
     FunctionClass,
     FunctionClassSpecificData,
@@ -49,6 +48,7 @@ from ..functions_errors import (
     UnsupportedFunctionClassError,
     UnsupportedFunctionFunctionJobClassCombinationError,
 )
+from ..groups import GroupID
 from ..projects import ProjectID
 from ._base import InputSchema, OutputSchema
 
@@ -114,11 +114,23 @@ __all__ = [
 ]
 
 
+class FunctionGroupAccessRightsGet(OutputSchema):
+    read: bool
+    write: bool
+    execute: bool
+
+
+class FunctionGroupAccessRightsUpdate(InputSchema):
+    read: bool
+    write: bool
+    execute: bool
+
+
 class RegisteredSolverFunctionGet(RegisteredSolverFunction, OutputSchema):
     uid: Annotated[FunctionID, Field(alias="uuid")]
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
-    access_rights: FunctionAccessRights | None = None
+    access_rights: dict[GroupID, FunctionGroupAccessRightsGet]
     thumbnail: HttpUrl | None = None
 
 
@@ -127,7 +139,7 @@ class RegisteredProjectFunctionGet(RegisteredProjectFunction, OutputSchema):
     project_id: Annotated[ProjectID, Field(alias="templateId")]
     created_at: Annotated[datetime.datetime, Field(alias="creationDate")]
     modified_at: Annotated[datetime.datetime, Field(alias="lastChangeDate")]
-    access_rights: FunctionAccessRights | None = None
+    access_rights: dict[GroupID, FunctionGroupAccessRightsGet]
     thumbnail: HttpUrl | None = None
 
 

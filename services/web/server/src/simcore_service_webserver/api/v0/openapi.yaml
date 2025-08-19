@@ -3761,6 +3761,86 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/functions/{function_id}/groups:
+    get:
+      tags:
+      - functions
+      summary: Get Function Groups
+      operationId: get_function_groups
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__'
+  /v0/functions/{function_id}/groups/{group_id}:
+    put:
+      tags:
+      - functions
+      summary: Create or update a Function Group
+      operationId: create_or_update_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FunctionGroupAccessRightsGet_'
+    delete:
+      tags:
+      - functions
+      summary: Delete a Function Group
+      operationId: delete_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      responses:
+        '204':
+          description: Successful Response
   /v0/tasks:
     get:
       tags:
@@ -10802,6 +10882,19 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
+    Envelope_FunctionGroupAccessRightsGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[FunctionGroupAccessRightsGet]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -11511,6 +11604,22 @@ components:
           title: Error
       type: object
       title: Envelope[_ProjectNodePreview]
+    Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__:
+      properties:
+        data:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            type: object
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[dict[Annotated[int, Gt], FunctionGroupAccessRightsGet]]
     Envelope_dict_Annotated_str__StringConstraints___ImageResources__:
       properties:
         data:
@@ -12632,23 +12741,40 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
-    FunctionAccessRights:
+    FunctionGroupAccessRightsGet:
       properties:
         read:
           type: boolean
           title: Read
-          default: false
         write:
           type: boolean
           title: Write
-          default: false
         execute:
           type: boolean
           title: Execute
-          default: false
-      additionalProperties: false
       type: object
-      title: FunctionAccessRights
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsGet
+    FunctionGroupAccessRightsUpdate:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        execute:
+          type: boolean
+          title: Execute
+      type: object
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsUpdate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -16463,9 +16589,10 @@ components:
           format: uuid
           title: Templateid
         accessRights:
-          anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
@@ -16483,6 +16610,7 @@ components:
       - creationDate
       - lastChangeDate
       - templateId
+      - accessRights
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
@@ -16542,9 +16670,10 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           title: Solverversion
         accessRights:
-          anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
@@ -16563,6 +16692,7 @@ components:
       - lastChangeDate
       - solverKey
       - solverVersion
+      - accessRights
       title: RegisteredSolverFunctionGet
     ReplaceWalletAutoRecharge:
       properties:

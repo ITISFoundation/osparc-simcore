@@ -1,4 +1,5 @@
 from models_library.functions import FunctionID
+from models_library.groups import GroupID
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import BaseModel, ConfigDict
 
@@ -10,6 +11,10 @@ assert AuthenticatedRequestContext.__name__  # nosec
 class FunctionPathParams(BaseModel):
     function_id: FunctionID
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+
+class FunctionGroupPathParams(FunctionPathParams):
+    group_id: GroupID
 
 
 class _FunctionQueryParams(BaseModel):

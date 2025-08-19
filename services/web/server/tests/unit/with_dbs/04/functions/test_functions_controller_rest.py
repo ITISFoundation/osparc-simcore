@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
-
+# pylint: disable=too-many-statements
 
 from collections.abc import AsyncIterator
 from http import HTTPStatus
@@ -87,6 +87,7 @@ def mocked_function(request) -> dict[str, Any]:
 async def test_function_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
     mocked_function: dict[str, Any],
     expected_register: HTTPStatus,
     expected_get: HTTPStatus,
@@ -118,6 +119,43 @@ async def test_function_workflow(
         retrieved_function = TypeAdapter(RegisteredFunctionGet).validate_python(data)
         assert retrieved_function.uid == returned_function.uid
 
+    # Set group permissions for other user
+    new_group_id = other_logged_user["primary_gid"]
+    new_group_access_rights = {"read": True, "write": True, "execute": False}
+
+    url = client.app.router["create_or_update_function_group"].url_for(
+        function_id=f"{returned_function_uid}", group_id=f"{new_group_id}"
+    )
+
+    response = await client.put(url, json=new_group_access_rights)
+    data, error = await assert_status(response, expected_update)
+    if not error:
+        assert data == new_group_access_rights
+
+    # Remove group permissions for original user
+    url = client.app.router["delete_function_group"].url_for(
+        function_id=f"{returned_function_uid}", group_id=f"{logged_user['primary_gid']}"
+    )
+
+    response = await client.delete(url)
+    data, error = await assert_status(response, expected_delete)
+    if not error:
+        assert data is None
+
+    # Check that original user no longer has access
+    url = client.app.router["get_function"].url_for(
+        function_id=f"{returned_function_uid}"
+    )
+    response = await client.get(url)
+    data, error = await assert_status(response, expected_get)
+    if not error:
+        retrieved_function = (
+            TypeAdapter(RegisteredFunctionGet).validate_python(data).model_dump()
+        )
+        assert retrieved_function["access_rights"] == {
+            new_group_id: new_group_access_rights
+        }
+
     # List existing functions
     url = client.app.router["list_functions"].url_for()
     response = await client.get(url)
@@ -140,9 +178,11 @@ async def test_function_workflow(
     )
     data, error = await assert_status(response, expected_update)
     if not error:
-        updated_function = TypeAdapter(RegisteredFunctionGet).validate_python(data)
-        assert updated_function.title == new_title
-        assert updated_function.description == new_description
+        updated_group_access_rights = TypeAdapter(
+            RegisteredFunctionGet
+        ).validate_python(data)
+        assert updated_group_access_rights.title == new_title
+        assert updated_group_access_rights.description == new_description
 
     # Delete existing function
     url = client.app.router["delete_function"].url_for(
