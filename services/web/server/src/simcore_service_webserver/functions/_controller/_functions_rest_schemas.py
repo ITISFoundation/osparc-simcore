@@ -9,6 +9,7 @@ from models_library.rest_ordering import (
     OrderDirection,
     create_ordering_query_model_class,
 )
+from models_library.groups import GroupID
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -22,7 +23,11 @@ class FunctionPathParams(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
 
-class FunctionQueryParams(BaseModel):
+class FunctionGroupPathParams(FunctionPathParams):
+    group_id: GroupID
+
+
+class _FunctionQueryParams(BaseModel):
     include_extras: bool = False
 
 

@@ -3,6 +3,8 @@ from typing import Any
 from aiohttp import web
 from models_library.api_schemas_webserver.functions import (
     Function,
+    FunctionGroupAccessRightsGet,
+    FunctionGroupAccessRightsUpdate,
     FunctionToRegister,
     RegisteredFunction,
     RegisteredFunctionGet,
@@ -10,12 +12,13 @@ from models_library.api_schemas_webserver.functions import (
 )
 from models_library.api_schemas_webserver.users import MyFunctionPermissionsGet
 from models_library.functions import (
-    FunctionAccessRights,
     FunctionClass,
+    FunctionGroupAccessRights,
     FunctionID,
     RegisteredProjectFunction,
     RegisteredSolverFunction,
 )
+from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
@@ -43,6 +46,7 @@ from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import (
     FunctionFilters,
     FunctionGetQueryParams,
+    FunctionGroupPathParams,
     FunctionPathParams,
     FunctionsListQueryParams,
 )
@@ -50,24 +54,27 @@ from ._functions_rest_schemas import (
 routes = web.RouteTableDef()
 
 
-async def _build_function_access_rights(
+async def _build_function_group_access_rights(
     app: web.Application,
     user_id: UserID,
     product_name: ProductName,
     function_id: FunctionID,
-) -> FunctionAccessRights:
-    access_rights = await _functions_service.get_function_user_permissions(
+) -> dict[GroupID, FunctionGroupAccessRightsGet]:
+    access_rights_list = await _functions_service.list_function_group_permissions(
         app=app,
         user_id=user_id,
         product_name=product_name,
         function_id=function_id,
     )
 
-    return FunctionAccessRights(
-        read=access_rights.read,
-        write=access_rights.write,
-        execute=access_rights.execute,
-    )
+    return {
+        access_rights.group_id: FunctionGroupAccessRightsGet(
+            read=access_rights.read,
+            write=access_rights.write,
+            execute=access_rights.execute,
+        )
+        for access_rights in access_rights_list
+    }
 
 
 def _build_project_function_extras_dict(
@@ -139,9 +146,17 @@ async def register_function(request: web.Request) -> web.Response:
         )
     )
 
+    access_rights = await _build_function_group_access_rights(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=registered_function.uid,
+    )
+
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
             registered_function.model_dump(mode="json")
+            | {"access_rights": access_rights}
         ),
         web.HTTPCreated,
     )
@@ -227,7 +242,7 @@ async def list_functions(request: web.Request) -> web.Response:
                     )
 
     for function in functions:
-        access_rights = await _build_function_access_rights(
+        access_rights = await _build_function_group_access_rights(
             request.app,
             user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
@@ -277,7 +292,7 @@ async def get_function(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
     )
 
-    access_rights = await _build_function_access_rights(
+    access_rights = await _build_function_group_access_rights(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -325,7 +340,7 @@ async def update_function(request: web.Request) -> web.Response:
         function=function_update,
     )
 
-    access_rights = await _build_function_access_rights(
+    access_rights = await _build_function_group_access_rights(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -361,6 +376,109 @@ async def delete_function(request: web.Request) -> web.Response:
         function_id=function_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+    )
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+#
+# /functions/{function_id}/groups/*
+#
+
+
+@routes.get(
+    f"/{VTAG}/functions/{{function_id}}/groups",
+    name="get_function_groups",
+)
+@login_required
+@permission_required("function.read")
+@handle_rest_requests_exceptions
+async def get_function_groups(request: web.Request) -> web.Response:
+    path_params = parse_request_path_parameters_as(FunctionPathParams, request)
+    function_id = path_params.function_id
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    access_rights_list = await _functions_service.list_function_group_permissions(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+    )
+
+    return envelope_json_response(
+        {
+            access_rights.group_id: FunctionGroupAccessRightsGet(
+                read=access_rights.read,
+                write=access_rights.write,
+                execute=access_rights.execute,
+            )
+            for access_rights in access_rights_list
+        }
+    )
+
+
+@routes.put(
+    f"/{VTAG}/functions/{{function_id}}/groups/{{group_id}}",
+    name="create_or_update_function_group",
+)
+@login_required
+@permission_required("function.update")
+@handle_rest_requests_exceptions
+async def create_or_update_function_group(request: web.Request) -> web.Response:
+    path_params = parse_request_path_parameters_as(FunctionGroupPathParams, request)
+    function_id = path_params.function_id
+    group_id = path_params.group_id
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+
+    function_group_update = FunctionGroupAccessRightsUpdate.model_validate(
+        await request.json()
+    )
+
+    updated_function_access_rights = (
+        await _functions_service.set_function_group_permissions(
+            request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            function_id=function_id,
+            permissions=FunctionGroupAccessRights(
+                group_id=group_id,
+                read=function_group_update.read,
+                write=function_group_update.write,
+                execute=function_group_update.execute,
+            ),
+        )
+    )
+
+    return envelope_json_response(
+        FunctionGroupAccessRightsGet(
+            read=updated_function_access_rights.read,
+            write=updated_function_access_rights.write,
+            execute=updated_function_access_rights.execute,
+        )
+    )
+
+
+@routes.delete(
+    f"/{VTAG}/functions/{{function_id}}/groups/{{group_id}}",
+    name="delete_function_group",
+)
+@login_required
+@permission_required("function.update")
+@handle_rest_requests_exceptions
+async def delete_function_group(request: web.Request) -> web.Response:
+    path_params = parse_request_path_parameters_as(FunctionGroupPathParams, request)
+    function_id = path_params.function_id
+    group_id = path_params.group_id
+
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+
+    await _functions_service.remove_function_group_permissions(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=function_id,
+        permission_group_id=group_id,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

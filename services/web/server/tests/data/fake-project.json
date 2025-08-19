@@ -20,6 +20,12 @@
       "position": {
         "x": 50,
         "y": 150
+      },
+      "state": {
+        "currentStatus": "NOT_STARTED",
+        "lock_state": {
+          "locked": false
+        }
       }
     },
     "5739e377-17f7-4f09-a6ad-62659fb7fdec": {
@@ -53,6 +59,12 @@
       "position": {
         "x": 300,
         "y": 150
+      },
+      "state": {
+        "currentStatus": "NOT_STARTED",
+        "lock_state": {
+          "locked": false
+        }
       }
     },
     "351fd505-1ee3-466d-ad6c-ea2915ffd364": {
@@ -65,7 +77,13 @@
         "x": 1073,
         "y": 307
       },
-      "progress": 100
+      "progress": 100,
+      "state": {
+        "currentStatus": "NOT_STARTED",
+        "lock_state": {
+          "locked": false
+        }
+      }
     }
   },
   "ui": {},

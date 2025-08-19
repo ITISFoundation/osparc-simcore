@@ -3788,6 +3788,86 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/functions/{function_id}/groups:
+    get:
+      tags:
+      - functions
+      summary: Get Function Groups
+      operationId: get_function_groups
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__'
+  /v0/functions/{function_id}/groups/{group_id}:
+    put:
+      tags:
+      - functions
+      summary: Create or update a Function Group
+      operationId: create_or_update_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FunctionGroupAccessRightsGet_'
+    delete:
+      tags:
+      - functions
+      summary: Delete a Function Group
+      operationId: delete_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      responses:
+        '204':
+          description: Successful Response
   /v0/tasks:
     get:
       tags:
@@ -10829,6 +10909,19 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
+    Envelope_FunctionGroupAccessRightsGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[FunctionGroupAccessRightsGet]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -11538,6 +11631,22 @@ components:
           title: Error
       type: object
       title: Envelope[_ProjectNodePreview]
+    Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__:
+      properties:
+        data:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            type: object
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[dict[Annotated[int, Gt], FunctionGroupAccessRightsGet]]
     Envelope_dict_Annotated_str__StringConstraints___ImageResources__:
       properties:
         data:
@@ -12659,23 +12768,40 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
-    FunctionAccessRights:
+    FunctionGroupAccessRightsGet:
       properties:
         read:
           type: boolean
           title: Read
-          default: false
         write:
           type: boolean
           title: Write
-          default: false
         execute:
           type: boolean
           title: Execute
-          default: false
-      additionalProperties: false
       type: object
-      title: FunctionAccessRights
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsGet
+    FunctionGroupAccessRightsUpdate:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        execute:
+          type: boolean
+          title: Execute
+      type: object
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsUpdate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -13809,10 +13935,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -13873,7 +14001,7 @@ components:
           deprecated: true
         state:
           anyOf:
-          - $ref: '#/components/schemas/NodeState'
+          - $ref: '#/components/schemas/NodeState-Input'
           - type: 'null'
           description: The node's state object
         bootOptions:
@@ -13942,10 +14070,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -14006,7 +14136,7 @@ components:
           deprecated: true
         state:
           anyOf:
-          - $ref: '#/components/schemas/NodeState'
+          - $ref: '#/components/schemas/NodeState-Output'
           - type: 'null'
           description: The node's state object
         bootOptions:
@@ -14153,9 +14283,6 @@ components:
       - serviceState
       - serviceUuid
       title: NodeGetIdle
-      example:
-        service_state: idle
-        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
     NodeGetUnknown:
       properties:
         serviceState:
@@ -14317,7 +14444,41 @@ components:
       - owner
       - myAccessRights
       title: NodeServiceGet
-    NodeState:
+    NodeShareState:
+      properties:
+        locked:
+          type: boolean
+          title: Locked
+          description: True if the node is locked, False otherwise
+        current_user_groupids:
+          anyOf:
+          - items:
+              type: integer
+              exclusiveMinimum: true
+              minimum: 0
+            type: array
+          - type: 'null'
+          title: Current User Groupids
+          description: Group(s) that currently have access to the node (or locked
+            it)
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareStatus'
+          - type: 'null'
+          description: Reason why the node is locked, None if not locked
+      additionalProperties: false
+      type: object
+      required:
+      - locked
+      title: NodeShareState
+    NodeShareStatus:
+      type: string
+      enum:
+      - OPENING
+      - OPENED
+      - CLOSING
+      title: NodeShareStatus
+    NodeState-Input:
       properties:
         modified:
           type: boolean
@@ -14347,6 +14508,49 @@ components:
           description: current progress of the task if available (None if not started
             or not a computational task)
           default: 0
+        lock_state:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareState'
+          - type: 'null'
+          description: the node's lock state
+      additionalProperties: false
+      type: object
+      title: NodeState
+    NodeState-Output:
+      properties:
+        modified:
+          type: boolean
+          title: Modified
+          description: true if the node's outputs need to be re-computed
+          default: true
+        dependencies:
+          items:
+            type: string
+            format: uuid
+          type: array
+          uniqueItems: true
+          title: Dependencies
+          description: contains the node inputs dependencies if they need to be computed
+            first
+        currentStatus:
+          $ref: '#/components/schemas/RunningState'
+          description: the node's current state
+          default: NOT_STARTED
+        progress:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Progress
+          description: current progress of the task if available (None if not started
+            or not a computational task)
+          default: 0
+        lock_state:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareState'
+          - type: 'null'
+          description: the node's lock state
       additionalProperties: false
       type: object
       title: NodeState
@@ -15023,7 +15227,7 @@ components:
             tasks)
         node_states:
           additionalProperties:
-            $ref: '#/components/schemas/NodeState'
+            $ref: '#/components/schemas/NodeState-Output'
           propertyNames:
             format: uuid
           type: object
@@ -16412,9 +16616,10 @@ components:
           format: uuid
           title: Templateid
         accessRights:
-          anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
@@ -16432,6 +16637,7 @@ components:
       - creationDate
       - lastChangeDate
       - templateId
+      - accessRights
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
@@ -16491,9 +16697,10 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           title: Solverversion
         accessRights:
-          anyOf:
-          - $ref: '#/components/schemas/FunctionAccessRights'
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
         thumbnail:
           anyOf:
           - type: string
@@ -16512,6 +16719,7 @@ components:
       - lastChangeDate
       - solverKey
       - solverVersion
+      - accessRights
       title: RegisteredSolverFunctionGet
     ReplaceWalletAutoRecharge:
       properties:
