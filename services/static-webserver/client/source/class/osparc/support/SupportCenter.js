@@ -103,7 +103,7 @@ qx.Class.define("osparc.support.SupportCenter", {
           control = new osparc.support.Conversations();
           control.addListener("openConversation", e => {
             const conversationId = e.getData();
-            this.__openConversation(conversationId);
+            this.openConversation(conversationId);
           }, this);
           const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
@@ -119,8 +119,7 @@ qx.Class.define("osparc.support.SupportCenter", {
             center: true,
             alignX: "center",
           });
-          // control.addListener("execute", () => this.__createConversation(), this);
-          control.addListener("execute", () => this.__openConversation(null), this);
+          control.addListener("execute", () => this.openConversation(null), this);
           this.getChildControl("conversations-layout").add(control);
           break;
         case "conversation-page":
@@ -140,7 +139,7 @@ qx.Class.define("osparc.support.SupportCenter", {
       this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-page")]);
     },
 
-    __openConversation: function(conversationId) {
+    openConversation: function(conversationId) {
       const conversationContent = this.getChildControl("conversation-page");
       conversationContent.setConversationId(conversationId);
       this.__showConversation();
@@ -150,7 +149,7 @@ qx.Class.define("osparc.support.SupportCenter", {
       this.getChildControl("ask-a-question-button").setFetching(true);
       osparc.store.ConversationsSupport.getInstance().addConversation()
         .then(data => {
-          this.__openConversation(data["conversationId"]);
+          this.openConversation(data["conversationId"]);
         })
         .finally(() => {
           this.getChildControl("ask-a-question-button").setFetching(false);
