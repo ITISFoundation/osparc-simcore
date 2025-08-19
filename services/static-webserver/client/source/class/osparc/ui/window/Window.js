@@ -119,6 +119,8 @@ qx.Class.define("osparc.ui.window.Window", {
             }
           }
         }, 1);
+        // keep it centered
+        window.addEventListener("resize", () => this.center());
       } else {
         this.base(arguments);
       }
