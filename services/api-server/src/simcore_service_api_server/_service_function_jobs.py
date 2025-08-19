@@ -43,6 +43,9 @@ from .models.schemas.jobs import (
 from .services_http.solver_job_models_converters import (
     get_solver_job_rest_interface_links,
 )
+from .services_http.study_job_models_converters import (
+    get_study_job_rest_interface_links,
+)
 from .services_rpc.wb_api_server import WbApiRpcClient
 
 
@@ -224,10 +227,14 @@ class FunctionJobService:
                     return cached_function_job
 
         if function.function_class == FunctionClass.PROJECT:
+            job_links = get_study_job_rest_interface_links(
+                url_for=url_for, study_id=function.project_id
+            )
             study_job = await self._job_service.create_studies_job(
                 study_id=function.project_id,
                 job_inputs=JobInputs(values=joined_inputs or {}),
                 hidden=True,
+                job_links=job_links,
                 x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
                 x_simcore_parent_node_id=x_simcore_parent_node_id,
             )

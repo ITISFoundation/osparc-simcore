@@ -37,6 +37,7 @@ from ...services_http.jobs import (
 from ...services_http.storage import StorageApi
 from ...services_http.study_job_models_converters import (
     create_job_outputs_from_project_outputs,
+    get_study_job_rest_interface_links,
 )
 from ...services_http.webserver import AuthSession
 from ..dependencies.application import get_reverse_url_mapper
@@ -113,11 +114,13 @@ async def create_study_job(
     hidden -- if True (default) hides project from UI
     """
 
+    job_links = get_study_job_rest_interface_links(url_for=url_for, study_id=study_id)
     job = await job_service.create_studies_job(
         study_id=study_id,
         job_inputs=job_inputs,
         x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
         x_simcore_parent_node_id=x_simcore_parent_node_id,
+        job_links=job_links,
         hidden=hidden,
     )
     assert job.name == compose_study_job_resource_name(study_id, job.id)

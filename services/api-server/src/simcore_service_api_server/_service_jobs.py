@@ -391,6 +391,7 @@ class JobService:
         job_inputs: JobInputs,
         x_simcore_parent_project_uuid: ProjectID | None,
         x_simcore_parent_node_id: NodeID | None,
+        job_links: JobLinks,
         hidden: bool,
     ) -> Job:
 
@@ -401,7 +402,10 @@ class JobService:
             parent_node_id=x_simcore_parent_node_id,
         )
         job = create_job_from_study(
-            study_key=study_id, project=project, job_inputs=job_inputs
+            study_key=study_id,
+            project=project,
+            job_inputs=job_inputs,
+            job_links=job_links,
         )
 
         await self._web_rest_client.patch_project(
