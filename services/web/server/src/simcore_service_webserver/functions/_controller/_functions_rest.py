@@ -166,6 +166,10 @@ async def list_functions(request: web.Request) -> web.Response:
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        search_by_function_title=(
+            query_params.filters.search_by_title if query_params.filters else None
+        ),
+        search_by_multi_columns=query_params.search,
     )
 
     chunk: list[RegisteredFunctionGet] = []
