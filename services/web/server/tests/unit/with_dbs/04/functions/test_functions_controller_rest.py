@@ -28,6 +28,37 @@ from simcore_service_webserver.db.models import UserRole
 pytest_simcore_core_services_selection = ["rabbit"]
 
 
+async def _list_functions_and_validate(
+    client: TestClient,
+    expected_status: HTTPStatus,
+    expected_count: int | None = None,
+    params: dict[str, Any] | None = None,
+    expected_uid_in_results: str | None = None,
+    expected_uid_at_index: tuple[str, int] | None = None,
+) -> list[RegisteredFunctionGet] | None:
+    """Helper function to list functions and validate the response."""
+    url = client.app.router["list_functions"].url_for()
+    response = await client.get(url, params=params or {})
+    data, error = await assert_status(response, expected_status)
+
+    if error:
+        return None
+
+    retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(data)
+
+    if expected_count is not None:
+        assert len(retrieved_functions) == expected_count
+
+    if expected_uid_in_results is not None:
+        assert expected_uid_in_results in [f"{f.uid}" for f in retrieved_functions]
+
+    if expected_uid_at_index is not None:
+        expected_uid, index = expected_uid_at_index
+        assert f"{retrieved_functions[index].uid}" == expected_uid
+
+    return retrieved_functions
+
+
 @pytest.fixture(params=[FunctionClass.PROJECT, FunctionClass.SOLVER])
 def mocked_function(request) -> dict[str, Any]:
     function_dict = {
@@ -127,55 +158,42 @@ async def test_function_workflow(
         assert retrieved_function.uid == returned_function.uid
 
     # List existing functions (default)
-    url = client.app.router["list_functions"].url_for()
-    response = await client.get(url)
-    data, error = await assert_status(response, expected_list)
-    if not error:
-        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
-            data
-        )
-        assert len(retrieved_functions) == 2
-        assert returned_function_uid in [f.uid for f in retrieved_functions]
-        assert (
-            retrieved_functions[1].uid == returned_function_uid
-        )  # ordered by modified_at by default
+    await _list_functions_and_validate(
+        client,
+        expected_list,
+        expected_count=2,
+        expected_uid_in_results=str(returned_function_uid),
+        expected_uid_at_index=(
+            str(returned_function_uid),
+            1,
+        ),  # ordered by modified_at by default
+    )
 
     # List existing functions (ordered by created_at ascending)
-    url = client.app.router["list_functions"].url_for()
-    response = await client.get(
-        url,
+    await _list_functions_and_validate(
+        client,
+        expected_list,
+        expected_count=2,
         params={"order_by": json_dumps({"field": "created_at", "direction": "asc"})},
+        expected_uid_in_results=str(returned_function_uid),
+        expected_uid_at_index=(str(returned_function_uid), 0),
     )
-    data, error = await assert_status(response, expected_list)
-    if not error:
-        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
-            data
-        )
-        assert len(retrieved_functions) == 2
-        assert returned_function_uid in [f.uid for f in retrieved_functions]
-        assert retrieved_functions[0].uid == returned_function_uid
 
     # List existing functions (searching for not existing)
-    url = client.app.router["list_functions"].url_for()
-    response = await client.get(
-        url, params={"search": "you_can_not_find_me_because_I_do_not_exist"}
+    await _list_functions_and_validate(
+        client,
+        expected_list,
+        expected_count=0,
+        params={"search": "you_can_not_find_me_because_I_do_not_exist"},
     )
-    data, error = await assert_status(response, expected_list)
-    if not error:
-        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
-            data
-        )
-        assert len(retrieved_functions) == 0
 
     # List existing functions (searching for duplicate)
-    url = client.app.router["list_functions"].url_for()
-    response = await client.get(url, params={"search": "duplicate"})
-    data, error = await assert_status(response, expected_list)
-    if not error:
-        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
-            data
-        )
-        assert len(retrieved_functions) == 1
+    await _list_functions_and_validate(
+        client,
+        expected_list,
+        expected_count=1,
+        params={"search": "duplicate"},
+    )
 
     # List existing functions (searching by title)
     url = client.app.router["list_functions"].url_for()
