@@ -131,8 +131,6 @@ qx.Class.define("osparc.support.Conversation", {
     __applyConversationId: function(conversationId) {
       this.__reloadMessages(true);
 
-      const supportSuggestion = this.getChildControl("support-suggestion");
-      supportSuggestion.exclude();
       if (conversationId === null && osparc.store.Store.getInstance().getCurrentStudy()) {
         this.getChildControl("share-project-checkbox").show();
       }
