@@ -881,7 +881,7 @@ class ProjectDBAPI(BaseProjectDB):
             extra=get_log_record_extra(user_id=user_id),
         ):
             partial_workbench_data: dict[NodeIDStr, Any] = {
-                NodeIDStr(f"{node_id}"): new_node_data,
+                f"{node_id}": new_node_data,
             }
             return await self._update_project_workbench_with_lock_and_notify(
                 partial_workbench_data,
@@ -1064,6 +1064,9 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_unset=True,
             ),
         }
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.add(conn, nodes=[node])
         await self._update_project_workbench_with_lock_and_notify(
             partial_workbench_data,
             user_id=user_id,
@@ -1072,9 +1075,6 @@ class ProjectDBAPI(BaseProjectDB):
             allow_workbench_changes=True,
             client_session_id=client_session_id,
         )
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
-            await project_nodes_repo.add(conn, nodes=[node])
 
     async def remove_project_node(
         self,

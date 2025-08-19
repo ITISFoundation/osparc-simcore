@@ -29,6 +29,7 @@ def test_create_minimal_node(minimal_node_data_sample: dict[str, Any]):
     assert node.state.current_status == RunningState.NOT_STARTED
     assert node.state.modified is True
     assert node.state.dependencies == set()
+    assert node.state.lock_state is None
 
     assert node.parent is None
     assert node.progress is None
@@ -37,7 +38,7 @@ def test_create_minimal_node(minimal_node_data_sample: dict[str, Any]):
 
 
 def test_create_minimal_node_with_new_data_type(
-    minimal_node_data_sample: dict[str, Any]
+    minimal_node_data_sample: dict[str, Any],
 ):
     old_node_data = minimal_node_data_sample
     # found some old data with this aspect
