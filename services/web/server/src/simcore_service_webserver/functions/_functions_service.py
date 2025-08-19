@@ -478,9 +478,8 @@ async def list_function_group_permissions(
             return access_rights
 
     raise FunctionGroupAccessRightsNotFoundError(
+        function_id=function_id,
         product_name=product_name,
-        object_id=function_id,
-        object_type="function",
     )
 
 
@@ -509,8 +508,7 @@ async def set_function_group_permissions(
 
     raise FunctionGroupAccessRightsNotFoundError(
         product_name=product_name,
-        object_id=function_id,
-        object_type="function",
+        function_id=function_id,
     )
 
 

@@ -1,5 +1,9 @@
-from common_library.errors_classes import OsparcErrorMixin
+from common_library.user_messages import user_message
+
+from ..errors import WebServerBaseError
 
 
-class FunctionGroupAccessRightsNotFoundError(OsparcErrorMixin, Exception):
-    msg_template = "Group access rights not found for {object_type} '{object_id}' in product '{product_name}'"
+class FunctionGroupAccessRightsNotFoundError(WebServerBaseError, RuntimeError):
+    msg_template = user_message(
+        "Group access rights could not be found for Function '{function_id}' in product '{product_name}'."
+    )
