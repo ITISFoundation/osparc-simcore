@@ -1,7 +1,6 @@
 import datetime
 import hashlib
 import logging
-from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
@@ -28,7 +27,6 @@ from pydantic import (
 from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from starlette.datastructures import Headers
 
-from ...models.api_resources import JobLinks
 from ...models.schemas.files import File, UserFile
 from .._utils_pydantic import UriSchema
 from ..api_resources import (
@@ -49,7 +47,6 @@ from .base import ApiServerInputSchema
 #  - custom metadata
 #
 from .programs import ProgramKeyId
-from .solvers import SolverKeyId
 
 JobID: TypeAlias = UUID
 
@@ -323,30 +320,6 @@ class Job(BaseModel):
     def resource_name(self) -> str:
         """Relative Resource Name"""
         return self.name
-
-
-def get_solver_job_rest_interface_links(
-    *, url_for: Callable, solver_key: SolverKeyId, version: VersionStr
-) -> JobLinks:
-    return JobLinks(
-        url_template=url_for(
-            "get_job",
-            solver_key=solver_key,
-            version=version,
-            job_id="{job_id}",
-        ),
-        runner_url_template=url_for(
-            "get_solver_release",
-            solver_key=solver_key,
-            version=version,
-        ),
-        outputs_url_template=url_for(
-            "get_job_outputs",
-            solver_key=solver_key,
-            version=version,
-            job_id="{job_id}",
-        ),
-    )
 
 
 PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]
