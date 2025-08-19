@@ -41,6 +41,7 @@ from .._services_metadata import proxy as _services_metadata_proxy
 from .._services_metadata.proxy import ServiceMetadata
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import (
+    FunctionFilters,
     FunctionGetQueryParams,
     FunctionPathParams,
     FunctionsListQueryParams,
@@ -158,6 +159,11 @@ async def list_functions(request: web.Request) -> web.Response:
         FunctionsListQueryParams, request
     )
 
+    if not query_params.filters:
+        query_params.filters = FunctionFilters()
+
+    assert query_params.filters  # nosec
+
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     functions, page_meta_info = await _functions_service.list_functions(
         request.app,
@@ -166,9 +172,7 @@ async def list_functions(request: web.Request) -> web.Response:
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
         order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
-        search_by_function_title=(
-            query_params.filters.search_by_title if query_params.filters else None
-        ),
+        search_by_function_title=query_params.filters.search_by_title,
         search_by_multi_columns=query_params.search,
     )
 
