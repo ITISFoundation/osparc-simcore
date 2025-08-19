@@ -27,7 +27,7 @@ qx.Class.define("osparc.store.Support", {
         const amISupporter = () => {
           const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
           supportCenterButton.set({
-            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Ask a Question"),
+            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Support"),
           });
         };
         amISupporter();
