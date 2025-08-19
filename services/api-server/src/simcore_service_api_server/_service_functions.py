@@ -1,3 +1,5 @@
+# pylint: disable=no-self-use
+
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -58,12 +60,11 @@ class FunctionService:
                 solver_key=function.solver_key,
                 version=function.solver_version,
             )
-        elif function.function_class == FunctionClass.PROJECT:
+        if function.function_class == FunctionClass.PROJECT:
             return get_study_job_rest_interface_links(
                 url_for=url_for,
                 study_id=function.project_id,
             )
-        else:
-            raise UnsupportedFunctionClassError(
-                function_class=function.function_class,
-            )
+        raise UnsupportedFunctionClassError(
+            function_class=function.function_class,
+        )
