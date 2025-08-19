@@ -3786,7 +3786,7 @@ paths:
     put:
       tags:
       - functions
-      summary: Update Function Group
+      summary: Create or Update Function Group
       operationId: update_function_group
       parameters:
       - name: function_id
