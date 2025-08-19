@@ -56,6 +56,7 @@ async def project_job_fixture(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
+        storage_assets_deleted=False,
     )
     return ProjectJobFixture(
         user_id=user_id,
@@ -221,6 +222,7 @@ async def test_filter_projects_by_metadata(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name=job_parent_resource_name,
+        storage_assets_deleted=False,
     )
 
     # 2. Set custom metadata

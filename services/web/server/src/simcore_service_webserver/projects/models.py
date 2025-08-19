@@ -81,6 +81,7 @@ class ProjectJobDBGet(ProjectDBGet):
     workbench: NodesDict
 
     job_parent_resource_name: str
+    storage_assets_deleted: bool
 
 
 class ProjectWithTrashExtra(ProjectDBGet):

@@ -53,19 +53,23 @@ async def test_set_and_remove_group_permissions(
             function_id=registered_function.uid,
         )
 
+    group_permissions = FunctionGroupAccessRights(
+        group_id=int(other_logged_user["primary_gid"]),
+        read=True,
+        write=True,
+        execute=False,
+    )
+
     # Give non-registering user group access
-    await _functions_service.set_function_group_permissions(
+    updated_group_permissions = await _functions_service.set_function_group_permissions(
         app=client.app,
         user_id=logged_user["id"],
         product_name=osparc_product_name,
         function_id=registered_function.uid,
-        permissions=FunctionGroupAccessRights(
-            group_id=int(other_logged_user["primary_gid"]),
-            read=True,
-            write=True,
-            execute=False,
-        ),
+        permissions=group_permissions,
     )
+
+    assert updated_group_permissions == group_permissions
 
     # Test if non-registering user can access the function
     returned_function = await _functions_service.get_function(

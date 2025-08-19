@@ -89,7 +89,31 @@ export DOCKER_REGISTRY  ?= itisfoundation
 
 MAKEFILES_WITH_OPENAPI_SPECS := $(shell find . -mindepth 2 -type f -name 'Makefile' -not -path '*/.*' -exec grep -l '^openapi-specs:' {} \; | xargs realpath)
 
+# WSL 2 tricks
+define _check_wsl_mirroring
+$(shell \
+    if [ "$(IS_WSL2)" = "WSL2" ]; then \
+        win_user=$$(powershell.exe '$$env:UserName' | tr -d '\r' | tail -n 1 | xargs); \
+        config_path="/mnt/c/Users/$$win_user/.wslconfig"; \
+        if [ -f "$$config_path" ] && grep -q "networkingMode.*=.*mirrored" "$$config_path" 2>/dev/null; then \
+            echo "true"; \
+        else \
+            echo "false"; \
+        fi; \
+    else \
+        echo "false"; \
+    fi \
+)
+endef
+
+WSL_MIRRORED := $(_check_wsl_mirroring)
+
+
+ifeq ($(WSL_MIRRORED),true)
+get_my_ip := 127.0.0.1
+else
 get_my_ip := $(shell (hostname --all-ip-addresses || hostname -i) 2>/dev/null | cut --delimiter=" " --fields=1)
+endif
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
 ifeq ($(IS_WSL2),WSL2)

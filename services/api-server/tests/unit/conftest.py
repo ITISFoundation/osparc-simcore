@@ -42,6 +42,7 @@ from models_library.generics import Envelope
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import BaseFileLink, SimcoreS3FileID
+from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.users import UserID
 from moto.server import ThreadedMotoServer
 from packaging.version import Version
@@ -184,7 +185,7 @@ def auth(
     # mock engine if db was not init
     if app.state.settings.API_SERVER_POSTGRES is None:
         engine = mocker.MagicMock()
-        engine.minsize = 1
+        engine.minsize = 2
         engine.size = 10
         engine.freesize = 3
         engine.maxsize = 10
@@ -544,8 +545,16 @@ def mocked_catalog_rest_api_base(
 
 
 @pytest.fixture
+def project_job_rpc_get() -> ProjectJobRpcGet:
+    example = ProjectJobRpcGet.model_json_schema()["examples"][0]
+    return ProjectJobRpcGet.model_validate(example)
+
+
+@pytest.fixture
 def mocked_webserver_rpc_api(
-    mocked_app_dependencies: None, mocker: MockerFixture
+    mocked_app_dependencies: None,
+    mocker: MockerFixture,
+    project_job_rpc_get: ProjectJobRpcGet,
 ) -> dict[str, MockType]:
     """
     Mocks the webserver's simcore service RPC API for testing purposes.
@@ -554,7 +563,7 @@ def mocked_webserver_rpc_api(
         projects as projects_rpc,  # keep import here
     )
 
-    side_effects = WebserverRpcSideEffects()
+    side_effects = WebserverRpcSideEffects(project_job_rpc_get=project_job_rpc_get)
 
     return {
         "mark_project_as_job": mocker.patch.object(
@@ -562,6 +571,12 @@ def mocked_webserver_rpc_api(
             "mark_project_as_job",
             autospec=True,
             side_effect=side_effects.mark_project_as_job,
+        ),
+        "get_project_marked_as_job": mocker.patch.object(
+            projects_rpc,
+            "get_project_marked_as_job",
+            autospec=True,
+            side_effect=side_effects.get_project_marked_as_job,
         ),
         "list_projects_marked_as_jobs": mocker.patch.object(
             projects_rpc,

@@ -38,6 +38,7 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from simcore_service_api_server.api.dependencies.services import get_rabbitmq_rpc_client
 from simcore_service_api_server.api.routes.functions_routes import get_wb_api_rpc_client
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
@@ -69,6 +70,17 @@ class DummyRpcClient(RabbitMQRPCClient):
         assert isinstance(method_name, str)
         assert isinstance(kwargs, dict)
         return {"mocked_response": True}
+
+
+@pytest.fixture
+async def mock_rabbitmq_rpc_client(
+    app: FastAPI, mocker: MockerFixture
+) -> MockerFixture:
+    def _():
+        return DummyRpcClient()
+
+    app.dependency_overrides[get_rabbitmq_rpc_client] = _
+    return mocker
 
 
 @pytest.fixture
@@ -267,19 +279,19 @@ def mock_handler_in_functions_rpc_interface(
 
 
 @pytest.fixture()
-def mock_handler_in_study_jobs_rest_interface(
+def mock_method_in_jobs_service(
     mock_wb_api_server_rpc: MockerFixture,
 ) -> Callable[[str, Any, Exception | None], None]:
     def _mock(
-        handler_name: str = "",
+        method_name: str = "",
         return_value: Any = None,
         exception: Exception | None = None,
     ) -> None:
-        from simcore_service_api_server.api.routes.functions_routes import studies_jobs
+        from simcore_service_api_server._service_jobs import JobService
 
         mock_wb_api_server_rpc.patch.object(
-            studies_jobs,
-            handler_name,
+            JobService,
+            method_name,
             return_value=return_value,
             side_effect=exception,
         )
