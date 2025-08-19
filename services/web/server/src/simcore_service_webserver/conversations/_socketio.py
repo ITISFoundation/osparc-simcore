@@ -68,6 +68,7 @@ class ConversationDeletedEvent(BaseConversationEvent): ...
 
 class BaseConversationMessageEvent(BaseEvent):
     conversation_id: ConversationID
+    project_id: ProjectID | None
     message_id: ConversationMessageID
     user_group_id: GroupID
     type: ConversationMessageType
@@ -109,7 +110,7 @@ async def notify_conversation_created(
     app: web.Application,
     *,
     recipients: set[UserID],
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation: ConversationGetDB,
 ) -> None:
     notification_message = SocketMessageDict(
@@ -129,7 +130,7 @@ async def notify_conversation_updated(
     app: web.Application,
     *,
     recipients: set[UserID],
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation: ConversationGetDB,
 ) -> None:
     notification_message = SocketMessageDict(
@@ -151,7 +152,7 @@ async def notify_conversation_deleted(
     recipients: set[UserID],
     product_name: ProductName,
     user_group_id: GroupID,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
 ) -> None:
     notification_message = SocketMessageDict(
@@ -174,15 +175,15 @@ async def notify_conversation_message_created(
     app: web.Application,
     *,
     recipients: set[UserID],
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_message: ConversationMessageGetDB,
 ) -> None:
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_CREATED_EVENT,
         data={
-            "projectId": project_id,
             **ConversationMessageCreatedOrUpdatedEvent(
-                **conversation_message.model_dump()
+                **conversation_message.model_dump(),
+                project_id=project_id,
             ).model_dump(mode="json", by_alias=True),
         },
     )
@@ -194,16 +195,16 @@ async def notify_conversation_message_updated(
     app: web.Application,
     *,
     recipients: set[UserID],
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_message: ConversationMessageGetDB,
 ) -> None:
 
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT,
         data={
-            "projectId": project_id,
             **ConversationMessageCreatedOrUpdatedEvent(
-                **conversation_message.model_dump()
+                **conversation_message.model_dump(),
+                project_id=project_id,
             ).model_dump(mode="json", by_alias=True),
         },
     )
@@ -216,7 +217,7 @@ async def notify_conversation_message_deleted(
     *,
     recipients: set[UserID],
     user_group_id: GroupID,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> None:
@@ -224,12 +225,12 @@ async def notify_conversation_message_deleted(
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT,
         data={
-            "projectId": project_id,
             **ConversationMessageDeletedEvent(
                 conversation_id=conversation_id,
                 message_id=message_id,
                 user_group_id=user_group_id,
                 type=ConversationMessageType.MESSAGE,
+                project_id=project_id,
             ).model_dump(mode="json", by_alias=True),
         },
     )

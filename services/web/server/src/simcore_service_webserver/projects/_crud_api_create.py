@@ -434,7 +434,6 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         new_project = await _projects_service.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
-            is_template=as_template,
             app=app,
         )
         await progress.update()

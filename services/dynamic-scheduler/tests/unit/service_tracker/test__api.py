@@ -126,11 +126,12 @@ async def test_services_tracer_workflow(
         ],
         *[
             DynamicServiceGet.model_validate(o)
-            for o in DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+            for o in DynamicServiceGet.model_json_schema()["examples"]
         ],
-        NodeGetIdle.model_validate(
-            NodeGetIdle.model_config["json_schema_extra"]["example"]
-        ),
+        *[
+            NodeGetIdle.model_validate(o)
+            for o in NodeGetIdle.model_json_schema()["examples"]
+        ],
     ],
 )
 async def test_set_if_status_changed(
@@ -182,14 +183,15 @@ async def test_set_service_status_task_uid(
                 TypeAdapter(DynamicServiceGet).validate_python(o),
                 NORMAL_RATE_POLL_INTERVAL,
             )
-            for o in DynamicServiceGet.model_config["json_schema_extra"]["examples"]
+            for o in DynamicServiceGet.model_json_schema()["examples"]
         ],
-        (
-            TypeAdapter(NodeGetIdle).validate_python(
-                NodeGetIdle.model_config["json_schema_extra"]["example"]
-            ),
-            _LOW_RATE_POLL_INTERVAL,
-        ),
+        *[
+            (
+                TypeAdapter(NodeGetIdle).validate_python(o),
+                _LOW_RATE_POLL_INTERVAL,
+            )
+            for o in NodeGetIdle.model_json_schema()["examples"]
+        ],
     ],
 )
 def test__get_poll_interval(
@@ -208,7 +210,7 @@ def _get_node_get_from(service_state: ServiceState) -> NodeGet:
 def _get_dynamic_service_get_from(
     service_state: ServiceState,
 ) -> DynamicServiceGet:
-    dict_data = DynamicServiceGet.model_config["json_schema_extra"]["examples"][1]
+    dict_data = DynamicServiceGet.model_json_schema()["examples"][1]
     assert "service_state" in dict_data
     dict_data["service_state"] = service_state
     return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
@@ -216,7 +218,7 @@ def _get_dynamic_service_get_from(
 
 def _get_node_get_idle() -> NodeGetIdle:
     return TypeAdapter(NodeGetIdle).validate_python(
-        NodeGetIdle.model_config["json_schema_extra"]["example"]
+        NodeGetIdle.model_json_schema()["examples"][0]
     )
 
 
