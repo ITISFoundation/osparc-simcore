@@ -36,7 +36,7 @@ def get_routes_view(routes: RouteTableDef) -> str:
 
 
 def create_url_for_function(
-    app: web.Application, url: URL, headers: dict[str, str]
+    app: web.Application, request_url: URL, request_headers: dict[str, str]
 ) -> Callable:
 
     def _url_for(route_name: str, **params: dict[str, Any]) -> str:
@@ -46,11 +46,11 @@ def create_url_for_function(
                 **{k: f"{v}" for k, v in params.items()}
             )
             _url: URL = (
-                url.origin()
+                request_url.origin()
                 .with_scheme(
                     # Custom header by traefik. See labels in docker-compose as:
                     # - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
-                    headers.get(X_FORWARDED_PROTO, url.scheme)
+                    request_headers.get(X_FORWARDED_PROTO, request_url.scheme)
                 )
                 .with_path(str(rel_url))
             )

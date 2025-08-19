@@ -101,8 +101,8 @@ async def create_project(request: web.Request):
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        url=request.url,
-        headers=dict(request.headers),
+        request_url=request.url,
+        request_headers=dict(request.headers),
         new_project_was_hidden_before_data_was_copied=query_params.hidden,
         from_study=query_params.from_study,
         as_template=query_params.as_template,
@@ -424,8 +424,8 @@ async def clone_project(request: web.Request):
         fire_and_forget=True,
         task_context=jsonable_encoder(req_ctx),
         # arguments
-        url=request.url,
-        headers=dict(request.headers),
+        request_url=request.url,
+        request_headers=dict(request.headers),
         new_project_was_hidden_before_data_was_copied=False,
         from_study=path_params.project_id,
         as_template=False,

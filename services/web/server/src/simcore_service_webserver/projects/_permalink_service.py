@@ -18,8 +18,8 @@ class CreateLinkCoroutine(Protocol):
     async def __call__(
         self,
         app: web.Application,
-        url: URL,
-        headers: dict[str, str],
+        request_url: URL,
+        request_headers: dict[str, str],
         project_uuid: ProjectID,
     ) -> ProjectPermalink: ...
 
@@ -43,13 +43,16 @@ _PERMALINK_CREATE_TIMEOUT_S = 2
 
 
 async def _create_permalink(
-    app: web.Application, url: URL, headers: dict[str, str], project_uuid: ProjectID
+    app: web.Application,
+    request_url: URL,
+    request_headers: dict[str, str],
+    project_uuid: ProjectID,
 ) -> ProjectPermalink:
     create_coro: CreateLinkCoroutine = _get_factory(app)
 
     try:
         permalink: ProjectPermalink = await asyncio.wait_for(
-            create_coro(app, url, headers, project_uuid),
+            create_coro(app, request_url, request_headers, project_uuid),
             timeout=_PERMALINK_CREATE_TIMEOUT_S,
         )
         return permalink
@@ -59,7 +62,10 @@ async def _create_permalink(
 
 
 async def update_or_pop_permalink_in_project(
-    app: web.Application, url: URL, headers: dict[str, str], project: ProjectDict
+    app: web.Application,
+    request_url: URL,
+    request_headers: dict[str, str],
+    project: ProjectDict,
 ) -> ProjectPermalink | None:
     """Updates permalink entry in project
 
@@ -69,7 +75,7 @@ async def update_or_pop_permalink_in_project(
     """
     try:
         permalink = await _create_permalink(
-            app, url, headers, project_uuid=project["uuid"]
+            app, request_url, request_headers, project_uuid=project["uuid"]
         )
 
         assert permalink  # nosec

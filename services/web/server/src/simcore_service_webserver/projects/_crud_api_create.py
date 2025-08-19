@@ -251,8 +251,8 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
     progress: TaskProgress,
     *,
     app: web.Application,
-    url: URL,
-    headers: dict[str, str],
+    request_url: URL,
+    request_headers: dict[str, str],
     new_project_was_hidden_before_data_was_copied: bool,
     from_study: ProjectID | None,
     as_template: bool,
@@ -439,7 +439,9 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         await progress.update()
 
         # Adds permalink
-        await update_or_pop_permalink_in_project(app, url, headers, new_project)
+        await update_or_pop_permalink_in_project(
+            app, request_url, request_headers, new_project
+        )
 
         # Adds folderId
         user_specific_project_data_db = (

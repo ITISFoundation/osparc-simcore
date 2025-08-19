@@ -36,8 +36,8 @@ class _GroupAccessRightsDict(TypedDict):
 def create_permalink_for_study(
     app: web.Application,
     *,
-    url: URL,
-    headers: dict[str, str],
+    request_url: URL,
+    request_headers: dict[str, str],
     project_uuid: ProjectID | ProjectIDStr,
     project_type: ProjectType,
     project_access_rights: dict[_GroupID, _GroupAccessRightsDict],
@@ -68,7 +68,7 @@ def create_permalink_for_study(
         raise PermalinkNotAllowedError(msg)
 
     # create
-    url_for = create_url_for_function(app, url, headers)
+    url_for = create_url_for_function(app, request_url, request_headers)
     permalink = TypeAdapter(HttpUrl).validate_python(
         url_for(route_name="get_redirection_to_study_page", id=f"{project_uuid}"),
     )
@@ -80,7 +80,10 @@ def create_permalink_for_study(
 
 
 async def permalink_factory(
-    app: web.Application, url: URL, headers: dict[str, str], project_uuid: ProjectID
+    app: web.Application,
+    request_url: URL,
+    request_headers: dict[str, str],
+    project_uuid: ProjectID,
 ) -> ProjectPermalink:
     """
     - Assumes project_id is up-to-date in the database
@@ -125,8 +128,8 @@ async def permalink_factory(
 
     return create_permalink_for_study(
         app,
-        url=url,
-        headers=headers,
+        request_url=request_url,
+        request_headers=request_headers,
         project_uuid=row.uuid,
         project_type=row.type,
         project_access_rights=row.access_rights,
