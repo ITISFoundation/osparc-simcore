@@ -44,6 +44,14 @@ qx.Class.define("osparc.support.Conversation", {
       event: "changeConversationId",
       apply: "__applyConversationId",
     },
+
+    studyId: {
+      check: "String",
+      init: null,
+      nullable: true,
+      event: "changeStudyId",
+      apply: "__applyStudyId",
+    },
   },
 
   members: {
@@ -78,13 +86,31 @@ qx.Class.define("osparc.support.Conversation", {
           break;
         case "add-message":
           control = new osparc.conversation.AddMessage().set({
-            padding: 10,
+            padding: 5,
           });
           this.bind("conversationId", control, "conversationId");
           // make it more compact
           control.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
           control.getChildControl("comment-field").getChildControl("subtitle").exclude();
           this._addAt(control, 3);
+          break;
+        case "share-project-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
+            backgroundColor: "strong-main",
+            decorator: "rounded",
+          });
+          this._addAt(control, 4);
+          break;
+        case "share-project-checkbox":
+          control = new qx.ui.form.CheckBox().set({
+            value: false,
+            label: this.tr("Share Project with Support"),
+            textColor: "white",
+            padding: 3,
+          });
+          this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
+          this.getChildControl("share-project-layout").add(control);
+          this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
           break;
       }
       return control || this.base(arguments, id);
@@ -108,19 +134,12 @@ qx.Class.define("osparc.support.Conversation", {
       const supportSuggestion = this.getChildControl("support-suggestion");
       supportSuggestion.exclude();
       if (conversationId === null && osparc.store.Store.getInstance().getCurrentStudy()) {
-        supportSuggestion.show();
-        const suggestedQuestion = new osparc.support.SuggestedQuestion();
-        const answers = [
-          { label: this.tr("No"), key: "no" },
-          { label: this.tr("Yes"), key: "yes" },
-        ];
-        suggestedQuestion.isProjectRelated(answers);
-        suggestedQuestion.addListener("questionAnswered", e => {
-          const answer = e.getData();
-          console.log(answer);
-        });
-        supportSuggestion.add(suggestedQuestion);
+        this.getChildControl("share-project-checkbox").show();
       }
+    },
+
+    __applyStudyId: function(studyId) {
+
     },
 
     __getNextRequest: function() {
