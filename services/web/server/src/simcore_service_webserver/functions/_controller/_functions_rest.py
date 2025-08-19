@@ -20,6 +20,7 @@ from models_library.functions import (
 )
 from models_library.groups import GroupID
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
@@ -43,6 +44,7 @@ from .._services_metadata import proxy as _services_metadata_proxy
 from .._services_metadata.proxy import ServiceMetadata
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import (
+    FunctionFilters,
     FunctionGetQueryParams,
     FunctionGroupPathParams,
     FunctionPathParams,
@@ -172,6 +174,11 @@ async def list_functions(request: web.Request) -> web.Response:
         FunctionsListQueryParams, request
     )
 
+    if not query_params.filters:
+        query_params.filters = FunctionFilters()
+
+    assert query_params.filters  # nosec
+
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     functions, page_meta_info = await _functions_service.list_functions(
         request.app,
@@ -179,6 +186,9 @@ async def list_functions(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         pagination_limit=query_params.limit,
         pagination_offset=query_params.offset,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
+        search_by_function_title=query_params.filters.search_by_title,
+        search_by_multi_columns=query_params.search,
     )
 
     chunk: list[RegisteredFunctionGet] = []
