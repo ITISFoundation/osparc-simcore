@@ -111,7 +111,9 @@ qx.Class.define("osparc.support.SupportCenter", {
         case "ask-a-question-button":
           control = new osparc.ui.form.FetchButton(this.tr("Ask a Question")).set({
             appearance: "strong-button",
+            allowGrowX: false,
             center: true,
+            alignX: "center",
           });
           control.addListener("execute", () => this.__openConversation(), this);
           this.getChildControl("conversations-layout").add(control);
