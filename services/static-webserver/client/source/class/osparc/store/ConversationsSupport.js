@@ -71,7 +71,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "addConversation", params)
         .then(data => {
-          // OM: todo PATCH the extra content
+          // OM PATCH the extra content
           // extraContext["conversationLink"] = `${url}#/conversation/${data["conversationId"]}`;
           return data;
         })

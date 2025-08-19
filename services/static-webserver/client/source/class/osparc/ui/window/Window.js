@@ -37,7 +37,6 @@ qx.Class.define("osparc.ui.window.Window", {
       if (modalFrame) {
         modalFrame.addEventListener("click", () => {
           if (
-            // this.isModal() && // OM?
             this.isClickAwayClose() &&
             parseInt(modalFrame.style.zIndex) === parseInt(thisDom.style.zIndex) - 1
           ) {
