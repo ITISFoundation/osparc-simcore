@@ -92,14 +92,16 @@ async def _get_tasks_to_remove(
 
         if tracked_task.last_status_check is None:
             # the task just added or never received a poll request
-            elapsed_from_start = (utc_now - tracked_task.started).seconds
+            elapsed_from_start = (utc_now - tracked_task.started).total_seconds()
             if elapsed_from_start > stale_task_detect_timeout_s:
                 tasks_to_remove.append(
                     (tracked_task.task_id, tracked_task.task_context)
                 )
         else:
             # the task status was already queried by the client
-            elapsed_from_last_poll = (utc_now - tracked_task.last_status_check).seconds
+            elapsed_from_last_poll = (
+                utc_now - tracked_task.last_status_check
+            ).total_seconds()
             if elapsed_from_last_poll > stale_task_detect_timeout_s:
                 tasks_to_remove.append(
                     (tracked_task.task_id, tracked_task.task_context)
