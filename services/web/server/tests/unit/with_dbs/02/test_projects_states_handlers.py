@@ -1627,12 +1627,11 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
 ):
     # This test is a simplified version of the test_open_shared_project_multiple_users
     # It only tests refreshing the tab of an already opened project
-    base_client = client
     (
-        sio_base,
-        base_client_tab_id,
-        sio_base_handlers,
-    ) = await create_socketio_connection_with_handlers(None, base_client)
+        original_socketio,
+        client_tab_id,
+        original_socket_handlers,
+    ) = await create_socketio_connection_with_handlers(None, client)
 
     # current state is closed and unlocked
     closed_project_state = ProjectStateOutputSchema(
@@ -1641,12 +1640,10 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
-    await _state_project(
-        base_client, shared_project, HTTPStatus.OK, closed_project_state
-    )
+    await _state_project(client, shared_project, expected.ok, closed_project_state)
 
     # now user opens the project
-    await _open_project(base_client, base_client_tab_id, shared_project, expected.ok)
+    await _open_project(client, client_tab_id, shared_project, expected.ok)
     opened_project_state = closed_project_state.model_copy(
         update={
             "share_state": ProjectShareStateOutputSchema(
@@ -1657,54 +1654,50 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
         }
     )
     await _assert_project_state_updated(
-        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [opened_project_state]
         * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
-    await _state_project(
-        base_client, shared_project, HTTPStatus.OK, opened_project_state
-    )
+    await _state_project(client, shared_project, expected.ok, opened_project_state)
     # opening a second time should also work as this is a no-op
-    await _open_project(base_client, base_client_tab_id, shared_project, expected.ok)
+    await _open_project(client, client_tab_id, shared_project, expected.ok)
     await _assert_project_state_updated(
-        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [opened_project_state]
         * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
-    await _state_project(
-        base_client, shared_project, HTTPStatus.OK, opened_project_state
-    )
+    await _state_project(client, shared_project, expected.ok, opened_project_state)
 
     # now we simulate refreshing the tab of the base user (the client session id remains the same), by disconnecting and reconnecting the socket.io
-    await sio_base.disconnect()
+    await original_socketio.disconnect()
     await _assert_project_state_updated(
-        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [],
     )
 
     # now we connect again the socket.io with a new socket
     (
-        new_sio,
+        new_socketio,
         new_client_tab_id,
-        new_sio_base_handlers,
-    ) = await create_socketio_connection_with_handlers(base_client_tab_id, base_client)
-    assert new_sio
-    assert new_client_tab_id == base_client_tab_id, "refreshing changed the tab id!"
+        new_socket_handlers,
+    ) = await create_socketio_connection_with_handlers(client_tab_id, client)
+    assert new_socketio
+    assert new_client_tab_id == client_tab_id, "refreshing changed the tab id!"
 
-    await _open_project(base_client, base_client_tab_id, shared_project, expected.ok)
+    await _open_project(client, client_tab_id, shared_project, expected.ok)
 
     await _assert_project_state_updated(
-        new_sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        new_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [opened_project_state]
         * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
     # check old socket is silent
     await _assert_project_state_updated(
-        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [],
     )
@@ -1728,12 +1721,11 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
 ):
     # This test is a simplified version of the test_open_shared_project_multiple_users
     # It only tests closing and reopening the tab of an already opened project which should still open
-    base_client = client
     (
-        sio_base,
-        base_client_tab_id,
-        sio_base_handlers,
-    ) = await create_socketio_connection_with_handlers(None, base_client)
+        original_socketio,
+        original_client_tab_id,
+        original_socket_handlers,
+    ) = await create_socketio_connection_with_handlers(None, client)
 
     # current state is closed and unlocked
     closed_project_state = ProjectStateOutputSchema(
@@ -1742,12 +1734,10 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
-    await _state_project(
-        base_client, shared_project, HTTPStatus.OK, closed_project_state
-    )
+    await _state_project(client, shared_project, expected.ok, closed_project_state)
 
     # now user opens the project
-    await _open_project(base_client, base_client_tab_id, shared_project, expected.ok)
+    await _open_project(client, original_client_tab_id, shared_project, expected.ok)
     opened_project_state = closed_project_state.model_copy(
         update={
             "share_state": ProjectShareStateOutputSchema(
@@ -1758,59 +1748,42 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
         }
     )
     await _assert_project_state_updated(
-        sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [opened_project_state]
         * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
-    await _state_project(
-        base_client, shared_project, HTTPStatus.OK, opened_project_state
+    await _state_project(client, shared_project, expected.ok, opened_project_state)
+
+    # now we simulate refreshing the tab of the base user (the client session id DOES NOT remain the same)
+    await original_socketio.disconnect()
+    await asyncio.sleep(5)  # wait for the disconnect to be processed
+    (
+        new_socketio,
+        new_client_session_id,
+        new_socketio_handlers,
+    ) = await create_socketio_connection_with_handlers(None, client)
+    assert original_client_tab_id != new_client_session_id
+    await _assert_project_state_updated(
+        new_socketio_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [],
     )
+    # re-open the project with the new socket / tab id
+    await _open_project(client, new_client_session_id, shared_project, expected.ok)
 
-    # now we simulate refreshing the tab of the base user (the client session id remains the same)
-    # await sio_base.disconnect()
-    # await asyncio.sleep(5)  # wait for the disconnect to be processed
-    # (
-    #     new_sio_x,
-    #     new_client_x_tab_id,
-    #     new_sio_x_handlers,
-    # ) = await create_socketio_connection_with_handlers(client_x)
-    # await _assert_project_state_updated(
-    #     new_sio_x_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
-    #     shared_project,
-    #     [],
-    # )
-
-    # await _open_project(client_x, new_client_x_tab_id, shared_project, expected.ok)
-
-    # await _assert_project_state_updated(
-    #     new_sio_x_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
-    #     shared_project,
-    #     [opened_project_state],
-    # )
-
-    # # put back the refreshed user in the list of other users
-    # other_users.append(
-    #     (user_x, client_x, new_client_x_tab_id, new_sio_x, new_sio_x_handlers)
-    # )
-    # # this triggers the new opening of the same users
-    # for _user_j, client_j, _, _sio_j, sio_j_handlers in other_users:
-    #     # check already opened  by other users which should also notify
-    #     await _assert_project_state_updated(
-    #         sio_j_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
-    #         shared_project,
-    #         [opened_project_state],
-    #     )
-    #     await _state_project(
-    #         client_j, shared_project, expected.ok, opened_project_state
-    #     )
-
-    # await _assert_project_state_updated(
-    #     sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
-    #     shared_project,
-    #     [opened_project_state]
-    #     * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
-    # )
+    await _assert_project_state_updated(
+        new_socketio_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [opened_project_state]
+        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+    )
+    # check old socket is silent
+    await _assert_project_state_updated(
+        original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
+        shared_project,
+        [],
+    )
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
