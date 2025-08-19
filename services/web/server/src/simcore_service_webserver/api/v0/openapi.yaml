@@ -16511,11 +16511,9 @@ components:
           format: uuid
           title: Templateid
         accessRights:
-          anyOf:
-          - additionalProperties:
-              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
-            type: object
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
           title: Accessrights
         thumbnail:
           anyOf:
@@ -16534,6 +16532,7 @@ components:
       - creationDate
       - lastChangeDate
       - templateId
+      - accessRights
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
@@ -16593,11 +16592,9 @@ components:
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           title: Solverversion
         accessRights:
-          anyOf:
-          - additionalProperties:
-              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
-            type: object
-          - type: 'null'
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
           title: Accessrights
         thumbnail:
           anyOf:
@@ -16617,6 +16614,7 @@ components:
       - lastChangeDate
       - solverKey
       - solverVersion
+      - accessRights
       title: RegisteredSolverFunctionGet
     ReplaceWalletAutoRecharge:
       properties:
