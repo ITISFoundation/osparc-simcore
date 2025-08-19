@@ -61,12 +61,6 @@ qx.Class.define("osparc.conversation.AddMessage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "add-comment-label":
-          control = new qx.ui.basic.Label().set({
-            value: this.tr("Add comment")
-          });
-          this._add(control);
-          break;
         case "add-comment-layout": {
           const grid = new qx.ui.layout.Grid(8, 5);
           grid.setColumnWidth(0, 32);
