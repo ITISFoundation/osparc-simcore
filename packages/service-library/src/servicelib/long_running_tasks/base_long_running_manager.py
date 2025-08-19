@@ -1,4 +1,5 @@
 import datetime
+from abc import ABC, abstractmethod
 
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -6,11 +7,11 @@ from settings_library.redis import RedisSettings
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._lrt_server import router
 from ._rabbit_namespace import get_rabbit_namespace
-from .models import LRTNamespace
+from .models import LRTNamespace, TaskContext
 from .task import TasksManager
 
 
-class BaseLongRunningManager:
+class BaseLongRunningManager(ABC):
     """
     Provides a commond inteface for aiohttp and fastapi services
     """
@@ -79,3 +80,8 @@ class BaseLongRunningManager:
         if self._rpc_client is not None:
             await self._rpc_client.close()
             self._rpc_client = None
+
+    @abstractmethod
+    @staticmethod
+    def get_task_context(request) -> TaskContext:
+        """return the task context based on the current request"""

@@ -13,7 +13,7 @@ from servicelib.logging_utils import log_catch
 from servicelib.long_running_tasks.base_long_running_manager import (
     BaseLongRunningManager,
 )
-from servicelib.long_running_tasks.models import LRTNamespace
+from servicelib.long_running_tasks.models import LRTNamespace, TaskContext
 from servicelib.long_running_tasks.task import TasksManager
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
@@ -21,6 +21,13 @@ from settings_library.redis import RedisSettings
 from utils import TEST_CHECK_STALE_INTERVAL_S
 
 _logger = logging.getLogger(__name__)
+
+
+class _TestingLongRunningManager(BaseLongRunningManager):
+    @staticmethod
+    def get_task_context(request) -> TaskContext:
+        _ = request
+        return {}
 
 
 @pytest.fixture
@@ -39,7 +46,7 @@ async def get_long_running_manager(
         rabbit_settings: RabbitSettings,
         lrt_namespace: LRTNamespace | None,
     ) -> BaseLongRunningManager:
-        manager = BaseLongRunningManager(
+        manager = _TestingLongRunningManager(
             stale_task_check_interval=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
             stale_task_detect_timeout=timedelta(seconds=TEST_CHECK_STALE_INTERVAL_S),
             redis_settings=redis_settings,
