@@ -67,7 +67,10 @@ async def _get_transferarble_task_result(
             task_id, with_task_context=task_context
         )
         await long_running_manager.tasks_manager.remove_task(
-            task_id, with_task_context=task_context, reraise_errors=False
+            task_id,
+            with_task_context=task_context,
+            wait_for_removal=True,
+            reraise_errors=False,
         )
         return task_result
     except (TaskNotFoundError, TaskNotCompletedError):
@@ -75,7 +78,10 @@ async def _get_transferarble_task_result(
     except Exception:
         # the task shall be removed in this case
         await long_running_manager.tasks_manager.remove_task(
-            task_id, with_task_context=task_context, reraise_errors=False
+            task_id,
+            with_task_context=task_context,
+            wait_for_removal=True,
+            reraise_errors=False,
         )
         raise
 
