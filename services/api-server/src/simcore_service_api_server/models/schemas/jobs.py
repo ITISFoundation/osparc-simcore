@@ -39,6 +39,7 @@ from ..domain.files import File as DomainFile
 from ..domain.files import FileInProgramJobData
 from ..schemas.files import UserFile
 from .base import ApiServerInputSchema
+from .programs import ProgramKeyId
 
 # JOB SUB-RESOURCES  ----------
 #
@@ -46,7 +47,6 @@ from .base import ApiServerInputSchema
 #  - Input/outputs are defined in service metadata
 #  - custom metadata
 #
-from .programs import ProgramKeyId
 
 JobID: TypeAlias = UUID
 
