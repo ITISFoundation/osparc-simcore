@@ -51,8 +51,9 @@ qx.Class.define("osparc.support.ConversationListItem", {
             });
             const lastMessage = lastMessages[0];
             const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
+            const name = conversation.getName();
             this.set({
-              title: lastMessage.content,
+              title: name && name !== "null" ? name : lastMessage.content,
               subtitle: date,
             });
 
