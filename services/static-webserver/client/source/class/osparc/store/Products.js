@@ -127,8 +127,13 @@ qx.Class.define("osparc.store.Products", {
     },
 
     getSupportGroupId: function() {
+      const statics = osparc.store.Store.getInstance().get("statics");
+      if (statics["supportStandardGroupId"]) {
+        return statics["supportStandardGroupId"];
+      }
       // OM change this
       return 23;
+      // return null;
     },
 
     amIASupportUser: function() {
