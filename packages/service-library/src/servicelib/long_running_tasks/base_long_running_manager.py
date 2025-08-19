@@ -81,7 +81,7 @@ class BaseLongRunningManager(ABC):
             await self._rpc_client.close()
             self._rpc_client = None
 
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def get_task_context(request) -> TaskContext:
         """return the task context based on the current request"""
