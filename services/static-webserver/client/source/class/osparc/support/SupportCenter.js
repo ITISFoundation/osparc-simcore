@@ -87,14 +87,18 @@ qx.Class.define("osparc.support.SupportCenter", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
           this.getChildControl("stack-layout").add(control);
           break;
-        case "conversations-intro-text":
+        case "conversations-intro-text": {
           control = new qx.ui.basic.Label().set({
-            value: this.tr("Welcome to the Support Center<br>Ask us anything, or share your feedback."),
             rich: true,
             font: "text-14",
           });
+          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
+          control.set({
+            value: isSupportUser ? this.tr("Here all the support questions") : this.tr("Ask us anything, or share your feedback."),
+          });
           this.getChildControl("conversations-layout").add(control);
           break;
+        }
         case "conversations-list": {
           control = new osparc.support.Conversations();
           control.addListener("openConversation", e => {
