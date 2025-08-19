@@ -189,6 +189,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 tracked_task.task_id,
                 tracked_task.task_context,
                 # when closing we do not care about pending errors
+                wait_for_removal=True,
                 reraise_errors=False,
             )
 
@@ -260,7 +261,10 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     ).model_dump_json(),
                 )
                 await self.remove_task(
-                    task_id, with_task_context=task_context, reraise_errors=False
+                    task_id,
+                    with_task_context=task_context,
+                    wait_for_removal=True,
+                    reraise_errors=False,
                 )
 
     async def _cancelled_tasks_removal(self) -> None:
@@ -400,6 +404,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_id: TaskId,
         with_task_context: TaskContext,
         *,
+        wait_for_removal: bool,
         reraise_errors: bool = True,
     ) -> None:
         """cancels and removes task"""
@@ -413,6 +418,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         await self._tasks_data.mark_task_for_removal(
             tracked_task.task_id, tracked_task.task_context
         )
+
+        if not wait_for_removal:
+            return
 
         # wait for task to be removed since it might not have been running
         # in this process

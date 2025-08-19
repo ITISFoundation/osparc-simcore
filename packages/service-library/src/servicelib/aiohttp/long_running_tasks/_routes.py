@@ -75,5 +75,6 @@ async def remove_task(request: web.Request) -> web.Response:
         long_running_manager,
         long_running_manager.get_task_context(request),
         path_params.task_id,
+        wait_for_removal=False,  # frontend does not care about waiting for this
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

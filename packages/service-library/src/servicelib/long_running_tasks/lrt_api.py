@@ -101,6 +101,8 @@ async def remove_task(
     long_running_manager: BaseLongRunningManager,
     task_context: TaskContext,
     task_id: TaskId,
+    *,
+    wait_for_removal: bool,
 ) -> None:
     """cancels and removes the task"""
     await _lrt_client.remove_task(
@@ -108,4 +110,6 @@ async def remove_task(
         long_running_manager.lrt_namespace,
         task_id=task_id,
         task_context=task_context,
+        wait_for_removal=wait_for_removal,
+        reraise_errors=True,
     )

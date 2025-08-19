@@ -106,4 +106,5 @@ async def remove_task(
         long_running_manager,
         task_context={},
         task_id=task_id,
+        wait_for_removal=True,  # only used by internal services, they will wait as before
     )

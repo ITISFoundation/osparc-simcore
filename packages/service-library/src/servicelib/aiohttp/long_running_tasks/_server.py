@@ -103,6 +103,7 @@ async def start_long_running_task(
                 long_running_manager,
                 task_context,
                 task_id,
+                wait_for_removal=True,
             )
         raise
 

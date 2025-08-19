@@ -22,7 +22,7 @@ from .task import RegisteredTaskName
 
 _logger = logging.getLogger(__name__)
 
-_RPC_TIMEOUT_TASK_REMOVAL: Final[PositiveInt] = int(
+_RPC_MAX_CANCELLATION_TIMEOUT: Final[PositiveInt] = int(
     timedelta(minutes=60).total_seconds()
 )
 _RPC_TIMEOUT_SHORT_REQUESTS: Final[PositiveInt] = int(
@@ -134,14 +134,28 @@ async def remove_task(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    reraise_errors: bool = True,
+    wait_for_removal: bool,
+    reraise_errors: bool,
+    cancellation_timeout: timedelta | None = None,
 ) -> None:
+    timeout_s = (
+        _RPC_MAX_CANCELLATION_TIMEOUT
+        if cancellation_timeout is None
+        else int(cancellation_timeout.total_seconds())
+    )
+
+    # NOTE: task always gets cancelled even if not waiting for it
+    # request will return immediatlye, no need to wait so much
+    if not wait_for_removal:
+        timeout_s = _RPC_TIMEOUT_SHORT_REQUESTS
+
     result = await rabbitmq_rpc_client.request(
         get_rabbit_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("remove_task"),
         task_context=task_context,
         task_id=task_id,
+        wait_for_removal=wait_for_removal,
         reraise_errors=reraise_errors,
-        timeout_s=_RPC_TIMEOUT_TASK_REMOVAL,
+        timeout_s=timeout_s,
     )
     assert result is None  # nosec
