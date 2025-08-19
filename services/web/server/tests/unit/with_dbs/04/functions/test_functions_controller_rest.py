@@ -188,7 +188,7 @@ async def test_function_workflow(
             data
         )
         assert len(retrieved_functions) == 1
-        
+
     # Set group permissions for other user
     new_group_id = other_logged_user["primary_gid"]
     new_group_access_rights = {"read": True, "write": True, "execute": False}

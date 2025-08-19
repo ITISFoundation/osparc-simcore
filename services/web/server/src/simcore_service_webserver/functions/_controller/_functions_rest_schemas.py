@@ -2,6 +2,7 @@ from typing import Annotated
 
 from models_library.basic_types import IDStr
 from models_library.functions import FunctionID
+from models_library.groups import GroupID
 from models_library.rest_base import RequestParameters
 from models_library.rest_filters import Filters, FiltersQueryParameters
 from models_library.rest_ordering import (
@@ -9,7 +10,6 @@ from models_library.rest_ordering import (
     OrderDirection,
     create_ordering_query_model_class,
 )
-from models_library.groups import GroupID
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,7 +27,7 @@ class FunctionGroupPathParams(FunctionPathParams):
     group_id: GroupID
 
 
-class _FunctionQueryParams(BaseModel):
+class FunctionQueryParams(BaseModel):
     include_extras: bool = False
 
 
