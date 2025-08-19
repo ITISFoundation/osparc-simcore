@@ -27,17 +27,18 @@ qx.Class.define("osparc.support.ConversationListItem", {
   },
 
   properties: {
-    conversationId: {
-      check: "String",
+    conversation: {
+      check: "osparc.data.model.Conversation",
       init: null,
       nullable: false,
-      event: "changeConversationId",
-      apply: "__applyConversationId",
+      event: "changeConversation",
+      apply: "__applyConversation",
     },
   },
 
   members: {
-    __applyConversationId: function(conversationId) {
+    __applyConversation: function(conversation) {
+      const conversationId = conversation.getConversationId();
       osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
         .then(lastMessages => {
           if (lastMessages && lastMessages.length) {

@@ -28,7 +28,6 @@ qx.Class.define("osparc.support.Conversations", {
     this.__openConversationId = openConversationId;
 
     this.__fetchConversations();
-    this.__listenToConversationWS();
   },
 
   statics: {
@@ -73,66 +72,6 @@ qx.Class.define("osparc.support.Conversations", {
       return control || this.base(arguments, id);
     },
 
-    __listenToConversationWS: function() {
-      this.__wsHandlers = [];
-
-      const socket = osparc.wrapper.WebSocket.getInstance();
-
-      [
-        this.self().CHANNELS.CONVERSATION_CREATED,
-        this.self().CHANNELS.CONVERSATION_UPDATED,
-        this.self().CHANNELS.CONVERSATION_DELETED,
-      ].forEach(eventName => {
-        const eventHandler = conversation => {
-          if (conversation) {
-            switch (eventName) {
-              case this.self().CHANNELS.CONVERSATION_CREATED:
-                if (!conversation["projectId"]) {
-                  this.__addConversation(conversation);
-                }
-                break;
-              case this.self().CHANNELS.CONVERSATION_UPDATED:
-                this.__updateConversationName(conversation);
-                break;
-              case this.self().CHANNELS.CONVERSATION_DELETED:
-                this.__removeConversationItem(conversation["conversationId"]);
-                break;
-            }
-          }
-        };
-        socket.on(eventName, eventHandler, this);
-        this.__wsHandlers.push({ eventName, handler: eventHandler });
-      });
-
-      [
-        this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED,
-        this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED,
-        this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED,
-      ].forEach(eventName => {
-        const eventHandler = message => {
-          if (message) {
-            const conversationId = message["conversationId"];
-            const conversationPage = this.__getConversationItem(conversationId);
-            if (conversationPage) {
-              switch (eventName) {
-                case this.self().CHANNELS.CONVERSATION_MESSAGE_CREATED:
-                  conversationPage.addMessage(message);
-                  break;
-                case this.self().CHANNELS.CONVERSATION_MESSAGE_UPDATED:
-                  conversationPage.updateMessage(message);
-                  break;
-                case this.self().CHANNELS.CONVERSATION_MESSAGE_DELETED:
-                  conversationPage.deleteMessage(message);
-                  break;
-              }
-            }
-          }
-        };
-        socket.on(eventName, eventHandler, this);
-        this.__wsHandlers.push({ eventName, handler: eventHandler });
-      });
-    },
-
     __getConversationItem: function(conversationId) {
       return this.__conversationListItems.find(conversation => conversation.getConversationId() === conversationId);
     },
@@ -143,8 +82,8 @@ qx.Class.define("osparc.support.Conversations", {
 
       osparc.store.ConversationsSupport.getInstance().getConversations()
         .then(conversations => {
-          if (conversations.length) {
-            conversations.forEach(conversation => this.__addConversation(conversation));
+          if (Object.values(conversations).length) {
+            Object.values(conversations).forEach(conversation => this.__addConversation(conversation));
             if (this.__openConversationId) {
               const conversationsLayout = this.getChildControl("conversations-layout");
               const conversation = conversationsLayout.getSelectables().find(c => c.getConversationId() === this.__openConversationId);
@@ -161,17 +100,17 @@ qx.Class.define("osparc.support.Conversations", {
         });
     },
 
-    __addConversation: function(conversationData) {
+    __addConversation: function(conversation) {
       // ignore it if it was already there
-      const conversationId = conversationData["conversationId"];
+      const conversationId = conversation.getConversationId();
       const conversationItemFound = this.__getConversationItem(conversationId);
       if (conversationItemFound) {
         return null;
       }
 
       const conversationListItem = new osparc.support.ConversationListItem();
-      conversationListItem.setConversationId(conversationData["conversationId"]);
-      conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationData["conversationId"]), this);
+      conversationListItem.setConversation(conversation);
+      conversationListItem.addListener("tap", () => this.fireDataEvent("openConversation", conversationId, this));
 
       const conversationsLayout = this.getChildControl("conversations-layout");
       conversationsLayout.add(conversationListItem);
@@ -179,46 +118,6 @@ qx.Class.define("osparc.support.Conversations", {
       this.__conversationListItems.push(conversationListItem);
 
       return conversationListItem;
-    },
-
-    __removeConversationItem: function(conversationId, changeSelection = false) {
-      const conversationItem = this.__getConversationItem(conversationId);
-      if (conversationItem) {
-        const conversationsLayout = this.getChildControl("conversations-layout");
-        if (conversationsLayout.indexOf(conversationItem) > -1) {
-          conversationsLayout.remove(conversationItem);
-        }
-        this.__conversationListItems = this.__conversationListItems.filter(c => c !== conversationItem);
-        const conversationPages = conversationsLayout.getSelectables();
-        if (conversationPages.length) {
-          if (changeSelection) {
-            // change selection to the first conversation
-            conversationsLayout.setSelection([conversationPages[0]]);
-          }
-        }
-      }
-    },
-
-    // it can only be renamed, not updated
-    __updateConversationName: function(conversationData) {
-      const conversationId = conversationData["conversationId"];
-      const conversationPage = this.__getConversationItem(conversationId);
-      if (conversationPage) {
-        conversationPage.renameConversation(conversationData["name"]);
-      }
-    },
-
-    // overridden
-    destroy: function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
-      if (this.__wsHandlers) {
-        this.__wsHandlers.forEach(({ eventName }) => {
-          socket.removeSlot(eventName);
-        });
-        this.__wsHandlers = null;
-      }
-
-      this.base(arguments);
     },
   },
 });

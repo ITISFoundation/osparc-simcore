@@ -19,6 +19,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   extend: qx.core.Object,
   type: "singleton",
 
+  construct: function() {
+    this.base(arguments);
+
+    this.__conversationsCached = {};
+  },
+
   events: {
     "conversationRenamed": "qx.event.type.Data",
     "conversationDeleted": "qx.event.type.Data",
@@ -39,12 +45,13 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         }
       };
       return osparc.data.Resources.fetch("conversationsSupport", "getConversationsPage", params)
-        .then(conversations => {
-          if (conversations.length) {
+        .then(conversationsData => {
+          if (conversationsData.length) {
             // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
-            conversations.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
+            conversationsData.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
           }
-          return conversations;
+          conversationsData.forEach(conversationData => this.__addToCache(conversationData));
+          return this.__conversationsCached;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
@@ -160,6 +167,11 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "deleteMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __addToCache: function(conversationData) {
+      const conversation = new osparc.data.model.Conversation(conversationData);
+      this.__conversationsCached[conversation.getConversationId()] = conversation;
     },
   }
 });
