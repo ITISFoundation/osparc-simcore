@@ -135,7 +135,8 @@ qx.Class.define("osparc.Application", {
             osparc.auth.Manager.getInstance().validateToken()
               .then(() => {
                 const studyId = urlFragment.nav[1];
-                this.__loadMainPage(studyId);
+                const loadAfterLogin = { studyId };
+                this.__loadMainPage(loadAfterLogin);
               })
               .catch(() => this.__loadLoginPage());
           }
@@ -153,9 +154,28 @@ qx.Class.define("osparc.Application", {
                 if (["anonymous", "guest"].includes(data.role.toLowerCase())) {
                   this.__loadNodeViewerPage(studyId, viewerNodeId);
                 } else {
-                  this.__loadMainPage(studyId);
+                  const loadAfterLogin = { studyId };
+                  this.__loadMainPage(loadAfterLogin);
                 }
               });
+          }
+          break;
+        }
+        case "conversation": {
+          // Route: /#/conversation/{id}
+          if (urlFragment.nav.length > 1) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(() => {
+                const conversationId = urlFragment.nav[1];
+                const loadAfterLogin = { conversationId };
+                this.__loadMainPage(loadAfterLogin);
+              })
+              .catch(() => this.__loadLoginPage());
+          }
+          if (urlFragment.nav && urlFragment.nav.length > 1) {
+            const conversationId = urlFragment.nav[1];
+            this.__loadConversationPage(conversationId);
           }
           break;
         }
@@ -201,9 +221,9 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
-        case "form-sandbox": {
+        case "form-sandbox":
           this.__loadView(new osparc.desktop.FormSandboxPage(), {}, false);
-        }
+          break;
       }
     },
 
@@ -450,7 +470,7 @@ qx.Class.define("osparc.Application", {
       view.addListener("done", () => this.__restart(), this);
     },
 
-    __loadMainPage: function(studyId = null) {
+    __loadMainPage: function(loadAfterLogin = null) {
       // logged in
       osparc.WindowSizeTracker.getInstance().evaluateTooSmallDialog();
       osparc.data.Resources.getOne("profile")
@@ -497,8 +517,16 @@ qx.Class.define("osparc.Application", {
               });
             }
 
-            if (studyId) {
+            if (loadAfterLogin && loadAfterLogin["studyId"]) {
+              const studyId = loadAfterLogin["studyId"];
               osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+            }
+
+            if (loadAfterLogin && loadAfterLogin["conversationId"]) {
+              const conversationId = loadAfterLogin["conversationId"];
+              const supportCenterWindow = osparc.support.SupportCenter.openWindow();
+              supportCenterWindow.openConversation(conversationId);
+              this.__loadConversationPage(conversationId);
             }
 
             const loadViewerPage = () => {
