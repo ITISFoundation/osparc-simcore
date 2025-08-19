@@ -249,7 +249,9 @@ async def get_active_project(request: web.Request) -> web.Response:
         # updates project's permalink field
         await update_or_pop_permalink_in_project(request, project)
 
-        data = ProjectGet.from_domain_model(project).model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+        data = ProjectGet.from_domain_model(project).model_dump(
+            by_alias=True, exclude_unset=True, exclude_none=True
+        )
 
     return envelope_json_response(data)
 
@@ -281,7 +283,9 @@ async def get_project(request: web.Request):
 
     # Adds permalink
     await update_or_pop_permalink_in_project(request, project)
-    data = ProjectGet.from_domain_model(project).model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+    data = ProjectGet.from_domain_model(project).model_dump(
+        by_alias=True, exclude_unset=True
+    )
     return envelope_json_response(data)
 
 

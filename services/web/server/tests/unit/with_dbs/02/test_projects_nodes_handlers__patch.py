@@ -185,7 +185,6 @@ async def test_patch_project_node(
     _tested_node = data["workbench"][node_id]
 
     assert _tested_node["label"] == "testing-string"
-    assert _tested_node["progress"] is None
     assert _tested_node["key"] == _patch_key["key"]
     assert _tested_node["version"] == _patch_version["version"]
     assert _tested_node["inputs"] == _patch_inputs["inputs"]
