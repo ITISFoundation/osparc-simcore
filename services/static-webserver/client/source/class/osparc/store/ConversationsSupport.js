@@ -58,11 +58,13 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return osparc.data.Resources.fetch("conversationsSupport", "getConversation", params);
     },
 
-    addConversation: function(name = "null", type = osparc.store.ConversationsSupport.TYPES.SUPPORT) {
+    addConversation: function(extraContext = {}) {
+      extraContext["deployment"] = window.location.href;
       const params = {
         data: {
-          name,
-          type,
+          name: "null",
+          type: osparc.store.ConversationsSupport.TYPES.SUPPORT,
+          extraContext,
         }
       };
       return osparc.data.Resources.fetch("conversationsSupport", "addConversation", params)
