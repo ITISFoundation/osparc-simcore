@@ -115,33 +115,13 @@ qx.Class.define("osparc.support.SupportCenter", {
             center: true,
             alignX: "center",
           });
-          control.addListener("execute", () => this.__openConversation(), this);
+          control.addListener("execute", () => this.__createConversation(), this);
           this.getChildControl("conversations-layout").add(control);
           break;
-        case "conversation-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+        case "conversation-page":
+          control = new osparc.support.ConversationPage();
+          control.addListener("showConversations", () => this.__showConversations(), this);
           this.getChildControl("stack-layout").add(control);
-          break;
-        case "conversation-header":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this.getChildControl("conversation-layout").add(control);
-          break;
-        case "conversation-back-button":
-          control = new qx.ui.form.Button().set({
-            toolTipText: this.tr("Return to Messages"),
-            icon: "@FontAwesome5Solid/arrow-left/16",
-            backgroundColor: "transparent"
-          });
-          control.addListener("execute", () => this.__showConversations());
-          this.getChildControl("conversation-header").add(control);
-          break;
-        case "conversation-content":
-          control = new osparc.support.Conversation();
-          const scroll = new qx.ui.container.Scroll();
-          scroll.add(control);
-          this.getChildControl("conversation-layout").add(scroll, {
-            flex: 1,
-          });
           break;
       }
       return control || this.base(arguments, id);
@@ -152,28 +132,24 @@ qx.Class.define("osparc.support.SupportCenter", {
     },
 
     __showConversation: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-layout")]);
+      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-page")]);
     },
 
     __openConversation: function(conversationId) {
-      const openConversation = conversationId => {
-        this.getChildControl("conversation-back-button");
-        const conversationContent = this.getChildControl("conversation-content");
-        conversationContent.setConversationId(conversationId);
-        this.__showConversation();
-      }
-      if (conversationId) {
-        openConversation(conversationId);
-      } else {
-        this.getChildControl("ask-a-question-button").setFetching(true);
-        osparc.store.ConversationsSupport.getInstance().addConversation()
-          .then(data => {
-            openConversation(data["conversationId"]);
-          })
-          .finally(() => {
-            this.getChildControl("ask-a-question-button").setFetching(false);
-          });
-      }
+      const conversationContent = this.getChildControl("conversation-page");
+      conversationContent.setConversationId(conversationId);
+      this.__showConversation();
+    },
+
+    __createConversation: function() {
+      this.getChildControl("ask-a-question-button").setFetching(true);
+      osparc.store.ConversationsSupport.getInstance().addConversation()
+        .then(data => {
+          this.__openConversation(data["conversationId"]);
+        })
+        .finally(() => {
+          this.getChildControl("ask-a-question-button").setFetching(false);
+        });
     },
   }
 });
