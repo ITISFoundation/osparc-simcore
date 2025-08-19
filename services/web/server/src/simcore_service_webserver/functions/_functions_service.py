@@ -458,7 +458,7 @@ async def get_function_user_permissions(
     )
 
 
-async def get_function_group_permissions(
+async def list_function_group_permissions(
     app: web.Application,
     *,
     user_id: UserID,

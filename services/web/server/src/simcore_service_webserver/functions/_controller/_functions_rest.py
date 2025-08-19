@@ -58,7 +58,7 @@ async def _build_function_group_access_rights(
     product_name: ProductName,
     function_id: FunctionID,
 ) -> dict[GroupID, FunctionGroupAccessRightsGet]:
-    access_rights_list = await _functions_service.get_function_group_permissions(
+    access_rights_list = await _functions_service.list_function_group_permissions(
         app=app,
         user_id=user_id,
         product_name=product_name,
@@ -144,9 +144,17 @@ async def register_function(request: web.Request) -> web.Response:
         )
     )
 
+    access_rights = await _build_function_group_access_rights(
+        request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        function_id=registered_function.uid,
+    )
+
     return envelope_json_response(
         TypeAdapter(RegisteredFunctionGet).validate_python(
             registered_function.model_dump(mode="json")
+            | {"access_rights": access_rights}
         ),
         web.HTTPCreated,
     )
@@ -380,7 +388,7 @@ async def get_function_groups(request: web.Request) -> web.Response:
     function_id = path_params.function_id
 
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    access_rights_list = await _functions_service.get_function_group_permissions(
+    access_rights_list = await _functions_service.list_function_group_permissions(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
