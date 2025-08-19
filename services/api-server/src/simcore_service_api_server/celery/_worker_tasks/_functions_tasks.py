@@ -95,6 +95,7 @@ async def run_function(
     x_simcore_parent_project_uuid: NodeID | None,
     x_simcore_parent_node_id: NodeID | None,
 ):
+    assert task_id  # nosec
     app = get_app_server(task.app).app
     function_job_service = await _assemble_function_job_service(app, identity)
 
