@@ -103,13 +103,23 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __applyConversationId: function(conversationId) {
+      this.__reloadMessages(true);
+
       const supportSuggestion = this.getChildControl("support-suggestion");
-      if (conversationId) {
-        supportSuggestion.exclude();
-        this.__reloadMessages(true);
-      } else {
-        // new conversation, collect context data
+      supportSuggestion.exclude();
+      if (conversationId === null && osparc.store.Store.getInstance().getCurrentStudy()) {
         supportSuggestion.show();
+        const suggestedQuestion = new osparc.support.SuggestedQuestion();
+        const answers = [
+          { label: this.tr("No"), key: "no" },
+          { label: this.tr("Yes"), key: "yes" },
+        ];
+        suggestedQuestion.isProjectRelated(answers);
+        suggestedQuestion.addListener("questionAnswered", e => {
+          const answer = e.getData();
+          console.log(answer);
+        });
+        supportSuggestion.add(suggestedQuestion);
       }
     },
 
