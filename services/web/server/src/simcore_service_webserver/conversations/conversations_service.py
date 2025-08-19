@@ -10,7 +10,7 @@ from ._conversation_service import (
     create_conversation,
     delete_conversation,
     get_conversation,
-    list_conversations_for_project,
+    list_project_conversations,
     update_conversation,
 )
 
@@ -21,7 +21,7 @@ __all__: tuple[str, ...] = (
     "delete_message",
     "get_conversation",
     "get_message",
-    "list_conversations_for_project",
+    "list_project_conversations",
     "list_messages_for_conversation",
     "update_conversation",
     "update_message",

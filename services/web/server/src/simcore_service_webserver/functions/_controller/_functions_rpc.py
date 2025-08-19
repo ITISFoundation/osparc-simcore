@@ -3,11 +3,13 @@ from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.functions import (
     Function,
     FunctionAccessRights,
+    FunctionClass,
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
     FunctionJob,
     FunctionJobCollection,
+    FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
     FunctionJobID,
     FunctionJobStatus,
@@ -39,6 +41,7 @@ from models_library.functions_errors import (
     UnsupportedFunctionJobClassError,
 )
 from models_library.products import ProductName
+from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
@@ -175,6 +178,10 @@ async def list_functions(
     product_name: ProductName,
     pagination_limit: int,
     pagination_offset: int,
+    order_by: OrderBy | None = None,
+    filter_by_function_class: FunctionClass | None = None,
+    search_by_function_title: str | None = None,
+    search_by_multi_columns: str | None = None,
 ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
     return await _functions_service.list_functions(
         app=app,
@@ -182,6 +189,10 @@ async def list_functions(
         product_name=product_name,
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
+        order_by=order_by,
+        filter_by_function_class=filter_by_function_class,
+        search_by_function_title=search_by_function_title,
+        search_by_multi_columns=search_by_multi_columns,
     )
 
 
@@ -199,6 +210,8 @@ async def list_function_jobs(
     pagination_limit: int,
     pagination_offset: int,
     filter_by_function_id: FunctionID | None = None,
+    filter_by_function_job_ids: list[FunctionJobID] | None = None,
+    filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
     return await _functions_service.list_function_jobs(
         app=app,
@@ -207,6 +220,8 @@ async def list_function_jobs(
         pagination_limit=pagination_limit,
         pagination_offset=pagination_offset,
         filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
 
 

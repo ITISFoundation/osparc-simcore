@@ -23,6 +23,7 @@ from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
+from .._meta import APP_NAME
 from ..core.docker_compose_utils import (
     docker_compose_create,
     docker_compose_down,
@@ -168,17 +169,19 @@ async def task_create_service_containers(
 
     assert shared_store.compose_spec  # nosec
 
-    async with event_propagation_disabled(app), _reset_on_error(
-        shared_store
-    ), ProgressBarData(
-        num_steps=4,
-        progress_report_cb=functools.partial(
-            post_progress_message,
-            app,
-            ProgressType.SERVICE_CONTAINERS_STARTING,
-        ),
-        description="starting software",
-    ) as progress_bar:
+    async with (
+        event_propagation_disabled(app),
+        _reset_on_error(shared_store),
+        ProgressBarData(
+            num_steps=4,
+            progress_report_cb=functools.partial(
+                post_progress_message,
+                app,
+                ProgressType.SERVICE_CONTAINERS_STARTING,
+            ),
+            description="starting software",
+        ) as progress_bar,
+    ):
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
                 await user_services_preferences.load_user_services_preferences(app)
@@ -433,6 +436,7 @@ async def _save_state_folder(
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
+        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
     )
 
 

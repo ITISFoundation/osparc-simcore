@@ -75,6 +75,7 @@ from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 
+from ..application_settings import get_application_settings
 from ..models import ClientSessionID
 from ..utils import now_str
 from ._comments_repository import (
@@ -880,7 +881,7 @@ class ProjectDBAPI(BaseProjectDB):
             extra=get_log_record_extra(user_id=user_id),
         ):
             partial_workbench_data: dict[NodeIDStr, Any] = {
-                NodeIDStr(f"{node_id}"): new_node_data,
+                f"{node_id}": new_node_data,
             }
             return await self._update_project_workbench_with_lock_and_notify(
                 partial_workbench_data,
@@ -957,19 +958,23 @@ class ProjectDBAPI(BaseProjectDB):
             allow_workbench_changes=allow_workbench_changes,
         )
 
-        (
-            project_document,
-            document_version,
-        ) = await create_project_document_and_increment_version(self._app, project_uuid)
+        app_settings = get_application_settings(self._app)
+        if app_settings.WEBSERVER_REALTIME_COLLABORATION is not None:
+            (
+                project_document,
+                document_version,
+            ) = await create_project_document_and_increment_version(
+                self._app, project_uuid
+            )
 
-        await notify_project_document_updated(
-            app=self._app,
-            project_id=project_uuid,
-            user_primary_gid=user_primary_gid,
-            client_session_id=client_session_id,
-            version=document_version,
-            document=project_document,
-        )
+            await notify_project_document_updated(
+                app=self._app,
+                project_id=project_uuid,
+                user_primary_gid=user_primary_gid,
+                client_session_id=client_session_id,
+                version=document_version,
+                document=project_document,
+            )
         return updated_project, changed_entries
 
     async def _update_project_workbench(
@@ -1059,6 +1064,9 @@ class ProjectDBAPI(BaseProjectDB):
                 exclude_unset=True,
             ),
         }
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.add(conn, nodes=[node])
         await self._update_project_workbench_with_lock_and_notify(
             partial_workbench_data,
             user_id=user_id,
@@ -1067,9 +1075,6 @@ class ProjectDBAPI(BaseProjectDB):
             allow_workbench_changes=True,
             client_session_id=client_session_id,
         )
-        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-        async with self.engine.acquire() as conn:
-            await project_nodes_repo.add(conn, nodes=[node])
 
     async def remove_project_node(
         self,

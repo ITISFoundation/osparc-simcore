@@ -726,6 +726,8 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_MINSIZE: ${POSTGRES_MINSIZE}
+      POSTGRES_MAXSIZE: ${POSTGRES_MAXSIZE}
       POSTGRES_USER: ${POSTGRES_USER}
 
       # WEBSERVER_DIAGNOSTICS
@@ -1550,7 +1552,7 @@ services:
   #
   # use fallback routes to return proper 503 (instead of 404)
   # this service must be running at all times
-  traefik-configuration-placeholder:
+  traefik-config-placeholder:
     image: busybox:1.35.0
     command: sleep infinity
     networks:

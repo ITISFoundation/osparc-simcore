@@ -3,7 +3,7 @@
   "info": {
     "title": "osparc.io public API",
     "description": "osparc-simcore public API specifications",
-    "version": "0.10.0"
+    "version": "0.12.0"
   },
   "paths": {
     "/v0/meta": {
@@ -2761,6 +2761,138 @@
         }
       }
     },
+    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/assets": {
+      "delete": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Delete Job Assets",
+        "description": "Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable\n\nNew in *version 0.12*",
+        "operationId": "delete_job_assets",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "solver_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^simcore/services/comp/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$",
+              "title": "Solver Key"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "402": {
+            "description": "Payment required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job/wallet/pricing details not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Unexpected error when communicating with backend service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start": {
       "post": {
         "tags": [
@@ -2918,6 +3050,16 @@
           },
           "406": {
             "description": "Cluster not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Job assets missing",
             "content": {
               "application/json": {
                 "schema": {
@@ -3752,6 +3894,16 @@
           },
           "504": {
             "description": "Request to a backend service timed out.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Job assets missing",
             "content": {
               "application/json": {
                 "schema": {
@@ -5305,7 +5457,7 @@
           "function_jobs"
         ],
         "summary": "List Function Jobs",
-        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects",
+        "description": "List function jobs\n\nNew in *version 0.8.0*\n\nAdded in *version 0.9.0*: add `created_at` field in the registered function-related objects\n\nAdded in *version 0.11.0*: add filter by `function_id`, `function_job_ids` and `function_job_collection_id`",
         "operationId": "list_function_jobs",
         "security": [
           {
@@ -5335,6 +5487,66 @@
               "default": 0,
               "title": "Offset"
             }
+          },
+          {
+            "name": "function_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function ID pattern",
+              "title": "Function Id"
+            },
+            "description": "Filter by function ID pattern"
+          },
+          {
+            "name": "function_job_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function job IDs",
+              "title": "Function Job Ids"
+            },
+            "description": "Filter by function job IDs"
+          },
+          {
+            "name": "function_job_collection_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by function job collection ID",
+              "title": "Function Job Collection Id"
+            },
+            "description": "Filter by function job collection ID"
           }
         ],
         "responses": {
@@ -5710,7 +5922,7 @@
           "function_jobs"
         ],
         "summary": "Get Function Job Logs Task",
-        "description": "Get function job logs task\n\nNew in *version 0.10-rc1*",
+        "description": "Get function job logs task\n\nNew in *version 0.11.0*",
         "operationId": "get_function_job_logs_task",
         "security": [
           {
@@ -6055,6 +6267,169 @@
                     }
                   },
                   "title": "Response Function Job Collection List Function Jobs V0 Function Job Collections  Function Job Collection Id  Function Jobs Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections/{function_job_collection_id}/function_jobs/page": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Function Job Collection List Function Jobs Page",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
+        "operationId": "function_job_collection_list_function_jobs_page",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_Annotated_Union_RegisteredProjectFunctionJob__RegisteredPythonCodeFunctionJob__RegisteredSolverFunctionJob___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Function job collection not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorGet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/function_job_collections/{function_job_collection_id}/function_jobs/list": {
+      "get": {
+        "tags": [
+          "function_job_collections"
+        ],
+        "summary": "Function Job Collection List Function Jobs List",
+        "description": "Get the function jobs in function job collection\n\nNew in *version 0.11.0*",
+        "operationId": "function_job_collection_list_function_jobs_list",
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "function_job_collection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Function Job Collection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
+                      },
+                      {
+                        "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
+                      }
+                    ],
+                    "discriminator": {
+                      "propertyName": "function_class",
+                      "mapping": {
+                        "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
+                        "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
+                        "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
+                      }
+                    }
+                  },
+                  "title": "Response Function Job Collection List Function Jobs List V0 Function Job Collections  Function Job Collection Id  Function Jobs List Get"
                 }
               }
             }

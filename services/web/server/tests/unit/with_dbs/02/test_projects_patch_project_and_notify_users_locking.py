@@ -49,6 +49,7 @@ def user_primary_gid(logged_user: UserInfoDict) -> int:
 )
 async def test_patch_project_and_notify_users_sequential(
     user_role: UserRole,
+    with_enabled_rtc_collaboration: None,
     expected: HTTPStatus,
     client: TestClient,
     user_project: ProjectDict,
@@ -105,6 +106,7 @@ async def test_patch_project_and_notify_users_sequential(
 )
 async def test_patch_project_and_notify_users_concurrent_locking(
     user_role: UserRole,
+    with_enabled_rtc_collaboration: None,
     expected: HTTPStatus,
     client: TestClient,
     user_project: ProjectDict,
@@ -155,6 +157,7 @@ async def test_patch_project_and_notify_users_concurrent_locking(
 )
 async def test_patch_project_and_notify_users_concurrent_different_projects(
     user_role: UserRole,
+    with_enabled_rtc_collaboration: None,
     expected: HTTPStatus,
     client: TestClient,
     user_project: ProjectDict,
