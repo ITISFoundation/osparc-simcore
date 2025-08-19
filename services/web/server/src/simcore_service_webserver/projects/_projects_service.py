@@ -1366,6 +1366,12 @@ async def is_node_id_present_in_any_project_workbench(
     return await db_legacy.node_id_exists(node_id)
 
 
+async def _is_service_collaborative(
+    app: web.Application, *, key: ServiceKey, version: ServiceVersion
+) -> bool:
+    return False
+
+
 async def _get_node_share_state(
     app: web.Application, *, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
 ) -> NodeShareState:
@@ -1374,15 +1380,19 @@ async def _get_node_share_state(
     )
 
     if _is_node_dynamic(node.key):
-        # if the service is dynamic and running it is locked
+        # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(
             app, node_id=node_id
         )
 
         if isinstance(service, DynamicServiceGet | NodeGet):
             # service is running
+            collaborative_service = await _is_service_collaborative(
+                app, key=node.key, version=node.version
+            )
+
             return NodeShareState(
-                locked=True,
+                locked=not collaborative_service,
                 current_user_groupids=[
                     await users_service.get_user_primary_group_id(
                         app, TypeAdapter(UserID).validate_python(service.user_id)
