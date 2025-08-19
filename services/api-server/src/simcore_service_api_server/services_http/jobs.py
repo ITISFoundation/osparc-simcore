@@ -1,15 +1,12 @@
 import logging
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Request, status
 from models_library.api_schemas_webserver.projects import ProjectGet
-from pydantic import HttpUrl, PositiveInt
+from models_library.users import UserID
+from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
-from ..api.dependencies.authentication import get_current_user_id
-from ..api.dependencies.services import get_api_client
-from ..api.dependencies.webserver_http import get_webserver_session
+from ..exceptions.backend_errors import InvalidInputError
 from ..models.schemas.jobs import (
     JobID,
     JobMetadata,
@@ -28,20 +25,17 @@ def raise_if_job_not_associated_with_solver(
     expected_project_name: str, project: ProjectGet
 ) -> None:
     if expected_project_name != project.name:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid input data for job {project.uuid}",
-        )
+        raise InvalidInputError()
 
 
 async def start_project(
     *,
-    request: Request,
     job_id: JobID,
     expected_job_name: str,
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    pricing_spec: JobPricingSpecification | None,
+    webserver_api: AuthSession,
 ) -> None:
-    if pricing_spec := JobPricingSpecification.create_from_headers(request.headers):
+    if pricing_spec is not None:
         with log_context(_logger, logging.DEBUG, "Set pricing plan and unit"):
             project: ProjectGet = await webserver_api.get_project(project_id=job_id)
             raise_if_job_not_associated_with_solver(expected_job_name, project)
@@ -60,8 +54,8 @@ async def start_project(
 async def stop_project(
     *,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    user_id: UserID,
+    director2_api: DirectorV2Api,
 ) -> JobStatus:
     await director2_api.stop_computation(project_id=job_id, user_id=user_id)
 
