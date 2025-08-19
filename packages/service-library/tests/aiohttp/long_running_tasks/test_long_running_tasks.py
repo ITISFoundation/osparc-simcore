@@ -109,14 +109,7 @@ async def test_workflow(
         ("generated item", 0.8),
         ("finished", 1.0),
     ]
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(10),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            assert all(x in progress_updates for x in EXPECTED_MESSAGES)
+    assert all(x in progress_updates for x in EXPECTED_MESSAGES)
     # now get the result
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
@@ -201,10 +194,18 @@ async def test_cancel_task(
     assert not data
     assert not error
 
-    # it should be gone, so no status
-    status_url = client.app.router["get_task_status"].url_for(task_id=task_id)
-    result = await client.get(f"{status_url}")
-    await assert_status(result, status.HTTP_404_NOT_FOUND)
+    # it should eventually go away, so no status
+    # does not wait for removal any longer
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(0.1),
+        stop=stop_after_delay(5),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            status_url = client.app.router["get_task_status"].url_for(task_id=task_id)
+            result = await client.get(f"{status_url}")
+            await assert_status(result, status.HTTP_404_NOT_FOUND)
     # and also no results
     result_url = client.app.router["get_task_result"].url_for(task_id=task_id)
     result = await client.get(f"{result_url}")
