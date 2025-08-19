@@ -1367,13 +1367,27 @@ async def is_node_id_present_in_any_project_workbench(
 
 
 async def _is_service_collaborative(
-    app: web.Application, *, key: ServiceKey, version: ServiceVersion
+    app: web.Application,
+    *,
+    user_id: UserID,
+    key: ServiceKey,
+    version: ServiceVersion,
+    product_name: ProductName,
 ) -> bool:
-    return False
+    service = await catalog_service.get_service(
+        app, user_id=user_id, key=key, version=version, product_name=product_name
+    )
+
+    return service.get("collaborative", False) is True
 
 
 async def _get_node_share_state(
-    app: web.Application, *, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_id: NodeID,
+    product_name: ProductName,
 ) -> NodeShareState:
     node = await _projects_nodes_repository.get(
         app, project_id=project_uuid, node_id=node_id
@@ -1388,7 +1402,11 @@ async def _get_node_share_state(
         if isinstance(service, DynamicServiceGet | NodeGet):
             # service is running
             collaborative_service = await _is_service_collaborative(
-                app, key=node.key, version=node.version
+                app,
+                key=node.key,
+                version=node.version,
+                user_id=user_id,
+                product_name=product_name,
             )
 
             return NodeShareState(
