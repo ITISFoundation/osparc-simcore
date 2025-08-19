@@ -66,6 +66,8 @@ def webserver_environ(
     EXCLUDED_SERVICES = [
         "dask-scheduler",
         "director",
+        "docker-api-proxy",
+        "dynamic-schdlr",
         "sto-worker",
         "sto-worker-cpu-bound",
     ]
