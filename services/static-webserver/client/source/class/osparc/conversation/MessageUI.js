@@ -64,11 +64,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       let control;
       switch (id) {
         case "thumbnail":
-          control = new qx.ui.basic.Image().set({
-            scale: true,
-            maxWidth: 32,
-            maxHeight: 32,
-            decorator: "rounded",
+          control = osparc.utils.Utils.createThumbnail(32).set({
             marginTop: 4,
           });
           this._add(control, {

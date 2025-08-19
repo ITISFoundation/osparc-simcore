@@ -78,17 +78,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           break;
         }
         case "thumbnail": {
-          control = new qx.ui.basic.Image().set({
-            alignY: "middle",
-            scale: true,
-            allowGrowX: true,
-            allowGrowY: true,
-            allowShrinkX: true,
-            allowShrinkY: true,
-            maxWidth: 32,
-            maxHeight: 32,
-            decorator: "rounded",
-          });
+          control = osparc.utils.Utils.createThumbnail(32);
           const authData = osparc.auth.Data.getInstance();
           const myUsername = authData.getUsername();
           const myEmail = authData.getEmail();

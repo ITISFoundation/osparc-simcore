@@ -130,6 +130,25 @@ qx.Class.define("osparc.utils.Utils", {
       }
     },
 
+    getThumbnailProps: function(size = 32) {
+      return {
+        alignX: "center",
+        alignY: "middle",
+        scale: true,
+        allowGrowX: true,
+        allowGrowY: true,
+        allowShrinkX: true,
+        allowShrinkY: true,
+        decorator: "rounded",
+        maxWidth: size,
+        maxHeight: size,
+      };
+    },
+
+    createThumbnail: function(size = 32) {
+      return new qx.ui.basic.Image().set(this.getThumbnailProps(size));
+    },
+
     disableAutocomplete: function(control) {
       if (control && control.getContentElement()) {
         control.getContentElement().setAttribute("autocomplete", "off");
