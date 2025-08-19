@@ -13,7 +13,7 @@ from servicelib.logging_utils import setup_loggers
 
 from ..core.application import create_app
 from ..core.settings import ApplicationSettings
-from ._worker_tasks import setup_worker_tasks
+from ._worker_tasks.tasks import setup_worker_tasks
 
 _settings = ApplicationSettings.create_from_envs()
 
