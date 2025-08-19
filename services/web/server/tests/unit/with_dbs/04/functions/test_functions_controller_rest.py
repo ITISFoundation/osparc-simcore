@@ -162,9 +162,9 @@ async def test_function_workflow(
         client,
         expected_list,
         expected_count=2,
-        expected_uid_in_results=str(returned_function_uid),
+        expected_uid_in_results=f"{returned_function_uid}",
         expected_uid_at_index=(
-            str(returned_function_uid),
+            f"{returned_function_uid}",
             1,
         ),  # ordered by modified_at by default
     )
@@ -175,8 +175,8 @@ async def test_function_workflow(
         expected_list,
         expected_count=2,
         params={"order_by": json_dumps({"field": "created_at", "direction": "asc"})},
-        expected_uid_in_results=str(returned_function_uid),
-        expected_uid_at_index=(str(returned_function_uid), 0),
+        expected_uid_in_results=f"{returned_function_uid}",
+        expected_uid_at_index=(f"{returned_function_uid}", 0),
     )
 
     # List existing functions (searching for not existing)
@@ -196,16 +196,12 @@ async def test_function_workflow(
     )
 
     # List existing functions (searching by title)
-    url = client.app.router["list_functions"].url_for()
-    response = await client.get(
-        url, params={"filters": json_dumps({"search_by_title": "duplicate"})}
+    await _list_functions_and_validate(
+        client,
+        expected_list,
+        expected_count=1,
+        params={"filters": json_dumps({"search_by_title": "duplicate"})},
     )
-    data, error = await assert_status(response, expected_list)
-    if not error:
-        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
-            data
-        )
-        assert len(retrieved_functions) == 1
 
     # Set group permissions for other user
     new_group_id = other_logged_user["primary_gid"]
