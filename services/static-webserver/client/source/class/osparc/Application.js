@@ -173,10 +173,6 @@ qx.Class.define("osparc.Application", {
               })
               .catch(() => this.__loadLoginPage());
           }
-          if (urlFragment.nav && urlFragment.nav.length > 1) {
-            const conversationId = urlFragment.nav[1];
-            this.__loadConversationPage(conversationId);
-          }
           break;
         }
         case "registration": {
@@ -526,7 +522,6 @@ qx.Class.define("osparc.Application", {
               const conversationId = loadAfterLogin["conversationId"];
               const supportCenterWindow = osparc.support.SupportCenter.openWindow();
               supportCenterWindow.openConversation(conversationId);
-              this.__loadConversationPage(conversationId);
             }
 
             const loadViewerPage = () => {
