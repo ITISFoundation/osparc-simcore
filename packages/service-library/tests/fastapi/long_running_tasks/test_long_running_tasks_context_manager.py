@@ -111,7 +111,7 @@ async def bg_task_app(
     )
     setup_client(app, router_prefix=router_prefix)
 
-    async with LifespanManager(app):
+    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         yield app
 
 
