@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
+import json
 from collections.abc import AsyncIterator
 from http import HTTPStatus
 from typing import Any
@@ -108,6 +109,12 @@ async def test_function_workflow(
         assert returned_function.uid is not None
         returned_function_uid = returned_function.uid
 
+    # Register a new function (duplicate)
+    url = client.app.router["register_function"].url_for()
+    mocked_function.update(title=mocked_function["title"] + " (duplicate)")
+    response = await client.post(url, json=mocked_function)
+    await assert_status(response, expected_status_code=expected_register)
+
     # Get the registered function
     url = client.app.router["get_function"].url_for(
         function_id=f"{returned_function_uid}"
@@ -118,7 +125,7 @@ async def test_function_workflow(
         retrieved_function = TypeAdapter(RegisteredFunctionGet).validate_python(data)
         assert retrieved_function.uid == returned_function.uid
 
-    # List existing functions
+    # List existing functions (default)
     url = client.app.router["list_functions"].url_for()
     response = await client.get(url)
     data, error = await assert_status(response, expected_list)
@@ -126,8 +133,60 @@ async def test_function_workflow(
         retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
             data
         )
-        assert len(retrieved_functions) == 1
+        assert len(retrieved_functions) == 2
+        assert returned_function_uid in [f.uid for f in retrieved_functions]
+        assert (
+            retrieved_functions[1].uid == returned_function_uid
+        )  # ordered by modified_at by default
+
+    # List existing functions (ordered by created_at ascending)
+    url = client.app.router["list_functions"].url_for()
+    response = await client.get(
+        url,
+        params={"order_by": json.dumps({"field": "created_at", "direction": "asc"})},
+    )
+    data, error = await assert_status(response, expected_list)
+    if not error:
+        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
+            data
+        )
+        assert len(retrieved_functions) == 2
+        assert returned_function_uid in [f.uid for f in retrieved_functions]
         assert retrieved_functions[0].uid == returned_function_uid
+
+    # List existing functions (searching for not existing)
+    url = client.app.router["list_functions"].url_for()
+    response = await client.get(
+        url, params={"search": "you_can_not_find_me_because_I_do_not_exist"}
+    )
+    data, error = await assert_status(response, expected_list)
+    if not error:
+        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
+            data
+        )
+        assert len(retrieved_functions) == 0
+
+    # List existing functions (searching for duplicate)
+    url = client.app.router["list_functions"].url_for()
+    response = await client.get(url, params={"search": "duplicate"})
+    data, error = await assert_status(response, expected_list)
+    if not error:
+        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
+            data
+        )
+        assert len(retrieved_functions) == 1
+
+    # List existing functions (searching by title)
+    url = client.app.router["list_functions"].url_for()
+    response = await client.get(
+        url, params={"filters": json.dumps({"search_by_title": "duplicate"})}
+    )
+    data, error = await assert_status(response, expected_list)
+    if not error:
+        retrieved_functions = TypeAdapter(list[RegisteredFunctionGet]).validate_python(
+            data
+        )
+        assert len(retrieved_functions) == 1
 
     # Update existing function
     new_title = "Test Function (edited)"

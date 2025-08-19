@@ -46,6 +46,10 @@ FunctionListOrderQueryParams: type[RequestParameters] = (
             "name",
         },
         default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={
+            "created_at": "created",
+            "modified_at": "modified",
+        },
     )
 )
 
