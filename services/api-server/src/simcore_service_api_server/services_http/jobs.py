@@ -2,7 +2,8 @@ import logging
 from uuid import UUID
 
 from models_library.api_schemas_webserver.projects import ProjectGet
-from pydantic import HttpUrl, PositiveInt
+from models_library.users import UserID
+from pydantic import HttpUrl
 from servicelib.logging_utils import log_context
 
 from ..exceptions.backend_errors import InvalidInputError
@@ -53,7 +54,7 @@ async def start_project(
 async def stop_project(
     *,
     job_id: JobID,
-    user_id: PositiveInt,
+    user_id: UserID,
     director2_api: DirectorV2Api,
 ) -> JobStatus:
     await director2_api.stop_computation(project_id=job_id, user_id=user_id)
