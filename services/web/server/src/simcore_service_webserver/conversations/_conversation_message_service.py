@@ -78,8 +78,7 @@ async def create_support_message_and_check_if_it_is_first_message(
         content=content,
         type_=type_,
     )
-
-    await _conversation_message_repository.list_(
+    _, messages = await _conversation_message_repository.list_(
         app,
         conversation_id=conversation_id,
         offset=0,
@@ -89,12 +88,6 @@ async def create_support_message_and_check_if_it_is_first_message(
         ),  # NOTE: ASC - first/oldest message first
     )
 
-    _, messages = await list_messages_for_conversation(
-        app,
-        conversation_id=conversation_id,
-        offset=0,
-        limit=1,
-    )
     is_first_message = False
     if messages:
         first_message = messages[0]
