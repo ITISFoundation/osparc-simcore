@@ -699,6 +699,7 @@ services:
       WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       WEBSERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
 
+      # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb
 
       # WEBSERVER_SERVER_HOST
@@ -931,6 +932,7 @@ services:
       WEBSERVER_STATICWEB: "null"
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
 
+      # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: api
 
     networks: *webserver_networks
@@ -942,6 +944,7 @@ services:
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
 
+      # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: db
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
@@ -1040,6 +1043,7 @@ services:
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
+      # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: gc
 
       # WEBSERVER_DB
@@ -1134,6 +1138,7 @@ services:
       WEBSERVER_APP_FACTORY_NAME: WEBSERVER_AUTHZ_APP_FACTORY
       WEBSERVER_LOGLEVEL: ${WB_AUTH_LOGLEVEL}
 
+      # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: auth
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
