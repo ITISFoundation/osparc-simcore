@@ -103,6 +103,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         case "conversation-extra-content":
           control = new qx.ui.basic.Label().set({
             font: "text-12",
+            textColor: "text-disabled",
             rich: true,
             allowGrowX: true,
             selectable: true,
@@ -157,6 +158,6 @@ qx.Class.define("osparc.support.ConversationPage", {
         title.setValue("");
         options.exclude();
       }
-    }
+    },
   }
 });

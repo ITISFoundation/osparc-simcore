@@ -48,8 +48,8 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .then(conversationsData => {
           const conversations = [];
           if (conversationsData.length) {
-            // Sort conversations by created date, oldest first (the new ones will be next to the plus button)
-            conversationsData.sort((a, b) => new Date(a["created"]) - new Date(b["created"]));
+            // Sort conversations by created date, newest first (the new ones will be next to the plus button)
+            conversationsData.sort((a, b) => new Date(b["created"]) - new Date(a["created"]));
           }
           conversationsData.forEach(conversationData => {
             const conversation = new osparc.data.model.Conversation(conversationData);
