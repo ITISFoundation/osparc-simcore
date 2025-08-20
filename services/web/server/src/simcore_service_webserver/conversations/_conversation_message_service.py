@@ -86,7 +86,7 @@ async def create_support_message_and_check_if_it_is_first_message(
         limit=1,
         order_by=OrderBy(
             field=IDStr("created"), direction=OrderDirection.ASC
-        ),  # NOTE: ASC - first message first
+        ),  # NOTE: ASC - first/oldest message first
     )
 
     _, messages = await list_messages_for_conversation(
@@ -99,7 +99,6 @@ async def create_support_message_and_check_if_it_is_first_message(
     if messages:
         first_message = messages[0]
         is_first_message = first_message.message_id == created_message.message_id
-        is_first_message = True
 
     return created_message, is_first_message
 
