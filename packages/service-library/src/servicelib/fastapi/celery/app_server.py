@@ -5,9 +5,9 @@ from typing import Final
 
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from servicelib.celery.task_manager import TaskManager
 
 from ...celery.app_server import BaseAppServer
+from ...celery.task_manager import TaskManager
 
 _SHUTDOWN_TIMEOUT: Final[float] = datetime.timedelta(seconds=10).total_seconds()
 
