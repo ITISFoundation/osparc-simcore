@@ -79,17 +79,13 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
     env_devel_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             **env_devel_dict,
-            "REDIS_SECURE": redis_service.REDIS_SECURE,
-            "REDIS_HOST": redis_service.REDIS_HOST,
-            "REDIS_PORT": f"{redis_service.REDIS_PORT}",
-            "REDIS_PASSWORD": redis_service.REDIS_PASSWORD.get_secret_value(),
         },
     )
 
@@ -151,16 +147,14 @@ async def with_celery_worker(
 async def celery_task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
-    mock_redis_socket_timeout: None,
+    use_in_memory_redis: RedisSettings,
     with_celery_worker: TestWorkController,
 ) -> AsyncIterator[CeleryTaskManager]:
     register_celery_types()
 
     try:
         redis_client_sdk = RedisClientSDK(
-            celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
-                RedisDatabase.CELERY_TASKS
-            ),
+            use_in_memory_redis.build_redis_dsn(RedisDatabase.CELERY_TASKS),
             client_name="pytest_celery_tasks",
         )
         await redis_client_sdk.setup()
