@@ -95,6 +95,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           const conversation = new osparc.data.model.Conversation(conversationData);
           this.__addToCache(conversation);
           this.fireDataEvent("conversationCreated", conversation);
+          return conversationData;
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
