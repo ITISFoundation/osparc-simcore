@@ -124,6 +124,7 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __buildLayout: function() {
+      this.getChildControl("spacer-top");
       this.getChildControl("messages-container");
       const addMessages = this.getChildControl("add-message");
       addMessages.addListener("messageAdded", e => {
