@@ -25,6 +25,7 @@ from yarl import URL
 from .constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
 from .core.errors import (
     DirectorRuntimeError,
+    DockerRegistryUnsupportedManifestSchemaVersionError,
     RegistryConnectionError,
     ServiceNotAvailableError,
 )
@@ -375,22 +376,55 @@ async def get_image_labels(
     app: FastAPI, image: str, tag: str, *, update_cache=False
 ) -> tuple[dict[str, str], str | None]:
     """Returns image labels and the image manifest digest"""
+    with log_context(_logger, logging.DEBUG, msg=f"get {image}:{tag} labels"):
+        request_result, headers = await registry_request(
+            app,
+            path=f"{image}/manifests/{tag}",
+            method="GET",
+            use_cache=not update_cache,
+        )
 
-    _logger.debug("getting image labels of %s:%s", image, tag)
-    path = f"{image}/manifests/{tag}"
-    request_result, headers = await registry_request(
-        app, path=path, method="GET", use_cache=not update_cache
-    )
-    v1_compatibility_key = json_loads(request_result["history"][0]["v1Compatibility"])
-    container_config: dict[str, Any] = v1_compatibility_key.get(
-        "container_config", v1_compatibility_key["config"]
-    )
-    labels: dict[str, str] = container_config["Labels"]
+        schema_version = request_result["schemaVersion"]
+        labels: dict[str, str] = {}
+        match schema_version:
+            case 2:
+                # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
+                media_type = request_result["mediaType"]
+                if (
+                    media_type
+                    == "application/vnd.docker.distribution.manifest.list.v2+json"
+                ):
+                    raise DockerRegistryUnsupportedManifestSchemaVersionError(
+                        version=schema_version,
+                        service_name=image,
+                        service_tag=tag,
+                        reason="Multiple architectures images are currently not supported and need to be implemented",
+                    )
+                config_digest = request_result["config"]["digest"]
+                # Fetch the config blob
+                config_result, _ = await registry_request(
+                    app,
+                    path=f"{image}/blobs/{config_digest}",
+                    method="GET",
+                    use_cache=not update_cache,
+                )
+                labels = config_result.get("config", {}).get("Labels", {})
+            case 1:
+                # Image Manifest Version 2, Schema 1 deprecated in docker hub since 2024-11-04
+                v1_compatibility_key = json_loads(
+                    request_result["history"][0]["v1Compatibility"]
+                )
+                container_config: dict[str, Any] = v1_compatibility_key.get(
+                    "container_config", v1_compatibility_key.get("config", {})
+                )
+                labels = container_config.get("Labels", {})
+            case _:
+                raise DockerRegistryUnsupportedManifestSchemaVersionError(
+                    version=schema_version, service_name=image, service_tag=tag
+                )
 
-    headers = headers or {}
-    manifest_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
-
-    _logger.debug("retrieved labels of image %s:%s", image, tag)
+        headers = headers or {}
+        manifest_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
 
     return (labels, manifest_digest)
 
