@@ -5,6 +5,7 @@ from typing import Final
 
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
+from servicelib.celery.task_manager import TaskManager
 
 from ...celery.app_server import BaseAppServer
 
@@ -17,6 +18,10 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
     def __init__(self, app: FastAPI):
         super().__init__(app)
         self._lifespan_manager: LifespanManager | None = None
+
+    @property
+    def task_manager(self) -> TaskManager:
+        return self.app.state.task_manager
 
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
         async with LifespanManager(

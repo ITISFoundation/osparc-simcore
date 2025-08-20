@@ -31,12 +31,9 @@ class BaseAppServer(ABC, Generic[T]):
         return self._shutdown_event
 
     @property
+    @abstractmethod
     def task_manager(self) -> TaskManager:
-        return self._task_manager
-
-    @task_manager.setter
-    def task_manager(self, manager: TaskManager) -> None:
-        self._task_manager = manager
+        raise NotImplementedError
 
     @abstractmethod
     async def lifespan(

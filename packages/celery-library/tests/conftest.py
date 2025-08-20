@@ -19,6 +19,7 @@ from celery_library.types import register_celery_types
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
+from servicelib.celery.task_manager import TaskManager
 from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -38,7 +39,12 @@ class FakeAppServer(BaseAppServer):
     def __init__(self, app: Celery, settings: CelerySettings):
         super().__init__(app)
         self._settings = settings
-        self.task_manager: CeleryTaskManager | None = None
+        self._task_manager: CeleryTaskManager | None = None
+
+    @property
+    def task_manager(self) -> TaskManager:
+        assert self._task_manager, "Task manager is not initialized"
+        return self._task_manager
 
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
         redis_client_sdk = RedisClientSDK(
@@ -49,7 +55,7 @@ class FakeAppServer(BaseAppServer):
         )
         await redis_client_sdk.setup()
 
-        self.task_manager = CeleryTaskManager(
+        self._task_manager = CeleryTaskManager(
             self._app,
             self._settings,
             RedisTaskInfoStore(redis_client_sdk),
@@ -120,7 +126,6 @@ def celery_config() -> dict[str, Any]:
 async def with_celery_worker(
     celery_app: Celery,
     app_server: BaseAppServer,
-    celery_settings: CelerySettings,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
@@ -146,6 +151,7 @@ async def with_celery_worker(
 async def celery_task_manager(
     celery_app: Celery,
     celery_settings: CelerySettings,
+    mock_redis_socket_timeout: None,
     with_celery_worker: TestWorkController,
 ) -> AsyncIterator[CeleryTaskManager]:
     register_celery_types()
