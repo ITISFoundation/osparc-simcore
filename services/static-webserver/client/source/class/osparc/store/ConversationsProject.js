@@ -113,7 +113,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
-    addMessage: function(studyId, conversationId, message) {
+    postMessage: function(studyId, conversationId, message) {
       const params = {
         url: {
           studyId,

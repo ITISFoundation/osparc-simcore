@@ -147,7 +147,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         });
     },
 
-    addMessage: function(conversationId, message) {
+    postMessage: function(conversationId, message) {
       const params = {
         url: {
           conversationId,

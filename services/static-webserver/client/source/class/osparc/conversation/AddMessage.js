@@ -193,9 +193,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
         const studyData = this.getStudyData();
         const conversationId = this.getConversationId();
         if (studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().addMessage(studyData["uuid"], conversationId, content);
+          promise = osparc.store.ConversationsProject.getInstance().postMessage(studyData["uuid"], conversationId, content);
         } else {
-          promise = osparc.store.ConversationsSupport.getInstance().addMessage(conversationId, content);
+          promise = osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
         }
         promise
           .then(data => {

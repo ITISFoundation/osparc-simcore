@@ -328,7 +328,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
           },
-          addMessage: {
+          postMessage: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages"
           },
@@ -1497,7 +1497,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/conversations/{conversationId}"
           },
-          addMessage: {
+          postMessage: {
             method: "POST",
             url: statics.API + "/conversations/{conversationId}/messages"
           },
