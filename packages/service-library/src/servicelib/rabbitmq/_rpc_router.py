@@ -65,8 +65,8 @@ class RPCRouter:
                             raise
 
                         _logger.exception(
-                            "Unhandled exception on the rpc-server side."
-                            f" Re-raising as {RPCServerError.__name__}."
+                            "Unhandled exception on the rpc-server side. Re-raising as %s.",
+                            RPCServerError.__name__,
                         )
                         # NOTE: we do not return internal exceptions over RPC
                         formatted_traceback = "\n".join(
