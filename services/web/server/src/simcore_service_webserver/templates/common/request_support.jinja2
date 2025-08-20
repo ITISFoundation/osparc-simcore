@@ -7,6 +7,7 @@ TEST last_name: {{ last_name }}
 TEST user_email: {{ user_email }}
 TEST product: {{ product }}
 TEST conversation_url: {{ conversation_url }}
+TEST message_content: {{ message_content }}
 TEST extra_context: {{ extra_context }}
 -->
 <p>
@@ -23,7 +24,11 @@ TEST extra_context: {{ extra_context }}
 </p>
 
 <p>
-  Additional Information:
+  First message content: {{ message_content }}
+</p>
+
+<p>
+  Extra Contect:
 </p>
 
 <pre>

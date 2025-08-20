@@ -79,7 +79,29 @@ async def create_support_message_and_check_if_it_is_first_message(
         type_=type_,
     )
 
-    return created_message, True
+    await _conversation_message_repository.list_(
+        app,
+        conversation_id=conversation_id,
+        offset=0,
+        limit=1,
+        order_by=OrderBy(
+            field=IDStr("created"), direction=OrderDirection.ASC
+        ),  # NOTE: ASC - first message first
+    )
+
+    _, messages = await list_messages_for_conversation(
+        app,
+        conversation_id=conversation_id,
+        offset=0,
+        limit=1,
+    )
+    is_first_message = False
+    if messages:
+        first_message = messages[0]
+        is_first_message = first_message.message_id == created_message.message_id
+        is_first_message = True
+
+    return created_message, is_first_message
 
 
 async def get_message(

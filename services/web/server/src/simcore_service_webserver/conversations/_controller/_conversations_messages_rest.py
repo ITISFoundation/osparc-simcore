@@ -122,14 +122,15 @@ async def create_conversation_message(request: web.Request):
                     "last_name": user["last_name"],
                     "user_email": user["email"],
                     "conversation_url": _conversation_url,
+                    "message_content": message.content,
                     "extra_context": _extra_context,
                 },
             )
         except Exception:  # pylint: disable=broad-except
             _logger.exception(
-                "Failed while sending '%s' email to %s",
+                "Failed to send '%s' email to %s (this means the FogBugz case for the request was not created).",
                 template_name,
-                user["email"],
+                destination_email,
             )
 
     data = ConversationMessageRestGet.from_domain_model(message)
