@@ -5,6 +5,7 @@ import pytest
 from celery import Celery, Task
 from celery.contrib.testing.worker import TestWorkController
 from celery_library.task import register_task
+from celery_library.types import register_pydantic_types
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
@@ -111,6 +112,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
     ), f"Signature mismatch: {inspect.signature(run_function_task)} != {inspect.signature(run_function)}"
 
     def _(celery_app: Celery) -> None:
+        register_pydantic_types(RegisteredProjectFunctionJob)
         register_task(celery_app, run_function)
 
     return _
@@ -148,8 +150,4 @@ async def test_with_fake_run_function(
 
     # Poll until task completion and get result
     result = await poll_task_until_done(client, auth, task.task_id)
-
-    # Verify the result is a RegisteredProjectFunctionJob
-    assert result is not None
-    assert isinstance(result, dict)
-    # Add more specific assertions based on your expected result structure
+    RegisteredProjectFunctionJob.model_validate(result.result)
