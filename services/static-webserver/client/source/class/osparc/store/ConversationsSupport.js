@@ -130,10 +130,9 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     getLastMessage: function(conversationId) {
       if (
         conversationId in this.__conversationsCached &&
-        this.__conversationsCached[conversationId].getMessages() &&
-        this.__conversationsCached[conversationId].getMessages().length
+        this.__conversationsCached[conversationId].getLastMessage()
       ) {
-        return Promise.resolve(this.__conversationsCached[conversationId].getMessages()[0]);
+        return Promise.resolve(this.__conversationsCached[conversationId].getLastMessage());
       }
 
       const params = {

@@ -47,7 +47,13 @@ qx.Class.define("osparc.support.ConversationListItem", {
   members: {
     __applyConversation: function(conversation) {
       conversation.bind("nameAlias", this, "title");
-      conversation.getLastMessage()
+
+      this.__populateWithLastMessage();
+      conversation.addListener("changeLastMessage", this.__populateWithLastMessage, this);
+    },
+
+    __populateWithLastMessage: function() {
+      this.getConversation().getLastMessage()
         .then(lastMessage => {
           if (lastMessage) {
             const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));

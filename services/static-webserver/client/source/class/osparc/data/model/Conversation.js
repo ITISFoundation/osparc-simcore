@@ -39,6 +39,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       extraContext: conversationData.extraContext || null,
     });
 
+    this.__messages = [];
     this.__fetchLastMessage();
   },
 
@@ -56,13 +57,6 @@ qx.Class.define("osparc.data.model.Conversation", {
       init: null,
       event: "changeName",
       apply: "__applyName",
-    },
-
-    nameAlias: {
-      check: "String",
-      nullable: false,
-      init: "",
-      event: "changeNameAlias",
     },
 
     userGroupId: {
@@ -111,17 +105,26 @@ qx.Class.define("osparc.data.model.Conversation", {
       event: "changeExtraContext",
     },
 
-    messages: {
-      check: "Array",
+    nameAlias: {
+      check: "String",
       nullable: false,
+      init: "",
+      event: "changeNameAlias",
+    },
+
+    lastMessage: {
+      check: "Object",
+      nullable: true,
       init: null,
-      apply: "__applyMessages",
+      event: "changeLastMessage",
+      apply: "__applyLastMessage",
     },
   },
 
   members: {
     __fetchLastMessagePromise: null,
     __nextRequestParams: null,
+    __messages: null,
 
     __applyName: function(name) {
       if (name && name !== "null") {
@@ -129,8 +132,10 @@ qx.Class.define("osparc.data.model.Conversation", {
       }
     },
 
-    __applyMessages: function(messages) {
-      console.log(messages);
+    __applyLastMessage: function(lastMessage) {
+      if (this.getNameAlias() === "") {
+        this.setNameAlias(lastMessage ? lastMessage.content : "");
+      }
     },
 
     __fetchLastMessage: function() {
@@ -141,9 +146,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       let promise = osparc.store.ConversationsSupport.getInstance().getLastMessage(this.getConversationId());
       promise
         .then(lastMessage => {
-          if (this.getNameAlias() === "") {
-            this.setNameAlias(lastMessage ? lastMessage.content : "");
-          }
+          this.addMessage(lastMessage);
           promise = null;
           return lastMessage;
         })
@@ -196,9 +199,9 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
 
     addMessage: function(message) {
-      const messages = this.getMessages() || [];
-      messages.push(message);
-      this.setMessages(messages);
+      this.__messages.push(message);
+
+      this.setLastMessage(this.__messages[0]);
     },
 
     getContextProjectId: function() {
