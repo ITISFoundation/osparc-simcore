@@ -62,6 +62,10 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     },
 
     getConversation: function(conversationId) {
+      if (conversationId in this.__conversationsCached) {
+        return Promise.resolve(this.__conversationsCached[conversationId]);
+      }
+
       const params = {
         url: {
           conversationId,
@@ -130,6 +134,14 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     },
 
     getLastMessage: function(conversationId) {
+      if (
+        conversationId in this.__conversationsCached &&
+        this.__conversationsCached[conversationId].getMessages() &&
+        this.__conversationsCached[conversationId].getMessages().length
+      ) {
+        return Promise.resolve(this.__conversationsCached[conversationId].getMessages()[0]);
+      }
+
       const params = {
         url: {
           conversationId,
@@ -188,7 +200,9 @@ qx.Class.define("osparc.store.ConversationsSupport", {
     },
 
     __addMessageToCache: function(conversationId, messageData) {
-      this.__conversationsCached[conversationId].addMessage(messageData);
+      if (conversationId in this.__conversationsCached) {
+        this.__conversationsCached[conversationId].addMessage(messageData);
+      }
     },
   }
 });

@@ -67,6 +67,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         case "conversation-title":
           control = new qx.ui.basic.Label().set({
             alignY: "middle",
+            allowGrowX: true,
           });
           this.getChildControl("conversation-header-layout").add(control);
           break;
@@ -99,9 +100,14 @@ qx.Class.define("osparc.support.ConversationPage", {
         osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
           .then(conversation => {
             const name = conversation.getName();
-            title.set({
-              value: name && name !== "null" ? name : lastMessage.content,
-            });
+            if (name && name !== "null") {
+              title.setValue(name);
+            } else {
+              osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
+                .then(lastMessage => {
+                  title.setValue(lastMessage ? lastMessage.content : "");
+                });
+            }
             options.show();
           });
       } else {

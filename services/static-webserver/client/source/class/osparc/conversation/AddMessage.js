@@ -213,14 +213,14 @@ qx.Class.define("osparc.conversation.AddMessage", {
         const conversationId = this.getConversationId();
         const message = this.getMessage();
         if (studyData) {
-          osparc.store.ConversationsProject.getInstance().editMessage(studyData["uuid"], conversationId, message["messageId"], content)
-            .then(data => {
-              this.fireDataEvent("messageUpdated", data);
-              commentField.getChildControl("text-area").setValue("");
-            });
+          promise = osparc.store.ConversationsProject.getInstance().editMessage(studyData["uuid"], conversationId, message["messageId"], content);
         } else {
-          // support comment editing
+          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, message["messageId"], content);
         }
+        promise.then(data => {
+          this.fireDataEvent("messageUpdated", data);
+          commentField.getChildControl("text-area").setValue("");
+        });
       }
     },
 
