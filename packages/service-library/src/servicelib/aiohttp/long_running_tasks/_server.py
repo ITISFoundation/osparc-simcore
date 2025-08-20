@@ -155,19 +155,21 @@ def setup(
     redis_settings: RedisSettings,
     rabbit_settings: RabbitSettings,
     lrt_namespace: LRTNamespace,
-    handler_check_decorator: Callable = _no_ops_decorator,
-    task_request_context_decorator: Callable = _no_task_context_decorator,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
     stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
+    handler_check_decorator: Callable = _no_ops_decorator,
+    task_request_context_decorator: Callable = _no_task_context_decorator,
 ) -> None:
     """
     - `router_prefix` APIs are mounted on `/...`, this
         will change them to be mounted as `{router_prefix}/...`
-    - `stale_task_check_interval_s` interval at which the
+    - `redis_settings` settings for Redis connection
+    - `rabbit_settings` settings for RabbitMQ connection
+    - `lrt_namespace` namespace for the long-running tasks
+    - `stale_task_check_interval` interval at which the
         TaskManager checks for tasks which are no longer being
         actively monitored by a client
-    - `stale_task_detect_timeout_s` interval after which a
-        task is considered stale
+    - `stale_task_detect_timeout` interval after which atask is considered stale
     """
 
     async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:

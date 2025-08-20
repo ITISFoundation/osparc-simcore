@@ -26,13 +26,15 @@ def setup(
     stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 ) -> None:
     """
-    - `router_prefix` APIs are mounted on `/task/...`, this
-        will change them to be mounted as `{router_prefix}/task/...`
-    - `stale_task_check_interval_s` interval at which the
+    - `router_prefix` APIs are mounted on `/...`, this
+        will change them to be mounted as `{router_prefix}/...`
+    - `redis_settings` settings for Redis connection
+    - `rabbit_settings` settings for RabbitMQ connection
+    - `lrt_namespace` namespace for the long-running tasks
+    - `stale_task_check_interval` interval at which the
         TaskManager checks for tasks which are no longer being
         actively monitored by a client
-    - `stale_task_detect_timeout_s` interval after which a
-        task is considered stale
+    - `stale_task_detect_timeout` interval after which atask is considered stale
     """
 
     async def on_startup() -> None:
