@@ -71,10 +71,23 @@ async def _basic_auth_registry_request(
     )
 
     session = get_client_session(app)
+    # Only accept docker distribution  V1 registry protocol ,
+    # dv0 does not have v2 compatability here, but from registry>=3.0.0
+    # the v2 scheme is default...
+    # https://specs.opencontainers.org/image-spec/media-types/?v=v1.0.1
+    # https://distribution.github.io/distribution/spec/api/
     response = await session.request(
         method.lower(),
         f"{request_url}",
         auth=auth,
+        headers={
+            "Accept": ", ".join(
+                [
+                    "application/vnd.oci.image.manifest.v1+json",
+                    "application/vnd.oci.image.index.v1+json",
+                ]
+            )
+        },
         **session_kwargs,
     )
 
@@ -104,7 +117,7 @@ async def _basic_auth_registry_request(
     return (resp_data, resp_headers)
 
 
-async def _auth_registry_request(  # noqa: C901
+async def _auth_registry_request(  # noqa: C901#
     app_settings: ApplicationSettings,
     url: URL,
     method: str,
