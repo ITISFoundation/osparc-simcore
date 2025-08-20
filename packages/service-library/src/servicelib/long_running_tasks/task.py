@@ -286,7 +286,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
     async def _cancelled_tasks_removal(self) -> None:
         """
-        Periodicallu checks which tasks are maked for removal and attempts to remove the
+        Periodically checks which tasks are marked for removal and attempts to remove the
         task if it's handled by this process.
         """
         self._started_event_task_cancelled_tasks_removal.set()
