@@ -74,6 +74,7 @@ def default_app_env_vars(
     env_vars["POSTGRES_MINSIZE"] = "2"
     env_vars["POSTGRES_MAXSIZE"] = "10"
     env_vars["API_SERVER_CELERY"] = "null"
+    env_vars["API_SERVER_RABBITMQ"] = "null"
 
     return env_vars
 
