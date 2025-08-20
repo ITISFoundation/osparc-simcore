@@ -42,6 +42,15 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+async def mocked_log_streamer_setup(mocker: MockerFixture) -> MockerFixture:
+    # mock log streamer: He is looking for non-existent queues. Should be solved more elegantly
+    from simcore_service_api_server.services_http import rabbitmq
+
+    mock_log_streamer = mocker.patch.object(rabbitmq, "LogDistributor", spec=True)
+    return mock_log_streamer
+
+
+@pytest.fixture
 def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
     celery_app = Celery(**celery_config)
 
@@ -54,6 +63,7 @@ def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Cel
 @pytest.fixture
 def app_environment(
     mock_celery_app: Celery,
+    mocked_log_streamer_setup: MockerFixture,
     mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
