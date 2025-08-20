@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 import logging
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from datetime import timedelta
@@ -61,7 +62,7 @@ async def get_long_running_manager(
 
     for manager in managers:
         with log_catch(_logger, reraise=False):
-            await manager.teardown()
+            await asyncio.wait_for(manager.teardown(), timeout=5)
 
 
 @pytest.fixture
