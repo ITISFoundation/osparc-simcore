@@ -229,7 +229,13 @@ qx.Class.define("osparc.conversation.MessageUI", {
       win.open();
       win.addListener("close", () => {
         if (win.getConfirmed()) {
-          osparc.store.ConversationsProject.getInstance().deleteMessage(message)
+          let promise = null;
+          if (this.__studyData) {
+            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message);
+          } else {
+            promise = osparc.store.ConversationsSupport.getInstance().deleteMessage(message);
+          }
+          promise
             .then(() => this.fireDataEvent("messageDeleted", message))
             .catch(err => osparc.FlashMessenger.logError(err));
         }

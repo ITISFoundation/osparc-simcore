@@ -123,10 +123,10 @@ qx.Class.define("osparc.support.Conversation", {
       const addMessages = this.getChildControl("add-message");
       addMessages.addListener("messageAdded", e => {
         const data = e.getData();
-        if (data["conversationId"]) {
+        if (data["conversationId"] && this.getConversation() === null) {
           this.setConversationId(data["conversationId"]);
-          this.addMessage(data);
         }
+        this.addMessage(data);
       });
     },
 
