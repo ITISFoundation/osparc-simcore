@@ -25,7 +25,7 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
         task_manager: TaskManager = self.app.state.task_manager
         return task_manager
 
-    async def lifespan(self, startup_completed_event: threading.Event) -> None:
+    async def start_and_hold(self, startup_completed_event: threading.Event) -> None:
         async with LifespanManager(
             self.app,
             startup_timeout=None,  # waits for full app initialization (DB migrations, etc.)

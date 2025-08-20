@@ -36,7 +36,7 @@ class BaseAppServer(ABC, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    async def lifespan(
+    async def start_and_hold(
         self,
         startup_completed_event: threading.Event,
     ) -> None:
