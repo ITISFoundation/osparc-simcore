@@ -117,7 +117,7 @@ async def _basic_auth_registry_request(
     return (resp_data, resp_headers)
 
 
-async def _auth_registry_request(  # noqa: C901#
+async def _auth_registry_request(  # noqa: C901
     app_settings: ApplicationSettings,
     url: URL,
     method: str,
