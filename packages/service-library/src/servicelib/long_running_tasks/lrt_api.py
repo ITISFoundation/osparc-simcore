@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
@@ -104,13 +105,27 @@ async def remove_task(
     task_id: TaskId,
     *,
     wait_for_removal: bool,
+    cancellation_timeout: timedelta | None = None,
 ) -> None:
-    """cancels and removes the task"""
+    """cancels and removes a task
+
+    Arguments:
+        wait_for_removal -- if True, then it will wait for the task to be removed
+            before returning otherwise returns immediately
+
+    Keyword Arguments:
+        cancellation_timeout (default: {None}) -- if specified it's the amount of
+            time to wait before cancellation is timedout
+            if not specified and:
+             - wait_for_removal is True, it's set to _RPC_TIMEOUT_SHORT_REQUESTS
+             - wait_for_removal is False it's set to _RPC_MAX_CANCELLATION_TIMEOUT
+    """
     await _lrt_client.remove_task(
         rabbitmq_rpc_client,
         lrt_namespace,
         task_id=task_id,
         task_context=task_context,
-        wait_for_removal=wait_for_removal,
         reraise_errors=True,
+        wait_for_removal=wait_for_removal,
+        cancellation_timeout=cancellation_timeout,
     )

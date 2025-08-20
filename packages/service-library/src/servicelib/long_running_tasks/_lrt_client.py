@@ -23,7 +23,7 @@ from .models import (
 _logger = logging.getLogger(__name__)
 
 _RPC_MAX_CANCELLATION_TIMEOUT: Final[PositiveInt] = int(
-    timedelta(minutes=60).total_seconds()
+    timedelta(hours=1).total_seconds()
 )
 _RPC_TIMEOUT_SHORT_REQUESTS: Final[PositiveInt] = int(
     timedelta(seconds=20).total_seconds()
@@ -137,9 +137,9 @@ async def remove_task(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    wait_for_removal: bool,
     reraise_errors: bool,
-    cancellation_timeout: timedelta | None = None,
+    wait_for_removal: bool,
+    cancellation_timeout: timedelta | None,
 ) -> None:
     timeout_s = (
         _RPC_MAX_CANCELLATION_TIMEOUT
