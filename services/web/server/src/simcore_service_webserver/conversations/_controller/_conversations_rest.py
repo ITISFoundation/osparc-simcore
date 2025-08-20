@@ -190,9 +190,7 @@ async def update_conversation(request: web.Request):
         app=request.app,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
-        updates=ConversationPatchDB(
-            name=body_params.name, extra_context=body_params.extra_context
-        ),
+        updates=ConversationPatchDB(**body_params.model_dump(exclude_unset=True)),
     )
 
     data = ConversationRestGet.from_domain_model(conversation)

@@ -211,7 +211,7 @@ async def test_conversations_update_and_delete(
         conversation_id=first_conversation_id
     )
     updated_name = "Updated Support Request - Bug Report"
-    resp = await client.put(
+    resp = await client.patch(
         f"{update_url}?type=SUPPORT",
         json={"name": updated_name},
     )
@@ -351,7 +351,7 @@ async def test_conversations_access_control(
         update_url = client.app.router["update_conversation"].url_for(
             conversation_id=conversation_id
         )
-        resp = await client.put(
+        resp = await client.patch(
             f"{update_url}?type=SUPPORT",
             json={"name": "Unauthorized update attempt"},
         )
@@ -394,7 +394,7 @@ async def test_conversations_error_handling(
     update_url = client.app.router["update_conversation"].url_for(
         conversation_id=fake_conversation_id
     )
-    resp = await client.put(
+    resp = await client.patch(
         f"{update_url}?type=SUPPORT",
         json={"name": "Update non-existent"},
     )
@@ -434,7 +434,7 @@ async def test_conversations_without_type_query_param(
     update_url = client.app.router["update_conversation"].url_for(
         conversation_id=conversation_id
     )
-    resp = await client.put(f"{update_url}", json={"name": "Updated"})
+    resp = await client.patch(f"{update_url}", json={"name": "Updated"})
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     delete_url = client.app.router["delete_conversation"].url_for(
