@@ -51,10 +51,17 @@ qx.Class.define("osparc.support.ConversationPage", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "conversation-header-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        case "conversation-header-layout": {
+          const headerGrid = new qx.ui.layout.Grid(5, 5);
+          headerGrid.setColumnAlign(0, "center", "middle");
+          headerGrid.setColumnFlex(1, 1);
+          headerGrid.setColumnAlign(2, "center", "middle");
+          control = new qx.ui.container.Composite(headerGrid).set({
+            padding: 5,
+          });
           this._add(control);
           break;
+        }
         case "back-button":
           control = new qx.ui.form.Button().set({
             toolTipText: this.tr("Return to Messages"),
@@ -62,14 +69,21 @@ qx.Class.define("osparc.support.ConversationPage", {
             backgroundColor: "transparent"
           });
           control.addListener("execute", () => this.fireEvent("showConversations"));
-          this.getChildControl("conversation-header-layout").add(control);
+          this.getChildControl("conversation-header-layout").add(control, {
+            row: 0,
+            column: 0,
+            rowSpan: 2,
+          });
           break;
         case "conversation-title":
           control = new qx.ui.basic.Label().set({
             alignY: "middle",
             allowGrowX: true,
-          });
-          this.getChildControl("conversation-header-layout").add(control);
+            });
+            this.getChildControl("conversation-header-layout").add(control, {
+              row: 0,
+              column: 1,
+            });
           break;
         case "conversation-options":
           control = new qx.ui.form.MenuButton().set({
@@ -79,7 +93,21 @@ qx.Class.define("osparc.support.ConversationPage", {
             alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/14",
           });
-          this.getChildControl("conversation-header-layout").add(control);
+          this.getChildControl("conversation-header-layout").add(control, {
+            row: 0,
+            column: 2,
+            rowSpan: 2,
+          });
+          break;
+        case "conversation-extra-content":
+          control = new qx.ui.basic.Label().set({
+            alignY: "middle",
+            allowGrowX: true,
+          });
+          this.getChildControl("conversation-header-layout").add(control, {
+            row: 1,
+            column: 1,
+          });
           break;
         case "conversation":
           control = new osparc.support.Conversation();
@@ -109,6 +137,18 @@ qx.Class.define("osparc.support.ConversationPage", {
                 });
             }
             options.show();
+            const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
+            const extraContextLabel = this.getChildControl("conversation-extra-content");
+            extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
+            const extraContext = conversation.getExtraContext();
+            if (amISupporter && extraContext && Object.keys(extraContext).length) {
+              let extraContext = "";
+              extraContext += `ID: ${conversationId}<br>`;
+              if ("projectId" in extraContext) {
+                extraContext += `Project ID: ${extraContext["projectId"]}<br>`;
+              }
+              extraContextLabel.setValue(extraContext);
+            }
           });
       } else {
         title.setValue("");

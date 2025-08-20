@@ -36,7 +36,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       created: new Date(conversationData.created),
       modified: new Date(conversationData.modified),
       projectId: conversationData.projectUuid || null,
-      extraContent: conversationData.extraContent || null,
+      extraContext: conversationData.extraContext || null,
     });
   },
 
@@ -94,11 +94,11 @@ qx.Class.define("osparc.data.model.Conversation", {
       event: "changeProjectId",
     },
 
-    extraContent: {
+    extraContext: {
       check: "Object",
       nullable: true,
       init: null,
-      event: "changeExtraContent",
+      event: "changeExtraContext",
     },
 
     messages: {
