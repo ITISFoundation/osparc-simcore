@@ -167,7 +167,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         let promise = null;
         if (studyData) {
           // create new project conversation first
-          promise = osparc.store.ConversationsProject.getInstance().addConversation(studyData)
+          promise = osparc.store.ConversationsProject.getInstance().addConversation(studyData["uuid"])
         } else {
           // support conversation
           const extraContext = {};
