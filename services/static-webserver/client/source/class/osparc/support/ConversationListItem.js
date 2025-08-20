@@ -47,25 +47,25 @@ qx.Class.define("osparc.support.ConversationListItem", {
   members: {
     __applyConversation: function(conversation) {
       conversation.bind("nameAlias", this, "title");
-      const messages = conversation.getMessages();
-      if (messages && messages.length) {
-        const lastMessage = messages[0];
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
-        this.set({
-          subtitle: date,
-        });
-
-        const userGroupId = lastMessage.userGroupId;
-        osparc.store.Users.getInstance().getUser(userGroupId)
-          .then(user => {
-            if (user) {
-              this.set({
-                thumbnail: user.getThumbnail(),
-                subtitle: user.getLabel() + " - " + date,
+      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversation.getConversationId())
+        .then(lastMessage => {
+          if (lastMessage) {
+            const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
+            this.set({
+              subtitle: date,
+            });
+            const userGroupId = lastMessage.userGroupId;
+            osparc.store.Users.getInstance().getUser(userGroupId)
+              .then(user => {
+                if (user) {
+                  this.set({
+                    thumbnail: user.getThumbnail(),
+                    subtitle: user.getLabel() + " - " + date,
+                  });
+                }
               });
-            }
-          });
-      }
+          }
+      });
     },
   }
 });
