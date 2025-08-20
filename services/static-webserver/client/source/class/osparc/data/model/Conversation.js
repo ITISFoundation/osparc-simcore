@@ -62,6 +62,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       nullable: false,
       init: null,
       event: "changeName",
+      apply: "__applyName",
     },
 
     nameAlias: {
@@ -121,6 +122,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       check: "Array",
       nullable: false,
       init: null,
+      apply: "__applyMessages",
     },
   },
 
@@ -128,6 +130,16 @@ qx.Class.define("osparc.data.model.Conversation", {
   },
 
   members: {
+    __applyName: function(name) {
+      if (name && name !== "null") {
+        this.setNameAlias(name);
+      }
+    },
+
+    __applyMessages: function(messages) {
+      console.log(messages);
+    },
+
     addMessage: function(message) {
       const messages = this.getMessages() || [];
       messages.push(message);
