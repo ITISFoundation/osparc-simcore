@@ -131,9 +131,7 @@ qx.Class.define("osparc.store.Products", {
       if (statics["supportStandardGroupId"]) {
         return statics["supportStandardGroupId"];
       }
-      // OM change this
-      return 23;
-      // return null;
+      return null;
     },
 
     amIASupportUser: function() {
