@@ -155,16 +155,5 @@ qx.Class.define("osparc.support.SupportCenter", {
         this.__showConversation();
       }
     },
-
-    __createConversation: function() {
-      this.getChildControl("ask-a-question-button").setFetching(true);
-      osparc.store.ConversationsSupport.getInstance().addConversation()
-        .then(data => {
-          this.openConversation(data["conversationId"]);
-        })
-        .finally(() => {
-          this.getChildControl("ask-a-question-button").setFetching(false);
-        });
-    },
   }
 });

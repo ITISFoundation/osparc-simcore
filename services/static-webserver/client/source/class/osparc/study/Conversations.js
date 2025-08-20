@@ -259,7 +259,7 @@ qx.Class.define("osparc.study.Conversations", {
           enabled: osparc.data.model.Study.canIWrite(studyData["accessRights"]),
         });
         newConversationButton.addListener("execute", () => {
-          osparc.store.ConversationsProject.getInstance().addConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
+          osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"], "new " + (this.__conversationsPages.length + 1))
             .then(conversationDt => {
               this.__addConversationPage(conversationDt);
               const newConversationPage = this.__getConversationPage(conversationDt["conversationId"]);

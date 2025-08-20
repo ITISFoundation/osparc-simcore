@@ -61,7 +61,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
       return osparc.data.Resources.fetch("conversationsStudies", "getConversation", params);
     },
 
-    addConversation: function(studyId, name = "new 1", type = osparc.store.ConversationsProject.TYPES.PROJECT_STATIC) {
+    postConversation: function(studyId, name = "new 1", type = osparc.store.ConversationsProject.TYPES.PROJECT_STATIC) {
       const params = {
         url: {
           studyId,
@@ -71,7 +71,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           type,
         }
       };
-      return osparc.data.Resources.fetch("conversationsStudies", "addConversation", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "postConversation", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 

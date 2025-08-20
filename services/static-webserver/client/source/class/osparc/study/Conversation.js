@@ -91,7 +91,7 @@ qx.Class.define("osparc.study.Conversation", {
               .then(() => this.renameConversation(newLabel));
           } else {
             // create new conversation first
-            osparc.store.ConversationsProject.getInstance().addConversation(this.__studyData["uuid"], newLabel)
+            osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"], newLabel)
               .then(data => {
                 this.setConversationId(data["conversationId"]);
                 this.getChildControl("button").setLabel(newLabel);

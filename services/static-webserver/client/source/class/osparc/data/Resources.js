@@ -308,7 +308,7 @@ qx.Class.define("osparc.data.Resources", {
       "conversationsStudies": {
         useCache: false, // It has its own cache handler
         endpoints: {
-          addConversation: {
+          postConversation: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations"
           },
@@ -1477,7 +1477,7 @@ qx.Class.define("osparc.data.Resources", {
       "conversationsSupport": {
         useCache: false, // It has its own cache handler
         endpoints: {
-          addConversation: {
+          postConversation: {
             method: "POST",
             url: statics.API + "/conversations"
           },

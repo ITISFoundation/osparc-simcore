@@ -167,7 +167,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         let promise = null;
         if (studyData) {
           // create new project conversation first
-          promise = osparc.store.ConversationsProject.getInstance().addConversation(studyData["uuid"])
+          promise = osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"])
         } else {
           // support conversation
           const extraContext = {};
@@ -175,7 +175,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
           if (currentStudy) {
             extraContext["projectId"] = currentStudy.getUuid();
           }
-          promise = osparc.store.ConversationsSupport.getInstance().addConversation(extraContext);
+          promise = osparc.store.ConversationsSupport.getInstance().postConversation(extraContext);
         }
         promise
           .then(data => {
@@ -300,7 +300,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         this.__postNotify(userGid);
       } else {
         // create new conversation first
-        osparc.store.ConversationsProject.getInstance().addConversation(studyData["uuid"])
+        osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"])
           .then(data => {
             this.setConversationId(data["conversationId"]);
             this.__postNotify(userGid);

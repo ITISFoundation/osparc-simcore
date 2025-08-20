@@ -78,7 +78,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         });
     },
 
-    addConversation: function(extraContext = {}) {
+    postConversation: function(extraContext = {}) {
       const url = window.location.href;
       extraContext["deployment"] = url;
       extraContext["product"] = osparc.product.Utils.getProductName();
@@ -89,7 +89,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           extraContext,
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "addConversation", params)
+      return osparc.data.Resources.fetch("conversationsSupport", "postConversation", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
