@@ -143,7 +143,7 @@ qx.Class.define("osparc.data.model.Conversation", {
         return this.__fetchLastMessagePromise;
       }
 
-      let promise = osparc.store.ConversationsSupport.getInstance().getLastMessage(this.getConversationId());
+      let promise = osparc.store.ConversationsSupport.getInstance().fetchLastMessage(this.getConversationId());
       promise
         .then(lastMessage => {
           this.addMessage(lastMessage);
@@ -156,13 +156,6 @@ qx.Class.define("osparc.data.model.Conversation", {
 
       this.__fetchLastMessagePromise = promise;
       return promise;
-    },
-
-    getLastMessage: function() {
-      if (this.getMessages() && this.getMessages().length) {
-        return Promise.resolve(this.getMessages()[0]);
-      }
-      return this.__fetchLastMessage();
     },
 
     getNextMessages: function() {

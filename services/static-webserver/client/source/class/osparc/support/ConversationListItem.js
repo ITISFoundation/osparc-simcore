@@ -53,25 +53,23 @@ qx.Class.define("osparc.support.ConversationListItem", {
     },
 
     __populateWithLastMessage: function() {
-      this.getConversation().getLastMessage()
-        .then(lastMessage => {
-          if (lastMessage) {
-            const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
-            this.set({
-              subtitle: date,
-            });
-            const userGroupId = lastMessage.userGroupId;
-            osparc.store.Users.getInstance().getUser(userGroupId)
-              .then(user => {
-                if (user) {
-                  this.set({
-                    thumbnail: user.getThumbnail(),
-                    subtitle: user.getLabel() + " - " + date,
-                  });
-                }
+      const lastMessage = this.getConversation().getLastMessage();
+      if (lastMessage) {
+        const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
+        this.set({
+          subtitle: date,
+        });
+        const userGroupId = lastMessage.userGroupId;
+        osparc.store.Users.getInstance().getUser(userGroupId)
+          .then(user => {
+            if (user) {
+              this.set({
+                thumbnail: user.getThumbnail(),
+                subtitle: user.getLabel() + " - " + date,
               });
-          }
-      });
+            }
+          });
+      }
     },
   }
 });

@@ -127,7 +127,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       return osparc.data.Resources.fetch("conversationsSupport", "renameConversation", params);
     },
 
-    getLastMessage: function(conversationId) {
+    fetchLastMessage: function(conversationId) {
       if (
         conversationId in this.__conversationsCached &&
         this.__conversationsCached[conversationId].getLastMessage()
