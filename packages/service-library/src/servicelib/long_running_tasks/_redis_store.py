@@ -8,7 +8,7 @@ from settings_library.redis import RedisDatabase, RedisSettings
 from ..redis._client import RedisClientSDK
 from ..redis._utils import handle_redis_returns_union_types
 from ..utils import limited_gather
-from .models import TaskContext, TaskData, TaskId
+from .models import LRTNamespace, TaskContext, TaskData, TaskId
 
 _STORE_TYPE_TASK_DATA: Final[str] = "TD"
 _STORE_TYPE_CANCELLED_TASKS: Final[str] = "CT"
@@ -26,9 +26,9 @@ def _from_redis(data: dict[str, str]) -> dict[str, Any]:
 
 
 class RedisStore:
-    def __init__(self, redis_settings: RedisSettings, namespace: str):
+    def __init__(self, redis_settings: RedisSettings, namespace: LRTNamespace):
         self.redis_settings = redis_settings
-        self.namespace = namespace.upper()
+        self.namespace: LRTNamespace = namespace.upper()
 
         self._client: RedisClientSDK | None = None
 
