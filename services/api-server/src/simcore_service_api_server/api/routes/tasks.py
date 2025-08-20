@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any, Final
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, FastAPI, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
@@ -20,13 +20,12 @@ from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ...services_rpc.async_jobs import AsyncJobClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME
 from ..dependencies.tasks import get_async_jobs_client
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-
-_ASYNC_JOB_CLIENT_NAME: Final[str] = "API_SERVER"
 
 router = APIRouter()
 _logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ _logger = logging.getLogger(__name__)
 
 def _get_job_filter(user_id: UserID, product_name: ProductName) -> AsyncJobFilter:
     return AsyncJobFilter(
-        user_id=user_id, product_name=product_name, client_name=_ASYNC_JOB_CLIENT_NAME
+        user_id=user_id, product_name=product_name, client_name=ASYNC_JOB_CLIENT_NAME
     )
 
 

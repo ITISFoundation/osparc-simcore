@@ -1,3 +1,5 @@
+from typing import Final
+
 from celery_library.common import create_app, create_task_manager
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types, register_pydantic_types
@@ -12,6 +14,8 @@ from settings_library.celery import CelerySettings
 from ...api.dependencies.authentication import Identity
 from ...models.api_resources import JobLinks
 from ...models.schemas.jobs import JobPricingSpecification
+
+ASYNC_JOB_CLIENT_NAME: Final[str] = "API_SERVER"
 
 
 def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
