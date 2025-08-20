@@ -48,11 +48,18 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 
 @pytest.fixture
+def add_worker_tasks() -> bool:
+    "override to not add default worker tasks"
+    return True
+
+
+@pytest.fixture
 async def with_storage_celery_worker(
     app_environment: EnvVarsDict,
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
+    add_worker_tasks: bool,
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitily connected
     monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
@@ -69,7 +76,8 @@ async def with_storage_celery_worker(
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
 
-    setup_worker_tasks(celery_app)
+    if add_worker_tasks:
+        setup_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
     with start_worker(
