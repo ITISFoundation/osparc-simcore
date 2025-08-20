@@ -77,6 +77,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           break;
         case "conversation-title":
           control = new qx.ui.basic.Label().set({
+            font: "text-14",
             alignY: "middle",
             allowGrowX: true,
             });
@@ -101,8 +102,10 @@ qx.Class.define("osparc.support.ConversationPage", {
           break;
         case "conversation-extra-content":
           control = new qx.ui.basic.Label().set({
-            alignY: "middle",
+            font: "text-12",
+            rich: true,
             allowGrowX: true,
+            selectable: true,
           });
           this.getChildControl("conversation-header-layout").add(control, {
             row: 1,
@@ -142,12 +145,12 @@ qx.Class.define("osparc.support.ConversationPage", {
             extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
             const extraContext = conversation.getExtraContext();
             if (amISupporter && extraContext && Object.keys(extraContext).length) {
-              let extraContext = "";
-              extraContext += `ID: ${conversationId}<br>`;
+              let extraContextText = "";
+              extraContextText += `ID: ${conversationId}<br>`;
               if ("projectId" in extraContext) {
-                extraContext += `Project ID: ${extraContext["projectId"]}<br>`;
+                extraContextText += `Project ID: ${extraContext["projectId"]}<br>`;
               }
-              extraContextLabel.setValue(extraContext);
+              extraContextLabel.setValue(extraContextText);
             }
           });
       } else {

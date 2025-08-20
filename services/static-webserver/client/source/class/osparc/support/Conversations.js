@@ -70,7 +70,7 @@ qx.Class.define("osparc.support.Conversations", {
     },
 
     __getConversationItem: function(conversationId) {
-      return this.__conversationListItems.find(conversation => conversation.getConversationId() === conversationId);
+      return this.__conversationListItems.find(conversation => conversation.getConversation().getConversationId() === conversationId);
     },
 
     __fetchConversations: function() {
