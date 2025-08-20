@@ -44,7 +44,7 @@ qx.Class.define("osparc.support.SupportCenter", {
   },
 
   statics: {
-    WINDOW_WIDTH: 400,
+    WINDOW_WIDTH: 430,
 
     getMaxHeight: function() {
       // height: max 80% of screen, min 600
@@ -95,7 +95,9 @@ qx.Class.define("osparc.support.SupportCenter", {
           });
           const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
           control.set({
-            value: isSupportUser ? this.tr("Here all the support questions") : this.tr("Ask us anything, or share your feedback."),
+            value: isSupportUser ?
+              this.tr("Thanks for being here! Let's help every user feel supported.") :
+              this.tr("Need help or want to share feedback? You're in the right place."),
           });
           this.getChildControl("conversations-layout").add(control);
           break;
