@@ -133,7 +133,8 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
 
     __applyLastMessage: function(lastMessage) {
-      if (this.getNameAlias() === "") {
+      const name = this.getName();
+      if (!name || name === "null") {
         this.setNameAlias(lastMessage ? lastMessage.content : "");
       }
     },
@@ -192,9 +193,15 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
 
     addMessage: function(message) {
-      this.__messages.push(message);
-
-      this.setLastMessage(this.__messages[0]);
+      if (message) {
+        const found = this.__messages.find(msg => msg["messageId"] === message["messageId"]);
+        if (!found) {
+          this.__messages.push(message);
+        }
+        // latest first
+        this.__messages.sort((a, b) => new Date(b.created) - new Date(a.created));
+        this.setLastMessage(this.__messages[0]);
+      }
     },
 
     getContextProjectId: function() {

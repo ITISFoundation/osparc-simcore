@@ -135,6 +135,7 @@ qx.Class.define("osparc.support.Conversation", {
               this.setConversation(conversation);
             });
         } else {
+          this.getConversation().addMessage(data);
           this.addMessage(data);
         }
       });
