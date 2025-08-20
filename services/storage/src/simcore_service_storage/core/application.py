@@ -69,7 +69,7 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     setup_db(app)
     setup_s3(app)
-    setup_client_session(app)
+    setup_client_session(app, tracing_settings=settings.STORAGE_TRACING)
 
     if settings.STORAGE_CELERY and not settings.STORAGE_WORKER_MODE:
         setup_rabbitmq(app)
