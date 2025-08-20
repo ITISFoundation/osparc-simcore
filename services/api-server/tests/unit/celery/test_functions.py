@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Callable
 
 import pytest
@@ -54,7 +55,11 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
             project_job_id=ProjectID(_faker.uuid4()),
         )
 
+    # check our mock task is correct
     assert run_function_task.__name__ == run_function.__name__
+    assert inspect.signature(run_function_task) == inspect.signature(
+        run_function
+    ), f"Signature mismatch: {inspect.signature(run_function_task)} != {inspect.signature(run_function)}"
 
     def _(celery_app: Celery) -> None:
         register_task(celery_app, run_function)
