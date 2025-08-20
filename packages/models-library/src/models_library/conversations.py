@@ -70,6 +70,7 @@ class ConversationMessageGetDB(BaseModel):
 
 class ConversationPatchDB(BaseModel):
     name: ConversationName | None = None
+    extra_context: dict[str, Any] | None = None
 
 
 class ConversationMessagePatchDB(BaseModel):

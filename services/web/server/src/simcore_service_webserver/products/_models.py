@@ -288,6 +288,7 @@ class Product(BaseModel):
                             "LOGIN_2FA_REQUIRED": False,
                         },
                         "group_id": 12345,
+                        "support_standard_group_id": 67890,
                         "is_payment_enabled": False,
                     },
                 ]
