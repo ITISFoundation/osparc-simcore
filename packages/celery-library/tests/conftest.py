@@ -150,18 +150,19 @@ async def celery_task_manager(
 ) -> AsyncIterator[CeleryTaskManager]:
     register_celery_types()
 
-    redis_client_sdk = RedisClientSDK(
-        celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
-            RedisDatabase.CELERY_TASKS
-        ),
-        client_name="pytest_celery_tasks",
-    )
-    await redis_client_sdk.setup()
+    try:
+        redis_client_sdk = RedisClientSDK(
+            celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
+                RedisDatabase.CELERY_TASKS
+            ),
+            client_name="pytest_celery_tasks",
+        )
+        await redis_client_sdk.setup()
 
-    yield CeleryTaskManager(
-        celery_app,
-        celery_settings,
-        RedisTaskInfoStore(redis_client_sdk),
-    )
-
-    await redis_client_sdk.shutdown()
+        yield CeleryTaskManager(
+            celery_app,
+            celery_settings,
+            RedisTaskInfoStore(redis_client_sdk),
+        )
+    finally:
+        await redis_client_sdk.shutdown()
