@@ -332,7 +332,9 @@ async def _stop_dynamic_service_task(
 
 
 def register_stop_dynamic_service_task(app: web.Application) -> None:
-    TaskRegistry.register(_stop_dynamic_service_task, app=app)
+    TaskRegistry.register(
+        _stop_dynamic_service_task, allowed_errors=(web.HTTPNotFound,), app=app
+    )
 
 
 @routes.post(

@@ -523,4 +523,13 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
 
 
 def register_create_project_task(app: web.Application) -> None:
-    TaskRegistry.register(create_project, app=app)
+    TaskRegistry.register(
+        create_project,
+        allowed_errors=(
+            web.HTTPUnprocessableEntity,
+            web.HTTPBadRequest,
+            web.HTTPNotFound,
+            web.HTTPForbidden,
+        ),
+        app=app,
+    )
