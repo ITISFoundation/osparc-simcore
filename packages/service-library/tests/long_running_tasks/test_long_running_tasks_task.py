@@ -14,6 +14,9 @@ import pytest
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import ProgressMessage
 from servicelib.long_running_tasks import lrt_api
+from servicelib.long_running_tasks._serialization import (
+    string_to_object,
+)
 from servicelib.long_running_tasks.base_long_running_manager import (
     BaseLongRunningManager,
 )
@@ -25,6 +28,7 @@ from servicelib.long_running_tasks.errors import (
 )
 from servicelib.long_running_tasks.models import (
     LRTNamespace,
+    ResultField,
     TaskContext,
     TaskProgress,
     TaskStatus,
@@ -52,6 +56,10 @@ _RETRY_PARAMS: dict[str, Any] = {
 }
 
 
+class _TetingError(Exception):
+    pass
+
+
 async def a_background_task(
     progress: TaskProgress,
     raise_when_finished: bool,
@@ -63,7 +71,7 @@ async def a_background_task(
         await progress.update(percent=(i + 1) / total_sleep)
     if raise_when_finished:
         msg = "raised this error as instructed"
-        raise RuntimeError(msg)
+        raise _TetingError(msg)
 
     return 42
 
@@ -76,7 +84,7 @@ async def fast_background_task(progress: TaskProgress) -> int:
 async def failing_background_task(progress: TaskProgress):
     """this task does nothing and returns a constant"""
     msg = "failing asap"
-    raise RuntimeError(msg)
+    raise _TetingError(msg)
 
 
 TaskRegistry.register(a_background_task)
@@ -172,6 +180,10 @@ async def test_checked_task_is_not_auto_removed(
     assert result
 
 
+def _get_resutlt(result_field: ResultField) -> Any:
+    return string_to_object(result_field.str_result)
+
+
 async def test_fire_and_forget_task_is_not_auto_removed(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
@@ -195,7 +207,7 @@ async def test_fire_and_forget_task_is_not_auto_removed(
     task_result = await long_running_manager.tasks_manager.get_task_result(
         task_id, with_task_context=empty_context
     )
-    assert task_result == 42
+    assert _get_resutlt(task_result) == 42
 
 
 async def test_get_result_of_unfinished_task_raises(
@@ -265,12 +277,12 @@ async def test_start_multiple_not_unique_tasks(
 async def test_get_task_id(
     long_running_manager: BaseLongRunningManager, faker: Faker, is_unique: bool
 ):
-    obj1 = long_running_manager.tasks_manager._get_task_id(
+    obj1 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
         faker.word(), is_unique=is_unique
-    )  # noqa: SLF001
-    obj2 = long_running_manager.tasks_manager._get_task_id(
+    )
+    obj2 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
         faker.word(), is_unique=is_unique
-    )  # noqa: SLF001
+    )
     assert obj1 != obj2
 
 
@@ -321,7 +333,7 @@ async def test_get_result(
     result = await long_running_manager.tasks_manager.get_task_result(
         task_id, with_task_context=empty_context
     )
-    assert result == 42
+    assert _get_resutlt(result) == 42
 
 
 async def test_get_result_missing(
@@ -351,10 +363,13 @@ async def test_get_result_finished_with_error(
                 )
             ).done
 
-    with pytest.raises(RuntimeError, match="failing asap"):
-        await long_running_manager.tasks_manager.get_task_result(
-            task_id, with_task_context=empty_context
-        )
+    result = await long_running_manager.tasks_manager.get_task_result(
+        task_id, with_task_context=empty_context
+    )
+    assert result.error_response is not None  # nosec
+    error = string_to_object(result.error_response.str_error_object)
+    with pytest.raises(_TetingError, match="failing asap"):
+        raise error
 
 
 async def test_cancel_task_from_different_manager(
@@ -402,7 +417,7 @@ async def test_cancel_task_from_different_manager(
         task_result = await manager.tasks_manager.get_task_result(
             task_id, empty_context
         )
-        assert task_result == 42
+        assert _get_resutlt(task_result) == 42
 
 
 async def test_remove_task(

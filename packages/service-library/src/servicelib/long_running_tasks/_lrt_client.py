@@ -9,10 +9,10 @@ from ..logging_errors import create_troubleshootting_log_kwargs
 from ..logging_utils import log_decorator
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._rabbit_namespace import get_rabbit_namespace
-from ._serialization import string_to_object
+from ._serialization import object_to_string, string_to_object
 from .models import (
+    ErrorResponse,
     LRTNamespace,
-    RPCErrorResponse,
     TaskBase,
     TaskContext,
     TaskId,
@@ -99,27 +99,33 @@ async def get_task_result(
     *,
     task_context: TaskContext,
     task_id: TaskId,
+    allowed_errors: tuple[type[BaseException], ...],
 ) -> Any:
     serialized_result = await rabbitmq_rpc_client.request(
         get_rabbit_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("get_task_result"),
         task_context=task_context,
         task_id=task_id,
+        allowed_errors_str=object_to_string(allowed_errors),
         timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
     )
-    assert isinstance(serialized_result, RPCErrorResponse | str)  # nosec
-    if isinstance(serialized_result, RPCErrorResponse):
-        error = string_to_object(serialized_result.error_object)
-        _logger.warning(
+    assert isinstance(serialized_result, ErrorResponse | str)  # nosec
+    if isinstance(serialized_result, ErrorResponse):
+        error = string_to_object(serialized_result.str_error_object)
+        _logger.info(
             **create_troubleshootting_log_kwargs(
-                f"Remote task finished with error '{error.__class__.__name__}: {error}'\n{serialized_result.str_traceback}",
+                f"Task '{task_id}' raised the following error:\n{serialized_result.str_traceback}",
                 error=error,
                 error_context={
                     "task_id": task_id,
-                    "task_context": task_context,
                     "namespace": namespace,
+                    "task_context": task_context,
+                    "allowed_errors": allowed_errors,
                 },
-                tip=f"Raised where the lrt_server was running, you can figure this out via {namespace=}",
+                tip=(
+                    f"The caller of this function should handle the exception. "
+                    f"To figure out where it was running check {namespace=}"
+                ),
             )
         )
         raise error

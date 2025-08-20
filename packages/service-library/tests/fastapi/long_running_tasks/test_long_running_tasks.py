@@ -33,6 +33,7 @@ from servicelib.long_running_tasks.models import (
     TaskStatus,
 )
 from servicelib.long_running_tasks.task import TaskContext, TaskRegistry
+from servicelib.long_running_tasks.utils import encode_error_types
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
@@ -48,6 +49,10 @@ pytest_simcore_core_services_selection = [
 ITEM_PUBLISH_SLEEP: Final[float] = 0.1
 
 
+class _TestingError(Exception):
+    pass
+
+
 async def _string_list_task(
     progress: TaskProgress,
     num_strings: int,
@@ -61,7 +66,7 @@ async def _string_list_task(
         await progress.update(message="generated item", percent=index / num_strings)
         if fail:
             msg = "We were asked to fail!!"
-            raise RuntimeError(msg)
+            raise _TestingError(msg)
 
     return generated_strings
 
@@ -241,8 +246,11 @@ async def test_failing_task_returns_error(
     await wait_for_task(app, client, task_id, {})
     # get the result
     result_url = app.url_path_for("get_task_result", task_id=task_id)
-    with pytest.raises(RuntimeError) as exec_info:
-        await client.get(f"{result_url}")
+
+    encoded_errors = encode_error_types((_TestingError,))
+    url = f"{result_url}?allowed_errors={encoded_errors}"
+    with pytest.raises(_TestingError) as exec_info:
+        await client.get(url)
     assert f"{exec_info.value}" == "We were asked to fail!!"
 
 

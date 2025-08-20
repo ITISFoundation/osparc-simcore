@@ -87,12 +87,14 @@ async def get_task_result(
     long_running_manager: BaseLongRunningManager,
     task_context: TaskContext,
     task_id: TaskId,
+    allowed_errors: tuple[type[BaseException], ...] = (),
 ) -> Any:
     return await _lrt_client.get_task_result(
         rabbitmq_rpc_client,
         long_running_manager.lrt_namespace,
         task_context=task_context,
         task_id=task_id,
+        allowed_errors=allowed_errors,
     )
 
 

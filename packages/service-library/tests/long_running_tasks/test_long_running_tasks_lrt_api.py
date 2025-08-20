@@ -43,9 +43,13 @@ async def _task_echo_input(progress: TaskProgress, to_return: Any) -> Any:
     return to_return
 
 
+class _TestingError(Exception):
+    pass
+
+
 async def _task_always_raise(progress: TaskProgress) -> None:
     msg = "This task always raises an error"
-    raise RuntimeError(msg)
+    raise _TestingError(msg)
 
 
 async def _task_takes_too_long(progress: TaskProgress) -> None:
@@ -270,12 +274,13 @@ async def test_workflow_raises_error(
     )
 
     for task_id in task_ids:
-        with pytest.raises(RuntimeError, match="This task always raises an error"):
+        with pytest.raises(_TestingError, match="This task always raises an error"):
             await lrt_api.get_task_result(
                 rabbitmq_rpc_client,
                 _get_task_manager(long_running_managers),
                 saved_context,
                 task_id,
+                allowed_errors=(_TestingError,),
             )
 
         await _assert_task_is_no_longer_present(

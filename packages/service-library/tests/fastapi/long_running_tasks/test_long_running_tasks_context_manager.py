@@ -56,11 +56,15 @@ async def a_test_task(progress: TaskProgress) -> int:
 TaskRegistry.register(a_test_task)
 
 
+class _TestingError(Exception):
+    pass
+
+
 async def a_failing_test_task(progress: TaskProgress) -> None:
     _ = progress
     await asyncio.sleep(TASK_SLEEP_INTERVAL)
     msg = "I am failing as requested"
-    raise RuntimeError(msg)
+    raise _TestingError(msg)
 
 
 TaskRegistry.register(a_failing_test_task)

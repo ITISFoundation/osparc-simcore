@@ -31,13 +31,18 @@ TaskContext: TypeAlias = dict[str, Any]
 LRTNamespace: TypeAlias = str
 
 
+class ErrorResponse(BaseModel):
+    str_error_object: str
+    str_traceback: str
+
+
 class ResultField(BaseModel):
-    result: str | None = None
-    error: str | None = None
+    str_result: str | None = None
+    error_response: ErrorResponse | None = None
 
     @model_validator(mode="after")
     def validate_mutually_exclusive(self) -> "ResultField":
-        if self.result is not None and self.error is not None:
+        if self.str_result is not None and self.error_response is not None:
             msg = "Cannot set both 'result' and 'error' - they are mutually exclusive"
             raise ValueError(msg)
         return self

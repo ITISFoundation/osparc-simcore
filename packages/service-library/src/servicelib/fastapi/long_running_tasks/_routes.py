@@ -1,9 +1,10 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from ...long_running_tasks import lrt_api
 from ...long_running_tasks.models import TaskGet, TaskId, TaskResult, TaskStatus
+from ...long_running_tasks.utils import decode_error_types
 from ..requests_decorators import cancel_on_disconnect
 from ._dependencies import get_long_running_manager
 from ._manager import FastAPILongRunningManager
@@ -73,6 +74,13 @@ async def get_task_result(
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
+    allowed_errors: Annotated[
+        str,
+        Query(
+            description="list of json encoded tuples of allowed errors",
+            example='["tests.fastapi.long_running_tasks.test_long_running_tasks", "_TestingError"]',
+        ),
+    ] = "",
 ) -> TaskResult | Any:
     assert request  # nosec
     return await lrt_api.get_task_result(
@@ -80,6 +88,7 @@ async def get_task_result(
         long_running_manager,
         task_context={},
         task_id=task_id,
+        allowed_errors=decode_error_types(allowed_errors),
     )
 
 

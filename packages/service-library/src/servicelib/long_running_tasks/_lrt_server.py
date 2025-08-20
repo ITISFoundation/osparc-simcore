@@ -1,11 +1,14 @@
-import traceback
+import logging
 from typing import TYPE_CHECKING, Any
 
+from ..logging_errors import create_troubleshootting_log_kwargs
 from ..rabbitmq import RPCRouter
-from ._serialization import object_to_string
-from .errors import BaseLongRunningError, TaskNotCompletedError, TaskNotFoundError
-from .models import RPCErrorResponse, TaskBase, TaskContext, TaskId, TaskStatus
+from ._serialization import string_to_object
+from .errors import BaseLongRunningError
+from .models import ErrorResponse, TaskBase, TaskContext, TaskId, TaskStatus
 from .task import RegisteredTaskName
+
+_logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .base_long_running_manager import BaseLongRunningManager
@@ -56,53 +59,55 @@ async def get_task_status(
     )
 
 
-async def _get_transferarble_task_result(
-    long_running_manager: "BaseLongRunningManager",
-    *,
-    task_context: TaskContext,
-    task_id: TaskId,
-) -> Any:
-    try:
-        task_result = await long_running_manager.tasks_manager.get_task_result(
-            task_id, with_task_context=task_context
-        )
-        await long_running_manager.tasks_manager.remove_task(
-            task_id,
-            with_task_context=task_context,
-            wait_for_removal=True,
-            reraise_errors=False,
-        )
-        return task_result
-    except (TaskNotFoundError, TaskNotCompletedError):
-        raise
-    except Exception:
-        # the task shall be removed in this case
-        await long_running_manager.tasks_manager.remove_task(
-            task_id,
-            with_task_context=task_context,
-            wait_for_removal=True,
-            reraise_errors=False,
-        )
-        raise
-
-
-@router.expose(reraise_if_error_type=(BaseLongRunningError, Exception))
+@router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def get_task_result(
     long_running_manager: "BaseLongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
-) -> RPCErrorResponse | str:
+    allowed_errors_str: str,
+) -> ErrorResponse | str:
+    allowed_errors: tuple[type[BaseException], ...] = string_to_object(
+        allowed_errors_str
+    )
     try:
-        return object_to_string(
-            await _get_transferarble_task_result(
-                long_running_manager, task_context=task_context, task_id=task_id
-            )
+        result_field = await long_running_manager.tasks_manager.get_task_result(
+            task_id, with_task_context=task_context
         )
-    except Exception as exc:  # pylint:disable=broad-exception-caught
-        return RPCErrorResponse(
-            str_traceback="".join(traceback.format_tb(exc.__traceback__)),
-            error_object=object_to_string(exc),
+        if result_field.error_response is not None:
+            task_raised_error_traceback = result_field.error_response.str_traceback
+            task_raised_error = string_to_object(
+                result_field.error_response.str_error_object
+            )
+            _logger.info(
+                **create_troubleshootting_log_kwargs(
+                    f"Execution of {task_id=} finished with error:\n{task_raised_error_traceback}",
+                    error=task_raised_error,
+                    error_context={
+                        "task_id": task_id,
+                        "task_context": task_context,
+                        "namespace": long_running_manager.lrt_namespace,
+                    },
+                    tip="This exception is logged for debugging purposes, the client side will handle it",
+                )
+            )
+            if type(task_raised_error) in allowed_errors:
+                return result_field.error_response
+
+            raise task_raised_error
+
+        if result_field.str_result is not None:
+            return result_field.str_result
+
+        msg = f"Please check {result_field=}, both fields should never be None"
+        raise ValueError(msg)
+    finally:
+        # Ensure the task is removed regardless of the result
+        await long_running_manager.tasks_manager.remove_task(
+            task_id,
+            with_task_context=task_context,
+            wait_for_removal=True,
+            reraise_errors=False,
         )
 
 
