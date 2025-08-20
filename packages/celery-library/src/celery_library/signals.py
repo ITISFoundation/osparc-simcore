@@ -23,15 +23,13 @@ def on_worker_init(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        async def _setup():
-            assert sender.app  # nosec
-            assert isinstance(sender.app, Celery)  # nosec
+        assert sender.app  # nosec
+        assert isinstance(sender.app, Celery)  # nosec
 
-            set_app_server(sender.app, app_server)
+        set_app_server(sender.app, app_server)
 
         app_server.event_loop = loop
 
-        loop.run_until_complete(_setup())
         loop.run_until_complete(app_server.lifespan(startup_complete_event))
 
     thread = threading.Thread(
