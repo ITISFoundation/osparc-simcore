@@ -44,7 +44,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     message: {
-      check: "String",
+      check: "Object",
       init: null,
       nullable: true,
       event: "changeMessage",
