@@ -88,10 +88,12 @@ async def test_with_fake_run_function(
     with_storage_celery_worker: TestWorkController,
 ):
 
-    extra = RegisteredProjectFunction.model_config.get("json_schema_extra")
-    assert extra
     app.dependency_overrides[get_function] = (
-        lambda: RegisteredProjectFunction.model_validate(extra["examples"][0])
+        lambda: RegisteredProjectFunction.model_validate(
+            RegisteredProjectFunction.model_config.get("json_schema_extra", {}).get(
+                "examples", []
+            )[0]
+        )
     )
 
     headers = {}

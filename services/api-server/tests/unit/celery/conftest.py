@@ -9,6 +9,8 @@ from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
 from celery_library.signals import on_worker_init, on_worker_shutdown
+from fakeredis.aioredis import FakeRedis
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
@@ -34,14 +36,32 @@ def celery_config() -> dict[str, Any]:
 
 
 @pytest.fixture
+async def mocked_redis_server(mocker: MockerFixture) -> None:
+    mock_redis = FakeRedis()
+    mocker.patch("redis.asyncio.from_url", return_value=mock_redis)
+
+
+@pytest.fixture
+def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
+    celery_app = Celery(**celery_config)
+
+    for module in ("simcore_service_api_server.api.dependencies.celery.create_app",):
+        mocker.patch(module, return_value=celery_app)
+
+    return celery_app
+
+
+@pytest.fixture
 def app_environment(
+    mock_celery_app: Celery,
+    mocked_redis_server: None,
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     rabbit_env_vars_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     # do not init other services
-    delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ"])
-    return setenvs_from_dict(
+    delenvs_from_dict(monkeypatch, ["API_SERVER_RABBITMQ", "API_SERVER_CELERY"])
+    env_vars_dict = setenvs_from_dict(
         monkeypatch,
         {
             **rabbit_env_vars_dict,
@@ -50,6 +70,11 @@ def app_environment(
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
         },
     )
+
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.API_SERVER_CELERY is not None
+
+    return env_vars_dict
 
 
 @pytest.fixture
