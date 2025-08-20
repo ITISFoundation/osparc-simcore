@@ -639,42 +639,47 @@ def setup_long_running_tasks(app: FastAPI) -> None:
         lrt_namespace=f"{APP_NAME}-{app_settings.DY_SIDECAR_RUN_ID}",
     )
 
+    shared_store: SharedStore = app.state.shared_store
+    mounted_volumes: MountedVolumes = app.state.mounted_volumes
+    outputs_manager: OutputsManager = app.state.outputs_manager
+
+    context_app_store: dict[str, Any] = {
+        "app": app,
+        "shared_store": shared_store,
+    }
+    context_app_store_volumes: dict[str, Any] = {
+        "app": app,
+        "shared_store": shared_store,
+        "mounted_volumes": mounted_volumes,
+    }
+    context_app_volumes: dict[str, Any] = {
+        "app": app,
+        "mounted_volumes": mounted_volumes,
+    }
+    context_app_outputs: dict[str, Any] = {
+        "app": app,
+        "outputs_manager": outputs_manager,
+    }
+
+    task_context: dict[TaskProtocol, dict[str, Any]] = {
+        task_pull_user_servcices_docker_images: context_app_store,
+        task_create_service_containers: context_app_store,
+        task_runs_docker_compose_down: context_app_store_volumes,
+        task_restore_state: context_app_volumes,
+        task_save_state: context_app_volumes,
+        task_ports_inputs_pull: context_app_volumes,
+        task_ports_outputs_pull: context_app_volumes,
+        task_ports_outputs_push: context_app_outputs,
+        task_containers_restart: context_app_store,
+    }
+
     async def on_startup() -> None:
-        shared_store: SharedStore = app.state.shared_store
-        mounted_volumes: MountedVolumes = app.state.mounted_volumes
-        outputs_manager: OutputsManager = app.state.outputs_manager
-
-        context_app_store: dict[str, Any] = {
-            "app": app,
-            "shared_store": shared_store,
-        }
-        context_app_store_volumes: dict[str, Any] = {
-            "app": app,
-            "shared_store": shared_store,
-            "mounted_volumes": mounted_volumes,
-        }
-        context_app_volumes: dict[str, Any] = {
-            "app": app,
-            "mounted_volumes": mounted_volumes,
-        }
-        context_app_outputs: dict[str, Any] = {
-            "app": app,
-            "outputs_manager": outputs_manager,
-        }
-
-        task_context: dict[TaskProtocol, dict[str, Any]] = {
-            task_pull_user_servcices_docker_images: context_app_store,
-            task_create_service_containers: context_app_store,
-            task_runs_docker_compose_down: context_app_store_volumes,
-            task_restore_state: context_app_volumes,
-            task_save_state: context_app_volumes,
-            task_ports_inputs_pull: context_app_volumes,
-            task_ports_outputs_pull: context_app_volumes,
-            task_ports_outputs_push: context_app_outputs,
-            task_containers_restart: context_app_store,
-        }
-
         for handler, context in task_context.items():
             TaskRegistry.register(handler, **context)
 
+    async def _on_shutdown() -> None:
+        for handler in task_context:
+            TaskRegistry.unregister(handler)
+
     app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", _on_shutdown)
