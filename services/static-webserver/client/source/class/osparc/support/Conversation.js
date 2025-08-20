@@ -147,32 +147,34 @@ qx.Class.define("osparc.support.Conversation", {
       const shareProjectLayout = this.getChildControl("share-project-layout");
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let showCB = false;
-      if (currentStudy) {
-        if (conversation) {
-          if (conversation.getContextProjectId() === currentStudy.getUuid()) {
-            showCB = true;
-          }
-        } else {
-          showCB = true;
-        }
+      if (conversation === null && currentStudy) {
+        // initiating conversation
+        showCB = true;
+      }
+      if (conversation && conversation.getContextProjectId()) {
+        // it was already set
+        showCB = true;
       }
       shareProjectLayout.setVisibility(showCB ? "visible" : "excluded");
 
-      if (currentStudy && conversation && conversation.getContextProjectId() === currentStudy.getUuid()) {
-        let isAlreadyShared = false;
-        const accessRights = currentStudy.getAccessRights();
-        const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
-        if (supportGroupId && supportGroupId in accessRights) {
-          isAlreadyShared = true;
-        } else {
-          isAlreadyShared = false;
-        }
-        shareProjectCB.setValue(isAlreadyShared);
-      }
-
-      shareProjectCB.removeListener("changeValue", this.__shareProjectWithSupport, this);
-      if (showCB) {
-        shareProjectCB.addListener("changeValue", this.__shareProjectWithSupport, this);
+      if (conversation && conversation.getContextProjectId()) {
+        const projectId = conversation.getContextProjectId();
+        osparc.store.Study.getInstance().getOne(projectId)
+          .then(studyData => {
+            let isAlreadyShared = false;
+            const accessRights = studyData["accessRights"];
+            const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
+            if (supportGroupId && supportGroupId in accessRights) {
+              isAlreadyShared = true;
+            } else {
+              isAlreadyShared = false;
+            }
+            shareProjectCB.setValue(isAlreadyShared);
+            shareProjectCB.removeListener("changeValue", this.__shareProjectWithSupport, this);
+            if (showCB) {
+              shareProjectCB.addListener("changeValue", this.__shareProjectWithSupport, this);
+            }
+          });
       }
     },
 
