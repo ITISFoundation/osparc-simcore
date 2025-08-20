@@ -450,7 +450,6 @@ async def test_conversation_messages_nonexistent_resources(
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
 
 
-### Test with a database
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_conversation_messages_with_database(
     client: TestClient,

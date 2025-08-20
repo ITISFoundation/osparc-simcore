@@ -15,8 +15,9 @@ from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
+from servicelib.redis import exclusive
 
-# Import or define SocketMessageDict
+from ..redis import get_redis_lock_manager_client_sdk
 from ..users import users_service
 from . import _conversation_message_repository
 from ._conversation_service import _get_recipients
@@ -27,6 +28,9 @@ from ._socketio import (
 )
 
 _logger = logging.getLogger(__name__)
+
+# Redis lock key for conversation message operations
+CONVERSATION_MESSAGE_REDIS_LOCK_KEY = "conversation_message_update:{}"
 
 
 async def create_message(
@@ -70,30 +74,61 @@ async def create_support_message_and_check_if_it_is_first_message(
     content: str,
     type_: ConversationMessageType,
 ) -> tuple[ConversationMessageGetDB, bool]:
-    created_message = await create_message(
-        app,
-        user_id=user_id,
-        project_id=project_id,
-        conversation_id=conversation_id,
-        content=content,
-        type_=type_,
-    )
-    _, messages = await _conversation_message_repository.list_(
-        app,
-        conversation_id=conversation_id,
-        offset=0,
-        limit=1,
-        order_by=OrderBy(
-            field=IDStr("created"), direction=OrderDirection.ASC
-        ),  # NOTE: ASC - first/oldest message first
-    )
+    """Create a message and check if it's the first one with Redis lock protection.
 
-    is_first_message = False
-    if messages:
-        first_message = messages[0]
-        is_first_message = first_message.message_id == created_message.message_id
+    This function is protected by Redis exclusive lock because:
+    - the message creation and first message check must be kept in sync
 
-    return created_message, is_first_message
+    Args:
+        app: The web application instance
+        user_id: ID of the user creating the message
+        project_id: ID of the project (optional)
+        conversation_id: ID of the conversation
+        content: Content of the message
+        type_: Type of the message
+
+    Returns:
+        Tuple containing the created message and whether it's the first message
+    """
+
+    @exclusive(
+        get_redis_lock_manager_client_sdk(app),
+        lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
+        blocking=True,
+        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
+    )
+    async def _create_support_message_and_check_if_it_is_first_message() -> (
+        tuple[ConversationMessageGetDB, bool]
+    ):
+        """This function is protected because
+        - the message creation and first message check must be kept in sync
+        """
+        created_message = await create_message(
+            app,
+            user_id=user_id,
+            project_id=project_id,
+            conversation_id=conversation_id,
+            content=content,
+            type_=type_,
+        )
+        _, messages = await _conversation_message_repository.list_(
+            app,
+            conversation_id=conversation_id,
+            offset=0,
+            limit=1,
+            order_by=OrderBy(
+                field=IDStr("created"), direction=OrderDirection.ASC
+            ),  # NOTE: ASC - first/oldest message first
+        )
+
+        is_first_message = False
+        if messages:
+            first_message = messages[0]
+            is_first_message = first_message.message_id == created_message.message_id
+
+        return created_message, is_first_message
+
+    return await _create_support_message_and_check_if_it_is_first_message()
 
 
 async def get_message(
