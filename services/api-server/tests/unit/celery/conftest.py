@@ -1,5 +1,7 @@
+import datetime
 from collections.abc import AsyncIterator, Callable
 from functools import partial
+from typing import Any
 
 import pytest
 from celery import Celery
@@ -14,9 +16,21 @@ from simcore_service_api_server.celery.worker_main import setup_worker_tasks
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
 
-pytest_plugins = [
-    "pytest_simcore.rabbit_service",
-]
+
+@pytest.fixture(scope="session")
+def celery_config() -> dict[str, Any]:
+    return {
+        "broker_connection_retry_on_startup": True,
+        "broker_url": "memory://localhost//",
+        "result_backend": "cache+memory://localhost//",
+        "result_expires": datetime.timedelta(days=7),
+        "result_extended": True,
+        "pool": "threads",
+        "task_default_queue": "default",
+        "task_send_sent_event": True,
+        "task_track_started": True,
+        "worker_send_task_events": True,
+    }
 
 
 @pytest.fixture

@@ -2,7 +2,6 @@
 from collections.abc import Callable
 from typing import Annotated, Final, Literal
 
-from celery_library.task_manager import CeleryTaskManager
 from fastapi import APIRouter, Depends, Header, Request, status
 from fastapi_pagination.api import create_page
 from fastapi_pagination.bases import AbstractPage
@@ -329,10 +328,10 @@ async def run_function(  # noqa: PLR0913
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     function_inputs: FunctionInputs,
     function_service: Annotated[FunctionService, Depends(get_function_service)],
-    task_manager: Annotated[CeleryTaskManager, Depends(get_task_manager_from_app)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> TaskGet:
+    task_manager = get_task_manager_from_app(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)

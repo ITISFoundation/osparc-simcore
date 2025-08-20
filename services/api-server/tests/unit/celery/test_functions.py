@@ -26,6 +26,9 @@ from simcore_service_api_server.models.schemas.jobs import (
     NodeID,
 )
 
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_ops_services_selection = ["adminer"]
+
 _faker = Faker()
 
 
@@ -67,7 +70,7 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
     return _
 
 
-@pytest.mark.parametrize("register_celery_tasks", [_register_fake_run_function_task])
+@pytest.mark.parametrize("register_celery_tasks", [_register_fake_run_function_task()])
 @pytest.mark.parametrize("add_worker_tasks", [False])
 async def test_with_fake_run_function(with_storage_celery_worker: TestWorkController):
     pass
