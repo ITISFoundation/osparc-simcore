@@ -43,7 +43,7 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
         print("Warning: docker registry is already up!")
     except Exception:  # pylint: disable=broad-except
         container = docker_client.containers.run(
-            "registry:2",
+            "registry:3",
             ports={"5000": "5000"},
             name="pytest_registry",
             environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
