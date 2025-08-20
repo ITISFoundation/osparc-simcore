@@ -427,7 +427,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         // and show Flash Message
         const outputs = this.getNode().getOutputs();
         if (outputs && Object.keys(outputs).length > 0) {
-          const flashMsg = this.tr("New Outputs received");
+          const flashMsg = this.tr("New Outputs generated");
           osparc.FlashMessenger.getInstance().logAs(flashMsg, "INFO", 2000);
         }
       });
