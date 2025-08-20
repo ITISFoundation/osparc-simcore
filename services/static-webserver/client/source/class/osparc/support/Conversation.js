@@ -179,7 +179,20 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __shareProjectWithSupport: function(e) {
-      console.log("Share project with support: ", e.getData());
+      const share = e.getData();
+      const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
+      const projectId = this.getConversation().getContextProjectId();
+      osparc.store.Study.getInstance().getOne(projectId)
+        .then(studyData => {
+          if (share) {
+            const newCollaborators = {
+              [supportGroupId]: osparc.data.Roles.STUDY["write"].accessRights
+            };
+            osparc.store.Study.getInstance().addCollaborators(studyData, newCollaborators)
+          } else {
+            osparc.store.Study.getInstance().removeCollaborator(studyData, supportGroupId);
+          }
+        });
     },
 
     __reloadMessages: function(removeMessages = true) {
