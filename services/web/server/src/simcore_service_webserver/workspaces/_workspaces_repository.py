@@ -196,7 +196,7 @@ async def get_workspace_for_user(
         row = result.one_or_none()
         if row is None:
             raise WorkspaceAccessForbiddenError(
-                reason=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
+                details=f"User {user_id} does not have access to the workspace {workspace_id}. Or workspace does not exist.",
             )
         return UserWorkspaceWithAccessRights.model_validate(row)
 
@@ -217,7 +217,7 @@ async def get_workspace_db_get(
         )
         row = result.one_or_none()
         if row is None:
-            raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
+            raise WorkspaceNotFoundError(details=f"Workspace {workspace_id} not found.")
     return WorkspaceDBGet.model_validate(row)
 
 
@@ -247,7 +247,7 @@ async def update_workspace(
         )
         row = await result.first()
         if row is None:
-            raise WorkspaceNotFoundError(reason=f"Workspace {workspace_id} not found.")
+            raise WorkspaceNotFoundError(details=f"Workspace {workspace_id} not found.")
         return Workspace.model_validate(row)
 
 

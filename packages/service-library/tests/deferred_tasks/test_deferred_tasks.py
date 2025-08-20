@@ -333,8 +333,7 @@ async def rabbit_client(
 
 
 class ClientWithPingProtocol(Protocol):
-    async def ping(self) -> bool:
-        ...
+    async def ping(self) -> bool: ...
 
 
 class ServiceManager:

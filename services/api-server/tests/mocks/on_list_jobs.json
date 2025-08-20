@@ -146,9 +146,10 @@
           "tags": [],
           "classifiers": [],
           "state": {
-            "locked": {
-              "value": false,
-              "status": "CLOSED"
+            "shareState": {
+              "locked": false,
+              "status": "CLOSED",
+              "currentUserGroupids": []
             },
             "state": {
               "value": "NOT_STARTED"
@@ -222,9 +223,10 @@
           "tags": [],
           "classifiers": [],
           "state": {
-            "locked": {
-              "value": false,
-              "status": "CLOSED"
+            "shareState": {
+              "locked": false,
+              "status": "CLOSED",
+              "currentUserGroupids": []
             },
             "state": {
               "value": "NOT_STARTED"

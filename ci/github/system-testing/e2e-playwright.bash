@@ -37,7 +37,7 @@ dump_docker_logs() {
   for service_id in $(docker service ls -q); do
     service_name=$(docker service inspect "$service_id" --format="{{.Spec.Name}}")
     echo "Dumping logs for $service_name"
-    (timeout 30 docker service logs --timestamps --tail=400 --details "$service_id" >"$out_dir/$service_name.log" 2>&1) || true
+    (timeout 30 docker service logs --timestamps --tail=500 --details "$service_id" >"$out_dir/$service_name.log" 2>&1) || true
   done
 }
 

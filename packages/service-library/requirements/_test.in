@@ -17,6 +17,7 @@ botocore
 coverage
 docker
 faker
+fakeredis[lua]
 flaky
 numpy
 openapi-spec-validator

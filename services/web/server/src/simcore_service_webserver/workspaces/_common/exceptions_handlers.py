@@ -36,7 +36,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     WorkspaceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
-            "The requested workspace could not be found. {reason}", _version=1
+            "The requested workspace could not be found: {details}", _version=1
         ),
     ),
     # Trashing

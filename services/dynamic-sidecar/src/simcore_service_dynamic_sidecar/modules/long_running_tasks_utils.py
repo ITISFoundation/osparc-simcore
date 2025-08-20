@@ -3,17 +3,18 @@ import os
 from datetime import timedelta
 from typing import Final
 
+from aiodocker import DockerError
 from models_library.callbacks_mapping import UserServiceCommand
-from servicelib.logging_utils import log_context
-
-from ..core.errors import (
+from servicelib.container_utils import (
     ContainerExecCommandFailedError,
     ContainerExecContainerNotFoundError,
     ContainerExecTimeoutError,
+    run_command_in_container,
 )
+from servicelib.logging_utils import log_context
+
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
-from .container_utils import run_command_in_container
 
 _logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ async def run_before_shutdown_actions(
                 ContainerExecContainerNotFoundError,
                 ContainerExecCommandFailedError,
                 ContainerExecTimeoutError,
+                DockerError,
             ):
                 _logger.warning(
                     "Could not run before_shutdown command %s in container %s",

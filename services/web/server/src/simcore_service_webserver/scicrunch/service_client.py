@@ -1,10 +1,9 @@
 """
-   Client to interact with scicrunch service (https://scicrunch.org)
-    - both with REST API and resolver API
+Client to interact with scicrunch service (https://scicrunch.org)
+ - both with REST API and resolver API
 
 """
 
-import asyncio
 import logging
 
 from aiohttp import ClientSession, client_exceptions, web
@@ -72,7 +71,7 @@ class SciCrunch:
         obj: SciCrunch | None = app.get(f"{__name__}.{cls.__name__}")
         if obj is None:
             raise ScicrunchConfigError(
-                reason="Services on scicrunch.org are currently disabled"
+                details="Services on scicrunch.org are currently disabled"
             )
         return obj
 
@@ -153,17 +152,17 @@ class SciCrunch:
 
         except (ValidationError, client_exceptions.InvalidURL) as err:
             raise ScicrunchAPIError(
-                reason="scicrunch API response unexpectedly changed"
+                details="scicrunch API response unexpectedly changed"
             ) from err
 
         except (
             client_exceptions.ClientConnectionError,
             client_exceptions.ClientPayloadError,
-            asyncio.TimeoutError,
+            TimeoutError,
         ) as err:
             # https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
             raise ScicrunchServiceError(
-                reason="Failed to connect scicrunch service"
+                details="Failed to connect scicrunch service"
             ) from err
 
     async def search_resource(self, name_as: str) -> list[ResourceHit]:

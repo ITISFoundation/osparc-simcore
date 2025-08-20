@@ -22,12 +22,14 @@ from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallabl
 from pytest_simcore.helpers.faker_factories import (
     random_service_access_rights,
     random_service_meta_data,
-    random_user,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
     insert_and_get_row_lifespan,
+)
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.groups import groups
@@ -36,7 +38,6 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
-from simcore_postgres_database.models.users import users
 from simcore_service_catalog.core.settings import ApplicationSettings
 from sqlalchemy import sql
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -151,12 +152,9 @@ async def user(
     injects a user in db
     """
     assert user_id == user["id"]
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+    async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
-        table=users,
-        values=user,
-        pk_col=users.c.id,
-        pk_value=user["id"],
+        **user,
     ) as row:
         yield row
 
@@ -165,16 +163,14 @@ async def user(
 async def other_user(
     user_id: UserID,
     sqlalchemy_async_engine: AsyncEngine,
-    faker: Faker,
 ) -> AsyncIterator[dict[str, Any]]:
-
-    _other_user = random_user(fake=faker, id=user_id + 1)
-    async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+    """
+    injects a other user in db (!= user)
+    """
+    async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         sqlalchemy_async_engine,
-        table=users,
-        values=_other_user,
-        pk_col=users.c.id,
-        pk_value=_other_user["id"],
+        name="other_user",
+        id=user_id + 1,
     ) as row:
         yield row
 

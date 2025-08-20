@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.72.0
+  version: 0.75.0
 servers:
 - url: ''
   description: webserver
@@ -510,6 +510,289 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
           description: Not Found
+  /v0/conversations:
+    post:
+      tags:
+      - conversations
+      summary: Create Conversation
+      operationId: create_conversation
+      parameters:
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ConversationsCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    get:
+      tags:
+      - conversations
+      summary: List Conversations
+      operationId: list_conversations
+      parameters:
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationRestGet_'
+  /v0/conversations/{conversation_id}:
+    patch:
+      tags:
+      - conversations
+      summary: Update Conversation
+      operationId: update_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationPatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+    delete:
+      tags:
+      - conversations
+      summary: Delete Conversation
+      operationId: delete_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - conversations
+      summary: Get Conversation
+      operationId: get_conversation
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationRestGet_'
+  /v0/conversations/{conversation_id}/messages:
+    post:
+      tags:
+      - conversations
+      summary: Create Conversation Message
+      operationId: create_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/_ConversationMessageCreateBodyParams'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    get:
+      tags:
+      - conversations
+      summary: List Conversation Messages
+      operationId: list_conversation_messages
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_ConversationMessageRestGet_'
+  /v0/conversations/{conversation_id}/messages/{message_id}:
+    put:
+      tags:
+      - conversations
+      summary: Update Conversation Message
+      operationId: update_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationMessagePatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+    delete:
+      tags:
+      - conversations
+      summary: Delete Conversation Message
+      operationId: delete_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
+    get:
+      tags:
+      - conversations
+      summary: Get Conversation Message
+      operationId: get_conversation_message
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
   /v0/groups:
     get:
       tags:
@@ -1560,7 +1843,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PreRegisteredUserGet'
+              $ref: '#/components/schemas/UserAccountRestPreRegister'
         required: true
       responses:
         '200':
@@ -3354,19 +3637,19 @@ paths:
       summary: Register Function
       operationId: register_function
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               oneOf:
               - $ref: '#/components/schemas/ProjectFunctionToRegister'
               - $ref: '#/components/schemas/SolverFunctionToRegister'
-              title: ' Body'
               discriminator:
                 propertyName: functionClass
                 mapping:
                   PROJECT: '#/components/schemas/ProjectFunctionToRegister'
                   SOLVER: '#/components/schemas/SolverFunctionToRegister'
-        required: true
+              title: ' Body'
       responses:
         '200':
           description: Successful Response
@@ -3374,6 +3657,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    get:
+      tags:
+      - functions
+      summary: List Functions
+      operationId: list_functions
+      parameters:
+      - name: include_extras
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Extras
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      - name: filters
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            contentMediaType: application/json
+            contentSchema: {}
+          - type: 'null'
+          title: Filters
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 20
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____'
   /v0/functions/{function_id}:
     get:
       tags:
@@ -3388,6 +3732,39 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      - name: include_extras
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Include Extras
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class____'
+    patch:
+      tags:
+      - functions
+      summary: Update Function
+      operationId: update_function
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisteredFunctionUpdate'
       responses:
         '200':
           description: Successful Response
@@ -3408,6 +3785,86 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      responses:
+        '204':
+          description: Successful Response
+  /v0/functions/{function_id}/groups:
+    get:
+      tags:
+      - functions
+      summary: Get Function Groups
+      operationId: get_function_groups
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__'
+  /v0/functions/{function_id}/groups/{group_id}:
+    put:
+      tags:
+      - functions
+      summary: Create or update a Function Group
+      operationId: create_or_update_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_FunctionGroupAccessRightsGet_'
+    delete:
+      tags:
+      - functions
+      summary: Delete a Function Group
+      operationId: delete_function_group
+      parameters:
+      - name: function_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Function Id
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          exclusiveMinimum: true
+          title: Group Id
+          minimum: 0
       responses:
         '204':
           description: Successful Response
@@ -6304,7 +6761,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_ProjectState_'
+                $ref: '#/components/schemas/Envelope_ProjectStateOutputSchema_'
   /v0/projects/{project_uuid}/tags/{tag_id}:add:
     post:
       tags:
@@ -8574,14 +9031,14 @@ components:
           application: Antenna_Design
           city: Washington
           company: EM Com
-          country: USA
+          country: Switzerland
           description: Description of something
           email: maxwel@email.com
           eula: true
           firstName: James
           hear: Search_Engine
           lastName: Maxwel
-          phone: +1 123456789
+          phone: +41 44 245 96 96
           postalCode: '98001'
           privacyPolicy: true
     AccountRequestStatus:
@@ -9792,6 +10249,15 @@ components:
       - serviceKey
       - serviceVersion
       title: ConnectServiceToPricingPlanBodyParams
+    ConversationMessagePatch:
+      properties:
+        content:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content
+      type: object
+      title: ConversationMessagePatch
     ConversationMessageRestGet:
       properties:
         messageId:
@@ -9837,6 +10303,21 @@ components:
       - MESSAGE
       - NOTIFICATION
       title: ConversationMessageType
+    ConversationPatch:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        extraContext:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Extracontext
+      type: object
+      title: ConversationPatch
     ConversationRestGet:
       properties:
         conversationId:
@@ -9871,6 +10352,11 @@ components:
           type: string
           format: date-time
           title: Modified
+        extraContext:
+          additionalProperties:
+            type: string
+          type: object
+          title: Extracontext
       type: object
       required:
       - conversationId
@@ -9881,12 +10367,14 @@ components:
       - type
       - created
       - modified
+      - extraContext
       title: ConversationRestGet
     ConversationType:
       type: string
       enum:
       - PROJECT_STATIC
       - PROJECT_ANNOTATION
+      - SUPPORT
       title: ConversationType
     CountryInfoDict:
       properties:
@@ -10427,6 +10915,19 @@ components:
           title: Error
       type: object
       title: Envelope[FolderGet]
+    Envelope_FunctionGroupAccessRightsGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[FunctionGroupAccessRightsGet]
     Envelope_GetProjectInactivityResponse_:
       properties:
         data:
@@ -10830,11 +11331,11 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectShareAccepted]
-    Envelope_ProjectState_:
+    Envelope_ProjectStateOutputSchema_:
       properties:
         data:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         error:
           anyOf:
@@ -10842,7 +11343,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[ProjectState]
+      title: Envelope[ProjectStateOutputSchema]
     Envelope_ProjectsCommentsAPI_:
       properties:
         data:
@@ -11136,6 +11637,22 @@ components:
           title: Error
       type: object
       title: Envelope[_ProjectNodePreview]
+    Envelope_dict_Annotated_int__Gt___FunctionGroupAccessRightsGet__:
+      properties:
+        data:
+          anyOf:
+          - additionalProperties:
+              $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+            type: object
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[dict[Annotated[int, Gt], FunctionGroupAccessRightsGet]]
     Envelope_dict_Annotated_str__StringConstraints___ImageResources__:
       properties:
         data:
@@ -11239,6 +11756,30 @@ components:
           title: Error
       type: object
       title: Envelope[dict[str, Any]]
+    ? Envelope_list_Annotated_Union_RegisteredProjectFunctionGet__RegisteredSolverFunctionGet___FieldInfo_annotation_NoneType__required_True__discriminator__function_class_____
+    : properties:
+        data:
+          anyOf:
+          - items:
+              oneOf:
+              - $ref: '#/components/schemas/RegisteredProjectFunctionGet'
+              - $ref: '#/components/schemas/RegisteredSolverFunctionGet'
+              discriminator:
+                propertyName: functionClass
+                mapping:
+                  PROJECT: '#/components/schemas/RegisteredProjectFunctionGet'
+                  SOLVER: '#/components/schemas/RegisteredSolverFunctionGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[Annotated[Union[RegisteredProjectFunctionGet, RegisteredSolverFunctionGet],
+        FieldInfo(annotation=NoneType, required=True, discriminator='function_class')]]]
     Envelope_list_Annotated_str__StringConstraints___:
       properties:
         data:
@@ -12233,6 +12774,40 @@ components:
       required:
       - name
       title: FolderReplaceBodyParams
+    FunctionGroupAccessRightsGet:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        execute:
+          type: boolean
+          title: Execute
+      type: object
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsGet
+    FunctionGroupAccessRightsUpdate:
+      properties:
+        read:
+          type: boolean
+          title: Read
+        write:
+          type: boolean
+          title: Write
+        execute:
+          type: boolean
+          title: Execute
+      type: object
+      required:
+      - read
+      - write
+      - execute
+      title: FunctionGroupAccessRightsUpdate
     GetProjectInactivityResponse:
       properties:
         is_inactive:
@@ -13023,11 +13598,15 @@ components:
       title: MarkerUI
     MyFunctionPermissionsGet:
       properties:
+        readFunctions:
+          type: boolean
+          title: Readfunctions
         writeFunctions:
           type: boolean
           title: Writefunctions
       type: object
       required:
+      - readFunctions
       - writeFunctions
       title: MyFunctionPermissionsGet
     MyGroupsGet:
@@ -13113,7 +13692,7 @@ components:
       properties:
         phone:
           type: string
-          minLength: 1
+          format: phone
           title: Phone
           description: Phone number to register
       type: object
@@ -13362,10 +13941,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -13426,7 +14007,7 @@ components:
           deprecated: true
         state:
           anyOf:
-          - $ref: '#/components/schemas/NodeState'
+          - $ref: '#/components/schemas/NodeState-Input'
           - type: 'null'
           description: The node's state object
         bootOptions:
@@ -13495,10 +14076,12 @@ components:
           title: Inputs
           description: values of input properties
         inputsRequired:
-          items:
-            type: string
-            pattern: ^[-_a-zA-Z0-9]+$
-          type: array
+          anyOf:
+          - items:
+              type: string
+              pattern: ^[-_a-zA-Z0-9]+$
+            type: array
+          - type: 'null'
           title: Inputsrequired
           description: Defines inputs that are required in order to run the service
         inputsUnits:
@@ -13559,7 +14142,7 @@ components:
           deprecated: true
         state:
           anyOf:
-          - $ref: '#/components/schemas/NodeState'
+          - $ref: '#/components/schemas/NodeState-Output'
           - type: 'null'
           description: The node's state object
         bootOptions:
@@ -13706,9 +14289,6 @@ components:
       - serviceState
       - serviceUuid
       title: NodeGetIdle
-      example:
-        service_state: idle
-        service_uuid: 3fa85f64-5717-4562-b3fc-2c963f66afa6
     NodeGetUnknown:
       properties:
         serviceState:
@@ -13870,7 +14450,41 @@ components:
       - owner
       - myAccessRights
       title: NodeServiceGet
-    NodeState:
+    NodeShareState:
+      properties:
+        locked:
+          type: boolean
+          title: Locked
+          description: True if the node is locked, False otherwise
+        current_user_groupids:
+          anyOf:
+          - items:
+              type: integer
+              exclusiveMinimum: true
+              minimum: 0
+            type: array
+          - type: 'null'
+          title: Current User Groupids
+          description: Group(s) that currently have access to the node (or locked
+            it)
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareStatus'
+          - type: 'null'
+          description: Reason why the node is locked, None if not locked
+      additionalProperties: false
+      type: object
+      required:
+      - locked
+      title: NodeShareState
+    NodeShareStatus:
+      type: string
+      enum:
+      - OPENING
+      - OPENED
+      - CLOSING
+      title: NodeShareStatus
+    NodeState-Input:
       properties:
         modified:
           type: boolean
@@ -13900,6 +14514,49 @@ components:
           description: current progress of the task if available (None if not started
             or not a computational task)
           default: 0
+        lock_state:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareState'
+          - type: 'null'
+          description: the node's lock state
+      additionalProperties: false
+      type: object
+      title: NodeState
+    NodeState-Output:
+      properties:
+        modified:
+          type: boolean
+          title: Modified
+          description: true if the node's outputs need to be re-computed
+          default: true
+        dependencies:
+          items:
+            type: string
+            format: uuid
+          type: array
+          uniqueItems: true
+          title: Dependencies
+          description: contains the node inputs dependencies if they need to be computed
+            first
+        currentStatus:
+          $ref: '#/components/schemas/RunningState'
+          description: the node's current state
+          default: NOT_STARTED
+        progress:
+          anyOf:
+          - type: number
+            maximum: 1.0
+            minimum: 0.0
+          - type: 'null'
+          title: Progress
+          description: current progress of the task if available (None if not started
+            or not a computational task)
+          default: 0
+        lock_state:
+          anyOf:
+          - $ref: '#/components/schemas/NodeShareState'
+          - type: 'null'
+          description: the node's lock state
       additionalProperties: false
       type: object
       title: NodeState
@@ -13931,35 +14588,6 @@ components:
       - service_key
       - running_time_in_hours
       title: OsparcCreditsAggregatedByServiceGet
-    Owner:
-      properties:
-        user_id:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          description: Owner's user id
-          minimum: 0
-        first_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: First Name
-          description: Owner's first name
-        last_name:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Last Name
-          description: Owner's last name
-      additionalProperties: false
-      type: object
-      required:
-      - user_id
-      - first_name
-      - last_name
-      title: Owner
     PageLinks:
       properties:
         self:
@@ -14605,7 +15233,7 @@ components:
             tasks)
         node_states:
           additionalProperties:
-            $ref: '#/components/schemas/NodeState'
+            $ref: '#/components/schemas/NodeState-Output'
           propertyNames:
             format: uuid
           type: object
@@ -14653,62 +15281,6 @@ components:
       - x
       - y
       title: Position
-    PreRegisteredUserGet:
-      properties:
-        firstName:
-          type: string
-          title: Firstname
-        lastName:
-          type: string
-          title: Lastname
-        email:
-          type: string
-          format: email
-          title: Email
-        institution:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Institution
-          description: company, university, ...
-        phone:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Phone
-        address:
-          type: string
-          title: Address
-        city:
-          type: string
-          title: City
-        state:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: State
-        postalCode:
-          type: string
-          title: Postalcode
-        country:
-          type: string
-          title: Country
-        extras:
-          additionalProperties: true
-          type: object
-          title: Extras
-          description: Keeps extra information provided in the request form.
-      type: object
-      required:
-      - firstName
-      - lastName
-      - email
-      - phone
-      - address
-      - city
-      - postalCode
-      - country
-      title: PreRegisteredUserGet
     Preference:
       properties:
         defaultValue:
@@ -15236,7 +15808,7 @@ components:
           title: Lastchangedate
         state:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         trashedAt:
           anyOf:
@@ -15439,7 +16011,7 @@ components:
           title: Lastchangedate
         state:
           anyOf:
-          - $ref: '#/components/schemas/ProjectState'
+          - $ref: '#/components/schemas/ProjectStateOutputSchema'
           - type: 'null'
         trashedAt:
           anyOf:
@@ -15521,26 +16093,6 @@ components:
       - workspaceId
       - folderId
       title: ProjectListItem
-    ProjectLocked:
-      properties:
-        value:
-          type: boolean
-          title: Value
-          description: True if the project is locked
-        status:
-          $ref: '#/components/schemas/ProjectStatus'
-          description: The status of the project
-        owner:
-          anyOf:
-          - $ref: '#/components/schemas/Owner'
-          - type: 'null'
-          description: If locked, the user that owns the lock
-      additionalProperties: false
-      type: object
-      required:
-      - value
-      - status
-      title: ProjectLocked
     ProjectMetadataGet:
       properties:
         projectUuid:
@@ -15695,6 +16247,11 @@ components:
           anyOf:
           - $ref: '#/components/schemas/ProjectTemplateType'
           - type: 'null'
+        hidden:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Hidden
       type: object
       title: ProjectPatch
     ProjectPermalink:
@@ -15768,20 +16325,42 @@ components:
       - shareeEmail
       - confirmationLink
       title: ProjectShareAccepted
-    ProjectState:
+    ProjectShareStateOutputSchema:
       properties:
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+          description: The status of the project
         locked:
-          $ref: '#/components/schemas/ProjectLocked'
-          description: The project lock state
+          type: boolean
+          title: Locked
+          description: True if the project is locked
+        currentUserGroupids:
+          items:
+            type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          type: array
+          title: Currentusergroupids
+          description: Current users in the project (if the project is locked, the
+            list contains only the lock owner)
+      type: object
+      required:
+      - status
+      - locked
+      - currentUserGroupids
+      title: ProjectShareStateOutputSchema
+    ProjectStateOutputSchema:
+      properties:
+        shareState:
+          $ref: '#/components/schemas/ProjectShareStateOutputSchema'
         state:
           $ref: '#/components/schemas/ProjectRunningState'
           description: The project running state
-      additionalProperties: false
       type: object
       required:
-      - locked
+      - shareState
       - state
-      title: ProjectState
+      title: ProjectStateOutputSchema
     ProjectStatus:
       type: string
       enum:
@@ -15935,6 +16514,7 @@ components:
           title: Email
         phone:
           type: string
+          format: phone
           title: Phone
           description: Phone number E.164, needed on the deployments with 2FA
       additionalProperties: false
@@ -15974,6 +16554,20 @@ components:
       - name
       - message
       title: RegisterPhoneNextPage
+    RegisteredFunctionUpdate:
+      properties:
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      title: RegisteredFunctionUpdate
     RegisteredProjectFunctionGet:
       properties:
         functionClass:
@@ -16011,26 +16605,45 @@ components:
             type: object
           - type: 'null'
           title: Defaultinputs
-        uid:
+        uuid:
           type: string
           format: uuid
-          title: Uid
-        createdAt:
+          title: Uuid
+        creationDate:
           type: string
           format: date-time
-          title: Createdat
-        projectId:
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          format: date-time
+          title: Lastchangedate
+        templateId:
           type: string
           format: uuid
-          title: Projectid
+          title: Templateid
+        accessRights:
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
+        thumbnail:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
       type: object
       required:
       - inputSchema
       - outputSchema
       - defaultInputs
-      - uid
-      - createdAt
-      - projectId
+      - uuid
+      - creationDate
+      - lastChangeDate
+      - templateId
+      - accessRights
       title: RegisteredProjectFunctionGet
     RegisteredSolverFunctionGet:
       properties:
@@ -16069,14 +16682,18 @@ components:
             type: object
           - type: 'null'
           title: Defaultinputs
-        uid:
+        uuid:
           type: string
           format: uuid
-          title: Uid
-        createdAt:
+          title: Uuid
+        creationDate:
           type: string
           format: date-time
-          title: Createdat
+          title: Creationdate
+        lastChangeDate:
+          type: string
+          format: date-time
+          title: Lastchangedate
         solverKey:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
@@ -16085,15 +16702,30 @@ components:
           type: string
           pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
           title: Solverversion
+        accessRights:
+          additionalProperties:
+            $ref: '#/components/schemas/FunctionGroupAccessRightsGet'
+          type: object
+          title: Accessrights
+        thumbnail:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
       type: object
       required:
       - inputSchema
       - outputSchema
       - defaultInputs
-      - uid
-      - createdAt
+      - uuid
+      - creationDate
+      - lastChangeDate
       - solverKey
       - solverVersion
+      - accessRights
       title: RegisteredSolverFunctionGet
     ReplaceWalletAutoRecharge:
       properties:
@@ -17098,6 +17730,17 @@ components:
             const: hypertool
           - type: 'null'
           title: Templatetype
+        mode:
+          anyOf:
+          - type: string
+            enum:
+            - workbench
+            - app
+            - guided
+            - standalone
+            - pipeline
+          - type: 'null'
+          title: Mode
       additionalProperties: true
       type: object
       title: StudyUI
@@ -17138,6 +17781,17 @@ components:
             const: hypertool
           - type: 'null'
           title: Templatetype
+        mode:
+          anyOf:
+          - type: string
+            enum:
+            - workbench
+            - app
+            - guided
+            - standalone
+            - pipeline
+          - type: 'null'
+          title: Mode
       additionalProperties: true
       type: object
       title: StudyUI
@@ -17727,6 +18381,63 @@ components:
       required:
       - email
       title: UserAccountReject
+    UserAccountRestPreRegister:
+      properties:
+        firstName:
+          type: string
+          title: Firstname
+        lastName:
+          type: string
+          title: Lastname
+        email:
+          type: string
+          format: email
+          title: Email
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+          description: company, university, ...
+        phone:
+          anyOf:
+          - type: string
+            format: phone
+          - type: 'null'
+          title: Phone
+        address:
+          type: string
+          title: Address
+        city:
+          type: string
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+        postalCode:
+          type: string
+          title: Postalcode
+        country:
+          type: string
+          title: Country
+        extras:
+          additionalProperties: true
+          type: object
+          title: Extras
+          description: Keeps extra information provided in the request form.
+      type: object
+      required:
+      - firstName
+      - lastName
+      - email
+      - phone
+      - address
+      - city
+      - postalCode
+      - country
+      title: UserAccountRestPreRegister
     UserGet:
       properties:
         userId:
@@ -18294,6 +19005,37 @@ components:
       - write
       - delete
       title: WorkspacesGroupsBodyParams
+    _ConversationMessageCreateBodyParams:
+      properties:
+        content:
+          type: string
+          title: Content
+        type:
+          $ref: '#/components/schemas/ConversationMessageType'
+      additionalProperties: false
+      type: object
+      required:
+      - content
+      - type
+      title: _ConversationMessageCreateBodyParams
+    _ConversationsCreateBodyParams:
+      properties:
+        name:
+          type: string
+          title: Name
+        type:
+          $ref: '#/components/schemas/ConversationType'
+        extraContext:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Extracontext
+      type: object
+      required:
+      - name
+      - type
+      title: _ConversationsCreateBodyParams
     _InvitationDetails:
       properties:
         trialAccountDays:

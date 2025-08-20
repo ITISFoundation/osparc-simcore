@@ -440,7 +440,7 @@ python-multipart==0.0.20
     # via
     #   fastapi
     #   nicegui
-python-socketio==5.12.1
+python-socketio==5.13.0
     # via
     #   -r requirements/_base.in
     #   nicegui

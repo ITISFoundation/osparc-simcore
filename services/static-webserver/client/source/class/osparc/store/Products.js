@@ -38,23 +38,12 @@ qx.Class.define("osparc.store.Products", {
         }
 
         Promise.all([
-          osparc.data.Resources.fetch("productMetadata", "getUiConfig"),
-          osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json"),
+          this.__getUIConfig(),
           osparc.utils.Utils.fetchJSON("/resource/schemas/product-ui.json"),
         ])
           .then(values => {
-            let uiConfig = {};
-            const beUiConfig = values[0];
-            const feUiConfig = values[1];
-            const schema = values[2];
-            if (beUiConfig && beUiConfig["ui"] && Object.keys(beUiConfig["ui"]).length) {
-              uiConfig = beUiConfig["ui"];
-            } else {
-              const product = osparc.product.Utils.getProductName();
-              if (feUiConfig && product in feUiConfig) {
-                uiConfig = feUiConfig[product];
-              }
-            }
+            const uiConfig = values[0];
+            const schema = values[1];
             const ajvLoader = new qx.util.DynamicScriptLoader([
               "/resource/ajv/ajv-6-11-0.min.js",
               "/resource/object-path/object-path-0-11-4.min.js"
@@ -83,6 +72,46 @@ qx.Class.define("osparc.store.Products", {
           })
           .catch(console.error);
       });
+    },
+
+    __getUIConfig: function() {
+      return Promise.all([
+        this.__getUiConfigBackend(),
+        this.__getUiConfigFrontend(),
+      ])
+        .then(values => {
+          const beUiConfig = values[0];
+          if (beUiConfig) {
+            return beUiConfig;
+          }
+          const feUiConfig = values[1];
+          return feUiConfig || {};
+        });
+    },
+
+    __getUiConfigBackend: function() {
+      if (osparc.auth.Data.getInstance().isGuest()) {
+        // Guest users do not have access to product metadata
+        return Promise.resolve(null);
+      }
+      return osparc.data.Resources.fetch("productMetadata", "getUiConfig")
+        .then(response => {
+          if (response && response["ui"] && Object.keys(response["ui"]).length) {
+            return response["ui"];
+          }
+          return null;
+        });
+    },
+
+    __getUiConfigFrontend: function() {
+      return osparc.utils.Utils.fetchJSON("/resource/osparc/ui_config.json")
+        .then(uiConfig => {
+          const product = osparc.product.Utils.getProductName();
+          if (uiConfig && product in uiConfig) {
+            return uiConfig[product];
+          }
+          return null;
+        });
     },
 
     getPlusButtonUiConfig: function() {

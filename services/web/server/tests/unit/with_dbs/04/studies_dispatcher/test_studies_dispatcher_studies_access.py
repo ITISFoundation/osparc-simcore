@@ -12,6 +12,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
+from unittest import mock
 
 import pytest
 import redis.asyncio as aioredis
@@ -21,7 +22,10 @@ from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
 from models_library.progress_bar import ProgressReport
-from models_library.projects_state import ProjectLocked, ProjectStatus
+from models_library.projects_state import (
+    ProjectShareState,
+    ProjectStatus,
+)
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
@@ -144,8 +148,10 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     All projects in this module are UNLOCKED
     """
     mocker.patch(
-        "simcore_service_webserver.projects._projects_service._get_project_lock_state",
-        return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
+        "simcore_service_webserver.projects._projects_service._get_project_share_state",
+        return_value=ProjectShareState(
+            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
+        ),
     )
 
 
@@ -297,6 +303,7 @@ async def test_access_to_forbidden_study(
 
 
 async def test_access_study_anonymously(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
@@ -344,6 +351,7 @@ async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 async def test_access_study_by_logged_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     published_project: ProjectDict,
@@ -377,6 +385,7 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
@@ -421,7 +430,7 @@ async def test_access_cookie_of_expired_user(
         )
         await delete_task
 
-        await delete_user_without_projects(app, uid)
+        await delete_user_without_projects(app, user_id=uid)
         return uid
 
     user_id = await enforce_garbage_collect_guest(uid=data["id"])
@@ -458,6 +467,7 @@ async def test_access_cookie_of_expired_user(
     ],
 )
 async def test_guest_user_is_not_garbage_collected(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     number_of_simultaneous_requests: int,
     web_server: TestServer,
     aiohttp_client: Callable,

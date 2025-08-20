@@ -165,7 +165,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         flex: 1
       });
 
-      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton().set({
+      const outputsBtn = this.__outputsBtn = new qx.ui.form.ToggleButton().set({
         width: 110,
         label: this.tr("Outputs"),
         icon: "@FontAwesome5Solid/sign-out-alt/14",
@@ -198,7 +198,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
       });
       mainView.bind("backgroundColor", outputsLayout, "backgroundColor");
       mainView.bind("backgroundColor", outputsLayout.getChildControl("frame"), "backgroundColor");
-      this._outputsBtn.bind("value", outputsLayout, "visibility", {
+      this.__outputsBtn.bind("value", outputsLayout, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
       hBox.add(outputsLayout);
@@ -217,7 +217,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
     __openServiceDetails: function() {
       const node = this.getNode();
-      const metadata = node.getMetaData();
+      const metadata = node.getMetadata();
       const serviceDetails = new osparc.info.ServiceLarge(metadata, {
         nodeId: node.getNodeId(),
         label: node.getLabel(),
@@ -266,7 +266,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
     },
 
     getOutputsButton: function() {
-      return this._outputsBtn;
+      return this.__outputsBtn;
     },
 
     getMainView: function() {
@@ -275,13 +275,6 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
 
     getSettingsLayout: function() {
       return this._settingsLayout;
-    },
-
-    /**
-      * @abstract
-      */
-    isSettingsGroupShowable: function() {
-      throw new Error("Abstract method called!");
     },
 
     /**
@@ -415,7 +408,7 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
         node.getStatus().addListener("changeProgress", () => updateProgress(), this);
       }
 
-      node.bind("outputs", this._outputsBtn, "label", {
+      node.bind("outputs", this.__outputsBtn, "label", {
         converter: outputsData => {
           let outputCounter = 0;
           Object.keys(outputsData).forEach(outKey => {
@@ -427,7 +420,17 @@ qx.Class.define("osparc.node.slideshow.BaseNodeView", {
           return this.tr("Outputs") + ` (${outputCounter})`;
         }
       });
-      this._outputsBtn.addListener("changeLabel", () => osparc.utils.Utils.makeButtonBlink(this._outputsBtn, 2));
+      this.__outputsBtn.addListener("changeLabel", () => {
+        // new output received
+        // make button blink
+        osparc.utils.Utils.makeButtonBlink(this.__outputsBtn, 2);
+        // and show Flash Message
+        const outputs = this.getNode().getOutputs();
+        if (outputs && Object.keys(outputs).length > 0) {
+          const flashMsg = this.tr("New Outputs received");
+          osparc.FlashMessenger.getInstance().logAs(flashMsg, "INFO");
+        }
+      });
 
       this._addLogger();
     }

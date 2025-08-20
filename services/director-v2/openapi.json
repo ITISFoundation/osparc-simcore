@@ -2405,6 +2405,58 @@
         "title": "NATRule",
         "description": "Content of \"simcore.service.containers-allowed-outgoing-permit-list\" label"
       },
+      "NodeShareState": {
+        "properties": {
+          "locked": {
+            "type": "boolean",
+            "title": "Locked",
+            "description": "True if the node is locked, False otherwise"
+          },
+          "current_user_groupids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": true,
+                  "minimum": 0
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current User Groupids",
+            "description": "Group(s) that currently have access to the node (or locked it)"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NodeShareStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Reason why the node is locked, None if not locked"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "locked"
+        ],
+        "title": "NodeShareState"
+      },
+      "NodeShareStatus": {
+        "type": "string",
+        "enum": [
+          "OPENING",
+          "OPENED",
+          "CLOSING"
+        ],
+        "title": "NodeShareStatus"
+      },
       "NodeState": {
         "properties": {
           "modified": {
@@ -2442,6 +2494,17 @@
             "title": "Progress",
             "description": "current progress of the task if available (None if not started or not a computational task)",
             "default": 0
+          },
+          "lock_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NodeShareState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "the node's lock state"
           }
         },
         "additionalProperties": false,
@@ -2851,6 +2914,11 @@
         "properties": {
           "paths_mapping": {
             "$ref": "#/components/schemas/PathMappingsLabel"
+          },
+          "is_collaborative": {
+            "type": "boolean",
+            "title": "Is Collaborative",
+            "default": false
           },
           "simcore.service.compose-spec": {
             "anyOf": [

@@ -13,7 +13,8 @@ from contextlib import contextmanager
 from typing import TypeVar
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps
+from common_library.user_messages import user_message
+from models_library.rest_error import EnvelopedError
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from ..mimetype_constants import MIMETYPE_APPLICATION_JSON
@@ -25,14 +26,13 @@ ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list 
 
 @contextmanager
 def handle_validation_as_http_error(
-    *, error_msg_template: str, resource_name: str, use_error_v1: bool
+    *, error_msg_template: str, resource_name: str
 ) -> Iterator[None]:
     """Context manager to handle ValidationError and reraise them as HTTPUnprocessableEntity error
 
     Arguments:
         error_msg_template -- _description_
         resource_name --
-        use_error_v1 -- If True, it uses new error response
 
     Raises:
         web.HTTPUnprocessableEntity: (422) raised from a ValidationError
@@ -43,49 +43,37 @@ def handle_validation_as_http_error(
         yield
 
     except ValidationError as err:
-        details = [
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/443
+        _details = [
             {
-                "loc": ".".join(map(str, e["loc"])),
+                "loc": ".".join(map(str, e["loc"])),  # e.g. "body.name"
                 "msg": e["msg"],
                 "type": e["type"],
             }
             for e in err.errors()
         ]
-        user_error_message = error_msg_template.format(
-            failed=", ".join(d["loc"] for d in details)
-        )
 
-        if use_error_v1:
-            # NOTE: keeps backwards compatibility until ligher error response is implemented in the entire API
-            # Implements servicelib.aiohttp.rest_responses.ErrorItemType
-            errors = [
-                {
-                    "code": e["type"],
-                    "message": e["msg"],
-                    "resource": resource_name,
-                    "field": e["loc"],
+        errors_details = [
+            {
+                "code": e["type"],
+                "message": e["msg"],
+                "resource": resource_name,
+                "field": e["loc"],
+            }
+            for e in _details
+        ]
+
+        error_json_str = EnvelopedError.model_validate(
+            {
+                "error": {
+                    "message": error_msg_template.format(
+                        failed=", ".join(e["field"] for e in errors_details)
+                    ),
+                    "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "errors": errors_details,
                 }
-                for e in details
-            ]
-            error_json_str = json_dumps(
-                {
-                    "error": {
-                        "status": status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        "errors": errors,
-                    }
-                }
-            )
-        else:
-            # NEW proposed error for https://github.com/ITISFoundation/osparc-simcore/issues/443
-            error_json_str = json_dumps(
-                {
-                    "error": {
-                        "msg": user_error_message,
-                        "resource": resource_name,  # optional
-                        "details": details,  # optional
-                    }
-                }
-            )
+            }
+        ).model_dump_json(exclude_unset=True, exclude_none=True)
 
         raise web.HTTPUnprocessableEntity(  # 422
             text=error_json_str,
@@ -104,14 +92,9 @@ def handle_validation_as_http_error(
 def parse_request_path_parameters_as(
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
-    *,
-    use_enveloped_error_v1: bool = True,
 ) -> ModelClass:
     """Parses path parameters from 'request' and validates against 'parameters_schema'
 
-
-    Keyword Arguments:
-        use_enveloped_error_v1 -- new enveloped error model (default: {True})
 
     Raises:
         web.HTTPUnprocessableEntity: (422) if validation of parameters  fail
@@ -121,9 +104,10 @@ def parse_request_path_parameters_as(
     """
 
     with handle_validation_as_http_error(
-        error_msg_template="Invalid parameter/s '{failed}' in request path",
+        error_msg_template=user_message(
+            "Invalid parameter/s '{failed}' in request path"
+        ),
         resource_name=request.rel_url.path,
-        use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.match_info)
         return parameters_schema_cls.model_validate(data)
@@ -132,14 +116,9 @@ def parse_request_path_parameters_as(
 def parse_request_query_parameters_as(
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
-    *,
-    use_enveloped_error_v1: bool = True,
 ) -> ModelClass:
     """Parses query parameters from 'request' and validates against 'parameters_schema'
 
-
-    Keyword Arguments:
-        use_enveloped_error_v1 -- new enveloped error model (default: {True})
 
     Raises:
         web.HTTPUnprocessableEntity: (422) if validation of parameters  fail
@@ -149,9 +128,10 @@ def parse_request_query_parameters_as(
     """
 
     with handle_validation_as_http_error(
-        error_msg_template="Invalid parameter/s '{failed}' in request query",
+        error_msg_template=user_message(
+            "Invalid parameter/s '{failed}' in request query"
+        ),
         resource_name=request.rel_url.path,
-        use_error_v1=use_enveloped_error_v1,
     ):
         # NOTE: Currently, this does not take into consideration cases where there are multiple
         # query parameters with the same key. However, we are not using such cases anywhere at the moment.
@@ -166,13 +146,12 @@ def parse_request_query_parameters_as(
 def parse_request_headers_as(
     parameters_schema_cls: type[ModelClass],
     request: web.Request,
-    *,
-    use_enveloped_error_v1: bool = True,
 ) -> ModelClass:
     with handle_validation_as_http_error(
-        error_msg_template="Invalid parameter/s '{failed}' in request headers",
+        error_msg_template=user_message(
+            "Invalid parameter/s '{failed}' in request headers"
+        ),
         resource_name=request.rel_url.path,
-        use_error_v1=use_enveloped_error_v1,
     ):
         data = dict(request.headers)
         return parameters_schema_cls.model_validate(data)
@@ -181,8 +160,6 @@ def parse_request_headers_as(
 async def parse_request_body_as(
     model_schema_cls: type[ModelOrListOrDictType],
     request: web.Request,
-    *,
-    use_enveloped_error_v1: bool = True,
 ) -> ModelOrListOrDictType:
     """Parses and validates request body against schema
 
@@ -197,9 +174,8 @@ async def parse_request_body_as(
         Validated model of request body
     """
     with handle_validation_as_http_error(
-        error_msg_template="Invalid field/s '{failed}' in request body",
+        error_msg_template=user_message("Invalid field/s '{failed}' in request body"),
         resource_name=request.rel_url.path,
-        use_error_v1=use_enveloped_error_v1,
     ):
         if not request.can_read_body:
             # requests w/o body e.g. when model-schema is fully optional

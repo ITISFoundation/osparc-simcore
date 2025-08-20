@@ -10,8 +10,6 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     MyFunctionPermissionsGet,
     MyPermissionGet,
-    MyPhoneConfirm,
-    MyPhoneRegister,
     MyProfileRestGet,
     MyProfileRestPatch,
     MyTokenCreate,
@@ -31,6 +29,10 @@ from simcore_service_webserver.user_notifications._models import (
     UserNotification,
     UserNotificationCreate,
     UserNotificationPatch,
+)
+from simcore_service_webserver.users._controller.rest._rest_schemas import (
+    MyPhoneConfirm,
+    MyPhoneRegister,
 )
 
 router = APIRouter(prefix=f"/{API_VTAG}", tags=["users"])

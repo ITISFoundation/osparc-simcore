@@ -34,7 +34,6 @@ async def test_unauthorized_to_change_password(client: TestClient, new_password:
             "confirm": new_password,
         },
     )
-    assert response.status == 401
     await assert_status(response, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -54,7 +53,7 @@ async def test_wrong_current_password(
             },
         )
         assert response.url.path == url.path
-        assert response.status == 422
+        assert response.status == status.HTTP_422_UNPROCESSABLE_ENTITY
         assert MSG_WRONG_PASSWORD in await response.text()
         await assert_status(
             response, status.HTTP_422_UNPROCESSABLE_ENTITY, MSG_WRONG_PASSWORD
@@ -90,6 +89,7 @@ async def test_wrong_confirm_pass(client: TestClient, new_password: str):
                     "field": "confirm",
                 }
             ],
+            "message": "Invalid field/s 'confirm' in request body",
         }
 
 
@@ -110,13 +110,13 @@ async def test_success(client: TestClient, new_password: str):
             },
         )
         assert response.url.path == url_change_password.path
-        assert response.status == 200
+        assert response.status == status.HTTP_200_OK
         assert MSG_PASSWORD_CHANGED in await response.text()
         await assert_status(response, status.HTTP_200_OK, MSG_PASSWORD_CHANGED)
 
         # logout
         response = await client.post(f"{url_logout}")
-        assert response.status == 200
+        assert response.status == status.HTTP_200_OK
         assert response.url.path == url_logout.path
 
         # login with new password
@@ -127,6 +127,6 @@ async def test_success(client: TestClient, new_password: str):
                 "password": new_password,
             },
         )
-        assert response.status == 200
+        assert response.status == status.HTTP_200_OK
         assert response.url.path == url_login.path
         await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)

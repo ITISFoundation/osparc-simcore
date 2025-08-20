@@ -257,15 +257,18 @@ async def test_create_and_link_user_from_pre_registration(
     # Invitation link is clicked and the user is created and linked to the pre-registration
     async with transaction_context(asyncpg_engine) as connection:
         # user gets created
-        new_user = await UsersRepo.new_user(
+        repo = UsersRepo(asyncpg_engine)
+        new_user = await repo.new_user(
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
-        await UsersRepo.link_and_update_user_from_pre_registration(
-            connection, new_user_id=new_user.id, new_user_email=new_user.email
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
         )
 
     # Verify the user was created and linked
@@ -291,23 +294,23 @@ async def test_get_billing_details_from_pre_registration(
 
     # Create the user
     async with transaction_context(asyncpg_engine) as connection:
-        new_user = await UsersRepo.new_user(
+        repo = UsersRepo(asyncpg_engine)
+        new_user = await repo.new_user(
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
-        await UsersRepo.link_and_update_user_from_pre_registration(
-            connection, new_user_id=new_user.id, new_user_email=new_user.email
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
         )
 
     # Get billing details
-    async with pass_or_acquire_connection(asyncpg_engine) as connection:
-        invoice_data = await UsersRepo.get_billing_details(
-            connection, user_id=new_user.id
-        )
-        assert invoice_data is not None
+    invoice_data = await repo.get_billing_details(user_id=new_user.id)
+    assert invoice_data is not None
 
     # Test UserAddress model conversion
     user_address = UserAddress.create_from_db(invoice_data)
@@ -331,15 +334,18 @@ async def test_update_user_from_pre_registration(
 
     # Create the user and link to pre-registration
     async with transaction_context(asyncpg_engine) as connection:
-        new_user = await UsersRepo.new_user(
+        repo = UsersRepo(asyncpg_engine)
+        new_user = await repo.new_user(
             connection,
             email=pre_email,
             password_hash="123456",  # noqa: S106
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
-        await UsersRepo.link_and_update_user_from_pre_registration(
-            connection, new_user_id=new_user.id, new_user_email=new_user.email
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
         )
 
     # Update the user manually
@@ -358,8 +364,11 @@ async def test_update_user_from_pre_registration(
 
     # Re-link the user to pre-registration, which should override manual updates
     async with transaction_context(asyncpg_engine) as connection:
-        await UsersRepo.link_and_update_user_from_pre_registration(
-            connection, new_user_id=new_user.id, new_user_email=new_user.email
+        repo = UsersRepo(asyncpg_engine)
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
         )
 
         result = await connection.execute(
@@ -487,20 +496,24 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
         assert registrations[1].account_request_reviewed_by == product_owner_user["id"]
         assert registrations[1].account_request_reviewed_at is not None
 
-    # 3.Now create a user account with the approved pre-registration
+    # 3. Now create a user account and link ALL pre-registrations for this email
     async with transaction_context(asyncpg_engine) as connection:
-        new_user = await UsersRepo.new_user(
+        repo = UsersRepo(asyncpg_engine)
+        new_user = await repo.new_user(
             connection,
             email=user_email,
             password_hash="123456",  # noqa: S106
             status=UserStatus.ACTIVE,
             expires_at=None,
         )
-        await UsersRepo.link_and_update_user_from_pre_registration(
-            connection, new_user_id=new_user.id, new_user_email=new_user.email
+        # Link all pre-registrations for this email, regardless of approval status or product
+        await repo.link_and_update_user_from_pre_registration(
+            connection,
+            new_user_id=new_user.id,
+            new_user_email=new_user.email,
         )
 
-    # Verify both pre-registrations are linked to the new user
+    # Verify ALL pre-registrations for this email are linked to the user
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         result = await connection.execute(
             sa.select(
@@ -515,5 +528,17 @@ async def test_user_preregisters_for_multiple_products_with_different_outcomes(
         registrations = result.fetchall()
         assert len(registrations) == 2
 
-        # Both registrations should be linked to the same user, regardless of approval status
-        assert all(reg.user_id == new_user.id for reg in registrations)
+        # Both pre-registrations should be linked to the user, regardless of approval status
+        product1_reg = next(
+            reg for reg in registrations if reg.product_name == product1["name"]
+        )
+        product2_reg = next(
+            reg for reg in registrations if reg.product_name == product2["name"]
+        )
+
+        assert product1_reg.user_id == new_user.id  # Linked
+        assert product2_reg.user_id == new_user.id  # Linked
+
+        # Verify approval status is preserved independently of linking
+        assert product1_reg.account_request_status == AccountRequestStatus.APPROVED
+        assert product2_reg.account_request_status == AccountRequestStatus.REJECTED

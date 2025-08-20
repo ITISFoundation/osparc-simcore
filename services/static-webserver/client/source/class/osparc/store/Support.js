@@ -160,12 +160,15 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getMailToLabel: function(email, subject) {
-      const mailto = new qx.ui.basic.Label(this.mailToLink(email, subject, false)).set({
+      const mailto = new qx.ui.basic.Label().set({
         font: "text-14",
         allowGrowX: true, // let it grow to make it easier to select
         selectable: true,
         rich: true,
       });
+      if (email) {
+        mailto.setValue(this.mailToLink(email, subject, false));
+      }
       return mailto;
     },
 

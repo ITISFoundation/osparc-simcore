@@ -10,12 +10,12 @@ import simcore_postgres_database.cli
 import sqlalchemy as sa
 import sqlalchemy.engine
 import sqlalchemy.exc
+from common_library.users_enums import UserRole
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
-from simcore_postgres_database.models.users import users
 
 
 @pytest.fixture
@@ -66,9 +66,24 @@ def test_populate_projects_to_jobs_during_migration(
 
         # INSERT data (emulates data in-place)
         user_data = random_user(
-            faker, name="test_populate_projects_to_jobs_during_migration"
+            faker,
+            name="test_populate_projects_to_jobs_during_migration",
+            role=UserRole.USER.value,
         )
-        stmt = users.insert().values(**user_data).returning(users.c.id)
+        user_data["password_hash"] = (
+            "password_hash_was_still_here_at_this_migration_commit"  # noqa: S105
+        )
+
+        columns = list(user_data.keys())
+        values_clause = ", ".join(f":{col}" for col in columns)
+        columns_clause = ", ".join(columns)
+        stmt = sa.text(
+            f"""
+            INSERT INTO users ({columns_clause})
+            VALUES ({values_clause})
+            RETURNING id
+            """  # noqa: S608
+        ).bindparams(**user_data)
         result = conn.execute(stmt)
         user_id = result.scalar()
 

@@ -72,10 +72,16 @@ class ProjectDBGet(BaseModel):
     )
 
 
+class ProjectWithWorkbenchDBGet(ProjectDBGet):
+    # This model is used to read the project with its workbench
+    workbench: NodesDict
+
+
 class ProjectJobDBGet(ProjectDBGet):
     workbench: NodesDict
 
     job_parent_resource_name: str
+    storage_assets_deleted: bool
 
 
 class ProjectWithTrashExtra(ProjectDBGet):

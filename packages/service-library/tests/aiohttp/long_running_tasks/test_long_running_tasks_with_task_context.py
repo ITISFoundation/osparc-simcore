@@ -27,7 +27,11 @@ from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.long_running_tasks.models import TaskGet, TaskId
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.redis import RedisSettings
 
+pytest_simcore_core_services_selection = [
+    "redis",
+]
 # WITH TASK CONTEXT
 # NOTE: as the long running task framework may be used in any number of services
 # in some cases there might be specific so-called task contexts.
@@ -61,7 +65,9 @@ def task_context_decorator(task_context: TaskContext):
 
 @pytest.fixture
 def app_with_task_context(
-    server_routes: web.RouteTableDef, task_context_decorator
+    server_routes: web.RouteTableDef,
+    task_context_decorator,
+    redis_service: RedisSettings,
 ) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
@@ -69,6 +75,8 @@ def app_with_task_context(
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(
         app,
+        redis_settings=redis_service,
+        redis_namespace="test",
         router_prefix="/futures_with_task_context",
         task_request_context_decorator=task_context_decorator,
     )

@@ -19,6 +19,7 @@ from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3Fil
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user
+from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.s3 import S3Settings
@@ -40,18 +41,16 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
     # which would turn this test too complex.
 
     # pylint: disable=no-value-for-parameter
-    with postgres_db.connect() as conn:
-        result = conn.execute(
-            users.insert().values(**random_user(name="test")).returning(users.c.id)
-        )
-        row = result.first()
-        assert row
-        usr_id = row[users.c.id]
+    with sync_insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        postgres_db,
+        table=users,
+        values=random_user(
+            name="test",
+        ),
+        pk_col=users.c.id,
+    ) as user_row:
 
-    yield usr_id
-
-    with postgres_db.connect() as conn:
-        conn.execute(users.delete().where(users.c.id == usr_id))
+        yield user_row["id"]
 
 
 @pytest.fixture

@@ -17,7 +17,6 @@ import pytest
 from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from common_library.users_enums import UserRole
-from faker import Faker
 from models_library.api_schemas_webserver.groups import GroupUserGet
 from models_library.api_schemas_webserver.users import (
     MyProfileRestGet,
@@ -33,6 +32,7 @@ from pytest_simcore.helpers.webserver_login import (
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.models import PhoneNumberStr
 from simcore_service_webserver.user_preferences._service import (
     get_frontend_user_preferences_aggregation,
 )
@@ -602,7 +602,6 @@ async def test_phone_registration_basic_workflow(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    faker: Faker,
 ):
     assert client.app
 
@@ -613,9 +612,11 @@ async def test_phone_registration_basic_workflow(
 
     initial_profile = MyProfileRestGet.model_validate(data)
     initial_phone = initial_profile.phone
+    assert initial_phone
 
     # REGISTER phone number
-    new_phone = faker.phone_number()
+    # Change the last 3 digits of the initial phone number to '999'
+    new_phone = f"{initial_phone[:-3]}999"
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -658,7 +659,6 @@ async def test_phone_registration_workflow(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    faker: Faker,
 ):
     assert client.app
 
@@ -669,9 +669,10 @@ async def test_phone_registration_workflow(
 
     initial_profile = MyProfileRestGet.model_validate(data)
     initial_phone = initial_profile.phone
+    assert initial_phone
 
     # STEP 1: REGISTER phone number
-    new_phone = faker.phone_number()
+    new_phone = f"{initial_phone[:-3]}999"  # Change the last 3 digits to '999'
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -714,12 +715,12 @@ async def test_phone_registration_with_resend(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
     # STEP 1: REGISTER phone number
-    new_phone = faker.phone_number()
+    new_phone = user_phone_number
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -760,12 +761,12 @@ async def test_phone_registration_change_existing_phone(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
     # Set initial phone
-    first_phone = faker.phone_number()
+    first_phone = user_phone_number
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -785,7 +786,8 @@ async def test_phone_registration_change_existing_phone(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # Change to new phone
-    new_phone = faker.phone_number()
+    # Create a different phone number by changing the last digits
+    new_phone = user_phone_number[:-4] + "9999"
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -859,12 +861,12 @@ async def test_phone_confirm_with_wrong_code(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
     # STEP 1: REGISTER phone number
-    new_phone = faker.phone_number()
+    new_phone = user_phone_number
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -890,12 +892,12 @@ async def test_phone_confirm_with_invalid_code_format(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
     # STEP 1: REGISTER phone number
-    new_phone = faker.phone_number()
+    new_phone = user_phone_number
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -950,12 +952,12 @@ async def test_phone_confirm_with_empty_code(
     user_role: UserRole,
     logged_user: UserInfoDict,
     client: TestClient,
-    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
     # STEP 1: REGISTER phone number
-    new_phone = faker.phone_number()
+    new_phone = user_phone_number
     url = client.app.router["my_phone_register"].url_for()
     resp = await client.post(
         f"{url}",
@@ -988,7 +990,7 @@ async def test_phone_register_access_rights(
     logged_user: UserInfoDict,
     client: TestClient,
     expected: HTTPStatus,
-    faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ):
     assert client.app
 
@@ -997,7 +999,7 @@ async def test_phone_register_access_rights(
     resp = await client.post(
         f"{url}",
         json={
-            "phone": faker.phone_number(),
+            "phone": user_phone_number,
         },
     )
     await assert_status(resp, expected)

@@ -18,8 +18,9 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt, TypeAdapter
-from servicelib.logging_utils import log_decorator
-from servicelib.rabbitmq import RabbitMQRPCClient
+
+from ....logging_utils import log_decorator
+from ....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 

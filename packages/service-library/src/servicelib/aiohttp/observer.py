@@ -8,8 +8,8 @@ from collections import defaultdict
 from collections.abc import Callable
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ensure_single_setup
 
+from ..aiohttp.application_setup import ensure_single_setup
 from ..utils import logged_gather
 
 log = logging.getLogger(__name__)

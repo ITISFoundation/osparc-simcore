@@ -6,6 +6,7 @@
 
 
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -24,6 +25,7 @@ from simcore_service_webserver.projects.models import ProjectDict
 )
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_projects_groups_full_workflow(  # noqa: PLR0915
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -237,6 +239,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_share_project(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -303,6 +306,7 @@ async def test_share_project(
     ],
 )
 async def test_share_project_with_roles(
+    with_dev_features_enabled: None,
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 import simcore_sdk
+from faker import Faker
 from helpers.utils_port_v2 import CONSTANT_UUID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
@@ -85,3 +86,8 @@ def constant_uuid4(mocker: MockerFixture) -> None:
         "simcore_sdk.node_ports_common.data_items_utils.uuid4",
         return_value=CONSTANT_UUID,
     )
+
+
+@pytest.fixture
+def mock_app_name(faker: Faker) -> str:
+    return faker.pystr()

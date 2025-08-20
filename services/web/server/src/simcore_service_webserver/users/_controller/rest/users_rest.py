@@ -3,8 +3,6 @@ from contextlib import suppress
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
-    MyPhoneConfirm,
-    MyPhoneRegister,
     MyProfileRestGet,
     MyProfileRestPatch,
     UserGet,
@@ -30,7 +28,7 @@ from ....utils_aiohttp import envelope_json_response
 from ... import _users_service
 from ..._users_web import RegistrationSessionManager
 from ._rest_exceptions import handle_rest_requests_exceptions
-from ._rest_schemas import UsersRequestContext
+from ._rest_schemas import MyPhoneConfirm, MyPhoneRegister, UsersRequestContext
 
 _logger = logging.getLogger(__name__)
 

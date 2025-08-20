@@ -19,7 +19,7 @@
 qx.Class.define("osparc.ui.basic.AvatarGroup", {
   extend: qx.ui.core.Widget,
 
-  construct: function(size = 30, orientation = "left", maxWidth = 150) {
+  construct: function(size = 32, orientation = "right", maxWidth = 150) {
     this.base(arguments);
 
     this.set({
@@ -28,12 +28,15 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
       backgroundColor: null,
       width: maxWidth,
       maxWidth: maxWidth,
+      allowGrowY: false,
     });
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.__avatarSize = size;
     this.__orientation = orientation;
     this.__maxVisible = Math.max(1, Math.floor(maxWidth/size) - 1); // Ensure at least 1 visible avatar
+    this.__userGroupIds = [];
+    this.__avatars = [];
 
     this.__isPointerInside = false;
     this.__onGlobalPointerMove = this.__onGlobalPointerMove.bind(this);
@@ -43,26 +46,47 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
   members: {
     __avatarSize: null,
     __maxVisible: null,
-    __users: null,
+    __userGroupIds: null,
     __avatars: null,
     __collapseTimeout: null,
     __isPointerInside: null,
     __onGlobalPointerMove: null,
 
-    setUsers: function(users) {
-      this.__users = users;
-      this.__buildAvatars();
+    setUserGroupIds: function(userGroupIds) {
+      if (
+        userGroupIds.length &&
+        JSON.stringify(userGroupIds) === JSON.stringify(this.__userGroupIds)
+      ) {
+        return;
+      }
+      this.__userGroupIds = userGroupIds || [];
+      const usersStore = osparc.store.Users.getInstance();
+      const userPromises = userGroupIds.map(userGroupId => usersStore.getUser(userGroupId));
+      const users = [];
+      Promise.all(userPromises)
+        .then(usersResult => {
+          usersResult.forEach(user => {
+            users.push({
+              name: user.getUsername(),
+              avatar: user.getThumbnail(),
+            });
+          });
+          this.__buildAvatars(users);
+        })
+        .catch(error => {
+          console.error("Failed to fetch user data for avatars:", error);
+        });
     },
 
-    __buildAvatars() {
+    __buildAvatars(users) {
       this._removeAll();
       this.__avatars = [];
 
-      const usersToShow = this.__users.slice(0, this.__maxVisible);
+      const usersToShow = users.slice(0, this.__maxVisible);
       const totalAvatars = [...usersToShow];
-      if (this.__users.length > this.__maxVisible) {
+      if (users.length > this.__maxVisible) {
         totalAvatars.push({
-          name: `+${this.__users.length - this.__maxVisible}`,
+          name: `+${users.length - this.__maxVisible}`,
           isExtra: true
         });
       }

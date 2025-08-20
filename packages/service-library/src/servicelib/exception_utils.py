@@ -6,7 +6,8 @@ from functools import wraps
 from typing import Any, Final, ParamSpec, TypeVar
 
 from pydantic import BaseModel, Field, NonNegativeFloat, PrivateAttr
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+
+from .logging_errors import create_troubleshootting_log_kwargs
 
 _logger = logging.getLogger(__name__)
 

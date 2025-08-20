@@ -1,17 +1,22 @@
 import asyncio
 import logging
+import os
 import tempfile
 from asyncio.streams import StreamReader
+from datetime import timedelta
 from pathlib import Path
 from textwrap import dedent
 from typing import Final
 from uuid import uuid4
 
 from fastapi import FastAPI
+from servicelib.container_utils import run_command_in_container
 from settings_library.utils_r_clone import resolve_provider
 
 from ..core.settings import ApplicationSettings
 from ..models.volumes import DynamicServiceVolumeLabels, VolumeDetails
+
+_TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 
 _logger = logging.getLogger(__name__)
 
@@ -107,6 +112,15 @@ def _log_expected_operation(
     _logger.log(log_level, formatted_message)
 
 
+async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
+    self_container = os.environ["HOSTNAME"]
+    await run_command_in_container(
+        self_container,
+        command=f"chmod -R o+rX '{source_dir}'",
+        timeout=_TIMEOUT_PERMISSION_CHANGES.total_seconds(),
+    )
+
+
 async def _store_in_s3(
     settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails
 ) -> None:
@@ -147,6 +161,8 @@ async def _store_in_s3(
     _log_expected_operation(
         volume_details.labels, s3_path, r_clone_ls_output, volume_name
     )
+
+    await _ensure_permissions_on_source_dir(source_dir)
 
     # sync files via rclone
     r_clone_sync = [

@@ -12,8 +12,8 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .._meta import API_VTAG as VTAG
 from ..login._emails_service import AttachmentTuple, send_email_from_template, themed
 from ..login.decorators import login_required
-from ..login.login_repository_legacy import AsyncpgStorage, get_plugin_storage
 from ..products import products_web
+from ..users import users_service
 from ._utils import json2html
 
 _logger = logging.getLogger(__name__)
@@ -57,11 +57,9 @@ async def service_submission(request: web.Request):
 
     support_email_address = product.support_email
 
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    user = await db.get_user({"id": request[RQT_USERID_KEY]})
-    assert user  # nosec
-    user_email = user.get("email")
-    assert user_email  # nosec
+    user = await users_service.get_user_name_and_email(
+        request.app, user_id=request[RQT_USERID_KEY]
+    )
 
     try:
         attachments = [
@@ -80,11 +78,11 @@ async def service_submission(request: web.Request):
         # send email
         await send_email_from_template(
             request,
-            from_=user_email,
+            from_=user.email,
             to=support_email_address,
             template=themed("templates/common", _EMAIL_TEMPLATE_NAME),
             context={
-                "user": user_email,
+                "user": user.email,
                 "data": json2html.convert(
                     json=json_dumps(data), table_attributes='class="pure-table"'
                 ),

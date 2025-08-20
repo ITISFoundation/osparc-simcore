@@ -67,15 +67,6 @@ users = sa.Table(
         "NOTE: new policy (NK) is that the same phone can be reused therefore it does not has to be unique",
     ),
     #
-    # User Secrets  ------------------
-    #
-    sa.Column(
-        "password_hash",
-        sa.String(),
-        nullable=False,
-        doc="Hashed password",
-    ),
-    #
     # User Account ------------------
     #
     sa.Column(

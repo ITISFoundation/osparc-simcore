@@ -34,7 +34,6 @@ from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
-    "redis",
 ]
 
 
@@ -43,7 +42,8 @@ class MockKeys(StrAutoEnum):
     GET_TIMEOUT = auto()
     START_DEFERRED = auto()
     ON_DEFERRED_CREATED = auto()
-    RUN_DEFERRED = auto()
+    RUN_DEFERRED_BEFORE_HANDLER = auto()
+    RUN_DEFERRED_AFTER_HANDLER = auto()
     ON_DEFERRED_RESULT = auto()
     ON_FINISHED_WITH_ERROR = auto()
 
@@ -57,6 +57,7 @@ async def redis_client_sdk(
         decode_responses=False,
         client_name="pytest",
     )
+    await sdk.setup()
     yield sdk
     await sdk.shutdown()
 
@@ -122,8 +123,9 @@ async def get_mocked_deferred_handler(
 
             @classmethod
             async def run(cls, context: DeferredContext) -> Any:
+                mocks[MockKeys.RUN_DEFERRED_BEFORE_HANDLER](context)
                 result = await run(context)
-                mocks[MockKeys.RUN_DEFERRED](context)
+                mocks[MockKeys.RUN_DEFERRED_AFTER_HANDLER](context)
                 return result
 
             @classmethod
@@ -229,8 +231,8 @@ async def test_deferred_manager_result_ok(
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_CREATED, count=1)
     assert TaskUID(mocks[MockKeys.ON_DEFERRED_CREATED].call_args_list[0].args[0])
 
-    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=1)
-    mocks[MockKeys.RUN_DEFERRED].assert_called_once_with(context)
+    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_AFTER_HANDLER, count=1)
+    mocks[MockKeys.RUN_DEFERRED_AFTER_HANDLER].assert_called_once_with(context)
 
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=1)
     mocks[MockKeys.ON_DEFERRED_RESULT].assert_called_once_with(run_return, context)
@@ -282,7 +284,7 @@ async def test_deferred_manager_raised_error(
             count=retry_count,
         )
 
-    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
+    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_AFTER_HANDLER, count=0)
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)
 
     await _assert_log_message(
@@ -319,6 +321,7 @@ async def test_deferred_manager_cancelled(
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_CREATED, count=1)
     task_uid = TaskUID(mocks[MockKeys.ON_DEFERRED_CREATED].call_args_list[0].args[0])
 
+    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_BEFORE_HANDLER, count=1)
     await mocked_deferred_handler.cancel(task_uid)
 
     await _assert_mock_call(mocks, key=MockKeys.ON_FINISHED_WITH_ERROR, count=0)
@@ -330,7 +333,7 @@ async def test_deferred_manager_cancelled(
         == 0
     )
 
-    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
+    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_AFTER_HANDLER, count=0)
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)
 
     await _assert_log_message(
@@ -450,7 +453,7 @@ async def test_deferred_manager_code_times_out(
     for entry in mocks[MockKeys.ON_FINISHED_WITH_ERROR].call_args_list:
         assert "builtins.TimeoutError" in entry.args[0].error
 
-    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED, count=0)
+    await _assert_mock_call(mocks, key=MockKeys.RUN_DEFERRED_AFTER_HANDLER, count=0)
     await _assert_mock_call(mocks, key=MockKeys.ON_DEFERRED_RESULT, count=0)
 
 

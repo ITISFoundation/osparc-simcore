@@ -23,6 +23,7 @@ from pydantic import NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DynamicSidecarStatus,
@@ -124,6 +125,7 @@ async def _assert_get_dynamic_services_mocked(
 
 @pytest.fixture
 def mock_env(
+    use_in_memory_redis: RedisSettings,
     mock_exclusive: None,
     disable_postgres: None,
     disable_rabbitmq: None,

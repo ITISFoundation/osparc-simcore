@@ -17,8 +17,12 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director:${DOCKER_IMAGE_TAG:-latest}
   director-v2:
     image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
+  docker-api-proxy:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
   dynamic-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+  dynamic-scheduler:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
   efs-guardian:
     image: ${DOCKER_REGISTRY:-itisfoundation}/efs-guardian:${DOCKER_IMAGE_TAG:-latest}
   invitations:
@@ -29,10 +33,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
   payments:
     image: ${DOCKER_REGISTRY:-itisfoundation}/payments:${DOCKER_IMAGE_TAG:-latest}
-  dynamic-scheduler:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
-  docker-api-proxy:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
   resource-usage-tracker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/resource-usage-tracker:${DOCKER_IMAGE_TAG:-latest}
   service-integration:

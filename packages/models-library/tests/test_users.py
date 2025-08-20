@@ -1,4 +1,6 @@
-from models_library.api_schemas_webserver.users import MyProfileRestGet
+from models_library.api_schemas_webserver.users import (
+    MyProfileRestGet,
+)
 from models_library.api_schemas_webserver.users_preferences import Preference
 from models_library.groups import AccessRightsDict, Group, GroupsByTypeTuple
 from models_library.users import MyProfile

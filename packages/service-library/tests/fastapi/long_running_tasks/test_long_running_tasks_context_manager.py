@@ -28,6 +28,7 @@ from servicelib.long_running_tasks.models import (
     TaskProgress,
 )
 from servicelib.long_running_tasks.task import TaskRegistry
+from settings_library.redis import RedisSettings
 
 TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
@@ -89,13 +90,18 @@ def user_routes() -> APIRouter:
 
 @pytest.fixture
 async def bg_task_app(
-    user_routes: APIRouter, router_prefix: str
+    user_routes: APIRouter, router_prefix: str, use_in_memory_redis: RedisSettings
 ) -> AsyncIterable[FastAPI]:
     app = FastAPI()
 
     app.include_router(user_routes)
 
-    setup_server(app, router_prefix=router_prefix)
+    setup_server(
+        app,
+        router_prefix=router_prefix,
+        redis_settings=use_in_memory_redis,
+        redis_namespace="test",
+    )
     setup_client(app, router_prefix=router_prefix)
 
     async with LifespanManager(app):

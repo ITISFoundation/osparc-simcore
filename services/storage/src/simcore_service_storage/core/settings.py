@@ -36,7 +36,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ]
 
     STORAGE_REDIS: Annotated[
-        RedisSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
     ]
 
     STORAGE_S3: Annotated[

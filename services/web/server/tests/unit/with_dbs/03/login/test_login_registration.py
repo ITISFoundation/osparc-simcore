@@ -19,6 +19,7 @@ from servicelib.aiohttp import status
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.groups.api import auto_add_user_to_product_group
+from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._confirmation_web import _url_for_confirmation
 from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login.constants import (
@@ -107,6 +108,7 @@ async def test_register_body_validation(
                 "field": "confirm",
             },
         ],
+        "message": "Invalid field/s 'email, confirm' in request body",
     }
 
 
@@ -262,7 +264,6 @@ async def test_registration_with_invalid_confirmation_code(
 
 async def test_registration_without_confirmation(
     client: TestClient,
-    db: AsyncpgStorage,
     mocker: MockerFixture,
     user_email: str,
     user_password: str,
@@ -292,13 +293,12 @@ async def test_registration_without_confirmation(
     data, _ = await assert_status(response, status.HTTP_200_OK)
     assert MSG_LOGGED_IN in data["message"]
 
-    user = await db.get_user({"email": user_email})
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
     assert user
 
 
 async def test_registration_with_confirmation(
     client: TestClient,
-    db: AsyncpgStorage,
     capsys: pytest.CaptureFixture,
     mocker: MockerFixture,
     user_email: str,
@@ -330,7 +330,8 @@ async def test_registration_with_confirmation(
     data, error = unwrap_envelope(await response.json())
     assert response.status == 200, (data, error)
 
-    user = await db.get_user({"email": user_email})
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
     assert user["status"] == UserStatus.CONFIRMATION_PENDING.name
 
     assert "verification link" in data["message"]
@@ -349,7 +350,8 @@ async def test_registration_with_confirmation(
     assert response.status == 200
 
     # user is active
-    user = await db.get_user({"email": user_email})
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
     assert user["status"] == UserStatus.ACTIVE.name
 
 

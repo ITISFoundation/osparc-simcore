@@ -15,16 +15,24 @@ from servicelib.aiohttp.long_running_tasks.client import (
     long_running_task_request,
 )
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
+from settings_library.redis import RedisSettings
 from yarl import URL
 
 
 @pytest.fixture
-def app(server_routes: web.RouteTableDef) -> web.Application:
+def app(
+    server_routes: web.RouteTableDef, use_in_memory_redis: RedisSettings
+) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
     # this adds enveloping and error middlewares
     append_rest_middlewares(app, api_version="")
-    long_running_tasks.server.setup(app, router_prefix="/futures")
+    long_running_tasks.server.setup(
+        app,
+        redis_settings=use_in_memory_redis,
+        redis_namespace="test",
+        router_prefix="/futures",
+    )
 
     return app
 

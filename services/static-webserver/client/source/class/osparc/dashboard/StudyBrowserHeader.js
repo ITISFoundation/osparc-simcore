@@ -324,7 +324,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           this.__setIcon("@FontAwesome5Solid/search/24");
-          title.setValue(this.tr("Projects results"));
+          title.setValue(this.tr("My Projects results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
           this.__setIcon("@FontAwesome5Solid/search/24");

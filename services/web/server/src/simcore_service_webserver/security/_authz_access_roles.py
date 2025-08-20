@@ -78,6 +78,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "project.workspaces.*",
             "function.create",
             "function.read",
+            "function.update",
             "function.execute",
             "function.delete",
             "resource-usage.read",
@@ -119,7 +120,7 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "resource-usage.write",
             "storage.files.sync",
         ],
-        inherits=[UserRole.TESTER],
+        inherits=[UserRole.PRODUCT_OWNER],
     ),
 }
 

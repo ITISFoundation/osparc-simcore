@@ -34,10 +34,11 @@ class PackageInfo:
         self._distribution = distribution(package_name)
         # property checks
         if re.match(_APP_NAME_PATTERN, self.app_name) is None:
-            raise ValueError(
+            msg = (
                 f"Invalid package name {self.app_name}. "
                 "It must be all lowercase and words separated by dashes ('-')."
             )
+            raise ValueError(msg)
 
     @property
     def project_name(self) -> str:

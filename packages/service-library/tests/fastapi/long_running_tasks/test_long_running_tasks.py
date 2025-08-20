@@ -33,6 +33,7 @@ from servicelib.long_running_tasks.models import (
     TaskStatus,
 )
 from servicelib.long_running_tasks.task import TaskContext, TaskRegistry
+from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -52,7 +53,7 @@ async def _string_list_task(
     for index in range(num_strings):
         generated_strings.append(f"{index}")
         await asyncio.sleep(sleep_time)
-        progress.update(message="generated item", percent=index / num_strings)
+        await progress.update(message="generated item", percent=index / num_strings)
         if fail:
             msg = "We were asked to fail!!"
             raise RuntimeError(msg)
@@ -91,11 +92,13 @@ def server_routes() -> APIRouter:
 
 
 @pytest.fixture
-async def app(server_routes: APIRouter) -> AsyncIterator[FastAPI]:
+async def app(
+    server_routes: APIRouter, use_in_memory_redis: RedisSettings
+) -> AsyncIterator[FastAPI]:
     # overrides fastapi/conftest.py:app
     app = FastAPI(title="test app")
     app.include_router(server_routes)
-    setup_server(app)
+    setup_server(app, redis_settings=use_in_memory_redis, redis_namespace="test")
     setup_client(app)
     async with LifespanManager(app):
         yield app

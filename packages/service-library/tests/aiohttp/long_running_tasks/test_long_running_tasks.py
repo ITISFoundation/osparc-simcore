@@ -23,19 +23,35 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "redis",
+]
+
+pytest_simcore_ops_services_selection = [
+    "redis-commander",
+]
+
 
 @pytest.fixture
-def app(server_routes: web.RouteTableDef) -> web.Application:
+def app(
+    server_routes: web.RouteTableDef, redis_service: RedisSettings
+) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
     # this adds enveloping and error middlewares
     append_rest_middlewares(app, api_version="")
-    long_running_tasks.server.setup(app, router_prefix="/futures")
+    long_running_tasks.server.setup(
+        app,
+        redis_settings=redis_service,
+        redis_namespace="test",
+        router_prefix="/futures",
+    )
 
     return app
 

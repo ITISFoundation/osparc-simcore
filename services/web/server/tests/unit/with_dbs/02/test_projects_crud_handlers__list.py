@@ -18,6 +18,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.aiohttp import status
+from settings_library.redis import RedisSettings
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
@@ -151,6 +152,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
 @pytest.mark.parametrize("limit", [7, 20, 43])
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_pagination(
+    use_in_memory_redis: RedisSettings,
     mock_dynamic_scheduler: None,
     client: TestClient,
     logged_user: dict[str, Any],

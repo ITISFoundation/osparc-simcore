@@ -30,7 +30,7 @@ async def _on_user_connected(
     assert product_name  # nosec
     # check if there is a project resource
     with managed_resource(user_id, client_session_id, app) as user_session:
-        projects: list[str] = await user_session.find(PROJECT_ID_KEY)
+        projects = await user_session.find(PROJECT_ID_KEY)
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
     if projects:
@@ -63,7 +63,7 @@ async def _on_user_disconnected(
 
     # check if there is a project resource
     with managed_resource(user_id, client_session_id, app) as user_session:
-        projects: list[str] = await user_session.find(PROJECT_ID_KEY)
+        projects = await user_session.find(PROJECT_ID_KEY)
 
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 

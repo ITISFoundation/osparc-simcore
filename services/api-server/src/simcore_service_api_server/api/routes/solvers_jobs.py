@@ -5,15 +5,13 @@ from collections.abc import Callable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Query, Request, status
-from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
-from ..._service_jobs import JobService
-from ..._service_solvers import SolverService
+from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ...exceptions.backend_errors import ProjectAlreadyStartedError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
@@ -24,17 +22,18 @@ from ...models.schemas.jobs import (
     JobInputs,
     JobMetadata,
     JobMetadataUpdate,
+    JobPricingSpecification,
     JobStatus,
 )
 from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services_http.director_v2 import DirectorV2Api
-from ...services_http.jobs import replace_custom_metadata, start_project, stop_project
+from ...services_http.jobs import replace_custom_metadata, stop_project
 from ...services_http.solver_job_models_converters import (
-    create_jobstatus_from_task,
+    get_solver_job_rest_interface_links,
 )
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
-from ..dependencies.services import get_api_client, get_job_service, get_solver_service
+from ..dependencies.services import get_api_client, get_job_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
@@ -46,14 +45,6 @@ from ._constants import (
 _logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-def compose_job_resource_name(solver_key, solver_version, job_id) -> str:
-    """Creates a unique resource name for solver's jobs"""
-    return Job.compose_resource_name(
-        parent_name=Solver.compose_resource_name(solver_key, solver_version),
-        job_id=job_id,
-    )
 
 
 # JOBS ---------------
@@ -97,7 +88,6 @@ async def create_solver_job(  # noqa: PLR0913
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     hidden: Annotated[bool, Query()] = True,
@@ -109,23 +99,17 @@ async def create_solver_job(  # noqa: PLR0913
     NOTE: This operation does **not** start the job
     """
 
-    # ensures user has access to solver
-    solver = await solver_service.get_solver(
+    return await job_service.create_solver_job(
         solver_key=solver_key,
-        solver_version=version,
-    )
-    job, _ = await job_service.create_job(
-        project_name=None,
-        description=None,
-        solver_or_program=solver,
+        version=version,
         inputs=inputs,
-        url_for=url_for,
         hidden=hidden,
-        parent_project_uuid=x_simcore_parent_project_uuid,
-        parent_node_id=x_simcore_parent_node_id,
+        x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
+        x_simcore_parent_node_id=x_simcore_parent_node_id,
+        job_links=get_solver_job_rest_interface_links(
+            url_for=url_for, solver_key=solver_key, version=version
+        ),
     )
-
-    return job
 
 
 @router.delete(
@@ -145,10 +129,40 @@ async def delete_job(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Deleting Job '%s'", job_name)
 
     await webserver_api.delete_project(project_id=job_id)
+
+
+@router.delete(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/assets",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=JOBS_STATUS_CODES,
+    description=create_route_description(
+        base="Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable",
+        changelog=[
+            FMSG_CHANGELOG_NEW_IN_VERSION.format("0.12"),
+        ],
+    ),
+)
+async def delete_job_assets(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: JobID,
+    job_service: Annotated[JobService, Depends(get_job_service)],
+):
+    job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
+
+    # check that job exists and is accessible to user
+    project_job_rpc_get = await job_service.get_job(
+        job_parent_resource_name=job_parent_resource_name, job_id=job_id
+    )
+    assert project_job_rpc_get.uuid == job_id  # nosec
+
+    await job_service.delete_job_assets(
+        job_parent_resource_name=job_parent_resource_name, job_id=job_id
+    )
 
 
 @router.post(
@@ -163,6 +177,10 @@ async def delete_job(
         },
         status.HTTP_406_NOT_ACCEPTABLE: {
             "description": "Cluster not found",
+            "model": ErrorGet,
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Job assets missing",
             "model": ErrorGet,
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
@@ -190,41 +208,27 @@ async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     cluster_id: Annotated[  # pylint: disable=unused-argument  # noqa: ARG001
         ClusterID | None, Query(deprecated=True)
     ] = None,
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
-    _logger.debug("Start Job '%s'", job_name)
+    pricing_spec = JobPricingSpecification.create_from_headers(headers=request.headers)
 
     try:
-        await start_project(
-            request=request,
-            job_id=job_id,
-            expected_job_name=job_name,
-            webserver_api=webserver_api,
-        )
-    except ProjectAlreadyStartedError:
-        job_status = await inspect_job(
+        return await job_service.start_solver_job(
             solver_key=solver_key,
             version=version,
             job_id=job_id,
-            user_id=user_id,
-            director2_api=director2_api,
+            pricing_spec=pricing_spec,
+        )
+    except ProjectAlreadyStartedError:
+        job_status = await job_service.inspect_solver_job(
+            solver_key=solver_key, version=version, job_id=job_id
         )
         return JSONResponse(
-            status_code=status.HTTP_200_OK, content=jsonable_encoder(job_status)
+            status_code=status.HTTP_200_OK, content=job_status.model_dump(mode="json")
         )
-    return await inspect_job(
-        solver_key=solver_key,
-        version=version,
-        job_id=job_id,
-        user_id=user_id,
-        director2_api=director2_api,
-    )
 
 
 @router.post(
@@ -245,7 +249,7 @@ async def stop_job(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
 
     return await stop_project(
@@ -268,15 +272,14 @@ async def inspect_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ) -> JobStatus:
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
-    task = await director2_api.get_computation(project_id=job_id, user_id=user_id)
-    job_status: JobStatus = create_jobstatus_from_task(task)
-    return job_status
+    return await job_service.inspect_solver_job(
+        solver_key=solver_key, version=version, job_id=job_id
+    )
 
 
 @router.patch(
@@ -298,7 +301,7 @@ async def replace_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
     return await replace_custom_metadata(

@@ -78,7 +78,7 @@ async def test_create_pg_engine(postgres_service_with_fake_data: DataSourceName)
     dsn = postgres_service_with_fake_data
 
     # using raw call and dsn.asdict to fill create_engine arguments!
-    engine1 = await aiopg.sa.create_engine(minsize=1, maxsize=5, **asdict(dsn))
+    engine1 = await aiopg.sa.create_engine(minsize=2, maxsize=5, **asdict(dsn))
 
     # just creating engine
     engine2 = await create_pg_engine(dsn)
@@ -114,7 +114,7 @@ async def test_engine_when_idle_for_some_time():
         database="db",
         application_name="test-app",
     )
-    engine = await create_pg_engine(dsn, minsize=1, maxsize=1)
+    engine = await create_pg_engine(dsn, minsize=2, maxsize=2)
     init_pg_tables(dsn, metadata)
     assert not engine.closed  # does not mean anything!!!
     # pylint: disable=no-value-for-parameter

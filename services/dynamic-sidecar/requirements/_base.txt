@@ -621,7 +621,7 @@ python-magic==0.4.27
     # via -r requirements/_base.in
 python-multipart==0.0.20
     # via fastapi
-python-socketio==5.12.1
+python-socketio==5.13.0
     # via -r requirements/_base.in
 pyyaml==6.0.2
     # via
