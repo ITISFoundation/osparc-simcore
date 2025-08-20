@@ -52,11 +52,10 @@ qx.Class.define("osparc.support.ConversationPage", {
       let control;
       switch (id) {
         case "conversation-header-layout": {
-          const headerGrid = new qx.ui.layout.Grid(5, 5);
-          headerGrid.setColumnAlign(0, "center", "middle");
-          headerGrid.setColumnFlex(1, 1);
-          headerGrid.setColumnAlign(2, "center", "middle");
-          control = new qx.ui.container.Composite(headerGrid).set({
+          const headerLayout = new qx.ui.layout.HBox(5).set({
+            alignY: "middle",
+          })
+          control = new qx.ui.container.Composite(headerLayout).set({
             padding: 5,
           });
           this._add(control);
@@ -69,10 +68,12 @@ qx.Class.define("osparc.support.ConversationPage", {
             backgroundColor: "transparent"
           });
           control.addListener("execute", () => this.fireEvent("showConversations"));
-          this.getChildControl("conversation-header-layout").add(control, {
-            row: 0,
-            column: 0,
-            rowSpan: 2,
+          this.getChildControl("conversation-header-layout").addAt(control, 0);
+          break;
+        case "conversation-header-center-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          this.getChildControl("conversation-header-layout").addAt(control, 1, {
+            flex: 1,
           });
           break;
         case "conversation-title":
@@ -81,24 +82,7 @@ qx.Class.define("osparc.support.ConversationPage", {
             alignY: "middle",
             allowGrowX: true,
             });
-            this.getChildControl("conversation-header-layout").add(control, {
-              row: 0,
-              column: 1,
-            });
-          break;
-        case "conversation-options":
-          control = new qx.ui.form.MenuButton().set({
-            maxWidth: 22,
-            maxHeight: 22,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
-          });
-          this.getChildControl("conversation-header-layout").add(control, {
-            row: 0,
-            column: 2,
-            rowSpan: 2,
-          });
+          this.getChildControl("conversation-header-center-layout").addAt(control, 0);
           break;
         case "conversation-extra-content":
           control = new qx.ui.basic.Label().set({
@@ -108,10 +92,17 @@ qx.Class.define("osparc.support.ConversationPage", {
             allowGrowX: true,
             selectable: true,
           });
-          this.getChildControl("conversation-header-layout").add(control, {
-            row: 1,
-            column: 1,
+          this.getChildControl("conversation-header-center-layout").addAt(control, 1);
+          break;
+        case "conversation-options":
+          control = new qx.ui.form.MenuButton().set({
+            maxWidth: 22,
+            maxHeight: 22,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
           });
+          this.getChildControl("conversation-header-layout").addAt(control, 2);
           break;
         case "conversation":
           control = new osparc.support.Conversation();
@@ -137,11 +128,10 @@ qx.Class.define("osparc.support.ConversationPage", {
             extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
             const extraContext = conversation.getExtraContext();
             if (amISupporter && extraContext && Object.keys(extraContext).length) {
-              let extraContextText = "";
-              extraContextText += `ID: ${conversationId}<br>`;
+              let extraContextText = `Support ID: ${conversationId}`;
               const contextProjectId = conversation.getContextProjectId();
               if (contextProjectId) {
-                extraContextText += `Project ID: ${contextProjectId}<br>`;
+                extraContextText += `<br>Project ID: ${contextProjectId}`;
               }
               extraContextLabel.setValue(extraContextText);
             }

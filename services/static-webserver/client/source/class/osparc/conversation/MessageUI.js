@@ -28,7 +28,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
     this.__studyData = studyData;
 
-    const layout = new qx.ui.layout.Grid(12, 4);
+    const layout = new qx.ui.layout.Grid(12, 2);
     layout.setColumnFlex(1, 1); // content
     this._setLayout(layout);
     this.setPadding(5);
