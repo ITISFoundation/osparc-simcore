@@ -143,9 +143,24 @@ qx.Class.define("osparc.support.Conversation", {
     __applyConversation: function(conversation) {
       this.__reloadMessages(true);
 
-      if (conversation === null && osparc.store.Store.getInstance().getCurrentStudy()) {
+      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+      if (conversation === null && currentStudy) {
         this.getChildControl("share-project-checkbox").show();
       }
+      /*
+      const shareProjectLayout = this.getChildControl("share-project-layout");
+      shareProjectLayout.setVisibility(conversation && currentStudy ? "visible" : "excluded");
+      if (conversation && currentStudy) {
+        const shareProjectCB = this.getChildControl("share-project-checkbox");
+        const supportGroupId = currentStudy.getSupportGroupId();
+        const accessRights = currentStudy.getAccessRights();
+        if (supportGroupId && supportGroupId in accessRights) {
+          shareProjectCB.setValue(true);
+        } else {
+          shareProjectCB.setValue(false);
+        }
+      }
+      */
     },
 
     __reloadMessages: function(removeMessages = true) {
