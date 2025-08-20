@@ -60,6 +60,28 @@ async def create_message(
     return created_message
 
 
+async def create_support_message_and_check_if_it_is_first_message(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_id: ProjectID | None,
+    conversation_id: ConversationID,
+    # Creation attributes
+    content: str,
+    type_: ConversationMessageType,
+) -> tuple[ConversationMessageGetDB, bool]:
+    created_message = await create_message(
+        app,
+        user_id=user_id,
+        project_id=project_id,
+        conversation_id=conversation_id,
+        content=content,
+        type_=type_,
+    )
+
+    return created_message, True
+
+
 async def get_message(
     app: web.Application,
     *,

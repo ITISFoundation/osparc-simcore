@@ -27,8 +27,10 @@ from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 
 from ..._meta import API_VTAG as VTAG
+from ...email import email_service
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
+from ...products import products_web
 from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
 from .. import _conversation_message_service, _conversation_service
@@ -70,26 +72,65 @@ async def create_conversation_message(request: web.Request):
         _ConversationMessageCreateBodyParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
-    )
+    user = await users_service.get_user(request.app, user_id=req_ctx.user_id)
     conversation = await _conversation_service.get_conversation_for_user(
         app=request.app,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
+        user_group_id=user["primary_gid"],
     )
     # Ensure only support conversations are allowed
     if conversation.type != ConversationType.SUPPORT:
         raise_unsupported_type(conversation.type)
 
-    message = await _conversation_message_service.create_message(
-        app=request.app,
-        user_id=req_ctx.user_id,
-        project_id=None,  # Support conversations don't use project_id
-        conversation_id=path_params.conversation_id,
-        content=body_params.content,
-        type_=body_params.type,
+    message, is_first_message = (
+        await _conversation_message_service.create_support_message_and_check_if_it_is_first_message(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            project_id=None,  # Support conversations don't use project_id
+            conversation_id=path_params.conversation_id,
+            content=body_params.content,
+            type_=body_params.type,
+        )
     )
+
+    # NOTE: This is done here in the Controller layer, as the interface around email currently needs request
+    if is_first_message:
+        try:
+            product = products_web.get_current_product(request)
+            template_name = "request_support.jinja2"
+            destination_email = product.support_email
+            email_template_path = await products_web.get_product_template_path(
+                request, template_name
+            )
+            _conversation_url = (
+                f"{request.url}/#/conversations/{path_params.conversation_id}"
+            )
+            _extra_context = conversation.extra_context
+            await email_service.send_email_from_template(
+                request,
+                from_=product.support_email,
+                to=destination_email,
+                template=email_template_path,
+                context={
+                    "host": request.host,
+                    "product": product.model_dump(
+                        include={
+                            "display_name",
+                        }
+                    ),
+                    "first_name": user["first_name"],
+                    "last_name": user["last_name"],
+                    "user_email": user["email"],
+                    "conversation_url": _conversation_url,
+                    "extra_context": _extra_context,
+                },
+            )
+        except Exception:  # pylint: disable=broad-except
+            _logger.exception(
+                "Failed while sending '%s' email to %s",
+                template_name,
+                user["email"],
+            )
 
     data = ConversationMessageRestGet.from_domain_model(message)
     return envelope_json_response(data, web.HTTPCreated)

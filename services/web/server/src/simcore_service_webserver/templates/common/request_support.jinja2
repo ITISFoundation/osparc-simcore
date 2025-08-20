@@ -1,0 +1,31 @@
+Request for Support on {{ host }}
+<!--
+NOTE: this header is only for testing purposes and is removed automatically before sending
+TEST host: {{ host }}
+TEST first_name: {{ first_name }}
+TEST last_name: {{ last_name }}
+TEST user_email: {{ user_email }}
+TEST product: {{ product }}
+TEST conversation_url: {{ conversation_url }}
+TEST extra_context: {{ extra_context }}
+-->
+<p>
+  Dear Support Team,
+</p>
+
+<p>
+  We have received a support request from {{ first_name }} {{ last_name }} ({{ user_email }}) regarding an account in <b>{{ product.display_name }}</b> on <b>{{ host }}</b>.
+</p>
+
+<p>
+  All communication should take place in the Platform Support Center at the following link:
+  <a href="{{ conversation_url }}">{{ conversation_url }}</a>
+</p>
+
+<p>
+  Additional Information:
+</p>
+
+<pre>
+{{ dumps(extra_context) }}
+</pre>
