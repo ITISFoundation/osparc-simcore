@@ -25,42 +25,44 @@ from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.storage import StorageApi
 
 
-async def _assemble_function_job_service(app: FastAPI, identity: Identity):
+async def _assemble_function_job_service(*, app: FastAPI, user_identity: Identity):
     # to avoid this show we could introduce a dependency injection
     # system which is not linked to FastAPI (i.e. can be resolved manually).
-    # See also https://github.com/fastapi/fastapi/issues/1105#issuecomment-609919850
+    # One suggestion: https://github.com/ets-labs/python-dependency-injector, which is compatible
+    # with FastAPI's Depends.
+    # See also https://github.com/fastapi/fastapi/issues/1105#issuecomment-609919850.
     settings = app.state.settings
     assert settings.API_SERVER_WEBSERVER  # nosec
     session_cookie = get_session_cookie(
-        identity=identity.email, settings=settings.API_SERVER_WEBSERVER, app=app
+        identity=user_identity.email, settings=settings.API_SERVER_WEBSERVER, app=app
     )
 
     rpc_client = get_rabbitmq_rpc_client(app=app)
     web_server_rest_client = get_webserver_session(
-        app=app, session_cookies=session_cookie, identity=identity
+        app=app, session_cookies=session_cookie, identity=user_identity
     )
     web_api_rpc_client = await get_wb_api_rpc_client(app=app)
     director2_api = get_api_client(DirectorV2Api)
-    assert isinstance(director2_api, DirectorV2Api)
+    assert isinstance(director2_api, DirectorV2Api)  # nosec
     storage_api = get_api_client(StorageApi)
-    assert isinstance(storage_api, StorageApi)
+    assert isinstance(storage_api, StorageApi)  # nosec
     catalog_service = get_catalog_service(
         rpc_client=rpc_client,
-        user_id=identity.user_id,
-        product_name=identity.product_name,
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
     )
 
     storage_service = get_storage_service(
         rpc_client=rpc_client,
-        user_id=identity.user_id,
-        product_name=identity.product_name,
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
     )
     directorv2_service = get_directorv2_service(rpc_client=rpc_client)
 
     solver_service = get_solver_service(
         catalog_service=catalog_service,
-        user_id=identity.user_id,
-        product_name=identity.product_name,
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
     )
 
     job_service = get_job_service(
@@ -70,16 +72,16 @@ async def _assemble_function_job_service(app: FastAPI, identity: Identity):
         web_rpc_api=web_api_rpc_client,
         storage_service=storage_service,
         directorv2_service=directorv2_service,
-        user_id=identity.user_id,
-        product_name=identity.product_name,
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
         solver_service=solver_service,
     )
 
     return get_function_job_service(
         web_rpc_api=web_api_rpc_client,
         job_service=job_service,
-        user_id=identity.user_id,
-        product_name=identity.product_name,
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
     )
 
 
@@ -87,7 +89,7 @@ async def run_function(
     task: Task,
     task_id: TaskID,
     *,
-    identity: Identity,  # user identity
+    user_identity: Identity,
     function: RegisteredFunction,
     function_inputs: FunctionInputs,
     pricing_spec: JobPricingSpecification | None,
@@ -97,7 +99,9 @@ async def run_function(
 ):
     assert task_id  # nosec
     app = get_app_server(task.app).app
-    function_job_service = await _assemble_function_job_service(app, identity)
+    function_job_service = await _assemble_function_job_service(
+        app=app, user_identity=user_identity
+    )
 
     return await function_job_service.run_function(
         function=function,
