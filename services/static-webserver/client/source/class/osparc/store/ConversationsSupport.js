@@ -91,11 +91,6 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         }
       };
       return osparc.data.Resources.fetch("conversationsSupport", "addConversation", params)
-        .then(data => {
-          // OM PATCH the extra content
-          // extraContext["conversationLink"] = `${url}#/conversation/${data["conversationId"]}`;
-          return data;
-        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
