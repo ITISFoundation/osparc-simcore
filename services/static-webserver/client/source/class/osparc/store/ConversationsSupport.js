@@ -146,8 +146,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params)
         .then(messagesData => {
-          messagesData.forEach(messageData => this.__addMessageToCache(conversationId, messageData));
-          return messagesData;
+          if (messagesData && messagesData.length) {
+            const lastMessage = messagesData[0];
+            this.__addMessageToCache(conversationId, lastMessage);
+            return lastMessage;
+          }
+          return lastMessage;
         });
     },
 
