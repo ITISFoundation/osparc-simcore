@@ -20,9 +20,9 @@ qx.Class.define("osparc.support.Conversation", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param conversationId {String} Conversation Id
+    * @param conversation {osparc.data.model.Conversation} Conversation
     */
-  construct: function(conversationId) {
+  construct: function(conversation) {
     this.base(arguments);
 
     this.__messages = [];
@@ -31,18 +31,18 @@ qx.Class.define("osparc.support.Conversation", {
 
     this.__buildLayout();
 
-    if (conversationId) {
-      this.setConversationId(conversationId);
+    if (conversation) {
+      this.setConversation(conversation);
     }
   },
 
   properties: {
-    conversationId: {
-      check: "String",
+    conversation: {
+      check: "osparc.data.model.Conversation",
       init: null,
       nullable: true,
-      event: "changeConversationId",
-      apply: "__applyConversationId",
+      event: "changeConversation",
+      apply: "__applyConversation",
     },
 
     studyId: {
@@ -88,7 +88,9 @@ qx.Class.define("osparc.support.Conversation", {
           control = new osparc.conversation.AddMessage().set({
             padding: 5,
           });
-          this.bind("conversationId", control, "conversationId");
+          this.bind("conversation", control, "conversationId", {
+            converter: conversation => conversation ? conversation.getConversationId() : null
+          });
           // make it more compact
           control.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
           control.getChildControl("comment-field").getChildControl("subtitle").exclude();
@@ -128,22 +130,18 @@ qx.Class.define("osparc.support.Conversation", {
       });
     },
 
-    __applyConversationId: function(conversationId) {
+    __applyConversation: function(conversation) {
       this.__reloadMessages(true);
 
-      if (conversationId === null && osparc.store.Store.getInstance().getCurrentStudy()) {
+      if (conversation === null && osparc.store.Store.getInstance().getCurrentStudy()) {
         this.getChildControl("share-project-checkbox").show();
       }
-    },
-
-    __applyStudyId: function(studyId) {
-
     },
 
     __getNextRequest: function() {
       const params = {
         url: {
-          conversationId: this.getConversationId(),
+          conversationId: this.getConversation().getConversationId(),
           offset: 0,
           limit: 42
         }
@@ -163,7 +161,7 @@ qx.Class.define("osparc.support.Conversation", {
     __reloadMessages: function(removeMessages = true) {
       const messagesContainer = this.getChildControl("messages-container");
       const loadMoreMessages = this.getChildControl("load-more-button");
-      if (this.getConversationId() === null) {
+      if (this.getConversation() === null) {
         messagesContainer.hide();
         loadMoreMessages.hide();
         return;

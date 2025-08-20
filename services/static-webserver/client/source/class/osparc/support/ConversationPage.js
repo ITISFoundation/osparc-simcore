@@ -28,18 +28,18 @@ qx.Class.define("osparc.support.ConversationPage", {
 
     this.getChildControl("back-button");
 
-    const conversation = this.getChildControl("conversation");
-    this.bind("conversationId", conversation, "conversationId");
-    conversation.bind("conversationId", this, "conversationId");
+    const conversation = this.getChildControl("conversation-content");
+    this.bind("conversation", conversation, "conversation");
+    conversation.bind("conversation", this, "conversation");
   },
 
   properties: {
-    conversationId: {
-      check: "String",
+    conversation: {
+      check: "osparc.data.model.Conversation",
       init: null,
       nullable: true,
-      event: "changeConversationId",
-      apply: "__applyConversationId",
+      event: "changeConversation",
+      apply: "__applyConversation",
     },
   },
 
@@ -94,7 +94,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           });
           this.getChildControl("conversation-header-center-layout").addAt(control, 1);
           break;
-        case "conversation-options":
+        case "conversation-options": {
           control = new qx.ui.form.MenuButton().set({
             maxWidth: 22,
             maxHeight: 22,
@@ -102,9 +102,20 @@ qx.Class.define("osparc.support.ConversationPage", {
             alignY: "middle",
             icon: "@FontAwesome5Solid/ellipsis-v/14",
           });
+          const menu = new qx.ui.menu.Menu().set({
+            position: "bottom-right",
+          });
+          control.setMenu(menu);
+          const renameButton = new qx.ui.menu.Button().set({
+            label: this.tr("Rename"),
+            icon: "@FontAwesome5Solid/i-cursor/10"
+          });
+          renameButton.addListener("execute", () => this.__renameConversation());
+          menu.add(renameButton);
           this.getChildControl("conversation-header-layout").addAt(control, 2);
           break;
-        case "conversation":
+        }
+        case "conversation-content":
           control = new osparc.support.Conversation();
           const scroll = new qx.ui.container.Scroll();
           scroll.add(control);
@@ -116,31 +127,43 @@ qx.Class.define("osparc.support.ConversationPage", {
       return control || this.base(arguments, id);
     },
 
-    __applyConversationId: function(conversationId) {
+    __applyConversation: function(conversation) {
       const title = this.getChildControl("conversation-title");
       const options = this.getChildControl("conversation-options");
-      if (conversationId) {
-        osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
-          .then(conversation => {
-            conversation.bind("nameAlias", title, "value");
-            const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
-            const extraContextLabel = this.getChildControl("conversation-extra-content");
-            extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
-            const extraContext = conversation.getExtraContext();
-            if (amISupporter && extraContext && Object.keys(extraContext).length) {
-              let extraContextText = `Support ID: ${conversationId}`;
-              const contextProjectId = conversation.getContextProjectId();
-              if (contextProjectId) {
-                extraContextText += `<br>Project ID: ${contextProjectId}`;
-              }
-              extraContextLabel.setValue(extraContextText);
-            }
-            options.show();
-          });
+      if (conversation) {
+        conversation.bind("nameAlias", title, "value");
+        const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
+        const extraContextLabel = this.getChildControl("conversation-extra-content");
+        extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
+        const extraContext = conversation.getExtraContext();
+        if (amISupporter && extraContext && Object.keys(extraContext).length) {
+          let extraContextText = `Support ID: ${conversation}`;
+          const contextProjectId = conversation.getContextProjectId();
+          if (contextProjectId) {
+            extraContextText += `<br>Project ID: ${contextProjectId}`;
+          }
+          extraContextLabel.setValue(extraContextText);
+        }
+        options.show();
       } else {
         title.setValue("");
         options.exclude();
       }
+    },
+
+    __renameConversation: function() {
+      let oldName = this.getConversation().getName();
+      if (oldName === "null") {
+        oldName = "";
+      }
+      const renamer = new osparc.widget.Renamer(oldName);
+      renamer.addListener("labelChanged", e => {
+        renamer.close();
+        const newLabel = e.getData()["newLabel"];
+        this.getConversation().setName(newLabel);
+      }, this);
+      renamer.center();
+      renamer.open();
     },
   }
 });
