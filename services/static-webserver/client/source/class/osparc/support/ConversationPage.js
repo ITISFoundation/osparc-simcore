@@ -160,7 +160,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       renamer.addListener("labelChanged", e => {
         renamer.close();
         const newLabel = e.getData()["newLabel"];
-        this.getConversation().setName(newLabel);
+        this.getConversation().renameConversation(newLabel);
       }, this);
       renamer.center();
       renamer.open();

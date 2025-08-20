@@ -26,7 +26,6 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   events: {
-    "conversationRenamed": "qx.event.type.Data",
     "conversationDeleted": "qx.event.type.Data",
   },
 
@@ -118,14 +117,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           name,
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "renameConversation", params)
-        .then(() => {
-          this.fireDataEvent("conversationRenamed", {
-            conversationId,
-            name,
-          });
-        })
-        .catch(err => osparc.FlashMessenger.logError(err));
+      return osparc.data.Resources.fetch("conversationsSupport", "renameConversation", params);
     },
 
     getLastMessage: function(conversationId) {

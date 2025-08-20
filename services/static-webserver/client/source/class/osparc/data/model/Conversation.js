@@ -159,6 +159,13 @@ qx.Class.define("osparc.data.model.Conversation", {
       return this.__fetchLastMessage();
     },
 
+    renameConversation: function(newName) {
+      osparc.store.ConversationsSupport.getInstance().renameConversation(this.getConversationId(), newName)
+        .then(() => {
+          this.setNameAlias(newName);
+        });
+    },
+
     addMessage: function(message) {
       const messages = this.getMessages() || [];
       messages.push(message);
