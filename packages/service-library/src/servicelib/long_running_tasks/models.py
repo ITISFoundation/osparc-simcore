@@ -109,11 +109,6 @@ class ClientConfiguration(BaseModel):
     default_timeout: PositiveFloat
 
 
-class RPCErrorResponse(BaseModel):
-    str_traceback: str
-    error_object: str
-
-
 @dataclass(frozen=True)
 class LRTask:
     progress: TaskProgress
