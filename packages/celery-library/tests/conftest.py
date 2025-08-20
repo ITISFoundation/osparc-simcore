@@ -102,7 +102,7 @@ async def with_celery_worker(
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        return partial(on_worker_init, app_server, celery_settings)(sender, **_kwargs)
+        return partial(on_worker_init, app_server)(sender, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)

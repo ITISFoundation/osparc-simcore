@@ -6,7 +6,6 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.worker.worker import WorkController  # type: ignore[import-untyped]
 from servicelib.celery.app_server import BaseAppServer
 from servicelib.logging_utils import log_context
-from settings_library.celery import CelerySettings
 
 from .utils import get_app_server, set_app_server
 
@@ -15,7 +14,6 @@ _logger = logging.getLogger(__name__)
 
 def on_worker_init(
     app_server: BaseAppServer,
-    celery_settings: CelerySettings,
     sender: WorkController,
     **_kwargs,
 ) -> None:
