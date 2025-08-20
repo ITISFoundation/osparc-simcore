@@ -131,16 +131,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       if (conversationId) {
         osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
           .then(conversation => {
-            const name = conversation.getName();
-            if (name && name !== "null") {
-              title.setValue(name);
-            } else {
-              osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
-                .then(lastMessage => {
-                  title.setValue(lastMessage ? lastMessage.content : "");
-                });
-            }
-            options.show();
+            conversation.bind("nameAlias", title, "value");
             const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
             const extraContextLabel = this.getChildControl("conversation-extra-content");
             extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
@@ -153,6 +144,7 @@ qx.Class.define("osparc.support.ConversationPage", {
               }
               extraContextLabel.setValue(extraContextText);
             }
+            options.show();
           });
       } else {
         title.setValue("");

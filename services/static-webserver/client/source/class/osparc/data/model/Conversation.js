@@ -38,6 +38,15 @@ qx.Class.define("osparc.data.model.Conversation", {
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
     });
+
+    if (conversationData.name && conversationData.name !== "null") {
+      this.setNameAlias(conversationData.name);
+    } else {
+      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationData.conversationId)
+        .then(lastMessage => {
+          this.setNameAlias(lastMessage ? lastMessage.content : "");
+        });
+    }
   },
 
   properties: {
@@ -53,6 +62,13 @@ qx.Class.define("osparc.data.model.Conversation", {
       nullable: false,
       init: null,
       event: "changeName",
+    },
+
+    nameAlias: {
+      check: "String",
+      nullable: false,
+      init: "",
+      event: "changeNameAlias",
     },
 
     userGroupId: {

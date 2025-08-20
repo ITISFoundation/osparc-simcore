@@ -46,26 +46,12 @@ qx.Class.define("osparc.support.ConversationListItem", {
 
   members: {
     __applyConversation: function(conversation) {
-      const conversationId = conversation.getConversationId();
-      if (conversation.getMessages()) {
-        this.__populateListItem();
-      } else {
-        osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationId)
-          .then(() => {
-            this.__populateListItem();
-          });
-      }
-    },
-
-    __populateListItem: function() {
-      const conversation = this.getConversation();
+      conversation.bind("nameAlias", this, "title");
       const messages = conversation.getMessages();
       if (messages && messages.length) {
         const lastMessage = messages[0];
         const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
-        const name = conversation.getName();
         this.set({
-          title: name && name !== "null" ? name : lastMessage.content,
           subtitle: date,
         });
 
