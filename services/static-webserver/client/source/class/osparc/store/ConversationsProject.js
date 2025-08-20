@@ -124,7 +124,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           "type": "MESSAGE",
         }
       };
-      return osparc.data.Resources.fetch("conversationsStudies", "addMessage", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "postMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
@@ -166,7 +166,7 @@ qx.Class.define("osparc.store.ConversationsProject", {
           "type": "NOTIFICATION",
         }
       };
-      return osparc.data.Resources.fetch("conversationsStudies", "addMessage", params)
+      return osparc.data.Resources.fetch("conversationsStudies", "postMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
   }

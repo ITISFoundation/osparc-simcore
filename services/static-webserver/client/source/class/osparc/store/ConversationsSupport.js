@@ -157,7 +157,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           "type": "MESSAGE",
         }
       };
-      return osparc.data.Resources.fetch("conversationsSupport", "addMessage", params)
+      return osparc.data.Resources.fetch("conversationsSupport", "postMessage", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
