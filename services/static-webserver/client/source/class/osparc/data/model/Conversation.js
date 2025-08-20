@@ -140,7 +140,9 @@ qx.Class.define("osparc.data.model.Conversation", {
       let promise = osparc.store.ConversationsSupport.getInstance().getLastMessage(this.getConversationId());
       promise
         .then(lastMessage => {
-          this.setNameAlias(lastMessage ? lastMessage.content : "");
+          if (this.getNameAlias() === "") {
+            this.setNameAlias(lastMessage ? lastMessage.content : "");
+          }
           promise = null;
           return lastMessage;
         })
