@@ -69,7 +69,7 @@ async def list_conversations(
 ): ...
 
 
-@router.put(
+@router.patch(
     "/conversations/{conversation_id}",
     response_model=Envelope[ConversationRestGet],
 )
