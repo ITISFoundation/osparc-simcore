@@ -133,5 +133,12 @@ qx.Class.define("osparc.data.model.Conversation", {
       messages.push(message);
       this.setMessages(messages);
     },
+
+    getContextProjectId: function() {
+      if (this.getExtraContext() && "projectId" in this.getExtraContext()) {
+        return this.getExtraContext()["projectId"];
+      }
+      return null;
+    }
   },
 });

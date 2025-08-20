@@ -139,8 +139,9 @@ qx.Class.define("osparc.support.ConversationPage", {
             if (amISupporter && extraContext && Object.keys(extraContext).length) {
               let extraContextText = "";
               extraContextText += `ID: ${conversationId}<br>`;
-              if ("projectId" in extraContext) {
-                extraContextText += `Project ID: ${extraContext["projectId"]}<br>`;
+              const contextProjectId = conversation.getContextProjectId();
+              if (contextProjectId) {
+                extraContextText += `Project ID: ${contextProjectId}<br>`;
               }
               extraContextLabel.setValue(extraContextText);
             }
