@@ -5,8 +5,14 @@ from ..logging_errors import create_troubleshootting_log_kwargs
 from ..rabbitmq import RPCRouter
 from ._serialization import string_to_object
 from .errors import BaseLongRunningError
-from .models import ErrorResponse, TaskBase, TaskContext, TaskId, TaskStatus
-from .task import RegisteredTaskName
+from .models import (
+    ErrorResponse,
+    RegisteredTaskName,
+    TaskBase,
+    TaskContext,
+    TaskId,
+    TaskStatus,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -65,11 +71,7 @@ async def get_task_result(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    allowed_errors_str: str,
 ) -> ErrorResponse | str:
-    allowed_errors: tuple[type[BaseException], ...] = string_to_object(
-        allowed_errors_str
-    )
     try:
         result_field = await long_running_manager.tasks_manager.get_task_result(
             task_id, with_task_context=task_context
@@ -89,6 +91,11 @@ async def get_task_result(
                         "namespace": long_running_manager.lrt_namespace,
                     },
                     tip="This exception is logged for debugging purposes, the client side will handle it",
+                )
+            )
+            allowed_errors = (
+                await long_running_manager.tasks_manager.get_allowed_errors(
+                    task_id, with_task_context=task_context
                 )
             )
             if type(task_raised_error) in allowed_errors:

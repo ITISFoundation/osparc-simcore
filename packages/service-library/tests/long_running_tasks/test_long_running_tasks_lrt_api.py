@@ -58,7 +58,7 @@ async def _task_takes_too_long(progress: TaskProgress) -> None:
 
 
 TaskRegistry.register(_task_echo_input)
-TaskRegistry.register(_task_always_raise)
+TaskRegistry.register(_task_always_raise, allowed_errors=(_TestingError,))
 TaskRegistry.register(_task_takes_too_long)
 
 
@@ -280,7 +280,6 @@ async def test_workflow_raises_error(
                 _get_task_manager(long_running_managers),
                 saved_context,
                 task_id,
-                allowed_errors=(_TestingError,),
             )
 
         await _assert_task_is_no_longer_present(

@@ -51,7 +51,7 @@ async def _string_list_task(
     )
 
 
-TaskRegistry.register(_string_list_task)
+TaskRegistry.register(_string_list_task, allowed_errors=(_TestingError,))
 
 
 @pytest.fixture

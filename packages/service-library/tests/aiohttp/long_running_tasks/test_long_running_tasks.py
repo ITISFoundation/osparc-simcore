@@ -164,7 +164,7 @@ async def test_failing_task_returns_error(
     # The actual error details should be logged, not returned in response
     log_messages = caplog.text
     assert "OEC" in log_messages
-    assert "RuntimeError" in log_messages
+    assert "_TestingError" in log_messages
     assert "We were asked to fail!!" in log_messages
 
 

@@ -30,6 +30,8 @@ TaskContext: TypeAlias = dict[str, Any]
 
 LRTNamespace: TypeAlias = str
 
+RegisteredTaskName: TypeAlias = str
+
 
 class ErrorResponse(BaseModel):
     str_error_object: str
@@ -49,6 +51,7 @@ class ResultField(BaseModel):
 
 
 class TaskData(BaseModel):
+    registered_task_name: RegisteredTaskName
     task_id: str
     task_progress: TaskProgress
     # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
@@ -86,6 +89,7 @@ class TaskData(BaseModel):
         json_schema_extra={
             "examples": [
                 {
+                    "registered_task_name": "a-task-name",
                     "task_id": "1a119618-7186-4bc1-b8de-7e3ff314cb7e",
                     "task_name": "running-task",
                     "task_status": "running",

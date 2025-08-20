@@ -35,6 +35,7 @@ from .errors import (
 from .models import (
     ErrorResponse,
     LRTNamespace,
+    RegisteredTaskName,
     ResultField,
     TaskBase,
     TaskContext,
@@ -51,8 +52,7 @@ _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(se
 _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 
-
-RegisteredTaskName: TypeAlias = str
+AllowedErrrors: TypeAlias = tuple[type[BaseException], ...]
 
 
 class TaskProtocol(Protocol):
@@ -65,14 +65,29 @@ class TaskProtocol(Protocol):
 
 
 class TaskRegistry:
-    REGISTERED_TASKS: ClassVar[dict[RegisteredTaskName, TaskProtocol]] = {}
+    REGISTERED_TASKS: ClassVar[
+        dict[RegisteredTaskName, tuple[AllowedErrrors, TaskProtocol]]
+    ] = {}
 
     @classmethod
-    def register(cls, task: TaskProtocol, **partial_kwargs) -> None:
+    def register(
+        cls,
+        task: TaskProtocol,
+        allowed_errors: AllowedErrrors = (),
+        **partial_kwargs,
+    ) -> None:
         partial_task = functools.partial(task, **partial_kwargs)
         # allows to call the partial via it's original name
         partial_task.__name__ = task.__name__  # type: ignore[attr-defined]
-        cls.REGISTERED_TASKS[task.__name__] = partial_task  # type: ignore[assignment]
+        cls.REGISTERED_TASKS[task.__name__] = [allowed_errors, partial_task]  # type: ignore[assignment]
+
+    @classmethod
+    def get_task(cls, task_name: RegisteredTaskName) -> TaskProtocol:
+        return cls.REGISTERED_TASKS[task_name][1]
+
+    @classmethod
+    def get_allowed_errors(cls, task_name: RegisteredTaskName) -> AllowedErrrors:
+        return cls.REGISTERED_TASKS[task_name][0]
 
     @classmethod
     def unregister(cls, task: TaskProtocol) -> None:
@@ -381,6 +396,17 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             }
         )
 
+    async def get_allowed_errors(
+        self, task_id: TaskId, with_task_context: TaskContext
+    ) -> AllowedErrrors:
+        """
+        returns: the allowed errors for the task
+
+        raises TaskNotFoundError if the task cannot be found
+        """
+        task_data = await self._get_tracked_task(task_id, with_task_context)
+        return TaskRegistry.get_allowed_errors(task_data.registered_task_name)
+
     async def get_task_result(
         self, task_id: TaskId, with_task_context: TaskContext
     ) -> ResultField:
@@ -483,7 +509,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 task_name=registered_task_name, tasks=TaskRegistry.REGISTERED_TASKS
             )
 
-        task = TaskRegistry.REGISTERED_TASKS[registered_task_name]
+        task = TaskRegistry.get_task(registered_task_name)
 
         # NOTE: If not task name is given, it will be composed of the handler's module and it's name
         # to keep the urls shorter and more meaningful.
@@ -521,6 +547,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         )
 
         tracked_task = TaskData(
+            registered_task_name=registered_task_name,
             task_id=task_id,
             task_progress=task_progress,
             task_context=context_to_use,

@@ -33,7 +33,6 @@ from servicelib.long_running_tasks.models import (
     TaskStatus,
 )
 from servicelib.long_running_tasks.task import TaskContext, TaskRegistry
-from servicelib.long_running_tasks.utils import encode_error_types
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
@@ -71,7 +70,7 @@ async def _string_list_task(
     return generated_strings
 
 
-TaskRegistry.register(_string_list_task)
+TaskRegistry.register(_string_list_task, allowed_errors=(_TestingError,))
 
 
 @pytest.fixture
@@ -247,10 +246,8 @@ async def test_failing_task_returns_error(
     # get the result
     result_url = app.url_path_for("get_task_result", task_id=task_id)
 
-    encoded_errors = encode_error_types((_TestingError,))
-    url = f"{result_url}?allowed_errors={encoded_errors}"
     with pytest.raises(_TestingError) as exec_info:
-        await client.get(url)
+        await client.get(f"{result_url}")
     assert f"{exec_info.value}" == "We were asked to fail!!"
 
 

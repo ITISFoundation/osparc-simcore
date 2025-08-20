@@ -9,16 +9,16 @@ from ..logging_errors import create_troubleshootting_log_kwargs
 from ..logging_utils import log_decorator
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._rabbit_namespace import get_rabbit_namespace
-from ._serialization import object_to_string, string_to_object
+from ._serialization import string_to_object
 from .models import (
     ErrorResponse,
     LRTNamespace,
+    RegisteredTaskName,
     TaskBase,
     TaskContext,
     TaskId,
     TaskStatus,
 )
-from .task import RegisteredTaskName
 
 _logger = logging.getLogger(__name__)
 
@@ -99,14 +99,12 @@ async def get_task_result(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    allowed_errors: tuple[type[BaseException], ...],
 ) -> Any:
     serialized_result = await rabbitmq_rpc_client.request(
         get_rabbit_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("get_task_result"),
         task_context=task_context,
         task_id=task_id,
-        allowed_errors_str=object_to_string(allowed_errors),
         timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
     )
     assert isinstance(serialized_result, ErrorResponse | str)  # nosec
@@ -120,7 +118,6 @@ async def get_task_result(
                     "task_id": task_id,
                     "namespace": namespace,
                     "task_context": task_context,
-                    "allowed_errors": allowed_errors,
                 },
                 tip=(
                     f"The caller of this function should handle the exception. "
