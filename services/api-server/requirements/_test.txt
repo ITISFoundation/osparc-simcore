@@ -134,6 +134,8 @@ ecdsa==0.19.0
     #   sshpubkeys
 faker==36.1.1
     # via -r requirements/_test.in
+fakeredis==2.31.0
+    # via -r requirements/_test.in
 fastapi==0.115.12
     # via
     #   -c requirements/_base.txt
@@ -351,6 +353,11 @@ pyyaml==6.0.2
     #   moto
     #   openapi-spec-validator
     #   responses
+redis==5.2.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
 referencing==0.35.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -398,6 +405,8 @@ sniffio==1.3.1
     #   anyio
     #   asgi-lifespan
     #   httpx
+sortedcontainers==2.4.0
+    # via fakeredis
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt
