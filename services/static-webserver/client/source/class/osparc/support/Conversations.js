@@ -27,6 +27,8 @@ qx.Class.define("osparc.support.Conversations", {
     this.__conversationListItems = [];
 
     this.__fetchConversations();
+
+    this.__listenToNewConversations();
   },
 
   statics: {
@@ -87,6 +89,13 @@ qx.Class.define("osparc.support.Conversations", {
           loadMoreButton.setFetching(false);
           loadMoreButton.exclude();
         });
+    },
+
+    __listenToNewConversations: function() {
+      osparc.store.ConversationsSupport.getInstance().addListener("conversationCreated", e => {
+        const conversation = e.getData();
+        this.__addConversation(conversation);
+      });
     },
 
     __addConversation: function(conversation) {

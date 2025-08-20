@@ -26,6 +26,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   events: {
+    "conversationCreated": "qx.event.type.Data",
     "conversationDeleted": "qx.event.type.Data",
   },
 
@@ -90,6 +91,11 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         }
       };
       return osparc.data.Resources.fetch("conversationsSupport", "postConversation", params)
+        .then(conversationData => {
+          const conversation = new osparc.data.model.Conversation(conversationData);
+          this.__addToCache(conversation);
+          this.fireDataEvent("conversationCreated", conversation);
+        })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
