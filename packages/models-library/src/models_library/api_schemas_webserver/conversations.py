@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from pydantic import Field
 
@@ -47,6 +47,7 @@ class ConversationRestGet(OutputSchema):
 
 class ConversationPatch(InputSchema):
     name: str | None = None
+    extra_context: dict[str, Any] | None = None
 
 
 ### CONVERSATION MESSAGES ---------------------------------------------------------------
