@@ -129,21 +129,21 @@ qx.Class.define("osparc.support.ConversationPage", {
 
     __applyConversation: function(conversation) {
       const title = this.getChildControl("conversation-title");
+      const extraContextLabel = this.getChildControl("conversation-extra-content");
       const options = this.getChildControl("conversation-options");
       if (conversation) {
         conversation.bind("nameAlias", title, "value");
         const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
-        const extraContextLabel = this.getChildControl("conversation-extra-content");
-        extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
         const extraContext = conversation.getExtraContext();
         if (amISupporter && extraContext && Object.keys(extraContext).length) {
-          let extraContextText = `Support ID: ${conversation}`;
+          let extraContextText = `Support ID: ${conversation.getConversationId()}`;
           const contextProjectId = conversation.getContextProjectId();
           if (contextProjectId) {
             extraContextText += `<br>Project ID: ${contextProjectId}`;
           }
           extraContextLabel.setValue(extraContextText);
         }
+        extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
         options.show();
       } else {
         title.setValue("");

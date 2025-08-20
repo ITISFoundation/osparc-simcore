@@ -144,11 +144,16 @@ qx.Class.define("osparc.support.SupportCenter", {
 
     openConversation: function(conversationId) {
       const conversationPage = this.getChildControl("conversation-page");
-      osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
-        .then(conversation => {
-          conversationPage.setConversation(conversation);
-          this.__showConversation();
-        });
+      if (conversationId) {
+        osparc.store.ConversationsSupport.getInstance().getConversation(conversationId)
+          .then(conversation => {
+            conversationPage.setConversation(conversation);
+            this.__showConversation();
+          });
+      } else {
+        conversationPage.setConversation(null);
+        this.__showConversation();
+      }
     },
 
     __createConversation: function() {
