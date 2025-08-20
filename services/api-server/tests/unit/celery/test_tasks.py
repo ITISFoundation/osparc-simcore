@@ -4,6 +4,7 @@
 from typing import Any
 
 import pytest
+from celery.contrib.testing.worker import TestWorkController
 from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
@@ -18,6 +19,9 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.async_jobs_server import AsyncJobSideEffects
 from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
+
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+
 
 _faker = Faker()
 
@@ -64,26 +68,17 @@ def mocked_async_jobs_rpc_api(
 
 
 @pytest.mark.parametrize(
-    "async_job_error, expected_status_code",
-    [
-        (None, status.HTTP_200_OK),
-        (
-            JobSchedulerError(
-                exc=Exception("A very rare exception raised by the scheduler")
-            ),
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-        ),
-    ],
+    "expected_status_code",
+    [status.HTTP_200_OK],
 )
-async def test_get_async_jobs(
+async def test_get_celery_tasks(
     client: AsyncClient,
-    mocked_async_jobs_rpc_api: dict[str, MockType],
     auth: BasicAuth,
     expected_status_code: int,
+    with_api_server_celery_worker: TestWorkController,
 ):
 
     response = await client.get("/v0/tasks", auth=auth)
-    assert mocked_async_jobs_rpc_api["list_jobs"].called
     assert response.status_code == expected_status_code
 
     if response.status_code == status.HTTP_200_OK:

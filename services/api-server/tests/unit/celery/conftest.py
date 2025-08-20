@@ -103,7 +103,7 @@ def add_worker_tasks() -> bool:
 
 
 @pytest.fixture
-async def with_storage_celery_worker(
+async def with_api_server_celery_worker(
     app_environment: EnvVarsDict,
     celery_app: Celery,
     monkeypatch: pytest.MonkeyPatch,

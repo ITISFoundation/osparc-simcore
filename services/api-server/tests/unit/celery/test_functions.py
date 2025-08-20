@@ -124,7 +124,7 @@ async def test_with_fake_run_function(
     app: FastAPI,
     client: AsyncClient,
     auth: BasicAuth,
-    with_storage_celery_worker: TestWorkController,
+    with_api_server_celery_worker: TestWorkController,
 ):
     app.dependency_overrides[get_function] = (
         lambda: RegisteredProjectFunction.model_validate(
