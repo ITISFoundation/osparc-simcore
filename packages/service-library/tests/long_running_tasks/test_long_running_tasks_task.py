@@ -118,7 +118,8 @@ async def test_task_is_auto_removed(
     empty_context: TaskContext,
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10 * TEST_CHECK_STALE_INTERVAL_S,
@@ -162,7 +163,8 @@ async def test_checked_task_is_not_auto_removed(
     wait_multiplier: int,
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=wait_multiplier * TEST_CHECK_STALE_INTERVAL_S,
@@ -188,7 +190,8 @@ async def test_fire_and_forget_task_is_not_auto_removed(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
@@ -214,7 +217,8 @@ async def test_get_result_of_unfinished_task_raises(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=5 * TEST_CHECK_STALE_INTERVAL_S,
@@ -236,7 +240,8 @@ async def test_unique_task_already_running(
     TaskRegistry.register(unique_task)
 
     await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         unique_task.__name__,
         unique=True,
         task_context=empty_context,
@@ -245,7 +250,8 @@ async def test_unique_task_already_running(
     # ensure unique running task regardless of how many times it gets started
     with pytest.raises(TaskAlreadyRunningError) as exec_info:
         await lrt_api.start_task(
-            long_running_manager,
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
             unique_task.__name__,
             unique=True,
             task_context=empty_context,
@@ -265,7 +271,8 @@ async def test_start_multiple_not_unique_tasks(
 
     for _ in range(5):
         await lrt_api.start_task(
-            long_running_manager,
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
             not_unique_task.__name__,
             task_context=empty_context,
         )
@@ -290,7 +297,8 @@ async def test_get_status(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
@@ -320,7 +328,10 @@ async def test_get_result(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager, fast_background_task.__name__, task_context=empty_context
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        fast_background_task.__name__,
+        task_context=empty_context,
     )
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
@@ -350,7 +361,8 @@ async def test_get_result_finished_with_error(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         failing_background_task.__name__,
         task_context=empty_context,
     )
@@ -392,7 +404,8 @@ async def test_cancel_task_from_different_manager(
     )
 
     task_id = await lrt_api.start_task(
-        manager_1,
+        manager_1.rpc_client,
+        manager_1.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=1,
@@ -424,7 +437,8 @@ async def test_remove_task(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
@@ -450,7 +464,8 @@ async def test_remove_task_with_task_context(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
@@ -495,7 +510,8 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
@@ -533,7 +549,8 @@ async def test_list_tasks(
     for _ in range(NUM_TASKS):
         task_ids.append(  # noqa: PERF401
             await lrt_api.start_task(
-                long_running_manager,
+                long_running_manager.rpc_client,
+                long_running_manager.lrt_namespace,
                 a_background_task.__name__,
                 raise_when_finished=False,
                 total_sleep=10,
@@ -563,21 +580,24 @@ async def test_list_tasks_filtering(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext
 ):
     await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_context=empty_context,
     )
     await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
         task_context={"user_id": 213},
     )
     await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
@@ -622,7 +642,8 @@ async def test_define_task_name(
 ):
     task_name = faker.name()
     task_id = await lrt_api.start_task(
-        long_running_manager,
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
         a_background_task.__name__,
         raise_when_finished=False,
         total_sleep=10,
@@ -636,4 +657,8 @@ async def test_start_not_registered_task(
     long_running_manager: BaseLongRunningManager,
 ):
     with pytest.raises(TaskNotRegisteredError):
-        await lrt_api.start_task(long_running_manager, "not_registered_task")
+        await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            "not_registered_task",
+        )

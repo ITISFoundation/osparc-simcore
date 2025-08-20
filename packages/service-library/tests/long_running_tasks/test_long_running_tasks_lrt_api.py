@@ -88,7 +88,7 @@ async def long_running_managers(
     return maanagers
 
 
-def _get_task_manager(
+def _get_long_running_manager(
     long_running_managers: list[BaseLongRunningManager],
 ) -> BaseLongRunningManager:
     return secrets.choice(long_running_managers)
@@ -102,7 +102,7 @@ async def _assert_task_status(
     is_done: bool
 ) -> None:
     result = await lrt_api.get_task_status(
-        rabbitmq_rpc_client, long_running_manager, TaskContext(), task_id
+        rabbitmq_rpc_client, long_running_manager.lrt_namespace, TaskContext(), task_id
     )
     assert result.done is is_done
 
@@ -117,7 +117,7 @@ async def _assert_task_status_on_random_manager(
     for task_id in task_ids:
         result = await lrt_api.get_task_status(
             rabbitmq_rpc_client,
-            _get_task_manager(long_running_managers),
+            _get_long_running_manager(long_running_managers).lrt_namespace,
             TaskContext(),
             task_id,
         )
@@ -135,7 +135,7 @@ async def _assert_task_status_done_on_all_managers(
         with attempt:
             await _assert_task_status(
                 rabbitmq_rpc_client,
-                _get_task_manager(long_running_managers),
+                _get_long_running_manager(long_running_managers),
                 task_id,
                 is_done=is_done,
             )
@@ -154,7 +154,9 @@ async def _assert_list_tasks_from_all_managers(
     task_count: int,
 ) -> None:
     for manager in long_running_managers:
-        tasks = await lrt_api.list_tasks(rabbitmq_rpc_client, manager, task_context)
+        tasks = await lrt_api.list_tasks(
+            rabbitmq_rpc_client, manager.lrt_namespace, task_context
+        )
         assert len(tasks) == task_count
 
 
@@ -167,7 +169,7 @@ async def _assert_task_is_no_longer_present(
     with pytest.raises(TaskNotFoundError):
         await lrt_api.get_task_status(
             rabbitmq_rpc_client,
-            _get_task_manager(long_running_managers),
+            _get_long_running_manager(long_running_managers).lrt_namespace,
             task_context,
             task_id,
         )
@@ -196,7 +198,8 @@ async def test_workflow_with_result(
     task_ids: list[TaskId] = []
     for _ in range(task_count):
         task_id = await lrt_api.start_task(
-            _get_task_manager(long_running_managers),
+            _get_long_running_manager(long_running_managers).rpc_client,
+            _get_long_running_manager(long_running_managers).lrt_namespace,
             _task_echo_input.__name__,
             unique=is_unique,
             task_name=None,
@@ -223,7 +226,7 @@ async def test_workflow_with_result(
     for task_id in task_ids:
         result = await lrt_api.get_task_result(
             rabbitmq_rpc_client,
-            _get_task_manager(long_running_managers),
+            _get_long_running_manager(long_running_managers).lrt_namespace,
             saved_context,
             task_id,
         )
@@ -250,7 +253,8 @@ async def test_workflow_raises_error(
     task_ids: list[TaskId] = []
     for _ in range(task_count):
         task_id = await lrt_api.start_task(
-            _get_task_manager(long_running_managers),
+            _get_long_running_manager(long_running_managers).rpc_client,
+            _get_long_running_manager(long_running_managers).lrt_namespace,
             _task_always_raise.__name__,
             unique=is_unique,
             task_name=None,
@@ -277,7 +281,7 @@ async def test_workflow_raises_error(
         with pytest.raises(_TestingError, match="This task always raises an error"):
             await lrt_api.get_task_result(
                 rabbitmq_rpc_client,
-                _get_task_manager(long_running_managers),
+                _get_long_running_manager(long_running_managers).lrt_namespace,
                 saved_context,
                 task_id,
             )
@@ -296,7 +300,8 @@ async def test_remove_task(
     task_context: TaskContext | None,
 ):
     task_id = await lrt_api.start_task(
-        _get_task_manager(long_running_managers),
+        _get_long_running_manager(long_running_managers).rpc_client,
+        _get_long_running_manager(long_running_managers).lrt_namespace,
         _task_takes_too_long.__name__,
         unique=is_unique,
         task_name=None,
@@ -311,7 +316,7 @@ async def test_remove_task(
 
     await lrt_api.remove_task(
         rabbitmq_rpc_client,
-        _get_task_manager(long_running_managers),
+        _get_long_running_manager(long_running_managers).lrt_namespace,
         saved_context,
         task_id,
         wait_for_removal=True,

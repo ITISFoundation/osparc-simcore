@@ -28,7 +28,9 @@ async def list_tasks(
             abort_href=str(request.url_for("remove_task", task_id=t.task_id)),
         )
         for t in await lrt_api.list_tasks(
-            long_running_manager.rpc_client, long_running_manager, task_context={}
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            task_context={},
         )
     ]
 
@@ -51,7 +53,7 @@ async def get_task_status(
     assert request  # nosec
     return await lrt_api.get_task_status(
         long_running_manager.rpc_client,
-        long_running_manager,
+        long_running_manager.lrt_namespace,
         task_context={},
         task_id=task_id,
     )
@@ -77,7 +79,7 @@ async def get_task_result(
     assert request  # nosec
     return await lrt_api.get_task_result(
         long_running_manager.rpc_client,
-        long_running_manager,
+        long_running_manager.lrt_namespace,
         task_context={},
         task_id=task_id,
     )
@@ -103,7 +105,7 @@ async def remove_task(
     assert request  # nosec
     await lrt_api.remove_task(
         long_running_manager.rpc_client,
-        long_running_manager,
+        long_running_manager.lrt_namespace,
         task_context={},
         task_id=task_id,
         wait_for_removal=True,  # only used by internal services, they will wait as before

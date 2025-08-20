@@ -80,7 +80,11 @@ def user_routes() -> APIRouter:
             FastAPILongRunningManager, Depends(get_long_running_manager)
         ],
     ) -> TaskId:
-        return await lrt_api.start_task(long_running_manager, a_test_task.__name__)
+        return await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            a_test_task.__name__,
+        )
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
@@ -89,7 +93,9 @@ def user_routes() -> APIRouter:
         ],
     ) -> TaskId:
         return await lrt_api.start_task(
-            long_running_manager, a_failing_test_task.__name__
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            a_failing_test_task.__name__,
         )
 
     return router

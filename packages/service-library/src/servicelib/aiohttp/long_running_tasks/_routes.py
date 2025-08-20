@@ -30,7 +30,7 @@ async def list_tasks(request: web.Request) -> web.Response:
             )
             for t in await lrt_api.list_tasks(
                 long_running_manager.rpc_client,
-                long_running_manager,
+                long_running_manager.lrt_namespace,
                 long_running_manager.get_task_context(request),
             )
         ]
@@ -44,7 +44,7 @@ async def get_task_status(request: web.Request) -> web.Response:
 
     task_status = await lrt_api.get_task_status(
         long_running_manager.rpc_client,
-        long_running_manager,
+        long_running_manager.lrt_namespace,
         long_running_manager.get_task_context(request),
         path_params.task_id,
     )
@@ -59,7 +59,7 @@ async def get_task_result(request: web.Request) -> web.Response | Any:
     # NOTE: this might raise an exception that will be catched by the _error_handlers
     return await lrt_api.get_task_result(
         long_running_manager.rpc_client,
-        long_running_manager,
+        long_running_manager.lrt_namespace,
         long_running_manager.get_task_context(request),
         path_params.task_id,
     )
@@ -72,7 +72,7 @@ async def remove_task(request: web.Request) -> web.Response:
 
     await lrt_api.remove_task(
         long_running_manager.rpc_client,
-        long_running_manager,
+        long_running_manager.lrt_namespace,
         long_running_manager.get_task_context(request),
         path_params.task_id,
         wait_for_removal=False,  # frontend does not care about waiting for this

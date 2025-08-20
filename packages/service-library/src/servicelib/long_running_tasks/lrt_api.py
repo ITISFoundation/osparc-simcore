@@ -2,12 +2,19 @@ from typing import Any
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from . import _lrt_client
-from .base_long_running_manager import BaseLongRunningManager
-from .models import RegisteredTaskName, TaskBase, TaskContext, TaskId, TaskStatus
+from .models import (
+    LRTNamespace,
+    RegisteredTaskName,
+    TaskBase,
+    TaskContext,
+    TaskId,
+    TaskStatus,
+)
 
 
 async def start_task(
-    long_running_manager: BaseLongRunningManager,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    lrt_namespace: LRTNamespace,
     registered_task_name: RegisteredTaskName,
     *,
     unique: bool = False,
@@ -43,8 +50,8 @@ async def start_task(
     """
 
     return await _lrt_client.start_task(
-        long_running_manager.rpc_client,
-        long_running_manager.lrt_namespace,
+        rabbitmq_rpc_client,
+        lrt_namespace,
         registered_task_name=registered_task_name,
         unique=unique,
         task_context=task_context,
@@ -56,40 +63,35 @@ async def start_task(
 
 async def list_tasks(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: BaseLongRunningManager,
+    lrt_namespace: LRTNamespace,
     task_context: TaskContext,
 ) -> list[TaskBase]:
     return await _lrt_client.list_tasks(
-        rabbitmq_rpc_client,
-        long_running_manager.lrt_namespace,
-        task_context=task_context,
+        rabbitmq_rpc_client, lrt_namespace, task_context=task_context
     )
 
 
 async def get_task_status(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: BaseLongRunningManager,
+    lrt_namespace: LRTNamespace,
     task_context: TaskContext,
     task_id: TaskId,
 ) -> TaskStatus:
     """returns the status of a task"""
     return await _lrt_client.get_task_status(
-        rabbitmq_rpc_client,
-        long_running_manager.lrt_namespace,
-        task_id=task_id,
-        task_context=task_context,
+        rabbitmq_rpc_client, lrt_namespace, task_id=task_id, task_context=task_context
     )
 
 
 async def get_task_result(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: BaseLongRunningManager,
+    lrt_namespace: LRTNamespace,
     task_context: TaskContext,
     task_id: TaskId,
 ) -> Any:
     return await _lrt_client.get_task_result(
         rabbitmq_rpc_client,
-        long_running_manager.lrt_namespace,
+        lrt_namespace,
         task_context=task_context,
         task_id=task_id,
     )
@@ -97,7 +99,7 @@ async def get_task_result(
 
 async def remove_task(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: BaseLongRunningManager,
+    lrt_namespace: LRTNamespace,
     task_context: TaskContext,
     task_id: TaskId,
     *,
@@ -106,7 +108,7 @@ async def remove_task(
     """cancels and removes the task"""
     await _lrt_client.remove_task(
         rabbitmq_rpc_client,
-        long_running_manager.lrt_namespace,
+        lrt_namespace,
         task_id=task_id,
         task_context=task_context,
         wait_for_removal=wait_for_removal,
