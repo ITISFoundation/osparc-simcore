@@ -143,24 +143,41 @@ qx.Class.define("osparc.support.Conversation", {
     __applyConversation: function(conversation) {
       this.__reloadMessages(true);
 
-      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
-      if (conversation === null && currentStudy) {
-        this.getChildControl("share-project-checkbox").show();
-      }
-      /*
+      const shareProjectCB = this.getChildControl("share-project-checkbox");
       const shareProjectLayout = this.getChildControl("share-project-layout");
-      shareProjectLayout.setVisibility(conversation && currentStudy ? "visible" : "excluded");
-      if (conversation && currentStudy) {
-        const shareProjectCB = this.getChildControl("share-project-checkbox");
-        const supportGroupId = currentStudy.getSupportGroupId();
-        const accessRights = currentStudy.getAccessRights();
-        if (supportGroupId && supportGroupId in accessRights) {
-          shareProjectCB.setValue(true);
+      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+      let showCB = false;
+      if (currentStudy) {
+        if (conversation) {
+          if (conversation.getContextProjectId() === currentStudy.getUuid()) {
+            showCB = true;
+          }
         } else {
-          shareProjectCB.setValue(false);
+          showCB = true;
         }
       }
-      */
+      shareProjectLayout.setVisibility(showCB ? "visible" : "excluded");
+
+      if (currentStudy && conversation && conversation.getContextProjectId() === currentStudy.getUuid()) {
+        let isAlreadyShared = false;
+        const accessRights = currentStudy.getAccessRights();
+        const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
+        if (supportGroupId && supportGroupId in accessRights) {
+          isAlreadyShared = true;
+        } else {
+          isAlreadyShared = false;
+        }
+        shareProjectCB.setValue(isAlreadyShared);
+      }
+
+      shareProjectCB.removeListener("changeValue", this.__shareProjectWithSupport, this);
+      if (showCB) {
+        shareProjectCB.addListener("changeValue", this.__shareProjectWithSupport, this);
+      }
+    },
+
+    __shareProjectWithSupport: function(e) {
+      console.log("Share project with support: ", e.getData());
     },
 
     __reloadMessages: function(removeMessages = true) {

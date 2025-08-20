@@ -149,7 +149,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
             this.__addMessageToCache(conversationId, lastMessage);
             return lastMessage;
           }
-          return lastMessage;
+          return null;
         });
     },
 
