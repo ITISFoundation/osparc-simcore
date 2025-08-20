@@ -38,6 +38,7 @@ class FakeAppServer(BaseAppServer):
     def __init__(self, app: Celery, settings: CelerySettings):
         super().__init__(app)
         self._settings = settings
+        self.task_manager: CeleryTaskManager | None = None
 
     async def lifespan(self, startup_completed_event: threading.Event) -> None:
         redis_client_sdk = RedisClientSDK(
