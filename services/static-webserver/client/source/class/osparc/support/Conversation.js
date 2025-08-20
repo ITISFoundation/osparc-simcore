@@ -123,9 +123,13 @@ qx.Class.define("osparc.support.Conversation", {
       addMessages.addListener("messageAdded", e => {
         const data = e.getData();
         if (data["conversationId"] && this.getConversation() === null) {
-          this.setConversationId(data["conversationId"]);
+          osparc.store.ConversationsSupport.getInstance().getConversation(data["conversationId"])
+            .then(conversation => {
+              this.setConversation(conversation);
+            });
+        } else {
+          this.addMessage(data);
         }
-        this.addMessage(data);
       });
     },
 
