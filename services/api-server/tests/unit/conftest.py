@@ -88,8 +88,6 @@ def app_environment(
             "API_SERVER_HEALTH_CHECK_TASK_PERIOD_SECONDS": "3",
             "API_SERVER_HEALTH_CHECK_TASK_TIMEOUT_SECONDS": "1",
             "API_SERVER_LOG_CHECK_TIMEOUT_SECONDS": "1",
-            "API_SERVER_CELERY": "null",
-            "API_SERVER_WORKER_MODE": "false",
             **backend_env_vars_overrides,
         },
     )
@@ -116,7 +114,6 @@ def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
             "setup_prometheus_instrumentation",
             autospec=True,
         )
-
     return app_environment
 
 
