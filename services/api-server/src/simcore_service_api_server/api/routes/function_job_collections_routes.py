@@ -18,24 +18,24 @@ from simcore_service_api_server._service_function_jobs import FunctionJobService
 
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
-from ...services_http.director_v2 import DirectorV2Api
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.functions import (
     get_function_from_functionjobid,
-    get_stored_job_status,
 )
 from ..dependencies.models_schemas_function_filters import (
     get_function_job_collections_filters,
 )
-from ..dependencies.services import get_api_client, get_function_job_service
+from ..dependencies.services import (
+    get_function_job_service,
+)
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
     FMSG_CHANGELOG_ADDED_IN_VERSION,
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
 )
-from .function_jobs_routes import function_job_status, get_function_job
+from .function_jobs_routes import get_function_job
 
 # pylint: disable=too-many-arguments
 
@@ -256,9 +256,11 @@ async def function_job_collection_list_function_jobs_list(
 async def function_job_collection_status(
     function_job_collection_id: FunctionJobCollectionID,
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
     product_name: Annotated[ProductName, Depends(get_product_name)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
 ) -> FunctionJobCollectionStatus:
     function_job_collection = await get_function_job_collection(
         function_job_collection_id=function_job_collection_id,
@@ -269,7 +271,7 @@ async def function_job_collection_status(
 
     job_statuses = await limited_gather(
         *[
-            function_job_status(
+            function_job_service.inspect_function_job(
                 function_job=await get_function_job(
                     function_job_id=function_job_id,
                     wb_api_rpc=wb_api_rpc,
@@ -282,16 +284,6 @@ async def function_job_collection_status(
                     user_id=user_id,
                     product_name=product_name,
                 ),
-                stored_job_status=await get_stored_job_status(
-                    function_job_id=function_job_id,
-                    wb_api_rpc=wb_api_rpc,
-                    user_id=user_id,
-                    product_name=product_name,
-                ),
-                wb_api_rpc=wb_api_rpc,
-                director2_api=director2_api,
-                user_id=user_id,
-                product_name=product_name,
             )
             for function_job_id in function_job_collection.job_ids
         ]

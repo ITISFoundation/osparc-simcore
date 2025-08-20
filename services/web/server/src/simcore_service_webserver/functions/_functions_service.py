@@ -44,6 +44,7 @@ from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
 from . import _functions_repository
+from ._functions_exceptions import FunctionGroupAccessRightsNotFoundError
 
 router = RPCRouter()
 
@@ -457,6 +458,31 @@ async def get_function_user_permissions(
     )
 
 
+async def list_function_group_permissions(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    function_id: FunctionID,
+) -> list[FunctionGroupAccessRights]:
+    access_rights_list = await _functions_repository.get_group_permissions(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        object_ids=[function_id],
+        object_type="function",
+    )
+
+    for object_id, access_rights in access_rights_list:
+        if object_id == function_id:
+            return access_rights
+
+    raise FunctionGroupAccessRightsNotFoundError(
+        function_id=function_id,
+        product_name=product_name,
+    )
+
+
 async def set_function_group_permissions(
     app: web.Application,
     *,
@@ -464,8 +490,8 @@ async def set_function_group_permissions(
     product_name: ProductName,
     function_id: FunctionID,
     permissions: FunctionGroupAccessRights,
-) -> None:
-    await _functions_repository.set_group_permissions(
+) -> FunctionGroupAccessRights:
+    access_rights_list = await _functions_repository.set_group_permissions(
         app=app,
         user_id=user_id,
         product_name=product_name,
@@ -475,6 +501,14 @@ async def set_function_group_permissions(
         read=permissions.read,
         write=permissions.write,
         execute=permissions.execute,
+    )
+    for object_id, access_rights in access_rights_list:
+        if object_id == function_id:
+            return access_rights
+
+    raise FunctionGroupAccessRightsNotFoundError(
+        product_name=product_name,
+        function_id=function_id,
     )
 
 

@@ -1565,6 +1565,17 @@ async def try_open_project_for_user(
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
+                # check if the project is already opened
+                if (
+                    current_project_ids := await user_session.find(PROJECT_ID_KEY)
+                ) and f"{project_uuid}" in current_project_ids:
+                    _logger.debug(
+                        "project %s is already opened by user %s/%s",
+                        project_uuid,
+                        user_id,
+                        client_session_id,
+                    )
+                    return True
                 # Enforce per-user open project limit
                 if max_number_of_opened_projects_per_user is not None and (
                     len(
@@ -1585,7 +1596,7 @@ async def try_open_project_for_user(
                         client_session_id=client_session_id,
                     )
 
-                # Assign project_id to current_session
+                # try to assign project_id to current_session
                 sessions_with_project = await user_session.find_users_of_resource(
                     app, PROJECT_ID_KEY, f"{project_uuid}"
                 )
@@ -1593,6 +1604,31 @@ async def try_open_project_for_user(
                     len(sessions_with_project)
                     >= max_number_of_user_sessions_per_project
                 ):
+                    # we need to check has an inactive session in which case we can steal the project
+                    this_user_other_sessions = [
+                        s
+                        for s in sessions_with_project
+                        if s.user_id == user_id and s != user_session
+                    ]
+                    for session in this_user_other_sessions:
+                        with managed_resource(
+                            session.user_id, session.client_session_id, app
+                        ) as other_user_session:
+                            if await other_user_session.get_socket_id() is None:
+                                # this user has an inactive session, we can steal the project
+                                _logger.debug(
+                                    "stealing project %s from user %s/%s",
+                                    project_uuid,
+                                    session.user_id,
+                                    session.client_session_id,
+                                )
+                                await user_session.add(
+                                    PROJECT_ID_KEY, f"{project_uuid}"
+                                )
+                                await other_user_session.remove(PROJECT_ID_KEY)
+
+                                return True
+
                     raise ProjectTooManyUserSessionsError(
                         max_num_sessions=max_number_of_user_sessions_per_project,
                         user_id=user_id,
