@@ -39,14 +39,7 @@ qx.Class.define("osparc.data.model.Conversation", {
       extraContext: conversationData.extraContext || null,
     });
 
-    if (conversationData.name && conversationData.name !== "null") {
-      this.setNameAlias(conversationData.name);
-    } else {
-      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversationData.conversationId)
-        .then(lastMessage => {
-          this.setNameAlias(lastMessage ? lastMessage.content : "");
-        });
-    }
+    this.__fetchLastMessage();
   },
 
   properties: {
@@ -126,10 +119,9 @@ qx.Class.define("osparc.data.model.Conversation", {
     },
   },
 
-  statics: {
-  },
-
   members: {
+    __fetchLastMessagePromise: null,
+
     __applyName: function(name) {
       if (name && name !== "null") {
         this.setNameAlias(name);
@@ -138,6 +130,33 @@ qx.Class.define("osparc.data.model.Conversation", {
 
     __applyMessages: function(messages) {
       console.log(messages);
+    },
+
+    __fetchLastMessage: function() {
+      if (this.__fetchLastMessagePromise) {
+        return this.__fetchLastMessagePromise;
+      }
+
+      let promise = osparc.store.ConversationsSupport.getInstance().getLastMessage(this.getConversationId());
+      promise
+        .then(lastMessage => {
+          this.setNameAlias(lastMessage ? lastMessage.content : "");
+          promise = null;
+          return lastMessage;
+        })
+        .finally(() => {
+          this.__fetchLastMessagePromise = null;
+        });
+
+      this.__fetchLastMessagePromise = promise;
+      return promise;
+    },
+
+    getLastMessage: function() {
+      if (this.getMessages() && this.getMessages().length) {
+        return Promise.resolve(this.getMessages()[0]);
+      }
+      return this.__fetchLastMessage();
     },
 
     addMessage: function(message) {

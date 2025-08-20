@@ -47,7 +47,7 @@ qx.Class.define("osparc.support.ConversationListItem", {
   members: {
     __applyConversation: function(conversation) {
       conversation.bind("nameAlias", this, "title");
-      osparc.store.ConversationsSupport.getInstance().getLastMessage(conversation.getConversationId())
+      conversation.getLastMessage()
         .then(lastMessage => {
           if (lastMessage) {
             const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
