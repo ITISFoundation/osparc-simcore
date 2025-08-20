@@ -121,6 +121,7 @@ qx.Class.define("osparc.data.model.Conversation", {
 
   members: {
     __fetchLastMessagePromise: null,
+    __nextRequestParams: null,
 
     __applyName: function(name) {
       if (name && name !== "null") {
@@ -159,6 +160,32 @@ qx.Class.define("osparc.data.model.Conversation", {
         return Promise.resolve(this.getMessages()[0]);
       }
       return this.__fetchLastMessage();
+    },
+
+    getNextMessages: function() {
+      const params = {
+        url: {
+          conversationId: this.getConversationId(),
+          offset: 0,
+          limit: 42
+        }
+      };
+      const nextRequestParams = this.__nextRequestParams;
+      if (nextRequestParams) {
+        params.url.offset = nextRequestParams.offset;
+        params.url.limit = nextRequestParams.limit;
+      }
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options)
+        .then(resp => {
+          const messages = resp["data"];
+          messages.forEach(message => this.addMessage(message));
+          this.__nextRequestParams = resp["_links"]["next"];
+          return resp;
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     renameConversation: function(newName) {

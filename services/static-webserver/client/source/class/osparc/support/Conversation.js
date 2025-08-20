@@ -56,7 +56,6 @@ qx.Class.define("osparc.support.Conversation", {
 
   members: {
     __messages: null,
-    __nextRequestParams: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -138,26 +137,6 @@ qx.Class.define("osparc.support.Conversation", {
       }
     },
 
-    __getNextRequest: function() {
-      const params = {
-        url: {
-          conversationId: this.getConversation().getConversationId(),
-          offset: 0,
-          limit: 42
-        }
-      };
-      const nextRequestParams = this.__nextRequestParams;
-      if (nextRequestParams) {
-        params.url.offset = nextRequestParams.offset;
-        params.url.limit = nextRequestParams.limit;
-      }
-      const options = {
-        resolveWResponse: true
-      };
-      return osparc.data.Resources.fetch("conversationsSupport", "getMessagesPage", params, options)
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
     __reloadMessages: function(removeMessages = true) {
       const messagesContainer = this.getChildControl("messages-container");
       const loadMoreMessages = this.getChildControl("load-more-button");
@@ -176,12 +155,11 @@ qx.Class.define("osparc.support.Conversation", {
         messagesContainer.removeAll();
       }
 
-      this.__getNextRequest()
+      this.getConversation().getNextMessages()
         .then(resp => {
           const messages = resp["data"];
           messages.forEach(message => this.addMessage(message));
-          this.__nextRequestParams = resp["_links"]["next"];
-          if (this.__nextRequestParams === null && loadMoreMessages) {
+          if (resp["_links"]["next"] === null && loadMoreMessages) {
             loadMoreMessages.exclude();
           }
         })
