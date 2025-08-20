@@ -22,35 +22,45 @@ from settings_library.docker_registry import RegistrySettings
 
 from .helpers.host import get_localhost_ip
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
 def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     """sets up and runs a docker registry container locally and returns its URL"""
+    yield from _docker_registry_impl(keep_docker_up, registry_version="3")
+
+
+@pytest.fixture(scope="session")
+def docker_registry_v2() -> Iterator[str]:
+    """sets up and runs a docker registry v2 container locally and returns its URL"""
+    yield from _docker_registry_impl(keep_docker_up=False, registry_version="2")
+
+
+def _docker_registry_impl(keep_docker_up: bool, registry_version: str) -> Iterator[str]:
+    """sets up and runs a docker registry container locally and returns its URL"""
     # run the registry outside of the stack
     docker_client = docker.from_env()
     # try to login to private registry
     host = "127.0.0.1"
-    port = 5000
+    port = 5000 if registry_version == "3" else 5001
     url = f"{host}:{port}"
+    container_name = f"pytest_registry_v{registry_version}"
+    volume_name = f"pytest_registry_v{registry_version}_data"
+
     container = None
     try:
         docker_client.login(registry=url, username="simcore")
-        container = docker_client.containers.list(filters={"name": "pytest_registry"})[
-            0
-        ]
+        container = docker_client.containers.list(filters={"name": container_name})[0]
         print("Warning: docker registry is already up!")
     except Exception:  # pylint: disable=broad-except
         container = docker_client.containers.run(
-            "registry:3",
-            ports={"5000": "5000"},
-            name="pytest_registry",
+            f"registry:{registry_version}",
+            ports={"5000": port},
+            name=container_name,
             environment=["REGISTRY_STORAGE_DELETE_ENABLED=true"],
             restart_policy={"Name": "always"},
-            volumes={
-                "pytest_registry_data": {"bind": "/var/lib/registry", "mode": "rw"}
-            },
+            volumes={volume_name: {"bind": "/var/lib/registry", "mode": "rw"}},
             detach=True,
         )
 
@@ -79,9 +89,9 @@ def docker_registry(keep_docker_up: bool) -> Iterator[str]:
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
     # the registry URL is how to access from the container (e.g. for accessing the API)
-    os.environ["REGISTRY_URL"] = f"{get_localhost_ip()}:5000"
+    os.environ["REGISTRY_URL"] = f"{get_localhost_ip()}:{port}"
     # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
-    os.environ["REGISTRY_PATH"] = "127.0.0.1:5000"
+    os.environ["REGISTRY_PATH"] = f"127.0.0.1:{port}"
     os.environ["REGISTRY_USER"] = "simcore"
     os.environ["REGISTRY_PW"] = ""
 
@@ -124,7 +134,7 @@ def registry_settings(
 @tenacity.retry(
     wait=tenacity.wait_fixed(2),
     stop=tenacity.stop_after_delay(20),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    before_sleep=tenacity.before_sleep_log(_logger, logging.INFO),
     reraise=True,
 )
 def wait_till_registry_is_responsive(url: str) -> bool:
