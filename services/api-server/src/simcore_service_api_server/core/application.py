@@ -13,6 +13,7 @@ from servicelib.fastapi.tracing import (
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
+from ..api.dependencies.celery import setup_task_manager
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..clients.postgres import setup_postgres
@@ -87,6 +88,9 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
         setup_postgres(app)
 
     setup_rabbitmq(app)
+
+    if settings.API_SERVER_CELERY and not settings.API_SERVER_WORKER_MODE:
+        setup_task_manager(app, settings.API_SERVER_CELERY)
 
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
