@@ -6,8 +6,13 @@ from celery import Celery, Task
 from celery.contrib.testing.worker import TestWorkController
 from celery_library.task import register_task
 from faker import Faker
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from httpx import AsyncClient, BasicAuth
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskResult,
+    TaskStatus,
+)
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -34,11 +39,43 @@ from simcore_service_api_server.models.schemas.jobs import (
     JobPricingSpecification,
     NodeID,
 )
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_exponential,
+)
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 _faker = Faker()
+
+
+async def poll_task_until_done(
+    client: AsyncClient,
+    auth: BasicAuth,
+    task_id: str,
+    timeout: float = 30.0,
+) -> TaskResult:
+
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(timeout),
+        wait=wait_exponential(multiplier=0.5, min=0.5, max=2.0),
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+
+            response = await client.get(f"/{API_VTAG}/tasks/{task_id}", auth=auth)
+            response.raise_for_status()
+            status = TaskStatus.model_validate(response.json())
+            assert status.done is True
+
+    assert status.done is True
+    response = await client.get(f"/{API_VTAG}/tasks/{task_id}/result", auth=auth)
+    response.raise_for_status()
+    return TaskResult.model_validate(response.json())
 
 
 def _register_fake_run_function_task() -> Callable[[Celery], None]:
@@ -87,7 +124,6 @@ async def test_with_fake_run_function(
     auth: BasicAuth,
     with_storage_celery_worker: TestWorkController,
 ):
-
     app.dependency_overrides[get_function] = (
         lambda: RegisteredProjectFunction.model_validate(
             RegisteredProjectFunction.model_config.get("json_schema_extra", {}).get(
@@ -107,4 +143,13 @@ async def test_with_fake_run_function(
         headers=headers,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
+    task = TaskGet.model_validate(response.json())
+
+    # Poll until task completion and get result
+    result = await poll_task_until_done(client, auth, task.task_id)
+
+    # Verify the result is a RegisteredProjectFunctionJob
+    assert result is not None
+    assert isinstance(result, dict)
+    # Add more specific assertions based on your expected result structure

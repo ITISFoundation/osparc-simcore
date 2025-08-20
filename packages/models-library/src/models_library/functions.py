@@ -113,7 +113,37 @@ class ProjectFunction(FunctionBase):
 
 
 class RegisteredProjectFunction(ProjectFunction, RegisteredFunctionBase):
-    pass
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "function_class": "PROJECT",
+                    "title": "Example Project Function",
+                    "description": "This is an example project function.",
+                    "input_schema": {
+                        "schema_content": {
+                            "type": "object",
+                            "properties": {"input1": {"type": "integer"}},
+                        },
+                        "schema_class": "application/schema+json",
+                    },
+                    "output_schema": {
+                        "schema_content": {
+                            "type": "object",
+                            "properties": {"output1": {"type": "string"}},
+                        },
+                        "schema_class": "application/schema+json",
+                    },
+                    "default_inputs": None,
+                    "project_id": "11111111-1111-1111-1111-111111111111",
+                    "uid": "22222222-2222-2222-2222-222222222222",
+                    "created_at": "2024-01-01T12:00:00",
+                    "modified_at": "2024-01-02T12:00:00",
+                },
+            ]
+        },
+    )
 
 
 SolverJobID: TypeAlias = UUID
