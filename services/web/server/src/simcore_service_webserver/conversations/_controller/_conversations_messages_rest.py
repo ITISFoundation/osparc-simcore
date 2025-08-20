@@ -1,6 +1,9 @@
+import functools
 import logging
+from typing import Any
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_webserver.conversations import (
     ConversationMessagePatch,
     ConversationMessageRestGet,
@@ -16,6 +19,7 @@ from models_library.rest_pagination import (
     PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
+from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
@@ -56,6 +60,10 @@ class _ConversationMessageCreateBodyParams(BaseModel):
     content: str
     type: ConversationMessageType
     model_config = ConfigDict(extra="forbid")
+
+
+def _json_encoder_and_dumps(obj: Any, **kwargs):
+    return json_dumps(jsonable_encoder(obj), **kwargs)
 
 
 @routes.post(
@@ -102,9 +110,11 @@ async def create_conversation_message(request: web.Request):
             email_template_path = await products_web.get_product_template_path(
                 request, template_name
             )
-            _conversation_url = (
-                f"{request.url}/#/conversations/{path_params.conversation_id}"
-            )
+            _url = request.url
+            if _url.port:
+                _conversation_url = f"{_url.scheme}://{_url.host}:{_url.port}/#/conversations/{path_params.conversation_id}"
+            else:
+                _conversation_url = f"{_url.scheme}://{_url.host}/#/conversations/{path_params.conversation_id}"
             _extra_context = conversation.extra_context
             await email_service.send_email_from_template(
                 request,
@@ -124,6 +134,7 @@ async def create_conversation_message(request: web.Request):
                     "conversation_url": _conversation_url,
                     "message_content": message.content,
                     "extra_context": _extra_context,
+                    "dumps": functools.partial(_json_encoder_and_dumps, indent=1),
                 },
             )
         except Exception:  # pylint: disable=broad-except

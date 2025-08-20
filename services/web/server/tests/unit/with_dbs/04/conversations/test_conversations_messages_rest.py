@@ -448,3 +448,62 @@ async def test_conversation_messages_nonexistent_resources(
     )
     resp = await client.delete(f"{delete_url}")
     await assert_status(resp, status.HTTP_404_NOT_FOUND)
+
+
+### Test with a database
+@pytest.mark.parametrize("user_role", [UserRole.USER])
+async def test_conversation_messages_with_database(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    mocker: MockerFixture,
+):
+    """Test conversation messages with direct database interaction"""
+    # Mock the email service to verify it's called for first message
+    mock_send_email = mocker.patch(
+        "simcore_service_webserver.email.email_service.send_email_from_template"
+    )
+
+    assert client.app
+
+    # Create a conversation directly via API (no mocks)
+    base_url = client.app.router["list_conversations"].url_for()
+    body = {"name": "Database Test Conversation", "type": "SUPPORT"}
+    resp = await client.post(f"{base_url}", json=body)
+    data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+    conversation_id = data["conversationId"]
+
+    # Verify the conversation was created
+    assert conversation_id is not None
+    assert data["name"] == "Database Test Conversation"
+    assert data["type"] == "SUPPORT"
+
+    # Create a message in the conversation
+    create_message_url = client.app.router["create_conversation_message"].url_for(
+        conversation_id=conversation_id
+    )
+    message_body = {"content": "Hello from database test", "type": "MESSAGE"}
+    resp = await client.post(f"{create_message_url}", json=message_body)
+    message_data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # Verify the message was created
+    assert message_data["messageId"] is not None
+    assert message_data["content"] == "Hello from database test"
+    assert message_data["type"] == "MESSAGE"
+    assert message_data["conversationId"] == conversation_id
+
+    # Verify email was sent for first message
+    assert mock_send_email.call_count == 1
+
+    # Create a second message
+    second_message_body = {"content": "Second message", "type": "MESSAGE"}
+    resp = await client.post(f"{create_message_url}", json=second_message_body)
+    second_message_data, _ = await assert_status(resp, status.HTTP_201_CREATED)
+
+    # Verify the second message was created
+    assert second_message_data["messageId"] is not None
+    assert second_message_data["content"] == "Second message"
+    assert second_message_data["type"] == "MESSAGE"
+    assert second_message_data["conversationId"] == conversation_id
+
+    # Verify email was NOT sent again for second message (still only 1 call)
+    assert mock_send_email.call_count == 1
