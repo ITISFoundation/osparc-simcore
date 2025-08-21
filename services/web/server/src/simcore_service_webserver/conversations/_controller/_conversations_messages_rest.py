@@ -35,7 +35,6 @@ from ...email import email_service
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...products import products_web
-from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
 from .. import _conversation_message_service, _conversation_service
 from ._common import ConversationPathParams, raise_unsupported_type
@@ -80,15 +79,19 @@ async def create_conversation_message(request: web.Request):
         _ConversationMessageCreateBodyParams, request
     )
 
-    user = await users_service.get_user(request.app, user_id=req_ctx.user_id)
-    conversation = await _conversation_service.get_conversation_for_user(
-        app=request.app,
-        conversation_id=path_params.conversation_id,
-        user_group_id=user["primary_gid"],
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    # Ensure only support conversations are allowed
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
+    )
 
     message, is_first_message = (
         await _conversation_message_service.create_support_message_with_first_check(
@@ -162,16 +165,19 @@ async def list_conversation_messages(request: web.Request):
         _ListConversationMessageQueryParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     total, messages = (
         await _conversation_message_service.list_messages_for_conversation(
@@ -213,16 +219,19 @@ async def get_conversation_message(request: web.Request):
         _ConversationMessagePathParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     message = await _conversation_message_service.get_message(
         app=request.app,
@@ -248,16 +257,19 @@ async def update_conversation_message(request: web.Request):
     )
     body_params = await parse_request_body_as(ConversationMessagePatch, request)
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     message = await _conversation_message_service.update_message(
         app=request.app,
@@ -284,16 +296,19 @@ async def delete_conversation_message(request: web.Request):
         _ConversationMessagePathParams, request
     )
 
-    user_primary_gid = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
     )
-    conversation = await _conversation_service.get_conversation_for_user(
+    if _conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=user_primary_gid,
     )
-    if conversation.type != ConversationType.SUPPORT:
-        raise_unsupported_type(conversation.type)
 
     await _conversation_message_service.delete_message(
         app=request.app,
