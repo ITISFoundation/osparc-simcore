@@ -83,39 +83,36 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   members: {
-    __thumbnail: null,
     __header: null,
     __messagesContainer: null,
     __extraWidgets: null,
     __maxButton: null,
 
-    __buildLayout: function() {
-      const maxLayout = this.__createMaximizeToolbar();
-      this._add(maxLayout);
-
-      const topSpacer = new qx.ui.core.Spacer();
-      this._add(topSpacer, {
-        flex: 1,
-      });
-
-      const productLogoPath = osparc.product.Utils.getLogoPath();
-      const thumbnail = this.__thumbnail = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().ICON_WIDTH, this.self().LOGO_HEIGHT).set({
-        alignX: "center"
-      });
-      let logoHeight = this.self().LOGO_HEIGHT;
-      if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
-        logoHeight = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().ICON_WIDTH);
-        thumbnail.getChildControl("image").set({
-          width: this.self().ICON_WIDTH,
-          height: logoHeight
-        });
-      } else {
-        thumbnail.getChildControl("image").set({
-          width: this.self().ICON_WIDTH,
-          height: logoHeight
-        });
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "max-toolbar":
+          control = this.__createMaximizeToolbar();
+          this._add(control);
+          break;
+        case "spacer-top":
+          control = new qx.ui.core.Spacer();
+          this._add(control, {
+            flex: 1,
+          });
+          break;
+        case "thumbnail":
+          control = this.__createThumbnail();
+          this._add(control);
+          break;
       }
-      this._add(thumbnail);
+      return control || this.base(arguments, id);
+    },
+
+    __buildLayout: function() {
+      this.getChildControl("max-toolbar");
+      this.getChildControl("spacer-top");
+      this.getChildControl("thumbnail");
 
       const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
         icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
@@ -188,19 +185,41 @@ qx.Class.define("osparc.ui.message.Loading", {
       return toolbarLayout;
     },
 
+    __createThumbnail: function() {
+      const productLogoPath = osparc.product.Utils.getLogoPath();
+      const thumbnail = new osparc.ui.basic.Thumbnail(productLogoPath, this.self().ICON_WIDTH, this.self().LOGO_HEIGHT).set({
+        alignX: "center"
+      });
+      let logoHeight = this.self().LOGO_HEIGHT;
+      if (qx.util.ResourceManager.getInstance().getImageFormat(productLogoPath) === "png") {
+        logoHeight = osparc.ui.basic.Logo.getHeightKeepingAspectRatio(productLogoPath, this.self().ICON_WIDTH);
+        thumbnail.getChildControl("image").set({
+          width: this.self().ICON_WIDTH,
+          height: logoHeight
+        });
+      } else {
+        thumbnail.getChildControl("image").set({
+          width: this.self().ICON_WIDTH,
+          height: logoHeight
+        });
+      }
+      return thumbnail;
+    },
+
     __applyLogo: function(newLogo) {
       const productLogoPath = osparc.product.Utils.getLogoPath();
+      const thumbnail = this.getChildControl("thumbnail");
       if (newLogo !== productLogoPath) {
-        this.__thumbnail.set({
+        thumbnail.set({
           maxHeight: this.self().ICON_HEIGHT,
           height: this.self().ICON_HEIGHT,
         });
-        this.__thumbnail.getChildControl("image").set({
+        thumbnail.getChildControl("image").set({
           maxHeight: this.self().ICON_HEIGHT,
           height: this.self().ICON_HEIGHT,
         });
       }
-      this.__thumbnail.setSource(newLogo);
+      thumbnail.setSource(newLogo);
     },
 
     __applyHeader: function(value) {
