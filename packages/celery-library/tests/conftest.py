@@ -4,7 +4,6 @@
 import datetime
 import logging
 import threading
-from asyncio import wait_for
 from collections.abc import AsyncIterator, Callable
 from functools import partial
 from typing import Any
@@ -15,14 +14,13 @@ from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init
 from celery.worker.worker import WorkController
 from celery_library.backends._redis import RedisTaskInfoStore
-from celery_library.signals import on_worker_init, on_worker_shutdown
+from celery_library.signals import on_worker_init
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
 from servicelib.celery.task_manager import TaskManager
-from servicelib.logging_utils import log_catch
 from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -70,8 +68,7 @@ class FakeAppServer(BaseAppServer):
         startup_completed_event.set()
         await self.shutdown_event.wait()  # wait for shutdown
 
-        with log_catch(_logger, reraise=False):
-            await wait_for(redis_client_sdk.shutdown(), timeout=5.0)
+        await redis_client_sdk.shutdown()
 
 
 @pytest.fixture
@@ -145,11 +142,7 @@ async def with_celery_worker(
         perform_ping_check=False,
         queues="default",
     ) as worker:
-        try:
-            yield worker
-        finally:
-            worker.stop()  # explicitly stop the worker
-            on_worker_shutdown(worker)
+        yield worker
 
 
 @pytest.fixture
@@ -174,5 +167,4 @@ async def celery_task_manager(
             RedisTaskInfoStore(redis_client_sdk),
         )
     finally:
-        with log_catch(_logger, reraise=False):
-            await wait_for(redis_client_sdk.shutdown(), timeout=5.0)
+        await redis_client_sdk.shutdown()
