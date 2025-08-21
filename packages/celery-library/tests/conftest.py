@@ -2,7 +2,9 @@
 # pylint: disable=unused-argument
 
 import datetime
+import logging
 import threading
+from asyncio import wait_for
 from collections.abc import AsyncIterator, Callable
 from functools import partial
 from typing import Any
@@ -20,6 +22,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.celery.app_server import BaseAppServer
 from servicelib.celery.task_manager import TaskManager
+from servicelib.logging_utils import log_catch
 from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -33,6 +36,9 @@ pytest_plugins = [
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
+
+
+_logger = logging.getLogger(__name__)
 
 
 class FakeAppServer(BaseAppServer):
@@ -64,7 +70,8 @@ class FakeAppServer(BaseAppServer):
         startup_completed_event.set()
         await self.shutdown_event.wait()  # wait for shutdown
 
-        await redis_client_sdk.shutdown()
+        with log_catch(_logger, reraise=False):
+            await wait_for(redis_client_sdk.shutdown(), timeout=5.0)
 
 
 @pytest.fixture
@@ -79,7 +86,6 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 @pytest.fixture
 def app_environment(
     monkeypatch: pytest.MonkeyPatch,
-    use_in_memory_redis: RedisSettings,
     env_devel_dict: EnvVarsDict,
 ) -> EnvVarsDict:
     return setenvs_from_dict(
@@ -98,8 +104,10 @@ def celery_settings(
 
 
 @pytest.fixture
-def app_server(celery_app: Celery, celery_settings: CelerySettings) -> BaseAppServer:
-    return FakeAppServer(app=celery_app, settings=celery_settings)
+def app_server(
+    celery_session_app: Celery, celery_settings: CelerySettings
+) -> BaseAppServer:
+    return FakeAppServer(app=celery_session_app, settings=celery_settings)
 
 
 @pytest.fixture(scope="session")
@@ -133,20 +141,16 @@ async def with_celery_worker(
 
     with start_worker(
         celery_app,
-        pool="threads",
-        concurrency=1,
         loglevel="info",
         perform_ping_check=False,
         queues="default",
+        shutdown_timeout=10.0,
     ) as worker:
-        # Ensure worker is fully up before test continues
-        worker.ensure_started()
-
         try:
             yield worker
         finally:
-            worker_init.disconnect(_on_worker_init_wrapper)
             on_worker_shutdown(worker)
+            worker_init.disconnect(_on_worker_init_wrapper)
 
 
 @pytest.fixture
@@ -171,4 +175,5 @@ async def celery_task_manager(
             RedisTaskInfoStore(redis_client_sdk),
         )
     finally:
-        await redis_client_sdk.shutdown()
+        with log_catch(_logger, reraise=False):
+            await wait_for(redis_client_sdk.shutdown(), timeout=5.0)
