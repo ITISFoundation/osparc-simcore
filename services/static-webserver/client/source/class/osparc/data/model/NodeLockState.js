@@ -42,7 +42,8 @@ qx.Class.define("osparc.data.model.NodeLockState", {
     },
 
     status: {
-      check: ["NOT_STARTED", "STARTED", "OPENED"],
+      // check: ["NOT_STARTED", "STARTED", "OPENED"],
+      check: "String",
       init: false,
       nullable: false,
       event: "changeStatus",
