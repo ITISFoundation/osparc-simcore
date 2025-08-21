@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import pytest
 from faker import Faker
 from pytest_mock import MockerFixture, MockType
@@ -37,7 +39,9 @@ def mock_task_manager_object(mocker: MockerFixture) -> MockType:
 
 
 @pytest.fixture
-def mock_task_manager_raising_factory(mocker: MockerFixture):
+def mock_task_manager_raising_factory(
+    mocker: MockerFixture,
+) -> Callable[[Exception], MockType]:
     def _factory(task_manager_exception: Exception) -> MockType:
         mock = mocker.Mock(spec=TaskManager)
 

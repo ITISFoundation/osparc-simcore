@@ -2,7 +2,11 @@
 # pylint: disable=unused-argument
 
 
+from collections.abc import Callable
+from typing import Literal
+
 import pytest
+from celery.exceptions import CeleryError
 from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
@@ -37,28 +41,43 @@ def mock_task_manager(
     return mock_task_manager_object
 
 
-@pytest.mark.parametrize(
-    "expected_status_code",
-    [status.HTTP_200_OK],
-)
 async def test_list_celery_tasks(
     mock_task_manager: MockType,
     client: AsyncClient,
     auth: BasicAuth,
-    expected_status_code: int,
 ):
 
     response = await client.get("/v0/tasks", auth=auth)
-    assert response.status_code == expected_status_code
+    assert response.status_code == status.HTTP_200_OK
 
-    if response.status_code == status.HTTP_200_OK:
-        result = ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
-        assert len(result.data) > 0
-        assert all(isinstance(task, TaskGet) for task in result.data)
-        task = result.data[0]
-        assert task.abort_href == f"/v0/tasks/{task.task_id}:cancel"
-        assert task.result_href == f"/v0/tasks/{task.task_id}/result"
-        assert task.status_href == f"/v0/tasks/{task.task_id}"
+    result = ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
+    assert len(result.data) > 0
+    assert all(isinstance(task, TaskGet) for task in result.data)
+    task = result.data[0]
+    assert task.abort_href == f"/v0/tasks/{task.task_id}:cancel"
+    assert task.result_href == f"/v0/tasks/{task.task_id}/result"
+    assert task.status_href == f"/v0/tasks/{task.task_id}"
+
+
+@pytest.mark.parametrize(
+    "method, url, celery_exception, expected_status_code",
+    [
+        ("GET", "/v0/tasks", CeleryError(), status.HTTP_500_INTERNAL_SERVER_ERROR),
+    ],
+)
+async def test_celery_tasks_error_propagation(
+    mock_task_manager_raising_factory: Callable[[Exception], None],
+    client: AsyncClient,
+    auth: BasicAuth,
+    method: Literal["GET", "POST"],
+    url: str,
+    celery_exception: Exception,
+    expected_status_code: int,
+):
+    mock_task_manager_raising_factory(celery_exception)
+
+    response = await client.request(method=method, url=url, auth=auth)
+    assert response.status_code == expected_status_code
 
 
 @pytest.mark.parametrize(
