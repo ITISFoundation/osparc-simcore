@@ -31,7 +31,9 @@ anyio==4.7.0
     #   httpx
     #   starlette
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 attrs==24.2.0
     # via
     #   -c requirements/_base.txt

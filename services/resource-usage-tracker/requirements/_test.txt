@@ -13,7 +13,9 @@ anyio==4.3.0
     #   -c requirements/_base.txt
     #   httpx
 asgi-lifespan==2.1.0
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 attrs==23.2.0
     # via
     #   -c requirements/_base.txt
