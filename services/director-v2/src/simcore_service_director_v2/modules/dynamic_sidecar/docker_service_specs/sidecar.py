@@ -321,19 +321,6 @@ async def _get_mounts(
                     storage_directory_name=_storage_directory_name,
                 )
             )
-        # for now only enable this with dev features enabled
-        elif app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-            mounts.append(
-                DynamicSidecarVolumesPathsResolver.mount_r_clone(
-                    swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-                    path=path_to_mount,
-                    node_uuid=scheduler_data.node_uuid,
-                    service_run_id=scheduler_data.run_id,
-                    project_id=scheduler_data.project_id,
-                    user_id=scheduler_data.user_id,
-                    r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
-                )
-            )
         else:
             mounts.append(
                 DynamicSidecarVolumesPathsResolver.mount_entry(

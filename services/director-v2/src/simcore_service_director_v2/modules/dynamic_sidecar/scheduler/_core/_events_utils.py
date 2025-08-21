@@ -356,15 +356,9 @@ async def attempt_pod_removal_and_data_saving(
 
         try:
             tasks = [
-                service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
+                service_push_outputs(app, scheduler_data.node_uuid, sidecars_client),
+                service_save_state(app, scheduler_data.node_uuid, sidecars_client),
             ]
-
-            # When enabled no longer uploads state via nodeports
-            # It uses rclone mounted volumes for this task.
-            if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-                tasks.append(
-                    service_save_state(app, scheduler_data.node_uuid, sidecars_client)
-                )
 
             await logged_gather(*tasks, max_concurrency=2)
             scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
@@ -547,11 +541,8 @@ async def prepare_services_environment(
     tasks = [
         _pull_user_services_images_with_metrics(),
         _pull_output_ports_with_metrics(),
+        _restore_service_state_with_metrics(),
     ]
-    # When enabled no longer downloads state via nodeports
-    # S3 is used to store state paths
-    if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        tasks.append(_restore_service_state_with_metrics())
 
     await limited_gather(*tasks, limit=3)
 

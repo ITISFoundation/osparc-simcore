@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any, NamedTuple, cast
 from uuid import uuid4
 
-import aioboto3
 import aiodocker
 import httpx
 import pytest
@@ -94,7 +93,6 @@ from utils import (
     is_legacy,
     patch_dynamic_service_url,
     run_command,
-    sleep_for,
 )
 from yarl import URL
 
@@ -330,26 +328,6 @@ async def db_manager(sqlalchemy_async_engine: AsyncEngine) -> DBManager:
     return DBManager(sqlalchemy_async_engine, application_name=APP_NAME)
 
 
-def _is_docker_r_clone_plugin_installed() -> bool:
-    return "rclone:" in run_command("docker plugin ls")
-
-
-@pytest.fixture(
-    scope="session",
-    params={
-        # NOTE: There is an issue with the docker rclone volume plugin:
-        # SEE https://github.com/rclone/rclone/issues/6059
-        # Disabling rclone test until this is fixed.
-        # "true",
-        "false",
-    },
-)
-def dev_feature_r_clone_enabled(request) -> str:
-    if request.param == "true" and not _is_docker_r_clone_plugin_installed():
-        pytest.skip("Required docker plugin `rclone` not installed.")
-    return request.param
-
-
 @pytest.fixture
 async def patch_storage_setup(
     mocker: MockerFixture,
@@ -375,7 +353,6 @@ def mock_env(
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     network_name: str,
-    dev_feature_r_clone_enabled: str,
     dask_scheduler_service: str,
     dask_scheduler_auth: ClusterAuthentication,
     minimal_configuration: None,
@@ -422,7 +399,6 @@ def mock_env(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "R_CLONE_PROVIDER": "MINIO",
-            "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED": dev_feature_r_clone_enabled,
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
@@ -707,36 +683,6 @@ async def _fetch_data_via_data_manager(
             progress_bar=progress_bar,
             aws_s3_cli_settings=None,
         )
-
-    return save_to
-
-
-async def _fetch_data_via_aioboto(
-    r_clone_settings: RCloneSettings,
-    dir_tag: str,
-    temp_dir: Path,
-    node_id: NodeIDStr,
-    project_id: ProjectID,
-) -> Path:
-    save_to = temp_dir / f"aioboto_{dir_tag}_{uuid4()}"
-    save_to.mkdir(parents=True, exist_ok=True)
-
-    session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
-    )
-    async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
-    ) as s3:
-        bucket = await s3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
-        async for s3_object in bucket.objects.all():
-            key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
-            if s3_object.key.startswith(key_path):
-                file_object = await s3_object.get()
-                file_path = save_to / s3_object.key.replace(key_path, "")
-                print(f"Saving file to {file_path}")
-                file_content = await file_object["Body"].read()
-                file_path.write_bytes(file_content)
 
     return save_to
 
@@ -1075,39 +1021,13 @@ async def test_nodeports_integration(
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
 
-    if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        await sleep_for(
-            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
-            "Waiting for rclone to sync data from the docker volume",
-        )
-
-    dy_path_volume_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
-        )
+    dy_path_volume_before = await _fetch_data_from_container(
+        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
     )
-    dy_compose_spec_path_volume_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy_compose_spec,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy_compose_spec",
-            service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=tmp_path,
-        )
+    dy_compose_spec_path_volume_before = await _fetch_data_from_container(
+        dir_tag="dy_compose_spec",
+        service_uuid=services_node_uuids.dy_compose_spec,
+        temp_dir=tmp_path,
     )
 
     # STEP 5
@@ -1125,52 +1045,26 @@ async def test_nodeports_integration(
 
     await _wait_for_dy_services_to_fully_stop(async_client)
 
-    if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        await sleep_for(
-            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
-            "Waiting for rclone to sync data from the docker volume",
-        )
-
-    dy_path_data_manager_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_via_data_manager(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            user_id=current_user["id"],
-            project_id=current_study.uuid,
-            service_uuid=NodeID(services_node_uuids.dy),
-            temp_dir=tmp_path,
-            io_log_redirect_cb=mock_io_log_redirect_cb,
-            faker=faker,
-        )
+    dy_path_data_manager_before = await _fetch_data_via_data_manager(
+        r_clone_settings=r_clone_settings,
+        dir_tag="dy",
+        user_id=current_user["id"],
+        project_id=current_study.uuid,
+        service_uuid=NodeID(services_node_uuids.dy),
+        temp_dir=tmp_path,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
+        faker=faker,
     )
 
-    dy_compose_spec_path_data_manager_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy_compose_spec,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_via_data_manager(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            user_id=current_user["id"],
-            project_id=current_study.uuid,
-            service_uuid=NodeID(services_node_uuids.dy_compose_spec),
-            temp_dir=tmp_path,
-            io_log_redirect_cb=mock_io_log_redirect_cb,
-            faker=faker,
-        )
+    dy_compose_spec_path_data_manager_before = await _fetch_data_via_data_manager(
+        r_clone_settings=r_clone_settings,
+        dir_tag="dy_compose_spec",
+        user_id=current_user["id"],
+        project_id=current_study.uuid,
+        service_uuid=NodeID(services_node_uuids.dy_compose_spec),
+        temp_dir=tmp_path,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
+        faker=faker,
     )
 
     # STEP 6
@@ -1185,33 +1079,13 @@ async def test_nodeports_integration(
         catalog_url=services_endpoint["catalog"],
     )
 
-    dy_path_volume_after = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
-        )
+    dy_path_volume_after = await _fetch_data_from_container(
+        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
     )
-    dy_compose_spec_path_volume_after = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy_compose_spec,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy_compose_spec",
-            service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=tmp_path,
-        )
+    dy_compose_spec_path_volume_after = await _fetch_data_from_container(
+        dir_tag="dy_compose_spec",
+        service_uuid=services_node_uuids.dy_compose_spec,
+        temp_dir=tmp_path,
     )
 
     # STEP 7
