@@ -470,8 +470,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     raise TryAgain
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
-        id_part = "unique" if is_unique else f"{uuid4()}"
-        return f"{self.lrt_namespace}.{task_name}.{id_part}"
+        suffix = "unique" if is_unique else f"{uuid4()}"
+        return f"{self.lrt_namespace}.{task_name}.{suffix}"
 
     async def _update_progress(
         self,
