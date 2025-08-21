@@ -104,10 +104,8 @@ def celery_settings(
 
 
 @pytest.fixture
-def app_server(
-    celery_session_app: Celery, celery_settings: CelerySettings
-) -> BaseAppServer:
-    return FakeAppServer(app=celery_session_app, settings=celery_settings)
+def app_server(celery_app: Celery, celery_settings: CelerySettings) -> BaseAppServer:
+    return FakeAppServer(app=celery_app, settings=celery_settings)
 
 
 @pytest.fixture(scope="session")
@@ -150,8 +148,8 @@ async def with_celery_worker(
         try:
             yield worker
         finally:
+            worker.stop()  # explicitly stop the worker
             on_worker_shutdown(worker)
-            worker_init.disconnect(_on_worker_init_wrapper)
 
 
 @pytest.fixture
