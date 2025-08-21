@@ -9,6 +9,7 @@ from models_library.functions import (
     RegisteredPythonCodeFunction,
     RegisteredSolverFunction,
 )
+from servicelib.celery.task_manager import TaskManager
 from settings_library.celery import CelerySettings
 
 from ...api.dependencies.authentication import Identity
@@ -37,7 +38,7 @@ def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
     app.add_event_handler("startup", on_startup)
 
 
-def get_task_manager(app: FastAPI) -> CeleryTaskManager:
+def get_task_manager(app: FastAPI) -> TaskManager:
     assert hasattr(app.state, "task_manager")  # nosec
     task_manager = app.state.task_manager
     assert isinstance(task_manager, CeleryTaskManager)  # nosec
