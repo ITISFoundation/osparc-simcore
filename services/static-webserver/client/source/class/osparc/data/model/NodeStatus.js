@@ -227,8 +227,9 @@ qx.Class.define("osparc.data.model.NodeStatus", {
           this.setModified(null);
         }
       }
+      console.log("NodeStatus.lock_state", state["lock_state"]);
       if ("lock_state" in state) {
-        this.setLockState(state.lock_state);
+        this.getLockState().stateReceived(state.lock_state);
       }
     },
 

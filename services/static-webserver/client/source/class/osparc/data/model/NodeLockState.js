@@ -18,14 +18,12 @@
 qx.Class.define("osparc.data.model.NodeLockState", {
   extend: qx.core.Object,
 
-  construct: function(lockState) {
+  construct: function() {
     this.base(arguments);
 
-    this.set({
-      currentUserGroupIds: lockState["current_user_groupids"] || [],
-      locked: lockState["locked"] || false,
-      status: lockState["status"] || "NOT_STARTED",
-    });
+    this.initCurrentUserGroupIds();
+    this.initLocked();
+    this.initStatus();
   },
 
   properties: {
@@ -54,6 +52,16 @@ qx.Class.define("osparc.data.model.NodeLockState", {
   members: {
     __currentUserGroupIds: function(currentUserGroupIds) {
       console.log(currentUserGroupIds);
+    },
+
+    stateReceived: function(state) {
+      if (state) {
+        this.set({
+          currentUserGroupIds: state.currentUserGroupIds || [],
+          locked: state.locked || false,
+          status: state.status || "NOT_STARTED",
+        });
+      }
     },
   }
 });
