@@ -16,7 +16,7 @@ from models_library.rest_pagination import (
     PageQueryParameters,
 )
 from models_library.rest_pagination_utils import paginate_data
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import ConfigDict, field_validator
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -25,16 +25,13 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.users import users_service
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...utils_aiohttp import envelope_json_response
-from .. import conversations_service
-from .._conversation_service import (
-    get_support_conversation_for_user,
-    list_support_conversations_for_user,
-)
+from .. import _conversation_service, conversations_service
 from ._common import ConversationPathParams, raise_unsupported_type
 from ._rest_exceptions import _handle_exceptions
 
@@ -43,7 +40,7 @@ _logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-class _GetConversationsQueryParams(BaseModel):
+class _ListConversationsQueryParams(PageQueryParameters):
     type: ConversationType
     model_config = ConfigDict(extra="forbid")
 
@@ -54,11 +51,6 @@ class _GetConversationsQueryParams(BaseModel):
             msg = "Only support type conversations are allowed"
             raise ValueError(msg)
         return value
-
-
-class _ListConversationsQueryParams(PageQueryParameters, _GetConversationsQueryParams):
-
-    model_config = ConfigDict(extra="forbid")
 
 
 class _ConversationsCreateBodyParams(InputSchema):
@@ -109,14 +101,17 @@ async def list_conversations(request: web.Request):
     query_params = parse_request_query_parameters_as(
         _ListConversationsQueryParams, request
     )
-    assert query_params.type == ConversationType.SUPPORT  # nosec
+    if query_params.type != ConversationType.SUPPORT:
+        raise_unsupported_type(query_params.type)
 
-    total, conversations = await list_support_conversations_for_user(
-        app=request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
-        offset=query_params.offset,
-        limit=query_params.limit,
+    total, conversations = (
+        await _conversation_service.list_support_conversations_for_user(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            offset=query_params.offset,
+            limit=query_params.limit,
+        )
     )
 
     page = Page[ConversationRestGet].model_validate(
@@ -147,12 +142,14 @@ async def get_conversation(request: web.Request):
     """Get a specific conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
-    query_params = parse_request_query_parameters_as(
-        _GetConversationsQueryParams, request
-    )
-    assert query_params.type == ConversationType.SUPPORT  # nosec
 
-    conversation = await get_support_conversation_for_user(
+    conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
+    )
+    if conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(conversation.type)
+
+    conversation = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -174,16 +171,21 @@ async def update_conversation(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
     body_params = await parse_request_body_as(ConversationPatch, request)
-    query_params = parse_request_query_parameters_as(
-        _GetConversationsQueryParams, request
-    )
-    assert query_params.type == ConversationType.SUPPORT  # nosec
 
-    await get_support_conversation_for_user(
+    conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
+    )
+    if conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(conversation.type)
+
+    # Only support conversation creator can update conversation
+    _user_group_id = await users_service.get_user_primary_group_id(
+        request.app, user_id=req_ctx.user_id
+    )
+    await _conversation_service.get_conversation_for_user(
         app=request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
+        user_group_id=_user_group_id,
     )
 
     conversation = await conversations_service.update_conversation(
@@ -207,16 +209,21 @@ async def delete_conversation(request: web.Request):
     """Delete a conversation"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ConversationPathParams, request)
-    query_params = parse_request_query_parameters_as(
-        _GetConversationsQueryParams, request
-    )
-    assert query_params.type == ConversationType.SUPPORT  # nosec
 
-    await get_support_conversation_for_user(
+    conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
+    )
+    if conversation.type != ConversationType.SUPPORT:
+        raise_unsupported_type(conversation.type)
+
+    # Only support conversation creator can delete conversation
+    _user_group_id = await users_service.get_user_primary_group_id(
+        request.app, user_id=req_ctx.user_id
+    )
+    await _conversation_service.get_conversation_for_user(
         app=request.app,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
+        user_group_id=_user_group_id,
     )
 
     await conversations_service.delete_conversation(

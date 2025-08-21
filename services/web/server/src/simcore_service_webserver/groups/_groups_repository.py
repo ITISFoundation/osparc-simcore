@@ -465,11 +465,11 @@ async def _get_user_in_group_or_raise(
     return row
 
 
-async def list_users_in_group(
+async def list_users_in_group_with_caller_check(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
-    caller_id: UserID,
+    caller_user_id: UserID,
     group_id: GroupID,
 ) -> list[GroupMember]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -487,7 +487,7 @@ async def list_users_in_group(
             .where(
                 (user_to_groups.c.gid == group_id)
                 & (
-                    (user_to_groups.c.uid == caller_id)
+                    (user_to_groups.c.uid == caller_user_id)
                     | (
                         (groups.c.type == GroupType.PRIMARY)
                         & users.c.role.in_([r for r in UserRole if r > UserRole.GUEST])
@@ -504,14 +504,17 @@ async def list_users_in_group(
         # Drop access-rights if primary group
         if group_row.type == GroupType.PRIMARY:
             query = sa.select(
-                *_group_user_cols(caller_id),
+                *_group_user_cols(caller_user_id),
             )
         else:
             _check_group_permissions(
-                group_row, caller_id=caller_id, group_id=group_id, permission="read"
+                group_row,
+                caller_id=caller_user_id,
+                group_id=group_id,
+                permission="read",
             )
             query = sa.select(
-                *_group_user_cols(caller_id),
+                *_group_user_cols(caller_user_id),
                 user_to_groups.c.access_rights,
             )
 
@@ -524,6 +527,43 @@ async def list_users_in_group(
         return [
             GroupMember.model_validate(row, from_attributes=True)
             async for row in aresult
+        ]
+
+
+async def list_all_users_in_group(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    group_id: GroupID,
+) -> list[GroupMember]:
+    """
+    Returns all users in a group without any permission checking.
+    This is a pure function that doesn't validate caller permissions.
+    """
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        # Check if group exists
+        group_exists = await conn.scalar(
+            sa.select(groups.c.gid).where(groups.c.gid == group_id)
+        )
+        if not group_exists:
+            raise GroupNotFoundError(gid=group_id)
+
+        # Get all users in the group
+        query = (
+            sa.select(
+                users.c.id,
+                users.c.name,  # Using public username without privacy checks
+                users.c.primary_gid,
+                user_to_groups.c.access_rights,
+            )
+            .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
+            .where(user_to_groups.c.gid == group_id)
+        )
+
+        result = await conn.stream(query)
+        return [
+            GroupMember.model_validate(row, from_attributes=True)
+            async for row in result
         ]
 
 
