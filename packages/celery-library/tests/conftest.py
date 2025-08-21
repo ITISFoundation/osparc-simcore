@@ -141,10 +141,11 @@ async def with_celery_worker(
 
     with start_worker(
         celery_app,
+        concurrency=1,
+        pool="threads",
         loglevel="info",
         perform_ping_check=False,
         queues="default",
-        shutdown_timeout=10.0,
     ) as worker:
         try:
             yield worker
