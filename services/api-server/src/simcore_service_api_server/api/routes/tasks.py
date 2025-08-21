@@ -21,7 +21,7 @@ from servicelib.fastapi.dependencies import get_app
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
 from ..dependencies.authentication import get_current_user_id, get_product_name
-from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager_from_app
+from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
     create_route_description,
@@ -64,7 +64,7 @@ async def list_tasks(
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
 
-    task_manager = get_task_manager_from_app(app)
+    task_manager = get_task_manager(app)
 
     try:
         tasks = await task_manager.list_tasks(
@@ -112,7 +112,7 @@ async def get_task_status(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
-    task_manager = get_task_manager_from_app(app)
+    task_manager = get_task_manager(app)
 
     try:
         task_status = await task_manager.get_task_status(
@@ -153,7 +153,7 @@ async def cancel_task(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
-    task_manager = get_task_manager_from_app(app)
+    task_manager = get_task_manager(app)
 
     try:
         await task_manager.cancel_task(
@@ -195,7 +195,7 @@ async def get_task_result(
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
 ):
-    task_manager = get_task_manager_from_app(app)
+    task_manager = get_task_manager(app)
     task_filter = _get_task_filter(user_id, product_name)
 
     try:

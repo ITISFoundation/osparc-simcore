@@ -37,7 +37,7 @@ def setup_task_manager(app: FastAPI, celery_settings: CelerySettings) -> None:
     app.add_event_handler("startup", on_startup)
 
 
-def get_task_manager_from_app(app: FastAPI) -> CeleryTaskManager:
+def get_task_manager(app: FastAPI) -> CeleryTaskManager:
     assert hasattr(app.state, "task_manager")  # nosec
     task_manager = app.state.task_manager
     assert isinstance(task_manager, CeleryTaskManager)  # nosec

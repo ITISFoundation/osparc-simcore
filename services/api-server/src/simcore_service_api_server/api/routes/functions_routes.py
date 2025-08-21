@@ -38,7 +38,7 @@ from ..dependencies.authentication import (
     get_current_user_id,
     get_product_name,
 )
-from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager_from_app
+from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
 from ..dependencies.services import (
     get_function_job_service,
     get_function_service,
@@ -331,7 +331,7 @@ async def run_function(  # noqa: PLR0913
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
 ) -> TaskGet:
-    task_manager = get_task_manager_from_app(request.app)
+    task_manager = get_task_manager(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)
