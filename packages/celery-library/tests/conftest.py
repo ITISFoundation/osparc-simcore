@@ -150,9 +150,9 @@ async def with_celery_worker(
         loglevel="debug",
         perform_ping_check=False,
         queues="default",
-        shutdown_timeout=15.0,
     ) as worker:
         yield worker
+        worker.stop()
 
 
 @pytest.fixture
