@@ -399,7 +399,15 @@ qx.Class.define("osparc.workbench.NodeUI", {
 
       const lock = this.getChildControl("lock");
       node.getStatus().getLockState().bind("locked", lock, "visibility", {
-        converter: nodeLocked => nodeLocked ? "visible" : "excluded"
+        converter: nodeLocked => {
+          if (nodeLocked) {
+            // if it's me the one using it, don't show the lock
+            const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+            const currentUserGroupIds = node.getStatus().getLockState().getCurrentUserGroupIds();
+            return currentUserGroupIds.includes(myGroupId) ? "excluded" : "visible";
+          }
+          return "excluded";
+        }
       });
 
       this.__markerBtn.show();
