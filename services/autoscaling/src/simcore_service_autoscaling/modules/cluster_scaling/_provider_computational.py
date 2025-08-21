@@ -5,11 +5,11 @@ from typing import cast
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication
-from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
-    DockerLabelKey,
-)
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+)
 from pydantic import AnyUrl, ByteSize
 from servicelib.utils import logged_gather
 from types_aiobotocore_ec2.literals import InstanceTypeType
