@@ -56,15 +56,15 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
         node.getPropsForm().hasVisibleInputs()
       ) {
         this._settingsLayout.add(node.getPropsForm());
+
+        // lock the inputs if the node is locked
+        node.getStatus().getLockState().bind("locked", node.getPropsForm(), "enabled", {
+          converter: locked => !locked
+        });
       }
 
       const showSettings = node.isComputational();
       this._settingsLayout.setVisibility(showSettings ? "visible" : "excluded");
-
-      // OM replace this with node.getStatus().getLockState()?
-      node.getStudy().bind("pipelineRunning", this._settingsLayout, "enabled", {
-        converter: pipelineRunning => !pipelineRunning
-      });
 
       this._mainView.add(this._settingsLayout);
     },

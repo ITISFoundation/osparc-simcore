@@ -804,10 +804,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__populateSecondaryColumnNode(node);
       }
 
-      if (node instanceof osparc.data.model.Node) {
-        // OM replace this with node.getStatus().getLockState()?
-        node.getStudy().bind("pipelineRunning", this.__serviceOptionsPage, "enabled", {
-          converter: pipelineRunning => !pipelineRunning
+      if (
+        node instanceof osparc.data.model.Node &&
+        node.isComputational() &&
+        node.getPropsForm()
+      ) {
+        // lock the inputs if the node is locked
+        node.getStatus().getLockState().bind("locked", node.getPropsForm(), "enabled", {
+          converter: locked => locked ? "visible" : "excluded"
         });
       }
     },
