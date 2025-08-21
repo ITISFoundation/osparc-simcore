@@ -29,6 +29,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.users import users_service
 
 from ..._meta import API_VTAG as VTAG
 from ...email import email_service
@@ -107,6 +108,7 @@ async def create_conversation_message(request: web.Request):
     # NOTE: This is done here in the Controller layer, as the interface around email currently needs request
     if is_first_message:
         try:
+            user = await users_service.get_user(request.app, req_ctx.user_id)
             product = products_web.get_current_product(request)
             template_name = "request_support.jinja2"
             destination_email = product.support_email
@@ -118,7 +120,7 @@ async def create_conversation_message(request: web.Request):
                 _conversation_url = f"{_url.scheme}://{_url.host}:{_url.port}/#/conversations/{path_params.conversation_id}"
             else:
                 _conversation_url = f"{_url.scheme}://{_url.host}/#/conversations/{path_params.conversation_id}"
-            _extra_context = conversation.extra_context
+            _extra_context = _conversation.extra_context
             await email_service.send_email_from_template(
                 request,
                 from_=product.support_email,
