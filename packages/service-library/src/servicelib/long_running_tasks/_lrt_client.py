@@ -22,9 +22,6 @@ from .models import (
 
 _logger = logging.getLogger(__name__)
 
-_RPC_MAX_CANCELLATION_TIMEOUT: Final[PositiveInt] = int(
-    timedelta(hours=1).total_seconds()
-)
 _RPC_TIMEOUT_SHORT_REQUESTS: Final[PositiveInt] = int(
     timedelta(seconds=20).total_seconds()
 )
@@ -141,14 +138,14 @@ async def remove_task(
     cancellation_timeout: timedelta | None,
 ) -> None:
     timeout_s = (
-        _RPC_MAX_CANCELLATION_TIMEOUT
+        None
         if cancellation_timeout is None
         else int(cancellation_timeout.total_seconds())
     )
 
     # NOTE: task always gets cancelled even if not waiting for it
     # request will return immediatlye, no need to wait so much
-    if not wait_for_removal:
+    if wait_for_removal is False:
         timeout_s = _RPC_TIMEOUT_SHORT_REQUESTS
 
     result = await rabbitmq_rpc_client.request(

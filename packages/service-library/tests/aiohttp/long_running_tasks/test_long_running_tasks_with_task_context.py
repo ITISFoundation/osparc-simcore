@@ -29,10 +29,6 @@ from servicelib.long_running_tasks.models import TaskGet, TaskId
 from servicelib.long_running_tasks.task import TaskContext
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from tenacity.asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -180,31 +176,15 @@ async def test_cancel_task(
         task_id=task_id
     )
     # calling cancel without task context should find nothing
-    # no longer waits for removal to end
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(5),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            resp = await client_with_task_context.delete(f"{cancel_url}")
-            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+    resp = await client_with_task_context.delete(f"{cancel_url}")
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)
     # calling with context should find and delete the task
     resp = await client_with_task_context.delete(
         f"{cancel_url.update_query(task_context)}"
     )
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
     # calling with context a second time should find nothing
-    # no longer waits for removal to end
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1),
-        stop=stop_after_delay(5),
-        reraise=True,
-        retry=retry_if_exception_type(AssertionError),
-    ):
-        with attempt:
-            resp = await client_with_task_context.delete(
-                f"{cancel_url.update_query(task_context)}"
-            )
-            await assert_status(resp, status.HTTP_404_NOT_FOUND)
+    resp = await client_with_task_context.delete(
+        f"{cancel_url.update_query(task_context)}"
+    )
+    await assert_status(resp, status.HTTP_404_NOT_FOUND)

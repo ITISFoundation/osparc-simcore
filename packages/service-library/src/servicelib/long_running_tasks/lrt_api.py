@@ -109,16 +109,7 @@ async def remove_task(
 ) -> None:
     """cancels and removes a task
 
-    Arguments:
-        wait_for_removal -- if True, then it will wait for the task to be removed
-            before returning otherwise returns immediately
-
-    Keyword Arguments:
-        cancellation_timeout (default: {None}) -- if specified it's the amount of
-            time to wait before cancellation is timedout
-            if not specified and:
-             - wait_for_removal is True, it's set to _RPC_TIMEOUT_SHORT_REQUESTS
-             - wait_for_removal is False it's set to _RPC_MAX_CANCELLATION_TIMEOUT
+    When `wait_for_removal` is True, `cancellationt_timeout` is set to _RPC_TIMEOUT_SHORT_REQUESTS
     """
     await _lrt_client.remove_task(
         rabbitmq_rpc_client,
