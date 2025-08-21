@@ -1383,13 +1383,13 @@ async def _get_node_share_state(
 
         if isinstance(service, DynamicServiceGet | NodeGet):
             # service is running
-            collaborative_service = False
+            is_collaborative_service = False
             if isinstance(service, DynamicServiceGet):
                 # only dynamic-sidecar powered services can be collaborative
-                collaborative_service = service.is_collaborative
+                is_collaborative_service = service.is_collaborative
 
             return NodeShareState(
-                locked=not collaborative_service,
+                locked=not is_collaborative_service,
                 current_user_groupids=[
                     await users_service.get_user_primary_group_id(
                         app, TypeAdapter(UserID).validate_python(service.user_id)
