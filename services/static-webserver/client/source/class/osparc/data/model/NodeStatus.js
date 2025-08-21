@@ -146,20 +146,21 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
   members: {
     __applyNode: function(node) {
-      const addNodeProgressSequence = () => {
+      const initNode = () => {
         if (node.isDynamic()) {
           const progressSequence = new osparc.data.model.NodeProgressSequence();
           this.setProgressSequence(progressSequence);
-
+        }
+        if (node.isComputational() || node.isDynamic()) {
           const lockState = new osparc.data.model.NodeLockState();
           this.setLockState(lockState);
         }
       };
 
       if (node.getMetadata()) {
-        addNodeProgressSequence();
+        initNode();
       } else {
-        node.addListenerOnce("changeMetadata", () => addNodeProgressSequence(), this);
+        node.addListenerOnce("changeMetadata", () => initNode(), this);
       }
     },
 
