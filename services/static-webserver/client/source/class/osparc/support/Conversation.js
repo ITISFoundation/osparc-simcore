@@ -148,15 +148,20 @@ qx.Class.define("osparc.support.Conversation", {
       const shareProjectLayout = this.getChildControl("share-project-layout");
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let showCB = false;
+      let enabledCB = false;
       if (conversation === null && currentStudy) {
         // initiating conversation
         showCB = true;
-      }
-      if (conversation && conversation.getContextProjectId() && conversation.amIOwner()) {
+        enabledCB = true;
+      } else if (conversation) {
         // it was already set
-        showCB = true;
+        showCB = conversation.getContextProjectId();
+        enabledCB = conversation.amIOwner();
       }
-      shareProjectLayout.setVisibility(showCB ? "visible" : "excluded");
+      shareProjectLayout.set({
+        visibility: showCB ? "visible" : "excluded",
+        enabled: enabledCB,
+      });
 
       if (conversation && conversation.getContextProjectId()) {
         const projectId = conversation.getContextProjectId();
