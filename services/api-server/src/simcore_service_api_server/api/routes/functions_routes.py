@@ -27,7 +27,7 @@ from servicelib.long_running_tasks.models import TaskGet
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
-from ...celery._worker_tasks._functions_tasks import run_function
+from ...celery.worker_tasks.functions_tasks import run_function as run_function_task
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobPricingSpecification
@@ -351,7 +351,7 @@ async def run_function(  # noqa: PLR0913
         client_name=ASYNC_JOB_CLIENT_NAME,
     )
     task_filter = TaskFilter.model_validate(job_filter.model_dump())
-    task_name = run_function.__name__
+    task_name = run_function_task.__name__
 
     task_uuid = await task_manager.submit_task(
         TaskMetadata(
