@@ -10,11 +10,15 @@ from typing import Any
 
 import pytest
 from celery import Celery  # type: ignore[import-untyped]
-from celery.contrib.testing.worker import TestWorkController, start_worker
+from celery.contrib.testing.worker import (
+    TestWorkController,
+    start_worker,
+    test_worker_stopped,
+)
 from celery.signals import worker_init
 from celery.worker.worker import WorkController
 from celery_library.backends._redis import RedisTaskInfoStore
-from celery_library.signals import on_worker_init
+from celery_library.signals import on_worker_init, on_worker_shutdown
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.types import register_celery_types
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -132,15 +136,21 @@ async def with_celery_worker(
 
     worker_init.connect(_on_worker_init_wrapper)
 
+    def _on_worker_stopped_wrapper(_: Celery, worker: WorkController, **_kwargs):
+        return on_worker_shutdown(sender=worker, **_kwargs)
+
+    test_worker_stopped.connect(_on_worker_stopped_wrapper)
+
     register_celery_tasks(celery_app)
 
     with start_worker(
         celery_app,
         concurrency=1,
         pool="threads",
-        loglevel="info",
+        loglevel="debug",
         perform_ping_check=False,
         queues="default",
+        shutdown_timeout=15.0,
     ) as worker:
         yield worker
 
