@@ -16,7 +16,7 @@ from ..core.settings import ApplicationSettings
 from ._worker_tasks.tasks import setup_worker_tasks
 
 
-def main():
+def app_factory():
     _settings = ApplicationSettings.create_from_envs()
 
     setup_loggers(
@@ -45,4 +45,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app_factory()
