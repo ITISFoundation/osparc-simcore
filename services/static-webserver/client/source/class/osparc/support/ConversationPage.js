@@ -94,13 +94,24 @@ qx.Class.define("osparc.support.ConversationPage", {
           });
           this.getChildControl("conversation-header-center-layout").addAt(control, 1);
           break;
-        case "conversation-options": {
-          control = new qx.ui.form.MenuButton().set({
-            maxWidth: 22,
-            maxHeight: 22,
+        case "open-project-button":
+          control = new qx.ui.form.Button().set({
+            maxWidth: 26,
+            maxHeight: 24,
             alignX: "center",
             alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesome5Solid/external-link-alt/12",
+          });
+          control.addListener("execute", () => this.__openProjectDetails());
+          this.getChildControl("conversation-header-layout").addAt(control, 2);
+          break;
+        case "conversation-options": {
+          control = new qx.ui.form.MenuButton().set({
+            maxWidth: 24,
+            maxHeight: 24,
+            alignX: "center",
+            alignY: "middle",
+            icon: "@FontAwesome5Solid/ellipsis-v/12",
           });
           const menu = new qx.ui.menu.Menu().set({
             position: "bottom-right",
@@ -112,7 +123,7 @@ qx.Class.define("osparc.support.ConversationPage", {
           });
           renameButton.addListener("execute", () => this.__renameConversation());
           menu.add(renameButton);
-          this.getChildControl("conversation-header-layout").addAt(control, 2);
+          this.getChildControl("conversation-header-layout").addAt(control, 3);
           break;
         }
         case "conversation-content":
@@ -152,11 +163,33 @@ qx.Class.define("osparc.support.ConversationPage", {
         extraContextLabel.exclude();
       }
 
+      const openButton = this.getChildControl("open-project-button");
+      if (conversation && conversation.getContextProjectId()) {
+        openButton.show();
+      } else {
+        openButton.exclude();
+      }
+
       const options = this.getChildControl("conversation-options");
       if (conversation && conversation.amIOwner()) {
         options.show();
       } else {
         options.exclude();
+      }
+    },
+
+    __openProjectDetails: function() {
+      const projectId = this.getConversation().getContextProjectId();
+      if (projectId) {
+        osparc.store.Study.getInstance().getOne(projectId)
+          .then(studyData => {
+            if (studyData) {
+              const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+              studyDataCopy["resourceType"] = "study";
+              osparc.dashboard.ResourceDetails.popUpInWindow(studyDataCopy);
+            }
+          })
+          .catch(err => console.warn(err));
       }
     },
 
