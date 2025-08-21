@@ -528,7 +528,8 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
         this.__populateInputOutputData(nodeData);
-        this.populateStates(nodeData);
+        this.populateProgress(nodeData);
+        this.populateState(nodeData);
         if (nodeData.bootOptions) {
           this.setBootOptions(nodeData.bootOptions);
         }
@@ -570,7 +571,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.setInputsRequired(nodeData.inputsRequired || []);
     },
 
-    populateStates: function(nodeData) {
+    populateProgress: function(nodeData) {
       if ("progress" in nodeData) {
         const progress = Number.parseInt(nodeData["progress"]);
         const oldProgress = this.getStatus().getProgress();
@@ -581,6 +582,9 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setProgress(progress);
         }
       }
+    },
+
+    populateState: function(nodeData) {
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
       }
