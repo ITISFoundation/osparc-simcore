@@ -305,10 +305,10 @@ qx.Class.define("osparc.data.Resources", {
           },
         }
       },
-      "conversations": {
+      "conversationsStudies": {
         useCache: false, // It has its own cache handler
         endpoints: {
-          addConversation: {
+          postConversation: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations"
           },
@@ -328,7 +328,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}"
           },
-          addMessage: {
+          postMessage: {
             method: "POST",
             url: statics.API + "/projects/{studyId}/conversations/{conversationId}/messages"
           },
@@ -1469,7 +1469,52 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/wallets/{walletId}/licensed-items-checkouts?offset={offset}&limit={limit}"
           },
         }
-      }
+      },
+
+      /*
+       * SUPPORT CONVERSATIONS
+       */
+      "conversationsSupport": {
+        useCache: false, // It has its own cache handler
+        endpoints: {
+          postConversation: {
+            method: "POST",
+            url: statics.API + "/conversations"
+          },
+          getConversationsPage: {
+            method: "GET",
+            url: statics.API + "/conversations?type=SUPPORT&offset={offset}&limit={limit}"
+          },
+          getConversation: {
+            method: "GET",
+            url: statics.API + "/conversations/{conversationId}?type=SUPPORT"
+          },
+          renameConversation: {
+            method: "PATCH",
+            url: statics.API + "/conversations/{conversationId}?type=SUPPORT"
+          },
+          deleteConversation: {
+            method: "DELETE",
+            url: statics.API + "/conversations/{conversationId}"
+          },
+          postMessage: {
+            method: "POST",
+            url: statics.API + "/conversations/{conversationId}/messages"
+          },
+          editMessage: {
+            method: "PUT",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}"
+          },
+          deleteMessage: {
+            method: "DELETE",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}"
+          },
+          getMessagesPage: {
+            method: "GET",
+            url: statics.API + "/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
+          },
+        }
+      },
     };
   },
 
