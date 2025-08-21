@@ -552,7 +552,7 @@ async def list_all_users_in_group(
         query = (
             sa.select(
                 users.c.id,
-                users.c.name,  # Using public username without privacy checks
+                users.c.name,
                 users.c.primary_gid,
                 user_to_groups.c.access_rights,
             )
