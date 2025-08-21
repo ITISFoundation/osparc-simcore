@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from celery import Celery  # type: ignore[import-untyped]
 from celery.contrib.testing.worker import TestWorkController, start_worker
-from celery.signals import worker_init, worker_shutdown
+from celery.signals import worker_init
 from celery.worker.worker import WorkController
 from celery_library.backends._redis import RedisTaskInfoStore
 from celery_library.signals import on_worker_init, on_worker_shutdown
@@ -128,7 +128,6 @@ async def with_celery_worker(
         return partial(on_worker_init, app_server)(sender, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
-    worker_shutdown.connect(on_worker_shutdown)
 
     register_celery_tasks(celery_app)
 
@@ -140,7 +139,14 @@ async def with_celery_worker(
         perform_ping_check=False,
         queues="default",
     ) as worker:
-        yield worker
+        # Ensure worker is fully up before test continues
+        worker.ensure_started()
+
+        try:
+            yield worker
+        finally:
+            worker_init.disconnect(_on_worker_init_wrapper)
+            on_worker_shutdown(worker)
 
 
 @pytest.fixture
