@@ -105,6 +105,23 @@ qx.Class.define("osparc.ui.message.Loading", {
           control = this.__createThumbnail();
           this._add(control);
           break;
+        case "loading-title":
+          control = new qx.ui.basic.Atom().set({
+            icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
+            font: "title-18",
+            alignX: "center",
+            rich: true,
+            gap: 15,
+            allowGrowX: false,
+          });
+          osparc.service.StatusUI.updateCircleAnimation(control.getChildControl("icon"));
+          control.getChildControl("label").set({
+            rich: true,
+            wrap: true,
+            alignX: "center",
+          });
+          this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
@@ -113,24 +130,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.getChildControl("max-toolbar");
       this.getChildControl("spacer-top");
       this.getChildControl("thumbnail");
-
-      const waitingHeader = this.__header = new qx.ui.basic.Atom().set({
-        icon: "@FontAwesome5Solid/circle-notch/"+this.self().STATUS_ICON_SIZE,
-        font: "title-18",
-        alignX: "center",
-        rich: true,
-        gap: 15,
-        allowGrowX: false,
-      });
-      const icon = waitingHeader.getChildControl("icon");
-      osparc.service.StatusUI.updateCircleAnimation(icon);
-      const label = waitingHeader.getChildControl("label");
-      label.set({
-        rich: true,
-        wrap: true,
-        alignX: "center",
-      });
-      this._add(waitingHeader);
+      this.getChildControl("loading-title");
 
       const messages = this.__messagesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
@@ -223,14 +223,15 @@ qx.Class.define("osparc.ui.message.Loading", {
     },
 
     __applyHeader: function(value) {
-      this.__header.setLabel(value);
+      const loadingTitle = this.getChildControl("loading-title");
+      loadingTitle.setLabel(value);
       const words = value.split(" ");
       if (words.length) {
         const state = words[0];
         const iconSource = osparc.service.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
         if (iconSource) {
-          this.__header.setIcon(iconSource);
-          osparc.service.StatusUI.updateCircleAnimation(this.__header.getChildControl("icon"));
+          loadingTitle.setIcon(iconSource);
+          osparc.service.StatusUI.updateCircleAnimation(loadingTitle.getChildControl("icon"));
         }
       }
     },
