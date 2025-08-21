@@ -805,8 +805,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node instanceof osparc.data.model.Node) {
-        node.getStatus().getLockState().bind("locked", this.__serviceOptionsPage, "enabled", {
-          converter: nodeLocked => !nodeLocked
+        // OM replace this with node.getStatus().getLockState()?
+        node.getStudy().bind("pipelineRunning", this.__serviceOptionsPage, "enabled", {
+          converter: pipelineRunning => !pipelineRunning
         });
       }
     },
