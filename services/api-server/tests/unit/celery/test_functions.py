@@ -8,12 +8,13 @@ from celery_library.task import register_task
 from celery_library.types import register_pydantic_types
 from faker import Faker
 from fastapi import FastAPI, status
-from httpx import AsyncClient, BasicAuth
+from httpx import AsyncClient, BasicAuth, HTTPStatusError
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
     TaskStatus,
 )
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.functions import (
     FunctionClass,
     FunctionID,
@@ -24,17 +25,22 @@ from models_library.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.projects import ProjectID
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
+from simcore_service_api_server.api.dependencies.celery import (
+    ASYNC_JOB_CLIENT_NAME,
+    get_task_manager,
+)
 from simcore_service_api_server.api.routes.functions_routes import get_function
 from simcore_service_api_server.celery._worker_tasks._functions_tasks import (
     run_function as run_function_task,
 )
+from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.schemas.jobs import (
     JobPricingSpecification,
@@ -151,3 +157,53 @@ async def test_with_fake_run_function(
     # Poll until task completion and get result
     result = await poll_task_until_done(client, auth, task.task_id)
     RegisteredProjectFunctionJob.model_validate(result.result)
+
+
+def _register_exception_task(exception: Exception) -> Callable[[Celery], None]:
+
+    async def exception_task(
+        task: Task,
+        task_id: TaskID,
+    ):
+        raise exception
+
+    def _(celery_app: Celery) -> None:
+        register_task(celery_app, exception_task)
+
+    return _
+
+
+@pytest.mark.parametrize(
+    "register_celery_tasks",
+    [
+        _register_exception_task(ValueError("Test error")),
+        _register_exception_task(Exception("Test error")),
+        _register_exception_task(BaseBackEndError()),
+    ],
+)
+@pytest.mark.parametrize("add_worker_tasks", [False])
+async def test_celery_error_propagation(
+    app: FastAPI,
+    client: AsyncClient,
+    auth: BasicAuth,
+    with_api_server_celery_worker: TestWorkController,
+):
+
+    user_identity = Identity(
+        user_id=_faker.pyint(), product_name=_faker.word(), email=_faker.email()
+    )
+    job_filter = AsyncJobFilter(
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
+        client_name=ASYNC_JOB_CLIENT_NAME,
+    )
+    task_manager = get_task_manager(app=app)
+    task_uuid = await task_manager.submit_task(
+        task_metadata=TaskMetadata(name="exception_task"),
+        task_filter=TaskFilter.model_validate(job_filter.model_dump()),
+    )
+
+    with pytest.raises(HTTPStatusError) as exc_info:
+        await poll_task_until_done(client, auth, f"{task_uuid}")
+
+    assert exc_info.value.response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
