@@ -398,8 +398,8 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
 
       const lock = this.getChildControl("lock");
-      node.getStudy().bind("pipelineRunning", lock, "visibility", {
-        converter: pipelineRunning => pipelineRunning ? "visible" : "excluded"
+      node.getLockState().bind("locked", lock, "visibility", {
+        converter: nodeLocked => nodeLocked ? "visible" : "excluded"
       });
 
       this.__markerBtn.show();
@@ -420,6 +420,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       node.addListener("changeMarker", () => updateMarker());
       updateMarker();
 
+      // do not allow modifying the pipeline
       node.getStudy().bind("pipelineRunning", this.__deleteBtn, "enabled", {
         converter: running => !running
       });

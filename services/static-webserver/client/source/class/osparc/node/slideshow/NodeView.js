@@ -61,8 +61,8 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const showSettings = node.isComputational();
       this._settingsLayout.setVisibility(showSettings ? "visible" : "excluded");
 
-      node.getStudy().bind("pipelineRunning", this._settingsLayout, "enabled", {
-        converter: pipelineRunning => !pipelineRunning
+      node.getLockState().bind("locked", this._settingsLayout, "enabled", {
+        converter: nodeLocked => !nodeLocked
       });
 
       this._mainView.add(this._settingsLayout);

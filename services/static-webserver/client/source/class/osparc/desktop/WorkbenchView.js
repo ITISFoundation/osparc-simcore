@@ -357,6 +357,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "center",
         marginLeft: 10
       });
+      // do not allow modifying the pipeline
       this.getStudy().bind("pipelineRunning", addNewNodeBtn, "enabled", {
         converter: running => !running
       });
@@ -804,8 +805,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       if (node instanceof osparc.data.model.Node) {
-        node.getStudy().bind("pipelineRunning", this.__serviceOptionsPage, "enabled", {
-          converter: pipelineRunning => !pipelineRunning
+        node.getLockState().bind("locked", this.__serviceOptionsPage, "enabled", {
+          converter: nodeLocked => !nodeLocked
         });
       }
     },
