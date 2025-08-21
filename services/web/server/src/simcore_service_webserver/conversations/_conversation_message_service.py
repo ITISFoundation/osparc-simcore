@@ -64,7 +64,7 @@ async def create_message(
     return created_message
 
 
-async def create_support_message_and_check_if_it_is_first_message(
+async def create_support_message_with_first_check(
     app: web.Application,
     *,
     user_id: UserID,

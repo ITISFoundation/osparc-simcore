@@ -91,7 +91,7 @@ async def create_conversation_message(request: web.Request):
         raise_unsupported_type(conversation.type)
 
     message, is_first_message = (
-        await _conversation_message_service.create_support_message_and_check_if_it_is_first_message(
+        await _conversation_message_service.create_support_message_with_first_check(
             app=request.app,
             user_id=req_ctx.user_id,
             project_id=None,  # Support conversations don't use project_id
