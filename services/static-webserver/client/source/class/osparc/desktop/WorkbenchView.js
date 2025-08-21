@@ -811,7 +811,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       ) {
         // lock the inputs if the node is locked
         node.getStatus().getLockState().bind("locked", node.getPropsForm(), "enabled", {
-          converter: locked => locked ? "visible" : "excluded"
+          converter: locked => !locked
         });
       }
     },
