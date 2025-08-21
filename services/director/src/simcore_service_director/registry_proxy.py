@@ -413,12 +413,29 @@ async def get_image_labels(
                     media_type
                     == "application/vnd.docker.distribution.manifest.list.v2+json"
                 ):
-                    raise DockerRegistryUnsupportedManifestSchemaVersionError(
-                        version=schema_version,
-                        service_name=image,
-                        service_tag=tag,
-                        reason="Multiple architectures images are currently not supported and need to be implemented",
+                    # default to x86_64 architecture
+                    _logger.info(
+                        "Image %s:%s is a docker image with multiple architectures. "
+                        "Currently defaulting to x86_64 architecture",
+                        image,
+                        tag,
                     )
+                    manifests = request_result.get("manifests", [])
+                    if not manifests:
+                        raise DockerRegistryUnsupportedManifestSchemaVersionError(
+                            version=schema_version,
+                            service_name=image,
+                            service_tag=tag,
+                            reason="Manifest list is empty",
+                        )
+                    first_manifest_digest = manifests[0]["digest"]
+                    request_result, _ = await registry_request(
+                        app,
+                        path=f"{image}/manifests/{first_manifest_digest}",
+                        method="GET",
+                        use_cache=not update_cache,
+                    )
+
                 config_digest = request_result["config"]["digest"]
                 # Fetch the config blob
                 config_result, _ = await registry_request(
