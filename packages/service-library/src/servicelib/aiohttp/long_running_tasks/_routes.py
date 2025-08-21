@@ -69,7 +69,7 @@ async def get_task_result(request: web.Request) -> web.Response | Any:
     )
 
 
-class MyRequestQueryParams(RequestParameters):
+class _RemoveTaskQueryParams(RequestParameters):
     wait_for_removal: Annotated[
         bool,
         Field(
@@ -84,7 +84,7 @@ class MyRequestQueryParams(RequestParameters):
 @routes.delete("/{task_id}", name="remove_task")
 async def remove_task(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
-    query_params = parse_request_query_parameters_as(MyRequestQueryParams, request)
+    query_params = parse_request_query_parameters_as(_RemoveTaskQueryParams, request)
     long_running_manager = get_long_running_manager(request.app)
 
     await lrt_api.remove_task(
