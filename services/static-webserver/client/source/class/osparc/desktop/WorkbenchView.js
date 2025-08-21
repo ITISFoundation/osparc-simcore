@@ -809,9 +809,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         node.isComputational() &&
         node.getPropsForm()
       ) {
-        // lock the inputs if the node is locked
-        node.getStatus().getLockState().bind("locked", node.getPropsForm(), "enabled", {
-          converter: locked => !locked
+        node.getStudy().bind("pipelineRunning", node.getPropsForm(), "enabled", {
+          converter: pipelineRunning => !pipelineRunning
         });
       }
     },
