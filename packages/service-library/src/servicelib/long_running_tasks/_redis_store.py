@@ -15,13 +15,11 @@ _STORE_TYPE_CANCELLED_TASKS: Final[str] = "CT"
 _LIST_CONCURRENCY: Final[int] = 2
 
 
-def _to_redis(data: dict[str, Any]) -> dict[str, str]:
-    """convert values to redis compatible data"""
+def _to_redis_hash_mapping(data: dict[str, Any]) -> dict[str, str]:
     return {k: json_dumps(v) for k, v in data.items()}
 
 
-def _from_redis(data: dict[str, str]) -> dict[str, Any]:
-    """converrt back from redis compatible data to python types"""
+def _load_from_redis_hash(data: dict[str, str]) -> dict[str, Any]:
     return {k: json_loads(v) for k, v in data.items()}
 
 
@@ -51,7 +49,7 @@ class RedisStore:
     def _get_redis_key_task_data_match(self) -> str:
         return f"{self.namespace}:{_STORE_TYPE_TASK_DATA}*"
 
-    def _get_redis_key_task_data_hash(self, task_id: TaskId) -> str:
+    def _get_redis_task_data_key(self, task_id: TaskId) -> str:
         return f"{self.namespace}:{_STORE_TYPE_TASK_DATA}:{task_id}"
 
     def _get_key_to_remove(self) -> str:
@@ -62,11 +60,11 @@ class RedisStore:
     async def get_task_data(self, task_id: TaskId) -> TaskData | None:
         result: dict[str, Any] = await handle_redis_returns_union_types(
             self._redis.hgetall(
-                self._get_redis_key_task_data_hash(task_id),
+                self._get_redis_task_data_key(task_id),
             )
         )
         return (
-            TypeAdapter(TaskData).validate_python(_from_redis(result))
+            TypeAdapter(TaskData).validate_python(_load_from_redis_hash(result))
             if result and len(result)
             else None
         )
@@ -74,8 +72,8 @@ class RedisStore:
     async def add_task_data(self, task_id: TaskId, value: TaskData) -> None:
         await handle_redis_returns_union_types(
             self._redis.hset(
-                self._get_redis_key_task_data_hash(task_id),
-                mapping=_to_redis(value.model_dump()),
+                self._get_redis_task_data_key(task_id),
+                mapping=_to_redis_hash_mapping(value.model_dump()),
             )
         )
 
@@ -87,8 +85,8 @@ class RedisStore:
     ) -> None:
         await handle_redis_returns_union_types(
             self._redis.hset(
-                self._get_redis_key_task_data_hash(task_id),
-                mapping=_to_redis(updates),
+                self._get_redis_task_data_key(task_id),
+                mapping=_to_redis_hash_mapping(updates),
             )
         )
 
@@ -107,14 +105,14 @@ class RedisStore:
         )
 
         return [
-            TypeAdapter(TaskData).validate_python(_from_redis(item))
+            TypeAdapter(TaskData).validate_python(_load_from_redis_hash(item))
             for item in result
             if item
         ]
 
     async def delete_task_data(self, task_id: TaskId) -> None:
         await handle_redis_returns_union_types(
-            self._redis.delete(self._get_redis_key_task_data_hash(task_id))
+            self._redis.delete(self._get_redis_task_data_key(task_id))
         )
 
     # to cancel
