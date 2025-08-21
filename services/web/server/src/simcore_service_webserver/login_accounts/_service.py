@@ -14,7 +14,7 @@ from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode
 
-from ..email.utils import send_email_from_template
+from ..email.email_service import send_email_from_template
 from ..products import products_web
 from ..products.models import Product
 from ..users import _accounts_service
