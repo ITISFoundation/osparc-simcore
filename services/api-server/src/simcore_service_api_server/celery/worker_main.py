@@ -42,7 +42,7 @@ def app_factory():
     worker_shutdown.connect(on_worker_shutdown)
 
     setup_worker_tasks(app)
+    return app
 
 
-if __name__ == "__main__":
-    app_factory()
+app = app_factory()
