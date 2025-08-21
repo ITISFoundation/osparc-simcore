@@ -3,7 +3,6 @@
 import logging
 
 from aiohttp import web
-from conftest import product_name
 from models_library.basic_types import IDStr
 from models_library.conversations import (
     ConversationID,
