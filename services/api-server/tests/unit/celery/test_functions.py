@@ -144,10 +144,22 @@ async def test_with_fake_run_function(
     headers[X_SIMCORE_PARENT_PROJECT_UUID] = "null"
     headers[X_SIMCORE_PARENT_NODE_ID] = "null"
 
+    body = {
+        "input_1": _faker.uuid4(),
+        "input_2": _faker.pyfloat(min_value=0, max_value=100),
+        "input_3": _faker.pyint(min_value=0, max_value=100),
+        "input_4": _faker.boolean(),
+        "input_5": _faker.sentence(),
+        "input_6": [
+            _faker.pyfloat(min_value=0, max_value=100)
+            for _ in range(_faker.pyint(min_value=5, max_value=100))
+        ],
+    }
+
     response = await client.post(
         f"/{API_VTAG}/functions/{_faker.uuid4()}:run",
         auth=auth,
-        json={},
+        json=body,
         headers=headers,
     )
 
