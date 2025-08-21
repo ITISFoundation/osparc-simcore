@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, Any
 
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
+from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
@@ -15,8 +16,9 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.celery.models import TaskFilter, TaskUUID
+from servicelib.celery.models import TaskFilter, TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
+from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ...models.schemas.base import ApiServerEnvelope
 from ...models.schemas.errors import ErrorGet
@@ -199,7 +201,6 @@ async def get_task_result(
     task_filter = _get_task_filter(user_id, product_name)
 
     try:
-        # First check if task exists and is done
         task_status = await task_manager.get_task_status(
             task_filter=task_filter,
             task_uuid=TaskUUID(f"{task_id}"),
@@ -210,15 +211,37 @@ async def get_task_result(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Task result not available yet",
             )
+        if task_status.task_state == TaskState.ABORTED:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Task was cancelled",
+            )
 
-        result = await task_manager.get_task_result(
+        task_result = await task_manager.get_task_result(
             task_filter=task_filter,
             task_uuid=TaskUUID(f"{task_id}"),
         )
-        return TaskResult(result=result, error=None)
-
     except CeleryError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Encountered issue when getting task result",
         ) from exc
+
+    if task_status.task_state == TaskState.FAILURE:
+        assert isinstance(task_result, Exception)
+        user_error_msg = f"The execution of task {task_id} failed"
+        support_id = create_error_code(task_result)
+        _logger.exception(
+            **create_troubleshootting_log_kwargs(
+                user_error_msg,
+                error=task_result,
+                error_code=support_id,
+                tip="Unexpected error in Celery",
+            )
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=user_error_msg,
+        )
+
+    return TaskResult(result=task_result, error=None)

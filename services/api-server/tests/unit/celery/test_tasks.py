@@ -9,8 +9,10 @@ from celery.exceptions import CeleryError
 from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from pytest_mock import MockerFixture, MockType, mocker
+from servicelib.celery.models import TaskState, TaskStatus, TaskUUID
 from simcore_service_api_server.api.routes import tasks as task_routes
 from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
 
@@ -89,12 +91,13 @@ async def test_get_result(
 
 
 @pytest.mark.parametrize(
-    "method, url, list_tasks_return_value, get_task_status_return_value, cancel_task_return_value, expected_status_code",
+    "method, url, list_tasks_return_value, get_task_status_return_value, cancel_task_return_value, get_task_result_return_value, expected_status_code",
     [
         (
             "GET",
             "/v0/tasks",
             CeleryError(),
+            None,
             None,
             None,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -105,6 +108,7 @@ async def test_get_result(
             None,
             CeleryError(),
             None,
+            None,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
         ),
         (
@@ -113,7 +117,57 @@ async def test_get_result(
             None,
             None,
             CeleryError(),
+            None,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+        (
+            "GET",
+            f"/v0/tasks/{_faker.uuid4()}/result",
+            None,
+            CeleryError(),
+            None,
+            None,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+        (
+            "GET",
+            f"/v0/tasks/{_faker.uuid4()}/result",
+            None,
+            TaskStatus(
+                task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
+                task_state=TaskState.STARTED,
+                progress_report=ProgressReport(
+                    actual_value=0.5,
+                    total=1.0,
+                    unit="Byte",
+                    message=ProgressStructuredMessage.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
+                ),
+            ),
+            None,
+            None,
+            status.HTTP_404_NOT_FOUND,
+        ),
+        (
+            "GET",
+            f"/v0/tasks/{_faker.uuid4()}/result",
+            None,
+            TaskStatus(
+                task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
+                task_state=TaskState.ABORTED,
+                progress_report=ProgressReport(
+                    actual_value=0.5,
+                    total=1.0,
+                    unit="Byte",
+                    message=ProgressStructuredMessage.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],
+                ),
+            ),
+            None,
+            None,
+            status.HTTP_409_CONFLICT,
         ),
     ],
 )
@@ -127,45 +181,3 @@ async def test_celery_error_propagation(
 ):
     response = await client.request(method=method, url=url, auth=auth)
     assert response.status_code == expected_status_code
-
-
-# @pytest.mark.parametrize(
-#     "async_job_error, expected_status_code",
-#     [
-#         (None, status.HTTP_200_OK),
-#         (
-#             JobError(
-#                 job_id=_faker.uuid4(),
-#                 exc_type=Exception,
-#                 exc_message="An exception from inside the async job",
-#             ),
-#             status.HTTP_500_INTERNAL_SERVER_ERROR,
-#         ),
-#         (
-#             JobNotDoneError(job_id=_faker.uuid4()),
-#             status.HTTP_404_NOT_FOUND,
-#         ),
-#         (
-#             JobAbortedError(job_id=_faker.uuid4()),
-#             status.HTTP_409_CONFLICT,
-#         ),
-#         (
-#             JobSchedulerError(
-#                 exc=Exception("A very rare exception raised by the scheduler")
-#             ),
-#             status.HTTP_500_INTERNAL_SERVER_ERROR,
-#         ),
-#     ],
-# )
-# async def test_get_async_job_result(
-#     client: AsyncClient,
-#     mocked_async_jobs_rpc_api: dict[str, MockType],
-#     async_job_error: Exception | None,
-#     auth: BasicAuth,
-#     expected_status_code: int,
-# ):
-#     task_id = f"{_faker.uuid4()}"
-#     response = await client.get(f"/v0/tasks/{task_id}/result", auth=auth)
-#     assert response.status_code == expected_status_code
-#     assert mocked_async_jobs_rpc_api["result"].called
-#     assert f"{mocked_async_jobs_rpc_api['result'].call_args[1]['job_id']}" == task_id
