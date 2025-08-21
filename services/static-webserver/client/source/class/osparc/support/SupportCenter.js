@@ -46,9 +46,9 @@ qx.Class.define("osparc.support.SupportCenter", {
     WINDOW_WIDTH: 430,
 
     getMaxHeight: function() {
-      // height: max 80% of screen, min 600
+      // height: max 80% of screen, or 600px
       const clientHeight = document.documentElement.clientHeight;
-      return Math.max(600, parseInt(clientHeight * 0.8));
+      return Math.min(600, parseInt(clientHeight * 0.8));
     },
 
     openWindow: function() {
@@ -61,8 +61,8 @@ qx.Class.define("osparc.support.SupportCenter", {
         // bottom right
         const clientWidth = document.documentElement.clientWidth;
         const clientHeight = document.documentElement.clientHeight;
-        const posX = clientWidth - osparc.support.SupportCenter.WINDOW_WIDTH;
-        const posY = clientHeight - supportCenterWindow.getHeight();
+        const posX = clientWidth - osparc.support.SupportCenter.WINDOW_WIDTH - 4;
+        const posY = clientHeight - supportCenterWindow.getHeight() - 4;
         supportCenterWindow.moveTo(posX, posY);
       };
       supportCenterWindow.open();
