@@ -81,6 +81,24 @@ async def test_list_celery_tasks(
     "method, url, celery_exception, expected_status_code",
     [
         ("GET", "/v0/tasks", CeleryError(), status.HTTP_500_INTERNAL_SERVER_ERROR),
+        (
+            "GET",
+            f"/v0/tasks/{_faker.uuid4()}",
+            CeleryError(),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+        (
+            "POST",
+            f"/v0/tasks/{_faker.uuid4()}:cancel",
+            CeleryError(),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
+        (
+            "GET",
+            f"/v0/tasks/{_faker.uuid4()}/result",
+            CeleryError(),
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ),
     ],
 )
 async def test_celery_tasks_error_propagation(
