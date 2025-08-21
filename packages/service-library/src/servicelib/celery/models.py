@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Annotated, Protocol, TypeAlias
 from uuid import UUID
 
-from models_library.progress_bar import ProgressReport
+from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from pydantic import BaseModel, StringConstraints
 
 TaskID: TypeAlias = str
@@ -113,8 +113,10 @@ class TaskStatus(BaseModel):
                         "actual_value": 0.5,
                         "total": 1.0,
                         "attempts": 1,
-                        "unit": "null",
-                        "message": "Task not done yet",
+                        "unit": "Byte",
+                        "message": ProgressStructuredMessage.model_config[
+                            "json_schema_extra"
+                        ]["examples"][0],
                     },
                 }
             ]

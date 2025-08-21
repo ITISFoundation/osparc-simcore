@@ -13,7 +13,8 @@ from models_library.api_schemas_rpc_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from pytest_mock import MockType
+from pytest_mock import MockerFixture, MockType, mocker
+from simcore_service_api_server.api.routes import tasks as task_routes
 from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
@@ -24,15 +25,27 @@ pytest_plugins = [
 _faker = Faker()
 
 
+@pytest.fixture
+def mock_task_manager(
+    mocker: MockerFixture, mock_task_manager_object: MockType
+) -> MockType:
+
+    def _get_task_manager(app):
+        return mock_task_manager_object
+
+    mocker.patch.object(task_routes, "get_task_manager", _get_task_manager)
+    return mock_task_manager_object
+
+
 @pytest.mark.parametrize(
     "expected_status_code",
     [status.HTTP_200_OK],
 )
-async def test_get_celery_tasks(
+async def test_list_celery_tasks(
+    mock_task_manager: MockType,
     client: AsyncClient,
     auth: BasicAuth,
     expected_status_code: int,
-    mock_task_manager_raising,
 ):
 
     response = await client.get("/v0/tasks", auth=auth)
@@ -40,12 +53,12 @@ async def test_get_celery_tasks(
 
     if response.status_code == status.HTTP_200_OK:
         result = ApiServerEnvelope[list[TaskGet]].model_validate_json(response.text)
-        # assert len(result.data) > 0
-        # assert all(isinstance(task, TaskGet) for task in result.data)
-        # task = result.data[0]
-        # assert task.abort_href == f"/v0/tasks/{task.task_id}:cancel"
-        # assert task.result_href == f"/v0/tasks/{task.task_id}/result"
-        # assert task.status_href == f"/v0/tasks/{task.task_id}"
+        assert len(result.data) > 0
+        assert all(isinstance(task, TaskGet) for task in result.data)
+        task = result.data[0]
+        assert task.abort_href == f"/v0/tasks/{task.task_id}:cancel"
+        assert task.result_href == f"/v0/tasks/{task.task_id}/result"
+        assert task.status_href == f"/v0/tasks/{task.task_id}"
 
 
 @pytest.mark.parametrize(

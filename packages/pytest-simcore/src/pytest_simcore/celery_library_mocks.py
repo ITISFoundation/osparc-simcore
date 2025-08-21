@@ -1,6 +1,6 @@
 import pytest
 from faker import Faker
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskStatus, TaskUUID
 from servicelib.celery.task_manager import Task, TaskManager
 
@@ -8,7 +8,7 @@ _faker = Faker()
 
 
 @pytest.fixture
-def mock_task_manager(mocker: MockerFixture) -> TaskManager:
+def mock_task_manager_object(mocker: MockerFixture) -> MockType:
     """
     Returns a TaskManager mock with example return values for each method.
     """
@@ -37,21 +37,19 @@ def mock_task_manager(mocker: MockerFixture) -> TaskManager:
 
 
 @pytest.fixture
-def mock_task_manager_raising(
-    mocker: MockerFixture, task_manager_exception: Exception
-) -> TaskManager:
-    """
-    Returns a TaskManager mock where all methods raise the provided exception.
-    """
-    mock = mocker.Mock(spec=TaskManager)
+def mock_task_manager_raising_factory(mocker: MockerFixture):
+    def _factory(task_manager_exception: Exception) -> MockType:
+        mock = mocker.Mock(spec=TaskManager)
 
-    def _raise_exc(*args, **kwargs):
-        raise task_manager_exception
+        def _raise_exc(*args, **kwargs):
+            raise task_manager_exception
 
-    mock.submit_task.side_effect = _raise_exc
-    mock.cancel_task.side_effect = _raise_exc
-    mock.get_task_result.side_effect = _raise_exc
-    mock.get_task_status.side_effect = _raise_exc
-    mock.list_tasks.side_effect = _raise_exc
-    mock.set_task_progress.side_effect = _raise_exc
-    return mock
+        mock.submit_task.side_effect = _raise_exc
+        mock.cancel_task.side_effect = _raise_exc
+        mock.get_task_result.side_effect = _raise_exc
+        mock.get_task_status.side_effect = _raise_exc
+        mock.list_tasks.side_effect = _raise_exc
+        mock.set_task_progress.side_effect = _raise_exc
+        return mock
+
+    return _factory
