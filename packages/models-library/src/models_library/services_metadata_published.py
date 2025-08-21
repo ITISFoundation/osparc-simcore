@@ -6,6 +6,7 @@ from pydantic import ConfigDict, Field, NonNegativeInt
 from .basic_types import SemanticVersionStr
 from .boot_options import BootOption, BootOptions
 from .emails import LowerCaseEmailStr
+from .service_settings_labels import SimcoreServiceLabels
 from .services_authoring import Author, Badge
 from .services_base import ServiceBaseDisplay, ServiceKeyVersion
 from .services_constants import ANY_FILETYPE
@@ -87,7 +88,9 @@ _EXAMPLE_W_BOOT_OPTIONS_AND_NO_DISPLAY_ORDER = {
 }
 
 
-class ServiceMetaDataPublished(ServiceKeyVersion, ServiceBaseDisplay):
+class ServiceMetaDataPublished(
+    ServiceKeyVersion, ServiceBaseDisplay, SimcoreServiceLabels
+):
     """
     Service metadata at publication time
 
