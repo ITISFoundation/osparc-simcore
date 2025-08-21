@@ -83,7 +83,6 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   members: {
-    __extraWidgets: null,
     __maxButton: null,
 
     _createChildControlImpl: function(id) {
@@ -125,6 +124,11 @@ qx.Class.define("osparc.ui.message.Loading", {
             alignX: "center"
           }));
           this._add(control);
+        case "extra-widgets-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+            alignX: "center"
+          }));
+          this._add(control);
       }
       return control || this.base(arguments, id);
     },
@@ -135,11 +139,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.getChildControl("thumbnail");
       this.getChildControl("loading-title");
       this.getChildControl("messages-container");
-
-      const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
-        alignX: "center"
-      }));
-      this._add(extraWidgets);
+      this.getChildControl("extra-widgets-container");
 
       const bottomSpacer = new qx.ui.core.Spacer();
       this._add(bottomSpacer, {
@@ -274,7 +274,8 @@ qx.Class.define("osparc.ui.message.Loading", {
     },
 
     addExtraWidget: function(widget) {
-      this.__extraWidgets.add(widget);
+      const extraWidgetsContainer = this.getChildControl("extra-widgets-container");
+      extraWidgetsContainer.add(widget);
     },
   }
 });
