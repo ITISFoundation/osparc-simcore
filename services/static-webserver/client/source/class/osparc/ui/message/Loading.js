@@ -83,8 +83,6 @@ qx.Class.define("osparc.ui.message.Loading", {
   },
 
   members: {
-    __header: null,
-    __messagesContainer: null,
     __extraWidgets: null,
     __maxButton: null,
 
@@ -122,6 +120,11 @@ qx.Class.define("osparc.ui.message.Loading", {
           });
           this._add(control);
           break;
+        case "messages-container":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+            alignX: "center"
+          }));
+          this._add(control);
       }
       return control || this.base(arguments, id);
     },
@@ -131,11 +134,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       this.getChildControl("spacer-top");
       this.getChildControl("thumbnail");
       this.getChildControl("loading-title");
-
-      const messages = this.__messagesContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
-        alignX: "center"
-      }));
-      this._add(messages);
+      this.getChildControl("messages-container");
 
       const extraWidgets = this.__extraWidgets = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
         alignX: "center"
@@ -238,6 +237,8 @@ qx.Class.define("osparc.ui.message.Loading", {
 
     __applyMessages: function(msgs) {
       this.clearMessages();
+
+      const messagesContainer = this.getChildControl("messages-container");
       if (msgs) {
         msgs.forEach(msg => {
           const text = new qx.ui.basic.Label(msg.toString()).set({
@@ -245,28 +246,30 @@ qx.Class.define("osparc.ui.message.Loading", {
             rich: true,
             wrap: true
           });
-          this.__messagesContainer.add(text);
+          messagesContainer.add(text);
         });
-        this.__messagesContainer.show();
+        messagesContainer.show();
       } else {
-        this.__messagesContainer.exclude();
+        messagesContainer.exclude();
       }
     },
 
     clearMessages: function() {
-      this.__messagesContainer.removeAll();
+      const messagesContainer = this.getChildControl("messages-container");
+      messagesContainer.removeAll();
     },
 
     getMessageLabels: function() {
-      return this.__messagesContainer.getChildren();
+      return this.getChildControl("messages-container").getChildren();
     },
 
     addWidgetToMessages: function(widget) {
+      const messagesContainer = this.getChildControl("messages-container");
       if (widget) {
-        this.__messagesContainer.add(widget);
-        this.__messagesContainer.show();
+        messagesContainer.add(widget);
+        messagesContainer.show();
       } else {
-        this.__messagesContainer.exclude();
+        messagesContainer.exclude();
       }
     },
 
