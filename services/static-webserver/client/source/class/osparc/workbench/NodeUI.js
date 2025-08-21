@@ -398,7 +398,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
 
       const lock = this.getChildControl("lock");
-      node.getLockState().bind("locked", lock, "visibility", {
+      node.getStatus().getLockState().bind("locked", lock, "visibility", {
         converter: nodeLocked => nodeLocked ? "visible" : "excluded"
       });
 

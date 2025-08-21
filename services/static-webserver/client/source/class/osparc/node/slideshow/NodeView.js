@@ -61,7 +61,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const showSettings = node.isComputational();
       this._settingsLayout.setVisibility(showSettings ? "visible" : "excluded");
 
-      node.getLockState().bind("locked", this._settingsLayout, "enabled", {
+      node.getStatus().getLockState().bind("locked", this._settingsLayout, "enabled", {
         converter: nodeLocked => !nodeLocked
       });
 
