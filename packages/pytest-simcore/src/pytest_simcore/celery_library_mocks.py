@@ -10,36 +10,78 @@ _faker = Faker()
 
 
 @pytest.fixture
-def mock_task_manager_object(mocker: MockerFixture) -> MockType:
-    """
-    Returns a TaskManager mock with example return values for each method.
-    """
-    mock = mocker.Mock(spec=TaskManager)
+def submit_task_return_value() -> TaskUUID:
+    return TaskUUID(_faker.uuid4())
 
-    # Example return values (replace with realistic objects as needed)
-    mock.submit_task.return_value = TaskUUID(_faker.uuid4())
-    mock.cancel_task.return_value = None
-    mock.get_task_result.return_value = {"result": "example"}
+
+@pytest.fixture
+def cancel_task_return_value() -> None:
+    return None
+
+
+@pytest.fixture
+def get_task_result_return_value() -> dict:
+    return {"result": "example"}
+
+
+@pytest.fixture
+def get_task_status_return_value() -> TaskStatus:
     status_extra = TaskStatus.model_config.get("json_schema_extra")
     assert status_extra is not None
     status_examples = status_extra.get("examples")
     assert isinstance(status_examples, list)
     assert len(status_examples) > 0
-    mock.get_task_status.return_value = TaskStatus.model_validate(status_examples[0])
+    return TaskStatus.model_validate(status_examples[0])
+
+
+@pytest.fixture
+def list_tasks_return_value() -> list[Task]:
     list_extra = Task.model_config.get("json_schema_extra")
     assert isinstance(list_extra, dict)
     list_examples = list_extra.get("examples")
     assert isinstance(list_examples, list)
     assert len(list_examples) > 0
-    mock.list_tasks.return_value = [
-        Task.model_validate(example) for example in list_examples
-    ]
-    mock.set_task_progress.return_value = None
+    return [Task.model_validate(example) for example in list_examples]
+
+
+@pytest.fixture
+def set_task_progress_return_value() -> None:
+    return None
+
+
+@pytest.fixture
+def mock_task_manager_object(
+    mocker: MockerFixture,
+    submit_task_return_value,
+    cancel_task_return_value,
+    get_task_result_return_value,
+    get_task_status_return_value,
+    list_tasks_return_value,
+    set_task_progress_return_value,
+) -> MockType:
+    """
+    Returns a TaskManager mock with overridable return values for each method.
+    If a return value is an Exception, the method will raise it.
+    """
+    mock = mocker.Mock(spec=TaskManager)
+
+    def _set_return_or_raise(method, value):
+        if isinstance(value, Exception):
+            method.side_effect = lambda *a, **kw: (_ for _ in ()).throw(value)
+        else:
+            method.return_value = value
+
+    _set_return_or_raise(mock.submit_task, submit_task_return_value)
+    _set_return_or_raise(mock.cancel_task, cancel_task_return_value)
+    _set_return_or_raise(mock.get_task_result, get_task_result_return_value)
+    _set_return_or_raise(mock.get_task_status, get_task_status_return_value)
+    _set_return_or_raise(mock.list_tasks, list_tasks_return_value)
+    _set_return_or_raise(mock.set_task_progress, set_task_progress_return_value)
     return mock
 
 
 @pytest.fixture
-def mock_task_manager_raising_factory(
+def mock_task_manager_object_raising_factory(
     mocker: MockerFixture,
 ) -> Callable[[Exception], MockType]:
     def _factory(task_manager_exception: Exception) -> MockType:
