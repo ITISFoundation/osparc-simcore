@@ -159,6 +159,10 @@ qx.Class.define("osparc.data.model.Conversation", {
       return promise;
     },
 
+    amIOwner: function() {
+      return this.getUserGroupId() === osparc.auth.Data.getInstance().getGroupId();
+    },
+
     getNextMessages: function() {
       const params = {
         url: {

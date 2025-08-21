@@ -129,13 +129,17 @@ qx.Class.define("osparc.support.ConversationPage", {
 
     __applyConversation: function(conversation) {
       const title = this.getChildControl("conversation-title");
-      const extraContextLabel = this.getChildControl("conversation-extra-content");
-      const options = this.getChildControl("conversation-options");
       if (conversation) {
         conversation.bind("nameAlias", title, "value");
-        const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
+      } else {
+        title.setValue(this.tr("Ask a Question"));
+      }
+
+      const extraContextLabel = this.getChildControl("conversation-extra-content");
+      const amISupporter = osparc.store.Products.getInstance().amIASupportUser();
+      if (conversation && amISupporter) {
         const extraContext = conversation.getExtraContext();
-        if (amISupporter && extraContext && Object.keys(extraContext).length) {
+        if (extraContext && Object.keys(extraContext).length) {
           let extraContextText = `Support ID: ${conversation.getConversationId()}`;
           const contextProjectId = conversation.getContextProjectId();
           if (contextProjectId) {
@@ -143,10 +147,15 @@ qx.Class.define("osparc.support.ConversationPage", {
           }
           extraContextLabel.setValue(extraContextText);
         }
-        extraContextLabel.setVisibility(amISupporter ? "visible" : "excluded");
+        extraContextLabel.show();
+      } else {
+        extraContextLabel.exclude();
+      }
+
+      const options = this.getChildControl("conversation-options");
+      if (conversation && conversation.amIOwner()) {
         options.show();
       } else {
-        title.setValue("");
         options.exclude();
       }
     },

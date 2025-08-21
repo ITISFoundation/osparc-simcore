@@ -152,7 +152,7 @@ qx.Class.define("osparc.support.Conversation", {
         // initiating conversation
         showCB = true;
       }
-      if (conversation && conversation.getContextProjectId()) {
+      if (conversation && conversation.getContextProjectId() && conversation.amIOwner()) {
         // it was already set
         showCB = true;
       }
