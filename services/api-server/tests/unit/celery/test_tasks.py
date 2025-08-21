@@ -41,6 +41,24 @@ def mock_task_manager(
     return mock_task_manager_object
 
 
+@pytest.fixture
+def mock_task_manager_raising_factory(
+    mocker: MockerFixture,
+    mock_task_manager_object_raising_factory: Callable[[Exception], MockType],
+) -> Callable[[Exception], MockType]:
+
+    def _(task_manager_exception: Exception):
+        mock = mock_task_manager_object_raising_factory(task_manager_exception)
+
+        def _get_task_manager(app):
+            return mock
+
+        mocker.patch.object(task_routes, "get_task_manager", _get_task_manager)
+        return mock
+
+    return _
+
+
 async def test_list_celery_tasks(
     mock_task_manager: MockType,
     client: AsyncClient,
