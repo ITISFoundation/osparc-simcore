@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from ...long_running_tasks import lrt_api
 from ...long_running_tasks.models import TaskGet, TaskId, TaskResult, TaskStatus
@@ -30,7 +30,7 @@ async def list_tasks(
         for t in await lrt_api.list_tasks(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
-            task_context={},
+            long_running_manager.get_task_context(request),
         )
     ]
 
@@ -45,16 +45,16 @@ async def list_tasks(
 @cancel_on_disconnect
 async def get_task_status(
     request: Request,
-    task_id: TaskId,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
+    task_id: TaskId,
 ) -> TaskStatus:
     assert request  # nosec
     return await lrt_api.get_task_status(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
-        task_context={},
+        long_running_manager.get_task_context(request),
         task_id=task_id,
     )
 
@@ -71,16 +71,16 @@ async def get_task_status(
 @cancel_on_disconnect
 async def get_task_result(
     request: Request,
-    task_id: TaskId,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
+    task_id: TaskId,
 ) -> TaskResult | Any:
     assert request  # nosec
     return await lrt_api.get_task_result(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
-        task_context={},
+        long_running_manager.get_task_context(request),
         task_id=task_id,
     )
 
@@ -97,16 +97,26 @@ async def get_task_result(
 @cancel_on_disconnect
 async def remove_task(
     request: Request,
-    task_id: TaskId,
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
+    task_id: TaskId,
+    *,
+    wait_for_removal: Annotated[
+        bool,
+        Query(
+            description=(
+                "when True waits for the task to be removed "
+                "completly instead of returning immediately"
+            ),
+        ),
+    ] = True,
 ) -> None:
     assert request  # nosec
     await lrt_api.remove_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
-        task_context={},
+        long_running_manager.get_task_context(request),
         task_id=task_id,
-        wait_for_removal=True,  # only used by internal services, they will wait as before
+        wait_for_removal=wait_for_removal,
     )

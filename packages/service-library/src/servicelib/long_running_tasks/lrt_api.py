@@ -125,7 +125,6 @@ async def remove_task(
         lrt_namespace,
         task_id=task_id,
         task_context=task_context,
-        reraise_errors=True,
         wait_for_removal=wait_for_removal,
         cancellation_timeout=cancellation_timeout,
     )

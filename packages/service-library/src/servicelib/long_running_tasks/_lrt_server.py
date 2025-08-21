@@ -1,10 +1,11 @@
 import logging
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 
 from ..logging_errors import create_troubleshootting_log_kwargs
 from ..rabbitmq import RPCRouter
 from ._serialization import string_to_object
-from .errors import BaseLongRunningError
+from .errors import BaseLongRunningError, TaskNotFoundError
 from .models import (
     ErrorResponse,
     RegisteredTaskName,
@@ -110,12 +111,12 @@ async def get_task_result(
         raise ValueError(msg)
     finally:
         # Ensure the task is removed regardless of the result
-        await long_running_manager.tasks_manager.remove_task(
-            task_id,
-            with_task_context=task_context,
-            wait_for_removal=True,
-            reraise_errors=False,
-        )
+        with suppress(TaskNotFoundError):
+            await long_running_manager.tasks_manager.remove_task(
+                task_id,
+                with_task_context=task_context,
+                wait_for_removal=True,
+            )
 
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
@@ -125,11 +126,9 @@ async def remove_task(
     task_context: TaskContext,
     task_id: TaskId,
     wait_for_removal: bool,
-    reraise_errors: bool,
 ) -> None:
     await long_running_manager.tasks_manager.remove_task(
         task_id,
         with_task_context=task_context,
         wait_for_removal=wait_for_removal,
-        reraise_errors=reraise_errors,
     )

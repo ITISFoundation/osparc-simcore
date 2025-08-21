@@ -498,13 +498,6 @@ async def test_remove_unknown_task(
             "invalid_id", with_task_context=empty_context, wait_for_removal=True
         )
 
-    await long_running_manager.tasks_manager.remove_task(
-        "invalid_id",
-        with_task_context=empty_context,
-        wait_for_removal=True,
-        reraise_errors=False,
-    )
-
 
 async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_different_process(
     long_running_manager: BaseLongRunningManager, empty_context: TaskContext

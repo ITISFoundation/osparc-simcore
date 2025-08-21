@@ -137,7 +137,6 @@ async def remove_task(
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    reraise_errors: bool,
     wait_for_removal: bool,
     cancellation_timeout: timedelta | None,
 ) -> None:
@@ -158,7 +157,6 @@ async def remove_task(
         task_context=task_context,
         task_id=task_id,
         wait_for_removal=wait_for_removal,
-        reraise_errors=reraise_errors,
         timeout_s=timeout_s,
     )
     assert result is None  # nosec

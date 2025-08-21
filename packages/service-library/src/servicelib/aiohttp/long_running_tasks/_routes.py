@@ -1,12 +1,16 @@
-from typing import Any
+from typing import Annotated, Any
 
 from aiohttp import web
-from pydantic import BaseModel
+from models_library.rest_base import RequestParameters
+from pydantic import BaseModel, Field
 
 from ...aiohttp import status
 from ...long_running_tasks import lrt_api
 from ...long_running_tasks.models import TaskGet, TaskId
-from ..requests_validation import parse_request_path_parameters_as
+from ..requests_validation import (
+    parse_request_path_parameters_as,
+    parse_request_query_parameters_as,
+)
 from ..rest_responses import create_data_response
 from ._manager import get_long_running_manager
 
@@ -65,9 +69,22 @@ async def get_task_result(request: web.Request) -> web.Response | Any:
     )
 
 
+class MyRequestQueryParams(RequestParameters):
+    wait_for_removal: Annotated[
+        bool,
+        Field(
+            description=(
+                "when True waits for the task to be removed "
+                "completly instead of returning immediately"
+            )
+        ),
+    ] = True
+
+
 @routes.delete("/{task_id}", name="remove_task")
 async def remove_task(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParam, request)
+    query_params = parse_request_query_parameters_as(MyRequestQueryParams, request)
     long_running_manager = get_long_running_manager(request.app)
 
     await lrt_api.remove_task(
@@ -75,6 +92,6 @@ async def remove_task(request: web.Request) -> web.Response:
         long_running_manager.lrt_namespace,
         long_running_manager.get_task_context(request),
         path_params.task_id,
-        wait_for_removal=False,  # frontend does not care about waiting for this
+        wait_for_removal=query_params.wait_for_removal,
     )
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
