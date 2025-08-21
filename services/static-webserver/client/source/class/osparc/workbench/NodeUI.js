@@ -398,9 +398,15 @@ qx.Class.define("osparc.workbench.NodeUI", {
       }
 
       const lock = this.getChildControl("lock");
-      node.getStatus().getLockState().bind("locked", lock, "visibility", {
-        converter: nodeLocked => nodeLocked ? "visible" : "excluded"
-      });
+      if (node.isComputational()) {
+        node.getStudy().bind("pipelineRunning", lock, "visibility", {
+          converter: pipelineRunning => !pipelineRunning
+        });
+      } else if (node.isDynamic()) {
+        node.getStatus().getLockState().bind("locked", lock, "visibility", {
+          converter: nodeLocked => nodeLocked ? "visible" : "excluded"
+        });
+      }
 
       this.__markerBtn.show();
       this.getNode().bind("marker", this.__markerBtn, "label", {
