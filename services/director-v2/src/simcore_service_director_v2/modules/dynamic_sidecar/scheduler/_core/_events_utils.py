@@ -472,7 +472,6 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
 async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
-    app_settings: AppSettings = app.state.settings
     sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
