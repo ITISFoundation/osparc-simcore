@@ -34,7 +34,6 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
     "pytest_simcore.logging",
-    "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
 ]
@@ -152,7 +151,6 @@ async def with_celery_worker(
         queues="default",
     ) as worker:
         yield worker
-        worker.stop()
 
 
 @pytest.fixture
