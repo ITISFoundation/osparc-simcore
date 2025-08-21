@@ -278,10 +278,7 @@ async def get_project_for_user(
     # adds state if it is not a template
     if include_state:
         project = await add_project_states_for_user(
-            user_id=user_id,
-            project=project,
-            app=app,
-            product_name=product_name,
+            user_id=user_id, project=project, app=app
         )
 
     # adds `trashed_by_primary_gid`
@@ -1266,7 +1263,7 @@ async def patch_project_node(
         )
 
     updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, app=app, product_name=product_name
+        user_id=user_id, project=updated_project, app=app
     )
     # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
@@ -1336,7 +1333,7 @@ async def update_project_node_outputs(
         pformat(changed_entries),
     )
     updated_project = await add_project_states_for_user(
-        user_id=user_id, project=updated_project, app=app, product_name=product_name
+        user_id=user_id, project=updated_project, app=app
     )
 
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
@@ -1367,32 +1364,12 @@ async def is_node_id_present_in_any_project_workbench(
     return await db_legacy.node_id_exists(node_id)
 
 
-async def _is_service_collaborative(
-    app: web.Application,
-    *,
-    user_id: UserID,
-    key: ServiceKey,
-    version: ServiceVersion,
-    product_name: ProductName,
-) -> bool:
-    service = await catalog_service.get_service(
-        app,
-        user_id=user_id,
-        service_key=key,
-        service_version=version,
-        product_name=product_name,
-    )
-
-    return service.get("collaborative", False) is True
-
-
 async def _get_node_share_state(
     app: web.Application,
     *,
     user_id: UserID,
     project_uuid: ProjectID,
     node_id: NodeID,
-    product_name: ProductName,
 ) -> NodeShareState:
     node = await _projects_nodes_repository.get(
         app, project_id=project_uuid, node_id=node_id
@@ -1406,13 +1383,10 @@ async def _get_node_share_state(
 
         if isinstance(service, DynamicServiceGet | NodeGet):
             # service is running
-            collaborative_service = await _is_service_collaborative(
-                app,
-                key=node.key,
-                version=node.version,
-                user_id=user_id,
-                product_name=product_name,
-            )
+            collaborative_service = False
+            if isinstance(service, DynamicServiceGet):
+                # only dynamic-sidecar powered services can be collaborative
+                collaborative_service = service.is_collaborative
 
             return NodeShareState(
                 locked=not collaborative_service,
@@ -1915,7 +1889,6 @@ async def add_project_states_for_user(
     user_id: int,
     project: ProjectDict,
     app: web.Application,
-    product_name: ProductName,
 ) -> ProjectDict:
     _logger.debug(
         "adding project states for %s with project %s",
@@ -1951,7 +1924,6 @@ async def add_project_states_for_user(
                 user_id=user_id,
                 project_uuid=project["uuid"],
                 node_id=NodeID(node_uuid),
-                product_name=product_name,
             )
         if NodeID(node_uuid) in computational_node_states:
             node_state = computational_node_states[NodeID(node_uuid)].model_copy(

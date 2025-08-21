@@ -162,10 +162,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         # notify users that project is now opened
         project = await _projects_service.add_project_states_for_user(
-            user_id=req_ctx.user_id,
-            project=project,
-            app=request.app,
-            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id, project=project, app=request.app
         )
         await _projects_service.notify_project_state_update(request.app, project)
 

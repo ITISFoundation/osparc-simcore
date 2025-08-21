@@ -430,10 +430,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
         )
         # Appends state
         new_project = await _projects_service.add_project_states_for_user(
-            user_id=user_id,
-            project=new_project,
-            app=request.app,
-            product_name=product_name,
+            user_id=user_id, project=new_project, app=request.app
         )
         await progress.update()
 
