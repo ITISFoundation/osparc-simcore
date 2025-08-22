@@ -244,6 +244,8 @@ qx.Class.define("osparc.share.Collaborators", {
         case "template":
         case "tutorial":
         case "hypertool":
+        case "function":
+        case "tag":
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();
           break;
         case "service":
@@ -251,9 +253,6 @@ qx.Class.define("osparc.share.Collaborators", {
           break;
         case "workspace":
           rolesLayout = osparc.data.Roles.createRolesWorkspaceInfo();
-          break;
-        case "tag":
-          rolesLayout = osparc.data.Roles.createRolesStudyInfo();
           break;
       }
       return rolesLayout;
