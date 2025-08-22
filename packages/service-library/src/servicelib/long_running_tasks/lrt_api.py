@@ -2,11 +2,11 @@ import logging
 from typing import Any
 
 from common_library.error_codes import create_error_code
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
+from ..logging_errors import create_troubleshootting_log_kwargs
 from .errors import TaskNotCompletedError, TaskNotFoundError
-from .models import TaskBase, TaskId, TaskStatus
-from .task import RegisteredTaskName, TaskContext, TasksManager
+from .models import TaskBase, TaskContext, TaskId, TaskStatus
+from .task import RegisteredTaskName, TasksManager
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ async def start_task(
     Returns:
         TaskId: the task unique identifier
     """
-    return tasks_manager.start_task(
+    return await tasks_manager.start_task(
         registered_task_name,
         unique=unique,
         task_context=task_context,
@@ -56,26 +56,26 @@ async def start_task(
     )
 
 
-def list_tasks(
-    tasks_manager: TasksManager, task_context: TaskContext | None
+async def list_tasks(
+    tasks_manager: TasksManager, task_context: TaskContext
 ) -> list[TaskBase]:
-    return tasks_manager.list_tasks(with_task_context=task_context)
+    return await tasks_manager.list_tasks(with_task_context=task_context)
 
 
-def get_task_status(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+async def get_task_status(
+    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> TaskStatus:
     """returns the status of a task"""
-    return tasks_manager.get_task_status(
+    return await tasks_manager.get_task_status(
         task_id=task_id, with_task_context=task_context
     )
 
 
 async def get_task_result(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> Any:
     try:
-        task_result = tasks_manager.get_task_result(
+        task_result = await tasks_manager.get_task_result(
             task_id, with_task_context=task_context
         )
         await tasks_manager.remove_task(
@@ -101,7 +101,7 @@ async def get_task_result(
 
 
 async def remove_task(
-    tasks_manager: TasksManager, task_context: TaskContext | None, task_id: TaskId
+    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
 ) -> None:
-    """removes / cancels a task"""
+    """cancels and removes the task"""
     await tasks_manager.remove_task(task_id, with_task_context=task_context)

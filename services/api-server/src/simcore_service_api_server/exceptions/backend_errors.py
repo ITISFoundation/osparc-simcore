@@ -57,6 +57,11 @@ class ServiceForbiddenAccessError(BaseBackEndError):
     status_code = status.HTTP_403_FORBIDDEN
 
 
+class JobForbiddenAccessError(BaseBackEndError):
+    msg_template = "Forbidden access to job {project_id}"
+    status_code = status.HTTP_403_FORBIDDEN
+
+
 class JobNotFoundError(BaseBackEndError):
     msg_template = "Could not get solver/study job {project_id}"
     status_code = status.HTTP_404_NOT_FOUND
@@ -135,3 +140,8 @@ class CanNotCheckoutServiceIsNotRunningError(BaseBackEndError):
 class LicensedItemCheckoutNotFoundError(BaseBackEndError):
     msg_template = "Licensed item checkout {licensed_item_checkout_id} not found."
     status_code = status.HTTP_404_NOT_FOUND
+
+
+class JobAssetsMissingError(BaseBackEndError):
+    msg_template = "Job assets missing for job {job_id}"
+    status_code = status.HTTP_409_CONFLICT

@@ -1,8 +1,19 @@
 name: ⬆️ Regular maintenance (developers-only)
 description: Creates an issue to plan a regular maintenance each sprint
-title: " ⬆️ Regular maintenance <sprint_name>"
-labels: ["t:maintenance"]
-assignees: ["matusdrobuliak66"]
+title: "⬆️ Regular maintenance <sprint_name>"
+labels:
+  - "t:maintenance"
+assignees:
+  - bisgaard-itis
+  - giancarloromeo
+  - GitHK
+  - matusdrobuliak66
+  - odeimaiz
+  - pcrespov
+  - sanderegg
+type: "Task"
+projects:
+  - "ITISFoundation/projects/9"
 body:
   - type: input
     id: sprint
@@ -13,13 +24,13 @@ body:
       required: true
   - type: textarea
     attributes:
-      label: ⬆️  Requirements
+      label: ⬆️ Requirements
       description: |
         Upgrade of Requirements
       value: |
         - Update of test & tools dependencies repository-wise
             - [ ] ``make reqs``
-        - Update of most important libraries repository-wise  make ``reqs-all upgrade=foo==1.2.3``
+        - Update of most important libraries repository-wise make ``reqs-all startswith=pydantic``
             - [ ] fastapi
             - [ ] pydantic
             - [ ] aio-pika

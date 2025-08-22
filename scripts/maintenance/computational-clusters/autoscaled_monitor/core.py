@@ -615,7 +615,11 @@ async def _cancel_all_jobs(
                     the_cluster,
                     dask_task.job_id,
                 )
-        if comp_task is not None and abort_in_db:
+        if (
+            comp_task is not None
+            and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"]
+            and abort_in_db
+        ):
             await db.abort_job_in_db(state, comp_task.project_id, comp_task.node_id)
 
         rich.print("cancelled all tasks")

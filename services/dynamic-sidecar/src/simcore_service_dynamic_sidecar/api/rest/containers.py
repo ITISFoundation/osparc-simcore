@@ -4,6 +4,7 @@ import logging
 from asyncio import Lock
 from typing import Annotated, Any, Final
 
+from aiodocker import DockerError
 from common_library.json_serialization import json_loads
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
@@ -13,14 +14,15 @@ from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfoOrNone,
 )
 from pydantic import TypeAdapter, ValidationError
-from servicelib.fastapi.requests_decorators import cancel_on_disconnect
-
-from ...core.docker_utils import docker_client
-from ...core.errors import (
+from servicelib.container_utils import (
     ContainerExecCommandFailedError,
     ContainerExecContainerNotFoundError,
     ContainerExecTimeoutError,
+    run_command_in_container,
 )
+from servicelib.fastapi.requests_decorators import cancel_on_disconnect
+
+from ...core.docker_utils import docker_client
 from ...core.settings import ApplicationSettings
 from ...core.validation import (
     ComposeSpecValidation,
@@ -29,7 +31,6 @@ from ...core.validation import (
 )
 from ...models.schemas.containers import ContainersComposeSpec
 from ...models.shared_store import SharedStore
-from ...modules.container_utils import run_command_in_container
 from ...modules.mounted_fs import MountedVolumes
 from ._dependencies import (
     get_container_restart_lock,
@@ -166,6 +167,7 @@ async def get_containers_activity(
         ContainerExecContainerNotFoundError,
         ContainerExecCommandFailedError,
         ContainerExecTimeoutError,
+        DockerError,
     ):
         _logger.warning(
             "Could not run inactivity command '%s' in container '%s'",

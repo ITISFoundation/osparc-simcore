@@ -41,7 +41,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
     "fileRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
-    "changeChildVisibility": "qx.event.type.Event"
   },
 
   properties: {
@@ -545,29 +544,6 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       });
     },
 
-    // overridden
-    setAccessLevel: function(data) {
-      const entry = this.self().GRID_POS;
-      const disableables = osparc.form.renderer.PropFormBase.getDisableables();
-      Object.entries(data).forEach(([portId, visibility]) => {
-        Object.values(entry).forEach(entryPos => {
-          const layoutElement = this._getLayoutChild(portId, entryPos);
-          if (layoutElement && layoutElement.child) {
-            const control = layoutElement.child;
-            if (control) {
-              const vis = visibility === this._visibility.hidden ? "excluded" : "visible";
-              const enabled = visibility === this._visibility.readWrite;
-              control.setVisibility(vis);
-              if (disableables.includes(entryPos)) {
-                control.setEnabled(enabled);
-              }
-            }
-          }
-        });
-      });
-      this.fireEvent("changeChildVisibility");
-    },
-
     setPortErrorMessage: function(portId, msg) {
       const infoButton = this._getInfoFieldChild(portId);
       if (infoButton && "child" in infoButton) {
@@ -932,6 +908,7 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
       }
+
       const ctrlLink = this.getControlLink(toPortId);
       ctrlLink.setEnabled(false);
       this._form.getControl(toPortId)["link"] = {
@@ -950,21 +927,28 @@ qx.Class.define("osparc.form.renderer.PropForm", {
       ctrlLink.addListener("mouseover", () => highlightEdgeUI(true));
       ctrlLink.addListener("mouseout", () => highlightEdgeUI(false));
 
-      const workbench = study.getWorkbench();
-      const fromNode = workbench.getNode(fromNodeId);
-      const port = fromNode.getOutput(fromPortId);
-      const fromPortLabel = port ? port.label : null;
-      fromNode.bind("label", ctrlLink, "value", {
-        converter: label => label + ": " + fromPortLabel
-      });
-      // Hack: Show tooltip if element is disabled
-      const addToolTip = () => {
-        ctrlLink.getContentElement().removeAttribute("title");
-        const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
-        ctrlLink.getContentElement().setAttribute("title", toolTipText);
-      };
-      fromNode.addListener("changeLabel", () => addToolTip());
-      addToolTip();
+      const fromNode = study.getWorkbench().getNode(fromNodeId);
+      const prettifyLinkString = () => {
+        const port = fromNode.getOutput(fromPortId);
+        const fromPortLabel = port ? port.label : null;
+        fromNode.bind("label", ctrlLink, "value", {
+          converter: label => label + ": " + fromPortLabel
+        });
+
+        // Hack: Show tooltip if element is disabled
+        const addToolTip = () => {
+          ctrlLink.getContentElement().removeAttribute("title");
+          const toolTipText = fromNode.getLabel() + ":\n" + fromPortLabel;
+          ctrlLink.getContentElement().setAttribute("title", toolTipText);
+        };
+        fromNode.addListener("changeLabel", () => addToolTip());
+        addToolTip();
+      }
+      if (fromNode.getMetadata()) {
+        prettifyLinkString();
+      } else {
+        fromNode.addListenerOnce("changeMetadata", () => prettifyLinkString(), this);
+      }
 
       this.__portLinkAdded(toPortId, fromNodeId, fromPortId);
 

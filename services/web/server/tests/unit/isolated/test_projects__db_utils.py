@@ -22,12 +22,12 @@ from simcore_service_webserver.projects._projects_repository_legacy import (
     convert_to_schema_names,
     create_project_access_rights,
     patch_workbench,
-    update_workbench,
 )
 from simcore_service_webserver.projects._projects_repository_legacy_utils import (
     DB_EXCLUSIVE_COLUMNS,
     SCHEMA_NON_NULL_KEYS,
     assemble_array_groups,
+    update_workbench,
 )
 from simcore_service_webserver.projects.exceptions import (
     NodeNotFoundError,

@@ -23,6 +23,7 @@ from tenacity.retry import retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random_exponential
 
+from .._meta import APP_NAME
 from ..core.docker_compose_utils import (
     docker_compose_create,
     docker_compose_down,
@@ -149,11 +150,11 @@ async def task_pull_user_servcices_docker_images(
 ) -> None:
     assert shared_store.compose_spec  # nosec
 
-    progress.update(message="started pulling user services", percent=0)
+    await progress.update(message="started pulling user services", percent=0)
 
     await docker_compose_pull(app, shared_store.compose_spec)
 
-    progress.update(message="finished pulling user services", percent=1)
+    await progress.update(message="finished pulling user services", percent=1)
 
 
 async def task_create_service_containers(
@@ -164,40 +165,42 @@ async def task_create_service_containers(
     app: FastAPI,
     application_health: ApplicationHealth,
 ) -> list[str]:
-    progress.update(message="validating service spec", percent=0)
+    await progress.update(message="validating service spec", percent=0)
 
     assert shared_store.compose_spec  # nosec
 
-    async with event_propagation_disabled(app), _reset_on_error(
-        shared_store
-    ), ProgressBarData(
-        num_steps=4,
-        progress_report_cb=functools.partial(
-            post_progress_message,
-            app,
-            ProgressType.SERVICE_CONTAINERS_STARTING,
-        ),
-        description="starting software",
-    ) as progress_bar:
+    async with (
+        event_propagation_disabled(app),
+        _reset_on_error(shared_store),
+        ProgressBarData(
+            num_steps=4,
+            progress_report_cb=functools.partial(
+                post_progress_message,
+                app,
+                ProgressType.SERVICE_CONTAINERS_STARTING,
+            ),
+            description="starting software",
+        ) as progress_bar,
+    ):
         with log_context(_logger, logging.INFO, "load user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
                 await user_services_preferences.load_user_services_preferences(app)
         await progress_bar.update()
 
         # removes previous pending containers
-        progress.update(message="cleanup previous used resources")
+        await progress.update(message="cleanup previous used resources")
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
         await progress_bar.update()
 
-        progress.update(message="creating and starting containers", percent=0.90)
+        await progress.update(message="creating and starting containers", percent=0.90)
         await post_sidecar_log_message(
             app, "starting service containers", log_level=logging.INFO
         )
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
         await progress_bar.update()
 
-        progress.update(message="ensure containers are started", percent=0.95)
+        await progress.update(message="ensure containers are started", percent=0.95)
         compose_start_result = await _retry_docker_compose_start(
             shared_store.compose_spec, settings
         )
@@ -280,7 +283,7 @@ async def task_runs_docker_compose_down(
             await send_service_stopped(app, simcore_platform_status)
 
     try:
-        progress.update(message="running docker-compose-down", percent=0.1)
+        await progress.update(message="running docker-compose-down", percent=0.1)
 
         await run_before_shutdown_actions(
             shared_store, settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown
@@ -293,11 +296,11 @@ async def task_runs_docker_compose_down(
         result = await _retry_docker_compose_down(shared_store.compose_spec, settings)
         _raise_for_errors(result, "down")
 
-        progress.update(message="stopping logs", percent=0.9)
+        await progress.update(message="stopping logs", percent=0.9)
         for container_name in shared_store.container_names:
             await stop_log_fetching(app, container_name)
 
-        progress.update(message="removing pending resources", percent=0.95)
+        await progress.update(message="removing pending resources", percent=0.95)
         result = await docker_compose_rm(shared_store.compose_spec, settings)
         _raise_for_errors(result, "rm")
     except Exception:
@@ -314,7 +317,7 @@ async def task_runs_docker_compose_down(
     async with shared_store:
         shared_store.compose_spec = None
         shared_store.container_names = []
-    progress.update(message="done", percent=0.99)
+    await progress.update(message="done", percent=0.99)
 
 
 def _get_satate_folders_size(paths: list[Path]) -> int:
@@ -377,7 +380,7 @@ async def task_restore_state(
     # NOTE: this implies that the legacy format will always be decompressed
     # until it is not removed.
 
-    progress.update(message="Downloading state", percent=0.05)
+    await progress.update(message="Downloading state", percent=0.05)
     state_paths = list(mounted_volumes.disk_state_paths_iter())
     await post_sidecar_log_message(
         app,
@@ -407,7 +410,7 @@ async def task_restore_state(
     await post_sidecar_log_message(
         app, "Finished state downloading", log_level=logging.INFO
     )
-    progress.update(message="state restored", percent=0.99)
+    await progress.update(message="state restored", percent=0.99)
 
     return _get_satate_folders_size(state_paths)
 
@@ -433,6 +436,7 @@ async def _save_state_folder(
         progress_bar=progress_bar,
         aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
+        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
     )
 
 
@@ -447,7 +451,7 @@ async def task_save_state(
     If a legacy archive is detected, it will be removed after
     saving the new format.
     """
-    progress.update(message="starting state save", percent=0.0)
+    await progress.update(message="starting state save", percent=0.0)
     state_paths = list(mounted_volumes.disk_state_paths_iter())
     async with ProgressBarData(
         num_steps=len(state_paths),
@@ -473,7 +477,7 @@ async def task_save_state(
         )
 
     await post_sidecar_log_message(app, "Finished state saving", log_level=logging.INFO)
-    progress.update(message="finished state saving", percent=0.99)
+    await progress.update(message="finished state saving", percent=0.99)
 
     return _get_satate_folders_size(state_paths)
 
@@ -491,12 +495,12 @@ async def task_ports_inputs_pull(
         _logger.info("Received request to pull inputs but was ignored")
         return 0
 
-    progress.update(message="starting inputs pulling", percent=0.0)
+    await progress.update(message="starting inputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
     await post_sidecar_log_message(
         app, f"Pulling inputs for {port_keys}", log_level=logging.INFO
     )
-    progress.update(message="pulling inputs", percent=0.1)
+    await progress.update(message="pulling inputs", percent=0.1)
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=functools.partial(
@@ -527,7 +531,7 @@ async def task_ports_inputs_pull(
     await post_sidecar_log_message(
         app, "Finished pulling inputs", log_level=logging.INFO
     )
-    progress.update(message="finished inputs pulling", percent=0.99)
+    await progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
 
 
@@ -537,7 +541,7 @@ async def task_ports_outputs_pull(
     mounted_volumes: MountedVolumes,
     app: FastAPI,
 ) -> int:
-    progress.update(message="starting outputs pulling", percent=0.0)
+    await progress.update(message="starting outputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
     await post_sidecar_log_message(
         app, f"Pulling output for {port_keys}", log_level=logging.INFO
@@ -564,14 +568,14 @@ async def task_ports_outputs_pull(
     await post_sidecar_log_message(
         app, "Finished pulling outputs", log_level=logging.INFO
     )
-    progress.update(message="finished outputs pulling", percent=0.99)
+    await progress.update(message="finished outputs pulling", percent=0.99)
     return int(transferred_bytes)
 
 
 async def task_ports_outputs_push(
     progress: TaskProgress, outputs_manager: OutputsManager, app: FastAPI
 ) -> None:
-    progress.update(message="starting outputs pushing", percent=0.0)
+    await progress.update(message="starting outputs pushing", percent=0.0)
     await post_sidecar_log_message(
         app,
         f"waiting for outputs {outputs_manager.outputs_context.file_type_port_keys} to be pushed",
@@ -583,7 +587,7 @@ async def task_ports_outputs_push(
     await post_sidecar_log_message(
         app, "finished outputs pushing", log_level=logging.INFO
     )
-    progress.update(message="finished outputs pushing", percent=0.99)
+    await progress.update(message="finished outputs pushing", percent=0.99)
 
 
 async def task_containers_restart(
@@ -598,7 +602,7 @@ async def task_containers_restart(
     # or some other state, the service will get shutdown, to prevent this
     # blocking status while containers are being restarted.
     async with app.state.container_restart_lock:
-        progress.update(message="starting containers restart", percent=0.0)
+        await progress.update(message="starting containers restart", percent=0.0)
         if shared_store.compose_spec is None:
             msg = "No spec for docker compose command was found"
             raise RuntimeError(msg)
@@ -606,23 +610,23 @@ async def task_containers_restart(
         for container_name in shared_store.container_names:
             await stop_log_fetching(app, container_name)
 
-        progress.update(message="stopped log fetching", percent=0.1)
+        await progress.update(message="stopped log fetching", percent=0.1)
 
         result = await docker_compose_restart(shared_store.compose_spec, settings)
         _raise_for_errors(result, "restart")
 
-        progress.update(message="containers restarted", percent=0.8)
+        await progress.update(message="containers restarted", percent=0.8)
 
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
 
-        progress.update(message="started log fetching", percent=0.9)
+        await progress.update(message="started log fetching", percent=0.9)
 
         await post_sidecar_log_message(
             app, "Service was restarted please reload the UI", log_level=logging.INFO
         )
         await post_event_reload_iframe(app)
-        progress.update(message="started log fetching", percent=0.99)
+        await progress.update(message="started log fetching", percent=0.99)
 
 
 for task in (

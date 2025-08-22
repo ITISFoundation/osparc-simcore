@@ -28,7 +28,9 @@ def create_postgres_database_input_state(settings: PostgresSettings) -> State:
     return {PostgresLifespanState.POSTGRES_SETTINGS: settings}
 
 
-async def postgres_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
+async def postgres_database_lifespan(
+    app: FastAPI, state: State
+) -> AsyncIterator[State]:
 
     _lifespan_name = f"{__name__}.{postgres_database_lifespan.__name__}"
 
@@ -43,7 +45,7 @@ async def postgres_database_lifespan(_: FastAPI, state: State) -> AsyncIterator[
 
         # connect to database
         async_engine: AsyncEngine = await create_async_engine_and_database_ready(
-            settings
+            settings, app.title
         )
 
         try:

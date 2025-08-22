@@ -1,8 +1,13 @@
 name: 🚀 Release to production (developers-only)
 description: Creates an issue to plan and log the release from staging to production
 title: "🚀 Release v<M.m.0>"
-labels: ["t:maintenance", "release"]
-assignees: ["matusdrobuliak66"]
+labels:
+  - "t:maintenance"
+  - release
+assignees:
+  - matusdrobuliak66
+  - YuryHrytsuk
+type: "Task"
 body:
   - type: input
     id: version
@@ -17,8 +22,8 @@ body:
     attributes:
       label: Commit SHA
       description: |
-        Selects the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
-        IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
+        Selects the commit from which the release takes place. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        IMPORTANT: make sure CI (i.e. tests passed and images were built and pushed)
       placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
     validations:
       required: true
@@ -41,7 +46,7 @@ body:
       required: true
   - type: checkboxes
     attributes:
-      label: Did the commit CI suceeded?
+      label: Did the commit CI succeed?
       description: Check the CI of the selected commit in the [repo commits](https://github.com/ITISFoundation/osparc-simcore/commits/master) to make sure the images are built and ready
       options:
         - label: The commit CI succeeded.
@@ -161,4 +166,5 @@ body:
         - [ ] Announce in mattermost
         ``` md
         :tada: https://github.com/ITISFoundation/osparc-simcore/releases/tag/v<M.m.0>
+        ```
         ```

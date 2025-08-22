@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from servicelib.fastapi.db_asyncpg_engine import close_db_connection, connect_to_db
 from servicelib.logging_utils import log_context
 
+from ...._meta import APP_NAME
+
 _logger = logging.getLogger(__name__)
 
 
@@ -14,7 +16,11 @@ def setup(app: FastAPI):
             logging.INFO,
             msg="RUT startup DB",
         ):
-            await connect_to_db(app, app.state.settings.RESOURCE_USAGE_TRACKER_POSTGRES)
+            await connect_to_db(
+                app,
+                app.state.settings.RESOURCE_USAGE_TRACKER_POSTGRES,
+                application_name=APP_NAME,
+            )
 
     async def on_shutdown() -> None:
         with log_context(

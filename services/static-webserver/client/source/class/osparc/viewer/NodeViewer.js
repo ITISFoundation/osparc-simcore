@@ -41,7 +41,11 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           }, this);
         }
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        osparc.FlashMessenger.logError(err);
+        qx.core.Init.getApplication().logout();
+      });
   },
 
   properties: {

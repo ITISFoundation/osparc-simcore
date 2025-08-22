@@ -15,7 +15,7 @@ services:
         - traefik.enable=true
         - traefik.swarm.network=${SWARM_STACK_NAME}_default
         # auth: https://doc.traefik.io/traefik/middlewares/http/forwardauth
-        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.address=http://${WEBSERVER_HOST}:${WEBSERVER_PORT}/v0/auth:check
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.address=http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:check
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.trustForwardHeader=true
         - traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.authResponseHeaders=Set-Cookie,osparc-sc2
         # routing

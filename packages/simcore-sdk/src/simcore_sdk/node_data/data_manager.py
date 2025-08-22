@@ -169,7 +169,7 @@ async def _state_metadata_entry_exists(
 
 
 async def _delete_legacy_archive(
-    project_id: ProjectID, node_uuid: NodeID, path: Path
+    project_id: ProjectID, node_uuid: NodeID, path: Path, *, application_name: str
 ) -> None:
     """removes the .zip state archive from storage"""
     s3_object = __create_s3_object_key(
@@ -180,13 +180,15 @@ async def _delete_legacy_archive(
     # NOTE: if service is opened by a person which the users shared it with,
     # they will not have the permission to delete the node
     # Removing it via it's owner allows to always have access to the delete operation.
-    owner_id = await DBManager().get_project_owner_user_id(project_id)
+    owner_id = await DBManager(
+        application_name=application_name
+    ).get_project_owner_user_id(project_id)
     await filemanager.delete_file(
         user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
     )
 
 
-async def push(
+async def push(  # pylint: disable=too-many-arguments
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -198,6 +200,7 @@ async def push(
     progress_bar: ProgressBarData,
     aws_s3_cli_settings: AwsS3CliSettings | None,
     legacy_state: LegacyState | None,
+    application_name: str,
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
@@ -226,6 +229,7 @@ async def push(
                 project_id=project_id,
                 node_uuid=node_uuid,
                 path=source_path,
+                application_name=application_name,
             )
 
     if legacy_state:
@@ -244,6 +248,7 @@ async def push(
                     project_id=project_id,
                     node_uuid=node_uuid,
                     path=legacy_state.old_state_path,
+                    application_name=application_name,
                 )
 
 

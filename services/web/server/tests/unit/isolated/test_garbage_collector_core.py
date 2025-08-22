@@ -21,7 +21,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.garbage_collector._core_orphans import (
     remove_orphaned_services,
 )
-from simcore_service_webserver.resource_manager.registry import UserSessionDict
+from simcore_service_webserver.resource_manager.registry import UserSession
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 
 MODULE_GC_CORE_ORPHANS: Final[str] = (
@@ -36,7 +36,7 @@ def project_id(faker: Faker) -> ProjectID:
 
 @pytest.fixture
 def client_session_id(faker: Faker) -> str:
-    return faker.uuid4(cast_to=None)
+    return faker.uuid4(cast_to=str)
 
 
 @pytest.fixture
@@ -44,9 +44,9 @@ def mock_registry(
     user_id: UserID, project_id: ProjectID, client_session_id: str
 ) -> mock.AsyncMock:
     async def _fake_get_all_resource_keys() -> (
-        tuple[list[UserSessionDict], list[UserSessionDict]]
+        tuple[list[UserSession], list[UserSession]]
     ):
-        return ([{"user_id": user_id, "client_session_id": client_session_id}], [])
+        return ([UserSession(user_id=user_id, client_session_id=client_session_id)], [])
 
     registry = mock.AsyncMock()
     registry.get_all_resource_keys = mock.AsyncMock(

@@ -40,6 +40,7 @@ from servicelib.common_headers import (
     X_DYNAMIC_SIDECAR_REQUEST_SCHEME,
     X_SIMCORE_USER_AGENT,
 )
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
@@ -52,6 +53,7 @@ from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = [
     "postgres",
+    "redis",
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
@@ -99,6 +101,7 @@ def mock_env(
     mock_exclusive: None,
     disable_postgres: None,
     disable_rabbitmq: None,
+    redis_service: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> None:

@@ -21,7 +21,6 @@ async def test_list_no_services_available(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
 ):
-
     computational_services = await registry_proxy.list_services(
         app, registry_proxy.ServiceType.COMPUTATIONAL
     )
@@ -116,13 +115,36 @@ async def test_list_interactive_service_dependencies(
             assert image_dependencies[0]["tag"] == docker_dependencies[0]["tag"]
 
 
+@pytest.fixture(
+    params=["docker_registry", "docker_registry_v2"], ids=["registry_v3", "registry_v2"]
+)
+def configure_registry_access_both_versions(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> EnvVarsDict:
+    """Parametrized fixture that tests with both registry v3 and v2 - use only for specific tests that need both"""
+    registry_url = request.getfixturevalue(request.param)
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "REGISTRY_URL": registry_url,
+            "REGISTRY_PATH": registry_url,
+            "REGISTRY_SSL": False,
+            "DIRECTOR_REGISTRY_CACHING": False,
+        },
+    )
+
+
 async def test_get_image_labels(
-    configure_registry_access: EnvVarsDict,
+    configure_registry_access_both_versions: EnvVarsDict,
     app: FastAPI,
     push_services,
 ):
     images = await push_services(
-        number_of_computational_services=1, number_of_interactive_services=1
+        number_of_computational_services=1,
+        number_of_interactive_services=1,
+        override_registry_url=configure_registry_access_both_versions["REGISTRY_URL"],
     )
     images_digests = set()
     for image in images:

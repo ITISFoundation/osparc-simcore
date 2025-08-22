@@ -22,6 +22,7 @@ from pydantic import (
 )
 from settings_library.docker_registry import RegistrySettings
 from tenacity import (
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
@@ -275,6 +276,7 @@ async def pull_image(
             stop=stop_after_attempt(retry_upon_error_count),
             reraise=True,
             retry=retry_if_exception_type(asyncio.TimeoutError),
+            before_sleep=before_sleep_log(_logger, logging.WARNING),
         )
         async def _pull_image_with_retry() -> None:
             nonlocal attempt

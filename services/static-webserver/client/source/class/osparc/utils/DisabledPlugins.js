@@ -30,6 +30,7 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     META_MODELING: "WEBSERVER_META_MODELING",
     FUNCTIONS: "WEBSERVER_FUNCTIONS",
     LICENSES: "WEBSERVER_LICENSES",
+    REALTIME_COLLABORATION: "WEBSERVER_REALTIME_COLLABORATION",
 
     isExportDisabled: function() {
       return this.__isPluginDisabled(this.EXPORT);
@@ -53,12 +54,12 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
       return this.__isPluginDisabled(this.FUNCTIONS);
     },
 
-    isLicensesDisabled: function() {
-      return this.__isPluginDisabled(this.LICENSES);
+    isLicensesEnabled: function() {
+      return !this.__isPluginDisabled(this.LICENSES);
     },
 
-    isSimultaneousAccessEnabled: function() {
-      return false;
+    isRTCEnabled: function() {
+      return !this.__isPluginDisabled(this.REALTIME_COLLABORATION);
     },
 
     __isPluginDisabled: function(key) {

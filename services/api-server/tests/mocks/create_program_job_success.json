@@ -162,9 +162,10 @@
         "creationDate": "2025-04-15T13:14:44.636Z",
         "lastChangeDate": "2025-04-15T13:14:46.704Z",
         "state": {
-          "locked": {
-            "value": false,
-            "status": "CLOSED"
+          "shareState": {
+            "locked": false,
+            "status": "CLOSED",
+            "currentUserGroupids": []
           },
           "state": {
             "value": "UNKNOWN"

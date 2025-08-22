@@ -90,6 +90,7 @@ async def test_rpc_client_mark_project_as_job(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name="solvers/solver123/version/1.2.3",
+        storage_assets_deleted=False,
     )
 
 
@@ -109,6 +110,7 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name="solvers/solver123/version/1.2.3",
+        storage_assets_deleted=False,
     )
 
     # List projects marked as jobs
@@ -170,6 +172,7 @@ async def test_errors_on_rpc_client_mark_project_as_job(
             user_id=other_user_id,  # <-- no access
             project_uuid=project_uuid,
             job_parent_resource_name="solvers/solver123/version/1.2.3",
+            storage_assets_deleted=False,
         )
 
     assert exc_info.value.error_context()["project_uuid"] == project_uuid
@@ -181,6 +184,7 @@ async def test_errors_on_rpc_client_mark_project_as_job(
             user_id=logged_user["id"],
             project_uuid=UUID("00000000-0000-0000-0000-000000000000"),  # <-- wont find
             job_parent_resource_name="solvers/solver123/version/1.2.3",
+            storage_assets_deleted=False,
         )
 
     with pytest.raises(ValidationError, match="job_parent_resource_name") as exc_info:
@@ -190,6 +194,7 @@ async def test_errors_on_rpc_client_mark_project_as_job(
             user_id=user_id,
             project_uuid=project_uuid,
             job_parent_resource_name="This is not a resource",  # <-- wrong format
+            storage_assets_deleted=False,
         )
 
     assert exc_info.value.error_count() == 1
@@ -216,6 +221,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
         user_id=user_id,
         project_uuid=project_uuid,
         job_parent_resource_name="solvers/solver123/version/1.2.3",
+        storage_assets_deleted=False,
     )
 
     # Set custom metadata on the project
@@ -307,3 +313,147 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
 
     assert page.meta.total == 0
     assert len(page.data) == 0
+
+
+async def test_rpc_client_get_project_marked_as_job_found(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    # Mark the project as a job first
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+        storage_assets_deleted=False,
+    )
+
+    # Should be able to retrieve it
+    project_job = await projects_rpc.get_project_marked_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+    assert project_job.uuid == project_uuid
+    assert project_job.job_parent_resource_name == job_parent_resource_name
+    assert project_job.name == user_project["name"]
+
+
+async def test_rpc_client_get_project_marked_as_job_not_found(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    # Do NOT mark the project as a job, so it should not be found
+    with pytest.raises(ProjectNotFoundRpcError):
+        await projects_rpc.get_project_marked_as_job(
+            rpc_client=rpc_client,
+            product_name=product_name,
+            user_id=user_id,
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+
+
+async def test_rpc_client_get_project_marked_as_job_forbidden(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    other_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    """
+    Ensures ProjectForbiddenRpcError is raised if the user does not have read access to the project.
+    """
+    project_uuid = ProjectID(user_project["uuid"])
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    # Mark the project as a job as the owner
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=logged_user["id"],
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+        storage_assets_deleted=False,
+    )
+
+    # Try to get the project as another user (should not have access)
+    with pytest.raises(ProjectForbiddenRpcError):
+        await projects_rpc.get_project_marked_as_job(
+            rpc_client=rpc_client,
+            product_name=product_name,
+            user_id=other_user["id"],
+            project_uuid=project_uuid,
+            job_parent_resource_name=job_parent_resource_name,
+        )
+
+
+async def test_mark_and_get_project_job_storage_assets_deleted(
+    rpc_client: RabbitMQRPCClient,
+    product_name: ProductName,
+    logged_user: UserInfoDict,
+    user_project: ProjectDict,
+):
+    """
+    Marks a project as a job with storage_assets_deleted True, checks the value,
+    then marks it again with storage_assets_deleted False and checks the value again.
+    """
+    project_uuid = ProjectID(user_project["uuid"])
+    user_id = logged_user["id"]
+    job_parent_resource_name = "solvers/solver123/version/1.2.3"
+
+    # First mark as job with storage_assets_deleted=True
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+        storage_assets_deleted=True,
+    )
+
+    # Retrieve and check
+    project_job = await projects_rpc.get_project_marked_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+    assert project_job.storage_assets_deleted is True
+
+    # Mark again as job with storage_assets_deleted=False
+    await projects_rpc.mark_project_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+        storage_assets_deleted=False,
+    )
+
+    # Retrieve and check again
+    project_job = await projects_rpc.get_project_marked_as_job(
+        rpc_client=rpc_client,
+        product_name=product_name,
+        user_id=user_id,
+        project_uuid=project_uuid,
+        job_parent_resource_name=job_parent_resource_name,
+    )
+    assert project_job.storage_assets_deleted is False

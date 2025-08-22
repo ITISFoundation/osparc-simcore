@@ -23,3 +23,4 @@ RESPONSE_MODEL_POLICY = PydanticExportParametersDict(
 
 # Headers keys
 X_PRODUCT_NAME_HEADER: Final[str] = "X-Simcore-Products-Name"
+X_CLIENT_SESSION_ID_HEADER: Final[str] = "X-Client-Session-Id"

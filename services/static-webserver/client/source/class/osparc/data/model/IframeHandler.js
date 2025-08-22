@@ -117,7 +117,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       }
 
       const node = this.getNode();
-      const thumbnail = node.getMetaData()["thumbnail"];
+      const thumbnail = node.getMetadata()["thumbnail"];
       if (thumbnail) {
         loadingPage.setLogo(thumbnail);
       }
@@ -141,7 +141,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         status = node.getStatus().getInteractive();
       }
       const statusText = status ? (status.charAt(0).toUpperCase() + status.slice(1)) : this.tr("Starting");
-      const metadata = node.getMetaData();
+      const metadata = node.getMetadata();
       const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
       return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + versionDisplay + "</sub></span>";
     },

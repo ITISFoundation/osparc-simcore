@@ -34,6 +34,9 @@ qx.Class.define("osparc.io.rest.Resource", {
       }, {
         key: "X-Simcore-Products-Name",
         value: qx.core.Environment.get("product.name")
+      }, {
+        key: "X-Client-Session-Id",
+        value: osparc.utils.Utils.getClientSessionID()
       }];
 
       if (this.AUTHENTICATION !== undefined && this.AUTHENTICATION !== null) {

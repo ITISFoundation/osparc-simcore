@@ -134,14 +134,14 @@ async def update_workspace_group(
     )
     if workspace.my_access_rights.write is False:
         raise WorkspaceAccessForbiddenError(
-            reason=f"User does not have write access to workspace {workspace_id}"
+            details=f"User does not have write access to workspace {workspace_id}"
         )
     if workspace.owner_primary_gid == group_id:
         user: dict = await users_service.get_user(app, user_id)
         if user["primary_gid"] != workspace.owner_primary_gid:
             # Only the owner of the workspace can modify the owner group
             raise WorkspaceAccessForbiddenError(
-                reason=f"User does not have access to modify owner workspace group in workspace {workspace_id}"
+                details=f"User does not have access to modify owner workspace group in workspace {workspace_id}"
             )
 
     workspace_group_db: WorkspaceGroupGetDB = (
@@ -180,7 +180,7 @@ async def delete_workspace_group(
     )
     if user["primary_gid"] != group_id and workspace.my_access_rights.delete is False:
         raise WorkspaceAccessForbiddenError(
-            reason=f"User does not have delete access to workspace {workspace_id}"
+            details=f"User does not have delete access to workspace {workspace_id}"
         )
     if (
         workspace.owner_primary_gid == group_id
@@ -188,7 +188,7 @@ async def delete_workspace_group(
     ):
         # Only the owner of the workspace can delete the owner group
         raise WorkspaceAccessForbiddenError(
-            reason=f"User does not have access to modify owner workspace group in workspace {workspace_id}"
+            details=f"User does not have access to modify owner workspace group in workspace {workspace_id}"
         )
 
     await workspaces_groups_db.delete_workspace_group(

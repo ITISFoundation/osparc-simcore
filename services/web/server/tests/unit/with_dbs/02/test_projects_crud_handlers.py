@@ -9,6 +9,7 @@ from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
 from math import ceil
 from typing import Any
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
@@ -18,8 +19,8 @@ from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
     GetProjectInactivityResponse,
 )
+from models_library.api_schemas_webserver.projects import ProjectStateOutputSchema
 from models_library.products import ProductName
-from models_library.projects_state import ProjectState
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -171,7 +172,7 @@ async def _assert_get_same_project(
         assert data == {k: project[k] for k in data}
 
         if project_state:
-            assert ProjectState.model_validate(project_state)
+            assert ProjectStateOutputSchema.model_validate(project_state)
 
         if project_permalink:
             assert ProjectPermalink.model_validate(project_permalink)
@@ -190,6 +191,7 @@ async def _assert_get_same_project(
 )
 async def test_list_projects(
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     template_project: dict[str, Any],
@@ -209,9 +211,9 @@ async def test_list_projects(
 
         assert got == {k: template_project[k] for k in got}
 
-        assert not ProjectState(
+        assert not ProjectStateOutputSchema(
             **project_state
-        ).locked.value, "Templates are not locked"
+        ).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
         # standard project
@@ -222,7 +224,7 @@ async def test_list_projects(
 
         assert got == {k: user_project[k] for k in got}
 
-        assert ProjectState(**project_state)
+        assert ProjectStateOutputSchema(**project_state)
         assert project_permalink is None
         assert folder_id is None
 
@@ -238,9 +240,9 @@ async def test_list_projects(
         folder_id = got.pop("folderId")
 
         assert got == {k: user_project[k] for k in got}
-        assert not ProjectState(
+        assert not ProjectStateOutputSchema(
             **project_state
-        ).locked.value, "Single user does not lock"
+        ).share_state.locked, "Single user does not lock"
         assert project_permalink is None
 
     # GET /v0/projects?type=template
@@ -256,9 +258,9 @@ async def test_list_projects(
         folder_id = got.pop("folderId")
 
         assert got == {k: template_project[k] for k in got}
-        assert not ProjectState(
+        assert not ProjectStateOutputSchema(
             **project_state
-        ).locked.value, "Templates are not locked"
+        ).share_state.locked, "Templates are not locked"
         assert ProjectPermalink.model_validate(project_permalink)
 
 
@@ -338,6 +340,7 @@ async def logged_user_registed_in_two_products(
 async def test_list_projects_with_innaccessible_services(
     s4l_products_db_name: ProductName,
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user_registed_in_two_products: UserInfoDict,
     user_project: dict[str, Any],
     template_project: dict[str, Any],
@@ -395,6 +398,7 @@ async def test_list_projects_with_innaccessible_services(
 )
 async def test_get_project(
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     template_project: ProjectDict,
@@ -479,6 +483,7 @@ async def test_create_get_and_patch_project_ui_field(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -506,6 +511,7 @@ async def test_new_project_from_template(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_other_study(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -534,6 +540,7 @@ async def test_new_project_from_other_study(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template_with_body(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -589,6 +596,7 @@ async def test_new_project_from_template_with_body(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_template_from_project(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],

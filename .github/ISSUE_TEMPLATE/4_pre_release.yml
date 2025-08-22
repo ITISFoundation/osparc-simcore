@@ -1,8 +1,13 @@
 name: 🚀 Pre-release to staging (developers-only)
 description: Issue to plan and log pre-release from master to staging deploy (including staging hotfixes)
 title: "🚀 Pre-release master -> staging_<sprint_name><version>"
-labels: ["t:maintenance", "release"]
-assignees: ["matusdrobuliak66"]
+labels:
+  - "t:maintenance"
+  - release
+assignees:
+  - matusdrobuliak66
+  - YuryHrytsuk
+type: "Task"
 body:
   - type: dropdown
     id: prerelease_kind
@@ -34,8 +39,8 @@ body:
     attributes:
       label: Commit SHA
       description: |
-        Selets the commit from which the release takes placeholder. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
-        IMPORTANT: make sure t (i.e. tests passed and images were built and pushed)
+        Selects the commit from which the release takes place. Check [commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
+        IMPORTANT: make sure CI (i.e. tests passed and images were built and pushed)
       placeholder: 7d9dcc313f9ced0bd1e6508363148841683b6d7c
     validations:
       required: true
@@ -49,7 +54,7 @@ body:
       required: true
   - type: checkboxes
     attributes:
-      label: Did the commit CI suceeded?
+      label: Did the commit CI succeed?
       description: Check the CI of the selected commit in the [repo commits](https://github.com/ITISFoundation/osparc-simcore/commits/master)
       options:
         - label: The commit CI succeeded.
@@ -158,4 +163,5 @@ body:
         - [ ] Announce
         ``` md
         https://github.com/ITISFoundation/osparc-simcore/releases/tag/staging_<sprint_name><version>
+        ```
         ```

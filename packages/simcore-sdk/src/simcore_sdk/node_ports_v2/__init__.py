@@ -22,17 +22,11 @@ async def ports(
     project_id: ProjectIDStr,
     node_uuid: NodeIDStr,
     *,
-    db_manager: DBManager | None = None,
+    db_manager: DBManager,
     r_clone_settings: RCloneSettings | None = None,
     io_log_redirect_cb: LogRedirectCB | None = None,
     aws_s3_cli_settings: AwsS3CliSettings | None = None
 ) -> Nodeports:
-    log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
-    # NOTE: warning every dbmanager create a new db engine!
-    if db_manager is None:  # NOTE: keeps backwards compatibility
-        log.debug("no db manager provided, creating one...")
-        db_manager = DBManager()
-
     return await load(
         db_manager=db_manager,
         user_id=user_id,

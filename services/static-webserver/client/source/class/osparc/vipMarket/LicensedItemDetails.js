@@ -195,12 +195,7 @@ qx.Class.define("osparc.vipMarket.LicensedItemDetails", {
             iconPosition: "right",
             cursor: "pointer",
           });
-          manufacturerLink.getChildControl("icon").set({
-            maxWidth: 32,
-            maxHeight: 32,
-            scale: true,
-            decorator: "rounded",
-          });
+          manufacturerLink.getChildControl("icon").set(osparc.utils.Utils.getThumbnailProps(32));
           manufacturerLink.addListener("tap", () => window.open(licensedResource.getManufacturerLink()));
           headerLayout.add(manufacturerLink, {
             column: 1,

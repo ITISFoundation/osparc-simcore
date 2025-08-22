@@ -1,7 +1,17 @@
 name: ✨ Feature request
-description: Suggest an idea to implement in the simcore plaform
-labels: ["t:enhancement"]
-assignees: ["pcrespov"]
+description: Suggest an idea to implement in the simcore platform
+title: "[Feature]: "
+labels:
+  - t:enhancement
+assignees:
+  - bisgaard-itis
+  - giancarloromeo
+  - GitHK
+  - matusdrobuliak66
+  - odeimaiz
+  - pcrespov
+  - sanderegg
+type: "Feature"
 body:
   - type: checkboxes
     attributes:

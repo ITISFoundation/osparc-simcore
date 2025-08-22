@@ -17,7 +17,6 @@ import aiopg.sa
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from common_library.dict_tools import copy_from_dict_ex, remap_keys
 from faker import Faker
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects_nodes_io import NodeID, NodeIDStr
@@ -50,7 +49,6 @@ from simcore_service_webserver.projects.exceptions import (
     ProjectNodeRequiredInputsNotSetError,
     ProjectNotFoundError,
 )
-from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import Row
@@ -710,89 +708,6 @@ async def test_get_node_ids_from_project(
         some_projects_and_nodes, node_ids_inside_project_list, strict=True
     ):
         assert node_ids_inside_project == set(some_projects_and_nodes[project_id])
-
-
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
-async def test_replace_user_project(
-    db_api: ProjectDBAPI,
-    user_project: ProjectDict,
-    logged_user: UserInfoDict,
-    osparc_product_name: str,
-    postgres_db: sa.engine.Engine,
-    aiopg_engine: aiopg.sa.engine.Engine,
-):
-    PROJECT_DICT_IGNORE_FIELDS = {"lastChangeDate"}
-    original_project = remap_keys(
-        user_project,
-        rename={"trashedAt": "trashed"},
-    )
-
-    # replace the project with the same should do nothing
-    working_project = await db_api.replace_project(
-        original_project,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        project_uuid=original_project["uuid"],
-    )
-    assert copy_from_dict_ex(
-        original_project, PROJECT_DICT_IGNORE_FIELDS
-    ) == copy_from_dict_ex(working_project, PROJECT_DICT_IGNORE_FIELDS)
-    _assert_projects_to_product_db_row(
-        postgres_db, working_project, osparc_product_name
-    )
-    await _assert_projects_nodes_db_rows(aiopg_engine, working_project)
-
-    # now let's create some outputs (similar to what happens when running services)
-    NODE_INDEX = 1  # this is not the file-picker
-    node_id = tuple(working_project["workbench"].keys())[NODE_INDEX]
-    node_data = working_project["workbench"][node_id]
-    node_data["progress"] = 100
-    node_data["outputs"] = {
-        "output_1": {
-            "store": 0,
-            "path": "687b8dc2-fea2-11ec-b7fd-02420a6e3a4d/d61a2ec8-19b4-4375-adcb-fdd22f850333/single_number.txt",
-            "eTag": "c4ca4238a0b923820dcc509a6f75849b",
-        },
-        "output_2": 5,
-    }
-    node_data["runHash"] = (
-        "5b0583fa546ac82f0e41cef9705175b7187ce3928ba42892e842add912c16676"
-    )
-    # replacing with the new entries shall return the very same data
-    replaced_project = await db_api.replace_project(
-        working_project,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        project_uuid=working_project["uuid"],
-    )
-    assert copy_from_dict_ex(
-        working_project, PROJECT_DICT_IGNORE_FIELDS
-    ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
-    _assert_projects_to_product_db_row(
-        postgres_db, replaced_project, osparc_product_name
-    )
-    await _assert_projects_nodes_db_rows(aiopg_engine, replaced_project)
-
-    # the frontend sends project without some fields, but for FRONTEND type of nodes
-    # replacing should keep the values
-    FRONTEND_EXCLUDED_FIELDS = ["outputs", "progress", "runHash"]
-    incoming_frontend_project = deepcopy(original_project)
-    for node_data in incoming_frontend_project["workbench"].values():
-        if "frontend" not in node_data["key"]:
-            for field in FRONTEND_EXCLUDED_FIELDS:
-                node_data.pop(field, None)
-    replaced_project = await db_api.replace_project(
-        incoming_frontend_project,
-        user_id=logged_user["id"],
-        product_name=osparc_product_name,
-        project_uuid=incoming_frontend_project["uuid"],
-    )
-    assert copy_from_dict_ex(
-        working_project, PROJECT_DICT_IGNORE_FIELDS
-    ) == copy_from_dict_ex(replaced_project, PROJECT_DICT_IGNORE_FIELDS)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.ANONYMOUS])  # worst case

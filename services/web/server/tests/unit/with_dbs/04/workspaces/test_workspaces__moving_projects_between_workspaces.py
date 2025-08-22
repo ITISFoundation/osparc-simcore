@@ -7,6 +7,7 @@
 
 from copy import deepcopy
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
@@ -43,6 +44,7 @@ async def test_moving_between_workspaces_user_role_permissions(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_moving_between_private_and_shared_workspaces(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -109,6 +111,7 @@ async def test_moving_between_private_and_shared_workspaces(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_moving_between_shared_and_shared_workspaces(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -174,6 +177,7 @@ async def test_moving_between_shared_and_shared_workspaces(
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_moving_between_workspaces_check_removed_from_folder(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

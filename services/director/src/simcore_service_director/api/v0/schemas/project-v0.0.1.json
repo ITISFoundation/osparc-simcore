@@ -458,6 +458,16 @@
                     "ABORTED"
                   ],
                   "type": "string"
+                },
+                "lock_state": {
+                  "type": "object",
+                  "properties": {
+                    "locked": {
+                      "type": "boolean",
+                      "description": "true if the node is locked",
+                      "default": false
+                    }
+                  }
                 }
               },
               "additionalProperties": false
@@ -765,7 +775,10 @@
       "description": "Object containing Quality Assessment related data"
     },
     "workspaceId": {
-      "type": ["integer", "null"]
+      "type": [
+        "integer",
+        "null"
+      ]
     },
     "type": {
       "type": "string",

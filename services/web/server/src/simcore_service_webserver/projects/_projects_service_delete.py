@@ -48,7 +48,7 @@ async def batch_stop_services_in_project(
         ),
         _projects_service.remove_project_dynamic_services(
             user_id=user_id,
-            project_uuid=f"{project_uuid}",
+            project_uuid=project_uuid,
             app=app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             notify_users=False,
@@ -67,6 +67,7 @@ async def delete_project_as_admin(
     try:
         # 1. hide
         with _monitor_step(state, name="hide"):
+            # NOTE: We do not need to use PROJECT_DB_UPDATE_REDIS_LOCK_KEY lock, as hidden field is not passed to frontend
             project = await _projects_repository.patch_project(
                 app,
                 project_uuid=project_uuid,
@@ -94,13 +95,13 @@ async def delete_project_as_admin(
     except ProjectLockError as err:
         raise ProjectDeleteError(
             project_uuid=project_uuid,
-            reason=f"Cannot delete project {project_uuid} because it is currently in use. Details: {err}",
+            details=f"Cannot delete project {project_uuid} because it is currently in use. Details: {err}",
             state=state,
         ) from err
 
     except Exception as err:
         raise ProjectDeleteError(
             project_uuid=project_uuid,
-            reason=f"Unexpected error. Deletion sequence: {state=}",
+            details=f"Unexpected error. Deletion sequence: {state=}",
             state=state,
         ) from err

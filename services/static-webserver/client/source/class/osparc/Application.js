@@ -135,7 +135,8 @@ qx.Class.define("osparc.Application", {
             osparc.auth.Manager.getInstance().validateToken()
               .then(() => {
                 const studyId = urlFragment.nav[1];
-                this.__loadMainPage(studyId);
+                const loadAfterLogin = { studyId };
+                this.__loadMainPage(loadAfterLogin);
               })
               .catch(() => this.__loadLoginPage());
           }
@@ -153,9 +154,24 @@ qx.Class.define("osparc.Application", {
                 if (["anonymous", "guest"].includes(data.role.toLowerCase())) {
                   this.__loadNodeViewerPage(studyId, viewerNodeId);
                 } else {
-                  this.__loadMainPage(studyId);
+                  const loadAfterLogin = { studyId };
+                  this.__loadMainPage(loadAfterLogin);
                 }
               });
+          }
+          break;
+        }
+        case "conversation": {
+          // Route: /#/conversation/{id}
+          if (urlFragment.nav.length > 1) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(() => {
+                const conversationId = urlFragment.nav[1];
+                const loadAfterLogin = { conversationId };
+                this.__loadMainPage(loadAfterLogin);
+              })
+              .catch(() => this.__loadLoginPage());
           }
           break;
         }
@@ -201,9 +217,9 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
-        case "form-sandbox": {
+        case "form-sandbox":
           this.__loadView(new osparc.desktop.FormSandboxPage(), {}, false);
-        }
+          break;
       }
     },
 
@@ -450,7 +466,7 @@ qx.Class.define("osparc.Application", {
       view.addListener("done", () => this.__restart(), this);
     },
 
-    __loadMainPage: function(studyId = null) {
+    __loadMainPage: function(loadAfterLogin = null) {
       // logged in
       osparc.WindowSizeTracker.getInstance().evaluateTooSmallDialog();
       osparc.data.Resources.getOne("profile")
@@ -497,28 +513,57 @@ qx.Class.define("osparc.Application", {
               });
             }
 
-            if (studyId) {
+            if (loadAfterLogin && loadAfterLogin["studyId"]) {
+              const studyId = loadAfterLogin["studyId"];
               osparc.store.Store.getInstance().setCurrentStudyId(studyId);
             }
 
-            let mainPage = null;
-            if (osparc.product.Utils.getProductName().includes("s4ldesktop")) {
-              mainPage = new osparc.desktop.MainPageDesktop();
-            } else {
-              mainPage = new osparc.desktop.MainPage();
+            if (loadAfterLogin && loadAfterLogin["conversationId"]) {
+              const conversationId = loadAfterLogin["conversationId"];
+              const supportCenterWindow = osparc.support.SupportCenter.openWindow();
+              supportCenterWindow.openConversation(conversationId);
             }
-            this.__mainPage = mainPage;
-            this.__loadView(mainPage);
+
+            const loadViewerPage = () => {
+              const mainPage = new osparc.desktop.MainPage();
+              this.__mainPage = mainPage;
+              this.__loadView(mainPage);
+            };
+            const wsInstance = osparc.wrapper.WebSocket.getInstance();
+            if (wsInstance.isAppConnected()) {
+              loadViewerPage();
+            } else {
+              const listenerId = wsInstance.addListener("changeAppConnected", function(e) {
+                if (e.getData()) {
+                  wsInstance.removeListenerById(listenerId);
+                  loadViewerPage();
+                }
+              }, this);
+            }
           }
         })
         .catch(err => console.error(err));
     },
 
-    __loadNodeViewerPage: async function(studyId, viewerNodeId) {
+    __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
-      const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
-      this.__mainPage = mainPage;
-      this.__loadView(mainPage);
+
+      const loadNodeViewerPage = () => {
+        const mainPage = new osparc.viewer.MainPage(studyId, viewerNodeId);
+        this.__mainPage = mainPage;
+        this.__loadView(mainPage);
+      };
+      const wsInstance = osparc.wrapper.WebSocket.getInstance();
+      if (wsInstance.isAppConnected()) {
+        loadNodeViewerPage();
+      } else {
+        const listenerId = wsInstance.addListener("changeAppConnected", e => {
+          if (e.getData()) {
+            wsInstance.removeListenerById(listenerId);
+            loadNodeViewerPage();
+          }
+        }, this);
+      }
     },
 
     __loadView: function(view, opts, clearUrl=true) {

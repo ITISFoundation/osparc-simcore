@@ -1,4 +1,4 @@
-""" Common utilities for python-socketio library
+"""Common utilities for python-socketio library
 
 
 NOTE: we intentionally avoided importing socketio here to avoid adding an extra dependency at
@@ -9,7 +9,6 @@ import asyncio
 
 
 async def cleanup_socketio_async_pubsub_manager(server_manager):
-
     # NOTE: this is ugly. It seems though that python-socketio does not
     # cleanup its background tasks properly.
     # https://github.com/miguelgrinberg/python-socketio/discussions/1092
@@ -35,6 +34,7 @@ async def cleanup_socketio_async_pubsub_manager(server_manager):
             for coro_name in [
                 "AsyncServer._service_task",
                 "AsyncSocket.schedule_ping",
+                "AsyncSocket._send_ping",
                 "AsyncPubSubManager._thread",
             ]
         ):

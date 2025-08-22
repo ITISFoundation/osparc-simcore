@@ -31,10 +31,10 @@ class PostgresSettings(BaseCustomSettings):
 
     # pool connection limits
     POSTGRES_MINSIZE: Annotated[
-        int, Field(description="Minimum number of connections in the pool", ge=1)
-    ] = 1
+        int, Field(description="Minimum number of connections in the pool", ge=2)
+    ] = 2  # see https://github.com/ITISFoundation/osparc-simcore/pull/8199
     POSTGRES_MAXSIZE: Annotated[
-        int, Field(description="Maximum number of connections in the pool", ge=1)
+        int, Field(description="Maximum number of connections in the pool", ge=2)
     ] = 50
 
     POSTGRES_CLIENT_NAME: Annotated[
@@ -82,19 +82,19 @@ class PostgresSettings(BaseCustomSettings):
         )
         return f"{url}"
 
-    @cached_property
-    def dsn_with_query(self) -> str:
+    def dsn_with_query(self, application_name: str, *, suffix: str | None) -> str:
         """Some clients do not support queries in the dsn"""
         dsn = self.dsn
-        return self._update_query(dsn)
+        return self._update_query(dsn, application_name, suffix=suffix)
 
-    def _update_query(self, uri: str) -> str:
+    def client_name(self, application_name: str, *, suffix: str | None) -> str:
+        return f"{application_name}{'-' if self.POSTGRES_CLIENT_NAME else ''}{self.POSTGRES_CLIENT_NAME or ''}{'-' + suffix if suffix else ''}"
+
+    def _update_query(self, uri: str, application_name: str, suffix: str | None) -> str:
         # SEE https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-        new_params: dict[str, str] = {}
-        if self.POSTGRES_CLIENT_NAME:
-            new_params = {
-                "application_name": self.POSTGRES_CLIENT_NAME,
-            }
+        new_params: dict[str, str] = {
+            "application_name": self.client_name(application_name, suffix=suffix),
+        }
 
         if new_params:
             parsed_uri = urlparse(uri)
@@ -124,7 +124,7 @@ class PostgresSettings(BaseCustomSettings):
                         "POSTGRES_USER": "usr",
                         "POSTGRES_PASSWORD": "secret",
                         "POSTGRES_DB": "db",
-                        "POSTGRES_MINSIZE": 1,
+                        "POSTGRES_MINSIZE": 2,
                         "POSTGRES_MAXSIZE": 50,
                         "POSTGRES_CLIENT_NAME": "my_app",  # first-choice
                         "HOST": "should be ignored",

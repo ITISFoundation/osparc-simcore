@@ -23,10 +23,8 @@ import tenacity
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
     DockerLabelKey,
-    StandardSimcoreDockerLabels,
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -37,6 +35,10 @@ from models_library.generated_models.docker_rest_api import (
     Task,
 )
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    SimcoreContainerLabels,
+)
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -273,7 +275,7 @@ async def create_services_batch(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    osparc_docker_label_keys: SimcoreContainerLabels,
 ) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
     async def _(scale_up_params: _ScaleUpParams) -> list[Service]:
         return await asyncio.gather(

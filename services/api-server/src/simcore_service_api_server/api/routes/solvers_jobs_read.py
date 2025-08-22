@@ -21,6 +21,7 @@ from servicelib.logging_utils import log_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.background import BackgroundTask
 
+from ..._service_jobs import JobService, compose_solver_job_resource_name
 from ..._service_solvers import SolverService
 from ...exceptions.custom_errors import InsufficientCreditsError, MissingWalletError
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
@@ -43,14 +44,17 @@ from ...models.schemas.model_adapter import (
     PricingUnitGetLegacy,
     WalletGetWithAvailableCreditsLegacy,
 )
-from ...models.schemas.solvers import SolverKeyId
+from ...models.schemas.solvers import Solver, SolverKeyId
 from ...services_http.director_v2 import DirectorV2Api
 from ...services_http.jobs import (
     get_custom_metadata,
     raise_if_job_not_associated_with_solver,
 )
 from ...services_http.log_streaming import LogDistributor, LogStreamer
-from ...services_http.solver_job_models_converters import create_job_from_project
+from ...services_http.solver_job_models_converters import (
+    create_job_from_project,
+    get_solver_job_rest_interface_links,
+)
 from ...services_http.solver_job_outputs import ResultsTypes, get_solver_output_results
 from ...services_http.storage import StorageApi, to_file_api_model
 from ..dependencies.application import get_reverse_url_mapper
@@ -58,7 +62,7 @@ from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_asyncpg_engine
 from ..dependencies.models_schemas_jobs_filters import get_job_metadata_filter
 from ..dependencies.rabbitmq import get_log_check_timeout, get_log_distributor
-from ..dependencies.services import get_api_client, get_solver_service
+from ..dependencies.services import get_api_client, get_job_service, get_solver_service
 from ..dependencies.webserver_http import AuthSession, get_webserver_session
 from ._constants import (
     FMSG_CHANGELOG_NEW_IN_VERSION,
@@ -68,7 +72,6 @@ from ._constants import (
 from .solvers_jobs import (
     JOBS_STATUS_CODES,
     METADATA_STATUS_CODES,
-    compose_job_resource_name,
 )
 from .wallets import WALLET_STATUS_CODES
 
@@ -140,11 +143,11 @@ async def list_all_solvers_jobs(
     filter_job_metadata_params: Annotated[
         JobMetadataFilter | None, Depends(get_job_metadata_filter)
     ],
-    solver_service: Annotated[SolverService, Depends(get_solver_service)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
 
-    jobs, meta = await solver_service.list_jobs(
+    jobs, meta = await job_service.list_solver_jobs(
         filter_any_custom_metadata=(
             [
                 NameValueTuple(filter_metadata.name, filter_metadata.pattern)
@@ -203,9 +206,14 @@ async def list_jobs(
     )
 
     jobs: deque[Job] = deque()
+    job_rest_interface_links = get_solver_job_rest_interface_links(
+        url_for=url_for, solver_key=solver_key, version=solver.version
+    )
     for prj in projects_page.data:
         job = create_job_from_project(
-            solver_or_program=solver, project=prj, url_for=url_for
+            solver_or_program=solver,
+            project=prj,
+            job_links=job_rest_interface_links,
         )
         assert job.id == prj.uuid  # nosec
         assert job.name == prj.name  # nosec
@@ -247,9 +255,16 @@ async def list_jobs_paginated(
     projects_page = await webserver_api.get_projects_w_solver_page(
         solver_name=solver.name, limit=page_params.limit, offset=page_params.offset
     )
+    job_rest_interface_links = get_solver_job_rest_interface_links(
+        url_for=url_for, solver_key=solver_key, version=version
+    )
 
     jobs: list[Job] = [
-        create_job_from_project(solver_or_program=solver, project=prj, url_for=url_for)
+        create_job_from_project(
+            solver_or_program=solver,
+            project=prj,
+            job_links=job_rest_interface_links,
+        )
         for prj in projects_page.data
     ]
 
@@ -275,7 +290,8 @@ async def get_job(
 ):
     """Gets job of a given solver"""
     _logger.debug(
-        "Getting Job '%s'", compose_job_resource_name(solver_key, version, job_id)
+        "Getting Job '%s'",
+        compose_solver_job_resource_name(solver_key, version, job_id),
     )
 
     solver = await solver_service.get_solver(
@@ -284,8 +300,14 @@ async def get_job(
     )
     project: ProjectGet = await webserver_api.get_project(project_id=job_id)
 
+    job_rest_interface_links = get_solver_job_rest_interface_links(
+        url_for=url_for, solver_key=solver_key, version=version
+    )
+
     job = create_job_from_project(
-        solver_or_program=solver, project=project, url_for=url_for
+        solver_or_program=solver,
+        project=project,
+        job_links=job_rest_interface_links,
     )
     assert job.id == job_id  # nosec
     return job  # nosec
@@ -294,7 +316,13 @@ async def get_job(
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/outputs",
     response_model=JobOutputs,
-    responses=_OUTPUTS_STATUS_CODES,
+    responses=_OUTPUTS_STATUS_CODES
+    | {
+        status.HTTP_409_CONFLICT: {
+            "description": "Job assets missing",
+            "model": ErrorGet,
+        },
+    },
 )
 async def get_job_outputs(
     solver_key: SolverKeyId,
@@ -303,20 +331,34 @@ async def get_job_outputs(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
     storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs", job_name)
 
-    project: ProjectGet = await webserver_api.get_project(project_id=job_id)
-    node_ids = list(project.workbench.keys())
+    project_marked_as_job = await job_service.get_job(
+        job_id=job_id,
+        job_parent_resource_name=Solver.compose_resource_name(
+            key=solver_key, version=version
+        ),
+    )
+    node_ids = list(project_marked_as_job.workbench.keys())
     assert len(node_ids) == 1  # nosec
+
+    if project_marked_as_job.storage_assets_deleted:
+        _logger.warning("Storage data for job '%s' has been deleted", job_name)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Assets have been deleted"
+        )
 
     product_price = await webserver_api.get_product_price()
     if product_price.usd_per_credit is not None:
-        wallet = await webserver_api.get_project_wallet(project_id=project.uuid)
+        wallet = await webserver_api.get_project_wallet(
+            project_id=project_marked_as_job.uuid
+        )
         if wallet is None:
-            raise MissingWalletError(job_id=project.uuid)
+            raise MissingWalletError(job_id=project_marked_as_job.uuid)
         wallet_with_credits = await webserver_api.get_wallet(wallet_id=wallet.wallet_id)
         if wallet_with_credits.available_credits <= ZERO_CREDITS:
             raise InsufficientCreditsError(
@@ -375,7 +417,7 @@ async def get_job_output_logfile(
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Get Job '%s' outputs logfile", job_name)
 
     project_id = job_id
@@ -431,7 +473,7 @@ async def get_job_custom_metadata(
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Custom metadata for '%s'", job_name)
 
     return await get_custom_metadata(
@@ -461,7 +503,7 @@ async def get_job_wallet(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ) -> WalletGetWithAvailableCreditsLegacy:
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Getting wallet for job '%s'", job_name)
 
     if project_wallet := await webserver_api.get_project_wallet(project_id=job_id):
@@ -484,7 +526,7 @@ async def get_job_pricing_unit(
     job_id: JobID,
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
 ):
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     with log_context(_logger, logging.DEBUG, "Get pricing unit"):
         _logger.debug("job: %s", job_name)
         project: ProjectGet = await webserver_api.get_project(project_id=job_id)
@@ -515,7 +557,7 @@ async def get_log_stream(
 ):
     assert request  # nosec
 
-    job_name = compose_job_resource_name(solver_key, version, job_id)
+    job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     with log_context(
         _logger, logging.DEBUG, f"Streaming logs for {job_name=} and {user_id=}"
     ):

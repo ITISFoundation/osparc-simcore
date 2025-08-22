@@ -18,7 +18,6 @@ from aws_library.ec2 import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -30,6 +29,9 @@ from models_library.generated_models.docker_rest_api import (
     NodeStatus,
     Service,
     Task,
+)
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
 )
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock.plugin import MockerFixture

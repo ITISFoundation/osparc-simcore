@@ -15,6 +15,7 @@ from models_library.basic_types import PortInt
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
@@ -27,6 +28,7 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def mock_env(
+    use_in_memory_redis: RedisSettings,
     mock_exclusive: None,
     disable_rabbitmq: None,
     disable_postgres: None,

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from faker import Faker
 
 from .helpers.monkeypatch_envs import load_dotenv, setenvs_from_dict
 from .helpers.typing_env import EnvVarsDict
@@ -112,7 +113,7 @@ def service_name(project_slug_dir: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def services_docker_compose_dict(services_docker_compose_file: Path) -> EnvVarsDict:
+def docker_compose_services_dict(services_docker_compose_file: Path) -> EnvVarsDict:
     # NOTE: By keeping import here, this library is ONLY required when the fixture is used
     import yaml
 
@@ -122,10 +123,29 @@ def services_docker_compose_dict(services_docker_compose_file: Path) -> EnvVarsD
 
 
 @pytest.fixture
+def docker_compose_service_hostname(
+    faker: Faker, service_name: str, docker_compose_services_dict: dict[str, Any]
+) -> str:
+    """Evaluates `hostname` from docker-compose service"""
+    hostname_template = docker_compose_services_dict["services"][service_name][
+        "hostname"
+    ]
+
+    # Generate fake values to replace Docker Swarm template variables
+    node_hostname = faker.hostname(levels=1)
+    task_slot = faker.random_int(min=0, max=10)
+
+    # Replace the Docker Swarm template variables with faker values
+    return hostname_template.replace("{{.Node.Hostname}}", node_hostname).replace(
+        "{{.Task.Slot}}", str(task_slot)
+    )
+
+
+@pytest.fixture
 def docker_compose_service_environment_dict(
-    services_docker_compose_dict: dict[str, Any],
-    env_devel_dict: EnvVarsDict,
+    docker_compose_services_dict: dict[str, Any],
     service_name: str,
+    env_devel_dict: EnvVarsDict,
     env_devel_file: Path,
 ) -> EnvVarsDict:
     """Returns env vars dict from the docker-compose `environment` section
@@ -133,10 +153,10 @@ def docker_compose_service_environment_dict(
     - env_devel_dict in environment_configs plugin
     - service_name needs to be defined
     """
-    service = services_docker_compose_dict["services"][service_name]
+    service = docker_compose_services_dict["services"][service_name]
 
     def _substitute(key, value) -> tuple[str, str]:
-        if m := re.match(r"\${([^{}:-]\w+)", value):
+        if m := re.match(r"\${([^{}:-]\w+)", f"{value}"):
             expected_env_var = m.group(1)
             try:
                 # NOTE: if this raises, then the RHS env-vars in the docker-compose are

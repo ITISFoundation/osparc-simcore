@@ -469,8 +469,8 @@ async function isStudyUnlocked(page, studyId) {
     return false;
   }
 
-  if (resp !== null && "locked" in resp && "value" in resp["locked"]) {
-    const studyLocked = resp["locked"]["value"];
+  if (resp !== null && "shareState" in resp && "value" in resp["shareState"]) {
+    const studyLocked = resp["shareState"]["locked"];
     console.log("Study Lock Status:", studyId, studyLocked);
     return !studyLocked;
   }

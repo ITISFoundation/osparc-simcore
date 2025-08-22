@@ -25,6 +25,7 @@ from yarl import URL
 from .constants import DIRECTOR_SIMCORE_SERVICES_PREFIX
 from .core.errors import (
     DirectorRuntimeError,
+    DockerRegistryUnsupportedManifestSchemaVersionError,
     RegistryConnectionError,
     ServiceNotAvailableError,
 )
@@ -93,7 +94,9 @@ async def _basic_auth_registry_request(
         raise ServiceNotAvailableError(service_name=path)
 
     elif response.status_code >= status.HTTP_400_BAD_REQUEST:
-        raise RegistryConnectionError(msg=str(response))
+        raise RegistryConnectionError(
+            msg=f"{response}: {response.text} for {request_url}"
+        )
 
     else:
         # registry that does not need an auth
@@ -164,7 +167,9 @@ async def _auth_registry_request(  # noqa: C901
         if resp_wbasic.status_code == status.HTTP_404_NOT_FOUND:
             raise ServiceNotAvailableError(service_name=f"{url}")
         if resp_wbasic.status_code >= status.HTTP_400_BAD_REQUEST:
-            raise RegistryConnectionError(msg=f"{resp_wbasic}")
+            raise RegistryConnectionError(
+                msg=f"{resp_wbasic}: {resp_wbasic.text} for {url}"
+            )
         resp_data = await resp_wbasic.json(content_type=None)
         resp_headers = resp_wbasic.headers
         return (resp_data, resp_headers)
@@ -198,7 +203,22 @@ async def registry_request(
     if use_cache and (cached_response := await cache.get(cache_key)):
         assert isinstance(cached_response, tuple)  # nosec
         return cast(tuple[dict, Mapping], cached_response)
-
+    # Add proper Accept headers for manifest requests for accepting both v1 and v2
+    if "manifests/" in path and method.upper() == "GET":
+        headers = session_kwargs.get("headers", {})
+        headers.update(
+            {
+                "Accept": ", ".join(
+                    [
+                        "application/vnd.docker.distribution.manifest.v2+json",
+                        "application/vnd.docker.distribution.manifest.list.v2+json",
+                        "application/vnd.docker.distribution.manifest.v1+prettyjws",
+                        "application/json",
+                    ]
+                )
+            }
+        )
+        session_kwargs["headers"] = headers
     app_settings = get_application_settings(app)
     try:
         response, response_headers = await _retried_request(
@@ -375,22 +395,72 @@ async def get_image_labels(
     app: FastAPI, image: str, tag: str, *, update_cache=False
 ) -> tuple[dict[str, str], str | None]:
     """Returns image labels and the image manifest digest"""
+    with log_context(_logger, logging.DEBUG, msg=f"get {image}:{tag} labels"):
+        request_result, headers = await registry_request(
+            app,
+            path=f"{image}/manifests/{tag}",
+            method="GET",
+            use_cache=not update_cache,
+        )
 
-    _logger.debug("getting image labels of %s:%s", image, tag)
-    path = f"{image}/manifests/{tag}"
-    request_result, headers = await registry_request(
-        app, path=path, method="GET", use_cache=not update_cache
-    )
-    v1_compatibility_key = json_loads(request_result["history"][0]["v1Compatibility"])
-    container_config: dict[str, Any] = v1_compatibility_key.get(
-        "container_config", v1_compatibility_key["config"]
-    )
-    labels: dict[str, str] = container_config["Labels"]
+        schema_version = request_result["schemaVersion"]
+        labels: dict[str, str] = {}
+        match schema_version:
+            case 2:
+                # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
+                media_type = request_result["mediaType"]
+                if (
+                    media_type
+                    == "application/vnd.docker.distribution.manifest.list.v2+json"
+                ):
+                    # default to x86_64 architecture
+                    _logger.info(
+                        "Image %s:%s is a docker image with multiple architectures. "
+                        "Currently defaulting to first architecture",
+                        image,
+                        tag,
+                    )
+                    manifests = request_result.get("manifests", [])
+                    if not manifests:
+                        raise DockerRegistryUnsupportedManifestSchemaVersionError(
+                            version=schema_version,
+                            service_name=image,
+                            service_tag=tag,
+                            reason="Manifest list is empty",
+                        )
+                    first_manifest_digest = manifests[0]["digest"]
+                    request_result, _ = await registry_request(
+                        app,
+                        path=f"{image}/manifests/{first_manifest_digest}",
+                        method="GET",
+                        use_cache=not update_cache,
+                    )
 
-    headers = headers or {}
-    manifest_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+                config_digest = request_result["config"]["digest"]
+                # Fetch the config blob
+                config_result, _ = await registry_request(
+                    app,
+                    path=f"{image}/blobs/{config_digest}",
+                    method="GET",
+                    use_cache=not update_cache,
+                )
+                labels = config_result.get("config", {}).get("Labels", {})
+            case 1:
+                # Image Manifest Version 2, Schema 1 deprecated in docker hub since 2024-11-04
+                v1_compatibility_key = json_loads(
+                    request_result["history"][0]["v1Compatibility"]
+                )
+                container_config: dict[str, Any] = v1_compatibility_key.get(
+                    "container_config", v1_compatibility_key.get("config", {})
+                )
+                labels = container_config.get("Labels", {})
+            case _:
+                raise DockerRegistryUnsupportedManifestSchemaVersionError(
+                    version=schema_version, service_name=image, service_tag=tag
+                )
 
-    _logger.debug("retrieved labels of image %s:%s", image, tag)
+        headers = headers or {}
+        manifest_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
 
     return (labels, manifest_digest)
 

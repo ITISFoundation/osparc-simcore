@@ -17,10 +17,11 @@ from opentelemetry.instrumentation.aiohttp_server import (
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from servicelib.logging_utils import log_context
-from servicelib.tracing import get_trace_id_header
 from settings_library.tracing import TracingSettings
 from yarl import URL
+
+from ..logging_utils import log_context
+from ..tracing import get_trace_id_header
 
 _logger = logging.getLogger(__name__)
 try:
@@ -63,11 +64,11 @@ def _create_span_processor(tracing_destination: str) -> SpanProcessor:
     otlp_exporter = OTLPSpanExporterHTTP(
         endpoint=tracing_destination,
     )
-    span_processor = BatchSpanProcessor(otlp_exporter)
-    return span_processor
+    return BatchSpanProcessor(otlp_exporter)
 
 
 def _startup(
+    *,
     app: web.Application,
     tracing_settings: TracingSettings,
     service_name: str,
@@ -177,7 +178,7 @@ async def response_trace_id_header_middleware(request: web.Request, handler):
     except web.HTTPException as exc:
         if headers:
             exc.headers.update(headers)
-        raise exc
+        raise
     if headers:
         response.headers.update(headers)
     return response

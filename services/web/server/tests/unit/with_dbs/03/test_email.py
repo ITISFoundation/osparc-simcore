@@ -214,6 +214,7 @@ def test_render_templates(template_path: Path, faker: Faker):
             "dumps": functools.partial(_json_encoder_and_dumps, indent=1),
             "request_form": fake_request_form,
             "ipinfo": _get_ipinfo(request),
+            "extra_context": {"extra": "information"},
         },
     )
 

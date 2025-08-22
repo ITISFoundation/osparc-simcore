@@ -105,10 +105,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       });
       this.__workspacesAndFoldersTree.contextChanged(context);
 
-      this.__templatesButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
-      this.__publicProjectsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES);
-      this.__functionsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS);
-      this.__trashButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TRASH);
+      if (this.__templatesButton) {
+        this.__templatesButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES);
+      }
+      if (this.__publicProjectsButton) {
+        this.__publicProjectsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES);
+      }
+      if (this.__functionsButton) {
+        this.__functionsButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS);
+      }
+      if (this.__trashButton) {
+        this.__trashButton.setValue(context === osparc.dashboard.StudyBrowser.CONTEXT.TRASH);
+      }
     },
 
     /* WORKSPACES AND FOLDERS */

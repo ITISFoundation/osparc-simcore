@@ -41,11 +41,11 @@ from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.clusters import ClusterTypeInModel, NoAuthentication
-from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter

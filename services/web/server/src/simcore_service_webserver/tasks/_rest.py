@@ -58,7 +58,7 @@ _task_prefix: Final[str] = f"/{API_VTAG}/tasks"
 @webserver_request_context_decorator
 async def get_async_jobs(request: web.Request) -> web.Response:
     inprocess_long_running_manager = get_long_running_manager(request.app)
-    inprocess_tracked_tasks = lrt_api.list_tasks(
+    inprocess_tracked_tasks = await lrt_api.list_tasks(
         inprocess_long_running_manager.tasks_manager,
         inprocess_long_running_manager.get_task_context(request),
     )

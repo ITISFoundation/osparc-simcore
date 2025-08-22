@@ -31,7 +31,7 @@ jobs:
           version: "0.6.x"
           enable-cache: false
       - name: checkout source branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Run pact tests
         run: |
           make devenv

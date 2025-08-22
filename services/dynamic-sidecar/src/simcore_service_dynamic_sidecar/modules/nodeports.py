@@ -15,7 +15,6 @@ import magic
 from aiofiles.os import remove
 from aiofiles.tempfile import TemporaryDirectory as AioTemporaryDirectory
 from common_library.json_serialization import json_loads
-from models_library.projects import ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
 from models_library.services_types import ServicePortKey
 from pydantic import ByteSize, TypeAdapter
@@ -29,10 +28,11 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_sdk.node_ports_v2 import Port
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
-from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports, OutputsCallbacks
+from simcore_sdk.node_ports_v2.nodeports_v2 import OutputsCallbacks
 from simcore_sdk.node_ports_v2.port import SetKWargs
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
+from .._meta import APP_NAME
 from ..core.settings import ApplicationSettings, get_settings
 from ..modules.notifications import PortNotifier
 
@@ -98,15 +98,19 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
     start_time = time.perf_counter()
 
     settings: ApplicationSettings = get_settings()
-    PORTS: Nodeports = await node_ports_v2.ports(
+    db_manager = node_ports_v2.DBManager(
+        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}"
+    )
+    ports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
-        project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
+        project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
         node_uuid=TypeAdapter(NodeIDStr).validate_python(
             f"{settings.DY_SIDECAR_NODE_ID}"
         ),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         aws_s3_cli_settings=None,
+        db_manager=db_manager,
     )
 
     # let's gather the tasks
@@ -116,7 +120,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
     archiving_tasks: deque[Coroutine[None, None, None]] = deque()
     ports_to_set: list[Port] = [
         port_value
-        for port_value in (await PORTS.outputs).values()
+        for port_value in (await ports.outputs).values()
         if (not port_keys) or (port_value.key in port_keys)
     ]
 
@@ -220,7 +224,7 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
         if archiving_tasks:
             await limited_gather(*archiving_tasks, limit=4)
 
-        await PORTS.set_multiple(
+        await ports.set_multiple(
             ports_values,
             progress_bar=sub_progress,
             outputs_callbacks=OutputCallbacksWrapper(port_notifier),
@@ -327,21 +331,25 @@ async def download_target_ports(
     start_time = time.perf_counter()
 
     settings: ApplicationSettings = get_settings()
-    PORTS: Nodeports = await node_ports_v2.ports(
+    db_manager = node_ports_v2.DBManager(
+        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}"
+    )
+    ports = await node_ports_v2.ports(
         user_id=settings.DY_SIDECAR_USER_ID,
-        project_id=ProjectIDStr(settings.DY_SIDECAR_PROJECT_ID),
+        project_id=f"{settings.DY_SIDECAR_PROJECT_ID}",
         node_uuid=TypeAdapter(NodeIDStr).validate_python(
             f"{settings.DY_SIDECAR_NODE_ID}"
         ),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
         aws_s3_cli_settings=None,
+        db_manager=db_manager,
     )
 
     # let's gather all the data
     ports_to_get: list[Port] = [
         port_value
-        for port_value in (await getattr(PORTS, port_type_name.value)).values()
+        for port_value in (await getattr(ports, port_type_name.value)).values()
         if (not port_keys) or (port_value.key in port_keys)
     ]
 

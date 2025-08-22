@@ -95,7 +95,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     WalletNotEnoughCreditsError: HttpErrorInfo(
         status.HTTP_402_PAYMENT_REQUIRED,
         user_message(
-            "Your wallet does not have sufficient credits to run this computation. {reason}",
+            "Your wallet does not have sufficient credits to run this computation: {details}",
             _version=1,
         ),
     ),

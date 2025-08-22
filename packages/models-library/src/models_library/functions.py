@@ -99,6 +99,12 @@ class FunctionBase(BaseModel):
 class RegisteredFunctionBase(FunctionBase):
     uid: FunctionID
     created_at: datetime.datetime
+    modified_at: datetime.datetime
+
+
+class FunctionUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
 
 
 class ProjectFunction(FunctionBase):
@@ -250,6 +256,7 @@ class FunctionDB(BaseModel):
 class RegisteredFunctionDB(FunctionDB):
     uuid: FunctionID
     created: datetime.datetime
+    modified: datetime.datetime
 
 
 class FunctionJobCollectionDB(BaseModel):

@@ -372,6 +372,16 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     ] = None
 
+    is_collaborative: Annotated[
+        bool,
+        Field(
+            alias="simcore.service.is-collaborative",
+            description=(
+                "if True, the service is collaborative and will not be locked"
+            ),
+        ),
+    ] = False
+
     compose_spec: Annotated[
         Json[ComposeSpecLabelDict | None] | None,
         Field(
@@ -663,6 +673,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         "simcore.service.user-preferences-path": json_dumps(
                             "/tmp/path_to_preferences"  # noqa: S108
                         ),
+                        "simcore.service.is_collaborative": "False",
                     },
                     # dynamic-service with compose spec
                     {
@@ -702,6 +713,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         "simcore.service.callbacks-mapping": json_dumps(
                             CallbacksMapping.model_json_schema()["examples"][3]
                         ),
+                        "simcore.service.is_collaborative": "True",
                     },
                 ]
             },

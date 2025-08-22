@@ -31,6 +31,8 @@ from pytest_simcore.helpers.postgres_tools import PostgresTestConfig
 from pytest_simcore.helpers.storage import replace_storage_endpoint
 from servicelib.long_running_tasks.models import TaskProgress
 from servicelib.utils import logged_gather
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.projects import projects
 from simcore_sdk.node_ports_common.constants import SIMCORE_LOCATION
@@ -89,7 +91,8 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
 def mock_environment(
     mock_storage_check: None,
     mock_rabbit_check: None,
-    rabbit_service,
+    redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
     postgres_host_config: PostgresTestConfig,
     storage_endpoint: URL,
     minio_s3_settings_envs: EnvVarsDict,

@@ -25,7 +25,7 @@ jobs:
       # secrets can be set in settings/secrets on github
       DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: setup QEMU
         uses: docker/setup-qemu-action@v3
       - name: setup docker buildx

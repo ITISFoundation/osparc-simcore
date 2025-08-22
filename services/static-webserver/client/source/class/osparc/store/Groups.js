@@ -38,18 +38,14 @@ qx.Class.define("osparc.store.Groups", {
 
     organizations: {
       check: "Object",
-      init: {}
+      init: {},
+      event: "organizationsChanged",
     },
 
     groupMe: {
       check: "osparc.data.model.Group",
       init: {}
     },
-  },
-
-  events: {
-    "groupAdded": "qx.event.type.Data",
-    "groupRemoved": "qx.event.type.Data",
   },
 
   statics: {
@@ -156,6 +152,15 @@ qx.Class.define("osparc.store.Groups", {
 
     getOrganizationIds: function() {
       return Object.keys(this.getOrganizations());
+    },
+
+    getAllMyGroupIds: function() {
+      return [
+        this.getMyGroupId(),
+        ...this.getOrganizationIds().map(gId => parseInt(gId)),
+        this.getEveryoneProductGroup().getGroupId(),
+        this.getEveryoneGroup().getGroupId(),
+      ]
     },
 
     getGroup: function(groupId) {

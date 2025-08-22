@@ -164,14 +164,26 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 0,
         });
+
         pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.email), {
           row,
           column: 1,
         });
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.accountRequestReviewedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.accountRequestReviewedAt)) : "-"), {
+
+        let date = null;
+        switch (pendingUser.accountRequestStatus) {
+          case "PENDING":
+            date = pendingUser.preRegistrationRequestedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationRequestedAt)) : "-";
+            break;
+          default:
+            date = pendingUser.accountRequestReviewedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.accountRequestReviewedAt)) : "-";
+            break;
+        }
+        pendingUsersLayout.add(new qx.ui.basic.Label(date), {
           row,
           column: 2,
         });
+
         const statusChip = new osparc.ui.basic.Chip().set({
           label: pendingUser.accountRequestStatus.toLowerCase(),
         });
@@ -182,17 +194,18 @@ qx.Class.define("osparc.po.UsersPending", {
           row,
           column: 3,
         });
+
         const infoButton = this.self().createInfoButton(pendingUser);
         pendingUsersLayout.add(infoButton, {
           row,
           column: 4,
         });
+
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
         pendingUsersLayout.add(buttonsLayout, {
           row,
           column: 5,
         });
-
         switch (pendingUser.accountRequestStatus) {
           case "PENDING": {
             statusChip.setStatusColor(osparc.ui.basic.Chip.STATUS.WARNING);
@@ -233,8 +246,18 @@ qx.Class.define("osparc.po.UsersPending", {
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
           const sortByDate = (a, b) => {
-            const dateA = a.accountRequestReviewedAt ? new Date(a.accountRequestReviewedAt) : new Date(0);
-            const dateB = b.accountRequestReviewedAt ? new Date(b.accountRequestReviewedAt) : new Date(0);
+            let dateA = new Date(0); // default to epoch if no date is available
+            if (a.accountRequestStatus === "PENDING" && a.preRegistrationRequestedAt) {
+              dateA = new Date(a.preRegistrationRequestedAt);
+            } else if (a.accountRequestReviewedAt) {
+              dateA = new Date(a.accountRequestReviewedAt);
+            }
+            let dateB = new Date(0); // default to epoch if no date is available
+            if (b.accountRequestStatus === "PENDING" && b.preRegistrationRequestedAt) {
+              dateB = new Date(b.preRegistrationRequestedAt);
+            } else if (b.accountRequestReviewedAt) {
+              dateB = new Date(b.accountRequestReviewedAt);
+            }
             return dateB - dateA; // sort by most recent first
           };
           pendingUsers.sort(sortByDate);
@@ -317,7 +340,7 @@ qx.Class.define("osparc.po.UsersPending", {
     __createRejectButton: function(email) {
       const button = new osparc.ui.form.FetchButton("Reject");
       button.addListener("execute", () => {
-        const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted"`;
+        const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted`;
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: "Reject User",
           confirmText: "Reject",

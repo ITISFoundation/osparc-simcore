@@ -13,7 +13,7 @@ class ProductNotFoundError(ProductError):
 
 
 class ProductPriceNotDefinedError(ProductError):
-    msg_template = "Product price not defined. {reason}"
+    msg_template = "Product price not defined: {details}"
 
 
 class BelowMinimumPaymentError(ProductError):

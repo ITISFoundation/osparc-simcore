@@ -374,27 +374,69 @@ qx.Class.define("osparc.study.Utils", {
       return null;
     },
 
-    // used in the "projectStateUpdated" socket event
-    amIRunningTheStudy: function(content) {
-      if (
-        content &&
-        "data" in content &&
-        "locked" in content["data"] &&
-        "owner" in content["data"]["locked"] &&
-        "user_id" in content["data"]["locked"]["owner"] &&
-        content["data"]["locked"]["owner"]["user_id"] === osparc.auth.Data.getInstance().getUserId()
-      ) {
-        return (
-          content["data"]["state"] &&
-          content["data"]["state"]["value"] &&
-          [
-            "PUBLISHED",
-            "STARTED",
-            "STOPPING",
-          ].includes(content["data"]["state"]["value"])
-        );
-      }
-      return false;
+    state: {
+      getProjectStatus: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "status" in state["shareState"]
+        ) {
+          return state["shareState"]["status"];
+        }
+        return null;
+      },
+
+      isProjectLocked: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "locked" in state["shareState"]
+        ) {
+          return state["shareState"]["locked"];
+        }
+        return false;
+      },
+
+      getCurrentGroupIds: function(state) {
+        if (
+          state &&
+          "shareState" in state &&
+          "currentUserGroupids" in state["shareState"]
+        ) {
+          return state["shareState"]["currentUserGroupids"];
+        }
+
+        return [];
+      },
+
+      getPipelineState: function(state) {
+        if (
+          state &&
+          "state" in state &&
+          "value" in state["state"]
+        ) {
+          return state["state"]["value"];
+        }
+        return undefined;
+      },
+
+      PIPELINE_RUNNING_STATES: [
+        "PUBLISHED",
+        "PENDING",
+        "WAITING_FOR_RESOURCES",
+        "WAITING_FOR_CLUSTER",
+        "STARTED",
+        "STOPPING",
+        "RETRY",
+      ],
+
+      isPipelineRunning: function(state) {
+        const pipelineState = this.getPipelineState(state);
+        if (pipelineState) {
+          return this.PIPELINE_RUNNING_STATES.includes(pipelineState);
+        }
+        return false;
+      },
     },
 
     __getBlockedState: function(studyData) {
@@ -407,7 +449,7 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (studyData["state"] && studyData["state"]["locked"] && studyData["state"]["locked"]["value"]) {
+      if (studyData["state"] && studyData["state"]["shareState"] && studyData["state"]["shareState"]["locked"]) {
         return "IN_USE";
       }
       if (this.isInDebt(studyData)) {
@@ -418,7 +460,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canBeOpened: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);
@@ -446,7 +488,7 @@ qx.Class.define("osparc.study.Utils", {
 
     canShowPreview: function(studyData) {
       const blocked = this.__getBlockedState(studyData);
-      if (osparc.utils.DisabledPlugins.isSimultaneousAccessEnabled()) {
+      if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         return ["IN_USE", false].includes(blocked);
       }
       return [false].includes(blocked);
@@ -492,7 +534,7 @@ qx.Class.define("osparc.study.Utils", {
           resolve(osparc.data.model.StudyUI.PIPELINE_ICON);
         } else {
           const productIcon = osparc.dashboard.CardBase.PRODUCT_ICON;
-          const wbServices = this.self().getNonFrontendNodes(studyData);
+          const wbServices = this.getNonFrontendNodes(studyData);
           if (wbServices.length === 1) {
             const wbService = wbServices[0];
             osparc.store.Services.getService(wbService.key, wbService.version)

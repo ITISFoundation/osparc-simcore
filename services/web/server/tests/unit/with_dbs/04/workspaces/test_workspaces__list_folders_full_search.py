@@ -6,6 +6,7 @@
 
 
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -17,6 +18,7 @@ from simcore_service_webserver.db.models import UserRole
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_workspaces__list_folders_full_search(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     expected: HTTPStatus,

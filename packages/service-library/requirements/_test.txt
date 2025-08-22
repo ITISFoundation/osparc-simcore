@@ -53,6 +53,8 @@ execnet==2.1.1
     # via pytest-xdist
 faker==36.1.1
     # via -r requirements/_test.in
+fakeredis==2.30.3
+    # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
 frozenlist==1.5.0
@@ -109,6 +111,8 @@ jsonschema-specifications==2024.10.1
     #   openapi-schema-validator
 lazy-object-proxy==1.10.0
     # via openapi-spec-validator
+lupa==2.5
+    # via fakeredis
 multidict==6.1.0
     # via
     #   -c requirements/_aiohttp.txt
@@ -211,6 +215,11 @@ pyyaml==6.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   jsonschema-path
+redis==5.2.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   fakeredis
 referencing==0.35.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -245,6 +254,8 @@ sniffio==1.3.1
     #   -c requirements/_fastapi.txt
     #   anyio
     #   asgi-lifespan
+sortedcontainers==2.4.0
+    # via fakeredis
 sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../requirements/constraints.txt

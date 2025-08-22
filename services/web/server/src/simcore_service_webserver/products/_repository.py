@@ -53,6 +53,7 @@ _PRODUCTS_COLUMNS = [
     products.c.registration_email_template,
     products.c.max_open_studies_per_user,
     products.c.group_id,
+    products.c.support_standard_group_id,
 ]
 
 assert {column.name for column in _PRODUCTS_COLUMNS}.issubset(  # nosec

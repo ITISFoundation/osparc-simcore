@@ -150,7 +150,7 @@ async def get_wallet_for_user(
         row = await result.first()
         if row is None:
             raise WalletAccessForbiddenError(
-                reason=f"User does not have access to the wallet {wallet_id}. Or wallet does not exist.",
+                details=f"User does not have access to the wallet {wallet_id}. Or wallet does not exist.",
                 user_id=user_id,
                 wallet_id=wallet_id,
                 product_name=product_name,
@@ -182,7 +182,7 @@ async def get_wallet(
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
-            raise WalletNotFoundError(reason=f"Wallet {wallet_id} not found.")
+            raise WalletNotFoundError(details=f"Wallet {wallet_id} not found.")
         return WalletDB.model_validate(row)
 
 
@@ -213,7 +213,7 @@ async def update_wallet(
         )
         row = await result.first()
         if row is None:
-            raise WalletNotFoundError(reason=f"Wallet {wallet_id} not found.")
+            raise WalletNotFoundError(details=f"Wallet {wallet_id} not found.")
         return WalletDB.model_validate(row)
 
 

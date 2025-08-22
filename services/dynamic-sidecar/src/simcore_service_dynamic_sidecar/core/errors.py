@@ -14,18 +14,3 @@ class VolumeNotFoundError(BaseDynamicSidecarError):
 
 class UnexpectedDockerError(BaseDynamicSidecarError):
     msg_template = "An unexpected Docker error occurred status_code={status_code}, message={message}"
-
-
-class ContainerExecContainerNotFoundError(BaseDynamicSidecarError):
-    msg_template = "Container '{container_name}' was not found"
-
-
-class ContainerExecTimeoutError(BaseDynamicSidecarError):
-    msg_template = "Timed out after {timeout} while executing: '{command}'"
-
-
-class ContainerExecCommandFailedError(BaseDynamicSidecarError):
-    msg_template = (
-        "Command '{command}' exited with code '{exit_code}'"
-        "and output: '{command_result}'"
-    )

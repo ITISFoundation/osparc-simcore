@@ -51,7 +51,7 @@ async def test_get_product_price_when_undefined(
         (UserRole.USER, status.HTTP_403_FORBIDDEN),
         (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
-        (UserRole.ADMIN, status.HTTP_403_FORBIDDEN),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_get_product_access_rights(

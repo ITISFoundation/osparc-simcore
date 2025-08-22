@@ -1,7 +1,6 @@
 import datetime
 import hashlib
 import logging
-from collections.abc import Callable
 from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID, uuid4
@@ -40,6 +39,7 @@ from ..domain.files import File as DomainFile
 from ..domain.files import FileInProgramJobData
 from ..schemas.files import UserFile
 from .base import ApiServerInputSchema
+from .programs import ProgramKeyId
 
 # JOB SUB-RESOURCES  ----------
 #
@@ -47,8 +47,6 @@ from .base import ApiServerInputSchema
 #  - Input/outputs are defined in service metadata
 #  - custom metadata
 #
-from .programs import Program, ProgramKeyId
-from .solvers import Solver
 
 JobID: TypeAlias = UUID
 
@@ -322,44 +320,6 @@ class Job(BaseModel):
     def resource_name(self) -> str:
         """Relative Resource Name"""
         return self.name
-
-
-def get_url(
-    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
-) -> HttpUrl | None:
-    if isinstance(solver_or_program, Solver):
-        return url_for(
-            "get_job",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-            job_id=job_id,
-        )
-    return None
-
-
-def get_runner_url(
-    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl]
-) -> HttpUrl | None:
-    if isinstance(solver_or_program, Solver):
-        return url_for(
-            "get_solver_release",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-        )
-    return None
-
-
-def get_outputs_url(
-    solver_or_program: Solver | Program, url_for: Callable[..., HttpUrl], job_id: JobID
-) -> HttpUrl | None:
-    if isinstance(solver_or_program, Solver):
-        return url_for(
-            "get_job_outputs",
-            solver_key=solver_or_program.id,
-            version=solver_or_program.version,
-            job_id=job_id,
-        )
-    return None
 
 
 PercentageInt: TypeAlias = Annotated[int, Field(ge=0, le=100)]

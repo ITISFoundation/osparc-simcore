@@ -82,7 +82,9 @@ def backend_url() -> AnyHttpUrl:
 
 @pytest.fixture
 def mock_environment(
-    monkeypatch: pytest.MonkeyPatch, mock_rabbitmq_envs: EnvVarsDict
+    mock_postgres_check: None,
+    monkeypatch: pytest.MonkeyPatch,
+    mock_rabbitmq_envs: EnvVarsDict,
 ) -> EnvVarsDict:
     setenvs_from_dict(
         monkeypatch,

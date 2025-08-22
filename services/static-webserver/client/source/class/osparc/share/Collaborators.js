@@ -286,10 +286,13 @@ qx.Class.define("osparc.share.Collaborators", {
     __createCollaboratorsListSection: function() {
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
-      const label = new qx.ui.basic.Label(this.tr("Shared with"));
-      label.set({allowGrowX: true});
+      const label = new qx.ui.basic.Label(this.tr("Shared with:"));
+      label.set({
+        allowGrowX: true,
+        alignY: "middle",
+      });
       header.add(label, {
         flex: 1
       });
@@ -306,7 +309,8 @@ qx.Class.define("osparc.share.Collaborators", {
         decorator: "no-border",
         spacing: 3,
         width: 150,
-        padding: 0
+        padding: 0,
+        backgroundColor: "transparent",
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();

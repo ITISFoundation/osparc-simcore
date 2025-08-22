@@ -23,11 +23,6 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
 
     osparc.utils.Utils.setIdToWidget(this, "creditsIndicatorButton");
 
-    this.set({
-      cursor: "pointer",
-      padding: [3, 8]
-    });
-
     this.getChildControl("image").set({
       width: 24,
       height: 24
