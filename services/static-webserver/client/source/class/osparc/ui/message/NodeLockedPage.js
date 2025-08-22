@@ -59,7 +59,7 @@ qx.Class.define("osparc.ui.message.NodeLockedPage", {
         }
       };
       updateTitle();
-      lockState.addListener("changedLocked", updateTitle);
+      lockState.addListener("changeLocked", updateTitle);
     },
   }
 });

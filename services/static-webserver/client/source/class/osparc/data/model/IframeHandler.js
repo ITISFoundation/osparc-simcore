@@ -111,7 +111,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     },
 
     __applyNode: function(node) {
-      node.getStatus().getLockState().addListener("changedLocked", () => this.fireEvent("iframeStateChanged"), this);
+      node.getStatus().getLockState().addListener("changeLocked", () => this.fireEvent("iframeStateChanged"), this);
     },
 
     __initIFrame: function() {
