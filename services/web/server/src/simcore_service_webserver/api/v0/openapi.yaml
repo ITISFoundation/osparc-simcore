@@ -10504,8 +10504,10 @@ components:
           type: array
           title: Items
         total:
-          type: integer
-          minimum: 0
+          anyOf:
+          - type: integer
+            minimum: 0
+          - type: 'null'
           title: Total
         current_page:
           anyOf:
@@ -10534,7 +10536,6 @@ components:
       type: object
       required:
       - items
-      - total
       title: CursorPage[~_T]Customized[PathMetaDataGet]
     DatCoreFileLink:
       properties:

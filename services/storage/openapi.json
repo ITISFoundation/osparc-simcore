@@ -1440,8 +1440,15 @@
             "title": "Items"
           },
           "total": {
-            "type": "integer",
-            "minimum": 0,
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total"
           },
           "current_page": {
@@ -1495,8 +1502,7 @@
         },
         "type": "object",
         "required": [
-          "items",
-          "total"
+          "items"
         ],
         "title": "CursorPage[~_T]Customized[PathMetaDataGet]"
       },
