@@ -9,10 +9,12 @@ from celery.exceptions import CeleryError
 from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
-from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from pytest_mock import MockerFixture, MockType, mocker
-from servicelib.celery.models import TaskState, TaskStatus, TaskUUID
+from servicelib.celery.models import TaskState
+from servicelib.celery.models import TaskStatus as CeleryTaskStatus
+from servicelib.celery.models import TaskUUID
 from simcore_service_api_server.api.routes import tasks as task_routes
 from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
 
@@ -55,7 +57,7 @@ async def test_list_celery_tasks(
     assert task.status_href == f"/v0/tasks/{task.task_id}"
 
 
-async def test_get_async_jobs_status(
+async def test_get_task_status(
     mock_task_manager: MockType,
     client: AsyncClient,
     auth: BasicAuth,
@@ -67,7 +69,7 @@ async def test_get_async_jobs_status(
     TaskStatus.model_validate_json(response.text)
 
 
-async def test_cancel_async_job(
+async def test_cancel_task(
     mock_task_manager: MockType,
     client: AsyncClient,
     auth: BasicAuth,
@@ -78,7 +80,7 @@ async def test_cancel_async_job(
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
-async def test_get_result(
+async def test_get_task_result(
     mock_task_manager: MockType,
     client: AsyncClient,
     auth: BasicAuth,
@@ -133,7 +135,7 @@ async def test_get_result(
             "GET",
             f"/v0/tasks/{_faker.uuid4()}/result",
             None,
-            TaskStatus(
+            CeleryTaskStatus(
                 task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
                 task_state=TaskState.STARTED,
                 progress_report=ProgressReport(
@@ -153,7 +155,7 @@ async def test_get_result(
             "GET",
             f"/v0/tasks/{_faker.uuid4()}/result",
             None,
-            TaskStatus(
+            CeleryTaskStatus(
                 task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
                 task_state=TaskState.ABORTED,
                 progress_report=ProgressReport(
