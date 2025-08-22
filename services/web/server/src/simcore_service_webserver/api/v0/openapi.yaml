@@ -516,12 +516,6 @@ paths:
       - conversations
       summary: Create Conversation
       operationId: create_conversation
-      parameters:
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       requestBody:
         required: true
         content:
@@ -541,11 +535,6 @@ paths:
       summary: List Conversations
       operationId: list_conversations
       parameters:
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       - name: limit
         in: query
         required: false
@@ -563,6 +552,11 @@ paths:
           minimum: 0
           default: 0
           title: Offset
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
       responses:
         '200':
           description: Successful Response
@@ -584,11 +578,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       requestBody:
         required: true
         content:
@@ -615,11 +604,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       responses:
         '204':
           description: Successful Response
@@ -636,11 +620,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       responses:
         '200':
           description: Successful Response
@@ -3872,7 +3851,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: List Tasks
+      summary: Get Async Jobs
       description: Lists all long running tasks
       operationId: get_async_jobs
       responses:
@@ -3910,7 +3889,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Status
+      summary: Get Async Job Status
       description: Retrieves the status of a task
       operationId: get_async_job_status
       parameters:
@@ -3954,8 +3933,8 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
+      summary: Cancel Async Job
+      description: Cancels and removes a task
       operationId: cancel_async_job
       parameters:
       - name: task_id
@@ -3995,7 +3974,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Result
+      summary: Get Async Job Result
       description: Retrieves the result of a task
       operationId: get_async_job_result
       parameters:
@@ -4074,9 +4053,9 @@ paths:
     delete:
       tags:
       - long-running-tasks-legacy
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
-      operationId: cancel_and_delete_task
+      summary: Remove Task
+      description: Cancels and removes a task
+      operationId: remove_task
       parameters:
       - name: task_id
         in: path
@@ -16936,6 +16915,11 @@ components:
           - type: 'null'
           title: Service Message
           description: additional information related to service state
+        is_collaborative:
+          type: boolean
+          title: Is Collaborative
+          description: True if service allows collaboration (multi-tenant access)
+          default: false
       type: object
       required:
       - service_key

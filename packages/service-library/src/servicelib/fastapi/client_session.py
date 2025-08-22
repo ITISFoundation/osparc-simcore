@@ -2,8 +2,9 @@ import datetime
 
 import httpx
 from fastapi import FastAPI
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
 from settings_library.tracing import TracingSettings
+
+from .tracing import setup_httpx_client_tracing
 
 
 def setup_client_session(

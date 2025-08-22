@@ -32,7 +32,6 @@ from simcore_service_webserver.conversations._controller._conversations_messages
 )
 from simcore_service_webserver.conversations._controller._conversations_rest import (
     _ConversationsCreateBodyParams,
-    _GetConversationsQueryParams,
     _ListConversationsQueryParams,
 )
 
@@ -56,7 +55,6 @@ router = APIRouter(
 )
 async def create_conversation(
     _body: _ConversationsCreateBodyParams,
-    _query: Annotated[_GetConversationsQueryParams, Depends()],
 ): ...
 
 
@@ -76,7 +74,6 @@ async def list_conversations(
 async def update_conversation(
     _params: Annotated[ConversationPathParams, Depends()],
     _body: ConversationPatch,
-    _query: Annotated[as_query(_GetConversationsQueryParams), Depends()],
 ): ...
 
 
@@ -86,7 +83,6 @@ async def update_conversation(
 )
 async def delete_conversation(
     _params: Annotated[ConversationPathParams, Depends()],
-    _query: Annotated[as_query(_GetConversationsQueryParams), Depends()],
 ): ...
 
 
@@ -96,7 +92,6 @@ async def delete_conversation(
 )
 async def get_conversation(
     _params: Annotated[ConversationPathParams, Depends()],
-    _query: Annotated[as_query(_GetConversationsQueryParams), Depends()],
 ): ...
 
 

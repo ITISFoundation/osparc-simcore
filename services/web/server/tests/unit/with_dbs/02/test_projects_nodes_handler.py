@@ -51,6 +51,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 )
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects as projects_db_model
 from simcore_service_webserver.db.models import UserRole
@@ -67,6 +68,10 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 
 @pytest.mark.parametrize(
@@ -1060,6 +1065,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_stop_node(
+    rabbit_settings: RabbitSettings,
     use_in_memory_redis: RedisSettings,
     client: TestClient,
     user_project_with_num_dynamic_services: Callable[[int], Awaitable[ProjectDict]],

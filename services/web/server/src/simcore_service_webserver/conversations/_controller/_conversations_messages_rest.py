@@ -97,6 +97,7 @@ async def create_conversation_message(request: web.Request):
     message, is_first_message = (
         await _conversation_message_service.create_support_message_with_first_check(
             app=request.app,
+            product_name=req_ctx.product_name,
             user_id=req_ctx.user_id,
             project_id=None,  # Support conversations don't use project_id
             conversation_id=path_params.conversation_id,
@@ -116,10 +117,7 @@ async def create_conversation_message(request: web.Request):
                 request, template_name
             )
             _url = request.url
-            if _url.port:
-                _conversation_url = f"{_url.scheme}://{_url.host}:{_url.port}/#/conversations/{path_params.conversation_id}"
-            else:
-                _conversation_url = f"{_url.scheme}://{_url.host}/#/conversations/{path_params.conversation_id}"
+            _conversation_url = f"{_url.scheme}://{_url.host}/#/conversation/{path_params.conversation_id}"
             _extra_context = _conversation.extra_context
             await email_service.send_email_from_template(
                 request,
@@ -128,11 +126,6 @@ async def create_conversation_message(request: web.Request):
                 template=email_template_path,
                 context={
                     "host": request.host,
-                    "product": product.model_dump(
-                        include={
-                            "display_name",
-                        }
-                    ),
                     "first_name": user["first_name"],
                     "last_name": user["last_name"],
                     "user_email": user["email"],
@@ -275,6 +268,7 @@ async def update_conversation_message(request: web.Request):
 
     message = await _conversation_message_service.update_message(
         app=request.app,
+        product_name=req_ctx.product_name,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
         message_id=path_params.message_id,
@@ -314,6 +308,7 @@ async def delete_conversation_message(request: web.Request):
 
     await _conversation_message_service.delete_message(
         app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,

@@ -11,16 +11,18 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 from servicelib.redis import exclusive
+from simcore_service_webserver.groups import api as group_service
 
+from ..products import products_service
 from ..redis import get_redis_lock_manager_client_sdk
 from ..users import users_service
-from . import _conversation_message_repository
-from ._conversation_service import _get_recipients
+from . import _conversation_message_repository, _conversation_service
 from ._socketio import (
     notify_conversation_message_created,
     notify_conversation_message_deleted,
@@ -33,9 +35,23 @@ _logger = logging.getLogger(__name__)
 CONVERSATION_MESSAGE_REDIS_LOCK_KEY = "conversation_message_update:{}"
 
 
+async def _get_recipients_from_product_support_group(
+    app: web.Application, product_name: ProductName
+) -> set[UserID]:
+    product = products_service.get_product(app, product_name=product_name)
+    _support_standard_group_id = product.support_standard_group_id
+    if _support_standard_group_id:
+        users = await group_service.list_group_members(
+            app, group_id=_support_standard_group_id
+        )
+        return {user.id for user in users}
+    return set()
+
+
 async def create_message(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
@@ -56,8 +72,26 @@ async def create_message(
     if project_id:
         await notify_conversation_message_created(
             app,
-            recipients=await _get_recipients(app, project_id),
+            recipients=await _conversation_service.get_recipients_from_project(
+                app, project_id
+            ),
             project_id=project_id,
+            conversation_message=created_message,
+        )
+    else:
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=_conversation.user_group_id
+        )
+        _product_group_users = await _get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_message_created(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            project_id=None,
             conversation_message=created_message,
         )
 
@@ -67,6 +101,7 @@ async def create_message(
 async def create_support_message_with_first_check(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
@@ -105,6 +140,7 @@ async def create_support_message_with_first_check(
         """
         created_message = await create_message(
             app,
+            product_name=product_name,
             user_id=user_id,
             project_id=project_id,
             conversation_id=conversation_id,
@@ -145,6 +181,7 @@ async def get_message(
 async def update_message(
     app: web.Application,
     *,
+    product_name: ProductName,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
@@ -161,8 +198,26 @@ async def update_message(
     if project_id:
         await notify_conversation_message_updated(
             app,
-            recipients=await _get_recipients(app, project_id),
+            recipients=await _conversation_service.get_recipients_from_project(
+                app, project_id
+            ),
             project_id=project_id,
+            conversation_message=updated_message,
+        )
+    else:
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=_conversation.user_group_id
+        )
+        _product_group_users = await _get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_message_updated(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            project_id=None,
             conversation_message=updated_message,
         )
 
@@ -172,6 +227,7 @@ async def update_message(
 async def delete_message(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
@@ -188,9 +244,29 @@ async def delete_message(
     if project_id:
         await notify_conversation_message_deleted(
             app,
-            recipients=await _get_recipients(app, project_id),
+            recipients=await _conversation_service.get_recipients_from_project(
+                app, project_id
+            ),
             user_group_id=_user_group_id,
             project_id=project_id,
+            conversation_id=conversation_id,
+            message_id=message_id,
+        )
+    else:
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=_conversation.user_group_id
+        )
+        _product_group_users = await _get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_message_deleted(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            user_group_id=_user_group_id,
+            project_id=None,
             conversation_id=conversation_id,
             message_id=message_id,
         )
