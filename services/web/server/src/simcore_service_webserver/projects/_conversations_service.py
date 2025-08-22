@@ -175,6 +175,7 @@ async def create_project_conversation_message(
     )
     return await conversations_service.create_message(
         app,
+        product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
         conversation_id=conversation_id,
@@ -229,6 +230,7 @@ async def update_project_conversation_message(
     )
     return await conversations_service.update_message(
         app,
+        product_name=product_name,
         project_id=project_uuid,
         conversation_id=conversation_id,
         message_id=message_id,
@@ -254,6 +256,7 @@ async def delete_project_conversation_message(
     )
     await conversations_service.delete_message(
         app,
+        product_name=product_name,
         user_id=user_id,
         project_id=project_uuid,
         conversation_id=conversation_id,
