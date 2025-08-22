@@ -287,6 +287,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
             colSpan: 3
           });
           break;
+        case "avatar-group":
+          control = new osparc.ui.basic.AvatarGroup(20, "left");
+          this.getChildControl("middle-container").add(control);
+          break;
         case "usage-indicator":
           control = new osparc.workbench.DiskUsageIndicator();
           this.add(control, {
@@ -397,18 +401,27 @@ qx.Class.define("osparc.workbench.NodeUI", {
         this.__optionsMenu.add(convertToParameter);
       }
 
+      const lockState = node.getStatus().getLockState();
       const lock = this.getChildControl("lock");
-      node.getStatus().getLockState().bind("locked", lock, "visibility", {
+      lockState.bind("locked", lock, "visibility", {
         converter: nodeLocked => {
           if (nodeLocked) {
             // if it's me the one using it, don't show the lock
             const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-            const currentUserGroupIds = node.getStatus().getLockState().getCurrentUserGroupIds();
+            const currentUserGroupIds = lockState.getCurrentUserGroupIds();
             return currentUserGroupIds.includes(myGroupId) ? "excluded" : "visible";
           }
           return "excluded";
         }
       });
+
+      const updateUserGroupIds = () => {
+        const currentUserGroupIds = lockState.getCurrentUserGroupIds();
+        const avatarGroup = this.getChildControl("avatar-group");
+        avatarGroup.setUserGroupIds(currentUserGroupIds);
+      };
+      updateUserGroupIds();
+      lockState.addListener("changeCurrentUserGroupIds", updateUserGroupIds);
 
       this.__markerBtn.show();
       this.getNode().bind("marker", this.__markerBtn, "label", {

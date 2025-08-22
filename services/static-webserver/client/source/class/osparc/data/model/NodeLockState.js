@@ -31,6 +31,7 @@ qx.Class.define("osparc.data.model.NodeLockState", {
       check: "Array",
       init: [],
       nullable: false,
+      event: "changeCurrentUserGroupIds",
       apply: "__currentUserGroupIds",
     },
 
