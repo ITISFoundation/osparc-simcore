@@ -1376,7 +1376,6 @@ async def update_project_node_outputs(
     updated_project_with_states = await add_project_states_for_user(
         user_id=user_id,
         project=updated_project.model_dump(mode="json"),
-        is_template=False,
         app=app,
     )
 

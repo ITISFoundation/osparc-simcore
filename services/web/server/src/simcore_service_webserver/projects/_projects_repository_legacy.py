@@ -10,6 +10,7 @@ from contextlib import AsyncExitStack
 from typing import Any, Self, cast
 from uuid import uuid1
 
+from models_library.utils._original_fastapi_encoders import jsonable_encoder
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
