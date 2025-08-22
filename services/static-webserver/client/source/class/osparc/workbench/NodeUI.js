@@ -221,7 +221,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           break;
         case "middle-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignY: "middle"
           })).set({
             padding: [3, 4]
@@ -251,7 +251,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
               toolTipText: "Unknown",
             });
           }
-          this.getChildControl("middle-container").add(control);
+          this.getChildControl("middle-container").addAt(control, 0);
           break;
         }
         case "node-status-ui": {
@@ -273,7 +273,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
           };
           evaluateLabel();
           statusLabel.addListener("changeValue", evaluateLabel);
-          this.getChildControl("middle-container").add(control);
+          this.getChildControl("middle-container").addAt(control, 1);
           break;
         }
         case "progress":
@@ -288,8 +288,10 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           break;
         case "avatar-group":
-          control = new osparc.ui.basic.AvatarGroup(20, "left");
-          this.getChildControl("middle-container").add(control);
+          control = new osparc.ui.basic.AvatarGroup(20, "right");
+          this.getChildControl("middle-container").addAt(control, 2, {
+            flex: 1
+          });
           break;
         case "usage-indicator":
           control = new osparc.workbench.DiskUsageIndicator();
@@ -317,7 +319,6 @@ qx.Class.define("osparc.workbench.NodeUI", {
     __createContentLayout: function() {
       const node = this.getNode();
       if (node) {
-        this.getChildControl("middle-container").removeAll();
         this.getChildControl("node-type-chip");
         this.getChildControl("node-status-ui");
 
@@ -419,6 +420,7 @@ qx.Class.define("osparc.workbench.NodeUI", {
         const currentUserGroupIds = lockState.getCurrentUserGroupIds();
         const avatarGroup = this.getChildControl("avatar-group");
         avatarGroup.setUserGroupIds(currentUserGroupIds);
+        avatarGroup.setVisibility(currentUserGroupIds.length ? "visible" : "excluded");
       };
       updateUserGroupIds();
       lockState.addListener("changeCurrentUserGroupIds", updateUserGroupIds);
