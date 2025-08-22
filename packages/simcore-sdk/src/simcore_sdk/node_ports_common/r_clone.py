@@ -3,16 +3,14 @@ import logging
 import re
 import shlex
 from asyncio.streams import StreamReader
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
 from aiocache import cached  # type: ignore[import-untyped]
-from aiofiles import tempfile
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import AnyUrl, BaseModel, ByteSize
 from servicelib.progress_bar import ProgressBarData
+from servicelib.r_clone_utils import config_file
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_r_clone_config
@@ -43,15 +41,6 @@ class RCloneDirectoryNotFoundError(BaseRCloneError):
     msg_template: str = (
         "Provided path '{local_directory_path}' is a file. Expects a directory!"
     )
-
-
-@asynccontextmanager
-async def _config_file(config: str) -> AsyncIterator[str]:
-    async with tempfile.NamedTemporaryFile("w") as f:
-        await f.write(config)
-        await f.flush()
-        assert isinstance(f.name, str)  # nosec
-        yield f.name
 
 
 async def _read_stream(stream: StreamReader, r_clone_log_parsers: list[BaseLogParser]):
@@ -149,7 +138,7 @@ async def _get_folder_size(
     r_clone_config_file_content = get_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
     )
-    async with _config_file(r_clone_config_file_content) as config_file_name:
+    async with config_file(r_clone_config_file_content) as config_file_name:
         r_clone_command = (
             "rclone",
             f"--config {config_file_name}",
@@ -193,7 +182,7 @@ async def _sync_sources(
     r_clone_config_file_content = get_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
     )
-    async with _config_file(r_clone_config_file_content) as config_file_name:
+    async with config_file(r_clone_config_file_content) as config_file_name:
         r_clone_command = (
             "rclone",
             "--config",
