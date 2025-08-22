@@ -21,6 +21,7 @@ from tenacity import (
 
 from ..background_task import create_periodic_task
 from ..logging_errors import create_troubleshootting_log_kwargs
+from ..logging_utils import log_context
 from ..redis import RedisClientSDK, exclusive
 from ._redis_store import RedisStore
 from ._serialization import dumps
@@ -63,7 +64,7 @@ class TaskProtocol(Protocol):
 
 
 class TaskRegistry:
-    REGISTERED_TASKS: ClassVar[
+    _REGISTERED_TASKS: ClassVar[
         dict[RegisteredTaskName, tuple[AllowedErrrors, TaskProtocol]]
     ] = {}
 
@@ -77,20 +78,20 @@ class TaskRegistry:
         partial_task = functools.partial(task, **partial_kwargs)
         # allows to call the partial via it's original name
         partial_task.__name__ = task.__name__  # type: ignore[attr-defined]
-        cls.REGISTERED_TASKS[task.__name__] = [allowed_errors, partial_task]  # type: ignore[assignment]
+        cls._REGISTERED_TASKS[task.__name__] = [allowed_errors, partial_task]  # type: ignore[assignment]
 
     @classmethod
     def get_task(cls, task_name: RegisteredTaskName) -> TaskProtocol:
-        return cls.REGISTERED_TASKS[task_name][1]
+        return cls._REGISTERED_TASKS[task_name][1]
 
     @classmethod
     def get_allowed_errors(cls, task_name: RegisteredTaskName) -> AllowedErrrors:
-        return cls.REGISTERED_TASKS[task_name][0]
+        return cls._REGISTERED_TASKS[task_name][0]
 
     @classmethod
     def unregister(cls, task: TaskProtocol) -> None:
-        if task.__name__ in cls.REGISTERED_TASKS:
-            del cls.REGISTERED_TASKS[task.__name__]
+        if task.__name__ in cls._REGISTERED_TASKS:
+            del cls._REGISTERED_TASKS[task.__name__]
 
 
 async def _get_tasks_to_remove(
@@ -200,7 +201,6 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
     async def teardown(self) -> None:
         # ensure all created tasks are cancelled
         for tracked_task in await self._tasks_data.list_tasks_data():
-            # when closing we do not care about pending errors
             with suppress(TaskNotFoundError):
                 await self.remove_task(
                     tracked_task.task_id,
@@ -266,18 +266,17 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             # - finished with errors
             # we just print the status from where one can infer the above
             with suppress(TaskNotFoundError):
-                _logger.warning(
-                    "Removing stale task '%s' with status '%s'",
-                    task_id,
-                    (
-                        await self.get_task_status(
-                            task_id, with_task_context=task_context
-                        )
-                    ).model_dump_json(),
+                task_status = await self.get_task_status(
+                    task_id, with_task_context=task_context
                 )
-                await self.remove_task(
-                    task_id, with_task_context=task_context, wait_for_removal=True
-                )
+                with log_context(
+                    _logger,
+                    logging.WARNING,
+                    f"Removing stale task '{task_id}' with status '{task_status.model_dump_json()}'",
+                ):
+                    await self.remove_task(
+                        task_id, with_task_context=task_context, wait_for_removal=True
+                    )
 
     async def _cancelled_tasks_removal(self) -> None:
         """
@@ -330,7 +329,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                             **create_troubleshootting_log_kwargs(
                                 (
                                     f"Execution of {task_id=} finished with unexpected error, "
-                                    f"only the following are {allowed_errors=} are permitted"
+                                    f"only the following {allowed_errors=} are permitted"
                                 ),
                                 error=e,
                                 error_context={
@@ -501,9 +500,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         fire_and_forget: bool,
         **task_kwargs: Any,
     ) -> TaskId:
-        if registered_task_name not in TaskRegistry.REGISTERED_TASKS:
+        if registered_task_name not in TaskRegistry._REGISTERED_TASKS:
             raise TaskNotRegisteredError(
-                task_name=registered_task_name, tasks=TaskRegistry.REGISTERED_TASKS
+                task_name=registered_task_name, tasks=TaskRegistry._REGISTERED_TASKS
             )
 
         task = TaskRegistry.get_task(registered_task_name)
