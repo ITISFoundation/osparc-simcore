@@ -124,11 +124,13 @@ qx.Class.define("osparc.ui.message.Loading", {
             alignX: "center"
           }));
           this._add(control);
+          break;
         case "extra-widgets-container":
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
             alignX: "center"
           }));
           this._add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
