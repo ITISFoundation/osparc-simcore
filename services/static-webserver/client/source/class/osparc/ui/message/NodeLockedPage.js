@@ -20,9 +20,9 @@
  *
  * -----------------------
  * |                     |
- * |                     |
- * | oSparc/service logo |
- * |  reason why locked  |
+ * |    service logo     |
+ * |   locked/unlocked   |
+ * |    - who is in      |
  * |                     |
  * -----------------------
  *
