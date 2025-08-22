@@ -8,8 +8,9 @@ from typing import Any
 
 import aiodocker
 import pytest
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Service, Task
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from pydantic import TypeAdapter, ValidationError
 
 
@@ -28,7 +29,7 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
     assert service_tasks
     assert len(service_tasks) == 1
     with pytest.raises(ValidationError):
-        StandardSimcoreDockerLabels.from_docker_task(service_tasks[0])
+        SimcoreContainerLabels.from_docker_task(service_tasks[0])
 
 
 async def test_get_simcore_service_docker_labels(
@@ -37,7 +38,7 @@ async def test_get_simcore_service_docker_labels(
         [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
     ],
     task_template: dict[str, Any],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    osparc_docker_label_keys: SimcoreContainerLabels,
 ):
     service_with_labels = await create_service(
         task_template,
@@ -52,7 +53,7 @@ async def test_get_simcore_service_docker_labels(
     )
     assert service_tasks
     assert len(service_tasks) == 1
-    task_ownership = StandardSimcoreDockerLabels.from_docker_task(service_tasks[0])
+    task_ownership = SimcoreContainerLabels.from_docker_task(service_tasks[0])
     assert task_ownership
     assert task_ownership.user_id == osparc_docker_label_keys.user_id
     assert task_ownership.project_id == osparc_docker_label_keys.project_id
