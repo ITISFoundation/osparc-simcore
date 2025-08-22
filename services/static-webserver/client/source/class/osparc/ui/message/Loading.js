@@ -222,17 +222,29 @@ qx.Class.define("osparc.ui.message.Loading", {
     },
 
     __applyHeader: function(value) {
-      const loadingTitle = this.getChildControl("loading-title");
-      loadingTitle.setLabel(value);
+      this._setHeaderTitle(value);
+
+      // extract the state from the title
       const words = value.split(" ");
       if (words.length) {
         const state = words[0];
         const iconSource = osparc.service.StatusUI.getIconSource(state.toLowerCase(), this.self().STATUS_ICON_SIZE);
         if (iconSource) {
-          loadingTitle.setIcon(iconSource);
-          osparc.service.StatusUI.updateCircleAnimation(loadingTitle.getChildControl("icon"));
+          this._setHeaderIcon(iconSource);
         }
       }
+    },
+
+    _setHeaderTitle: function(label) {
+      const loadingTitle = this.getChildControl("loading-title");
+      loadingTitle.setLabel(label);
+    },
+
+    _setHeaderIcon: function(iconSource) {
+      const loadingTitle = this.getChildControl("loading-title");
+      loadingTitle.setIcon(iconSource);
+      // this will stop the circle, if it's not a circle
+      osparc.service.StatusUI.updateCircleAnimation(loadingTitle.getChildControl("icon"));
     },
 
     __applyMessages: function(msgs) {
