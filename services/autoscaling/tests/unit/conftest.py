@@ -36,7 +36,6 @@ from fastapi import FastAPI
 from models_library.docker import (
     DockerGenericTag,
     DockerLabelKey,
-    StandardSimcoreDockerLabels,
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -52,6 +51,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -812,8 +812,8 @@ def host_memory_total() -> ByteSize:
 @pytest.fixture
 def osparc_docker_label_keys(
     faker: Faker,
-) -> StandardSimcoreDockerLabels:
-    return StandardSimcoreDockerLabels.model_validate(
+) -> SimcoreContainerLabels:
+    return SimcoreContainerLabels.model_validate(
         {
             "user_id": faker.pyint(),
             "project_id": faker.uuid4(),
