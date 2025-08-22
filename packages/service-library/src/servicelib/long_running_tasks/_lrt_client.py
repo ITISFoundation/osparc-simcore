@@ -5,13 +5,12 @@ from typing import Any, Final
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import PositiveInt, TypeAdapter
 
-from ..logging_errors import create_troubleshootting_log_kwargs
 from ..logging_utils import log_decorator
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._rabbit_namespace import get_rabbit_namespace
 from ._serialization import string_to_object
+from .errors import RPCTransferrableTaskError
 from .models import (
-    ErrorResponse,
     LRTNamespace,
     RegisteredTaskName,
     TaskBase,
@@ -97,34 +96,19 @@ async def get_task_result(
     task_context: TaskContext,
     task_id: TaskId,
 ) -> Any:
-    serialized_result = await rabbitmq_rpc_client.request(
-        get_rabbit_namespace(namespace),
-        TypeAdapter(RPCMethodName).validate_python("get_task_result"),
-        task_context=task_context,
-        task_id=task_id,
-        timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
-    )
-    assert isinstance(serialized_result, ErrorResponse | str)  # nosec
-    if isinstance(serialized_result, ErrorResponse):
-        error = string_to_object(serialized_result.str_error_object)
-        _logger.info(
-            **create_troubleshootting_log_kwargs(
-                f"Task '{task_id}' raised the following error:\n{serialized_result.str_traceback}",
-                error=error,
-                error_context={
-                    "task_id": task_id,
-                    "namespace": namespace,
-                    "task_context": task_context,
-                },
-                tip=(
-                    f"The caller of this function should handle the exception. "
-                    f"To figure out where it was running check {namespace=}"
-                ),
-            )
+    try:
+        serialized_result = await rabbitmq_rpc_client.request(
+            get_rabbit_namespace(namespace),
+            TypeAdapter(RPCMethodName).validate_python("get_task_result"),
+            task_context=task_context,
+            task_id=task_id,
+            timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
         )
-        raise error
-
-    return string_to_object(serialized_result)
+        assert isinstance(serialized_result, str)  # nosec
+        return string_to_object(serialized_result)
+    except RPCTransferrableTaskError as e:
+        decoded_error = string_to_object(f"{e}")
+        raise decoded_error from None
 
 
 @log_decorator(_logger, level=logging.DEBUG)

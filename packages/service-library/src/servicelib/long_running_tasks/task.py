@@ -3,7 +3,6 @@ import datetime
 import functools
 import inspect
 import logging
-import traceback
 import urllib.parse
 from contextlib import suppress
 from typing import Any, ClassVar, Final, Protocol, TypeAlias
@@ -22,6 +21,7 @@ from tenacity import (
 )
 
 from ..background_task import create_periodic_task
+from ..logging_errors import create_troubleshootting_log_kwargs
 from ..redis import RedisClientSDK, exclusive
 from ._redis_store import RedisStore
 from ._serialization import object_to_string
@@ -33,7 +33,6 @@ from .errors import (
     TaskNotRegisteredError,
 )
 from .models import (
-    ErrorResponse,
     LRTNamespace,
     RegisteredTaskName,
     ResultField,
@@ -321,22 +320,30 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 except asyncio.InvalidStateError:
                     # task was not completed try again next time and see if it is done
                     continue
-                except asyncio.CancelledError as e:
+                except asyncio.CancelledError:
                     result_field = ResultField(
-                        error_response=ErrorResponse(
-                            str_error_object=object_to_string(
-                                TaskCancelledError(task_id=task_id)
-                            ),
-                            str_traceback="".join(traceback.format_tb(e.__traceback__)),
-                        )
+                        str_error=object_to_string(TaskCancelledError(task_id=task_id))
                     )
                 except Exception as e:  # pylint:disable=broad-except
-                    result_field = ResultField(
-                        error_response=ErrorResponse(
-                            str_error_object=object_to_string(e),
-                            str_traceback="".join(traceback.format_tb(e.__traceback__)),
-                        )
+                    allowed_errors = TaskRegistry.get_allowed_errors(
+                        task_data.registered_task_name
                     )
+                    if type(e) not in allowed_errors:
+                        _logger.exception(
+                            **create_troubleshootting_log_kwargs(
+                                (
+                                    f"Execution of {task_id=} finished with unexpected error, "
+                                    f"only the following are {allowed_errors=} are permitted"
+                                ),
+                                error=e,
+                                error_context={
+                                    "task_id": task_id,
+                                    "task_data": task_data,
+                                    "namespace": self.lrt_namespace,
+                                },
+                            ),
+                        )
+                    result_field = ResultField(str_error=object_to_string(e))
 
                 # update and store in Redis
                 updates = {"is_done": is_done, "result_field": task_data.result_field}

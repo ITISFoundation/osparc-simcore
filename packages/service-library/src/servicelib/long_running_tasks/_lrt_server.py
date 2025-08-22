@@ -2,12 +2,9 @@ import logging
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 
-from ..logging_errors import create_troubleshootting_log_kwargs
 from ..rabbitmq import RPCRouter
-from ._serialization import string_to_object
-from .errors import BaseLongRunningError, TaskNotFoundError
+from .errors import BaseLongRunningError, RPCTransferrableTaskError, TaskNotFoundError
 from .models import (
-    ErrorResponse,
     RegisteredTaskName,
     TaskBase,
     TaskContext,
@@ -66,43 +63,19 @@ async def get_task_status(
     )
 
 
-@router.expose(reraise_if_error_type=(BaseLongRunningError,))
+@router.expose(reraise_if_error_type=(BaseLongRunningError, RPCTransferrableTaskError))
 async def get_task_result(
     long_running_manager: "BaseLongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
-) -> ErrorResponse | str:
+) -> str:
     try:
         result_field = await long_running_manager.tasks_manager.get_task_result(
             task_id, with_task_context=task_context
         )
-        if result_field.error_response is not None:
-            task_raised_error_traceback = result_field.error_response.str_traceback
-            task_raised_error = string_to_object(
-                result_field.error_response.str_error_object
-            )
-            _logger.info(
-                **create_troubleshootting_log_kwargs(
-                    f"Execution of {task_id=} finished with error:\n{task_raised_error_traceback}",
-                    error=task_raised_error,
-                    error_context={
-                        "task_id": task_id,
-                        "task_context": task_context,
-                        "namespace": long_running_manager.lrt_namespace,
-                    },
-                    tip="This exception is logged for debugging purposes, the client side will handle it",
-                )
-            )
-            allowed_errors = (
-                await long_running_manager.tasks_manager.get_allowed_errors(
-                    task_id, with_task_context=task_context
-                )
-            )
-            if type(task_raised_error) in allowed_errors:
-                return result_field.error_response
-
-            raise task_raised_error
+        if result_field.str_error is not None:
+            raise RPCTransferrableTaskError(result_field.str_error)
 
         if result_field.str_result is not None:
             return result_field.str_result

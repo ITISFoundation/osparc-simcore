@@ -378,8 +378,8 @@ async def test_get_result_finished_with_error(
     result = await long_running_manager.tasks_manager.get_task_result(
         task_id, with_task_context=empty_context
     )
-    assert result.error_response is not None  # nosec
-    error = string_to_object(result.error_response.str_error_object)
+    assert result.str_error is not None  # nosec
+    error = string_to_object(result.str_error)
     with pytest.raises(_TetingError, match="failing asap"):
         raise error
 
