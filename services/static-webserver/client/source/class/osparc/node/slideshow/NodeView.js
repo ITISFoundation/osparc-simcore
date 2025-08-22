@@ -40,6 +40,21 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     LOGGER_HEIGHT: 28,
   },
 
+  statics: {
+    handleIframeStateChange: function(node, iframeLayout) {
+      iframeLayout.removeAll();
+      if (node && node.getIFrame()) {
+        const loadingPage = node.getLoadingPage();
+        const iFrame = node.getIFrame();
+        const src = iFrame.getSource();
+        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+        iframeLayout.add(iFrameView, {
+          flex: 1
+        });
+      }
+    },
+  },
+
   members: {
     __loggerPanel: null,
 
@@ -134,18 +149,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     },
 
     __iFrameStateChanged: function() {
-      this._iFrameLayout.removeAll();
-
-      const node = this.getNode();
-      if (node && node.getIFrame()) {
-        const loadingPage = node.getLoadingPage();
-        const iFrame = node.getIFrame();
-        const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        this._iFrameLayout.add(iFrameView, {
-          flex: 1
-        });
-      }
+      osparc.node.slideshow.NodeView.handleIframeStateChange(this.getNode(), this._iFrameLayout);
     }
   }
 });

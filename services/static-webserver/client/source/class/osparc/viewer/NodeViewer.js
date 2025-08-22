@@ -89,18 +89,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     },
 
     __iFrameStateChanged: function() {
-      this._removeAll();
-
-      if (this.getNode() && this.getNode().getIframeHandler()) {
-        const iframeHandler = this.getNode().getIframeHandler();
-        const loadingPage = iframeHandler.getLoadingPage();
-        const iFrame = iframeHandler.getIFrame();
-        const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        this._add(iFrameView, {
-          flex: 1
-        });
-      }
+      osparc.node.slideshow.NodeView.handleIframeStateChange(this.getNode(), this);
     },
 
     __attachSocketEventHandlers: function() {
