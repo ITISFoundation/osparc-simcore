@@ -19,6 +19,7 @@ from pytest_simcore.helpers.webserver_login import LoggedUser, UserInfoDict
 from servicelib.aiohttp import status
 from simcore_service_webserver.conversations import _conversation_service
 from simcore_service_webserver.db.models import UserRole
+from simcore_service_webserver.projects.models import ProjectDict
 
 
 @pytest.fixture
@@ -411,34 +412,40 @@ async def test_conversations_error_handling(
 async def test_conversations_without_type_query_param(
     client: TestClient,
     logged_user: UserInfoDict,
+    user_project: ProjectDict,
 ):
     """Test that endpoints require type query parameter"""
-    base_url = client.app.router["list_conversations"].url_for()
 
-    # Create a conversation first
-    body = {"name": "Test Conversation", "type": "SUPPORT"}
-    resp = await client.post(f"{base_url}", json=body)
+    # Create a conversation via project endpoint first
+    project_id = f"{user_project['uuid']}"
+    project_conversation_url = client.app.router["create_project_conversation"].url_for(
+        project_id=f"{project_id}"
+    )
+    body = {"name": "Test Conversation", "type": "PROJECT_STATIC"}
+    resp = await client.post(f"{project_conversation_url}", json=body)
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
     conversation_id = data["conversationId"]
 
-    # Test endpoints without type parameter should fail
-    resp = await client.get(f"{base_url}")
+    # Test list endpoint without type parameter should fail
+    list_url = client.app.router["list_conversations"].url_for()
+    resp = await client.get(f"{list_url}")
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
+    # All other endpoints should return 400, because we currently support only SUPPORT type
     get_url = client.app.router["get_conversation"].url_for(
         conversation_id=conversation_id
     )
     resp = await client.get(f"{get_url}")
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
 
     update_url = client.app.router["update_conversation"].url_for(
         conversation_id=conversation_id
     )
     resp = await client.patch(f"{update_url}", json={"name": "Updated"})
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)
 
     delete_url = client.app.router["delete_conversation"].url_for(
         conversation_id=conversation_id
     )
     resp = await client.delete(f"{delete_url}")
-    await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
+    await assert_status(resp, status.HTTP_400_BAD_REQUEST)

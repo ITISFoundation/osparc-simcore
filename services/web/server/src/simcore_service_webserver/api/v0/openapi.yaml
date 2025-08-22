@@ -516,12 +516,6 @@ paths:
       - conversations
       summary: Create Conversation
       operationId: create_conversation
-      parameters:
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       requestBody:
         required: true
         content:
@@ -541,11 +535,6 @@ paths:
       summary: List Conversations
       operationId: list_conversations
       parameters:
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       - name: limit
         in: query
         required: false
@@ -563,6 +552,11 @@ paths:
           minimum: 0
           default: 0
           title: Offset
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
       responses:
         '200':
           description: Successful Response
@@ -584,11 +578,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       requestBody:
         required: true
         content:
@@ -615,11 +604,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       responses:
         '204':
           description: Successful Response
@@ -636,11 +620,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       responses:
         '200':
           description: Successful Response
