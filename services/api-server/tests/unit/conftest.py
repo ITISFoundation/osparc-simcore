@@ -57,8 +57,10 @@ from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
+from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.repository.api_keys import UserAndProductTuple
 from simcore_service_api_server.services_http.solver_job_outputs import ResultsTypes
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
@@ -67,6 +69,19 @@ from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 @pytest.fixture
 def product_name() -> ProductName:
     return "osparc"
+
+
+@pytest.fixture
+def user_identity(
+    user_id: UserID,
+    user_email: EmailStr,
+    product_name: ProductName,
+) -> Identity:
+    return Identity(
+        user_id=user_id,
+        product_name=product_name,
+        email=user_email,
+    )
 
 
 @pytest.fixture
@@ -547,6 +562,15 @@ def mocked_catalog_rest_api_base(
 def project_job_rpc_get() -> ProjectJobRpcGet:
     example = ProjectJobRpcGet.model_json_schema()["examples"][0]
     return ProjectJobRpcGet.model_validate(example)
+
+
+@pytest.fixture
+def job_links() -> JobLinks:
+    extra = JobLinks.model_config.get("json_schema_extra")
+    assert isinstance(extra, dict)
+    examples = extra.get("examples")
+    assert isinstance(examples, list) and len(examples) > 0
+    return JobLinks.model_validate(examples[0])
 
 
 @pytest.fixture

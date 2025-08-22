@@ -8,7 +8,6 @@ from servicelib.celery.models import TaskID
 from ...api.dependencies.authentication import Identity
 from ...api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ...api.dependencies.services import (
-    get_api_client,
     get_catalog_service,
     get_directorv2_service,
     get_function_job_service,
@@ -42,9 +41,9 @@ async def _assemble_function_job_service(*, app: FastAPI, user_identity: Identit
         app=app, session_cookies=session_cookie, identity=user_identity
     )
     web_api_rpc_client = await get_wb_api_rpc_client(app=app)
-    director2_api = get_api_client(DirectorV2Api)
+    director2_api = DirectorV2Api.get_instance(app=app)
     assert isinstance(director2_api, DirectorV2Api)  # nosec
-    storage_api = get_api_client(StorageApi)
+    storage_api = StorageApi.get_instance(app=app)
     assert isinstance(storage_api, StorageApi)  # nosec
     catalog_service = get_catalog_service(
         rpc_client=rpc_client,

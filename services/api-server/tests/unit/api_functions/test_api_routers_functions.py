@@ -14,7 +14,9 @@ from uuid import UUID, uuid4
 import httpx
 import pytest
 import respx
+from celery import Task
 from faker import Faker
+from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.functions import (
@@ -25,6 +27,7 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -32,14 +35,22 @@ from models_library.functions_errors import (
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
+from pydantic import EmailStr
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
+from servicelib.celery.app_server import BaseAppServer
+from servicelib.celery.models import TaskID
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.api.dependencies.authentication import Identity
+from simcore_service_api_server.celery.worker_tasks import functions_tasks
+from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 _faker = Faker()
 
@@ -377,6 +388,103 @@ async def test_run_map_function_not_allowed(
         assert response.json()["errors"][0] == (
             f"User {user_id} does not have the permission to execute functions"
         )
+
+
+@pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
+async def test_run_project_function(
+    mocker: MockerFixture,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    app: FastAPI,
+    client: AsyncClient,
+    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_registered_project_function: RegisteredProjectFunction,
+    mock_registered_project_function_job: RegisteredFunctionJob,
+    auth: httpx.BasicAuth,
+    user_identity: Identity,
+    user_email: EmailStr,
+    job_links: JobLinks,
+    mocked_webserver_rest_api_base: respx.MockRouter,
+    mocked_directorv2_rest_api_base: respx.MockRouter,
+    create_respx_mock_from_capture,
+    project_tests_dir: Path,
+    capture: str,
+) -> None:
+
+    def _get_app_server(celery_app: Any) -> FastAPI:
+        app_server = mocker.Mock(spec=BaseAppServer)
+        app_server.app = app
+        return app_server
+
+    mocker.patch.object(functions_tasks, "get_app_server", _get_app_server)
+
+    def _get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+        return mocker.MagicMock(spec=RabbitMQRPCClient)
+
+    mocker.patch.object(
+        functions_tasks, "get_rabbitmq_rpc_client", _get_rabbitmq_rpc_client
+    )
+
+    async def _get_wb_api_rpc_client(app: FastAPI) -> WbApiRpcClient:
+        wb_api_rpc_client = WbApiRpcClient(
+            _client=mocker.MagicMock(spec=RabbitMQRPCClient)
+        )
+        return wb_api_rpc_client
+
+    mocker.patch.object(
+        functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client
+    )
+
+    def _default_side_effect(
+        request: httpx.Request,
+        path_params: dict[str, Any],
+        capture: HttpApiCallCaptureModel,
+    ) -> Any:
+        return capture.response_body
+
+    create_respx_mock_from_capture(
+        respx_mocks=[mocked_webserver_rest_api_base, mocked_directorv2_rest_api_base],
+        capture_path=project_tests_dir / "mocks" / capture,
+        side_effects_callbacks=[_default_side_effect] * 50,
+    )
+
+    mock_handler_in_functions_rpc_interface(
+        "get_function_user_permissions",
+        FunctionUserAccessRights(
+            user_id=user_identity.user_id,
+            execute=True,
+            read=True,
+            write=True,
+        ),
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_function", mock_registered_project_function
+    )
+    mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
+    mock_handler_in_functions_rpc_interface(
+        "register_function_job", mock_registered_project_function_job
+    )
+    mock_handler_in_functions_rpc_interface(
+        "get_functions_user_api_access_rights",
+        FunctionUserApiAccessRights(
+            user_id=user_identity.user_id,
+            execute_functions=True,
+            write_functions=True,
+            read_functions=True,
+        ),
+    )
+
+    job = await functions_tasks.run_function(
+        task=MagicMock(spec=Task),
+        task_id=TaskID(_faker.uuid4()),
+        user_identity=user_identity,
+        function=mock_registered_project_function,
+        function_inputs={},
+        pricing_spec=None,
+        job_links=job_links,
+        x_simcore_parent_project_uuid=None,
+        x_simcore_parent_node_id=None,
+    )
+    assert isinstance(job, RegisteredProjectFunctionJob)
 
 
 @pytest.mark.parametrize(
