@@ -56,14 +56,15 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
         node.getPropsForm().hasVisibleInputs()
       ) {
         this._settingsLayout.add(node.getPropsForm());
+
+        // lock the inputs if the node is locked
+        node.getStatus().getLockState().bind("locked", node.getPropsForm(), "enabled", {
+          converter: locked => !locked
+        });
       }
 
       const showSettings = node.isComputational();
       this._settingsLayout.setVisibility(showSettings ? "visible" : "excluded");
-
-      node.getStudy().bind("pipelineRunning", this._settingsLayout, "enabled", {
-        converter: pipelineRunning => !pipelineRunning
-      });
 
       this._mainView.add(this._settingsLayout);
     },
@@ -75,10 +76,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
       if (loadingPage && iFrame) {
-        const node = this.getNode();
-        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(), this);
-        iFrame.addListener("load", () => this.__iFrameChanged());
-        this.__iFrameChanged();
+        osparc.desktop.WorkbenchView.listenToIframeStateChanges(this.getNode(), this._iFrameLayout);
       } else {
         // This will keep what comes after at the bottom
         this._iFrameLayout.add(new qx.ui.core.Spacer(), {
@@ -131,20 +129,5 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     _applyNode: function(node) {
       this.base(arguments, node);
     },
-
-    __iFrameChanged: function() {
-      this._iFrameLayout.removeAll();
-
-      const node = this.getNode();
-      if (node && node.getIFrame()) {
-        const loadingPage = node.getLoadingPage();
-        const iFrame = node.getIFrame();
-        const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        this._iFrameLayout.add(iFrameView, {
-          flex: 1
-        });
-      }
-    }
   }
 });
