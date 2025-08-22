@@ -530,7 +530,7 @@ async def list_users_in_group_with_caller_check(
         ]
 
 
-async def list_all_users_in_group(
+async def list_users_in_group(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -550,13 +550,12 @@ async def list_all_users_in_group(
 
         # Get all users in the group
         query = (
-            sa.select(
-                users.c.id,
-                users.c.name,
-                users.c.primary_gid,
-                user_to_groups.c.access_rights,
+            sa.select(*_GROUP_COLUMNS)
+            .select_from(
+                groups.join(
+                    user_to_groups, user_to_groups.c.gid == groups.c.gid, isouter=True
+                ).join(users, users.c.id == user_to_groups.c.uid)
             )
-            .select_from(users.join(user_to_groups, users.c.id == user_to_groups.c.uid))
             .where(user_to_groups.c.gid == group_id)
         )
 

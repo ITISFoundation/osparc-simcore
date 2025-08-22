@@ -25,11 +25,11 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.users import users_service
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
+from ...users import users_service
 from ...utils_aiohttp import envelope_json_response
 from .. import _conversation_service, conversations_service
 from ._common import ConversationPathParams, raise_unsupported_type

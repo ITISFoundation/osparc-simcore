@@ -165,7 +165,7 @@ async def list_group_members_with_caller_check(
 async def list_group_members(
     app: web.Application, group_id: GroupID
 ) -> list[GroupMember]:
-    return await _groups_repository.list_all_users_in_group(app, group_id=group_id)
+    return await _groups_repository.list_users_in_group(app, group_id=group_id)
 
 
 async def get_group_member(
