@@ -48,7 +48,8 @@ if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
       --recursive \
       -- \
       celery \
-      --app=simcore_service_api_server.celery.worker_main:app \
+      --app=boot_celery_worker:app \
+      --workdir=services/api-server/docker \
       worker --pool=threads \
       --loglevel="${API_SERVER_LOGLEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
@@ -56,7 +57,8 @@ if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
       --queues="${CELERY_QUEUES:-default}"
   else
     exec celery \
-      --app=simcore_service_api_server.celery.worker_main:app \
+      --app=boot_celery_worker:app \
+      --workdir=services/api-server/docker \
       worker --pool=threads \
       --loglevel="${API_SERVER_LOGLEVEL}" \
       --concurrency="${CELERY_CONCURRENCY}" \
