@@ -6,7 +6,7 @@ from typing import Final
 
 from aiohttp import web
 from models_library.groups import GroupID
-from models_library.projects_state import RunningState
+from models_library.projects_state import RUNNING_STATE_COMPLETED_STATES
 from models_library.rabbitmq_messages import (
     ComputationalPipelineStatusMessage,
     EventRabbitMessage,
@@ -20,9 +20,9 @@ from models_library.socketio import SocketMessageDict
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
-from servicelib.utils import logged_gather
+from servicelib.utils import limited_gather, logged_gather
 
-from ..projects import _projects_service
+from ..projects import _nodes_service, _projects_service
 from ..rabbitmq import get_rabbitmq_client
 from ..socketio.messages import (
     SOCKET_IO_EVENT,
@@ -81,6 +81,10 @@ async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
+def _is_computational_node(node_key: str) -> bool:
+    return "/comp/" in node_key
+
+
 async def _computational_pipeline_status_message_parser(
     app: web.Application, data: bytes
 ) -> bool:
@@ -91,6 +95,25 @@ async def _computational_pipeline_status_message_parser(
         rabbit_message.user_id,
         include_state=True,
     )
+    if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
+        # the pipeline finished, the frontend needs to update all computational nodes
+        computational_node_ids = (
+            n.node_id
+            for n in await _nodes_service.get_project_nodes(
+                app, project_uuid=project["uuid"]
+            )
+            if _is_computational_node(n.key)
+        )
+
+        await limited_gather(
+            *[
+                _projects_service.notify_project_node_update(
+                    app, project, n_id, errors=None
+                )
+                for n_id in computational_node_ids
+            ],
+            limit=10,  # notify 10 nodes at a time
+        )
     await _projects_service.notify_project_state_update(app, project)
 
     return True
