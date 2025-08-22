@@ -1962,15 +1962,15 @@ async def add_project_states_for_user(
                 node_id=NodeID(node_uuid),
             )
         if NodeID(node_uuid) in computational_node_states:
-            node_state = computational_node_states[NodeID(node_uuid)].model_copy(
-                update={"lock_state": node_lock_state}
-            )
+            computed_node_state = computational_node_states[
+                NodeID(node_uuid)
+            ].model_copy(update={"lock_state": node_lock_state})
         else:
             # if the node is not in the computational state, we create a new one
             service_is_running = node_lock_state and (
                 node_lock_state.status is NodeShareStatus.OPENED
             )
-            node_state = NodeState(
+            computed_node_state = NodeState(
                 current_status=(
                     RunningState.STARTED
                     if service_is_running
@@ -1980,9 +1980,14 @@ async def add_project_states_for_user(
             )
 
         # upgrade the project
-        node.setdefault("state", {}).update(
-            node_state.model_dump(mode="json", by_alias=True, exclude_unset=True)
+        # NOTE: copy&dump step avoids both alias and field-names to be keys in the dict
+        # e.g. "current_status" and "currentStatus"
+        current_node_state = NodeState.model_validate(node.get("state", {}))
+        updated_node_state = current_node_state.model_copy(
+            update=computed_node_state.model_dump(mode="json", exclude_unset=True)
         )
+        node["state"] = updated_node_state.model_dump(by_alias=True, exclude_unset=True)
+
         if "progress" in node["state"] and node["state"]["progress"] is not None:
             # ensure progress is a percentage
             node["progress"] = round(node["state"]["progress"] * 100.0)

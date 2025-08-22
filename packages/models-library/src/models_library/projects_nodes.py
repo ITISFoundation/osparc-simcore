@@ -177,13 +177,21 @@ class NodeState(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        populate_by_name=True,
+        validate_by_alias=True,
+        validate_by_name=True,
         json_schema_extra={
             "examples": [
+                # example with alias name
                 {
                     "modified": True,
                     "dependencies": [],
                     "currentStatus": "NOT_STARTED",
+                },
+                # example with field name
+                {
+                    "modified": True,
+                    "dependencies": [],
+                    "current_status": "NOT_STARTED",
                 },
                 {
                     "modified": True,
