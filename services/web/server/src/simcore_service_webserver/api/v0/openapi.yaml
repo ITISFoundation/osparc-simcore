@@ -10504,11 +10504,9 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
-          description: Total items
         current_page:
           anyOf:
           - type: string
@@ -10536,6 +10534,7 @@ components:
       type: object
       required:
       - items
+      - total
       title: CursorPage[~_T]Customized[PathMetaDataGet]
     DatCoreFileLink:
       properties:
@@ -14650,28 +14649,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14679,6 +14670,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunRestGet]
     Page_ComputationCollectionRunTaskRestGet_:
       properties:
@@ -14688,28 +14680,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14717,6 +14701,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunTaskRestGet]
     Page_ComputationRunRestGet_:
       properties:
@@ -14726,28 +14711,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14755,6 +14732,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationRunRestGet]
     Page_ComputationTaskRestGet_:
       properties:
@@ -14764,28 +14742,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14793,6 +14763,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationTaskRestGet]
     Page_ConversationMessageRestGet_:
       properties:

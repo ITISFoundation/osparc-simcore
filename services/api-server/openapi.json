@@ -9788,13 +9788,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "first",
-          "last",
-          "self",
-          "next",
-          "prev"
-        ],
         "title": "Links"
       },
       "LogLink": {
@@ -9962,43 +9955,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -10039,43 +10012,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -10098,43 +10051,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -10157,43 +10090,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -10216,43 +10129,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -10275,43 +10168,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -10334,43 +10207,23 @@
             "title": "Items"
           },
           "total": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Total"
           },
           "limit": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 1,
             "title": "Limit"
           },
           "offset": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "integer",
+            "minimum": 0,
             "title": "Offset"
           },
           "links": {
-            "$ref": "#/components/schemas/Links"
+            "$ref": "#/components/schemas/Links",
+            "readOnly": true
           }
         },
         "type": "object",
