@@ -612,6 +612,10 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getIframeHandler() ? this.getIframeHandler().getLoadingPage() : null;
     },
 
+    getLockedPage: function() {
+      return this.getIframeHandler() ? this.getIframeHandler().getLockedPage() : null;
+    },
+
     __applyPropsForm: function(propsForm) {
       osparc.utils.Utils.setIdToWidget(propsForm, "settingsForm_" + this.getNodeId());
     },
