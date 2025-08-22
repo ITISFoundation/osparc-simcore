@@ -560,11 +560,11 @@ async def update_project_node_resources_from_hardware_info(
         return
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        unordered_list_ec2_instance_types: list[
-            EC2InstanceTypeGet
-        ] = await get_instance_type_details(
-            rabbitmq_rpc_client,
-            instance_type_names=set(hardware_info.aws_ec2_instances),
+        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
+            await get_instance_type_details(
+                rabbitmq_rpc_client,
+                instance_type_names=set(hardware_info.aws_ec2_instances),
+            )
         )
 
         assert unordered_list_ec2_instance_types  # nosec
@@ -1369,7 +1369,7 @@ async def _get_node_share_state(
     *,
     project_uuid: ProjectID,
     node_id: NodeID,
-    computational_pipeline_running: bool,
+    computational_pipeline_running: bool | None,
     user_primrary_groupid: GroupID,
 ) -> NodeShareState:
     node = await _projects_nodes_repository.get(
@@ -1914,9 +1914,8 @@ async def add_project_states_for_user(
     )
 
     # compose the node states
-    is_pipeline_running = (
-        await director_v2_service.is_pipeline_running(app, user_id, project["uuid"])
-        or True
+    is_pipeline_running = await director_v2_service.is_pipeline_running(
+        app, user_id, project["uuid"]
     )
     user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id)
     for node_uuid, node in project["workbench"].items():
