@@ -30,6 +30,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     });
 
     this.__initLoadingPage();
+    this.__initLockedPage();
     this.__initIFrame();
   },
 
@@ -44,11 +45,18 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     node: {
       check: "osparc.data.model.Node",
       init: null,
-      nullable: false
+      nullable: false,
+      event: "changeNode",
     },
 
     loadingPage: {
       check: "osparc.ui.message.Loading",
+      init: null,
+      nullable: true
+    },
+
+    lockedPage: {
+      check: "osparc.ui.message.Locked",
       init: null,
       nullable: true
     },
@@ -108,6 +116,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const loadingPage = new osparc.ui.message.Loading().set({
         header: this.__getLoadingPageHeader()
       });
+
       if (osparc.product.Utils.isProduct("s4llite")) {
         loadingPage.setShowToolbar(false);
       } else {
@@ -144,6 +153,12 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       const metadata = node.getMetadata();
       const versionDisplay = osparc.service.Utils.extractVersionDisplay(metadata);
       return statusText + " " + node.getLabel() + " <span style='font-size: 16px;font-weight: normal;'><sub>v" + versionDisplay + "</sub></span>";
+    },
+
+    __initLockedPage: function() {
+      const lockedPage = new osparc.ui.message.Locked();
+      this.bind("node", lockedPage, "node");
+      this.setLockedPage(lockedPage);
     },
 
     __nodeState: function() {
