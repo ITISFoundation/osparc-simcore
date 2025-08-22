@@ -14,8 +14,7 @@ from pydantic import NonNegativeFloat, PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
-    TryAgain,
-    retry_if_exception_type,
+    retry_unless_exception_type,
     stop_after_delay,
     wait_exponential,
 )
@@ -458,17 +457,16 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         # wait for task to be removed since it might not have been running
         # in this process
-        async for attempt in AsyncRetrying(
-            wait=wait_exponential(max=1),
-            stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
-            retry=retry_if_exception_type(TryAgain),
-        ):
-            with attempt:  # noqa: SIM117
-                with suppress(TaskNotFoundError):
+        with suppress(TaskNotFoundError):
+            async for attempt in AsyncRetrying(
+                wait=wait_exponential(max=1),
+                stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
+                retry=retry_unless_exception_type(TaskNotFoundError),
+            ):
+                with attempt:
                     await self._get_tracked_task(
                         tracked_task.task_id, tracked_task.task_context
                     )
-                    raise TryAgain
 
     def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
         suffix = "unique" if is_unique else f"{uuid4()}"
