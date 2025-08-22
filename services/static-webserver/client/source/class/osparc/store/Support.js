@@ -19,6 +19,26 @@ qx.Class.define("osparc.store.Support", {
       return osparc.store.VendorInfo.getInstance().getManuals();
     },
 
+    addSupportConversationsToMenu: function(menu) {
+      if (osparc.product.Utils.isSupportEnabled()) {
+        const supportCenterButton = new qx.ui.menu.Button().set({
+          icon: "@FontAwesome5Regular/question-circle/16",
+        });
+        const amISupporter = () => {
+          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
+          supportCenterButton.set({
+            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Support"),
+          });
+        };
+        amISupporter();
+        osparc.store.Groups.getInstance().addListener("organizationsChanged", () => amISupporter());
+        supportCenterButton.addListener("execute", () => {
+          osparc.support.SupportCenter.openWindow();
+        });
+        menu.add(supportCenterButton);
+      }
+    },
+
     addQuickStartToMenu: function(menu) {
       const quickStart = osparc.product.quickStart.Utils.getQuickStart();
       if (quickStart) {
