@@ -156,7 +156,7 @@ def create_workbench_subquery(project_id: str) -> Subquery:
         sa.select(
             projects_nodes.c.project_uuid,
             sa.func.json_object_agg(
-                projects_nodes.c.node_id, sa.func.json_strip_nulls(workbench_obj)
+                projects_nodes.c.node_id, sa.func.json(workbench_obj)
             ).label("workbench"),
         )
         .select_from(
