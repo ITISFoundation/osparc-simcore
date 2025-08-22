@@ -11,11 +11,7 @@ from aiohttp.test_utils import TestClient
 from models_library.groups import GroupMember, StandardGroupCreate
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.groups._groups_repository import (
-    create_standard_group,
-    delete_standard_group,
-    list_users_in_group,
-)
+from simcore_service_webserver.groups import _groups_repository
 
 
 @pytest.fixture
@@ -30,7 +26,7 @@ async def create_test_group(
         description: str = "A test group",
         thumbnail: str | None = None,
     ):
-        group, _ = await create_standard_group(
+        group, _ = await _groups_repository.create_standard_group(
             app=client.app,
             user_id=logged_user["id"],
             create=StandardGroupCreate(
@@ -46,7 +42,7 @@ async def create_test_group(
 
     # Cleanup all created groups
     for group in created_groups:
-        await delete_standard_group(
+        await _groups_repository.delete_standard_group(
             app=client.app, user_id=logged_user["id"], group_id=group.gid
         )
 
@@ -56,7 +52,7 @@ async def test_list_users_in_group_owner_only(
     client: TestClient,
     user_role: UserRole,
     logged_user: UserInfoDict,
-    create_test_group,
+    create_test_group: Callable[..., Coroutine[Any, Any, Any]],
 ):
     """Test list_users_in_group returns only the owner for a new group."""
     assert client.app
@@ -68,7 +64,9 @@ async def test_list_users_in_group_owner_only(
     )
 
     # List users in the group - should only contain the owner
-    users_in_group = await list_users_in_group(app=client.app, group_id=group.gid)
+    users_in_group = await _groups_repository.list_users_in_group(
+        app=client.app, group_id=group.gid
+    )
 
     # Should contain exactly one user (the owner)
     assert len(users_in_group) == 1
