@@ -3,7 +3,7 @@ Models both project and node states
 """
 
 from enum import Enum, unique
-from typing import Annotated, Self, TypeAlias
+from typing import Annotated, Final, Self, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -63,6 +63,13 @@ class RunningState(str, Enum):
 
     def is_running(self) -> bool:
         return self in self.list_running_states()
+
+
+RUNNING_STATE_COMPLETED_STATES: Final[tuple[RunningState, ...]] = (
+    RunningState.ABORTED,
+    RunningState.FAILED,
+    RunningState.SUCCESS,
+)
 
 
 @unique
