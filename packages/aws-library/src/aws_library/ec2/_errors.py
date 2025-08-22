@@ -36,3 +36,7 @@ class EC2TooManyInstancesError(EC2AccessError):
     msg_template: str = (
         "The maximum amount of instances {num_instances} is already reached!"
     )
+
+
+class EC2InsufficientCapacityError(EC2AccessError):
+    msg_template: str = "Insufficient capacity in {subnet_id} for {instance_type}"
