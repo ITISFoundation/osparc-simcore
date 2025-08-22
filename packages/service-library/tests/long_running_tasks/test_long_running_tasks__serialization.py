@@ -40,7 +40,10 @@ class MixedArguments:
 def test_serialization(obj: Any):
     str_data = dumps(obj)
 
-    reconstructed_obj = loads(str_data)
+    try:
+        reconstructed_obj = loads(str_data)
+    except Exception as exc:  # pylint:disable=broad-exception-caught
+        reconstructed_obj = exc
 
     assert type(reconstructed_obj) is type(obj)
     if hasattr(obj, "__dict__"):
