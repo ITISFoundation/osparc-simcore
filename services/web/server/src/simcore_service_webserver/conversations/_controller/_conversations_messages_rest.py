@@ -118,9 +118,9 @@ async def create_conversation_message(request: web.Request):
             )
             _url = request.url
             if _url.port:
-                _conversation_url = f"{_url.scheme}://{_url.host}:{_url.port}/#/conversations/{path_params.conversation_id}"
+                _conversation_url = f"{_url.scheme}://{_url.host}:{_url.port}/#/conversation/{path_params.conversation_id}"
             else:
-                _conversation_url = f"{_url.scheme}://{_url.host}/#/conversations/{path_params.conversation_id}"
+                _conversation_url = f"{_url.scheme}://{_url.host}/#/conversation/{path_params.conversation_id}"
             _extra_context = _conversation.extra_context
             await email_service.send_email_from_template(
                 request,
