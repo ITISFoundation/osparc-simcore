@@ -194,9 +194,10 @@ class Port(BaseServiceIOModel):
         )
 
         async def _evaluate() -> ItemValue | None:
+            # NOTE: review types returned by this function !!!
             if isinstance(self.value, PortLink):
                 # this is a link to another node's port
-                other_port_itemvalue: None | (ItemValue) = (
+                other_port_itemvalue: ItemValue | None = (
                     await port_utils.get_value_link_from_port_link(
                         self.value,
                         # pylint: disable=protected-access
@@ -209,7 +210,7 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, FileLink):
                 # let's get the download/upload link from storage
-                url_itemvalue: None | (AnyUrl) = (
+                url_itemvalue: AnyUrl | None = (
                     await port_utils.get_download_link_from_storage(
                         # pylint: disable=protected-access
                         user_id=self._node_ports.user_id,
