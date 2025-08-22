@@ -136,8 +136,6 @@ qx.Class.define("osparc.ui.basic.AvatarGroup", {
       });
 
       this.__expand(false);
-
-      this.setVisibility(this.__avatars.length ? "visible" : "excluded");
     },
 
     __expand: function(expand = true) {
