@@ -164,7 +164,7 @@ qx.Class.define("osparc.data.model.Function", {
         return osparc.share.CollaboratorsFunction.canGroupsWrite(accessRights, (orgIDs));
       }
       return false;
-    }
+    },
   },
 
   members: {
