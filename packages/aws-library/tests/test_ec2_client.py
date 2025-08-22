@@ -7,6 +7,7 @@ import random
 from collections.abc import AsyncIterator, Callable
 from dataclasses import fields
 from typing import cast, get_args
+from unittest.mock import patch
 
 import botocore.exceptions
 import pytest
@@ -14,6 +15,7 @@ from aws_library.ec2._client import SimcoreEC2API
 from aws_library.ec2._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
+    EC2InsufficientCapacityError,
     EC2TooManyInstancesError,
 )
 from aws_library.ec2._models import (
@@ -617,3 +619,303 @@ async def test_launch_instances_multi_subnet_fallback(
         expected_tags=ec2_instance_config.tags,
         expected_state="running",
     )
+
+
+async def test_launch_instances_multi_subnet_fallback_with_invalid_subnets(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+):
+    """Test that launch_instances uses multiple valid subnets correctly."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional valid subnets for testing
+    vpc_id = (await ec2_client.describe_subnets(SubnetIds=[aws_subnet_id]))["Subnets"][
+        0
+    ]["VpcId"]
+
+    # Create second subnet
+    subnet2 = await ec2_client.create_subnet(CidrBlock="10.0.2.0/24", VpcId=vpc_id)
+    subnet2_id = subnet2["Subnet"]["SubnetId"]
+
+    # Create third subnet
+    subnet3 = await ec2_client.create_subnet(CidrBlock="10.0.3.0/24", VpcId=vpc_id)
+    subnet3_id = subnet3["Subnet"]["SubnetId"]
+
+    try:
+        # Create a config with multiple valid subnet IDs
+        ec2_instance_config = EC2InstanceConfig(
+            type=fake_ec2_instance_type,
+            tags=faker.pydict(allowed_types=(str,)),
+            startup_script=faker.pystr(),
+            ami_id=aws_ami_id,
+            key_name=faker.pystr(),
+            security_group_ids=[aws_security_group_id],
+            subnet_ids=[aws_subnet_id, subnet2_id, subnet3_id],
+            iam_instance_profile="",
+        )
+
+        # This should succeed using one of the valid subnets
+        instances = await simcore_ec2_api.launch_instances(
+            ec2_instance_config,
+            min_number_of_instances=1,
+            number_of_instances=1,
+        )
+
+        # Verify that the instance was created in one of the configured subnets
+        await _assert_instances_in_ec2(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=1,
+            expected_instance_type=ec2_instance_config.type,
+            expected_tags=ec2_instance_config.tags,
+            expected_state="running",
+        )
+
+        # Verify the instance was created in one of the valid subnets
+        instance_details = await ec2_client.describe_instances(
+            InstanceIds=[instances[0].id]
+        )
+        instance = instance_details["Reservations"][0]["Instances"][0]
+        assert instance["SubnetId"] in [aws_subnet_id, subnet2_id, subnet3_id]
+
+    finally:
+        # Clean up additional subnets
+        await ec2_client.delete_subnet(SubnetId=subnet2_id)
+        await ec2_client.delete_subnet(SubnetId=subnet3_id)
+
+
+async def test_launch_instances_multi_subnet_configuration(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+):
+    """Test that launch_instances works with multiple valid subnets configuration."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional valid subnets for testing
+    vpc_id = (await ec2_client.describe_subnets(SubnetIds=[aws_subnet_id]))["Subnets"][
+        0
+    ]["VpcId"]
+
+    # Create second subnet
+    subnet2 = await ec2_client.create_subnet(CidrBlock="10.0.2.0/24", VpcId=vpc_id)
+    subnet2_id = subnet2["Subnet"]["SubnetId"]
+
+    # Create third subnet
+    subnet3 = await ec2_client.create_subnet(CidrBlock="10.0.3.0/24", VpcId=vpc_id)
+    subnet3_id = subnet3["Subnet"]["SubnetId"]
+
+    try:
+        # Create a config with multiple valid subnet IDs
+        ec2_instance_config = EC2InstanceConfig(
+            type=fake_ec2_instance_type,
+            tags=faker.pydict(allowed_types=(str,)),
+            startup_script=faker.pystr(),
+            ami_id=aws_ami_id,
+            key_name=faker.pystr(),
+            security_group_ids=[aws_security_group_id],
+            subnet_ids=[aws_subnet_id, subnet2_id, subnet3_id],
+            iam_instance_profile="",
+        )
+
+        # This should succeed using one of the valid subnets
+        instances = await simcore_ec2_api.launch_instances(
+            ec2_instance_config,
+            min_number_of_instances=1,
+            number_of_instances=1,
+        )
+
+        # Verify that the instance was created in one of the configured subnets
+        await _assert_instances_in_ec2(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=1,
+            expected_instance_type=ec2_instance_config.type,
+            expected_tags=ec2_instance_config.tags,
+            expected_state="running",
+        )
+
+        # Verify the instance was created in one of the valid subnets
+        instance_details = await ec2_client.describe_instances(
+            InstanceIds=[instances[0].id]
+        )
+        instance = instance_details["Reservations"][0]["Instances"][0]
+        assert instance["SubnetId"] in [aws_subnet_id, subnet2_id, subnet3_id]
+
+    finally:
+        # Clean up additional subnets
+        await ec2_client.delete_subnet(SubnetId=subnet2_id)
+        await ec2_client.delete_subnet(SubnetId=subnet3_id)
+
+
+async def test_launch_instances_insufficient_capacity_fallback(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+):
+    """Test that launch_instances falls back to next subnet when InsufficientInstanceCapacity occurs."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional valid subnets for testing
+    vpc_id = (await ec2_client.describe_subnets(SubnetIds=[aws_subnet_id]))["Subnets"][
+        0
+    ]["VpcId"]
+
+    # Create second subnet
+    subnet2 = await ec2_client.create_subnet(CidrBlock="10.0.2.0/24", VpcId=vpc_id)
+    subnet2_id = subnet2["Subnet"]["SubnetId"]
+
+    try:
+        # Create a config with multiple valid subnet IDs
+        ec2_instance_config = EC2InstanceConfig(
+            type=fake_ec2_instance_type,
+            tags=faker.pydict(allowed_types=(str,)),
+            startup_script=faker.pystr(),
+            ami_id=aws_ami_id,
+            key_name=faker.pystr(),
+            security_group_ids=[aws_security_group_id],
+            subnet_ids=[aws_subnet_id, subnet2_id],
+            iam_instance_profile="",
+        )
+
+        # Mock the EC2 client to simulate InsufficientInstanceCapacity on first subnet
+        original_run_instances = simcore_ec2_api.client.run_instances
+        call_count = 0
+
+        async def mock_run_instances(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # First call (first subnet) - simulate insufficient capacity
+                error_response = {
+                    "Error": {
+                        "Code": "InsufficientInstanceCapacity",
+                        "Message": "Insufficient capacity.",
+                    }
+                }
+                raise botocore.exceptions.ClientError(error_response, "RunInstances")
+            # Second call (second subnet) - succeed normally
+            return await original_run_instances(*args, **kwargs)
+
+        # Apply the mock
+        with patch.object(
+            simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
+        ):
+            instances = await simcore_ec2_api.launch_instances(
+                ec2_instance_config,
+                min_number_of_instances=1,
+                number_of_instances=1,
+            )
+
+        # Verify that run_instances was called twice (once for each subnet)
+        assert call_count == 2
+
+        # Verify that the instance was created (in the second subnet)
+        await _assert_instances_in_ec2(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=1,
+            expected_instance_type=ec2_instance_config.type,
+            expected_tags=ec2_instance_config.tags,
+            expected_state="running",
+        )
+
+        # Verify the instance was created in the second subnet (since first failed)
+        instance_details = await ec2_client.describe_instances(
+            InstanceIds=[instances[0].id]
+        )
+        instance = instance_details["Reservations"][0]["Instances"][0]
+        assert instance["SubnetId"] == subnet2_id
+
+    finally:
+        # Clean up additional subnet
+        await ec2_client.delete_subnet(SubnetId=subnet2_id)
+
+
+async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+):
+    """Test that launch_instances raises EC2InsufficientCapacityError when all subnets have insufficient capacity."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional valid subnets for testing
+    vpc_id = (await ec2_client.describe_subnets(SubnetIds=[aws_subnet_id]))["Subnets"][
+        0
+    ]["VpcId"]
+
+    # Create second subnet
+    subnet2 = await ec2_client.create_subnet(CidrBlock="10.0.2.0/24", VpcId=vpc_id)
+    subnet2_id = subnet2["Subnet"]["SubnetId"]
+
+    try:
+        # Create a config with multiple valid subnet IDs
+        ec2_instance_config = EC2InstanceConfig(
+            type=fake_ec2_instance_type,
+            tags=faker.pydict(allowed_types=(str,)),
+            startup_script=faker.pystr(),
+            ami_id=aws_ami_id,
+            key_name=faker.pystr(),
+            security_group_ids=[aws_security_group_id],
+            subnet_ids=[aws_subnet_id, subnet2_id],
+            iam_instance_profile="",
+        )
+
+        # Mock the EC2 client to simulate InsufficientInstanceCapacity on ALL subnets
+        call_count = 0
+
+        async def mock_run_instances(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            # Always simulate insufficient capacity
+            error_response = {
+                "Error": {
+                    "Code": "InsufficientInstanceCapacity",
+                    "Message": "Insufficient capacity.",
+                }
+            }
+            raise botocore.exceptions.ClientError(error_response, "RunInstances")
+
+        # Apply the mock and expect EC2InsufficientCapacityError
+        with (
+            patch.object(
+                simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
+            ),
+            pytest.raises(EC2InsufficientCapacityError) as exc_info,
+        ):
+            await simcore_ec2_api.launch_instances(
+                ec2_instance_config,
+                min_number_of_instances=1,
+                number_of_instances=1,
+            )
+
+        # Verify that run_instances was called for both subnets
+        assert call_count == 2
+
+        # Verify the error contains the expected information
+        assert exc_info.value.instance_type == fake_ec2_instance_type.name
+
+        # Verify no instances were created
+        await _assert_no_instances_in_ec2(ec2_client)
+
+    finally:
+        # Clean up additional subnet
+        await ec2_client.delete_subnet(SubnetId=subnet2_id)
