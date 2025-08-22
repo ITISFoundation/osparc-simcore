@@ -69,7 +69,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
   },
 
   events: {
-    "iframeChanged": "qx.event.type.Event"
+    "iframeStateChanged": "qx.event.type.Event"
   },
 
   members: {
@@ -396,7 +396,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         if (this.getIFrame()) {
           this.getIFrame().resetSource();
         }
-        this.fireEvent("iframeChanged");
+        this.fireEvent("iframeStateChanged");
       }
     },
 
@@ -433,7 +433,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
         // fire event to force switching to iframe's content:
         // it is required in those cases where the native 'load' event isn't triggered (voila)
-        this.fireEvent("iframeChanged");
+        this.fireEvent("iframeStateChanged");
       }
     }
   }

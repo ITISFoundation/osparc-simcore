@@ -756,7 +756,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
-        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(node), this);
+        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameChanged(node), this);
         iFrame.addListener("load", () => this.__iFrameChanged(node), this);
         this.__iFrameChanged(node);
       } else {

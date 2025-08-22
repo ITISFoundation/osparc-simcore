@@ -77,7 +77,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const iFrame = this.getNode().getIFrame();
       if (loadingPage && iFrame) {
         const node = this.getNode();
-        node.getIframeHandler().addListener("iframeChanged", () => this.__iFrameChanged(), this);
+        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameChanged(), this);
         iFrame.addListener("load", () => this.__iFrameChanged());
         this.__iFrameChanged();
       } else {
