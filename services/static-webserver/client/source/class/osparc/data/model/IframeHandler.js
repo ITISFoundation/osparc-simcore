@@ -56,7 +56,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     },
 
     lockedPage: {
-      check: "osparc.ui.message.Locked",
+      check: "osparc.ui.message.NodeLockedPage",
       init: null,
       nullable: true
     },
@@ -156,7 +156,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     },
 
     __initLockedPage: function() {
-      const lockedPage = new osparc.ui.message.Locked();
+      const lockedPage = new osparc.ui.message.NodeLockedPage();
       this.bind("node", lockedPage, "node");
       this.setLockedPage(lockedPage);
     },

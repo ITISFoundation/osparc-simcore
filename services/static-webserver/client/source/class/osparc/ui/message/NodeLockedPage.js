@@ -27,7 +27,7 @@
  * -----------------------
  *
  */
-qx.Class.define("osparc.ui.message.Locked", {
+qx.Class.define("osparc.ui.message.NodeLockedPage", {
   extend: osparc.ui.message.Loading,
 
   properties: {
