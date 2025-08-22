@@ -21,8 +21,9 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
 
     @property
     def task_manager(self) -> TaskManager:
-        assert self.app.state.task_manager, "Task manager is not initialized"  # nosec
-        task_manager: TaskManager = self.app.state.task_manager
+        task_manager = self.app.state.task_manager
+        assert task_manager, "Task manager is not initialized"  # nosec
+        assert isinstance(task_manager, TaskManager)
         return task_manager
 
     async def start_and_hold(self, startup_completed_event: threading.Event) -> None:
