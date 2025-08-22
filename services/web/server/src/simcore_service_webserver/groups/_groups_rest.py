@@ -73,9 +73,9 @@ async def list_groups(request: web.Request):
             GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard
         ],
         all=GroupGet.from_domain_model(*groups_by_type.everyone),
-        product=GroupGet.from_domain_model(*my_product_group)
-        if my_product_group
-        else None,
+        product=(
+            GroupGet.from_domain_model(*my_product_group) if my_product_group else None
+        ),
     )
 
     return envelope_json_response(my_groups)
@@ -173,7 +173,7 @@ async def get_all_group_users(request: web.Request):
     req_ctx = GroupsRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(GroupsPathParams, request)
 
-    users_in_group = await _groups_service.list_group_members(
+    users_in_group = await _groups_service.list_group_members_with_caller_check(
         request.app, req_ctx.user_id, path_params.gid
     )
 

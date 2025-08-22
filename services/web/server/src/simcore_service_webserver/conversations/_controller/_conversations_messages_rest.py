@@ -97,6 +97,7 @@ async def create_conversation_message(request: web.Request):
     message, is_first_message = (
         await _conversation_message_service.create_support_message_with_first_check(
             app=request.app,
+            product_name=req_ctx.product_name,
             user_id=req_ctx.user_id,
             project_id=None,  # Support conversations don't use project_id
             conversation_id=path_params.conversation_id,
@@ -128,11 +129,6 @@ async def create_conversation_message(request: web.Request):
                 template=email_template_path,
                 context={
                     "host": request.host,
-                    "product": product.model_dump(
-                        include={
-                            "display_name",
-                        }
-                    ),
                     "first_name": user["first_name"],
                     "last_name": user["last_name"],
                     "user_email": user["email"],
@@ -275,6 +271,7 @@ async def update_conversation_message(request: web.Request):
 
     message = await _conversation_message_service.update_message(
         app=request.app,
+        product_name=req_ctx.product_name,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
         message_id=path_params.message_id,
@@ -314,6 +311,7 @@ async def delete_conversation_message(request: web.Request):
 
     await _conversation_message_service.delete_message(
         app=request.app,
+        product_name=req_ctx.product_name,
         user_id=req_ctx.user_id,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
