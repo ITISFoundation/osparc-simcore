@@ -416,7 +416,7 @@ async def get_image_labels(
                     # default to x86_64 architecture
                     _logger.info(
                         "Image %s:%s is a docker image with multiple architectures. "
-                        "Currently defaulting to x86_64 architecture",
+                        "Currently defaulting to first architecture",
                         image,
                         tag,
                     )
