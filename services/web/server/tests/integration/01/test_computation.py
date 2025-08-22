@@ -254,15 +254,10 @@ async def _get_project_workbench_from_db(
     # this check is only there to check the comp_pipeline is there
     print(f"--> looking for project {project_id=} in projects table...")
     async with sqlalchemy_async_engine.connect() as conn:
-        rows = (
-            conn.execute(
-                sa.select(projects_nodes).where(
-                    projects_nodes.c.project_uuid == project_id
-                )
-            )
-            .mappings()
-            .all()
+        result = await conn.execute(
+            sa.select(projects_nodes).where(projects_nodes.c.project_uuid == project_id)
         )
+        rows = result.mappings().all()
 
     return {row["node_id"]: dict(row) for row in rows}
 
