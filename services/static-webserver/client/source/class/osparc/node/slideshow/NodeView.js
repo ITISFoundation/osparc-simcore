@@ -77,9 +77,9 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const iFrame = this.getNode().getIFrame();
       if (loadingPage && iFrame) {
         const node = this.getNode();
-        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameChanged(), this);
-        iFrame.addListener("load", () => this.__iFrameChanged());
-        this.__iFrameChanged();
+        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameStateChanged(), this);
+        iFrame.addListener("load", () => this.__iFrameStateChanged());
+        this.__iFrameStateChanged();
       } else {
         // This will keep what comes after at the bottom
         this._iFrameLayout.add(new qx.ui.core.Spacer(), {
@@ -133,7 +133,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       this.base(arguments, node);
     },
 
-    __iFrameChanged: function() {
+    __iFrameStateChanged: function() {
       this._iFrameLayout.removeAll();
 
       const node = this.getNode();

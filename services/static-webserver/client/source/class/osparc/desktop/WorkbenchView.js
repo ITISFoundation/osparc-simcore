@@ -756,9 +756,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
-        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameChanged(node), this);
-        iFrame.addListener("load", () => this.__iFrameChanged(node), this);
-        this.__iFrameChanged(node);
+        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameStateChanged(node), this);
+        iFrame.addListener("load", () => this.__iFrameStateChanged(node), this);
+        this.__iFrameStateChanged(node);
       } else {
         // This will keep what comes after at the bottom
         this.__iframePage.add(new qx.ui.core.Spacer(), {
@@ -767,7 +767,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __iFrameChanged: function(node) {
+    __iFrameStateChanged: function(node) {
       this.__iframePage.removeAll();
 
       if (node && node.getIFrame()) {

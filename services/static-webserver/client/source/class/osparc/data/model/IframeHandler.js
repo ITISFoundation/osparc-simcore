@@ -47,6 +47,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       init: null,
       nullable: false,
       event: "changeNode",
+      apply: "__applyNode",
     },
 
     loadingPage: {
@@ -95,6 +96,10 @@ qx.Class.define("osparc.data.model.IframeHandler", {
       if (this.getIFrame()) {
         this.getIFrame().resetSource();
       }
+    },
+
+    __applyNode: function(node) {
+      node.getStatus().getLockState().addListener("changedLocked", () => this.fireEvent("iframeStateChanged"), this);
     },
 
     __initIFrame: function() {
