@@ -66,7 +66,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const iFrame = node.getIFrame();
         const src = iFrame.getSource();
         let showPage = iFrame;
-        if (node.getStatus().getLockState().isLocked()) {
+        const nodeLockedState = node.getStatus().getLockState()
+        if (nodeLockedState.isLocked() && nodeLockedState.isLockedBySomeoneElse()) {
           showPage = node.getLockedPage();
         } else if (src === null || src === "about:blank") {
           showPage = node.getLoadingPage();

@@ -65,5 +65,14 @@ qx.Class.define("osparc.data.model.NodeLockState", {
     __currentUserGroupIds: function(currentUserGroupIds) {
       console.log("currentUserGroupIds", currentUserGroupIds);
     },
+
+    isLockedBySomeoneElse: function() {
+      if (this.isLocked()) {
+        const currentUserGroupIds = this.getCurrentUserGroupIds();
+        const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+        return !currentUserGroupIds.includes(myGroupId);
+      }
+      return false;
+    }
   }
 });
