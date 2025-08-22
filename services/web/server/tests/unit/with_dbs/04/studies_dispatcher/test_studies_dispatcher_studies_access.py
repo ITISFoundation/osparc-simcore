@@ -12,11 +12,14 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
+from unittest import mock
 
 import pytest
 import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from common_library.users_enums import UserRole
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
@@ -29,8 +32,10 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsystem
-from pytest_simcore.helpers.webserver_projects import delete_all_projects, NewProject
+from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -38,6 +43,7 @@ from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
 )
 from servicelib.rest_responses import unwrap_envelope
+from settings_library.rabbit import RabbitSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.projects._projects_service import (
     submit_delete_project_task,
@@ -49,6 +55,10 @@ from simcore_service_webserver.users.users_service import (
     get_user_role,
 )
 from tenacity import retry, stop_after_attempt, wait_fixed
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 
 async def _get_user_projects(client) -> list[ProjectDict]:
@@ -86,6 +96,22 @@ def _assert_same_projects(got: dict, expected: dict):
 
 def _is_user_authenticated(session: ClientSession) -> bool:
     return DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
+
+
+@pytest.fixture
+def app_environment(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    rabbit_service: RabbitSettings,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_RABBITMQ": json_dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            )
+        },
+    )
 
 
 @pytest.fixture
@@ -302,6 +328,7 @@ async def test_access_to_forbidden_study(
 
 
 async def test_access_study_anonymously(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
@@ -349,6 +376,7 @@ async def auto_delete_projects(client: TestClient) -> AsyncIterator[None]:
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER])
 async def test_access_study_by_logged_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     published_project: ProjectDict,
@@ -382,6 +410,7 @@ async def test_access_study_by_logged_user(
 
 
 async def test_access_cookie_of_expired_user(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     published_project: ProjectDict,
     storage_subsystem_mock_override: None,
@@ -463,6 +492,7 @@ async def test_access_cookie_of_expired_user(
     ],
 )
 async def test_guest_user_is_not_garbage_collected(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     number_of_simultaneous_requests: int,
     web_server: TestServer,
     aiohttp_client: Callable,

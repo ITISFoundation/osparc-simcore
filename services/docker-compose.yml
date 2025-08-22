@@ -699,6 +699,9 @@ services:
       WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       WEBSERVER_LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
 
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: wb
+
       # WEBSERVER_SERVER_HOST
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
@@ -929,6 +932,9 @@ services:
       WEBSERVER_STATICWEB: "null"
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
 
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: api
+
     networks: *webserver_networks
 
   wb-db-event-listener:
@@ -937,6 +943,9 @@ services:
     hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       WEBSERVER_LOGLEVEL: ${WB_DB_EL_LOGLEVEL}
+
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: db
 
       WEBSERVER_HOST: ${WEBSERVER_HOST}
       WEBSERVER_PORT: ${WEBSERVER_PORT}
@@ -1034,6 +1043,9 @@ services:
       LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
       LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
 
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: gc
+
       # WEBSERVER_DB
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_ENDPOINT: ${POSTGRES_ENDPOINT}
@@ -1125,6 +1137,9 @@ services:
       APP_NAME: "simcore_service_wb_auth"
       WEBSERVER_APP_FACTORY_NAME: WEBSERVER_AUTHZ_APP_FACTORY
       WEBSERVER_LOGLEVEL: ${WB_AUTH_LOGLEVEL}
+
+      # NOTE: keep in sync with the prefix form the hostname
+      LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: auth
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 

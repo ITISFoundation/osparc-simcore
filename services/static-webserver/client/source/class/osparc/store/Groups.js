@@ -38,18 +38,14 @@ qx.Class.define("osparc.store.Groups", {
 
     organizations: {
       check: "Object",
-      init: {}
+      init: {},
+      event: "organizationsChanged",
     },
 
     groupMe: {
       check: "osparc.data.model.Group",
       init: {}
     },
-  },
-
-  events: {
-    "groupAdded": "qx.event.type.Data",
-    "groupRemoved": "qx.event.type.Data",
   },
 
   statics: {

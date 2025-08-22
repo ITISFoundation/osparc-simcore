@@ -5,6 +5,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
+from unittest.mock import AsyncMock
 
 import arrow
 import pytest
@@ -23,6 +24,7 @@ from simcore_service_dynamic_sidecar.models.shared_store import (
 
 @pytest.fixture
 def trigger_setup_shutdown_events(
+    mock_core_rabbitmq: dict[str, AsyncMock],
     shared_store_dir: Path,
     app: FastAPI,
     test_client: TestClient,

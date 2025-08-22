@@ -8,6 +8,7 @@
 
 import json
 from http import HTTPStatus
+from unittest import mock
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -56,6 +57,7 @@ def mocked_notify_project_node_update(mocker: MockerFixture):
 )
 async def test_patch_project_node_entrypoint_access(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -78,6 +80,7 @@ async def test_patch_project_node_entrypoint_access(
 )
 async def test_patch_project_node(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -199,6 +202,7 @@ async def test_patch_project_node(
 )
 async def test_patch_project_node_notifies(
     mocker: MockerFixture,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -206,7 +210,6 @@ async def test_patch_project_node_notifies(
     mock_catalog_rpc_check_for_service,
     mocked_notify_project_node_update,
 ):
-
     node_id = next(iter(user_project["workbench"]))
     assert client.app
     base_url = client.app.router["patch_project_node"].url_for(
@@ -232,7 +235,7 @@ async def test_patch_project_node_notifies(
     "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
 )
 async def test_patch_project_node_inputs_notifies(
-    mocker: MockerFixture,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -275,6 +278,7 @@ async def test_patch_project_node_inputs_notifies(
     "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
 )
 async def test_patch_project_node_inputs_with_data_type_change(
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,

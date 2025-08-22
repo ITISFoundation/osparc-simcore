@@ -18,7 +18,7 @@ from models_library.products import ProductName
 from models_library.projects_state import RunningState
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
-from pytest_mock import MockType
+from pytest_mock import MockerFixture, MockType
 from servicelib.aiohttp import status
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import JobStatus
@@ -91,6 +91,7 @@ async def test_get_function_job(
 
 async def test_list_function_jobs(
     client: AsyncClient,
+    mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
@@ -115,6 +116,7 @@ async def test_list_function_jobs(
 
 async def test_list_function_jobs_with_job_id_filter(
     client: AsyncClient,
+    mock_rabbitmq_rpc_client: MockerFixture,
     mock_handler_in_functions_rpc_interface: Callable[[str], MockType],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     user_id: UserID,
@@ -178,11 +180,12 @@ async def test_list_function_jobs_with_job_id_filter(
 
 @pytest.mark.parametrize("job_status", ["SUCCESS", "FAILED", "STARTED"])
 async def test_get_function_job_status(
+    mocked_app_dependencies: None,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function_job: RegisteredProjectFunctionJob,
     mock_registered_project_function: RegisteredProjectFunction,
-    mock_handler_in_study_jobs_rest_interface: Callable[[str, Any], None],
+    mock_method_in_jobs_service: Callable[[str, Any], None],
     auth: httpx.BasicAuth,
     job_status: str,
 ) -> None:
@@ -197,7 +200,7 @@ async def test_get_function_job_status(
         "get_function_job_status",
         FunctionJobStatus(status=job_status),
     )
-    mock_handler_in_study_jobs_rest_interface(
+    mock_method_in_jobs_service(
         "inspect_study_job",
         JobStatus(
             job_id=uuid.uuid4(),

@@ -103,7 +103,7 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    conversations: {
+    conversationsStudies: {
       check: "Array",
       init: []
     },
@@ -247,6 +247,10 @@ qx.Class.define("osparc.store.Store", {
     notifications: {
       check: "Array",
       init: null,
+    },
+    conversationsSupport: {
+      check: "Array",
+      init: []
     },
   },
 

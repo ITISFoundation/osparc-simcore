@@ -94,8 +94,8 @@ from ._projects_repository_legacy_utils import (
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
+    get_project_workbench,
     patch_workbench,
-    get_project_workbench
 )
 from ._socketio_service import notify_project_document_updated
 from .exceptions import (
@@ -326,7 +326,9 @@ class ProjectDBAPI(BaseProjectDB):
                 node_id=NodeID(node_id),
                 **{
                     str(field_mapping.get(field, field)): value
-                    for field, value in Node.model_validate(project_workbench_node).model_dump(mode="json", by_alias=True).items()
+                    for field, value in Node.model_validate(project_workbench_node)
+                    .model_dump(mode="json", by_alias=True)
+                    .items()
                     if field_mapping.get(field, field) in valid_fields
                 },
             )
@@ -1048,7 +1050,58 @@ class ProjectDBAPI(BaseProjectDB):
         msg = "linter unhappy without this"
         raise RuntimeError(msg)
 
-    async def get_project_node(
+    async def add_project_node(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node: ProjectNodeCreate,
+        old_struct_node: Node,
+        product_name: str,
+        client_session_id: ClientSessionID | None,
+    ) -> None:
+        # NOTE: permission check is done currently in update_project_workbench!
+        partial_workbench_data: dict[NodeIDStr, Any] = {
+            NodeIDStr(f"{node.node_id}"): jsonable_encoder(
+                old_struct_node,
+                exclude_unset=True,
+            ),
+        }
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.add(conn, nodes=[node])
+
+        await self._update_project_workbench_with_lock_and_notify(
+            partial_workbench_data,
+            user_id=user_id,
+            project_uuid=project_id,
+            product_name=product_name,
+            allow_workbench_changes=True,
+            client_session_id=client_session_id,
+        )
+
+    async def remove_project_node(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        node_id: NodeID,
+        client_session_id: ClientSessionID | None,
+    ) -> None:
+        # NOTE: permission check is done currently in update_project_workbench!
+        partial_workbench_data: dict[NodeIDStr, Any] = {
+            NodeIDStr(f"{node_id}"): None,
+        }
+        await self._update_project_workbench_with_lock_and_notify(
+            partial_workbench_data,
+            user_id=user_id,
+            project_uuid=project_id,
+            allow_workbench_changes=True,
+            client_session_id=client_session_id,
+        )
+        project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
+        async with self.engine.acquire() as conn:
+            await project_nodes_repo.delete(conn, node_id=node_id)
+
+    async def get_project_node(  # NOTE: Not all Node data are here yet; they are in the workbench of a Project, waiting to be moved here.
         self, project_id: ProjectID, node_id: NodeID
     ) -> ProjectNode:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)

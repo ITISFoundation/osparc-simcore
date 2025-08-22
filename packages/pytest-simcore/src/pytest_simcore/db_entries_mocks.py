@@ -11,8 +11,8 @@ from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
-from faker import Faker
 from common_library.dict_tools import remap_keys
+from faker import Faker
 from models_library.products import ProductName
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
@@ -46,7 +46,6 @@ def create_registered_user(
     with contextlib.ExitStack() as stack:
 
         def _(**user_kwargs) -> dict[str, Any]:
-
             user_id = len(created_user_ids) + 1
             user = stack.enter_context(
                 sync_insert_and_get_user_and_secrets_lifespan(
@@ -89,7 +88,7 @@ async def create_project(
 
     async with contextlib.AsyncExitStack() as stack:
 
-        async def _(
+        async def _create(
             user: dict[str, Any],
             *,
             project_nodes_overrides: dict[str, Any] | None = None,
@@ -130,15 +129,16 @@ async def create_project(
                     {**project_db_rows, "workbench": project_workbench}
                 )
 
-                nodes = []
                 async with sqlalchemy_async_engine.connect() as con, con.begin():
-                    project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
-
+                    # collect nodes
+                    nodes = []
                     for node_id, node_data in project_workbench.items():
                         # NOTE: workbench node have a lot of camecase fields. We validate with Node and
                         # export to ProjectNodeCreate with alias=False
 
-                        node_model = Node.model_validate(node_data).model_dump(mode="json", by_alias=True)
+                        node_model = Node.model_validate(node_data).model_dump(
+                            mode="json", by_alias=True
+                        )
 
                         field_mapping = {
                             "inputAccess": "input_access",
@@ -161,13 +161,18 @@ async def create_project(
                         if project_nodes_overrides:
                             project_workbench_node.update(project_nodes_overrides)
 
-                        nodes.append(ProjectNodeCreate(node_id=node_id, **project_workbench_node))
+                        nodes.append(
+                            ProjectNodeCreate(node_id=node_id, **project_workbench_node)
+                        )
 
+                    # add nodes
+                    project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
                     await project_nodes_repo.add(
                         con,
                         nodes=nodes,
                     )
 
+                    # link to product
                     await con.execute(
                         projects_to_products.insert().values(
                             project_uuid=f"{inserted_project.uuid}",
@@ -178,7 +183,7 @@ async def create_project(
                 created_project_ids.append(f"{inserted_project.uuid}")
                 return inserted_project
 
-        yield _
+        yield _create
 
     _logger.info("<-- delete projects %s", created_project_ids)
 

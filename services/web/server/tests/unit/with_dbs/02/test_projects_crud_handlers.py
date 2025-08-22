@@ -9,12 +9,12 @@ from collections.abc import Awaitable, Callable, Iterator
 from http import HTTPStatus
 from math import ceil
 from typing import Any
+from unittest import mock
 
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from pytest_simcore.helpers.assert_checks import assert_equal_ignoring_none
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -24,7 +24,10 @@ from models_library.api_schemas_webserver.projects import ProjectStateOutputSche
 from models_library.products import ProductName
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
-from pytest_simcore.helpers.assert_checks import assert_status
+from pytest_simcore.helpers.assert_checks import (
+    assert_equal_ignoring_none,
+    assert_status,
+)
 from pytest_simcore.helpers.webserver_parametrizations import (
     ExpectedResponse,
     MockedStorageSubsystem,
@@ -34,6 +37,7 @@ from pytest_simcore.helpers.webserver_parametrizations import (
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
@@ -48,6 +52,10 @@ from simcore_service_webserver.projects.projects_permalink_service import (
 )
 from simcore_service_webserver.utils import to_datetime
 from yarl import URL
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 API_PREFIX = "/" + api_version_prefix
 
@@ -193,7 +201,9 @@ async def _assert_get_same_project(
     ],
 )
 async def test_list_projects(
+    rabbit_settings: RabbitSettings,
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user: dict[str, Any],
     user_project: dict[str, Any],
     template_project: dict[str, Any],
@@ -359,6 +369,7 @@ async def logged_user_registed_in_two_products(
 async def test_list_projects_with_innaccessible_services(
     s4l_products_db_name: ProductName,
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user_registed_in_two_products: UserInfoDict,
     user_project: dict[str, Any],
     template_project: dict[str, Any],
@@ -416,6 +427,7 @@ async def test_list_projects_with_innaccessible_services(
 )
 async def test_get_project(
     client: TestClient,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     template_project: ProjectDict,
@@ -500,6 +512,7 @@ async def test_create_get_and_patch_project_ui_field(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -527,6 +540,7 @@ async def test_new_project_from_template(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_other_study(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -555,6 +569,7 @@ async def test_new_project_from_other_study(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_project_from_template_with_body(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: UserInfoDict,
     primary_group: dict[str, str],
@@ -610,6 +625,7 @@ async def test_new_project_from_template_with_body(
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_new_template_from_project(
     mock_dynamic_scheduler: None,
+    mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
     logged_user: dict[str, Any],
     primary_group: dict[str, str],

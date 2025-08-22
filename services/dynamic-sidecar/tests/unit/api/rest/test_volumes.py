@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import pytest
 from async_asgi_testclient import TestClient
@@ -20,6 +21,7 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
     ],
 )
 async def test_volumes_state_saved_ok(
+    mock_core_rabbitmq: dict[str, AsyncMock],
     ensure_shared_store_dir: Path,
     test_client: TestClient,
     volume_category: VolumeCategory,
@@ -46,6 +48,7 @@ async def test_volumes_state_saved_ok(
 
 @pytest.mark.parametrize("invalid_volume_category", ["outputs", "outputS"])
 async def test_volumes_state_saved_error(
+    mock_core_rabbitmq: dict[str, AsyncMock],
     ensure_shared_store_dir: Path,
     test_client: TestClient,
     invalid_volume_category: VolumeCategory,

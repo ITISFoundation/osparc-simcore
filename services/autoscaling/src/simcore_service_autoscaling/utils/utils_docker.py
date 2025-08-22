@@ -15,7 +15,6 @@ import arrow
 import yaml
 from aws_library.ec2 import EC2InstanceData, Resources
 from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -26,6 +25,9 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     Task,
     TaskState,
+)
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
 )
 from pydantic import ByteSize, TypeAdapter, ValidationError
 from servicelib.docker_utils import to_datetime

@@ -9,6 +9,7 @@
 
 import asyncio
 import collections
+import contextlib
 import datetime
 import logging
 from collections import defaultdict
@@ -20,9 +21,10 @@ from typing import Any, Final, cast
 from uuid import uuid4
 
 from aiohttp import web
-from common_library.json_serialization import json_dumps, json_loads
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
+    DynamicServiceGet,
     GetProjectInactivityResponse,
 )
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -33,6 +35,10 @@ from models_library.api_schemas_webserver.projects import (
     ProjectGet,
     ProjectPatch,
 )
+from models_library.api_schemas_webserver.projects_nodes import (
+    NodeGet,
+    NodeGetUnknown,
+)
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.basic_types import KeyIDStr
 from models_library.errors import ErrorDict
@@ -40,7 +46,13 @@ from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.projects import Project, ProjectID
 from models_library.projects_access import Owner
-from models_library.projects_nodes import Node, NodeState, PartialNode
+from models_library.projects_nodes import (
+    Node,
+    NodeShareState,
+    NodeShareStatus,
+    NodeState,
+    PartialNode,
+)
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
 from models_library.projects_state import (
     ProjectRunningState,
@@ -151,6 +163,7 @@ from .exceptions import (
     InvalidEC2TypeInResourcesSpecsError,
     InvalidKeysInResourcesSpecsError,
     NodeNotFoundError,
+    NodeShareStateCannotBeComputedError,
     ProjectInvalidRightsError,
     ProjectLockError,
     ProjectNodeConnectionsMissingError,
@@ -282,7 +295,7 @@ async def get_project_for_user(
     )
     workspace_is_private = user_project_access.workspace_id is None
 
-    project, project_type = await db.get_project_dict_and_type(
+    project, _project_type = await db.get_project_dict_and_type(
         project_uuid,
     )
 
@@ -296,10 +309,7 @@ async def get_project_for_user(
     # adds state if it is not a template
     if include_state:
         project = await add_project_states_for_user(
-            user_id=user_id,
-            project=project,
-            is_template=project_type is ProjectType.TEMPLATE,
-            app=app,
+            user_id=user_id, project=project, app=app
         )
 
     # adds `trashed_by_primary_gid`
@@ -716,7 +726,8 @@ async def _check_project_node_has_all_required_inputs(
         if output_entry is None:
             unset_outputs_in_upstream.append((source_output_key, source_node.label))
 
-    if node.inputs_required:
+    if node.inputs_required is not None:
+        assert isinstance(node.inputs_required, list)  # nosec
         for required_input in node.inputs_required:
             _check_required_input(required_input)
 
@@ -733,7 +744,7 @@ async def _check_project_node_has_all_required_inputs(
         )
 
 
-async def _start_dynamic_service(  # noqa: C901
+async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa: C901
     request: web.Request,
     *,
     service_key: ServiceKey,
@@ -746,12 +757,10 @@ async def _start_dynamic_service(  # noqa: C901
     graceful_start: bool = False,
 ) -> None:
     if not _is_node_dynamic(service_key):
+        # not dynamic, nothing to do
         return
 
-    # this is a dynamic node, let's gather its resources and start it
-
-    db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(request.app)
-
+    db = ProjectDBAPI.get_from_app_context(request.app)
     try:
         await _check_project_node_has_all_required_inputs(
             request.app, db, user_id, project_uuid, node_uuid
@@ -767,9 +776,7 @@ async def _start_dynamic_service(  # noqa: C901
         raise
 
     save_state = False
-    user_role: UserRole = await users_service.get_user_role(
-        request.app, user_id=user_id
-    )
+    user_role = await users_service.get_user_role(request.app, user_id=user_id)
     if user_role > UserRole.GUEST:
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
@@ -785,7 +792,8 @@ async def _start_dynamic_service(  # noqa: C901
             )
         ),
     )
-    async def _() -> None:
+    async def _safe_service_start() -> None:
+        """In case of concurrent requests, this guarantees that only one service can be started at a time"""
         project_running_nodes = await dynamic_scheduler_service.list_dynamic_services(
             request.app, user_id=user_id, project_id=project_uuid
         )
@@ -903,7 +911,7 @@ async def _start_dynamic_service(  # noqa: C901
                 service_version=service_version,
             )
 
-        service_resources: ServiceResourcesDict = await get_project_node_resources(
+        service_resources = await get_project_node_resources(
             request.app,
             user_id=user_id,
             project_id=project_uuid,
@@ -936,7 +944,13 @@ async def _start_dynamic_service(  # noqa: C901
             ),
         )
 
-    await _()
+        project = await get_project_for_user(
+            request.app, f"{project_uuid}", user_id, include_state=True
+        )
+
+        await notify_project_node_update(request.app, project, node_uuid, errors=None)
+
+    await _safe_service_start()
 
 
 async def add_project_node(
@@ -1283,14 +1297,11 @@ async def patch_project_node(
         )
     )
 
-    # 5. Updates project states for user, if inputs/outputs have been changed
+    updated_project_with_states = await add_project_states_for_user(
+        user_id=user_id, project=updated_project.model_dump(mode="json"), app=app
+    )
+    # 5. if inputs/outputs have been changed all depending nodes shall be notified
     if {"inputs", "outputs"} & _node_patch_exclude_unset.keys():
-        updated_project_with_states = await add_project_states_for_user(
-            user_id=user_id,
-            project=updated_project.model_dump(mode="json"),
-            is_template=False,
-            app=app,
-        )
         for node_uuid in updated_project_with_states["workbench"]:
             await notify_project_node_update(
                 app, updated_project_with_states, node_uuid, errors=None
@@ -1390,18 +1401,56 @@ async def is_node_id_present_in_any_project_workbench(
     return await db_legacy.node_id_exists(node_id)
 
 
-async def _safe_retrieve(
-    app: web.Application, node_id: NodeID, port_keys: list[str]
-) -> None:
-    try:
-        await dynamic_scheduler_service.retrieve_inputs(app, node_id, port_keys)
-    except RPCServerError as exc:
-        _logger.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s]",
-            node_id,
-            port_keys,
-            exc,
+async def _get_node_share_state(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_id: NodeID,
+) -> NodeShareState:
+    node = await _projects_nodes_repository.get(
+        app, project_id=project_uuid, node_id=node_id
+    )
+
+    if _is_node_dynamic(node.key):
+        # if the service is dynamic and running it is locked if it is not collaborative
+        service = await dynamic_scheduler_service.get_dynamic_service(
+            app, node_id=node_id
         )
+
+        if isinstance(service, DynamicServiceGet | NodeGet):
+            # service is running
+            is_collaborative_service = False
+            if isinstance(service, DynamicServiceGet):
+                # only dynamic-sidecar powered services can be collaborative
+                is_collaborative_service = service.is_collaborative
+
+            return NodeShareState(
+                locked=not is_collaborative_service,
+                current_user_groupids=[
+                    await users_service.get_user_primary_group_id(
+                        app, TypeAdapter(UserID).validate_python(service.user_id)
+                    )
+                ],
+                status=NodeShareStatus.OPENED,
+            )
+        if isinstance(service, NodeGetUnknown):
+            # service state is unknown, raise
+            raise NodeShareStateCannotBeComputedError(
+                project_uuid=project_uuid, node_uuid=node_id
+            )
+        return NodeShareState(locked=False)
+
+    # if the service is computational and no pipeline is running it is not locked
+    if await director_v2_service.is_pipeline_running(app, user_id, project_uuid):
+        return NodeShareState(
+            locked=True,
+            current_user_groupids=[
+                await users_service.get_user_primary_group_id(app, user_id)
+            ],
+            status=NodeShareStatus.OPENED,
+        )
+    return NodeShareState(locked=False)
 
 
 async def _trigger_connected_service_retrieve(
@@ -1444,10 +1493,10 @@ async def _trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        _safe_retrieve(app, NodeID(node), keys)
+        dynamic_scheduler_service.retrieve_inputs(app, NodeID(node), keys)
         for node, keys in nodes_keys_to_update.items()
     ]
-    await logged_gather(*update_tasks)
+    await logged_gather(*update_tasks, reraise=False)
 
 
 async def post_trigger_connected_service_retrieve(
@@ -1560,6 +1609,17 @@ async def try_open_project_for_user(
         )
         async def _open_project() -> bool:
             with managed_resource(user_id, client_session_id, app) as user_session:
+                # check if the project is already opened
+                if (
+                    current_project_ids := await user_session.find(PROJECT_ID_KEY)
+                ) and f"{project_uuid}" in current_project_ids:
+                    _logger.debug(
+                        "project %s is already opened by user %s/%s",
+                        project_uuid,
+                        user_id,
+                        client_session_id,
+                    )
+                    return True
                 # Enforce per-user open project limit
                 if max_number_of_opened_projects_per_user is not None and (
                     len(
@@ -1580,7 +1640,7 @@ async def try_open_project_for_user(
                         client_session_id=client_session_id,
                     )
 
-                # Assign project_id to current_session
+                # try to assign project_id to current_session
                 sessions_with_project = await user_session.find_users_of_resource(
                     app, PROJECT_ID_KEY, f"{project_uuid}"
                 )
@@ -1588,6 +1648,31 @@ async def try_open_project_for_user(
                     len(sessions_with_project)
                     >= max_number_of_user_sessions_per_project
                 ):
+                    # we need to check has an inactive session in which case we can steal the project
+                    this_user_other_sessions = [
+                        s
+                        for s in sessions_with_project
+                        if s.user_id == user_id and s != user_session
+                    ]
+                    for session in this_user_other_sessions:
+                        with managed_resource(
+                            session.user_id, session.client_session_id, app
+                        ) as other_user_session:
+                            if await other_user_session.get_socket_id() is None:
+                                # this user has an inactive session, we can steal the project
+                                _logger.debug(
+                                    "stealing project %s from user %s/%s",
+                                    project_uuid,
+                                    session.user_id,
+                                    session.client_session_id,
+                                )
+                                await user_session.add(
+                                    PROJECT_ID_KEY, f"{project_uuid}"
+                                )
+                                await other_user_session.remove(PROJECT_ID_KEY)
+
+                                return True
+
                     raise ProjectTooManyUserSessionsError(
                         max_num_sessions=max_number_of_user_sessions_per_project,
                         user_id=user_id,
@@ -1840,7 +1925,6 @@ async def add_project_states_for_user(
     *,
     user_id: int,
     project: ProjectDict,
-    is_template: bool,
     app: web.Application,
 ) -> ProjectDict:
     _logger.debug(
@@ -1848,34 +1932,65 @@ async def add_project_states_for_user(
         f"{user_id=}",
         f"{project['uuid']=}",
     )
-    # for templates: the project is never locked and never opened. also the running state is always unknown
-    share_state = await _get_project_share_state(user_id, project["uuid"], app)
-    running_state = RunningState.UNKNOWN
+    project_share_state, user_computation_task = await asyncio.gather(
+        _get_project_share_state(user_id, project["uuid"], app),
+        director_v2_service.get_computation_task(app, user_id, project["uuid"]),
+    )
+    # retrieve the project computational state
+    # if the user has no computation task, we assume the project is not running
+    project_running_state = (
+        user_computation_task.state
+        if user_computation_task
+        else RunningState.NOT_STARTED
+    )
+    computational_node_states = (
+        user_computation_task.pipeline_details.node_states
+        if user_computation_task
+        else {}
+    )
 
-    if not is_template and (
-        computation_task := await director_v2_service.get_computation_task(
-            app, user_id, project["uuid"]
-        )
-    ):
-        # get the running state
-        running_state = computation_task.state
-        # get the nodes individual states
-        for (
-            node_id,
-            node_state,
-        ) in computation_task.pipeline_details.node_states.items():
-            prj_node = project["workbench"].get(str(node_id))
-            if prj_node is None:
-                continue
-            node_state_dict = json_loads(
-                node_state.model_dump_json(by_alias=True, exclude_unset=True)
+    # compose the node states
+    for node_uuid, node in project["workbench"].items():
+        assert isinstance(node_uuid, str)  # nosec
+        assert isinstance(node, dict)  # nosec
+
+        node_lock_state = None
+        with contextlib.suppress(NodeShareStateCannotBeComputedError):
+            node_lock_state = await _get_node_share_state(
+                app,
+                user_id=user_id,
+                project_uuid=project["uuid"],
+                node_id=NodeID(node_uuid),
             )
-            prj_node["state"] = NodeState.model_validate(node_state_dict)
-            prj_node_progress = node_state_dict.get("progress", None) or 0
-            prj_node["progress"] = round(prj_node_progress * 100.0)
+        if NodeID(node_uuid) in computational_node_states:
+            node_state = computational_node_states[NodeID(node_uuid)].model_copy(
+                update={"lock_state": node_lock_state}
+            )
+        else:
+            # if the node is not in the computational state, we create a new one
+            service_is_running = node_lock_state and (
+                node_lock_state.status is NodeShareStatus.OPENED
+            )
+            node_state = NodeState(
+                current_status=(
+                    RunningState.STARTED
+                    if service_is_running
+                    else RunningState.NOT_STARTED
+                ),
+                lock_state=node_lock_state,
+            )
+
+        # upgrade the project
+        node.setdefault("state", {}).update(
+            node_state.model_dump(mode="json", by_alias=True, exclude_unset=True)
+        )
+        if "progress" in node["state"] and node["state"]["progress"] is not None:
+            # ensure progress is a percentage
+            node["progress"] = round(node["state"]["progress"] * 100.0)
 
     project["state"] = ProjectState(
-        share_state=share_state, state=ProjectRunningState(value=running_state)
+        share_state=project_share_state,
+        state=ProjectRunningState(value=project_running_state),
     ).model_dump(by_alias=True, exclude_unset=True)
     return project
 
@@ -2073,8 +2188,6 @@ async def remove_project_dynamic_services(
     :raises ProjectLockError
     """
 
-    # NOTE: during the closing process, which might take awhile,
-    # the project is locked so no one opens it at the same time
     _logger.debug(
         "removing project interactive services for project [%s] and user [%s]",
         project_uuid,
@@ -2124,6 +2237,33 @@ async def remove_project_dynamic_services(
     await _locked_stop_dynamic_serivces_in_project()
 
 
+_CONCURRENT_NOTIFICATIONS_LIMIT: Final[int] = 10
+
+
+async def _send_message_to_project_groups(
+    app: web.Application,
+    project_id: ProjectID,
+    message: SocketMessageDict,
+) -> None:
+    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
+        app, project_id=project_id
+    )
+    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
+
+    await limited_gather(
+        *(
+            send_message_to_standard_group(
+                app,
+                room,
+                message,
+            )
+            for room in rooms_to_notify
+        ),
+        log=_logger,
+        limit=_CONCURRENT_NOTIFICATIONS_LIMIT,
+    )
+
+
 async def notify_project_state_update(
     app: web.Application,
     project: ProjectDict,
@@ -2150,15 +2290,7 @@ async def notify_project_state_update(
             message=message,
         )
     else:
-        project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-            app, project_id=project["uuid"]
-        )
-
-        rooms_to_notify = [
-            item.gid for item in project_group_get_list if item.read is True
-        ]
-        for room in rooms_to_notify:
-            await send_message_to_standard_group(app, group_id=room, message=message)
+        await _send_message_to_project_groups(app, project["uuid"], message)
 
 
 async def notify_project_node_update(
@@ -2170,25 +2302,17 @@ async def notify_project_node_update(
     if await is_project_hidden(app, ProjectID(project["uuid"])):
         return
 
-    project_group_get_list = await _groups_service.list_project_groups_by_project_without_checking_permissions(
-        app, project_id=project["uuid"]
-    )
-    rooms_to_notify = [item.gid for item in project_group_get_list if item.read is True]
-
     message = SocketMessageDict(
         event_type=SOCKET_IO_NODE_UPDATED_EVENT,
         data={
             "project_id": project["uuid"],
             "node_id": f"{node_id}",
-            # as GET projects/{project_id}/nodes/{node_id}
             "data": project["workbench"][f"{node_id}"],
-            # as GET projects/{project_id}/nodes/{node_id}/errors
             "errors": errors,
         },
     )
 
-    for room in rooms_to_notify:
-        await send_message_to_standard_group(app, room, message)
+    await _send_message_to_project_groups(app, project["uuid"], message)
 
 
 async def retrieve_and_notify_project_locked_state(

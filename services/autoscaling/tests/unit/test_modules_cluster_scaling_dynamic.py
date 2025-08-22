@@ -23,10 +23,8 @@ import tenacity
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2InstanceData, Resources
 from fastapi import FastAPI
 from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerGenericTag,
     DockerLabelKey,
-    StandardSimcoreDockerLabels,
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
@@ -37,6 +35,10 @@ from models_library.generated_models.docker_rest_api import (
     Task,
 )
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    SimcoreContainerLabels,
+)
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -273,7 +275,7 @@ async def create_services_batch(
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    osparc_docker_label_keys: SimcoreContainerLabels,
 ) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
     async def _(scale_up_params: _ScaleUpParams) -> list[Service]:
         return await asyncio.gather(
@@ -520,9 +522,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
     assert not all_instances["Reservations"]
 
-    assert (
-        scale_up_params.expected_num_instances == 1
-    ), "This test is not made to work with more than 1 expected instance. so please adapt if needed"
+    assert scale_up_params.expected_num_instances == 1, (
+        "This test is not made to work with more than 1 expected instance. so please adapt if needed"
+    )
 
     # create the service(s)
     created_docker_services = await create_services_batch(scale_up_params)
@@ -1281,7 +1283,9 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     assert (
         scale_up_params1.num_services
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), "this test requires to run a first batch of more services than the maximum number of instances allowed"
+    ), (
+        "this test requires to run a first batch of more services than the maximum number of instances allowed"
+    )
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -1498,7 +1502,9 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     assert "Instances" in reservation1
     assert len(reservation1["Instances"]) == (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
+    ), (
+        f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
+    )
     for instance in reservation1["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params1.expected_instance_type
@@ -1512,9 +1518,9 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     reservation2 = all_instances["Reservations"][1]
     assert "Instances" in reservation2
-    assert (
-        len(reservation2["Instances"]) == 1
-    ), f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
+    assert len(reservation2["Instances"]) == 1, (
+        f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
+    )
     for instance in reservation2["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params2.expected_instance_type
@@ -2241,9 +2247,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # BUG REPRODUCTION
     #
     # start a service that imposes same type as the hot buffer
-    assert (
-        hot_buffer_instance_type == "t2.xlarge"
-    ), "the test is hard-coded for this type and accordingly resource. If this changed then the resource shall be changed too"
+    assert hot_buffer_instance_type == "t2.xlarge", (
+        "the test is hard-coded for this type and accordingly resource. If this changed then the resource shall be changed too"
+    )
     scale_up_params = _ScaleUpParams(
         imposed_instance_type=hot_buffer_instance_type,
         service_resources=Resources(

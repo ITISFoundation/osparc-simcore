@@ -20,7 +20,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param message {Object} message
+    * @param message {Object} message data
     * @param studyData {Object?null} serialized Study Data
     */
   construct: function(message, studyData = null) {
@@ -28,7 +28,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
     this.__studyData = studyData;
 
-    const layout = new qx.ui.layout.Grid(12, 4);
+    const layout = new qx.ui.layout.Grid(12, 2);
     layout.setColumnFlex(1, 1); // content
     this._setLayout(layout);
     this.setPadding(5);
@@ -64,11 +64,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
       let control;
       switch (id) {
         case "thumbnail":
-          control = new qx.ui.basic.Image().set({
-            scale: true,
-            maxWidth: 32,
-            maxHeight: 32,
-            decorator: "rounded",
+          control = osparc.utils.Utils.createThumbnail(32).set({
             marginTop: 4,
           });
           this._add(control, {
@@ -89,13 +85,15 @@ qx.Class.define("osparc.conversation.MessageUI", {
           break;
         case "user-name":
           control = new qx.ui.basic.Label().set({
-            font: "text-12"
+            font: "text-12",
+            textColor: "text-disabled",
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 2 : 0);
           break;
         case "last-updated":
           control = new qx.ui.basic.Label().set({
-            font: "text-12"
+            font: "text-12",
+            textColor: "text-disabled",
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
@@ -203,7 +201,11 @@ qx.Class.define("osparc.conversation.MessageUI", {
     __editMessage: function() {
       const message = this.getMessage();
 
-      const addMessage = new osparc.conversation.AddMessage(this.__studyData, message["conversationId"], message);
+      const addMessage = new osparc.conversation.AddMessage().set({
+        studyData: this.__studyData,
+        conversationId: message["conversationId"],
+        message,
+      });
       const title = this.tr("Edit message");
       const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
         clickAwayClose: false,
@@ -227,7 +229,13 @@ qx.Class.define("osparc.conversation.MessageUI", {
       win.open();
       win.addListener("close", () => {
         if (win.getConfirmed()) {
-          osparc.store.Conversations.getInstance().deleteMessage(message)
+          let promise = null;
+          if (this.__studyData) {
+            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message);
+          } else {
+            promise = osparc.store.ConversationsSupport.getInstance().deleteMessage(message);
+          }
+          promise
             .then(() => this.fireDataEvent("messageDeleted", message))
             .catch(err => osparc.FlashMessenger.logError(err));
         }

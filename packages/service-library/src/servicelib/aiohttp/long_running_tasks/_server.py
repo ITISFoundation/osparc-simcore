@@ -8,11 +8,12 @@ from aiohttp import web
 from aiohttp.web import HTTPException
 from common_library.json_serialization import json_dumps
 from pydantic import AnyHttpUrl, TypeAdapter
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from ...aiohttp import status
 from ...long_running_tasks import lrt_api
-from ...long_running_tasks._redis_serialization import (
+from ...long_running_tasks._serialization import (
     BaseObjectSerializer,
     register_custom_serialization,
 )
@@ -20,8 +21,12 @@ from ...long_running_tasks.constants import (
     DEFAULT_STALE_TASK_CHECK_INTERVAL,
     DEFAULT_STALE_TASK_DETECT_TIMEOUT,
 )
-from ...long_running_tasks.models import TaskContext, TaskGet
-from ...long_running_tasks.task import RedisNamespace, RegisteredTaskName
+from ...long_running_tasks.models import (
+    LRTNamespace,
+    RegisteredTaskName,
+    TaskContext,
+    TaskGet,
+)
 from ..typing_extension import Handler
 from . import _routes
 from ._constants import (
@@ -63,7 +68,8 @@ async def start_long_running_task(
     task_id = None
     try:
         task_id = await lrt_api.start_task(
-            long_running_manager.tasks_manager,
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
             registerd_task_name,
             fire_and_forget=fire_and_forget,
             task_context=task_context,
@@ -81,7 +87,7 @@ async def start_long_running_task(
             f"http://{ip_addr}:{port}{request_.app.router['get_task_result'].url_for(task_id=task_id)}"  # NOSONAR
         )
         abort_url = TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{ip_addr}:{port}{request_.app.router['cancel_and_delete_task'].url_for(task_id=task_id)}"  # NOSONAR
+            f"http://{ip_addr}:{port}{request_.app.router['remove_task'].url_for(task_id=task_id)}"  # NOSONAR
         )
         task_get = TaskGet(
             task_id=task_id,
@@ -98,7 +104,11 @@ async def start_long_running_task(
         # remove the task, the client was disconnected
         if task_id:
             await lrt_api.remove_task(
-                long_running_manager.tasks_manager, task_context, task_id
+                long_running_manager.rpc_client,
+                long_running_manager.lrt_namespace,
+                task_context,
+                task_id,
+                wait_for_removal=True,
             )
         raise
 
@@ -143,20 +153,23 @@ def setup(
     *,
     router_prefix: str,
     redis_settings: RedisSettings,
-    redis_namespace: RedisNamespace,
-    handler_check_decorator: Callable = _no_ops_decorator,
-    task_request_context_decorator: Callable = _no_task_context_decorator,
+    rabbit_settings: RabbitSettings,
+    lrt_namespace: LRTNamespace,
     stale_task_check_interval: datetime.timedelta = DEFAULT_STALE_TASK_CHECK_INTERVAL,
     stale_task_detect_timeout: datetime.timedelta = DEFAULT_STALE_TASK_DETECT_TIMEOUT,
+    handler_check_decorator: Callable = _no_ops_decorator,
+    task_request_context_decorator: Callable = _no_task_context_decorator,
 ) -> None:
     """
     - `router_prefix` APIs are mounted on `/...`, this
         will change them to be mounted as `{router_prefix}/...`
-    - `stale_task_check_interval_s` interval at which the
+    - `redis_settings` settings for Redis connection
+    - `rabbit_settings` settings for RabbitMQ connection
+    - `lrt_namespace` namespace for the long-running tasks
+    - `stale_task_check_interval` interval at which the
         TaskManager checks for tasks which are no longer being
         actively monitored by a client
-    - `stale_task_detect_timeout_s` interval after which a
-        task is considered stale
+    - `stale_task_detect_timeout` interval after which atask is considered stale
     """
 
     async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:
@@ -168,11 +181,11 @@ def setup(
         # add components to state
         app[APP_LONG_RUNNING_MANAGER_KEY] = long_running_manager = (
             AiohttpLongRunningManager(
-                app=app,
                 stale_task_check_interval=stale_task_check_interval,
                 stale_task_detect_timeout=stale_task_detect_timeout,
                 redis_settings=redis_settings,
-                redis_namespace=redis_namespace,
+                rabbit_settings=rabbit_settings,
+                lrt_namespace=lrt_namespace,
             )
         )
 
