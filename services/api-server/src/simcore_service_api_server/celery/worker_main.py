@@ -16,33 +16,34 @@ from ..core.settings import ApplicationSettings
 from .worker_tasks.tasks import setup_worker_tasks
 
 
-def app_factory():
-    _settings = ApplicationSettings.create_from_envs()
+def _get_settings() -> ApplicationSettings:
+    return ApplicationSettings.create_from_envs()
 
-    setup_loggers(
-        log_format_local_dev_enabled=_settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=_settings.API_SERVER_LOG_FILTER_MAPPING,
-        tracing_settings=_settings.API_SERVER_TRACING,
-        log_base_level=_settings.log_level,
-        noisy_loggers=None,
+
+_settings = _get_settings()
+
+setup_loggers(
+    log_format_local_dev_enabled=_settings.API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
+    logger_filter_mapping=_settings.API_SERVER_LOG_FILTER_MAPPING,
+    tracing_settings=_settings.API_SERVER_TRACING,
+    log_base_level=_settings.log_level,
+    noisy_loggers=None,
+)
+
+assert _settings.API_SERVER_CELERY  # nosec
+app = create_celery_app(_settings.API_SERVER_CELERY)
+
+app_server = FastAPIAppServer(app=create_app(_settings))
+
+
+def worker_init_wrapper(sender, **_kwargs):
+    assert _settings.API_SERVER_CELERY  # nosec
+    return partial(on_worker_init, app_server, _settings.API_SERVER_CELERY)(
+        sender, **_kwargs
     )
 
-    assert _settings.API_SERVER_CELERY  # nosec
-    app = create_celery_app(_settings.API_SERVER_CELERY)
 
-    app_server = FastAPIAppServer(app=create_app(_settings))
+worker_init.connect(worker_init_wrapper)
+worker_shutdown.connect(on_worker_shutdown)
 
-    def worker_init_wrapper(sender, **_kwargs):
-        assert _settings.API_SERVER_CELERY  # nosec
-        return partial(on_worker_init, app_server, _settings.API_SERVER_CELERY)(
-            sender, **_kwargs
-        )
-
-    worker_init.connect(worker_init_wrapper)
-    worker_shutdown.connect(on_worker_shutdown)
-
-    setup_worker_tasks(app)
-    return app
-
-
-app = app_factory()
+setup_worker_tasks(app)

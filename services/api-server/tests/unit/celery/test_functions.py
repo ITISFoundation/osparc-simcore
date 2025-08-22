@@ -25,7 +25,7 @@ from models_library.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.projects import ProjectID
-from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata
+from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata, TasksQueue
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
@@ -37,7 +37,7 @@ from simcore_service_api_server.api.dependencies.celery import (
     get_task_manager,
 )
 from simcore_service_api_server.api.routes.functions_routes import get_function
-from simcore_service_api_server.celery._worker_tasks._functions_tasks import (
+from simcore_service_api_server.celery.worker_tasks.functions_tasks import (
     run_function as run_function_task,
 )
 from simcore_service_api_server.exceptions.backend_errors import BaseBackEndError
@@ -211,7 +211,9 @@ async def test_celery_error_propagation(
     )
     task_manager = get_task_manager(app=app)
     task_uuid = await task_manager.submit_task(
-        task_metadata=TaskMetadata(name="exception_task"),
+        task_metadata=TaskMetadata(
+            name="exception_task", queue=TasksQueue.API_WORKER_QUEUE
+        ),
         task_filter=TaskFilter.model_validate(job_filter.model_dump()),
     )
 

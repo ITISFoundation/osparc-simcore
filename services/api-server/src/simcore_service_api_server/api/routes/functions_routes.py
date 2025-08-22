@@ -21,7 +21,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.celery.models import TaskFilter, TaskMetadata
+from servicelib.celery.models import TaskFilter, TaskMetadata, TasksQueue
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
 from servicelib.long_running_tasks.models import TaskGet
 
@@ -356,6 +356,8 @@ async def run_function(  # noqa: PLR0913
     task_uuid = await task_manager.submit_task(
         TaskMetadata(
             name=task_name,
+            ephemeral=True,
+            queue=TasksQueue.API_WORKER_QUEUE,
         ),
         task_filter=task_filter,
         user_identity=user_identity,

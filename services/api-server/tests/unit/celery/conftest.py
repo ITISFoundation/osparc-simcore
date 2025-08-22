@@ -135,6 +135,6 @@ async def with_api_server_celery_worker(
         concurrency=1,
         loglevel="info",
         perform_ping_check=False,
-        queues="default",
+        queues="api_worker_queue",
     ) as worker:
         yield worker
