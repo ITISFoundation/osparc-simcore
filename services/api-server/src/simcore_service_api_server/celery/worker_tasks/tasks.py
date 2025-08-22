@@ -5,8 +5,10 @@ from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
 from models_library.functions import (
     RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
     RegisteredPythonCodeFunction,
     RegisteredSolverFunction,
+    RegisteredSolverFunctionJob,
 )
 from servicelib.logging_utils import log_context
 
@@ -17,17 +19,22 @@ from .functions_tasks import run_function
 
 _logger = logging.getLogger(__name__)
 
+registered_pydantic_types = (
+    Identity,
+    JobLinks,
+    JobPricingSpecification,
+    RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
+    RegisteredPythonCodeFunction,
+    RegisteredProjectFunctionJob,
+    RegisteredSolverFunction,
+    RegisteredSolverFunctionJob,
+)
+
 
 def setup_worker_tasks(app: Celery) -> None:
     register_celery_types()
-    register_pydantic_types(
-        Identity,
-        RegisteredProjectFunction,
-        RegisteredPythonCodeFunction,
-        RegisteredSolverFunction,
-        JobPricingSpecification,
-        JobLinks,
-    )
+    register_pydantic_types(*registered_pydantic_types)
 
     with log_context(_logger, logging.INFO, msg="worker task registration"):
         register_task(app, run_function)
