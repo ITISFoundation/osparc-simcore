@@ -19,7 +19,7 @@ from .functions_tasks import run_function
 
 _logger = logging.getLogger(__name__)
 
-registered_pydantic_types = (
+pydantic_types_to_register = (
     Identity,
     JobLinks,
     JobPricingSpecification,
@@ -34,7 +34,7 @@ registered_pydantic_types = (
 
 def setup_worker_tasks(app: Celery) -> None:
     register_celery_types()
-    register_pydantic_types(*registered_pydantic_types)
+    register_pydantic_types(*pydantic_types_to_register)
 
     with log_context(_logger, logging.INFO, msg="worker task registration"):
         register_task(app, run_function)
