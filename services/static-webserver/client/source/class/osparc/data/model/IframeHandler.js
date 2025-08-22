@@ -73,6 +73,18 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     "iframeStateChanged": "qx.event.type.Event"
   },
 
+  statics: {
+    evalShowToolbar: function(loadingPage, study) {
+      if (osparc.product.Utils.isProduct("s4llite")) {
+        loadingPage.setShowToolbar(false);
+      } else {
+        study.getUi().bind("mode", loadingPage, "showToolbar", {
+          converter: mode => mode !== "standalone"
+        });
+      }
+    },
+  },
+
   members: {
     __unresponsiveRetries: null,
     __stopRequestingStatus: null,
@@ -105,13 +117,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
     __initIFrame: function() {
       const iframe = new osparc.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe.getIframe(), "iframe_"+this.getNode().getNodeId());
-      if (osparc.product.Utils.isProduct("s4llite")) {
-        iframe.setShowToolbar(false);
-      } else {
-        this.getStudy().getUi().bind("mode", iframe, "showToolbar", {
-          converter: mode => mode !== "standalone"
-        });
-      }
+      this.self().evalShowToolbar(iframe, this.getStudy());
       iframe.addListener("restart", () => this.restartIFrame(), this);
       iframe.getDiskUsageIndicator().setCurrentNode(this.getNode())
       this.setIFrame(iframe);
@@ -122,13 +128,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
         header: this.__getLoadingPageHeader()
       });
 
-      if (osparc.product.Utils.isProduct("s4llite")) {
-        loadingPage.setShowToolbar(false);
-      } else {
-        this.getStudy().getUi().bind("mode", loadingPage, "showToolbar", {
-          converter: mode => mode !== "standalone"
-        });
-      }
+      this.self().evalShowToolbar(loadingPage, this.getStudy());
 
       const node = this.getNode();
       const thumbnail = node.getMetadata()["thumbnail"];
@@ -162,6 +162,7 @@ qx.Class.define("osparc.data.model.IframeHandler", {
 
     __initLockedPage: function() {
       const lockedPage = new osparc.ui.message.NodeLockedPage();
+      this.self().evalShowToolbar(lockedPage, this.getStudy());
       this.bind("node", lockedPage, "node");
       this.setLockedPage(lockedPage);
     },
