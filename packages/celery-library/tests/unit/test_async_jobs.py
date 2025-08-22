@@ -301,7 +301,7 @@ async def test_async_jobs_cancel(
         payload=60 * 10,  # test hangs if not cancelled properly
     )
 
-    await asyncio.sleep(3)
+    await asyncio.sleep(3.0)    # wait a bit before cancelling
 
     await async_jobs.cancel(
         async_jobs_rabbitmq_rpc_client,
