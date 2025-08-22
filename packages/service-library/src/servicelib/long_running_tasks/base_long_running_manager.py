@@ -5,8 +5,8 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
-from ._lrt_server import router
 from ._rabbit_namespace import get_rabbit_namespace
+from ._rpc_server import router
 from .models import LRTNamespace, TaskContext
 from .task import TasksManager
 

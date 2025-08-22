@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Any
 
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
-from . import _lrt_client
+from . import _rpc_client
 from .models import (
     LRTNamespace,
     RegisteredTaskName,
@@ -50,7 +50,7 @@ async def start_task(
         TaskId: the task unique identifier
     """
 
-    return await _lrt_client.start_task(
+    return await _rpc_client.start_task(
         rabbitmq_rpc_client,
         lrt_namespace,
         registered_task_name=registered_task_name,
@@ -67,7 +67,7 @@ async def list_tasks(
     lrt_namespace: LRTNamespace,
     task_context: TaskContext,
 ) -> list[TaskBase]:
-    return await _lrt_client.list_tasks(
+    return await _rpc_client.list_tasks(
         rabbitmq_rpc_client, lrt_namespace, task_context=task_context
     )
 
@@ -79,7 +79,7 @@ async def get_task_status(
     task_id: TaskId,
 ) -> TaskStatus:
     """returns the status of a task"""
-    return await _lrt_client.get_task_status(
+    return await _rpc_client.get_task_status(
         rabbitmq_rpc_client, lrt_namespace, task_id=task_id, task_context=task_context
     )
 
@@ -90,7 +90,7 @@ async def get_task_result(
     task_context: TaskContext,
     task_id: TaskId,
 ) -> Any:
-    return await _lrt_client.get_task_result(
+    return await _rpc_client.get_task_result(
         rabbitmq_rpc_client,
         lrt_namespace,
         task_context=task_context,
@@ -111,7 +111,7 @@ async def remove_task(
 
     When `wait_for_removal` is True, `cancellationt_timeout` is set to _RPC_TIMEOUT_SHORT_REQUESTS
     """
-    await _lrt_client.remove_task(
+    await _rpc_client.remove_task(
         rabbitmq_rpc_client,
         lrt_namespace,
         task_id=task_id,
