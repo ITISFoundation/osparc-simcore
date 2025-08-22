@@ -3851,9 +3851,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: 'List Tasks '
+      summary: Get Async Jobs
       description: Lists all long running tasks
-      operationId: list_tasks_
+      operationId: get_async_jobs
       responses:
         '200':
           description: Successful Response
@@ -3889,9 +3889,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: 'Get Task Status '
+      summary: Get Async Job Status
       description: Retrieves the status of a task
-      operationId: get_task_status_
+      operationId: get_async_job_status
       parameters:
       - name: task_id
         in: path
@@ -3933,9 +3933,9 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: 'Remove Task '
+      summary: Cancel Async Job
       description: Cancels and removes a task
-      operationId: remove_task_
+      operationId: cancel_async_job
       parameters:
       - name: task_id
         in: path
@@ -3974,9 +3974,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: 'Get Task Result '
+      summary: Get Async Job Result
       description: Retrieves the result of a task
-      operationId: get_task_result_
+      operationId: get_async_job_result
       parameters:
       - name: task_id
         in: path
@@ -3990,7 +3990,7 @@ paths:
           content:
             application/json:
               schema:
-                title: 'Response Get Task Result '
+                title: Response Get Async Job Result
         '404':
           content:
             application/json:
