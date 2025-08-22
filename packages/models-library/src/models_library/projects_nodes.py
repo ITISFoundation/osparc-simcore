@@ -478,6 +478,7 @@ class Node(BaseModel):
 
 
 class PartialNode(Node):
-    key: ServiceKey | None = None
-    version: ServiceVersion | None = None
-    label: str | None = None
+    # NOTE: `type: ignore[assignment]` is needed because mypy gets confused when overriding the types by adding the Union with None
+    key: ServiceKey | None = None  # type: ignore[assignment]
+    version: ServiceVersion | None = None  # type: ignore[assignment]
+    label: str | None = None  # type: ignore[assignment]
