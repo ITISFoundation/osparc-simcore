@@ -108,7 +108,7 @@ async def get_task_result(
         return loads(serialized_result)
     except RPCTransferrableTaskError as e:
         decoded_error = loads(f"{e}")
-        raise decoded_error from None
+        raise decoded_error from e
 
 
 @log_decorator(_logger, level=logging.DEBUG)
