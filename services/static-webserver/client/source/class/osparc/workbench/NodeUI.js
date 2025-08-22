@@ -288,7 +288,9 @@ qx.Class.define("osparc.workbench.NodeUI", {
           });
           break;
         case "avatar-group":
-          control = new osparc.ui.basic.AvatarGroup(20, "right");
+          control = new osparc.ui.basic.AvatarGroup(20, "right").set({
+            hideMyself: true,
+          });
           this.getChildControl("middle-container").addAt(control, 2, {
             flex: 1
           });
