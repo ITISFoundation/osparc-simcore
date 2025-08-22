@@ -63,11 +63,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __handleIframeStateChange: function(node, iframeLayout) {
       iframeLayout.removeAll();
       if (node && node.getIFrame()) {
-        const loadingPage = node.getLoadingPage();
         const iFrame = node.getIFrame();
         const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        iframeLayout.add(iFrameView, {
+        let showPage = iFrame;
+        if (node.getStatus().getLockState().isLocked()) {
+          showPage = node.getLockedPage();
+        } else if (src === null || src === "about:blank") {
+          showPage = node.getLoadingPage();
+        }
+        iframeLayout.add(showPage, {
           flex: 1
         });
       }
