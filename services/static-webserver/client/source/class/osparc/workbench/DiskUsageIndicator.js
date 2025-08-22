@@ -105,7 +105,7 @@ qx.Class.define("osparc.workbench.DiskUsageIndicator", {
       this._subscribe(node);
 
       node.getStatus().bind("interactive", this, "visibility", {
-        converter: state => state === "ready" ? "visible" : "hidden"
+        converter: state => state === "ready" ? "visible" : "excluded"
       });
     },
 
