@@ -61,13 +61,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __handleIframeStateChange: function(node, iframeLayout) {
+      console.log("handleIframeStateChange", node.getNodeId(), iframeLayout, node.getStatus().getLockState().isLocked(), node.getStatus().getLockState().getCurrentUserGroupIds());
       iframeLayout.removeAll();
       if (node && node.getIFrame()) {
         const iFrame = node.getIFrame();
         const src = iFrame.getSource();
         let showPage = iFrame;
-        const nodeLockedState = node.getStatus().getLockState()
-        if (nodeLockedState.isLocked() && nodeLockedState.isLockedBySomeoneElse()) {
+        if (node.getStatus().getLockState().isLockedBySomeoneElse()) {
           showPage = node.getLockedPage();
         } else if (src === null || src === "about:blank") {
           showPage = node.getLoadingPage();

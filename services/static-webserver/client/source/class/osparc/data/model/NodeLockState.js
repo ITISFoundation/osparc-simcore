@@ -32,7 +32,6 @@ qx.Class.define("osparc.data.model.NodeLockState", {
       init: [],
       nullable: false,
       event: "changeCurrentUserGroupIds",
-      apply: "__currentUserGroupIds",
     },
 
     locked: {
@@ -60,10 +59,6 @@ qx.Class.define("osparc.data.model.NodeLockState", {
           status: "status" in state ? state["status"] : "NOT_STARTED",
         });
       }
-    },
-
-    __currentUserGroupIds: function(currentUserGroupIds) {
-      console.log("currentUserGroupIds", currentUserGroupIds);
     },
 
     isLockedBySomeoneElse: function() {
