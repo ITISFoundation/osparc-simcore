@@ -6,6 +6,7 @@ from typing import Final
 
 from aiohttp import web
 from models_library.groups import GroupID
+from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     ComputationalPipelineStatusMessage,
     EventRabbitMessage,
