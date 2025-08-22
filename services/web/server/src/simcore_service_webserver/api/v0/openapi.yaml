@@ -3851,9 +3851,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: List Tasks
+      summary: 'List Tasks '
       description: Lists all long running tasks
-      operationId: list_tasks
+      operationId: list_tasks_
       responses:
         '200':
           description: Successful Response
@@ -3889,9 +3889,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Status
+      summary: 'Get Task Status '
       description: Retrieves the status of a task
-      operationId: get_task_status
+      operationId: get_task_status_
       parameters:
       - name: task_id
         in: path
@@ -3933,9 +3933,9 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Remove Task
+      summary: 'Remove Task '
       description: Cancels and removes a task
-      operationId: remove_task
+      operationId: remove_task_
       parameters:
       - name: task_id
         in: path
@@ -3974,9 +3974,9 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Result
+      summary: 'Get Task Result '
       description: Retrieves the result of a task
-      operationId: get_task_result
+      operationId: get_task_result_
       parameters:
       - name: task_id
         in: path
@@ -3990,7 +3990,7 @@ paths:
           content:
             application/json:
               schema:
-                title: Response Get Task Result
+                title: 'Response Get Task Result '
         '404':
           content:
             application/json:

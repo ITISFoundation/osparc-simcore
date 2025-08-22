@@ -34,7 +34,7 @@ _export_data_responses: dict[int | str, dict[str, Any]] = {
     response_model=Envelope[list[TaskGet]],
     responses=_export_data_responses,
 )
-def list_tasks():
+def list_tasks_():
     """Lists all long running tasks"""
 
 
@@ -43,7 +43,7 @@ def list_tasks():
     response_model=Envelope[TaskStatus],
     responses=_export_data_responses,
 )
-def get_task_status(
+def get_task_status_(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Retrieves the status of a task"""
@@ -54,7 +54,7 @@ def get_task_status(
     responses=_export_data_responses,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def remove_task(
+def remove_task_(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Cancels and removes a task"""
@@ -65,7 +65,7 @@ def remove_task(
     response_model=Any,
     responses=_export_data_responses,
 )
-def get_task_result(
+def get_task_result_(
     _path_params: Annotated[_PathParam, Depends()],
 ):
     """Retrieves the result of a task"""
