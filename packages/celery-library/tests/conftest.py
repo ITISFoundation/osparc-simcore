@@ -142,7 +142,7 @@ async def with_celery_worker(
         celery_app,
         concurrency=1,
         pool="threads",
-        loglevel="debug",
+        loglevel="info",
         perform_ping_check=False,
         queues="default",
     ) as worker:
