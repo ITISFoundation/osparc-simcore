@@ -431,7 +431,7 @@ async def test_conversations_without_type_query_param(
     resp = await client.get(f"{list_url}")
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-    # All other endpoints should be OK
+    # All other endpoints should return 400, because we currently support only SUPPORT type
     get_url = client.app.router["get_conversation"].url_for(
         conversation_id=conversation_id
     )
