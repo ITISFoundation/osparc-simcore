@@ -195,7 +195,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           layout = this.getChildControl("header");
           layout.add(control, this.self().HPOS.TITLE);
           break;
-        case "share-icon": {
+        case "subtitle-icon": {
           control = new qx.ui.basic.Image().set({
             allowGrowX: false,
             allowShrinkX: false,

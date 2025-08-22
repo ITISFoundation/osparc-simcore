@@ -261,7 +261,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
 
     _applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
-        const shareIcon = this.getChildControl("share-icon");
+        const shareIcon = this.getChildControl("subtitle-icon");
         shareIcon.addListener("tap", e => {
           e.stopPropagation();
           this.openAccessRights();
