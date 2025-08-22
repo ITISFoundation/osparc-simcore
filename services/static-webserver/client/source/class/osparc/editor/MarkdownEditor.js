@@ -34,6 +34,12 @@ qx.Class.define("osparc.editor.MarkdownEditor", {
       value: this.tr("Markdown supported"),
       url: "https://en.wikipedia.org/wiki/Markdown",
     });
+
+    this.getChildControl("text-area").set({
+      minimalLineHeight: 2, // defaults to 4 lines
+      maxHeight: 100, // 5 lines
+      autoSize: true,
+    });
   },
 
   members: {

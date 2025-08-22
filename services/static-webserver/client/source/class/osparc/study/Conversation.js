@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.conversation.Conversation", {
+qx.Class.define("osparc.study.Conversation", {
   extend: qx.ui.tabview.Page,
 
   /**
@@ -87,11 +87,11 @@ qx.Class.define("osparc.conversation.Conversation", {
           titleEditor.close();
           const newLabel = e.getData()["newLabel"];
           if (this.getConversationId()) {
-            osparc.store.Conversations.getInstance().renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
+            osparc.store.ConversationsProject.getInstance().renameConversation(this.__studyData["uuid"], this.getConversationId(), newLabel)
               .then(() => this.renameConversation(newLabel));
           } else {
             // create new conversation first
-            osparc.store.Conversations.getInstance().addConversation(this.__studyData["uuid"], newLabel)
+            osparc.store.ConversationsProject.getInstance().postConversation(this.__studyData["uuid"], newLabel)
               .then(data => {
                 this.setConversationId(data["conversationId"]);
                 this.getChildControl("button").setLabel(newLabel);
@@ -114,7 +114,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       });
       closeButton.addListener("execute", () => {
         if (this.__messagesList.getChildren().length === 0) {
-          osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
+          osparc.store.ConversationsProject.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
         } else {
           const msg = this.tr("Are you sure you want to delete the conversation?");
           const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
@@ -125,7 +125,7 @@ qx.Class.define("osparc.conversation.Conversation", {
           confirmationWin.open();
           confirmationWin.addListener("close", () => {
             if (confirmationWin.getConfirmed()) {
-              osparc.store.Conversations.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
+              osparc.store.ConversationsProject.getInstance().deleteConversation(this.__studyData["uuid"], this.getConversationId());
             }
           }, this);
         }
@@ -166,7 +166,9 @@ qx.Class.define("osparc.conversation.Conversation", {
       this.__loadMoreMessages.addListener("execute", () => this.__reloadMessages(false));
       this._add(this.__loadMoreMessages);
 
-      const addMessages = new osparc.conversation.AddMessage(this.__studyData, this.getConversationId()).set({
+      const addMessages = new osparc.conversation.AddMessage().set({
+        studyData: this.__studyData,
+        conversationId: this.getConversationId(),
         enabled: osparc.data.model.Study.canIWrite(this.__studyData["accessRights"]),
         paddingLeft: 10,
       });
@@ -197,7 +199,7 @@ qx.Class.define("osparc.conversation.Conversation", {
       const options = {
         resolveWResponse: true
       };
-      return osparc.data.Resources.fetch("conversations", "getMessagesPage", params, options)
+      return osparc.data.Resources.fetch("conversationsStudies", "getMessagesPage", params, options)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 

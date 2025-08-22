@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.74.0
+  version: 0.75.0
 servers:
 - url: ''
   description: webserver
@@ -516,12 +516,6 @@ paths:
       - conversations
       summary: Create Conversation
       operationId: create_conversation
-      parameters:
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       requestBody:
         required: true
         content:
@@ -541,11 +535,6 @@ paths:
       summary: List Conversations
       operationId: list_conversations
       parameters:
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       - name: limit
         in: query
         required: false
@@ -563,6 +552,11 @@ paths:
           minimum: 0
           default: 0
           title: Offset
+      - name: type
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConversationType'
       responses:
         '200':
           description: Successful Response
@@ -571,7 +565,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Page_ConversationRestGet_'
   /v0/conversations/{conversation_id}:
-    put:
+    patch:
       tags:
       - conversations
       summary: Update Conversation
@@ -584,11 +578,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       requestBody:
         required: true
         content:
@@ -615,11 +604,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       responses:
         '204':
           description: Successful Response
@@ -636,11 +620,6 @@ paths:
           type: string
           format: uuid
           title: Conversation Id
-      - name: type
-        in: query
-        required: true
-        schema:
-          $ref: '#/components/schemas/ConversationType'
       responses:
         '200':
           description: Successful Response
@@ -3670,6 +3649,33 @@ paths:
           type: boolean
           default: false
           title: Include Extras
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      - name: filters
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            contentMediaType: application/json
+            contentSchema: {}
+          - type: 'null'
+          title: Filters
+      - name: order_by
+        in: query
+        required: false
+        schema:
+          type: string
+          contentMediaType: application/json
+          contentSchema: {}
+          default: '{"field":"modified","direction":"desc"}'
+          title: Order By
       - name: limit
         in: query
         required: false
@@ -10310,6 +10316,12 @@ components:
           - type: string
           - type: 'null'
           title: Name
+        extraContext:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Extracontext
       type: object
       title: ConversationPatch
     ConversationRestGet:
@@ -16930,6 +16942,11 @@ components:
           - type: 'null'
           title: Service Message
           description: additional information related to service state
+        is_collaborative:
+          type: boolean
+          title: Is Collaborative
+          description: True if service allows collaboration (multi-tenant access)
+          default: false
       type: object
       required:
       - service_key

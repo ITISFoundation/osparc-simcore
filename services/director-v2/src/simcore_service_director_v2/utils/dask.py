@@ -20,11 +20,12 @@ from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.computations import TaskLogFileGet
 from models_library.api_schemas_directorv2.services import NodeRequirements
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import DockerLabelKey
 from models_library.errors import ErrorDict
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -294,7 +295,7 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.model_validate(
+    standard_simcore_labels = SimcoreContainerLabels.model_validate(
         {
             "user_id": user_id,
             "project_id": project_id,
