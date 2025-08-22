@@ -1,7 +1,4 @@
 """Main application to be deployed in for example uvicorn."""
-
-from functools import partial
-
 from celery.signals import worker_init, worker_shutdown  # type: ignore[import-untyped]
 from celery_library.common import create_app as create_celery_app
 from celery_library.signals import (
@@ -34,7 +31,7 @@ app_server = FastAPIAppServer(app=create_app(_settings))
 
 def worker_init_wrapper(sender, **_kwargs):
     assert _settings.STORAGE_CELERY  # nosec
-    return partial(on_worker_init, app_server)(sender, **_kwargs)
+    return on_worker_init(sender, app_server, **_kwargs)
 
 
 worker_init.connect(worker_init_wrapper)
