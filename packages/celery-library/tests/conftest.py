@@ -5,7 +5,6 @@ import datetime
 import logging
 import threading
 from collections.abc import AsyncIterator, Callable
-from functools import partial
 from typing import Any
 
 import pytest
@@ -131,7 +130,7 @@ async def with_celery_worker(
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        return partial(on_worker_init, app_server)(sender, **_kwargs)
+        return on_worker_init(app_server, sender, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
     worker_shutdown.connect(on_worker_shutdown)
