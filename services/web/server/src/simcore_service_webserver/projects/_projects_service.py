@@ -1471,6 +1471,7 @@ async def _trigger_connected_service_retrieve(
 
     # find the nodes that need to retrieve data
     for node_uuid, node in workbench.items():
+
         # check this node is dynamic
         if not _is_node_dynamic(node["key"]):
             continue
@@ -1482,9 +1483,11 @@ async def _trigger_connected_service_retrieve(
             if not isinstance(port_value, dict):
                 continue
 
-            input_node_uuid = port_value.get("nodeUuid")
+            # FIXME: hack to support both field and alias names because cannot guarantee which one is stored in workbench
+            input_node_uuid = port_value.get("nodeUuid", port_value.get("node_uuid"))
             if input_node_uuid != updated_node_uuid:
                 continue
+
             # so this node is linked to the updated one, now check if the port was changed?
             linked_input_port = port_value.get("output")
             if linked_input_port in changed_keys:
@@ -1492,8 +1495,8 @@ async def _trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        dynamic_scheduler_service.retrieve_inputs(app, NodeID(node), keys)
-        for node, keys in nodes_keys_to_update.items()
+        dynamic_scheduler_service.retrieve_inputs(app, NodeID(node_id), keys)
+        for node_id, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks, reraise=False)
 
