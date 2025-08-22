@@ -1,18 +1,21 @@
-import logging
+from datetime import timedelta
 from typing import Any
 
-from common_library.error_codes import create_error_code
-
-from ..logging_errors import create_troubleshootting_log_kwargs
-from .errors import TaskNotCompletedError, TaskNotFoundError
-from .models import TaskBase, TaskContext, TaskId, TaskStatus
-from .task import RegisteredTaskName, TasksManager
-
-_logger = logging.getLogger(__name__)
+from ..rabbitmq._client_rpc import RabbitMQRPCClient
+from . import _rpc_client
+from .models import (
+    LRTNamespace,
+    RegisteredTaskName,
+    TaskBase,
+    TaskContext,
+    TaskId,
+    TaskStatus,
+)
 
 
 async def start_task(
-    tasks_manager: TasksManager,
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    lrt_namespace: LRTNamespace,
     registered_task_name: RegisteredTaskName,
     *,
     unique: bool = False,
@@ -46,8 +49,11 @@ async def start_task(
     Returns:
         TaskId: the task unique identifier
     """
-    return await tasks_manager.start_task(
-        registered_task_name,
+
+    return await _rpc_client.start_task(
+        rabbitmq_rpc_client,
+        lrt_namespace,
+        registered_task_name=registered_task_name,
         unique=unique,
         task_context=task_context,
         task_name=task_name,
@@ -57,51 +63,59 @@ async def start_task(
 
 
 async def list_tasks(
-    tasks_manager: TasksManager, task_context: TaskContext
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    lrt_namespace: LRTNamespace,
+    task_context: TaskContext,
 ) -> list[TaskBase]:
-    return await tasks_manager.list_tasks(with_task_context=task_context)
+    return await _rpc_client.list_tasks(
+        rabbitmq_rpc_client, lrt_namespace, task_context=task_context
+    )
 
 
 async def get_task_status(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    lrt_namespace: LRTNamespace,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> TaskStatus:
     """returns the status of a task"""
-    return await tasks_manager.get_task_status(
-        task_id=task_id, with_task_context=task_context
+    return await _rpc_client.get_task_status(
+        rabbitmq_rpc_client, lrt_namespace, task_id=task_id, task_context=task_context
     )
 
 
 async def get_task_result(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    lrt_namespace: LRTNamespace,
+    task_context: TaskContext,
+    task_id: TaskId,
 ) -> Any:
-    try:
-        task_result = await tasks_manager.get_task_result(
-            task_id, with_task_context=task_context
-        )
-        await tasks_manager.remove_task(
-            task_id, with_task_context=task_context, reraise_errors=False
-        )
-        return task_result
-    except (TaskNotFoundError, TaskNotCompletedError):
-        raise
-    except Exception as exc:
-        _logger.exception(
-            **create_troubleshootting_log_kwargs(
-                user_error_msg=f"{task_id=} raised an exception while getting its result",
-                error=exc,
-                error_code=create_error_code(exc),
-                error_context={"task_context": task_context, "task_id": task_id},
-            ),
-        )
-        # the task shall be removed in this case
-        await tasks_manager.remove_task(
-            task_id, with_task_context=task_context, reraise_errors=False
-        )
-        raise
+    return await _rpc_client.get_task_result(
+        rabbitmq_rpc_client,
+        lrt_namespace,
+        task_context=task_context,
+        task_id=task_id,
+    )
 
 
 async def remove_task(
-    tasks_manager: TasksManager, task_context: TaskContext, task_id: TaskId
+    rabbitmq_rpc_client: RabbitMQRPCClient,
+    lrt_namespace: LRTNamespace,
+    task_context: TaskContext,
+    task_id: TaskId,
+    *,
+    wait_for_removal: bool,
+    cancellation_timeout: timedelta | None = None,
 ) -> None:
-    """cancels and removes the task"""
-    await tasks_manager.remove_task(task_id, with_task_context=task_context)
+    """cancels and removes a task
+
+    When `wait_for_removal` is True, `cancellationt_timeout` is set to _RPC_TIMEOUT_SHORT_REQUESTS
+    """
+    await _rpc_client.remove_task(
+        rabbitmq_rpc_client,
+        lrt_namespace,
+        task_id=task_id,
+        task_context=task_context,
+        wait_for_removal=wait_for_removal,
+        cancellation_timeout=cancellation_timeout,
+    )

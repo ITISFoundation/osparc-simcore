@@ -28,20 +28,25 @@ ProgressCallback: TypeAlias = Callable[
 RequestBody: TypeAlias = Any
 TaskContext: TypeAlias = dict[str, Any]
 
+LRTNamespace: TypeAlias = str
+
+RegisteredTaskName: TypeAlias = str
+
 
 class ResultField(BaseModel):
-    result: str | None = None
-    error: str | None = None
+    str_result: str | None = None
+    str_error: str | None = None
 
     @model_validator(mode="after")
     def validate_mutually_exclusive(self) -> "ResultField":
-        if self.result is not None and self.error is not None:
+        if self.str_result is not None and self.str_error is not None:
             msg = "Cannot set both 'result' and 'error' - they are mutually exclusive"
             raise ValueError(msg)
         return self
 
 
 class TaskData(BaseModel):
+    registered_task_name: RegisteredTaskName
     task_id: str
     task_progress: TaskProgress
     # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
@@ -79,6 +84,7 @@ class TaskData(BaseModel):
         json_schema_extra={
             "examples": [
                 {
+                    "registered_task_name": "a-task-name",
                     "task_id": "1a119618-7186-4bc1-b8de-7e3ff314cb7e",
                     "task_name": "running-task",
                     "task_status": "running",

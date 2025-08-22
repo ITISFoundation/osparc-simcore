@@ -29,7 +29,7 @@ db:
     host: 127.0.0.1
     port: 5432
     maxsize: 5
-    minsize: 1
+    minsize: 2
     endpoint: 127.0.0.1:5432
 diagnostics:
   enabled: false

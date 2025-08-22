@@ -5,8 +5,7 @@ from contextlib import AbstractAsyncContextManager
 
 import pytest
 from pydantic import TypeAdapter
-from servicelib.long_running_tasks._store.base import BaseStore
-from servicelib.long_running_tasks._store.redis import RedisStore
+from servicelib.long_running_tasks._redis_store import RedisStore
 from servicelib.long_running_tasks.models import TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -25,7 +24,7 @@ async def store(
     get_redis_client_sdk: Callable[
         [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
     ],
-) -> AsyncIterable[BaseStore]:
+) -> AsyncIterable[RedisStore]:
     store = RedisStore(redis_settings=use_in_memory_redis, namespace="test")
 
     await store.setup()
@@ -37,12 +36,12 @@ async def store(
         pass
 
 
-async def test_workflow(store: BaseStore, task_data: TaskData) -> None:
+async def test_workflow(store: RedisStore, task_data: TaskData) -> None:
     # task data
     assert await store.list_tasks_data() == []
     assert await store.get_task_data("missing") is None
 
-    await store.set_task_data(task_data.task_id, task_data)
+    await store.add_task_data(task_data.task_id, task_data)
 
     assert await store.list_tasks_data() == [task_data]
 
@@ -51,11 +50,13 @@ async def test_workflow(store: BaseStore, task_data: TaskData) -> None:
     assert await store.list_tasks_data() == []
 
     # cancelled tasks
-    assert await store.get_cancelled() == {}
+    assert await store.list_tasks_to_remove() == {}
 
-    await store.set_as_cancelled(task_data.task_id, task_data.task_context)
+    await store.mark_task_for_removal(task_data.task_id, task_data.task_context)
 
-    assert await store.get_cancelled() == {task_data.task_id: task_data.task_context}
+    assert await store.list_tasks_to_remove() == {
+        task_data.task_id: task_data.task_context
+    }
 
 
 @pytest.fixture
@@ -88,15 +89,15 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
 
     for store in redis_stores:
         assert await store.list_tasks_data() == []
-        assert await store.get_cancelled() == {}
+        assert await store.list_tasks_to_remove() == {}
 
     for store in redis_stores:
-        await store.set_task_data(task_data.task_id, task_data)
-        await store.set_as_cancelled(task_data.task_id, None)
+        await store.add_task_data(task_data.task_id, task_data)
+        await store.mark_task_for_removal(task_data.task_id, {})
 
     for store in redis_stores:
         assert await store.list_tasks_data() == [task_data]
-        assert await store.get_cancelled() == {task_data.task_id: None}
+        assert await store.list_tasks_to_remove() == {task_data.task_id: {}}
 
     for store in redis_stores:
         await store.delete_task_data(task_data.task_id)

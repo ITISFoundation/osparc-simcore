@@ -8,8 +8,6 @@ from random import choice
 from typing import Any
 from unittest import mock
 
-import aiopg
-import aiopg.sa
 import pytest
 import socketio
 import sqlalchemy as sa
@@ -40,7 +38,6 @@ from servicelib.aiohttp.monitor_services import (
 )
 from servicelib.rabbitmq import RabbitMQClient
 from settings_library.rabbit import RabbitSettings
-from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db.plugin import setup_db
@@ -59,7 +56,6 @@ from simcore_service_webserver.socketio._utils import get_socket_server
 from simcore_service_webserver.socketio.messages import (
     SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
-    SOCKET_IO_NODE_UPDATED_EVENT,
 )
 from simcore_service_webserver.socketio.models import WebSocketNodeProgress
 from simcore_service_webserver.socketio.plugin import setup_socketio
@@ -75,7 +71,10 @@ pytest_simcore_core_services_selection = [
     "redis",
 ]
 
-pytest_simcore_ops_services_selection = ["redis-commander"]
+pytest_simcore_ops_services_selection = [
+    "adminer",
+    "redis-commander",
+]
 
 _STABLE_DELAY_S = 2
 
@@ -132,6 +131,7 @@ async def _assert_handler_called_with_json(
 
 @pytest.fixture
 async def client(
+    docker_registry: str,
     mock_redis_socket_timeout: None,
     aiohttp_client: Callable,
     app_config: dict[str, Any],
@@ -139,9 +139,10 @@ async def client(
     postgres_db: sa.engine.Engine,
     redis_client: Redis,
     monkeypatch_setenv_from_app_config: Callable,
+    simcore_services_ready: None,
 ) -> TestClient:
     app_config["storage"]["enabled"] = False
-
+    app_config["db"]["postgres"]["minsize"] = 2
     monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
 
@@ -368,89 +369,6 @@ async def test_progress_non_computational_workflow(
         await _assert_handler_called_with_json(mock_progress_handler, expected_call)
     else:
         await _assert_handler_not_called(mock_progress_handler)
-
-
-@pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
-@pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
-)
-@pytest.mark.parametrize(
-    "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
-)
-async def test_progress_computational_workflow(
-    client: TestClient,
-    rabbitmq_publisher: RabbitMQClient,
-    user_project: ProjectDict,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
-    mocker: MockerFixture,
-    aiopg_engine: aiopg.sa.Engine,
-    subscribe_to_logs: bool,
-    # user
-    sender_same_user_id: bool,
-    sender_user_id: UserID,
-    # project
-    random_node_id_in_user_project: NodeID,
-    user_project_id: ProjectID,
-):
-    """
-    RabbitMQ (TOPIC) --> Webserver -->  DB (get project)
-                                        Redis --> webclient (socketio)
-
-    """
-    socket_io_conn, *_ = await create_socketio_connection(None, client)
-
-    mock_progress_handler = mocker.MagicMock()
-    socket_io_conn.on(SOCKET_IO_NODE_UPDATED_EVENT, handler=mock_progress_handler)
-
-    if subscribe_to_logs:
-        assert client.app
-        await project_logs.subscribe(client.app, user_project_id)
-    # this simulates the user openning the project
-    await get_socket_server(client.app).enter_room(
-        socket_io_conn.get_sid(), SocketIORoomStr.from_project_id(user_project_id)
-    )
-    progress_message = ProgressRabbitMessageNode(
-        user_id=sender_user_id,
-        project_id=user_project_id,
-        node_id=random_node_id_in_user_project,
-        progress_type=ProgressType.COMPUTATION_RUNNING,
-        report=ProgressReport(actual_value=0.3, total=1),
-    )
-    await rabbitmq_publisher.publish(progress_message.channel_name, progress_message)
-
-    call_expected = sender_same_user_id and subscribe_to_logs
-    if call_expected:
-        expected_call = jsonable_encoder(
-            progress_message, include={"node_id", "project_id"}
-        )
-        expected_call |= {
-            "data": user_project["workbench"][f"{random_node_id_in_user_project}"]
-        }
-        expected_call["data"]["progress"] = int(
-            progress_message.report.percent_value * 100
-        )
-        await _assert_handler_called_with_json(mock_progress_handler, expected_call)
-    else:
-        await _assert_handler_not_called(mock_progress_handler)
-
-    # check the database. doing it after the waiting calls above is safe
-    async with aiopg_engine.acquire() as conn:
-        assert projects is not None
-        result = await conn.execute(
-            sa.select(projects.c.workbench).where(
-                projects.c.uuid == str(user_project_id)
-            )
-        )
-        row = await result.fetchone()
-        assert row
-        project_workbench = dict(row[projects.c.workbench])
-        # NOTE: the progress might still be present but is not used anymore
-        assert (
-            project_workbench[f"{random_node_id_in_user_project}"].get("progress", 0)
-            == 0
-        )
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)

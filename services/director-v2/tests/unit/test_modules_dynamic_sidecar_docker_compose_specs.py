@@ -8,13 +8,13 @@ from uuid import uuid4
 
 import pytest
 import yaml
-from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     ComposeSpecLabelDict,
     SimcoreServiceLabels,
 )
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.services_resources import (
     DEFAULT_SINGLE_SERVICE_NAME,
     ResourcesDict,
@@ -131,7 +131,7 @@ async def test_inject_resource_limits_and_reservations(
             assert spec["deploy"]["resources"]["limits"]["memory"] == f"{memory.limit}"
 
             assert (
-                f"{CPU_RESOURCE_LIMIT_KEY}={int(float(cpu.limit)*10**9)}"
+                f"{CPU_RESOURCE_LIMIT_KEY}={int(float(cpu.limit) * 10**9)}"
                 in spec["environment"]
             )
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]
@@ -143,7 +143,7 @@ async def test_inject_resource_limits_and_reservations(
             assert spec["cpus"] == max(cpu.limit, cpu.reservation)
 
             assert (
-                f"{CPU_RESOURCE_LIMIT_KEY}={int(max(cpu.limit, cpu.reservation)*10**9)}"
+                f"{CPU_RESOURCE_LIMIT_KEY}={int(max(cpu.limit, cpu.reservation) * 10**9)}"
                 in spec["environment"]
             )
             assert f"{MEM_RESOURCE_LIMIT_KEY}={memory.limit}" in spec["environment"]

@@ -26,7 +26,7 @@ from .exceptions import (
 )
 
 
-async def get_project_wallet(app, project_id: ProjectID):
+async def get_project_wallet(app, project_id: ProjectID) -> WalletGet | None:
     db: ProjectDBAPI = ProjectDBAPI.get_from_app_context(app)
 
     wallet_db: WalletDB | None = await db.get_project_wallet(project_uuid=project_id)

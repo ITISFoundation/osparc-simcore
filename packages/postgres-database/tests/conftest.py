@@ -81,7 +81,7 @@ def sync_engine(postgres_service: str) -> Iterable[sqlalchemy.engine.Engine]:
 def _make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]:
     # NOTE: users is responsible of `await engine.dispose()`
     dsn = postgres_service.replace("postgresql://", "postgresql+asyncpg://")
-    minsize = 1
+    minsize = 2
     maxsize = 50
 
     def _(echo: bool):

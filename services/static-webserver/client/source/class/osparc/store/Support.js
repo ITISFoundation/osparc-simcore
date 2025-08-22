@@ -19,6 +19,26 @@ qx.Class.define("osparc.store.Support", {
       return osparc.store.VendorInfo.getInstance().getManuals();
     },
 
+    addSupportConversationsToMenu: function(menu) {
+      if (osparc.product.Utils.isSupportEnabled()) {
+        const supportCenterButton = new qx.ui.menu.Button().set({
+          icon: "@FontAwesome5Regular/question-circle/16",
+        });
+        const amISupporter = () => {
+          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
+          supportCenterButton.set({
+            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Support"),
+          });
+        };
+        amISupporter();
+        osparc.store.Groups.getInstance().addListener("organizationsChanged", () => amISupporter());
+        supportCenterButton.addListener("execute", () => {
+          osparc.support.SupportCenter.openWindow();
+        });
+        menu.add(supportCenterButton);
+      }
+    },
+
     addQuickStartToMenu: function(menu) {
       const quickStart = osparc.product.quickStart.Utils.getQuickStart();
       if (quickStart) {
@@ -160,12 +180,15 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getMailToLabel: function(email, subject) {
-      const mailto = new qx.ui.basic.Label(this.mailToLink(email, subject, false)).set({
+      const mailto = new qx.ui.basic.Label().set({
         font: "text-14",
         allowGrowX: true, // let it grow to make it easier to select
         selectable: true,
         rich: true,
       });
+      if (email) {
+        mailto.setValue(this.mailToLink(email, subject, false));
+      }
       return mailto;
     },
 

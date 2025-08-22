@@ -160,6 +160,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __studyEditorIdlingTracker: null,
     __lastSyncedProjectDocument: null,
     __lastSyncedProjectVersion: null,
+    __pendingProjectData: null,
+    __applyProjectDocumentTimer: null,
     __updatingStudy: null,
     __updateThrottled: null,
     __nodesSlidesTree: null,
@@ -334,55 +336,94 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (data["projectId"] === this.getStudy().getUuid()) {
             if (data["clientSessionId"] && data["clientSessionId"] === osparc.utils.Utils.getClientSessionID()) {
               // ignore my own updates
-              console.debug("Ignoring my own projectDocument:updated event", data);
+              console.debug("ProjectDocument Discarded: My own", data);
               return;
             }
-
-            const documentVersion = data["version"];
-            if (this.__lastSyncedProjectVersion && documentVersion <= this.__lastSyncedProjectVersion) {
-              // ignore old updates
-              console.debug("Ignoring old projectDocument:updated event", data);
-              return;
-            }
-            this.__lastSyncedProjectVersion = documentVersion;
-
-            const updatedStudy = data["document"];
-            // curate projectDocument:updated document
-            this.self().curateBackendProjectDocument(updatedStudy);
-
-            const myStudy = this.getStudy().serialize();
-            // curate myStudy
-            this.self().curateFrontendProjectDocument(myStudy);
-
-            this.__blockUpdates = true;
-            const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedStudy);
-            const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
-            const uiPatches = [];
-            const workbenchPatches = [];
-            const studyPatches = [];
-            for (const jsonPatch of jsonPatches) {
-              if (jsonPatch.path.startsWith('/ui/')) {
-                uiPatches.push(jsonPatch);
-              } else if (jsonPatch.path.startsWith('/workbench/')) {
-                workbenchPatches.push(jsonPatch);
-              } else {
-                studyPatches.push(jsonPatch);
-              }
-            }
-            if (workbenchPatches.length > 0) {
-              this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches);
-            }
-            if (uiPatches.length > 0) {
-              this.getStudy().getUi().updateUiFromPatches(uiPatches);
-            }
-            if (studyPatches.length > 0) {
-              this.getStudy().updateStudyFromPatches(studyPatches);
-            }
-
-            this.__blockUpdates = false;
+            this.__projectDocumentReceived(data);
           }
         }, this);
       }
+    },
+
+    __projectDocumentReceived: function(data) {
+      const documentVersion = data["version"];
+
+      // Ignore outdated updates
+      if (this.__lastSyncedProjectVersion && documentVersion <= this.__lastSyncedProjectVersion) {
+        // ignore old updates
+        console.debug("ProjectDocument Discarded: Ignoring old", data);
+        return;
+      }
+
+      // Always keep the latest version in pending buffer
+      if (!this.__pendingProjectData || documentVersion > (this.__pendingProjectData.version || 0)) {
+        this.__pendingProjectData = data;
+      }
+
+      // Reset the timer if it's already running
+      if (this.__applyProjectDocumentTimer) {
+        console.debug("ProjectDocument Discarded: Resetting applyProjectDocument timer");
+        clearTimeout(this.__applyProjectDocumentTimer);
+      }
+
+      // Throttle applying updates
+      this.__applyProjectDocumentTimer = setTimeout(() => {
+        if (!this.__pendingProjectData) {
+          return;
+        }
+        this.__applyProjectDocumentTimer = null;
+
+        // Apply the latest buffered project document
+        const latestData = this.__pendingProjectData;
+        this.__pendingProjectData = null;
+
+        this.__applyProjectDocument(latestData);
+      }, 3*this.self().THROTTLE_PATCH_TIME);
+      // make it 3 times longer.
+      // when another client adds a node:
+      // - there is a POST call
+      // - then (after the throttle) a PATCH on its position
+      // without waiting for it 3 times, this client might place it on the default 0,0
+    },
+
+    __applyProjectDocument: function(data) {
+      console.debug("ProjectDocument applying:", data);
+      this.__lastSyncedProjectVersion = data["version"];
+      const updatedProjectDocument = data["document"];
+
+      // curate projectDocument:updated document
+      this.self().curateBackendProjectDocument(updatedProjectDocument);
+
+      const myStudy = this.getStudy().serialize();
+      // curate myStudy
+      this.self().curateFrontendProjectDocument(myStudy);
+
+      this.__blockUpdates = true;
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedProjectDocument);
+      const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
+      const uiPatches = [];
+      const workbenchPatches = [];
+      const studyPatches = [];
+      for (const jsonPatch of jsonPatches) {
+        if (jsonPatch.path.startsWith('/ui/')) {
+          uiPatches.push(jsonPatch);
+        } else if (jsonPatch.path.startsWith('/workbench/')) {
+          workbenchPatches.push(jsonPatch);
+        } else {
+          studyPatches.push(jsonPatch);
+        }
+      }
+      if (workbenchPatches.length > 0) {
+        this.getStudy().getWorkbench().updateWorkbenchFromPatches(workbenchPatches, uiPatches);
+      }
+      if (uiPatches.length > 0) {
+        this.getStudy().getUi().updateUiFromPatches(uiPatches);
+      }
+      if (studyPatches.length > 0) {
+        this.getStudy().updateStudyFromPatches(studyPatches);
+      }
+
+      this.__blockUpdates = false;
     },
 
     __listenToLogger: function() {

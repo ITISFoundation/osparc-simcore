@@ -20,11 +20,12 @@ from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.computations import TaskLogFileGet
 from models_library.api_schemas_directorv2.services import NodeRequirements
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import DockerLabelKey
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID, ProjectIDStr
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -40,6 +41,7 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from .._meta import APP_NAME
 from ..constants import LOGS_FILE_NAME, UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -88,10 +90,10 @@ async def create_node_ports(
     :raises PortsValidationError: if any of the ports assigned values are invalid
     """
     try:
-        db_manager = node_ports_v2.DBManager(db_engine)
+        db_manager = node_ports_v2.DBManager(db_engine, application_name=APP_NAME)
         return await node_ports_v2.ports(
             user_id=user_id,
-            project_id=ProjectIDStr(f"{project_id}"),
+            project_id=f"{project_id}",
             node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{node_id}"),
             db_manager=db_manager,
         )
@@ -293,7 +295,7 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.model_validate(
+    standard_simcore_labels = SimcoreContainerLabels.model_validate(
         {
             "user_id": user_id,
             "project_id": project_id,

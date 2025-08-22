@@ -28,11 +28,6 @@ qx.Class.define("osparc.node.slideshow.FilePickerView", {
 
   members: {
     // overridden
-    isSettingsGroupShowable: function() {
-      return false;
-    },
-
-    // overridden
     _addSettings: function() {
       return;
     },

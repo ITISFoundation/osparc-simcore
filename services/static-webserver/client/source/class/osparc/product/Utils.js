@@ -417,5 +417,9 @@ qx.Class.define("osparc.product.Utils", {
     groupServices: function() {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
     },
+
+    isSupportEnabled: function() {
+      return Boolean(osparc.store.Products.getInstance().getSupportGroupId());
+    },
   }
 });

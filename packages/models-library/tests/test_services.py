@@ -29,7 +29,7 @@ def minimal_service_common_data() -> dict[str, Any]:
 
 
 def test_create_minimal_service_common_data(
-    minimal_service_common_data: dict[str, Any]
+    minimal_service_common_data: dict[str, Any],
 ):
     service = ServiceBaseDisplay(**minimal_service_common_data)
 
@@ -67,7 +67,7 @@ def test_node_with_thumbnail(minimal_service_common_data: dict[str, Any]):
     )
 
 
-@pytest.mark.parametrize("pattern", (SERVICE_KEY_RE, SERVICE_ENCODED_KEY_RE))
+@pytest.mark.parametrize("pattern", [SERVICE_KEY_RE, SERVICE_ENCODED_KEY_RE])
 @pytest.mark.parametrize(
     "service_key",
     [
@@ -182,9 +182,9 @@ def test_same_regex_patterns_in_jsonschema_and_python(
 
 
 def test_boot_option_wrong_default() -> None:
-    for example in [deepcopy(x) for x in BootOption.model_config["json_schema_extra"]["examples"]]:
-        with pytest.raises(ValueError):
-            example["default"] = "__undefined__"
+    for example in [deepcopy(x) for x in BootOption.model_json_schema()["examples"]]:
+        example["default"] = "__undefined__"
+        with pytest.raises(ValueError):  # noqa: PT011
             assert BootOption(**example)
 
 
@@ -202,7 +202,8 @@ def test_service_docker_data_labels_convesion():
     convension_breaking_fields: set[tuple[str, str]] = set()
 
     fields_with_aliases: list[tuple[str, str]] = [
-        (name, info.alias) for name, info in ServiceMetaDataPublished.model_fields.items()
+        (name, info.alias)
+        for name, info in ServiceMetaDataPublished.model_fields.items()
         if info.alias is not None
     ]
 

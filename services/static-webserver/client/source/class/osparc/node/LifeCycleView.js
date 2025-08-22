@@ -65,7 +65,7 @@ qx.Class.define("osparc.node.LifeCycleView", {
       const node = this.getNode();
 
       if (node.isDeprecated()) {
-        const deprecateDateLabel = new qx.ui.basic.Label(osparc.service.Utils.getDeprecationDateText(node.getMetaData())).set({
+        const deprecateDateLabel = new qx.ui.basic.Label(osparc.service.Utils.getDeprecationDateText(node.getMetadata())).set({
           rich: true
         });
         this._add(deprecateDateLabel);
