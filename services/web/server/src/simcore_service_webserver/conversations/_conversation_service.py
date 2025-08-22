@@ -32,7 +32,9 @@ from . import _conversation_repository
 _logger = logging.getLogger(__name__)
 
 
-async def _get_recipients(app: web.Application, project_id: ProjectID) -> set[UserID]:
+async def get_recipients_from_project(
+    app: web.Application, project_id: ProjectID
+) -> set[UserID]:
     groups = await list_project_groups(app, project_id=project_id)
     return {
         user
@@ -68,7 +70,7 @@ async def create_conversation(
     if project_uuid:
         await notify_conversation_created(
             app,
-            recipients=await _get_recipients(app, project_uuid),
+            recipients=await get_recipients_from_project(app, project_uuid),
             project_id=project_uuid,
             conversation=created_conversation,
         )
@@ -122,7 +124,7 @@ async def update_conversation(
     if project_id:
         await notify_conversation_updated(
             app,
-            recipients=await _get_recipients(app, project_id),
+            recipients=await get_recipients_from_project(app, project_id),
             project_id=project_id,
             conversation=updated_conversation,
         )
@@ -148,7 +150,7 @@ async def delete_conversation(
     if project_id:
         await notify_conversation_deleted(
             app,
-            recipients=await _get_recipients(app, project_id),
+            recipients=await get_recipients_from_project(app, project_id),
             product_name=product_name,
             user_group_id=_user_group_id,
             project_id=project_id,
