@@ -81,6 +81,12 @@ class TaskRegistry:
         cls._REGISTERED_TASKS[task.__name__] = [allowed_errors, partial_task]  # type: ignore[assignment]
 
     @classmethod
+    def get_registered_tasks(
+        cls,
+    ) -> dict[RegisteredTaskName, tuple[AllowedErrrors, TaskProtocol]]:
+        return cls._REGISTERED_TASKS
+
+    @classmethod
     def get_task(cls, task_name: RegisteredTaskName) -> TaskProtocol:
         return cls._REGISTERED_TASKS[task_name][1]
 
@@ -500,9 +506,10 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         fire_and_forget: bool,
         **task_kwargs: Any,
     ) -> TaskId:
-        if registered_task_name not in TaskRegistry._REGISTERED_TASKS:
+        registered_tasks = TaskRegistry.get_registered_tasks()
+        if registered_task_name not in registered_tasks:
             raise TaskNotRegisteredError(
-                task_name=registered_task_name, tasks=TaskRegistry._REGISTERED_TASKS
+                task_name=registered_task_name, tasks=registered_tasks
             )
 
         task = TaskRegistry.get_task(registered_task_name)
