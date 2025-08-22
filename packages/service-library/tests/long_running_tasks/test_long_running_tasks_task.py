@@ -15,7 +15,7 @@ from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import ProgressMessage
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks._serialization import (
-    string_to_object,
+    loads,
 )
 from servicelib.long_running_tasks.base_long_running_manager import (
     BaseLongRunningManager,
@@ -183,7 +183,8 @@ async def test_checked_task_is_not_auto_removed(
 
 
 def _get_resutlt(result_field: ResultField) -> Any:
-    return string_to_object(result_field.str_result)
+    assert result_field.str_result
+    return loads(result_field.str_result)
 
 
 async def test_fire_and_forget_task_is_not_auto_removed(
@@ -379,7 +380,7 @@ async def test_get_result_finished_with_error(
         task_id, with_task_context=empty_context
     )
     assert result.str_error is not None  # nosec
-    error = string_to_object(result.str_error)
+    error = loads(result.str_error)
     with pytest.raises(_TetingError, match="failing asap"):
         raise error
 

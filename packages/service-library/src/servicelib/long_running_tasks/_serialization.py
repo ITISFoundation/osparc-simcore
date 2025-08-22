@@ -38,7 +38,7 @@ _TYPE_FIELD: Final[str] = "__pickle__type__field__"
 _MODULE_FIELD: Final[str] = "__pickle__module__field__"
 
 
-def object_to_string(e: Any) -> str:
+def dumps(e: Any) -> str:
     """Serialize object to base64-encoded string."""
     to_serialize: Any | dict = e
     object_class = type(e)
@@ -55,7 +55,7 @@ def object_to_string(e: Any) -> str:
     return base64.b85encode(pickle.dumps(to_serialize)).decode("utf-8")
 
 
-def string_to_object(error_str: str) -> Any:
+def loads(error_str: str) -> Any:
     """Deserialize object from base64-encoded string."""
     data = pickle.loads(base64.b85decode(error_str))  # noqa: S301
 

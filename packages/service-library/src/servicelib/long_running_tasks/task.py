@@ -23,7 +23,7 @@ from ..background_task import create_periodic_task
 from ..logging_errors import create_troubleshootting_log_kwargs
 from ..redis import RedisClientSDK, exclusive
 from ._redis_store import RedisStore
-from ._serialization import object_to_string
+from ._serialization import dumps
 from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
@@ -313,15 +313,13 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 result_field: ResultField | None = None
                 # get task result
                 try:
-                    result_field = ResultField(
-                        str_result=object_to_string(task.result())
-                    )
+                    result_field = ResultField(str_result=dumps(task.result()))
                 except asyncio.InvalidStateError:
                     # task was not completed try again next time and see if it is done
                     continue
                 except asyncio.CancelledError:
                     result_field = ResultField(
-                        str_error=object_to_string(TaskCancelledError(task_id=task_id))
+                        str_error=dumps(TaskCancelledError(task_id=task_id))
                     )
                 except Exception as e:  # pylint:disable=broad-except
                     allowed_errors = TaskRegistry.get_allowed_errors(
@@ -342,7 +340,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                                 },
                             ),
                         )
-                    result_field = ResultField(str_error=object_to_string(e))
+                    result_field = ResultField(str_error=dumps(e))
 
                 # update and store in Redis
                 updates = {"is_done": is_done, "result_field": task_data.result_field}

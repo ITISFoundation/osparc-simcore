@@ -8,7 +8,7 @@ from pydantic import PositiveInt, TypeAdapter
 from ..logging_utils import log_decorator
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._rabbit_namespace import get_rabbit_namespace
-from ._serialization import string_to_object
+from ._serialization import loads
 from .errors import RPCTransferrableTaskError
 from .models import (
     LRTNamespace,
@@ -105,9 +105,9 @@ async def get_task_result(
             timeout_s=_RPC_TIMEOUT_SHORT_REQUESTS,
         )
         assert isinstance(serialized_result, str)  # nosec
-        return string_to_object(serialized_result)
+        return loads(serialized_result)
     except RPCTransferrableTaskError as e:
-        decoded_error = string_to_object(f"{e}")
+        decoded_error = loads(f"{e}")
         raise decoded_error from None
 
 
