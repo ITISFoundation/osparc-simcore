@@ -244,7 +244,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _applyOwner: function(value, old) {
       const label = this.getChildControl("owner");
       if (osparc.utils.Resources.isFunction(this.getResourceData())) {
-        const canIWrite = Boolean(this.getResourceData()["accessRights"]["write"]);
+        // Functions don't have 'owner'
+        const canIWrite = osparc.data.model.Function.canIWrite(this.getResourceData()["accessRights"]);
         label.setValue(canIWrite ? "My Function" : "Read Only");
       } else {
         const user = this.__createOwner(value);

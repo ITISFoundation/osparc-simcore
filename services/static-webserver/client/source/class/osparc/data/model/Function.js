@@ -155,6 +155,16 @@ qx.Class.define("osparc.data.model.Function", {
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Function));
     },
+
+    canIWrite: function(accessRights) {
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgIDs = groupsStore.getOrganizationIds();
+      orgIDs.push(groupsStore.getMyGroupId());
+      if (orgIDs.length) {
+        return osparc.share.CollaboratorsFunction.canGroupsWrite(accessRights, (orgIDs));
+      }
+      return false;
+    }
   },
 
   members: {
@@ -172,13 +182,7 @@ qx.Class.define("osparc.data.model.Function", {
 
     canIWrite: function() {
       const accessRights = this.getAccessRights();
-      const groupsStore = osparc.store.Groups.getInstance();
-      const orgIDs = groupsStore.getOrganizationIds();
-      orgIDs.push(groupsStore.getMyGroupId());
-      if (orgIDs.length) {
-        return osparc.share.CollaboratorsFunction.canGroupsWrite(accessRights, (orgIDs));
-      }
-      return false;
+      return this.self().canIWrite(accessRights);
     },
 
     patchFunction: function(functionChanges) {
