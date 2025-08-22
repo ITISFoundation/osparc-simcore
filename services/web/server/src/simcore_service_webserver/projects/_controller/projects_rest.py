@@ -292,7 +292,7 @@ async def get_project(request: web.Request):
         project=project,
     )
 
-    data = ProjectGet.from_domain_model(project).data(by_alias=True, exclude_unset=True)
+    data = ProjectGet.from_domain_model(project).data(exclude_unset=True)
     return envelope_json_response(data)
 
 
