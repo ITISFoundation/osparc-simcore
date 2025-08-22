@@ -100,15 +100,7 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
             paddingBottom: 5,
             allowGrowX: false
           });
-          control.getChildControl("icon").set({
-            scale: true,
-            allowGrowX: true,
-            allowGrowY: true,
-            allowShrinkX: true,
-            allowShrinkY: true,
-            maxWidth: 32,
-            maxHeight: 32
-          });
+          control.getChildControl("icon").set(this.getThumbnailProps(32));
           control.getChildControl("label").set({
             rich: true,
             wrap: true

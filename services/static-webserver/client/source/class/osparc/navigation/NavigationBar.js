@@ -158,25 +158,23 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "left-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
             alignY: "middle",
-            alignX: "left"
+            alignX: "left",
           }));
-          this._addAt(control, 0);
+          this._addAt(control, 0, { flex: 1 });
           break;
         case "center-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignY: "middle",
-            alignX: "center"
+            alignX: "center",
           }));
-          this._addAt(control, 1, {
-            flex: 1
-          });
+          this._addAt(control, 1);
           break;
         case "right-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
             alignY: "middle",
-            alignX: "right"
+            alignX: "right",
           }));
-          this._addAt(control, 2);
+          this._addAt(control, 2, { flex: 1 });
           break;
         case "logo":
           control = osparc.navigation.LogoOnOff.getInstance().set({
@@ -369,11 +367,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         position: "top-right",
         appearance: "menu-wider",
       });
-      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/22", menu).set({
+      const menuButton = new qx.ui.form.MenuButton(null, "@FontAwesome5Regular/question-circle/24", menu).set({
         backgroundColor: "transparent"
       });
 
       osparc.utils.Utils.setIdToWidget(menu, "helpNavigationMenu");
+
+      // add support conversations
+      osparc.store.Support.addSupportConversationsToMenu(menu);
 
       // quick starts and manuals
       osparc.store.Support.addQuickStartToMenu(menu);

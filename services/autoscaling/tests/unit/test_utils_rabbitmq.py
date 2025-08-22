@@ -14,7 +14,7 @@ import pytest
 from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from faker import Faker
 from fastapi import FastAPI
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Service, Task
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
@@ -24,6 +24,7 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageNode,
     ProgressType,
 )
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -208,7 +209,7 @@ async def test_post_task_log_message_docker(
     mocked_redis_server: None,
     initialized_app: FastAPI,
     running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    osparc_docker_label_keys: SimcoreContainerLabels,
     faker: Faker,
     logs_rabbitmq_consumer: AsyncMock,
 ):
@@ -288,7 +289,7 @@ async def test_post_task_progress_message_docker(
     mocked_redis_server: None,
     initialized_app: FastAPI,
     running_service_tasks: Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]],
-    osparc_docker_label_keys: StandardSimcoreDockerLabels,
+    osparc_docker_label_keys: SimcoreContainerLabels,
     faker: Faker,
     progress_rabbitmq_consumer: AsyncMock,
 ):

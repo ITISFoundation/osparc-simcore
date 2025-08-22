@@ -15,16 +15,16 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
-from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
-    to_simcore_runtime_docker_label_key,
-)
 from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion, ServiceRunID
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.wallets import WalletInfo
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
