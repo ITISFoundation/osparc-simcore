@@ -1,6 +1,6 @@
 from typing import Any
 
-from models_library.docker import StandardSimcoreDockerLabels
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_resources import (
     CPU_10_PERCENT,
     CPU_100_PERCENT,
@@ -116,7 +116,7 @@ def get_dynamic_proxy_spec(
             ),
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
         }
-        | StandardSimcoreDockerLabels(
+        | SimcoreContainerLabels(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
@@ -134,7 +134,7 @@ def get_dynamic_proxy_spec(
                 "Hosts": [],
                 "Image": f"caddy:{proxy_settings.DYNAMIC_SIDECAR_CADDY_VERSION}",
                 "Init": True,
-                "Labels": StandardSimcoreDockerLabels(
+                "Labels": SimcoreContainerLabels(
                     user_id=scheduler_data.user_id,
                     project_id=scheduler_data.project_id,
                     node_id=scheduler_data.node_uuid,

@@ -9,10 +9,12 @@ from uuid import UUID
 import pytest
 from faker import Faker
 from models_library.docker import (
-    _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX,
     DockerGenericTag,
     DockerLabelKey,
-    StandardSimcoreDockerLabels,
+)
+from models_library.services_metadata_runtime import (
+    _SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX,
+    SimcoreContainerLabels,
 )
 from pydantic import ByteSize, TypeAdapter, ValidationError
 
@@ -104,13 +106,11 @@ def test_docker_generic_tag(image_name: str, valid: bool):
 
 @pytest.mark.parametrize(
     "obj_data",
-    StandardSimcoreDockerLabels.model_config["json_schema_extra"]["examples"],
+    SimcoreContainerLabels.model_config["json_schema_extra"]["examples"],
     ids=str,
 )
 def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
-    simcore_service_docker_label_keys = StandardSimcoreDockerLabels.model_validate(
-        obj_data
-    )
+    simcore_service_docker_label_keys = SimcoreContainerLabels.model_validate(obj_data)
     exported_dict = simcore_service_docker_label_keys.to_simcore_runtime_docker_labels()
     assert all(
         isinstance(v, str) for v in exported_dict.values()
@@ -118,15 +118,15 @@ def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
     assert all(
         key.startswith(_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX) for key in exported_dict
     )
-    re_imported_docker_label_keys = TypeAdapter(
-        StandardSimcoreDockerLabels
-    ).validate_python(exported_dict)
+    re_imported_docker_label_keys = TypeAdapter(SimcoreContainerLabels).validate_python(
+        exported_dict
+    )
     assert re_imported_docker_label_keys
     assert simcore_service_docker_label_keys == re_imported_docker_label_keys
 
 
 def test_simcore_service_docker_label_keys_construction():
-    simcore_service_docker_label_keys = StandardSimcoreDockerLabels(
+    simcore_service_docker_label_keys = SimcoreContainerLabels(
         user_id=8268,
         project_id=UUID("5ea24ce0-0e4d-4ee6-a3f1-e4799752a684"),
         node_id=UUID("c17c6279-23c6-412f-8826-867323a7711a"),
