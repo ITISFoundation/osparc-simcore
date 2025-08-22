@@ -61,7 +61,7 @@ qx.Class.define("osparc.ui.message.NodeLockedPage", {
       lockState.addListener("changeLocked", this.__lockedChanged, this);
       this.__lockedChanged();
 
-      lockState.addListener("currentUserGroupIds", this.__currentUserGroupIdsChanged, this);
+      lockState.addListener("changeCurrentUserGroupIds", this.__currentUserGroupIdsChanged, this);
       this.__currentUserGroupIdsChanged();
     },
 
