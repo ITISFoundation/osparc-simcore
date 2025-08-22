@@ -206,5 +206,5 @@ async def test_listing_task_uuids_contains_submitted_task(
             tasks = await celery_task_manager.list_tasks(task_filter)
             assert any(task.uuid == task_uuid for task in tasks)
 
-        tasks = await celery_task_manager.list_tasks(task_filter)
-        assert any(task.uuid == task_uuid for task in tasks)
+    tasks = await celery_task_manager.list_tasks(task_filter)
+    assert any(task.uuid == task_uuid for task in tasks)
