@@ -38,26 +38,26 @@ _TYPE_FIELD: Final[str] = "__pickle__type__field__"
 _MODULE_FIELD: Final[str] = "__pickle__module__field__"
 
 
-def dumps(e: Any) -> str:
+def dumps(obj: Any) -> str:
     """Serialize object to base64-encoded string."""
-    to_serialize: Any | dict = e
-    object_class = type(e)
+    to_serialize: Any | dict = obj
+    object_class = type(obj)
 
     for registered_class, object_serializer in _SERIALIZERS.items():
         if issubclass(object_class, registered_class):
             to_serialize = {
-                _TYPE_FIELD: type(e).__name__,
-                _MODULE_FIELD: type(e).__module__,
-                **object_serializer.get_init_kwargs_from_object(e),
+                _TYPE_FIELD: type(obj).__name__,
+                _MODULE_FIELD: type(obj).__module__,
+                **object_serializer.get_init_kwargs_from_object(obj),
             }
             break
 
     return base64.b85encode(pickle.dumps(to_serialize)).decode("utf-8")
 
 
-def loads(error_str: str) -> Any:
+def loads(obj_str: str) -> Any:
     """Deserialize object from base64-encoded string."""
-    data = pickle.loads(base64.b85decode(error_str))  # noqa: S301
+    data = pickle.loads(base64.b85decode(obj_str))  # noqa: S301
 
     if isinstance(data, dict) and _TYPE_FIELD in data and _MODULE_FIELD in data:
         try:
@@ -71,7 +71,7 @@ def loads(error_str: str) -> Any:
                     data.pop(_TYPE_FIELD)
                     data.pop(_MODULE_FIELD)
 
-                    return exception_class(
+                    raise exception_class(
                         **object_serializer.prepare_object_init_kwargs(data)
                     )
         except (ImportError, AttributeError, TypeError) as e:
