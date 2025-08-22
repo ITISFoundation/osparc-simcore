@@ -13,9 +13,8 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.contrib.testing.worker import (
     TestWorkController,
     start_worker,
-    test_worker_stopped,
 )
-from celery.signals import worker_init
+from celery.signals import worker_init, worker_shutdown
 from celery.worker.worker import WorkController
 from celery_library.backends._redis import RedisTaskInfoStore
 from celery_library.signals import on_worker_init, on_worker_shutdown
@@ -135,11 +134,7 @@ async def with_celery_worker(
         return partial(on_worker_init, app_server)(sender, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
-
-    def _on_worker_stopped_wrapper(_: Celery, worker: WorkController, **_kwargs):
-        return on_worker_shutdown(sender=worker, **_kwargs)
-
-    test_worker_stopped.connect(_on_worker_stopped_wrapper)
+    worker_shutdown.connect(on_worker_shutdown)
 
     register_celery_tasks(celery_app)
 
@@ -155,11 +150,15 @@ async def with_celery_worker(
 
 
 @pytest.fixture
+async def mock_celery_app(celery_config: dict[str, Any]) -> Celery:
+    return Celery(**celery_config)
+
+
+@pytest.fixture
 async def celery_task_manager(
-    celery_app: Celery,
+    mock_celery_app: Celery,
     celery_settings: CelerySettings,
     use_in_memory_redis: RedisSettings,
-    with_celery_worker: TestWorkController,
 ) -> AsyncIterator[CeleryTaskManager]:
     register_celery_types()
 
@@ -171,7 +170,7 @@ async def celery_task_manager(
         await redis_client_sdk.setup()
 
         yield CeleryTaskManager(
-            celery_app,
+            mock_celery_app,
             celery_settings,
             RedisTaskInfoStore(redis_client_sdk),
         )

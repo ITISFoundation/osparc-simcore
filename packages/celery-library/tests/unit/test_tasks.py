@@ -13,6 +13,7 @@ from random import randint
 import pytest
 from celery import Celery, Task
 from celery.contrib.abortable import AbortableTask
+from celery.worker.worker import WorkController
 from celery_library.errors import TransferrableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
@@ -92,6 +93,7 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 
 async def test_submitting_task_calling_async_function_results_with_success_state(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
     task_filter = TaskFilter(user_id=42)
 
@@ -122,6 +124,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 
 async def test_submitting_task_with_failure_results_with_error(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
     task_filter = TaskFilter(user_id=42)
 
@@ -150,6 +153,7 @@ async def test_submitting_task_with_failure_results_with_error(
 
 async def test_cancelling_a_running_task_aborts_and_deletes(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
     task_filter = TaskFilter(user_id=42)
 
@@ -182,6 +186,7 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 
 async def test_listing_task_uuids_contains_submitted_task(
     celery_task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
     task_filter = TaskFilter(user_id=42)
 
