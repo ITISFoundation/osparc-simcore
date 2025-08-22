@@ -27,10 +27,11 @@ from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.long_running_tasks.models import TaskGet, TaskId
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
 pytest_simcore_core_services_selection = [
-    "redis",
+    "rabbit",
 ]
 # WITH TASK CONTEXT
 # NOTE: as the long running task framework may be used in any number of services
@@ -67,7 +68,8 @@ def task_context_decorator(task_context: TaskContext):
 def app_with_task_context(
     server_routes: web.RouteTableDef,
     task_context_decorator,
-    redis_service: RedisSettings,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
@@ -75,8 +77,9 @@ def app_with_task_context(
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(
         app,
-        redis_settings=redis_service,
-        redis_namespace="test",
+        redis_settings=use_in_memory_redis,
+        rabbit_settings=rabbit_service,
+        lrt_namespace="test",
         router_prefix="/futures_with_task_context",
         task_request_context_decorator=task_context_decorator,
     )
@@ -169,7 +172,7 @@ async def test_cancel_task(
 ):
     assert client_with_task_context.app
     task_id = await start_long_running_task(client_with_task_context)
-    cancel_url = client_with_task_context.app.router["cancel_and_delete_task"].url_for(
+    cancel_url = client_with_task_context.app.router["remove_task"].url_for(
         task_id=task_id
     )
     # calling cancel without task context should find nothing
