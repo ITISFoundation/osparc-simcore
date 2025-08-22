@@ -171,7 +171,14 @@ qx.Class.define("osparc.data.model.Function", {
     },
 
     canIWrite: function() {
-      return Boolean(this.getAccessRights()["write"]);
+      const accessRights = this.getAccessRights();
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgIDs = groupsStore.getOrganizationIds();
+      orgIDs.push(groupsStore.getMyGroupId());
+      if (orgIDs.length) {
+        return osparc.share.CollaboratorsFunction.canGroupsWrite(accessRights, (orgIDs));
+      }
+      return false;
     },
 
     patchFunction: function(functionChanges) {

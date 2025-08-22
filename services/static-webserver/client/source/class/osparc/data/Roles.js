@@ -77,7 +77,7 @@ qx.Class.define("osparc.data.Roles", {
         },
       }
     },
-    // study & templates
+    // study & templates & functions
     STUDY: {
       "read": {
         id: "read",
