@@ -58,7 +58,29 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const win = osparc.widget.StudyDataManager.popUpInWindow(node.getStudy().serialize(), node.getNodeId(), node.getLabel());
       const closeBtn = win.getChildControl("close-button");
       osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
-    }
+    },
+
+    __handleIframeStateChange: function(node, iframeLayout) {
+      iframeLayout.removeAll();
+      if (node && node.getIFrame()) {
+        const loadingPage = node.getLoadingPage();
+        const iFrame = node.getIFrame();
+        const src = iFrame.getSource();
+        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+        iframeLayout.add(iFrameView, {
+          flex: 1
+        });
+      }
+    },
+
+    listenToIframeStateChanges: function(node, iframeLayout) {
+      if (node && node.getIFrame()) {
+        const iFrame = node.getIFrame();
+        node.getIframeHandler().addListener("iframeStateChanged", () => this.__handleIframeStateChange(node, iframeLayout), this);
+        iFrame.addListener("load", () => this.__handleIframeStateChange(node, iframeLayout));
+        this.__handleIframeStateChange(node, iframeLayout);
+      }
+    },
   },
 
   events: {
@@ -756,19 +778,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             widget.addListener("restore", () => this.setMaximized(false), this);
           }
         });
-        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameStateChanged(node), this);
-        iFrame.addListener("load", () => this.__iFrameStateChanged(node), this);
-        this.__iFrameStateChanged(node);
+        osparc.desktop.WorkbenchView.listenToIframeStateChanges(node, this.__iframePage);
       } else {
         // This will keep what comes after at the bottom
         this.__iframePage.add(new qx.ui.core.Spacer(), {
           flex: 1
         });
       }
-    },
-
-    __iFrameStateChanged: function(node) {
-      osparc.node.slideshow.NodeView.handleIframeStateChange(node, this.__iframePage);
     },
 
     __populateSecondaryColumn: function(node) {

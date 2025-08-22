@@ -40,21 +40,6 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     LOGGER_HEIGHT: 28,
   },
 
-  statics: {
-    handleIframeStateChange: function(node, iframeLayout) {
-      iframeLayout.removeAll();
-      if (node && node.getIFrame()) {
-        const loadingPage = node.getLoadingPage();
-        const iFrame = node.getIFrame();
-        const src = iFrame.getSource();
-        const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-        iframeLayout.add(iFrameView, {
-          flex: 1
-        });
-      }
-    },
-  },
-
   members: {
     __loggerPanel: null,
 
@@ -91,10 +76,7 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
       const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
       if (loadingPage && iFrame) {
-        const node = this.getNode();
-        node.getIframeHandler().addListener("iframeStateChanged", () => this.__iFrameStateChanged(), this);
-        iFrame.addListener("load", () => this.__iFrameStateChanged());
-        this.__iFrameStateChanged();
+        osparc.desktop.WorkbenchView.listenToIframeStateChanges(this.getNode(), this._iFrameLayout);
       } else {
         // This will keep what comes after at the bottom
         this._iFrameLayout.add(new qx.ui.core.Spacer(), {
@@ -147,9 +129,5 @@ qx.Class.define("osparc.node.slideshow.NodeView", {
     _applyNode: function(node) {
       this.base(arguments, node);
     },
-
-    __iFrameStateChanged: function() {
-      osparc.node.slideshow.NodeView.handleIframeStateChange(this.getNode(), this._iFrameLayout);
-    }
   }
 });

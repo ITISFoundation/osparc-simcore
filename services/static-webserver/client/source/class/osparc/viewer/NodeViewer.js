@@ -78,18 +78,11 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       const iframeHandler = node.getIframeHandler();
       if (iframeHandler) {
         iframeHandler.checkState();
-        iframeHandler.addListener("iframeStateChanged", () => this.__iFrameStateChanged(), this);
-        iframeHandler.getIFrame().addListener("load", () => this.__iFrameStateChanged(), this);
-        this.__iFrameStateChanged();
-
+        osparc.desktop.WorkbenchView.listenToIframeStateChanges(node, this);
         this.__attachSocketEventHandlers();
       } else {
         console.error(node.getLabel() + " iframe handler not ready");
       }
-    },
-
-    __iFrameStateChanged: function() {
-      osparc.node.slideshow.NodeView.handleIframeStateChange(this.getNode(), this);
     },
 
     __attachSocketEventHandlers: function() {
