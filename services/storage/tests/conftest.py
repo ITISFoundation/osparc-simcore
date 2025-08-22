@@ -1017,7 +1017,6 @@ async def with_storage_celery_worker(
     app_server = FastAPIAppServer(app=create_app(app_settings))
 
     def _on_worker_init_wrapper(sender: WorkController, **_kwargs):
-        assert app_settings.STORAGE_CELERY  # nosec
         return on_worker_init(sender, app_server, **_kwargs)
 
     worker_init.connect(_on_worker_init_wrapper)
