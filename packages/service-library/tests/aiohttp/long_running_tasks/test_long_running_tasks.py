@@ -23,6 +23,7 @@ from servicelib.aiohttp import long_running_tasks, status
 from servicelib.aiohttp.rest_middlewares import append_rest_middlewares
 from servicelib.long_running_tasks.models import TaskGet, TaskId, TaskStatus
 from servicelib.long_running_tasks.task import TaskContext
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -30,17 +31,15 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_simcore_core_services_selection = [
-    "redis",
-]
-
-pytest_simcore_ops_services_selection = [
-    "redis-commander",
+    "rabbit",
 ]
 
 
 @pytest.fixture
 def app(
-    server_routes: web.RouteTableDef, redis_service: RedisSettings
+    server_routes: web.RouteTableDef,
+    use_in_memory_redis: RedisSettings,
+    rabbit_service: RabbitSettings,
 ) -> web.Application:
     app = web.Application()
     app.add_routes(server_routes)
@@ -48,8 +47,9 @@ def app(
     append_rest_middlewares(app, api_version="")
     long_running_tasks.server.setup(
         app,
-        redis_settings=redis_service,
-        redis_namespace="test",
+        redis_settings=use_in_memory_redis,
+        rabbit_settings=rabbit_service,
+        lrt_namespace="test",
         router_prefix="/futures",
     )
 
@@ -127,7 +127,7 @@ async def test_workflow(
     [
         ("GET", "get_task_status"),
         ("GET", "get_task_result"),
-        ("DELETE", "cancel_and_delete_task"),
+        ("DELETE", "remove_task"),
     ],
 )
 async def test_get_task_wrong_task_id_raises_not_found(
@@ -164,7 +164,7 @@ async def test_failing_task_returns_error(
     # The actual error details should be logged, not returned in response
     log_messages = caplog.text
     assert "OEC" in log_messages
-    assert "RuntimeError" in log_messages
+    assert "_TestingError" in log_messages
     assert "We were asked to fail!!" in log_messages
 
 
@@ -188,7 +188,7 @@ async def test_cancel_task(
     task_id = await start_long_running_task(client)
 
     # cancel the task
-    delete_url = client.app.router["cancel_and_delete_task"].url_for(task_id=task_id)
+    delete_url = client.app.router["remove_task"].url_for(task_id=task_id)
     result = await client.delete(f"{delete_url}")
     data, error = await assert_status(result, status.HTTP_204_NO_CONTENT)
     assert not data

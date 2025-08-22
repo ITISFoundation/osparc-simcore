@@ -1487,11 +1487,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           getConversation: {
             method: "GET",
-            url: statics.API + "/conversations/{conversationId}?type=SUPPORT"
+            url: statics.API + "/conversations/{conversationId}"
           },
           renameConversation: {
             method: "PATCH",
-            url: statics.API + "/conversations/{conversationId}?type=SUPPORT"
+            url: statics.API + "/conversations/{conversationId}"
           },
           deleteConversation: {
             method: "DELETE",
