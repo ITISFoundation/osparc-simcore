@@ -278,9 +278,7 @@ async def get_project_for_user(
     # adds state if it is not a template
     if include_state:
         project = await add_project_states_for_user(
-            user_id=user_id,
-            project=project,
-            app=app,
+            user_id=user_id, project=project, app=app
         )
 
     # adds `trashed_by_primary_gid`
@@ -1367,22 +1365,31 @@ async def is_node_id_present_in_any_project_workbench(
 
 
 async def _get_node_share_state(
-    app: web.Application, *, user_id: UserID, project_uuid: ProjectID, node_id: NodeID
+    app: web.Application,
+    *,
+    user_id: UserID,
+    project_uuid: ProjectID,
+    node_id: NodeID,
 ) -> NodeShareState:
     node = await _projects_nodes_repository.get(
         app, project_id=project_uuid, node_id=node_id
     )
 
     if _is_node_dynamic(node.key):
-        # if the service is dynamic and running it is locked
+        # if the service is dynamic and running it is locked if it is not collaborative
         service = await dynamic_scheduler_service.get_dynamic_service(
             app, node_id=node_id
         )
 
         if isinstance(service, DynamicServiceGet | NodeGet):
             # service is running
+            is_collaborative_service = False
+            if isinstance(service, DynamicServiceGet):
+                # only dynamic-sidecar powered services can be collaborative
+                is_collaborative_service = service.is_collaborative
+
             return NodeShareState(
-                locked=True,
+                locked=not is_collaborative_service,
                 current_user_groupids=[
                     await users_service.get_user_primary_group_id(
                         app, TypeAdapter(UserID).validate_python(service.user_id)

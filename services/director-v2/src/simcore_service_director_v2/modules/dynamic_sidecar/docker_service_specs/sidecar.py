@@ -458,9 +458,9 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
     )
 
-    assert (
-        scheduler_data.product_name is not None
-    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+    assert scheduler_data.product_name is not None, (
+        "ONLY for legacy. This function should not be called with product_name==None"
+    )  # nosec
 
     standard_simcore_docker_labels: dict[DockerLabelKey, str] = SimcoreContainerLabels(
         user_id=scheduler_data.user_id,

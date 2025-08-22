@@ -1,5 +1,6 @@
 from functools import cached_property
 from pathlib import Path
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
@@ -88,6 +89,11 @@ class RunningDynamicServiceDetails(ServiceDetails):
         description="additional information related to service state",
         alias="service_message",
     )
+
+    is_collaborative: Annotated[
+        bool,
+        Field(description="True if service allows collaboration (multi-tenant access)"),
+    ] = False
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
