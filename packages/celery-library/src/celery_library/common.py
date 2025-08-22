@@ -2,12 +2,8 @@ import ssl
 from typing import Any
 
 from celery import Celery  # type: ignore[import-untyped]
-from servicelib.redis import RedisClientSDK
 from settings_library.celery import CelerySettings
 from settings_library.redis import RedisDatabase
-
-from .backends._redis import RedisTaskInfoStore
-from .task_manager import CeleryTaskManager
 
 
 def _celery_configure(celery_settings: CelerySettings) -> dict[str, Any]:
@@ -35,23 +31,4 @@ def create_app(settings: CelerySettings) -> Celery:
             RedisDatabase.CELERY_TASKS,
         ),
         **_celery_configure(settings),
-    )
-
-
-async def create_task_manager(
-    app: Celery, settings: CelerySettings
-) -> CeleryTaskManager:
-    redis_client_sdk = RedisClientSDK(
-        settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
-            RedisDatabase.CELERY_TASKS
-        ),
-        client_name="celery_tasks",
-    )
-    await redis_client_sdk.setup()
-    # GCR please address https://github.com/ITISFoundation/osparc-simcore/issues/8159
-
-    return CeleryTaskManager(
-        app,
-        settings,
-        RedisTaskInfoStore(redis_client_sdk),
     )

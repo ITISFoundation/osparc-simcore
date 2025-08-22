@@ -7,6 +7,7 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 
 from ...celery.app_server import BaseAppServer
+from ...celery.task_manager import TaskManager
 
 _SHUTDOWN_TIMEOUT: Final[float] = datetime.timedelta(seconds=10).total_seconds()
 
@@ -18,7 +19,14 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
         super().__init__(app)
         self._lifespan_manager: LifespanManager | None = None
 
-    async def lifespan(self, startup_completed_event: threading.Event) -> None:
+    @property
+    def task_manager(self) -> TaskManager:
+        task_manager = self.app.state.task_manager
+        assert task_manager, "Task manager is not initialized"  # nosec
+        assert isinstance(task_manager, TaskManager)
+        return task_manager
+
+    async def start_and_hold(self, startup_completed_event: threading.Event) -> None:
         async with LifespanManager(
             self.app,
             startup_timeout=None,  # waits for full app initialization (DB migrations, etc.)
