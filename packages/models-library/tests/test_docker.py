@@ -112,9 +112,9 @@ def test_docker_generic_tag(image_name: str, valid: bool):
 def test_simcore_service_docker_label_keys(obj_data: dict[str, Any]):
     simcore_service_docker_label_keys = SimcoreContainerLabels.model_validate(obj_data)
     exported_dict = simcore_service_docker_label_keys.to_simcore_runtime_docker_labels()
-    assert all(
-        isinstance(v, str) for v in exported_dict.values()
-    ), "docker labels must be strings!"
+    assert all(isinstance(v, str) for v in exported_dict.values()), (
+        "docker labels must be strings!"
+    )
     assert all(
         key.startswith(_SIMCORE_RUNTIME_DOCKER_LABEL_PREFIX) for key in exported_dict
     )
