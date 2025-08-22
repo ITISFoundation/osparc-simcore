@@ -98,7 +98,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     lockState: {
       check: "osparc.data.model.NodeLockState",
       nullable: true,
-      init: "unlocked",
+      init: null,
       event: "changeLockState"
     }
   },
