@@ -16,7 +16,11 @@ from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeTy
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
 
 from ._error_handler import ec2_exception_handler
-from ._errors import EC2InstanceNotFoundError, EC2TooManyInstancesError
+from ._errors import (
+    EC2InstanceNotFoundError,
+    EC2InsufficientCapacityError,
+    EC2TooManyInstancesError,
+)
 from ._models import (
     AWSTagKey,
     EC2InstanceConfig,
@@ -152,33 +156,75 @@ class SimcoreEC2API:
                 for tag_key, tag_value in instance_config.tags.items()
             ]
 
-            instances = await self.client.run_instances(
-                ImageId=instance_config.ami_id,
-                MinCount=min_number_of_instances,
-                MaxCount=number_of_instances,
-                IamInstanceProfile=(
-                    {"Arn": instance_config.iam_instance_profile}
-                    if instance_config.iam_instance_profile
-                    else {}
-                ),
-                InstanceType=instance_config.type.name,
-                InstanceInitiatedShutdownBehavior="terminate",
-                KeyName=instance_config.key_name,
-                TagSpecifications=[
-                    {"ResourceType": "instance", "Tags": resource_tags},
-                    {"ResourceType": "volume", "Tags": resource_tags},
-                    {"ResourceType": "network-interface", "Tags": resource_tags},
-                ],
-                UserData=compose_user_data(instance_config.startup_script),
-                NetworkInterfaces=[
-                    {
-                        "AssociatePublicIpAddress": True,
-                        "DeviceIndex": 0,
-                        "SubnetId": instance_config.subnet_ids[0],
-                        "Groups": instance_config.security_group_ids,
-                    }
-                ],
-            )
+            # Try each subnet in order until one succeeds
+            last_error = None
+            for subnet_id in instance_config.subnet_ids:
+                try:
+                    _logger.debug(
+                        "Attempting to launch instances in subnet %s", subnet_id
+                    )
+                    instances = await self.client.run_instances(
+                        ImageId=instance_config.ami_id,
+                        MinCount=min_number_of_instances,
+                        MaxCount=number_of_instances,
+                        IamInstanceProfile=(
+                            {"Arn": instance_config.iam_instance_profile}
+                            if instance_config.iam_instance_profile
+                            else {}
+                        ),
+                        InstanceType=instance_config.type.name,
+                        InstanceInitiatedShutdownBehavior="terminate",
+                        KeyName=instance_config.key_name,
+                        TagSpecifications=[
+                            {"ResourceType": "instance", "Tags": resource_tags},
+                            {"ResourceType": "volume", "Tags": resource_tags},
+                            {
+                                "ResourceType": "network-interface",
+                                "Tags": resource_tags,
+                            },
+                        ],
+                        UserData=compose_user_data(instance_config.startup_script),
+                        NetworkInterfaces=[
+                            {
+                                "AssociatePublicIpAddress": True,
+                                "DeviceIndex": 0,
+                                "SubnetId": subnet_id,
+                                "Groups": instance_config.security_group_ids,
+                            }
+                        ],
+                    )
+                    # If we get here, the launch succeeded
+                    break
+                except botocore.exceptions.ClientError as exc:
+                    error_code = exc.response.get("Error", {}).get("Code")
+                    if error_code == "InsufficientInstanceCapacity":
+                        _logger.warning(
+                            "Insufficient capacity in subnet %s for instance type %s, trying next subnet",
+                            subnet_id,
+                            instance_config.type.name,
+                        )
+                        last_error = EC2InsufficientCapacityError(
+                            subnet_id=subnet_id,
+                            instance_type=instance_config.type.name,
+                        )
+                        continue
+                    # For any other ClientError, re-raise to let the decorator handle it
+                    raise
+                except Exception:
+                    # For any other error (not AWS-related), fail immediately
+                    raise
+            else:
+                # All subnets failed with capacity errors
+                _logger.error(
+                    "All subnets failed with insufficient capacity for instance type %s",
+                    instance_config.type.name,
+                )
+                if last_error:
+                    raise last_error
+                raise EC2InsufficientCapacityError(
+                    subnet_id="all_configured_subnets",
+                    instance_type=instance_config.type.name,
+                )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]
             _logger.info(
                 "%s New instances launched: %s, waiting for them to start now...",
