@@ -50,12 +50,7 @@ async def mock_container_with_data(
             config={
                 "Image": "alpine:latest",
                 "Cmd": ["/bin/ash", "-c", "sleep 10000"],
-                "HostConfig": {
-                    "Binds": [
-                        f"{volume_content}:{volume_content}:rw",
-                        "/var/run/docker.sock:/var/run/docker.sock:rw",
-                    ]
-                },
+                "HostConfig": {"Binds": [f"{volume_content}:{volume_content}:rw"]},
             }
         )
         container_inspect = await container.show()
