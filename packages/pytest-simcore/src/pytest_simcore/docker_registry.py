@@ -233,7 +233,7 @@ async def _pull_push_service(
     }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 def docker_registry_image_injector(
     docker_registry: str, node_meta_schema: dict
 ) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
