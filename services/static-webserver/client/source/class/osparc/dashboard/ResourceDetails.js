@@ -409,6 +409,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         return;
       } else if (osparc.utils.Resources.isFunction(this.__resourceData)) {
         this.__addInfoPage();
+        this.__addPermissionsPage();
         if (this.__resourceModel.getFunctionClass() === osparc.data.model.Function.FUNCTION_CLASS.PROJECT) {
           this.__addPreviewPage();
         }
@@ -637,6 +638,12 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         let collaboratorsView = null;
         if (osparc.utils.Resources.isService(resourceData)) {
           collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
+          collaboratorsView.addListener("updateAccessRights", e => {
+            const updatedData = e.getData();
+            this.__fireUpdateEvent(resourceData, updatedData);
+          }, this);
+        } else if (osparc.utils.Resources.isFunction(resourceData)) {
+          collaboratorsView = new osparc.share.CollaboratorsFunction(resourceData);
           collaboratorsView.addListener("updateAccessRights", e => {
             const updatedData = e.getData();
             this.__fireUpdateEvent(resourceData, updatedData);

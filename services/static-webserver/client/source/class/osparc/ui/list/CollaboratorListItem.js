@@ -75,17 +75,27 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
   members: {
     __getRoleInfo: function(id) {
+      let roleInfo = undefined;
       const resource = this.getResourceType();
-      if (["study", "template", "tutorial", "hypertool"].includes(resource)) {
-        return osparc.data.Roles.STUDY[id];
-      } else if (resource === "service") {
-        return osparc.data.Roles.SERVICES[id];
-      } else if (resource === "workspace") {
-        return osparc.data.Roles.WORKSPACE[id];
-      } else if (resource === "tag") {
-        return osparc.data.Roles.STUDY[id];
+      switch (resource) {
+        case "study":
+        case "template":
+        case "tutorial":
+        case "hypertool":
+        case "tag":
+          roleInfo = osparc.data.Roles.STUDY[id];
+          break;
+        case "function":
+          roleInfo = osparc.data.Roles.FUNCTION[id];
+          break;
+        case "service":
+          roleInfo = osparc.data.Roles.SERVICES[id];
+          break;
+        case "workspace":
+          roleInfo = osparc.data.Roles.WORKSPACE[id];
+          break;
       }
-      return undefined;
+      return roleInfo;
     },
 
     _createChildControlImpl: function(id) {
@@ -212,9 +222,9 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "write": {
-          const resource = this.getResourceType();
-          if (resource !== "service") {
-            // there is no owner role for services
+          // there might not be delete role
+          const deleteRole = this.__getRoleInfo("delete");
+          if (deleteRole) {
             const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo("delete").label}`));
             promoteButton.addListener("execute", () => {
               this.fireDataEvent("promoteToOwner", {

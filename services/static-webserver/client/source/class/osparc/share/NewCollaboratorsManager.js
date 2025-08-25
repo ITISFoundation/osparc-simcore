@@ -149,6 +149,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             allowGrowX: false,
             backgroundColor: "transparent",
           });
+          control.getChildControl("arrow").syncAppearance();
           this.getChildControl("access-rights-layout").add(control);
           break;
         case "access-rights-helper": {
