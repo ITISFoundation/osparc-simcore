@@ -1,23 +1,22 @@
 from ..errors import WebServerBaseError
 
 
-class StudyDispatcherError(WebServerBaseError, ValueError):
-    ...
+class StudyDispatcherError(WebServerBaseError, ValueError): ...
 
 
-class IncompatibleService(StudyDispatcherError):
+class IncompatibleServiceError(StudyDispatcherError):
     msg_template = "None of the registered services can handle '{file_type}'"
 
 
-class FileToLarge(StudyDispatcherError):
+class FileToLargeError(StudyDispatcherError):
     msg_template = "File size {file_size_in_mb} MB is over allowed limit"
 
 
-class ServiceNotFound(StudyDispatcherError):
+class ServiceNotFoundError(StudyDispatcherError):
     msg_template = "Service {service_key}:{service_version} not found"
 
 
-class InvalidRedirectionParams(StudyDispatcherError):
+class InvalidRedirectionParamsError(StudyDispatcherError):
     msg_template = (
         "The link you provided is invalid because it doesn't contain any information related to data or a service."
         " Please check the link and make sure it is correct."
