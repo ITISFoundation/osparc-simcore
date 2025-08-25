@@ -48,17 +48,6 @@ qx.Class.define("osparc.store.Groups", {
     },
   },
 
-  statics: {
-    curateOrderBy: function(orderBy) {
-      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
-      if (curatedOrderBy.field !== "name") {
-        // only "modified_at" and "name" supported
-        curatedOrderBy.field = "modified_at";
-      }
-      return curatedOrderBy;
-    },
-  },
-
   members: {
     groupsCached: null,
 
@@ -155,12 +144,17 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getAllMyGroupIds: function() {
-      return [
+      const allMyGroupIds = [
         this.getMyGroupId(),
-        ...this.getOrganizationIds().map(gId => parseInt(gId)),
-        this.getEveryoneProductGroup().getGroupId(),
-        this.getEveryoneGroup().getGroupId(),
-      ]
+        ...this.getOrganizationIds().map(gId => parseInt(gId))
+      ];
+      if (this.getEveryoneProductGroup()) {
+        allMyGroupIds.push(this.getEveryoneProductGroup().getGroupId());
+      }
+      if (this.getEveryoneGroup()) {
+        allMyGroupIds.push(this.getEveryoneGroup().getGroupId());
+      }
+      return allMyGroupIds;
     },
 
     getGroup: function(groupId) {

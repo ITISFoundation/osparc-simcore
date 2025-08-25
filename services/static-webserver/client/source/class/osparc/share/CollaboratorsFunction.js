@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2024 IT'IS Foundation, https://itis.swiss
+     2025 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -16,46 +16,55 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.share.CollaboratorsWorkspace", {
+qx.Class.define("osparc.share.CollaboratorsFunction", {
   extend: osparc.share.Collaborators,
 
   /**
-    * @param workspace {osparc.data.model.Workspace}
+    * @param functionData {Object} Object containing the serialized function Data
     */
-  construct: function(workspace) {
-    this.__workspace = workspace;
-    this._resourceType = "workspace";
+  construct: function(functionData) {
+    this._resourceType = "function";
+    const functionDataCopy = osparc.utils.Utils.deepCloneObject(functionData);
 
-    const workspaceDataCopy = workspace.serialize();
-    this.base(arguments, workspaceDataCopy, []);
+    this.base(arguments, functionDataCopy);
   },
 
   statics: {
-    canIDelete: function(myAccessRights) {
-      return myAccessRights["delete"];
+    canGroupsWrite: function(accessRights, gIds) {
+      let canWrite = false;
+      for (let i=0; i<gIds.length && !canWrite; i++) {
+        const gid = gIds[i];
+        canWrite = (gid in accessRights) ? accessRights[gid]["write"] : false;
+      }
+      return canWrite;
     },
   },
 
   members: {
-    __workspace: null,
-
-    _addEditors: function(gids) {
+    _addEditors: function(gids, newAccessRights) {
       if (gids.length === 0) {
         return;
       }
 
-      // default access rights
-      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
+      if (!newAccessRights) {
+        // default access rights
+        const readAccessRole = osparc.data.Roles.FUNCTION["read"];
+        newAccessRights = readAccessRole.accessRights;
+      }
+
+      const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType, {firstUpperCase: true});
       const newCollaborators = {};
-      gids.forEach(gid => newCollaborators[gid] = writeAccessRole.accessRights);
-      osparc.store.Workspaces.getInstance().addCollaborators(this.__workspace.getWorkspaceId(), newCollaborators)
+      gids.forEach(gid => {
+        newCollaborators[gid] = newAccessRights;
+      });
+      osparc.store.Functions.addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {
-          const text = this.tr("Workspace successfully shared");
+          const text = resourceAlias + this.tr(" successfully shared");
           osparc.FlashMessenger.logAs(text);
-          this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           this._reloadCollaboratorsList();
         })
-        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the workspace")));
+        .catch(err => osparc.FlashMessenger.logError(err, this.tr("Something went wrong while sharing the ") + resourceAlias));
     },
 
     _deleteMember: function(collaborator, item) {
@@ -63,9 +72,9 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         item.setEnabled(false);
       }
 
-      osparc.store.Workspaces.getInstance().removeCollaborator(this.__workspace.getWorkspaceId(), collaborator["gid"])
+      return osparc.store.Functions.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
-          this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
           this._reloadCollaboratorsList();
         })
@@ -80,9 +89,9 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.store.Workspaces.getInstance().updateCollaborator(this.__workspace.getWorkspaceId(), collaboratorGId, newAccessRights)
+      osparc.store.Functions.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
         .then(() => {
-          this.fireDataEvent("updateAccessRights", this.__workspace.serialize());
+          this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.logAs(successMsg);
           this._reloadCollaboratorsList();
         })
@@ -95,7 +104,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     },
 
     _promoteToEditor: function(collaborator, item) {
-      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
+      const writeAccessRole = osparc.data.Roles.FUNCTION["write"];
       this.__make(
         collaborator["gid"],
         writeAccessRole.accessRights,
@@ -106,18 +115,11 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     },
 
     _promoteToOwner: function(collaborator, item) {
-      const deleteAccessRole = osparc.data.Roles.WORKSPACE["delete"];
-      this.__make(
-        collaborator["gid"],
-        deleteAccessRole.accessRights,
-        this.tr(`Successfully promoted to ${deleteAccessRole.label}`),
-        this.tr(`Something went wrong while promoting to ${deleteAccessRole.label}`),
-        item
-      );
+      osparc.FlashMessenger.logAs(this.tr("Operation not available"), "WARNING");
     },
 
     _demoteToUser: async function(collaborator, item) {
-      const readAccessRole = osparc.data.Roles.WORKSPACE["read"];
+      const readAccessRole = osparc.data.Roles.FUNCTION["read"];
       const groupId = collaborator["gid"];
       const demoteToUser = (gid, itm) => {
         this.__make(
@@ -129,8 +131,8 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
         );
       };
 
-      const group = osparc.store.Groups.getInstance().getOrganization(groupId);
-      if (group) {
+      const organization = osparc.store.Groups.getInstance().getOrganization(groupId);
+      if (organization) {
         const msg = this.tr(`Demoting to ${readAccessRole.label} will remove write access to all the members of the Organization. Are you sure?`);
         const win = new osparc.ui.window.Confirmation(msg).set({
           caption: this.tr("Demote"),
@@ -150,14 +152,7 @@ qx.Class.define("osparc.share.CollaboratorsWorkspace", {
     },
 
     _demoteToEditor: function(collaborator, item) {
-      const writeAccessRole = osparc.data.Roles.WORKSPACE["write"];
-      this.__make(
-        collaborator["gid"],
-        writeAccessRole.accessRights,
-        this.tr(`Successfully demoted to ${writeAccessRole.label}`),
-        this.tr(`Something went wrong while demoting to ${writeAccessRole.label}`),
-        item
-      );
-    }
+      osparc.FlashMessenger.logAs(this.tr("Operation not available"), "WARNING");
+    },
   }
 });
