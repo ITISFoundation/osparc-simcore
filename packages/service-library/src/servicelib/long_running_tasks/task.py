@@ -210,7 +210,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         """
         NOTE: background `_task_cancelled_tasks_removal` will be shutdown by this function
         only invoke this externally before shutting down the process to ensure
-        proper cleanup of local tasks fron Redus (e.g. before closing a dynamic sidecar)
+        proper cleanup of local tasks fron Redis (e.g. before closing a dynamic sidecar)
         """
         # stop cancelled_tasks_removal
         if self._task_cancelled_tasks_removal:
@@ -226,16 +226,15 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             )
             await self._attempt_to_remove_local_task(task_data.task_id)
 
-        tasks_to_remove = []
-        for task_id in self._created_tasks:
-            tracked_task = await self._tasks_data.get_task_data(task_id)
-            if tracked_task is None:
-                continue
-
-            tasks_to_remove.append(_remove_local_task(tracked_task))
-
         await limited_gather(
-            *tasks_to_remove, log=_logger, limit=_PARALLEL_TASKS_CANCELLATION
+            *[
+                _remove_local_task(tracked_task)
+                for task_id in self._created_tasks
+                if (tracked_task := await self._tasks_data.get_task_data(task_id))
+                is not None
+            ],
+            log=_logger,
+            limit=_PARALLEL_TASKS_CANCELLATION,
         )
 
     async def teardown(self) -> None:
