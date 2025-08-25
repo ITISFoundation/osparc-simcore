@@ -1193,6 +1193,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
           curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES;
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
+          curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS;
+          break;
         default:
           curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
           break;
@@ -1222,6 +1226,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
         ].includes(searchContext)) {
           this._changeContext(searchContext);
         }
