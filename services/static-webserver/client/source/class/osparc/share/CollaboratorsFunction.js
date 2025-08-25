@@ -84,7 +84,7 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
       gids.forEach(gid => {
         newCollaborators[gid] = newAccessRights;
       });
-      osparc.store.function.getInstance().addCollaborators(this._serializedDataCopy, newCollaborators)
+      osparc.store.Functions.addCollaborators(this._serializedDataCopy, newCollaborators)
         .then(() => {
           const text = resourceAlias + this.tr(" successfully shared");
           osparc.FlashMessenger.logAs(text);
@@ -99,7 +99,7 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
         item.setEnabled(false);
       }
 
-      return osparc.store.function.getInstance().removeCollaborator(this._serializedDataCopy, collaborator["gid"])
+      return osparc.store.Functions.removeCollaborator(this._serializedDataCopy, collaborator["gid"])
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.logAs(collaborator["name"] + this.tr(" successfully removed"));
@@ -116,7 +116,7 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
     __make: function(collaboratorGId, newAccessRights, successMsg, failureMsg, item) {
       item.setEnabled(false);
 
-      osparc.store.function.getInstance().updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
+      osparc.store.Functions.updateCollaborator(this._serializedDataCopy, collaboratorGId, newAccessRights)
         .then(() => {
           this.fireDataEvent("updateAccessRights", this._serializedDataCopy);
           osparc.FlashMessenger.logAs(successMsg);

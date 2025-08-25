@@ -131,6 +131,65 @@ qx.Class.define("osparc.store.Functions", {
         });
     },
 
+    __putCollaborator: function(functionData, gid, newPermissions) {
+      const params = {
+        url: {
+          "functionId": functionData["uuid"],
+          "gId": gid,
+        },
+        data: newPermissions
+      };
+      return osparc.data.Resources.fetch("functions", "putAccessRights", params)
+    },
+
+    addCollaborators: function(functionData, newCollaborators) {
+      const promises = [];
+      Object.keys(newCollaborators).forEach(gid => {
+        promises.push(this.__putCollaborator(functionData, gid, newCollaborators[gid]));
+      });
+      return Promise.all(promises)
+        .then(() => {
+          Object.keys(newCollaborators).forEach(gid => {
+            functionData["accessRights"][gid] = newCollaborators[gid];
+          });
+          functionData["lastChangeDate"] = new Date().toISOString();
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
+    },
+
+    updateCollaborator: function(functionData, gid, newPermissions) {
+      return this.__putCollaborator(functionData, gid, newPermissions)
+        .then(() => {
+          functionData["accessRights"][gid] = newPermissions;
+          functionData["lastChangeDate"] = new Date().toISOString();
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
+    },
+
+    removeCollaborator: function(functionData, gid) {
+      const params = {
+        url: {
+          "studyId": functionData["uuid"],
+          "gId": gid
+        }
+      };
+      return osparc.data.Resources.fetch("functions", "deleteAccessRights", params)
+        .then(() => {
+          delete functionData["accessRights"][gid];
+          functionData["lastChangeDate"] = new Date().toISOString();
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          throw err;
+        });
+    },
+
     invalidateFunctions: function() {
       this.__functions = null;
       if (this.__functionsPromiseCached) {

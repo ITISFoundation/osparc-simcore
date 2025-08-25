@@ -644,6 +644,16 @@ qx.Class.define("osparc.data.Resources", {
             method: "PATCH",
             url: statics.API + "/functions/{functionId}?include_extras=true"
           },
+          putAccessRights: {
+            useCache: false,
+            method: "PUT",
+            url: statics.API + "/functions/{functionId}/groups/{gId}"
+          },
+          deleteAccessRights: {
+            useCache: false,
+            method: "DELETE",
+            url: statics.API + "/functions/{functionId}/groups/{gId}"
+          },
         }
       },
       /*
