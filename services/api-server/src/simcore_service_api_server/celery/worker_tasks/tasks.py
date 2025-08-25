@@ -1,6 +1,8 @@
 import logging
 
-from celery import Celery  # type: ignore[import-untyped]
+from celery import (
+    Celery,  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
+)
 from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
 from models_library.functions import (

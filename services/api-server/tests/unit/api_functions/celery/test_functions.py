@@ -1,3 +1,10 @@
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
+# pylint: disable=no-name-in-module
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-arguments
+
+
 import inspect
 from collections.abc import Callable
 from pathlib import Path
@@ -6,8 +13,10 @@ from typing import Any
 import httpx
 import pytest
 import respx
-from celery import Celery, Task
-from celery.contrib.testing.worker import TestWorkController
+from celery import Celery, Task  # pylint: disable=no-name-in-module
+from celery.contrib.testing.worker import (
+    TestWorkController,  # pylint: disable=no-name-in-module
+)
 from celery_library.task import register_task
 from celery_library.types import register_pydantic_types
 from faker import Faker

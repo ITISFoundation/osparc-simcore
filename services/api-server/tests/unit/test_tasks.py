@@ -5,13 +5,13 @@
 from typing import Literal
 
 import pytest
-from celery.exceptions import CeleryError
+from celery.exceptions import CeleryError  # pylint: disable=no-name-in-module
 from faker import Faker
 from fastapi import status
 from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
-from pytest_mock import MockerFixture, MockType, mocker
+from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskState
 from servicelib.celery.models import TaskStatus as CeleryTaskStatus
 from servicelib.celery.models import TaskUUID

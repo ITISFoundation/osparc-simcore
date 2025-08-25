@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 import httpx
 import pytest
 import respx
-from celery import Task
+from celery import Task  # pylint: disable=no-name-in-module
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient

@@ -1,13 +1,25 @@
+# pylint: disable=unused-argument
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-positional-arguments
+# pylint: disable=no-name-in-module
+
+
 import datetime
 from collections.abc import AsyncIterator, Callable
 from functools import partial
 from typing import Any
 
 import pytest
-from celery import Celery
-from celery.contrib.testing.worker import TestWorkController, start_worker
-from celery.signals import worker_init, worker_shutdown
-from celery.worker.worker import WorkController
+from celery import Celery  # pylint: disable=no-name-in-module
+from celery.contrib.testing.worker import (  # pylint: disable=no-name-in-module
+    TestWorkController,
+    start_worker,
+)
+from celery.signals import (  # pylint: disable=no-name-in-module
+    worker_init,
+    worker_shutdown,
+)
+from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library.signals import on_worker_init, on_worker_shutdown
 from fakeredis.aioredis import FakeRedis
 from pytest_mock import MockerFixture
