@@ -163,7 +163,7 @@ async def test_registration_to_different_product(
     )
 
     # CAN register for product A in deploy of product A
-    assert invitation_product_a.invitation_url.host == "product_b.com"
+    assert invitation_product_a.invitation_url.host == "product_a.com"
     response = await _register_account(invitation_product_a.invitation_url, product_a)
     await assert_status(response, status.HTTP_200_OK)
 
