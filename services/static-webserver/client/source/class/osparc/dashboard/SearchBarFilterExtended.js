@@ -53,6 +53,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         "searchProjects",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
         "searchTemplates",       // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
         "searchPublicTemplates", // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
+        "searchFunctions"        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS
       ],
       init: null,
       nullable: false,
@@ -127,6 +128,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           control = this.self().createToolbarRadioButton(
             this.tr("Public Projects"),
             "@FontAwesome5Solid/globe/14",
+          );
+          this.getChildControl("context-buttons").add(control);
+          break;
+        case "functions-button":
+          control = this.self().createToolbarRadioButton(
+            this.tr("Functions"),
+            "@FontAwesome5Solid/function/14",
             null,
             "right",
           );
@@ -169,10 +177,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       const myProjectsButton = this.getChildControl("my-projects-button");
       const templatesButton = this.getChildControl("templates-button");
       const publicProjectsButton = this.getChildControl("public-projects-button");
-      radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton);
+      const functionsButton = this.getChildControl("functions-button"); // OM only if enabled
+      radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton, functionsButton);
       myProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) : null, this);
       templatesButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES) : null, this);
       publicProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES) : null, this);
+      functionsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS) : null, this);
 
       // Set initial state based on the provided initFilterData
       const activeFilters = this.getChildControl("search-bar-filter").getChildControl("active-filters");
@@ -238,6 +248,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.getChildControl("shared-with-button").setVisibility("excluded");
           this.getChildControl("tags-button").setVisibility("visible");
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
+          this.getChildControl("functions-button").setValue(true);
+          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
+          this.getChildControl("shared-with-button").setVisibility("excluded");
+          this.getChildControl("tags-button").setVisibility("excluded");
       }
     },
 
