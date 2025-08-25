@@ -73,9 +73,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         } else if (src === null || src === "about:blank") {
           showPage = node.getLoadingPage();
         }
-        iframeLayout.add(showPage, {
-          flex: 1
-        });
+        if (iframeLayout.add) {
+          iframeLayout.add(showPage, {
+            flex: 1
+          });
+        } else if (iframeLayout._add) {
+          iframeLayout._add(showPage, {
+            flex: 1
+          });
+        }
       }
     },
 
