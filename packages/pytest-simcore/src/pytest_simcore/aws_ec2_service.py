@@ -62,8 +62,17 @@ async def aws_vpc_id(
 
 @pytest.fixture
 def create_subnet_cidr_block(faker: Faker) -> Callable[[], str]:
+    # Keep track of used subnet numbers to avoid overlaps
+    used_subnets: set[int] = set()
+
     def _() -> str:
-        return faker.ipv4_public(network=True)
+        # Generate subnet CIDR blocks within the VPC range 10.0.0.0/16
+        # Using /24 subnets (10.0.X.0/24) where X is between 1-255
+        while True:
+            subnet_number = faker.random_int(min=1, max=255)
+            if subnet_number not in used_subnets:
+                used_subnets.add(subnet_number)
+                return f"10.0.{subnet_number}.0/24"
 
     return _
 
@@ -73,6 +82,7 @@ def subnet_cidr_block(create_subnet_cidr_block: Callable[[], str]) -> str:
     return create_subnet_cidr_block()
 
 
+@pytest.fixture
 async def create_aws_subnet_id(
     aws_vpc_id: str,
     ec2_client: EC2Client,
