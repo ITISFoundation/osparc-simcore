@@ -121,8 +121,9 @@ def _get_self_container_ip() -> str:
 async def _get_self_container() -> str:
     ip = _get_self_container_ip()
 
-    transport = httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")
-    async with httpx.AsyncClient(transport=transport) as client:
+    async with httpx.AsyncClient(
+        transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")
+    ) as client:
         response = await client.get("http://localhost/containers/json")
         for entry in response.json():
             if ip in json.dumps(entry):
