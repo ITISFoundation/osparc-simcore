@@ -157,22 +157,22 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       switch (id) {
         case "left-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
-            alignY: "middle",
             alignX: "left",
+            alignY: "middle",
           }));
           this._addAt(control, 0, { flex: 1 });
           break;
         case "center-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-            alignY: "middle",
             alignX: "center",
+            alignY: "middle",
           }));
           this._addAt(control, 1);
           break;
         case "right-items":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
-            alignY: "middle",
             alignX: "right",
+            alignY: "middle",
           }));
           this._addAt(control, 2, { flex: 1 });
           break;
@@ -254,7 +254,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "avatar-group": {
           const maxWidth = osparc.WindowSizeTracker.getInstance().isCompactVersion() ? 80 : 150;
           control = new osparc.ui.basic.AvatarGroup(26, "right", maxWidth).set({
+            hideMyself: true,
             alignY: "middle",
+            visibility: "excluded",
           });
           this.getChildControl("right-items").add(control);
           break;
@@ -352,11 +354,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           if (this.getStudy() && data["project_uuid"] === this.getStudy().getUuid()) {
             const projectState = data["data"];
             const currentUserGroupIds = osparc.study.Utils.state.getCurrentGroupIds(projectState);
-            // remove myself from the list of users
-            const filteredUserGroupIds = currentUserGroupIds.filter(gid => gid !== osparc.store.Groups.getInstance().getMyGroupId());
-            // show the rest of the users in the avatar group
             const avatarGroup = this.getChildControl("avatar-group");
-            avatarGroup.setUserGroupIds(filteredUserGroupIds);
+            avatarGroup.setUserGroupIds(currentUserGroupIds);
           }
         }
       }, this);

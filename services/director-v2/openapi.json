@@ -2878,6 +2878,12 @@
             ],
             "title": "Service Message",
             "description": "additional information related to service state"
+          },
+          "is_collaborative": {
+            "type": "boolean",
+            "title": "Is Collaborative",
+            "description": "True if service allows collaboration (multi-tenant access)",
+            "default": false
           }
         },
         "type": "object",

@@ -576,11 +576,8 @@ qx.Class.define("osparc.data.model.Study", {
       if (node) {
         if (nodeData && !osparc.data.model.Node.isFrontend(node.getMetadata())) {
           node.setOutputData(nodeData.outputs);
-          if ("progress" in nodeData) {
-            const progress = Number.parseInt(nodeData["progress"]);
-            node.getStatus().setProgress(progress);
-          }
-          node.populateStates(nodeData);
+          node.populateProgress(nodeData);
+          node.populateState(nodeData);
         }
         if ("errors" in nodeUpdatedData) {
           const errors = nodeUpdatedData["errors"];

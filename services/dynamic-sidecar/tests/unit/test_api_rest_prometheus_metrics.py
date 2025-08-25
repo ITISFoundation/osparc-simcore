@@ -5,11 +5,11 @@
 import json
 from collections.abc import AsyncIterable
 from typing import Final
-from unittest.mock import AsyncMock
 
 import pytest
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
+from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI, status
 from httpx import ASGITransport, AsyncClient
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
@@ -20,6 +20,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_di
 from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.models import TaskId
+from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,
@@ -30,8 +31,29 @@ from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     UserServicesMetrics,
 )
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 _FAST_STATUS_POLL: Final[float] = 0.1
 _CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
+
+
+@pytest.fixture
+def mock_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    rabbit_service: RabbitSettings,
+    mock_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_environment,
+            "RABBIT_SETTINGS": json.dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            ),
+        },
+    )
 
 
 @pytest.fixture
@@ -42,14 +64,14 @@ async def enable_prometheus_metrics(
         monkeypatch,
         {
             "DY_SIDECAR_CALLBACKS_MAPPING": json.dumps(
-                CallbacksMapping.model_config["json_schema_extra"]["examples"][2]
-            )
+                CallbacksMapping.model_json_schema()["examples"][2]
+            ),
         },
     )
 
 
 @pytest.fixture
-async def app(mock_rabbitmq_envs: EnvVarsDict, app: FastAPI) -> AsyncIterable[FastAPI]:
+async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
     client_setup(app)
     async with LifespanManager(app):
         yield app
@@ -118,17 +140,13 @@ async def _get_task_id_create_service_containers(
     return task_id
 
 
-async def test_metrics_disabled(
-    mock_core_rabbitmq: dict[str, AsyncMock], httpx_async_client: AsyncClient
-) -> None:
+async def test_metrics_disabled(httpx_async_client: AsyncClient) -> None:
     response = await httpx_async_client.get("/metrics")
     assert response.status_code == status.HTTP_404_NOT_FOUND, response
 
 
 async def test_metrics_enabled_no_containers_running(
-    enable_prometheus_metrics: None,
-    mock_core_rabbitmq: dict[str, AsyncMock],
-    httpx_async_client: AsyncClient,
+    enable_prometheus_metrics: None, httpx_async_client: AsyncClient
 ) -> None:
     response = await httpx_async_client.get("/metrics")
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response
@@ -137,7 +155,6 @@ async def test_metrics_enabled_no_containers_running(
 
 async def test_metrics_enabled_containers_will_start(
     enable_prometheus_metrics: None,
-    mock_core_rabbitmq: dict[str, AsyncMock],
     app: FastAPI,
     httpx_async_client: AsyncClient,
     client: Client,
