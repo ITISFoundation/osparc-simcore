@@ -222,9 +222,9 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
           break;
         }
         case "write": {
-          const resource = this.getResourceType();
-          if (resource !== "service") {
-            // there is no owner role for services
+          // there might not be delete role
+          const deleteRole = this.__getRoleInfo("delete");
+          if (deleteRole) {
             const promoteButton = new qx.ui.menu.Button(this.tr(`Promote to ${this.__getRoleInfo("delete").label}`));
             promoteButton.addListener("execute", () => {
               this.fireDataEvent("promoteToOwner", {
