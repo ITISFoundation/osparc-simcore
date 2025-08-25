@@ -6,7 +6,7 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-click==8.1.8
+click==8.2.1
     # via
     #   dask
     #   distributed
@@ -136,7 +136,7 @@ referencing==0.35.1
     #   -c requirements/../../../requirements/constraints.txt
     #   jsonschema
     #   jsonschema-specifications
-rich==14.0.0
+rich==14.1.0
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   typer
@@ -159,7 +159,7 @@ toolz==1.0.0
     #   partd
 tornado==6.5
     # via distributed
-typer==0.15.4
+typer==0.16.1
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 types-python-dateutil==2.9.0.20250516
     # via arrow

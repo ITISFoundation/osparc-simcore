@@ -291,6 +291,7 @@ urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   -c requirements/_fastapi.txt
     #   botocore
     #   docker
     #   requests

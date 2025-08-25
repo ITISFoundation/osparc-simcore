@@ -54,7 +54,7 @@ charset-normalizer==3.3.2
     # via
     #   -c requirements/_base.txt
     #   requests
-click==8.1.7
+click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   flask
