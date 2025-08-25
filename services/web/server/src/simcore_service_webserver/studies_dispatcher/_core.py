@@ -15,7 +15,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
 from sqlalchemy.dialects.postgresql import ARRAY, INTEGER
 
 from ..db.plugin import get_database_engine_legacy
-from ._errors import FileToLarge, IncompatibleService
+from ._errors import FileToLargeError, IncompatibleServiceError
 from ._models import ViewerInfo
 from .settings import get_plugin_settings
 
@@ -84,12 +84,12 @@ async def get_default_viewer(
         viewers = await list_viewers_info(app, file_type, only_default=True)
         viewer = viewers[0]
     except IndexError as err:
-        raise IncompatibleService(file_type=file_type) from err
+        raise IncompatibleServiceError(file_type=file_type) from err
 
     if current_size := parse_obj_or_none(ByteSize, file_size):
         max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
         if current_size > max_size:
-            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))
+            raise FileToLargeError(file_size_in_mb=current_size.to("MiB"))
 
     return viewer
 
@@ -141,7 +141,7 @@ async def validate_requested_viewer(
                 )
                 return view
 
-    raise IncompatibleService(file_type=file_type)
+    raise IncompatibleServiceError(file_type=file_type)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -154,4 +154,4 @@ def validate_requested_file(
     if current_size := parse_obj_or_none(ByteSize, file_size):
         max_size: ByteSize = get_plugin_settings(app).STUDIES_MAX_FILE_SIZE_ALLOWED
         if current_size > max_size:
-            raise FileToLarge(file_size_in_mb=current_size.to("MiB"))
+            raise FileToLargeError(file_size_in_mb=current_size.to("MiB"))

@@ -23,7 +23,7 @@ from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
 from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
-from ._errors import InvalidRedirectionParams, StudyDispatcherError
+from ._errors import InvalidRedirectionParamsError, StudyDispatcherError
 from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
 from ._projects import (
     get_or_create_project_with_file,
@@ -336,7 +336,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     else:
         # NOTE: if query is done right, this should never happen
-        raise InvalidRedirectionParams
+        raise InvalidRedirectionParamsError
 
     # Adds auth cookies (login)
     await ensure_authentication(user, request, response)
