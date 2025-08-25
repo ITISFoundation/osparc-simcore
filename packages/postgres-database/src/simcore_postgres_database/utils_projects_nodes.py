@@ -4,19 +4,18 @@ from dataclasses import dataclass
 from typing import Annotated, Any
 
 import asyncpg.exceptions  # type: ignore[import-untyped]
-import sqlalchemy
 import sqlalchemy.exc
 from common_library.async_tools import maybe_await
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import BaseModel, ConfigDict, Field
-from simcore_postgres_database.utils_aiosqlalchemy import map_db_exception
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ._protocols import DBConnection
 from .aiopg_errors import ForeignKeyViolation, UniqueViolation
 from .models.projects_node_to_pricing_unit import projects_node_to_pricing_unit
 from .models.projects_nodes import projects_nodes
+from .utils_aiosqlalchemy import map_db_exception
 
 
 #
@@ -67,11 +66,32 @@ class ProjectNodeCreate(BaseModel):
     parent: str | None = None
     boot_options: dict[str, Any] | None = None
 
+    model_config = ConfigDict(frozen=True)
+
     @classmethod
     def get_field_names(cls, *, exclude: set[str]) -> set[str]:
         return cls.model_fields.keys() - exclude
 
-    model_config = ConfigDict(frozen=True)
+    def _get_node_exclude_fields(self) -> set[str]:  # pylint: disable=no-self-use
+        """Get the base fields to exclude when converting to Node model."""
+        return {"node_id", "required_resources"}
+
+    def model_dump_as_node(self) -> dict[str, Any]:
+        """Converts a ProjectNode from the database to a Node model for the API.
+
+        Usage:
+            Node.model_validate(project_node_create.model_dump_as_node(), by_name=True)
+
+        Handles field mapping and excludes database-specific fields that are not
+        part of the Node model.
+        """
+        return self.model_dump(
+            # NOTE: this setup ensures using the defaults provided in Node model when the db does not
+            # provide them, e.g. `state`
+            exclude=self._get_node_exclude_fields(),
+            exclude_none=True,
+            exclude_unset=True,
+        )
 
 
 class ProjectNode(ProjectNodeCreate):
@@ -79,6 +99,13 @@ class ProjectNode(ProjectNodeCreate):
     modified: datetime.datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+    def _get_node_exclude_fields(self) -> set[str]:  # pylint: disable=no-self-use
+        """Get the fields to exclude when converting to Node model, including DB-specific fields."""
+        base_excludes = super()._get_node_exclude_fields()
+        return base_excludes | {"created", "modified"}
+
+    # NOTE: model_dump_as_node is inherited from ProjectNodeCreate and uses the overridden _get_node_exclude_fields
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -103,17 +130,26 @@ class ProjectNodesRepo:
         """
         if not nodes:
             return []
+
+        values = [
+            {
+                "project_uuid": f"{self.project_uuid}",
+                **node.model_dump(mode="json"),
+            }
+            for node in nodes
+        ]
+
+        # Check
+        field_names = set(values[0].keys())
+        for v in values:
+            if set(v.keys()) != field_names:
+                msg = f"All rows in batch-insert MUST have same keys. Inconsistent keys in node values: {set(v.keys())} != {field_names}"
+                raise ValueError(msg)
+
+        # statement
         insert_stmt = (
             projects_nodes.insert()
-            .values(
-                [
-                    {
-                        "project_uuid": f"{self.project_uuid}",
-                        **node.model_dump(exclude_unset=True, mode="json"),
-                    }
-                    for node in nodes
-                ]
-            )
+            .values(values)
             .returning(
                 *[
                     c
@@ -129,14 +165,17 @@ class ProjectNodesRepo:
             rows = await maybe_await(result.fetchall())
             assert isinstance(rows, list)  # nosec
             return [ProjectNode.model_validate(r) for r in rows]
+
         except ForeignKeyViolation as exc:
             # this happens when the project does not exist, as we first check the node exists
             raise ProjectNodesProjectNotFoundError(
                 project_uuid=self.project_uuid
             ) from exc
+
         except UniqueViolation as exc:
             # this happens if the node already exists on creation
             raise ProjectNodesDuplicateNodeError from exc
+
         except sqlalchemy.exc.IntegrityError as exc:
             raise map_db_exception(
                 exc,
