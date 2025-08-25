@@ -7,17 +7,10 @@ from fastapi import Path as PathParam
 from fastapi import Request, Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
-from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ...core.docker_utils import docker_client
-from ...modules.inputs import disable_inputs_pulling, enable_inputs_pulling
-from ...modules.mounted_fs import MountedVolumes
-from ...modules.outputs import (
-    OutputsContext,
-    disable_event_propagation,
-    enable_event_propagation,
-)
-from ._dependencies import get_application, get_mounted_volumes, get_outputs_context
+from ...services import container_extensions
+from ._dependencies import get_application
 
 _logger = logging.getLogger(__name__)
 
@@ -59,15 +52,11 @@ async def toggle_ports_io(
     patch_ports_io_item: PatchPortsIOItem,
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> None:
-    if patch_ports_io_item.enable_outputs:
-        await enable_event_propagation(app)
-    else:
-        await disable_event_propagation(app)
-
-    if patch_ports_io_item.enable_inputs:
-        enable_inputs_pulling(app)
-    else:
-        disable_inputs_pulling(app)
+    await container_extensions.toggle_ports_io(
+        app,
+        enable_outputs=patch_ports_io_item.enable_outputs,
+        enable_inputs=patch_ports_io_item.enable_inputs,
+    )
 
 
 @router.post(
@@ -83,26 +72,11 @@ async def toggle_ports_io(
 )
 async def create_output_dirs(
     request_mode: CreateDirsRequestItem,
-    mounted_volumes: Annotated[MountedVolumes, Depends(get_mounted_volumes)],
-    outputs_context: Annotated[OutputsContext, Depends(get_outputs_context)],
+    app: Annotated[FastAPI, Depends(get_application)],
 ) -> None:
-    outputs_path = mounted_volumes.disk_outputs_path
-    file_type_port_keys = []
-    non_file_port_keys = []
-    for port_key, service_output in request_mode.outputs_labels.items():
-        _logger.debug("Parsing output labels, detected: %s", f"{port_key=}")
-        if is_file_type(service_output.property_type):
-            dir_to_create = outputs_path / port_key
-            dir_to_create.mkdir(parents=True, exist_ok=True)
-            file_type_port_keys.append(port_key)
-        else:
-            non_file_port_keys.append(port_key)
-
-    _logger.debug(
-        "Setting: %s, %s", f"{file_type_port_keys=}", f"{non_file_port_keys=}"
+    await container_extensions.create_output_dirs(
+        app, outputs_labels=request_mode.outputs_labels
     )
-    await outputs_context.set_file_type_port_keys(file_type_port_keys)
-    outputs_context.non_file_type_port_keys = non_file_port_keys
 
 
 @router.post(
