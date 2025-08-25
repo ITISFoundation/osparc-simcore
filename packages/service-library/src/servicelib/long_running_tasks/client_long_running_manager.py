@@ -46,4 +46,5 @@ class ClientLongRunningManager:
             keys_to_remove,
             lrt_namespace,
         )
-        await self._redis.delete(*keys_to_remove)
+        if len(keys_to_remove) > 0:
+            await self._redis.delete(*keys_to_remove)
