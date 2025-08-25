@@ -636,6 +636,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}"
           },
+          getPageSearch: {
+            method: "GET",
+            url: statics.API + "/functions:search?include_extras=true&offset={offset}&limit={limit}&text={text}"
+          },
           create: {
             method: "POST",
             url: statics.API + "/functions"

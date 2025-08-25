@@ -952,6 +952,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
           request = osparc.store.Functions.fetchFunctionsPaginated(params, options);
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
+          request = osparc.store.Functions.searchFunctionsPaginated(params, options);
+          break;
       }
       return request;
     },

@@ -122,6 +122,18 @@ qx.Class.define("osparc.store.Functions", {
         });
     },
 
+    searchFunctionsPaginated: function(params, options) {
+      if ("orderBy" in params["url"]) {
+        params["url"]["orderBy"] = this.curateOrderBy(params["url"]["orderBy"]);
+      }
+      return osparc.data.Resources.fetch("functions", "getPageSearch", params, options)
+        .then(response => {
+          const functions = response["data"];
+          functions.forEach(func => func["resourceType"] = "function");
+          return response;
+        });
+    },
+
     fetchFunction: function(functionId) {
       const params = {
         url: {
