@@ -25,3 +25,7 @@ class InvalidRedirectionParamsError(StudyDispatcherError):
 
 class GuestUsersLimitError(StudyDispatcherError):
     msg_template = "Maximum number of guests was reached. Please login with a registered user or try again later"
+
+
+class GuestUserNotAllowedError(StudyDispatcherError):
+    msg_template = "Guest users are not allowed to access this resource configuration."
