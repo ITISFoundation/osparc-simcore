@@ -63,24 +63,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   },
 
   statics: {
-    createToolbarRadioButton: function(label, icon, toolTipText = null, pos = null) {
-      const rButton = new qx.ui.toolbar.RadioButton().set({
-        label,
-        icon,
-        toolTipText,
-        padding: 8,
+    createListItem: function(label, icon, model) {
+      const listItem = new qx.ui.form.ListItem(label, icon, model).set({
         gap: 8,
         margin: 0,
       });
-      rButton.getContentElement().setStyles({
-        "border-radius": "0px"
-      });
-      if (pos === "left") {
-        osparc.utils.Utils.addBorderLeftRadius(rButton);
-      } else if (pos === "right") {
-        osparc.utils.Utils.addBorderRightRadius(rButton);
-      }
-      return rButton;
+      return listItem;
     },
   },
 
@@ -109,46 +97,52 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this._add(control);
           break;
         }
-        case "context-buttons":
-          control = new qx.ui.toolbar.ToolBar().set({
-            spacing: 0,
-            padding: 0,
-            backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
-          });
-          this._add(control);
+        case "context-drop-down": {
+          control = new qx.ui.form.SelectBox();
+          const searchBarFilter = this.getChildControl("search-bar-filter");
+          searchBarFilter._addAt(control, 3); //"search-icon", "active-filters", "text-field", "reset-button"
           break;
-        case "my-projects-button":
-          control = this.self().createToolbarRadioButton(
+        }
+        case "my-projects-button": {
+          control = this.self().createListItem(
             this.tr("My Projects"),
             "@FontAwesome5Solid/file/14",
-            null,
-            "left",
+            "myProjects"
           );
-          this.getChildControl("context-buttons").add(control);
+          const contextDropDown = this.getChildControl("context-drop-down");
+          contextDropDown.add(control);
           break;
-        case "templates-button":
-          control = this.self().createToolbarRadioButton(
+        }
+        case "templates-button": {
+          control = this.self().createListItem(
             this.tr("Templates"),
             "@FontAwesome5Solid/copy/14",
+            "templates"
           );
-          this.getChildControl("context-buttons").add(control);
+          const contextDropDown = this.getChildControl("context-drop-down");
+          contextDropDown.add(control);
           break;
-        case "public-projects-button":
-          control = this.self().createToolbarRadioButton(
+        }
+        case "public-projects-button": {
+          control = this.self().createListItem(
             this.tr("Public Projects"),
             "@FontAwesome5Solid/globe/14",
+            "publicProjects"
           );
-          this.getChildControl("context-buttons").add(control);
+          const contextDropDown = this.getChildControl("context-drop-down");
+          contextDropDown.add(control);
           break;
-        case "functions-button":
-          control = this.self().createToolbarRadioButton(
+        }
+        case "functions-button": {
+          control = this.self().createListItem(
             this.tr("Functions"),
             "@MaterialIcons/functions/18",
-            null,
-            "right",
+            "functions"
           );
-          this.getChildControl("context-buttons").add(control);
+          const contextDropDown = this.getChildControl("context-drop-down");
+          contextDropDown.add(control);
           break;
+        }
         case "filter-buttons":
           control = new qx.ui.toolbar.ToolBar().set({
             backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
@@ -172,21 +166,31 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     __buildLayout: function() {
       const searchBarFilter = this.getChildControl("search-bar-filter");
 
-      const radioGroup = new qx.ui.form.RadioGroup();
-      const contextButtons = [];
-      const myProjectsButton = this.getChildControl("my-projects-button");
-      myProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) : null, this);
-      contextButtons.push(myProjectsButton);
-      const templatesButton = this.getChildControl("templates-button");
-      templatesButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES) : null, this);
-      contextButtons.push(templatesButton);
-      const publicProjectsButton = this.getChildControl("public-projects-button");
-      publicProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES) : null, this);
-      contextButtons.push(publicProjectsButton);
-      const functionsButton = this.getChildControl("functions-button"); // OM only if enabled
-      functionsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS) : null, this);
-      contextButtons.push(functionsButton);
-      contextButtons.forEach(contextButton => radioGroup.add(contextButton));
+      const contextDropDown = this.getChildControl("context-drop-down");
+      this.getChildControl("my-projects-button");
+      this.getChildControl("templates-button");
+      this.getChildControl("public-projects-button");
+      this.getChildControl("functions-button");
+      contextDropDown.addListener("changeSelection", e => {
+        const selection = e.getData();
+        if (selection.length) {
+          const selectedContext = selection[0].getModel();
+          switch (selectedContext) {
+            case "myProjects":
+              this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS);
+              break;
+            case "templates":
+              this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES);
+              break;
+            case "publicProjects":
+              this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES);
+              break;
+            case "functions":
+              this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS);
+              break;
+          }
+        }
+      });
 
       // Set initial state based on the provided initFilterData
       const activeFilters = searchBarFilter.getChildControl("active-filters");
@@ -234,33 +238,35 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       if (value === old) {
         return;
       }
+      const contextDropDown = this.getChildControl("context-drop-down");
       const searchBarFilter = this.getChildControl("search-bar-filter");
       const sharedWithButton = this.getChildControl("shared-with-button");
       const tagsButton = this.getChildControl("tags-button");
       switch (value) {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
-          this.getChildControl("my-projects-button").setValue(true);
+          contextDropDown.setSelection([this.getChildControl("my-projects-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My projects"));
           sharedWithButton.setVisibility("visible");
           tagsButton.setVisibility("visible");
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          this.getChildControl("templates-button").setValue(true);
+          contextDropDown.setSelection([this.getChildControl("templates-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
           sharedWithButton.setVisibility("excluded");
           tagsButton.setVisibility("visible");
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-          this.getChildControl("public-projects-button").setValue(true);
+          contextDropDown.setSelection([this.getChildControl("public-projects-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Public projects"));
           sharedWithButton.setVisibility("excluded");
           tagsButton.setVisibility("visible");
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
-          this.getChildControl("functions-button").setValue(true);
+          contextDropDown.setSelection([this.getChildControl("functions-button")]);
           searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
           sharedWithButton.setVisibility("excluded");
           tagsButton.setVisibility("excluded");
+          break;
       }
     },
 
