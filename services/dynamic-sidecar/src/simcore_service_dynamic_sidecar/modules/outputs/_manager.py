@@ -118,6 +118,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
         self._port_key_tracker = _PortKeyTracker()
         self._task_uploading: Task | None = None
+        self._task_uploading_followup: Task | None = None
         self._task_scheduler_worker: Task | None = None
         self._schedule_all_ports_for_upload: bool = False
 
@@ -171,7 +172,9 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 except Exception as e:  # pylint: disable=broad-except
                     self._last_upload_error_tracker[port_key] = e
 
-            create_task(self._port_key_tracker.remove_all_uploading())
+            self._task_uploading_followup = create_task(
+                self._port_key_tracker.remove_all_uploading()
+            )
 
         self._task_uploading.add_done_callback(_remove_downloads)
 
@@ -179,6 +182,12 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         if self._task_uploading is not None:
             await _cancel_task(self._task_uploading, self.task_cancellation_timeout_s)
             await self._port_key_tracker.move_all_uploading_to_pending()
+            self._task_uploading = None
+        if self._task_uploading_followup is not None:
+            await _cancel_task(
+                self._task_uploading_followup, self.task_cancellation_timeout_s
+            )
+            self._task_uploading_followup = None
 
     async def _scheduler_worker(self) -> None:
         if await self._port_key_tracker.are_pending_ports_uploading():

@@ -307,6 +307,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
           title.setValue(this.tr("Public Projects"));
           break;
         }
+        case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS: {
+          this.__setIcon("@MaterialIcons/functions/26");
+          title.setValue(this.tr("Functions"));
+          break;
+        }
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH: {
           this.__setIcon("@FontAwesome5Solid/trash/24");
           title.setValue(this.tr("Recently Deleted"));
@@ -319,7 +324,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         }
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           this.__setIcon("@FontAwesome5Solid/search/24");
-          title.setValue(this.tr("Projects results"));
+          title.setValue(this.tr("My Projects results"));
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
           this.__setIcon("@FontAwesome5Solid/search/24");

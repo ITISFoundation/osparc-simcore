@@ -3,7 +3,7 @@ Models both project and node states
 """
 
 from enum import Enum, unique
-from typing import Annotated
+from typing import Annotated, Self, TypeAlias
 
 from pydantic import (
     BaseModel,
@@ -13,7 +13,9 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.config import JsonDict
 
+from .groups import GroupID
 from .projects_access import Owner
 
 
@@ -77,7 +79,101 @@ class ProjectStatus(str, Enum):
     EXPORTING = "EXPORTING"
     OPENING = "OPENING"
     OPENED = "OPENED"
-    MAINTAINING = "MAINTAINING"
+    MAINTAINING = "MAINTAINING"  # used for maintenance tasks, like removing EFS data
+
+
+ProjectShareStatus: TypeAlias = Annotated[
+    ProjectStatus, Field(description="The status of the project")
+]
+ProjectShareLocked: TypeAlias = Annotated[
+    bool, Field(description="True if the project is locked")
+]
+ProjectShareCurrentUserGroupIDs: TypeAlias = Annotated[
+    list[GroupID],
+    Field(
+        description="Current users in the project (if the project is locked, the list contains only the lock owner)"
+    ),
+]
+
+
+class ProjectShareState(BaseModel):
+    status: ProjectShareStatus
+    locked: ProjectShareLocked
+    current_user_groupids: ProjectShareCurrentUserGroupIDs
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "status": ProjectStatus.CLOSED,
+                        "locked": False,
+                        "current_user_groupids": [],
+                    },
+                    {
+                        "status": ProjectStatus.OPENING,
+                        "locked": False,
+                        "current_user_groupids": [
+                            "7",
+                            "15",
+                            "666",
+                        ],
+                    },
+                    {
+                        "status": ProjectStatus.OPENED,
+                        "locked": False,
+                        "current_user_groupids": [
+                            "7",
+                            "15",
+                            "666",
+                        ],
+                    },
+                    {
+                        "status": ProjectStatus.CLONING,
+                        "locked": True,
+                        "current_user_groupids": [
+                            "666",
+                        ],
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid", json_schema_extra=_update_json_schema_extra
+    )
+
+    @model_validator(mode="after")
+    def check_model_valid(self) -> Self:
+        if (
+            self.status
+            in [
+                ProjectStatus.CLONING,
+                ProjectStatus.EXPORTING,
+                ProjectStatus.MAINTAINING,
+            ]
+            and not self.locked
+        ):
+            msg = f"Project is {self.status=}, but it is not locked"
+            raise ValueError(msg)
+        if self.locked and not self.current_user_groupids:
+            msg = "If the project is locked, the current_users list must contain at least the lock owner"
+            raise ValueError(msg)
+        if self.status is ProjectStatus.CLOSED:
+            if self.locked:
+                msg = "If the project is closed, it cannot be locked"
+                raise ValueError(msg)
+            if self.current_user_groupids:
+                msg = "If the project is closed, the current_users list must be empty"
+                raise ValueError(msg)
+        elif not self.current_user_groupids and (
+            self.status is not ProjectStatus.MAINTAINING
+        ):
+            msg = f"If the project is {self.status=}, the current_users list must not be empty"
+            raise ValueError(msg)
+
+        return self
 
 
 class ProjectLocked(BaseModel):
@@ -99,8 +195,6 @@ class ProjectLocked(BaseModel):
                     "status": ProjectStatus.OPENED,
                     "owner": {
                         "user_id": 123,
-                        "first_name": "Johnny",
-                        "last_name": "Cash",
                     },
                 },
             ]
@@ -144,8 +238,16 @@ class ProjectRunningState(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+ProjectStateShareState: TypeAlias = Annotated[
+    ProjectShareState, Field(description="The project share state")
+]
+ProjectStateRunningState: TypeAlias = Annotated[
+    ProjectRunningState, Field(description="The project running state")
+]
+
+
 class ProjectState(BaseModel):
-    locked: Annotated[ProjectLocked, Field(..., description="The project lock state")]
-    state: ProjectRunningState = Field(..., description="The project running state")
+    share_state: ProjectStateShareState
+    state: ProjectStateRunningState
 
     model_config = ConfigDict(extra="forbid")

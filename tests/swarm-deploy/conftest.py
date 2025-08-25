@@ -111,7 +111,7 @@ def simcore_stack_deployed_services(
         # logs table like
         #  ID                  NAME                  IMAGE                                      NODE                DESIRED STATE       CURRENT STATE                ERROR
         # xbrhmaygtb76        simcore_sidecar.1     itisfoundation/sidecar:latest              crespo-wkstn        Running             Running 53 seconds ago
-        # zde7p8qdwk4j        simcore_rabbit.1      itisfoundation/rabbitmq:3.13.7-management   crespo-wkstn        Running             Running 59 seconds ago
+        # zde7p8qdwk4j        simcore_rabbit.1      itisfoundation/rabbitmq:4.1.2-management   crespo-wkstn        Running             Running 59 seconds ago
         # f2gxmhwq7hhk        simcore_postgres.1    postgres:10.10                             crespo-wkstn        Running             Running about a minute ago
         # 1lh2hulxmc4q        simcore_director.1    itisfoundation/director:latest             crespo-wkstn        Running             Running 34 seconds ago
         # ...

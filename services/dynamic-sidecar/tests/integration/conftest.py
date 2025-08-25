@@ -4,6 +4,7 @@ import pytest
 import sqlalchemy as sa
 from models_library.users import UserID
 from pytest_simcore.helpers.faker_factories import random_user
+from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from simcore_postgres_database.models.users import users
 
 pytest_plugins = [
@@ -24,15 +25,13 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
     # which would turn this test too complex.
 
     # pylint: disable=no-value-for-parameter
-    stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
-    print(f"{stmt}")
-    with postgres_db.connect() as conn:
-        result = conn.execute(stmt)
-        row = result.first()
-        assert row
-        usr_id = row[users.c.id]
+    with sync_insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        postgres_db,
+        table=users,
+        values=random_user(
+            name="test",
+        ),
+        pk_col=users.c.id,
+    ) as user_row:
 
-    yield usr_id
-
-    with postgres_db.connect() as conn:
-        conn.execute(users.delete().where(users.c.id == usr_id))
+        yield user_row["id"]

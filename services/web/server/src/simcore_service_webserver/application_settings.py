@@ -4,6 +4,7 @@ from typing import Annotated, Any, Final, Literal
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.exclude import Unset
 from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.utils.change_case import snake_to_camel
@@ -29,6 +30,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog.settings import CatalogSettings
+from .collaboration.settings import RealTimeCollaborationSettings
 from .constants import APP_SETTINGS_KEY
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
@@ -38,6 +40,7 @@ from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .licenses.settings import LicensesSettings
 from .login.settings import LoginSettings
+from .long_running_tasks.settings import LongRunningTasksSettings
 from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
@@ -55,7 +58,7 @@ _logger = logging.getLogger(__name__)
 
 
 # NOTE: to mark a plugin as a DEV-FEATURE annotated it with
-#    `Field(json_schema_extra={_X_DEV_FEATURE_FLAG: True})`
+#    `Field(json_schema_extra={_X_FEATURE_UNDER_DEVELOPMENT: True})`
 # This will force it to be disabled when WEBSERVER_DEV_FEATURES_ENABLED=False
 _X_FEATURE_UNDER_DEVELOPMENT: Final[str] = "x-dev-feature"
 
@@ -264,6 +267,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
+    WEBSERVER_LONG_RUNNING_TASKS: Annotated[
+        LongRunningTasksSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="long running tasks plugin",
+        ),
+    ]
+
     WEBSERVER_PAYMENTS: Annotated[
         PaymentsSettings | None,
         Field(
@@ -275,6 +286,17 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     WEBSERVER_PROJECTS: Annotated[
         ProjectsSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
+
+    WEBSERVER_REALTIME_COLLABORATION: Annotated[
+        RealTimeCollaborationSettings | None,
+        Field(
+            description="Enables real-time collaboration features",
+            json_schema_extra={
+                "auto_default_from_env": True,
+                _X_FEATURE_UNDER_DEVELOPMENT: True,
+            },
+        ),
     ]
 
     WEBSERVER_REDIS: Annotated[
@@ -482,6 +504,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             "WEBSERVER_LICENSES",
             "WEBSERVER_PAYMENTS",
             "WEBSERVER_SCICRUNCH",
+            "WEBSERVER_REALTIME_COLLABORATION",
         }
         return [_ for _ in advertised_plugins if not self.is_enabled(_)] + [
             # NOTE: Permanently retired in https://github.com/ITISFoundation/osparc-simcore/pull/7182
@@ -558,9 +581,15 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "WEBSERVER_PROJECTS": {
                     "PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES",
                 },
+                "WEBSERVER_REALTIME_COLLABORATION": {
+                    "RTC_MAX_NUMBER_OF_USERS",
+                },
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
                 "WEBSERVER_TRASH": {
                     "TRASH_RETENTION_DAYS",
+                },
+                "WEBSERVER_LONG_RUNNING_TASKS": {
+                    "LONG_RUNNING_TASKS_NAMESPACE_SUFFIX",
                 },
             },
             exclude_none=True,
@@ -571,12 +600,16 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return {snake_to_camel(k): v for k, v in data.items()}
 
 
+_unset = Unset.VALUE
+
+
 def setup_settings(app: web.Application) -> ApplicationSettings:
+
     settings: ApplicationSettings = ApplicationSettings.create_from_envs()
     app[APP_SETTINGS_KEY] = settings
     _logger.debug(
         "Captured app settings:\n%s",
-        app[APP_SETTINGS_KEY].model_dump_json(indent=1),
+        lambda: settings.model_dump_json(indent=1),
     )
     return settings
 

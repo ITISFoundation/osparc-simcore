@@ -10,6 +10,7 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+from pydantic.config import JsonDict
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
@@ -30,10 +31,10 @@ class PostgresSettings(BaseCustomSettings):
 
     # pool connection limits
     POSTGRES_MINSIZE: Annotated[
-        int, Field(description="Minimum number of connections in the pool", ge=1)
-    ] = 1
+        int, Field(description="Minimum number of connections in the pool", ge=2)
+    ] = 2  # see https://github.com/ITISFoundation/osparc-simcore/pull/8199
     POSTGRES_MAXSIZE: Annotated[
-        int, Field(description="Maximum number of connections in the pool", ge=1)
+        int, Field(description="Maximum number of connections in the pool", ge=2)
     ] = 50
 
     POSTGRES_CLIENT_NAME: Annotated[
@@ -41,8 +42,8 @@ class PostgresSettings(BaseCustomSettings):
         Field(
             description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
             validation_alias=AliasChoices(
-                "POSTGRES_CLIENT_NAME",
                 # This is useful when running inside a docker container, then the hostname is set each client gets a different name
+                "POSTGRES_CLIENT_NAME",
                 "HOST",
                 "HOSTNAME",
             ),
@@ -81,19 +82,19 @@ class PostgresSettings(BaseCustomSettings):
         )
         return f"{url}"
 
-    @cached_property
-    def dsn_with_query(self) -> str:
+    def dsn_with_query(self, application_name: str, *, suffix: str | None) -> str:
         """Some clients do not support queries in the dsn"""
         dsn = self.dsn
-        return self._update_query(dsn)
+        return self._update_query(dsn, application_name, suffix=suffix)
 
-    def _update_query(self, uri: str) -> str:
+    def client_name(self, application_name: str, *, suffix: str | None) -> str:
+        return f"{application_name}{'-' if self.POSTGRES_CLIENT_NAME else ''}{self.POSTGRES_CLIENT_NAME or ''}{'-' + suffix if suffix else ''}"
+
+    def _update_query(self, uri: str, application_name: str, suffix: str | None) -> str:
         # SEE https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-        new_params: dict[str, str] = {}
-        if self.POSTGRES_CLIENT_NAME:
-            new_params = {
-                "application_name": self.POSTGRES_CLIENT_NAME,
-            }
+        new_params: dict[str, str] = {
+            "application_name": self.client_name(application_name, suffix=suffix),
+        }
 
         if new_params:
             parsed_uri = urlparse(uri)
@@ -103,17 +104,34 @@ class PostgresSettings(BaseCustomSettings):
             return urlunparse(parsed_uri._replace(query=updated_query))
         return uri
 
-    model_config = SettingsConfigDict(
-        json_schema_extra={
-            "examples": [
-                # minimal required
-                {
-                    "POSTGRES_HOST": "localhost",
-                    "POSTGRES_PORT": "5432",
-                    "POSTGRES_USER": "usr",
-                    "POSTGRES_PASSWORD": "secret",
-                    "POSTGRES_DB": "db",
-                }
-            ],
-        }
-    )
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    # minimal required
+                    {
+                        "POSTGRES_HOST": "localhost",
+                        "POSTGRES_PORT": "5432",
+                        "POSTGRES_USER": "usr",
+                        "POSTGRES_PASSWORD": "secret",
+                        "POSTGRES_DB": "db",
+                    },
+                    # full example
+                    {
+                        "POSTGRES_HOST": "localhost",
+                        "POSTGRES_PORT": "5432",
+                        "POSTGRES_USER": "usr",
+                        "POSTGRES_PASSWORD": "secret",
+                        "POSTGRES_DB": "db",
+                        "POSTGRES_MINSIZE": 2,
+                        "POSTGRES_MAXSIZE": 50,
+                        "POSTGRES_CLIENT_NAME": "my_app",  # first-choice
+                        "HOST": "should be ignored",
+                        "HOST_NAME": "should be ignored",
+                    },
+                ],
+            }
+        )
+
+    model_config = SettingsConfigDict(json_schema_extra=_update_json_schema_extra)

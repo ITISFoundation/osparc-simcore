@@ -95,7 +95,7 @@ qx.Class.define("osparc.info.StudyLarge", {
           if (selected) {
             saveBtn.setFetching(true);
             const templateType = selected.getModel();
-            osparc.store.Study.getInstance().patchTemplateType(this.getStudy().getUuid(), templateType)
+            osparc.store.Study.getInstance().patchTemplateType(this.getStudy().serialize(), templateType)
               .then(() => osparc.FlashMessenger.logAs(this.tr("Template type updated, please reload"), "INFO"))
               .catch(err => osparc.FlashMessenger.logError(err))
               .finally(() => saveBtn.setFetching(false));
@@ -234,10 +234,6 @@ qx.Class.define("osparc.info.StudyLarge", {
       }
 
       return infoLayout;
-    },
-
-    __createStudyId: function() {
-      return osparc.info.StudyUtils.createUuid(this.getStudy());
     },
 
     __createThumbnail: function() {

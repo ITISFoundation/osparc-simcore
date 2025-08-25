@@ -48,11 +48,7 @@ qx.Class.define("osparc.WatchDog", {
 
     // register for socket.io event to change the default heartbeat interval
     const socket = osparc.wrapper.WebSocket.getInstance();
-    socket.removeSlot("set_heartbeat_emit_interval");
-    socket.on("set_heartbeat_emit_interval", ({ interval }) => {
-      const newInterval = parseInt(interval) * 1000;
-      this.setHeartbeatInterval(newInterval);
-    }, this);
+    socket.bind("heartbeatInterval", this, "heartbeatInterval");
   },
 
   properties: {
@@ -66,10 +62,14 @@ qx.Class.define("osparc.WatchDog", {
 
     heartbeatInterval: {
       check: "Number",
-      init: 2 * 1000, // in milliseconds
-      nullable: false,
-      apply: "_applyHeartbeatInterval"
-    }
+      init: null,
+      nullable: true,
+      apply: "__applyHeartbeatInterval"
+    },
+  },
+
+  statics: {
+    DEFAULT_HEARTBEAT_INTERVAL: 2000, // default to 2 seconds
   },
 
   members: {
@@ -81,15 +81,24 @@ qx.Class.define("osparc.WatchDog", {
         logo.setOnline(value);
       }
 
-      if (value) {
-        this.__clientHeartbeatWWPinger.postMessage(["start", this.getHeartbeatInterval()]);
-      } else {
-        this.__clientHeartbeatWWPinger.postMessage(["stop"]);
-      }
+      value ? this.__startPinging() : this.__stopPinging();
     },
 
-    _applyHeartbeatInterval: function(value) {
-      this.__clientHeartbeatWWPinger.postMessage(["start", value]);
+    __applyHeartbeatInterval: function(value) {
+      if (value === null) {
+        return;
+      }
+
+      this.__startPinging();
+    },
+
+    __startPinging: function() {
+      const heartbeatInterval = this.getHeartbeatInterval() || osparc.WatchDog.DEFAULT_HEARTBEAT_INTERVAL;
+      this.__clientHeartbeatWWPinger.postMessage(["start", heartbeatInterval]);
+    },
+
+    __stopPinging: function() {
+      this.__clientHeartbeatWWPinger.postMessage(["stop"]);
     },
 
     __pingServer: function() {

@@ -42,6 +42,7 @@ async def setup_redis_client(app: web.Application):
                 RedisDatabase.SCHEDULED_MAINTENANCE,
                 RedisDatabase.USER_NOTIFICATIONS,
                 RedisDatabase.ANNOUNCEMENTS,
+                RedisDatabase.DOCUMENTS,
             )
         },
         settings=redis_settings,
@@ -79,6 +80,10 @@ def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
 
 def get_redis_lock_manager_client_sdk(app: web.Application) -> RedisClientSDK:
     return _get_redis_client_sdk(app, RedisDatabase.LOCKS)
+
+
+def get_redis_document_manager_client_sdk(app: web.Application) -> RedisClientSDK:
+    return _get_redis_client_sdk(app, RedisDatabase.DOCUMENTS)
 
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:

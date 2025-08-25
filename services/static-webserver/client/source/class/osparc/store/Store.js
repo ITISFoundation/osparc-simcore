@@ -77,14 +77,15 @@ qx.Class.define("osparc.store.Store", {
     },
     studyBrowserContext: {
       check: [
-        "studiesAndFolders",
-        "workspaces",
-        "templates",
-        "publicTemplates",
-        "trash",
-        "searchProjects",
-        "searchTemplates",
-        "searchPublicTemplates",
+        "studiesAndFolders",      // osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS,
+        "workspaces",             // osparc.dashboard.StudyBrowser.CONTEXT.WORKSPACES,
+        "templates",              // osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES,
+        "publicTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES,
+        "functions",              // osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS,
+        "trash",                  // osparc.dashboard.StudyBrowser.CONTEXT.TRASH,
+        "searchProjects",         // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS,
+        "searchTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
+        "searchPublicTemplates",  // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
       ],
       init: "studiesAndFolders",
       nullable: false,
@@ -102,7 +103,7 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
-    conversations: {
+    conversationsStudies: {
       check: "Array",
       init: []
     },
@@ -246,6 +247,10 @@ qx.Class.define("osparc.store.Store", {
     notifications: {
       check: "Array",
       init: null,
+    },
+    conversationsSupport: {
+      check: "Array",
+      init: []
     },
   },
 

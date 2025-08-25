@@ -310,6 +310,18 @@ qx.Class.define("osparc.product.Utils", {
       return true;
     },
 
+    showFunctions: function() {
+      if (!osparc.data.Permissions.getInstance().checkFunctionPermissions("readFunctions")) {
+        return false;
+      }
+
+      return [
+        "osparc",
+        "s4l",
+        "s4lacad",
+      ].includes(osparc.product.Utils.getProductName());
+    },
+
     showQuality: function() {
       return this.isProduct("osparc");
     },
@@ -323,7 +335,7 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     showS4LStore: function() {
-      const licensesEnabled = osparc.store.StaticInfo.getInstance().areLicensesEnabled();
+      const licensesEnabled = osparc.utils.DisabledPlugins.isLicensesEnabled();
       return this.isS4LProduct() && licensesEnabled;
     },
 
@@ -404,6 +416,10 @@ qx.Class.define("osparc.product.Utils", {
 
     groupServices: function() {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
+    },
+
+    isSupportEnabled: function() {
+      return Boolean(osparc.store.Products.getInstance().getSupportGroupId());
     },
   }
 });

@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=no-member
 
+import asyncio
 import json
 from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
@@ -16,6 +17,7 @@ import pytest
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from asgi_lifespan import LifespanManager
+from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
@@ -27,11 +29,13 @@ from models_library.api_schemas_long_running_tasks.base import (
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
+from servicelib.long_running_tasks.task import TaskRegistry
+from settings_library.rabbit import RabbitSettings
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
@@ -44,6 +48,16 @@ from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
+
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 
 FAST_STATUS_POLL: Final[float] = 0.1
 CREATE_SERVICE_CONTAINERS_TIMEOUT: Final[float] = 60
@@ -73,6 +87,8 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
     async def _just_log_task(*args, **kwargs) -> None:
         print(f"Called mocked function with {args}, {kwargs}")
 
+    TaskRegistry.register(_just_log_task)
+
     # searching by name since all start with _task
     tasks_names = [
         x[0]
@@ -87,6 +103,8 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
 
     yield None
 
+    TaskRegistry.unregister(_just_log_task)
+
 
 @asynccontextmanager
 async def auto_remove_task(client: Client, task_id: TaskId) -> AsyncIterator[None]:
@@ -94,7 +112,7 @@ async def auto_remove_task(client: Client, task_id: TaskId) -> AsyncIterator[Non
     try:
         yield
     finally:
-        await client.cancel_and_delete_task(task_id, timeout=10)
+        await client.remove_task(task_id, timeout=10)
 
 
 async def _get_container_timestamps(
@@ -159,8 +177,20 @@ def backend_url() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_environment(mock_rabbitmq_envs: EnvVarsDict) -> EnvVarsDict:
-    return mock_rabbitmq_envs
+def mock_environment(
+    monkeypatch: pytest.MonkeyPatch,
+    rabbit_service: RabbitSettings,
+    mock_environment: EnvVarsDict,
+) -> EnvVarsDict:
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_environment,
+            "RABBIT_SETTINGS": json.dumps(
+                model_dump_with_secrets(rabbit_service, show_secrets=True)
+            ),
+        },
+    )
 
 
 @pytest.fixture
@@ -379,6 +409,20 @@ async def _debug_progress(
     print(f"{task_id} {percent} {message}")
 
 
+async def _assert_progress_finished(
+    last_progress_message: tuple[ProgressMessage, ProgressPercent] | None,
+) -> None:
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(10),
+        wait=wait_fixed(0.1),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            await asyncio.sleep(0)  # yield control to the event loop
+            assert last_progress_message == ("finished", 1.0)
+
+
 async def test_create_containers_task(
     httpx_async_client: AsyncClient,
     client: Client,
@@ -387,10 +431,13 @@ async def test_create_containers_task(
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     shared_store: SharedStore,
 ) -> None:
-    last_progress_message: tuple[str, float] | None = None
+    last_progress_message: tuple[ProgressMessage, ProgressPercent] | None = None
 
-    async def create_progress(message: str, percent: float, _: TaskId) -> None:
+    async def create_progress(
+        message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
+    ) -> None:
         nonlocal last_progress_message
+        assert percent is not None
         last_progress_message = (message, percent)
         print(message, percent)
 
@@ -405,7 +452,7 @@ async def test_create_containers_task(
     ) as result:
         assert shared_store.container_names == result
 
-    assert last_progress_message == ("finished", 1.0)
+    await _assert_progress_finished(last_progress_message)
 
 
 async def test_pull_user_servcices_docker_images(
@@ -437,7 +484,7 @@ async def test_pull_user_servcices_docker_images(
     ) as result:
         assert shared_store.container_names == result
 
-    assert last_progress_message == ("finished", 1.0)
+    await _assert_progress_finished(last_progress_message)
 
     async with periodic_task_result(
         client=client,
@@ -449,7 +496,7 @@ async def test_pull_user_servcices_docker_images(
         progress_callback=_debug_progress,
     ) as result:
         assert result is None
-    assert last_progress_message == ("finished", 1.0)
+    await _assert_progress_finished(last_progress_message)
 
 
 async def test_create_containers_task_invalid_yaml_spec(
@@ -506,13 +553,15 @@ async def test_same_task_id_is_returned_if_task_exists(
 
     with mock_tasks(mocker):
         task_id = await _get_awaitable()
+        assert task_id.endswith("unique")
         async with auto_remove_task(client, task_id):
             assert await _get_awaitable() == task_id
 
         # since the previous task was already removed it is again possible
-        # to create a task
+        # to create a task and it will share the same task_id
         new_task_id = await _get_awaitable()
-        assert new_task_id != task_id
+        assert new_task_id.endswith("unique")
+        assert new_task_id == task_id
         async with auto_remove_task(client, task_id):
             pass
 

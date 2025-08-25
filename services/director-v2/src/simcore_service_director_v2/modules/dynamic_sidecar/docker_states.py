@@ -1,6 +1,7 @@
 """
 States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
+
 import logging
 
 from models_library.generated_models.docker_rest_api import ContainerState
@@ -8,7 +9,7 @@ from models_library.services_enums import ServiceState
 
 from ...models.dynamic_services_scheduler import DockerContainerInspect
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 # For all available task states SEE
 # https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
@@ -62,7 +63,7 @@ _CONTAINER_STATE_TO_SERVICE_STATE: dict[str, ServiceState] = {
 
 
 def extract_task_state(task_status: dict[str, str]) -> tuple[ServiceState, str]:
-    last_task_error_msg = task_status["Err"] if "Err" in task_status else ""
+    last_task_error_msg = task_status.get("Err", "")
 
     task_state = _TASK_STATE_TO_SERVICE_STATE[task_status["State"]]
     return (task_state, last_task_error_msg)
@@ -89,7 +90,7 @@ def extract_containers_minimum_statuses(
     the lowest (considered worst) state will be forwarded to the frontend.
     `ServiceState` defines the order of the states.
     """
-    logger.info("containers_inspect=%s", containers_inspect)
+    _logger.debug("containers_inspect=%s", containers_inspect)
     remapped_service_statuses = {
         index: _extract_container_status(value.container_state)
         for index, value in enumerate(containers_inspect)

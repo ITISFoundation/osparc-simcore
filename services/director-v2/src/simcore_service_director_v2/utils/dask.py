@@ -20,11 +20,12 @@ from dask_task_models_library.container_tasks.utils import parse_dask_job_id
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.computations import TaskLogFileGet
 from models_library.api_schemas_directorv2.services import NodeRequirements
-from models_library.docker import DockerLabelKey, StandardSimcoreDockerLabels
+from models_library.docker import DockerLabelKey
 from models_library.errors import ErrorDict
-from models_library.projects import ProjectID, ProjectIDStr
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -40,7 +41,8 @@ from simcore_sdk.node_ports_v2 import FileLinkType, Port, links, port_utils
 from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..constants import UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
+from .._meta import APP_NAME
+from ..constants import LOGS_FILE_NAME, UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER_LABEL
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
@@ -88,10 +90,10 @@ async def create_node_ports(
     :raises PortsValidationError: if any of the ports assigned values are invalid
     """
     try:
-        db_manager = node_ports_v2.DBManager(db_engine)
+        db_manager = node_ports_v2.DBManager(db_engine, application_name=APP_NAME)
         return await node_ports_v2.ports(
             user_id=user_id,
-            project_id=ProjectIDStr(f"{project_id}"),
+            project_id=f"{project_id}",
             node_uuid=TypeAdapter(NodeIDStr).validate_python(f"{node_id}"),
             db_manager=db_manager,
         )
@@ -261,9 +263,6 @@ async def compute_output_data_schema(
     return TaskOutputDataSchema.model_validate(output_data_schema)
 
 
-_LOGS_FILE_NAME = "logs.zip"
-
-
 async def compute_service_log_file_upload_link(
     user_id: UserID,
     project_id: ProjectID,
@@ -274,7 +273,7 @@ async def compute_service_log_file_upload_link(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
-        file_name=_LOGS_FILE_NAME,
+        file_name=LOGS_FILE_NAME,
         link_type=file_link_type,
         file_size=ByteSize(0),  # will create a single presigned link
         sha256_checksum=None,
@@ -296,7 +295,7 @@ def compute_task_labels(
         ValidationError
     """
     product_name = run_metadata.get("product_name", UNDEFINED_DOCKER_LABEL)
-    standard_simcore_labels = StandardSimcoreDockerLabels.model_validate(
+    standard_simcore_labels = SimcoreContainerLabels.model_validate(
         {
             "user_id": user_id,
             "project_id": project_id,
@@ -375,7 +374,7 @@ async def _get_service_log_file_download_link(
             user_id=user_id,
             project_id=f"{project_id}",
             node_id=f"{node_id}",
-            file_name=_LOGS_FILE_NAME,
+            file_name=LOGS_FILE_NAME,
             link_type=file_link_type,
         )
         return value_link
@@ -444,10 +443,10 @@ async def clean_task_output_and_log_files_if_invalid(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
-        file_name=_LOGS_FILE_NAME,
+        file_name=LOGS_FILE_NAME,
     ):
         await port_utils.delete_target_link(
-            user_id, f"{project_id}", f"{node_id}", _LOGS_FILE_NAME
+            user_id, f"{project_id}", f"{node_id}", LOGS_FILE_NAME
         )
 
 

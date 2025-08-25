@@ -5,7 +5,7 @@ ARG PYTHON_VERSION="3.11.9"
 ARG UV_VERSION="0.7"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
-FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-bookworm AS base
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log

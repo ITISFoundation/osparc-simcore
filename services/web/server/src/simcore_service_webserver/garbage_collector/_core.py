@@ -5,7 +5,7 @@ import logging
 from aiohttp import web
 from servicelib.logging_utils import log_catch, log_context
 
-from ..resource_manager.registry import RedisResourceRegistry, get_registry
+from ..resource_manager.registry import get_registry
 from ._core_disconnected import remove_disconnected_user_resources
 from ._core_guests import remove_users_manually_marked_as_guests
 from ._core_orphans import remove_orphaned_services
@@ -34,24 +34,31 @@ async def collect_garbage(app: web.Application):
     The field `garbage_collection_interval_seconds` defines the interval at which this
     function will be called.
     """
-    registry: RedisResourceRegistry = get_registry(app)
+    registry = get_registry(app)
 
-    with log_catch(_logger, reraise=False), log_context(
-        _logger, logging.INFO, "Step 1: Removes disconnected user sessions"
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(
+            _logger, logging.INFO, "Step 1: Removes disconnected user sessions"
+        ),
     ):
         # Triggers signal to close possible pending opened projects
         # Removes disconnected GUEST users after they finished their sessions
         await remove_disconnected_user_resources(registry, app)
 
-    with log_catch(_logger, reraise=False), log_context(
-        _logger, logging.INFO, "Step 2: Removes users manually marked for removal"
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(
+            _logger, logging.INFO, "Step 2: Removes users manually marked for removal"
+        ),
     ):
         # if a user was manually marked as GUEST it needs to be
         # removed together with all the associated projects
         await remove_users_manually_marked_as_guests(registry, app)
 
-    with log_catch(_logger, reraise=False), log_context(
-        _logger, logging.INFO, "Step 3: Removes orphaned services"
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(_logger, logging.INFO, "Step 3: Removes orphaned services"),
     ):
         # For various reasons, some services remain pending after
         # the projects are closed or the user was disconencted.

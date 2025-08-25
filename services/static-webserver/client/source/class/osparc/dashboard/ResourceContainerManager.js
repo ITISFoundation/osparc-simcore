@@ -76,6 +76,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTutorial": "qx.event.type.Data",
+    "updateFunction": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
@@ -160,6 +161,9 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
             case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
             case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
               text = this.tr("No Public Projects found");
+              break;
+            case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
+              text = this.tr("No Functions found");
               break;
           }
           break;
@@ -297,6 +301,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         "updateStudy",
         "updateTemplate",
         "updateTutorial",
+        "updateFunction",
         "updateService",
         "updateHypertool",
         "publishTemplate",

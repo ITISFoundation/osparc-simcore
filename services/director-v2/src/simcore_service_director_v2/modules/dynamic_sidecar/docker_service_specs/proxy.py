@@ -1,6 +1,6 @@
 from typing import Any
 
-from models_library.docker import StandardSimcoreDockerLabels
+from models_library.services_metadata_runtime import SimcoreContainerLabels
 from models_library.services_resources import (
     CPU_10_PERCENT,
     CPU_100_PERCENT,
@@ -35,9 +35,9 @@ def get_dynamic_proxy_spec(
     The proxy is used to create network isolation
     from the rest of the platform.
     """
-    assert (
-        scheduler_data.product_name is not None
-    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+    assert scheduler_data.product_name is not None, (
+        "ONLY for legacy. This function should not be called with product_name==None"
+    )  # nosec
 
     proxy_settings: DynamicSidecarProxySettings = (
         dynamic_services_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
@@ -48,8 +48,8 @@ def get_dynamic_proxy_spec(
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
         dynamic_services_settings.DYNAMIC_SCHEDULER
     )
-    webserver_settings: webserver.WebServerSettings = (
-        dynamic_services_settings.WEBSERVER_SETTINGS
+    wb_auth_settings: webserver.WebServerSettings = (
+        dynamic_services_settings.WEBSERVER_AUTH_SETTINGS
     )
 
     mounts = [
@@ -99,7 +99,7 @@ def get_dynamic_proxy_spec(
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
             # auth
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{webserver_settings.api_base_url}/auth:check",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.address": f"{wb_auth_settings.api_base_url}/auth:check",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.trustForwardHeader": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-auth.forwardauth.authResponseHeaders": f"Set-Cookie,{DEFAULT_SESSION_COOKIE_NAME}",
             # routing
@@ -116,7 +116,7 @@ def get_dynamic_proxy_spec(
             ),
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
         }
-        | StandardSimcoreDockerLabels(
+        | SimcoreContainerLabels(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
@@ -134,7 +134,7 @@ def get_dynamic_proxy_spec(
                 "Hosts": [],
                 "Image": f"caddy:{proxy_settings.DYNAMIC_SIDECAR_CADDY_VERSION}",
                 "Init": True,
-                "Labels": StandardSimcoreDockerLabels(
+                "Labels": SimcoreContainerLabels(
                     user_id=scheduler_data.user_id,
                     project_id=scheduler_data.project_id,
                     node_id=scheduler_data.node_uuid,

@@ -10,23 +10,23 @@ from typing import Any
 import pytest
 from faker import Faker
 from models_library.api_schemas_webserver.users import (
-    MyProfileGet,
-    MyProfilePatch,
     MyProfilePrivacyGet,
+    MyProfileRestGet,
+    MyProfileRestPatch,
 )
 from models_library.generics import Envelope
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from simcore_postgres_database import utils_users
-from simcore_service_webserver.users._models import ToUserUpdateDB
+from simcore_service_webserver.users._models import UserModelAdapter
 
 
 @pytest.fixture
-def fake_profile_get(faker: Faker) -> MyProfileGet:
+def fake_profile_get(faker: Faker) -> MyProfileRestGet:
     fake_profile: dict[str, Any] = faker.simple_profile()
     first, last = fake_profile["name"].rsplit(maxsplit=1)
 
-    return MyProfileGet(
+    return MyProfileRestGet(
         id=faker.pyint(),
         first_name=first,
         last_name=last,
@@ -40,7 +40,7 @@ def fake_profile_get(faker: Faker) -> MyProfileGet:
     )
 
 
-def test_profile_get_expiration_date(fake_profile_get: MyProfileGet):
+def test_profile_get_expiration_date(fake_profile_get: MyProfileRestGet):
     fake_expiration = datetime.now(UTC)
 
     profile = fake_profile_get.model_copy(
@@ -53,7 +53,7 @@ def test_profile_get_expiration_date(fake_profile_get: MyProfileGet):
     assert body["expirationDate"] == fake_expiration.date().isoformat()
 
 
-def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileGet):
+def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileRestGet):
 
     profile = fake_profile_get.model_copy()
 
@@ -62,7 +62,7 @@ def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileGet):
 
     assert (
         "gravatar_id" not in data
-    ), f"{dict(MyProfileGet.model_fields)['gravatar_id'].deprecated=}"
+    ), f"{dict(MyProfileRestGet.model_fields)['gravatar_id'].deprecated=}"
     assert data["id"] == profile.id
     assert data["first_name"] == profile.first_name
     assert data["last_name"] == profile.last_name
@@ -116,13 +116,13 @@ def test_parsing_output_of_get_user_profile():
         },
     }
 
-    profile = MyProfileGet.model_validate(result_from_db_query_and_composition)
+    profile = MyProfileRestGet.model_validate(result_from_db_query_and_composition)
     assert "password" not in profile.model_dump(exclude_unset=True)
 
 
 def test_mapping_update_models_from_rest_to_db():
 
-    profile_update = MyProfilePatch.model_validate(
+    profile_update = MyProfileRestPatch.model_validate(
         # request payload
         {
             "first_name": "foo",
@@ -132,10 +132,10 @@ def test_mapping_update_models_from_rest_to_db():
     )
 
     # to db
-    profile_update_db = ToUserUpdateDB.from_api(profile_update)
+    profile_update_db = UserModelAdapter.from_rest_schema_model(profile_update)
 
     # expected
-    assert profile_update_db.to_db() == {
+    assert profile_update_db.to_db_values() == {
         "first_name": "foo",
         "name": "foo1234",
         "privacy_hide_fullname": False,
@@ -146,7 +146,7 @@ def test_mapping_update_models_from_rest_to_db():
 def test_utils_user_generates_valid_myprofile_patch():
     username = utils_users._generate_username_from_email("xi@email.com")  # noqa: SLF001
 
-    MyProfilePatch.model_validate({"userName": username})
-    MyProfilePatch.model_validate(
+    MyProfileRestPatch.model_validate({"userName": username})
+    MyProfileRestPatch.model_validate(
         {"userName": utils_users.generate_alternative_username(username)}
     )

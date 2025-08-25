@@ -75,6 +75,10 @@ async def test_trash_projects(  # noqa: PLR0915
         return_value=[mocker.MagicMock()] if is_project_running else [],
         autospec=True,
     )
+    mocker.patch(
+        "simcore_service_webserver.projects._trash_service.dynamic_scheduler_service.get_dynamic_service",
+        autospec=True,
+    )
 
     project_uuid = UUID(user_project["uuid"])
 
@@ -1162,7 +1166,7 @@ async def test_trash_folder_with_subfolder_and_project_and_empty_bin(
 
     # waits for deletion
     async for attempt in AsyncRetrying(
-        stop=stop_after_attempt(3), wait=wait_fixed(1), reraise=True
+        stop=stop_after_attempt(10), wait=wait_fixed(1), reraise=True
     ):
         with attempt:
             # GET trashed parent folder

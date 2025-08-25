@@ -33,10 +33,10 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadLinks,
     FileUploadSchema,
 )
-from models_library.docker import to_simcore_runtime_docker_label_key
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink, SimcoreS3FileID
 from models_library.services import ServiceRunID
+from models_library.services_metadata_runtime import to_simcore_runtime_docker_label_key
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pydantic.networks import AnyUrl
@@ -48,7 +48,7 @@ from simcore_service_director_v2.models.comp_runs import RunMetadataDict
 from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from simcore_service_director_v2.utils.dask import (
-    _LOGS_FILE_NAME,
+    LOGS_FILE_NAME,
     _to_human_readable_resource_values,
     check_if_cluster_is_able_to_run_pipeline,
     clean_task_output_and_log_files_if_invalid,
@@ -438,7 +438,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
         mock.call(
             user_id=user_id,
             store_id=0,
-            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
+            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{LOGS_FILE_NAME}",
         )
     ]
 

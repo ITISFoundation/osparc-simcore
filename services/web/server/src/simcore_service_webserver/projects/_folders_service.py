@@ -39,7 +39,7 @@ async def move_project_into_folder(
             raise ProjectInvalidRightsError(
                 user_id=user_id,
                 project_uuid=project_id,
-                reason=f"User does not have write access to project {project_id}",
+                details=f"User does not have write access to project {project_id}",
             )
         workspace_is_private = False
 

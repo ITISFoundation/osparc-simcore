@@ -43,7 +43,7 @@ from tenacity import (
     wait_fixed,
 )
 
-from .logging_tools import log_context
+from .logging_tools import ContextMessages, log_context
 
 _logger = logging.getLogger(__name__)
 
@@ -274,8 +274,8 @@ class SocketIOProjectClosedWaiter:
             decoded_message = decode_socketio_42_message(message)
             if (
                 (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
-                and (decoded_message.obj["data"]["locked"]["status"] == "CLOSED")
-                and (decoded_message.obj["data"]["locked"]["value"] is False)
+                and (decoded_message.obj["data"]["shareState"]["status"] == "CLOSED")
+                and (decoded_message.obj["data"]["shareState"]["locked"] is False)
             ):
                 self.logger.info("project successfully closed")
                 return True
@@ -532,9 +532,10 @@ def wait_for_pipeline_state(
     if current_state in if_in_states:
         with log_context(
             logging.INFO,
-            msg=(
-                f"pipeline is in {current_state=}, waiting for one of {expected_states=}",
-                f"pipeline is now in {current_state=}",
+            msg=ContextMessages(
+                starting=f"wait for one of {expected_states=}",
+                done=lambda: f"wait for one of {expected_states=}, pipeline reached {current_state=}",
+                raised=lambda: f"pipeline failed or timed out with {current_state}. Expected one of {expected_states=}",
             ),
         ):
             waiter = SocketIOProjectStateUpdatedWaiter(
@@ -551,7 +552,7 @@ def wait_for_pipeline_state(
                 and current_state not in expected_states
             ):
                 pytest.fail(
-                    f"❌ Pipeline failed with state {current_state}. Expected one of {expected_states} ❌"
+                    f"❌ Pipeline failed fast with state {current_state}. Expected one of {expected_states} ❌"
                 )
     return current_state
 

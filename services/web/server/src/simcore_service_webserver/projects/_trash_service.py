@@ -88,7 +88,7 @@ async def trash_project(
             product_name=product_name,
         )
 
-    await _projects_service.patch_project(
+    await _projects_service.patch_project_for_user(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -98,6 +98,7 @@ async def trash_project(
             trashed_explicitly=explicit,
             trashed_by=user_id,
         ),
+        client_session_id=None,
     )
 
 
@@ -109,7 +110,7 @@ async def untrash_project(
     project_id: ProjectID,
 ) -> None:
     # NOTE: check_user_project_permission is inside projects_api.patch_project
-    await _projects_service.patch_project(
+    await _projects_service.patch_project_for_user(
         app,
         user_id=user_id,
         product_name=product_name,
@@ -117,6 +118,7 @@ async def untrash_project(
         project_patch=ProjectPatchInternalExtended(
             trashed_at=None, trashed_explicitly=False, trashed_by=None
         ),
+        client_session_id=None,
     )
 
 
@@ -222,7 +224,7 @@ async def delete_explicitly_trashed_project(
         raise ProjectNotTrashedError(
             project_uuid=project_id,
             user_id=user_id,
-            reason="Cannot delete trashed project since it does not fit current criteria",
+            details="Cannot delete trashed project since it does not fit current criteria",
         )
 
     await _projects_service.delete_project_by_user(

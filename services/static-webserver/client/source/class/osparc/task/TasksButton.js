@@ -24,10 +24,6 @@ qx.Class.define("osparc.task.TasksButton", {
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.set({
-      width: 30,
-      alignX: "center",
-      cursor: "pointer",
-      visibility: "excluded",
       toolTipText: this.tr("Tasks"),
     });
 
@@ -95,16 +91,7 @@ qx.Class.define("osparc.task.TasksButton", {
         document.removeEventListener("mousedown", tapListener);
       };
 
-      const bounds = this.getBounds();
-      const cel = this.getContentElement();
-      if (cel) {
-        const domeEle = cel.getDomElement();
-        if (domeEle) {
-          const rect = domeEle.getBoundingClientRect();
-          bounds.left = parseInt(rect.x);
-          bounds.top = parseInt(rect.y);
-        }
-      }
+      const bounds = osparc.utils.Utils.getBounds(this);
       const tasks = osparc.task.TasksContainer.getInstance();
       tasks.setTasksContainerPosition(
         bounds.left + bounds.width - osparc.task.TaskUI.MAX_WIDTH,

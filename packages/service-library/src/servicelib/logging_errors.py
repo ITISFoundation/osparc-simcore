@@ -74,7 +74,7 @@ def create_troubleshootting_log_kwargs(
             ...
         except MyException as exc
             _logger.exception(
-                **create_troubleshotting_log_kwargs(
+                **create_troubleshootting_log_kwargs(
                     user_error_msg=frontend_msg,
                     error=exc,
                     error_context={

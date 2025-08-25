@@ -45,6 +45,7 @@ opentelemetry-instrumentation-aiopg
 orjson  # json
 packaging
 passlib
+phonenumbers
 pint # units
 pycountry
 pydantic[email] # models

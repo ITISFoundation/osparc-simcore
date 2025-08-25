@@ -1,7 +1,19 @@
 name: 🏗️ Maintenance
 description: A change in the code to overcome technical debt
-labels: ["t:maintenance"]
-assignees: ["pcrespov"]
+title: "[Maintenance]: "
+labels:
+  - "t:maintenance"
+assignees:
+  - bisgaard-itis
+  - giancarloromeo
+  - GitHK
+  - matusdrobuliak66
+  - odeimaiz
+  - pcrespov
+  - sanderegg
+projects:
+  - "ITISFoundation/projects/9"
+type: "Task"
 body:
   - type: checkboxes
     attributes:

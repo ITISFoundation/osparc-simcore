@@ -129,6 +129,10 @@ qx.Theme.define("osparc.theme.Appearance", {
       }
     },
 
+    "pb-function": {
+      include: "pb-template",
+    },
+
     "pb-hypertool": {
       include: "pb-template",
     },
@@ -235,6 +239,20 @@ qx.Theme.define("osparc.theme.Appearance", {
         }
       }
     },
+
+    /*
+    ---------------------------------------------------------------------------
+      TABLE
+    ---------------------------------------------------------------------------
+    */
+
+   "table-header-cell": {
+      style: function() {
+        return {
+          font: "text-13", // override the default theme's bold font
+        }
+      }
+   },
 
     /*
     ---------------------------------------------------------------------------
@@ -850,13 +868,11 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor = "default-button-focus-background";
         }
         if (states.selected || states.checked) {
-          textColor = "default-button-disabled";
+          textColor = "white";
           cursor = "default";
           decorator = "form-button-checked";
-          backgroundColor = "default-button-disabled-background";
+          backgroundColor = "product-color";
         }
-
-        decorator;
 
         return {
           textColor: textColor,

@@ -38,6 +38,7 @@ class MyProfile(BaseModel):
     email: LowerCaseEmailStr
     role: UserRole
     privacy: PrivacyDict
+    phone: str | None
     expiration_date: datetime.date | None = None
 
     @staticmethod
@@ -50,6 +51,7 @@ class MyProfile(BaseModel):
                     "user_name": "PtN5Ab0uv",
                     "first_name": "PtN5Ab0uv",
                     "last_name": "",
+                    "phone": None,
                     "role": "GUEST",
                     "privacy": {
                         "hide_email": True,

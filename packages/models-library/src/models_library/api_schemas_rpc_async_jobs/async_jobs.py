@@ -30,6 +30,17 @@ class AsyncJobResult(BaseModel):
 
 
 class AsyncJobGet(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "job_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "job_name": "export_data_task",
+                }
+            ]
+        }
+    )
+
     job_id: AsyncJobId
     job_name: AsyncJobName
 
@@ -41,6 +52,18 @@ class AsyncJobAbort(BaseModel):
 
 class AsyncJobFilter(AsyncJobFilterBase):
     """Data for controlling access to an async job"""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "product_name": "osparc",
+                    "user_id": 123,
+                    "client_name": "web_client",
+                }
+            ]
+        },
+    )
 
     product_name: ProductName
     user_id: UserID

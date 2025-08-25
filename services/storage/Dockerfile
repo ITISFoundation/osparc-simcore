@@ -65,8 +65,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 
-ENV SC_BUILD_TARGET base
-ENV SC_BOOT_MODE default
+ENV SC_BUILD_TARGET=base
+ENV SC_BOOT_MODE=default
 
 EXPOSE 8080
 # -------------------------- -------------------------------
@@ -81,7 +81,7 @@ EXPOSE 8080
 
 FROM base AS build
 
-ENV SC_BUILD_TARGET build
+ENV SC_BUILD_TARGET=build
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
   set -eux \

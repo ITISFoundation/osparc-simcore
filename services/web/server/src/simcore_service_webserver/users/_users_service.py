@@ -3,18 +3,20 @@ from typing import Any
 
 import pycountry
 from aiohttp import web
-from models_library.api_schemas_webserver.users import MyProfilePatch
+from models_library.api_schemas_webserver.users import MyProfileRestPatch
+from models_library.api_schemas_webserver.users_preferences import AggregatedPreferences
 from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupID
 from models_library.payments import UserInvoiceAddress
 from models_library.products import ProductName
-from models_library.users import UserBillingDetails, UserID, UserPermission
+from models_library.users import MyProfile, UserBillingDetails, UserID, UserPermission
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.users import UserStatus
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraPropertiesNotFoundError,
 )
+from simcore_postgres_database.utils_users import UsersRepo
 
 from ..db.plugin import get_asyncpg_engine
 from ..security import security_service
@@ -22,13 +24,14 @@ from ..user_preferences import user_preferences_service
 from . import _users_repository
 from ._models import (
     FullNameDict,
-    ToUserUpdateDB,
     UserCredentialsTuple,
     UserDisplayAndIdNamesTuple,
     UserIdNamesTuple,
+    UserModelAdapter,
 )
 from .exceptions import (
     MissingGroupExtraPropertiesForProductError,
+    UserNotFoundError,
 )
 
 _logger = logging.getLogger(__name__)
@@ -158,21 +161,19 @@ get_user_role = _users_repository.get_user_role
 async def get_user_credentials(
     app: web.Application, *, user_id: UserID
 ) -> UserCredentialsTuple:
-    row = await _users_repository.get_user_or_raise(
-        get_asyncpg_engine(app),
-        user_id=user_id,
-        return_column_names=[
-            "name",
-            "first_name",
-            "email",
-            "password_hash",
-        ],
-    )
+
+    repo = UsersRepo(get_asyncpg_engine(app))
+
+    user_row = await repo.get_user_by_id_or_none(user_id=user_id)
+    if user_row is None:
+        raise UserNotFoundError(user_id=user_id)
+
+    user_password_hash = await repo.get_password_hash(user_id=user_id)
 
     return UserCredentialsTuple(
-        email=TypeAdapter(LowerCaseEmailStr).validate_python(row["email"]),
-        password_hash=row["password_hash"],
-        display_name=row["first_name"] or row["name"].capitalize(),
+        email=TypeAdapter(LowerCaseEmailStr).validate_python(user_row.email),
+        password_hash=user_password_hash,
+        display_name=user_row.first_name or user_row.name.capitalize(),
     )
 
 
@@ -212,7 +213,9 @@ async def get_user_invoice_address(
 #
 
 
-async def delete_user_without_projects(app: web.Application, user_id: UserID) -> None:
+async def delete_user_without_projects(
+    app: web.Application, *, user_id: UserID, clean_cache: bool = True
+) -> None:
     """Deletes a user from the database if the user exists"""
     # WARNING: user cannot be deleted without deleting first all ist project
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
@@ -227,9 +230,10 @@ async def delete_user_without_projects(app: web.Application, user_id: UserID) ->
         )
         return
 
-    # This user might be cached in the auth. If so, any request
-    # with this user-id will get thru producing unexpected side-effects
-    await security_service.clean_auth_policy_cache(app)
+    if clean_cache:
+        # This user might be cached in the auth. If so, any request
+        # with this user-id will get thru producing unexpected side-effects
+        await security_service.clean_auth_policy_cache(app)
 
 
 async def set_user_as_deleted(app: web.Application, *, user_id: UserID) -> None:
@@ -249,7 +253,7 @@ async def update_expired_users(app: web.Application) -> list[UserID]:
 
 async def get_my_profile(
     app: web.Application, *, user_id: UserID, product_name: ProductName
-):
+) -> tuple[MyProfile, AggregatedPreferences]:
     """Caller and target user is the same. Privacy settings do not apply here
 
     :raises UserNotFoundError:
@@ -276,11 +280,31 @@ async def update_my_profile(
     app: web.Application,
     *,
     user_id: UserID,
-    update: MyProfilePatch,
+    update: MyProfileRestPatch,
 ) -> None:
 
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,
-        update=ToUserUpdateDB.from_api(update),
+        updated_values=UserModelAdapter.from_rest_schema_model(update).to_db_values(),
+    )
+
+
+async def update_user_phone(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    phone: str,
+) -> None:
+    """Update user's phone number after successful verification
+
+    Args:
+        app: Web application instance
+        user_id: ID of the user whose phone to update
+        phone: Verified phone number to set
+    """
+    await _users_repository.update_user_profile(
+        app,
+        user_id=user_id,
+        updated_values={"phone": phone},
     )

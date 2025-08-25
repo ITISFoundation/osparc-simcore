@@ -183,7 +183,12 @@ qx.Class.define("osparc.data.Roles", {
         longLabel: qx.locale.Manager.tr("Viewer: Read access"),
         canDo: [
           qx.locale.Manager.tr("- Can inspect the content and open ") + osparc.product.Utils.getStudyAlias({plural: true}) + qx.locale.Manager.tr(" without making changes")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": false,
+          "delete": false
+        },
       },
       "write": {
         id: "write",
@@ -192,7 +197,12 @@ qx.Class.define("osparc.data.Roles", {
         canDo: [
           qx.locale.Manager.tr("- Can add ") + osparc.product.Utils.getStudyAlias({plural: true}),
           qx.locale.Manager.tr("- Can add folders"),
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": true,
+          "delete": false
+        },
       },
       "delete": {
         id: "delete",
@@ -202,7 +212,12 @@ qx.Class.define("osparc.data.Roles", {
           qx.locale.Manager.tr("- Can rename workspace"),
           qx.locale.Manager.tr("- Can share it"),
           qx.locale.Manager.tr("- Can delete it")
-        ]
+        ],
+        accessRights: {
+          "read": true,
+          "write": true,
+          "delete": true
+        },
       }
     },
 

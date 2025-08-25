@@ -51,6 +51,7 @@ async def redis_client_sdk_lifespan(_: FastAPI, state: State) -> AsyncIterator[S
                 redis_dsn_with_secrets,
                 client_name=redis_state.REDIS_CLIENT_NAME,
             )
+            await redis_client.setup()
 
         try:
             yield {"REDIS_CLIENT_SDK": redis_client, **called_state}

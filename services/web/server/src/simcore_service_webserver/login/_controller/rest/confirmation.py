@@ -15,18 +15,22 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from simcore_postgres_database.aiopg_errors import UniqueViolation
 from yarl import URL
 
 from ....products import products_web
 from ....products.models import Product
-from ....security import security_service
 from ....session.access_policies import session_access_required
 from ....utils import HOUR, MINUTE
 from ....utils_aiohttp import create_redirect_to_page_response
 from ....utils_rate_limiting import global_rate_limit_route
 from ....web_utils import flash_response
-from ... import _confirmation_service, _security_service, _twofa_service
+from ... import (
+    _auth_service,
+    _confirmation_service,
+    _registration_service,
+    _security_service,
+    _twofa_service,
+)
 from ..._login_repository_legacy import (
     AsyncpgStorage,
     ConfirmationTokenDict,
@@ -207,8 +211,6 @@ async def phone_confirmation(request: web.Request):
         request.app, product_name=product.name
     )
 
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-
     if not settings.LOGIN_2FA_REQUIRED:
         raise web.HTTPServiceUnavailable(
             text="Phone registration is not available",
@@ -223,19 +225,15 @@ async def phone_confirmation(request: web.Request):
         # consumes code
         await _twofa_service.delete_2fa_code(request.app, request_body.email)
 
-        # updates confirmed phone number
-        try:
-            user = await db.get_user({"email": request_body.email})
-            assert user is not None  # nosec
-            await db.update_user(dict(user), {"phone": request_body.phone})
+        user = _auth_service.check_not_null_user(
+            await _auth_service.get_user_or_none(request.app, email=request_body.email)
+        )
 
-        except UniqueViolation as err:
-            raise web.HTTPUnauthorized(
-                text="Invalid phone number",
-                content_type=MIMETYPE_APPLICATION_JSON,
-            ) from err
+        await _registration_service.register_user_phone(
+            request.app, user_id=user["id"], user_phone=request_body.phone
+        )
 
-        return await _security_service.login_granted_response(request, user=dict(user))
+        return await _security_service.login_granted_response(request, user=user)
 
     # fails because of invalid or no code
     raise web.HTTPUnauthorized(
@@ -263,17 +261,19 @@ async def complete_reset_password(request: web.Request):
     )
 
     if confirmation:
-        user = await db.get_user({"id": confirmation["user_id"]})
+        user = await _auth_service.get_user_or_none(
+            request.app, user_id=confirmation["user_id"]
+        )
         assert user  # nosec
 
-        await db.update_user(
-            user={"id": user["id"]},
-            updates={
-                "password_hash": security_service.encrypt_password(
-                    request_body.password.get_secret_value()
-                )
-            },
+        await _auth_service.update_user_password(
+            request.app,
+            user_id=user["id"],
+            current_password="",
+            new_password=request_body.password.get_secret_value(),
+            verify_current_password=False,  # confirmed by code
         )
+
         await db.delete_confirmation(confirmation)
 
         return flash_response(MSG_PASSWORD_CHANGED)
@@ -282,5 +282,4 @@ async def complete_reset_password(request: web.Request):
         text=MSG_PASSWORD_CHANGE_NOT_ALLOWED.format(
             support_email=product.support_email
         ),
-        content_type=MIMETYPE_APPLICATION_JSON,
     )  # 401

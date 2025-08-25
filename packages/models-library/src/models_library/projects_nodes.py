@@ -2,7 +2,8 @@
 Models Node as a central element in a project's pipeline
 """
 
-from typing import Annotated, Any, TypeAlias, Union
+from enum import auto
+from typing import Annotated, Any, Self, TypeAlias, Union
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
@@ -16,10 +17,12 @@ from pydantic import (
     StrictInt,
     StringConstraints,
     field_validator,
+    model_validator,
 )
 from pydantic.config import JsonDict
 
 from .basic_types import EnvVarKey, KeyIDStr
+from .groups import GroupID
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -31,8 +34,9 @@ from .projects_nodes_io import (
 from .projects_nodes_layout import Position
 from .projects_state import RunningState
 from .services import ServiceKey, ServiceVersion
+from .utils.enums import StrAutoEnum
 
-InputTypes = Union[
+InputTypes = Union[  # noqa: UP007
     # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
@@ -44,7 +48,7 @@ InputTypes = Union[
     DownloadLink,
     list[Any] | dict[str, Any],  # arrays | object
 ]
-OutputTypes = Union[
+OutputTypes = Union[  # noqa: UP007
     # NOTE: WARNING the order in Union[*] below matters!
     StrictBool,
     StrictInt,
@@ -69,6 +73,69 @@ OutputsDict: TypeAlias = dict[
 ]
 
 UnitStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True)]
+
+
+class NodeShareStatus(StrAutoEnum):
+    OPENING = auto()
+    OPENED = auto()
+    CLOSING = auto()
+
+
+class NodeShareState(BaseModel):
+    locked: Annotated[
+        bool,
+        Field(
+            description="True if the node is locked, False otherwise",
+        ),
+    ]
+
+    current_user_groupids: Annotated[
+        list[GroupID] | None,
+        Field(
+            description="Group(s) that currently have access to the node (or locked it)"
+        ),
+    ] = None
+
+    status: Annotated[
+        NodeShareStatus | None,
+        Field(
+            description="Reason why the node is locked, None if not locked",
+        ),
+    ] = None
+
+    @model_validator(mode="after")
+    def _validate_lock_state(self) -> Self:
+        if self.locked and (self.current_user_groupids is None or self.status is None):
+            msg = "If the node is locked, both 'current_user_groupids' and 'status' must be set"
+            raise ValueError(msg)
+
+        return self
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "locked": False,
+                    },
+                    {
+                        "locked": True,
+                        "current_user_groupids": [666],
+                        "status": "OPENING",
+                    },
+                    {
+                        "locked": False,
+                        "current_user_groupids": [666, 4563],
+                        "status": "OPENED",
+                    },
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid", json_schema_extra=_update_json_schema_extra
+    )
 
 
 class NodeState(BaseModel):
@@ -103,6 +170,10 @@ class NodeState(BaseModel):
             description="current progress of the task if available (None if not started or not a computational task)",
         ),
     ] = 0
+
+    lock_state: Annotated[
+        NodeShareState | None, Field(description="the node's lock state")
+    ] = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -164,7 +235,7 @@ class Node(BaseModel):
             ge=0,
             le=100,
             description="the node progress value (deprecated in DB, still used for API only)",
-            deprecated=True,
+            deprecated=True,  # <-- Think this is not true, it is still used by the File Picker (frontend nodes)
         ),
     ] = None
 
@@ -192,7 +263,7 @@ class Node(BaseModel):
     ] = DEFAULT_FACTORY
 
     inputs_required: Annotated[
-        list[InputID],
+        list[InputID] | None,
         Field(
             default_factory=list,
             description="Defines inputs that are required in order to run the service",
@@ -286,7 +357,6 @@ class Node(BaseModel):
     @classmethod
     def _convert_from_enum(cls, v):
         if isinstance(v, str):
-
             # the old version of state was a enum of RunningState
             running_state_value = _convert_old_enum_name(v)
             return NodeState(current_status=running_state_value)

@@ -41,7 +41,6 @@ def app_environment(
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
             # enable plugins that by default are disabled
             "WEBSERVER_DEV_FEATURES_ENABLED": "1",
-            "WEBSERVER_CLUSTERS": "1",
             # enables activity WEBSERVER_ACTIVITY
             "PROMETHEUS_URL": f"https://{faker.domain_name()}",
             "PROMETHEUS_USERNAME": faker.user_name(),

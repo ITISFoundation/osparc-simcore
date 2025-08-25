@@ -23,6 +23,7 @@ from pytest_simcore.helpers.faker_factories import DEFAULT_TEST_PASSWORD
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.models import PhoneNumberStr
 
 
 @pytest.mark.parametrize(
@@ -33,7 +34,7 @@ from simcore_postgres_database.models.users import UserRole
         (UserRole.USER, status.HTTP_403_FORBIDDEN),
         (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
-        (UserRole.ADMIN, status.HTTP_403_FORBIDDEN),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_role_access_to_generate_invitation(
@@ -131,13 +132,14 @@ async def test_pre_registration_and_invitation_workflow(
     expected_status: HTTPStatus,
     guest_email: str,
     faker: Faker,
+    user_phone_number: PhoneNumberStr,
 ):
     requester_info = {
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": guest_email,
         "companyName": faker.company(),
-        "phone": faker.phone_number(),
+        "phone": user_phone_number,
         # billing info
         "address": faker.address().replace("\n", ", "),
         "city": faker.city(),

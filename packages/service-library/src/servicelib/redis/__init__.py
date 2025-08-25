@@ -8,6 +8,11 @@ from ._errors import (
     ProjectLockError,
 )
 from ._models import RedisManagerDBConfig
+from ._project_document_version import (
+    PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
+    PROJECT_DOCUMENT_VERSION_KEY,
+    increment_and_return_project_document_version,
+)
 from ._project_lock import (
     get_project_locked_state,
     is_project_locked,
@@ -19,10 +24,13 @@ __all__: tuple[str, ...] = (
     "CouldNotAcquireLockError",
     "CouldNotConnectToRedisError",
     "exclusive",
+    "increment_and_return_project_document_version",
     "get_project_locked_state",
     "handle_redis_returns_union_types",
     "is_project_locked",
     "LockLostError",
+    "PROJECT_DB_UPDATE_REDIS_LOCK_KEY",
+    "PROJECT_DOCUMENT_VERSION_KEY",
     "ProjectLockError",
     "RedisClientSDK",
     "RedisClientsManager",

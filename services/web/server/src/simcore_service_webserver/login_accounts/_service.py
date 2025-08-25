@@ -14,11 +14,11 @@ from PIL.Image import Image
 from pydantic import EmailStr, PositiveInt, TypeAdapter, ValidationError
 from servicelib.utils_secrets import generate_passcode
 
-from ..email.utils import send_email_from_template
+from ..email.email_service import send_email_from_template
 from ..products import products_web
 from ..products.models import Product
 from ..users import _accounts_service
-from ..users.schemas import PreRegisteredUserGet
+from ..users.schemas import UserAccountRestPreRegister
 
 _logger = logging.getLogger(__name__)
 
@@ -133,7 +133,10 @@ async def create_captcha() -> tuple[str, bytes]:
 
 
 async def create_pre_registration(
-    app: web.Application, *, profile: PreRegisteredUserGet, product_name: ProductName
+    app: web.Application,
+    *,
+    profile: UserAccountRestPreRegister,
+    product_name: ProductName,
 ):
 
     await _accounts_service.pre_register_user(

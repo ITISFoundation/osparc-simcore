@@ -24,7 +24,7 @@ orjson==3.10.15
     #   -r requirements/_base.in
 phonenumbers==9.0.9
     # via -r requirements/_base.in
-pydantic==2.10.6
+pydantic==2.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -32,9 +32,9 @@ pydantic==2.10.6
     #   -r requirements/_base.in
     #   pydantic-extra-types
     #   pydantic-settings
-pydantic-core==2.27.2
+pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.2
+pydantic-extra-types==2.10.5
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -66,3 +66,6 @@ typing-extensions==4.14.1
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic

@@ -10,15 +10,12 @@ from typing import Any
 
 from aiohttp import web
 from models_library.folders import FolderID, FolderQuery, FolderScope
-from models_library.projects import ProjectTemplateType, ProjectType
+from models_library.projects import ProjectTemplateType
 from models_library.rest_ordering import OrderBy
 from models_library.users import UserID
 from models_library.workspaces import WorkspaceID, WorkspaceQuery, WorkspaceScope
 from pydantic import NonNegativeInt
 from servicelib.utils import logged_gather
-from simcore_postgres_database.webserver_models import (
-    ProjectTemplateType as ProjectTemplateTypeDB,
-)
 
 from ..folders import _folders_repository
 from ..users import users_service
@@ -76,10 +73,7 @@ async def _aggregate_data_to_projects_from_other_sources(
     # udpating `project.state`
     update_state_per_project = [
         _projects_service.add_project_states_for_user(
-            user_id=user_id,
-            project=prj,
-            is_template=prj["type"] == ProjectType.TEMPLATE.value,
-            app=app,
+            user_id=user_id, project=prj, app=app
         )
         for prj in db_projects
     ]
@@ -174,9 +168,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
         ),
         # attrs
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
-        filter_by_template_type=(
-            ProjectTemplateTypeDB(template_type) if template_type else None
-        ),
+        filter_by_template_type=template_type,
         filter_trashed=trashed,
         filter_hidden=show_hidden,
         # composed attrs
@@ -228,11 +220,7 @@ async def list_projects_full_depth(  # pylint: disable=too-many-arguments
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(
             filter_by_project_type
         ),
-        filter_by_template_type=(
-            ProjectTemplateTypeDB(filter_by_template_type)
-            if filter_by_template_type
-            else None
-        ),
+        filter_by_template_type=filter_by_template_type,
         search_by_multi_columns=search_by_multi_columns,
         search_by_project_name=search_by_project_name,
         offset=offset,

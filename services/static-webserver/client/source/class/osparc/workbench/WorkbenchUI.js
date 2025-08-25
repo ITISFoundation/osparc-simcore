@@ -33,9 +33,6 @@
  * </pre>
  */
 
-const BUTTON_SIZE = 38;
-const NODE_INPUTS_WIDTH = 210;
-
 qx.Class.define("osparc.workbench.WorkbenchUI", {
   extend: qx.ui.core.Widget,
 
@@ -56,16 +53,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
   },
 
   statics: {
-    getDashedBorderStyle(isRight) {
-      const side = isRight ? "right" : "left";
-      const borderStyle = {};
-      borderStyle["background-image"] = `linear-gradient(to bottom, #3D3D3D 50%, rgba(255, 255, 255, 0) 0%)`;
-      borderStyle["background-position"] = side;
-      borderStyle["background-size"] = "5px 50px";
-      borderStyle["background-repeat"] = "repeat-y";
-      return borderStyle;
-    },
-
+    BUTTON_SIZE: 38,
+    NODE_INPUTS_WIDTH: 210,
     ZOOM_VALUES: [
       0.1,
       0.2,
@@ -83,7 +72,17 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       2,
       2.5,
       3
-    ]
+    ],
+
+    getDashedBorderStyle(isRight) {
+      const side = isRight ? "right" : "left";
+      const borderStyle = {};
+      borderStyle["background-image"] = `linear-gradient(to bottom, #3D3D3D 50%, rgba(255, 255, 255, 0) 0%)`;
+      borderStyle["background-position"] = side;
+      borderStyle["background-size"] = "5px 50px";
+      borderStyle["background-repeat"] = "repeat-y";
+      return borderStyle;
+    },
   },
 
   events: {
@@ -227,8 +226,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __addDeleteItemButton: function() {
       const deleteItemButton = this.__deleteItemButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/trash/18",
-        width: BUTTON_SIZE,
-        height: BUTTON_SIZE,
+        width: this.self().BUTTON_SIZE,
+        height: this.self().BUTTON_SIZE,
         visibility: "excluded"
       });
       deleteItemButton.addListener("execute", () => {
@@ -271,8 +270,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const label = isInput ? this.tr("INPUTS") : this.tr("OUTPUTS");
       const inputOutputNodesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       inputOutputNodesLayout.set({
-        width: NODE_INPUTS_WIDTH,
-        maxWidth: NODE_INPUTS_WIDTH,
+        width: this.self().NODE_INPUTS_WIDTH,
+        maxWidth: this.self().NODE_INPUTS_WIDTH,
         allowGrowX: false,
         padding: [0, 6]
       });
@@ -347,21 +346,32 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
     __addNode: async function(service, pos) {
       // render temporary node
-      let tempNodeUI = this.__createTemporaryNodeUI(pos);
+      let dashedNodeUI = this.__createTemporaryNodeUI(pos);
 
       let nodeUI = null;
       try {
         const node = await this.__getWorkbench().createNode(service.getKey(), service.getVersion());
-        nodeUI = this._createNodeUI(node.getNodeId());
-        this._addNodeUIToWorkbench(nodeUI, pos);
-        qx.ui.core.queue.Layout.flush();
-        this.__createDragDropMechanism(nodeUI);
+        nodeUI = this.addNode(node, pos);
       } catch (err) {
         console.error(err);
       } finally {
         // remove temporary node
-        this.__removeTemporaryNodeUI(tempNodeUI);
+        this.__removeTemporaryNodeUI(dashedNodeUI);
       }
+      return nodeUI;
+    },
+
+    addNode: function(node, pos) {
+      if (pos === undefined) {
+        pos = {
+          x: 0,
+          y: 0,
+        };
+      }
+      const nodeUI = this._createNodeUI(node.getNodeId());
+      this._addNodeUIToWorkbench(nodeUI, pos);
+      qx.ui.core.queue.Layout.flush();
+      this.__createDragDropMechanism(nodeUI);
       return nodeUI;
     },
 
@@ -419,7 +429,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       nodeUI.addListener("appear", () => this.__updateNodeUIPos(nodeUI), this);
 
-      const isStudyReadOnly = this.getStudy().isReadOnly();
+      const isStudyReadOnly = this.isPropertyInitialized("study") ? this.getStudy().isReadOnly() : true;
       nodeUI.set({
         movable: !isStudyReadOnly,
         selectable: !isStudyReadOnly,
@@ -444,7 +454,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __itemMoving: function(itemId, xDiff, yDiff) {
       this.getSelectedNodeUIs().forEach(selectedNodeUI => {
         if (itemId !== selectedNodeUI.getNodeId()) {
-          selectedNodeUI.setPosition({
+          // do not touch the position, just move the node, this will happen in __itemStoppedMoving
+          selectedNodeUI.moveNodeTo({
             x: selectedNodeUI.initPos.x + xDiff,
             y: selectedNodeUI.initPos.y + yDiff
           });
@@ -465,10 +476,24 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.getSelectedNodeUIs().forEach(selectedNodeUI => delete selectedNodeUI["initPos"]);
       this.getSelectedAnnotations().forEach(selectedAnnotation => delete selectedAnnotation["initPos"]);
 
-      if (nodeUI && osparc.Preferences.getInstance().isSnapNodeToGrid()) {
-        nodeUI.snapToGrid();
-        // make sure nodeUI is moved, then update edges
-        setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
+        // the moving item could be an annotation, so we need to check if it is a nodeUI
+      if (nodeUI) {
+        this.getSelectedNodeUIs().forEach(selectedNodeUI => {
+          if (nodeUI !== selectedNodeUI) {
+            // now set the position
+            const layoutProps = selectedNodeUI.getLayoutProperties();
+            selectedNodeUI.setPosition({
+              x: layoutProps.left,
+              y: layoutProps.top,
+            });
+          }
+        });
+
+        if (osparc.Preferences.getInstance().isSnapNodeToGrid()) {
+          this.getSelectedNodeUIs().forEach(selectedNodeUI => selectedNodeUI.snapToGrid());
+          // make sure nodeUI is moved, then update edges
+          setTimeout(() => this.__updateNodeUIPos(nodeUI), 10);
+        }
       }
 
       this.__updateWorkbenchBounds();
@@ -496,12 +521,13 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         this.__itemStartedMoving();
       }, this);
 
-      nodeUI.addListener("nodeMoving", () => {
+      nodeUI.addListener("nodeMoving", e => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
           // multi node move
-          const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
-          const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
+          const coords = e.getData();
+          const xDiff = coords.x - nodeUI.initPos.x;
+          const yDiff = coords.y - nodeUI.initPos.y;
           this.__itemMoving(nodeUI.getNodeId(), xDiff, yDiff);
         }
       }, this);
@@ -648,6 +674,16 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       const nodeUI = new osparc.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
       node.addListener("keyChanged", () => this.__selectNode(nodeUI), this);
+      node.addListener("edgeCreated", e => {
+        const data = e.getData();
+        const { nodeId1, nodeId2 } = data;
+        this._createEdgeBetweenNodes(nodeId1, nodeId2, false);
+      });
+      node.addListener("edgeRemoved", e => {
+        const data = e.getData();
+        const { nodeId1, nodeId2 } = data;
+        this.__removeEdgeBetweenNodes(nodeId1, nodeId2);
+      });
       nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
@@ -813,38 +849,62 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const edgeUI = new osparc.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
 
-        const hint = edgeUI.getHint();
-        const that = this;
-        [
-          edgeRepresentation.widerCurve.node,
-          edgeRepresentation.node
-        ].forEach(svgEl => {
-          svgEl.addEventListener("click", e => {
-            // this is needed to get out of the context of svg
-            that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
-            e.stopPropagation();
-          }, this);
+        this.__decorateEdgeUI(edgeUI);
+      }
+    },
 
-          const topOffset = 20;
-          [
-            "mouseover",
-            "mousemove"
-          ].forEach(ev => {
-            svgEl.addEventListener(ev, e => {
-              const leftOffset = -(parseInt(hint.getHintBounds().width/2));
-              const properties = {
-                top: e.clientY + topOffset,
-                left: e.clientX + leftOffset
-              };
-              hint.setLayoutProperties(properties);
-              if (hint.getText()) {
-                hint.show();
-              }
-            }, this);
-          });
+    __decorateEdgeUI: function(edgeUI) {
+      const hint = edgeUI.getHint();
+      const edgeRepresentation = edgeUI.getRepresentation();
+      const that = this;
+      [
+        edgeRepresentation.widerCurve.node,
+        edgeRepresentation.node
+      ].forEach(svgEl => {
+        svgEl.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__setSelectedItem(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
+
+        const topOffset = 20;
+        [
+          "mouseover",
+          "mousemove"
+        ].forEach(ev => {
+          svgEl.addEventListener(ev, e => {
+            const leftOffset = -(parseInt(hint.getHintBounds().width/2));
+            const properties = {
+              top: e.clientY + topOffset,
+              left: e.clientX + leftOffset
+            };
+            hint.setLayoutProperties(properties);
+            if (hint.getText()) {
+              hint.show();
+            }
+          }, this);
         });
-        edgeUI.getRepresentation().widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
-        this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
+      });
+      edgeRepresentation.widerCurve.node.addEventListener("mouseout", () => hint.exclude(), this);
+      this.__svgLayer.addListener("mouseout", () => hint.exclude(), this);
+    },
+
+    __getEdgeUIBetweenNodes: function(node1Id, node2Id) {
+      const foundEdgeUI = this.__edgesUI.find(edgeUi => {
+        const edgeObj = edgeUi.getEdge();
+        const inputNode = edgeObj.getInputNode();
+        const outputNode = edgeObj.getOutputNode();
+        if (inputNode.getNodeId() === node1Id && outputNode.getNodeId() === node2Id) {
+          return true;
+        }
+      });
+      return foundEdgeUI;
+    },
+
+    __removeEdgeBetweenNodes: function(node1Id, node2Id) {
+      const edgeUI = this.__getEdgeUIBetweenNodes(node1Id, node2Id);
+      if (edgeUI) {
+        this.__removeEdge(edgeUI);
       }
     },
 
@@ -855,11 +915,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     __updateEdges: function(nodeUI) {
-      let edgesInvolved = [];
-      if (nodeUI.getNodeType() === "service") {
-        edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
-      }
-
+      const edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
       edgesInvolved.forEach(edgeId => {
         const edgeUI = this.__getEdgeUI(edgeId);
         if (edgeUI) {
@@ -989,7 +1045,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         osparc.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
       const portLabel = port.isInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
-      portLabel.setSource(osparc.workbench.BaseNodeUI.PORT_CONNECTED);
+      portLabel.setSource(osparc.workbench.NodeUI.PORT_CONNECTED);
 
       if (!this.__tempEdgeIsInput) {
         const modified = nodeUI.getNode().getStatus().getModified();
@@ -1008,7 +1064,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         const isConnected = this.__tempEdgeIsInput ? nodeUI.getNode().getInputConnected() : nodeUI.getNode().getOutputConnected();
         const portLabel = this.__tempEdgeIsInput ? nodeUI.getInputPort() : nodeUI.getOutputPort();
         portLabel.set({
-          source: isConnected ? osparc.workbench.BaseNodeUI.PORT_CONNECTED : osparc.workbench.BaseNodeUI.PORT_DISCONNECTED
+          source: isConnected ? osparc.workbench.NodeUI.PORT_CONNECTED : osparc.workbench.NodeUI.PORT_DISCONNECTED
         });
       }
 
@@ -1041,21 +1097,18 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     },
 
     getNodeUI: function(nodeId) {
-      return this.__nodesUI.find(nodeUI => nodeUI.getNodeType() === "service" && nodeUI.getNodeId() === nodeId);
+      return this.__nodesUI.find(nodeUI => nodeUI.getNodeId() === nodeId);
     },
 
     __getEdgeUI: function(edgeId) {
-      for (let i = 0; i < this.__edgesUI.length; i++) {
-        if (this.__edgesUI[i].getEdgeId() === edgeId) {
-          return this.__edgesUI[i];
-        }
-      }
-      return null;
+      return this.__edgesUI.find(edgeUI => edgeUI.getEdgeId() === edgeId);
     },
 
     clearNode(nodeId) {
       const nodeUI = this.getNodeUI(nodeId);
-      this.__clearNodeUI(nodeUI);
+      if (nodeUI) {
+        this.__clearNodeUI(nodeUI);
+      }
     },
 
     clearEdge: function(edgeId) {
@@ -1192,6 +1245,14 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       Object.values(annotations).forEach(annotation => {
         this.__renderAnnotation(annotation);
       });
+      studyUI.addListener("annotationAdded", e => {
+        const annotation = e.getData();
+        this.__renderAnnotation(annotation);
+      }, this);
+      studyUI.addListener("annotationRemoved", e => {
+        const annotationId = e.getData();
+        this.__removeAnnotation(annotationId);
+      }, this);
     },
 
     __setSelectedItem: function(newID) {
@@ -1656,7 +1717,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
     __openNodeInfo: function(nodeId) {
       if (nodeId) {
         const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const metadata = node.getMetaData();
+        const metadata = node.getMetadata();
         const serviceDetails = new osparc.info.ServiceLarge(metadata, {
           nodeId,
           label: node.getLabel(),
@@ -1988,7 +2049,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         }
         case annotationTypes.CONVERSATION: {
           const conversationTitle = `${initPos.x}, ${initPos.y}`;
-          osparc.store.Conversations.getInstance().addConversation(this.getStudy().getUuid(), conversationTitle, osparc.study.Conversations.TYPES.PROJECT_ANNOTATION)
+          osparc.store.ConversationsProject.getInstance().postConversation(this.getStudy().getUuid(), conversationTitle, osparc.store.ConversationsProject.TYPES.PROJECT_ANNOTATION)
             .then(conversationData => {
               serializeData.attributes.conversationId = conversationData["conversationId"];
               serializeData.attributes.text = conversationData["name"];
@@ -2003,9 +2064,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__toolHint.setValue(null);
     },
 
-    __addAnnotation: function(annotationData, id) {
-      const annotation = new osparc.workbench.Annotation(annotationData, id);
-      this.getStudy().getUi().addAnnotation(annotation);
+    __addAnnotation: function(annotationData) {
+      const annotation = this.getStudy().getUi().addAnnotation(annotationData);
 
       this.__renderAnnotation(annotation);
 
@@ -2019,7 +2079,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.__annotations[annotation.getId()] = annotation;
 
       if (annotation.getType() === osparc.workbench.Annotation.TYPES.CONVERSATION) {
-        osparc.store.Conversations.getInstance().addListener("conversationDeleted", e => {
+        osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
           if (annotation.getAttributes()["conversationId"] === data["conversationId"]) {
             this.__removeAnnotation(annotation.getId());
@@ -2040,7 +2100,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       osparc.study.Conversations.popUpInWindow(this.getStudy().serialize(), conversationId);
 
       // Check if conversation still exists, if not, ask to remove annotation
-      osparc.store.Conversations.getInstance().getConversation(this.getStudy().getUuid(), conversationId)
+      osparc.store.ConversationsProject.getInstance().getConversation(this.getStudy().getUuid(), conversationId)
         .catch(err => {
           if ("status" in err && err.status === 404) {
             const win = new osparc.ui.window.Confirmation(this.tr("Do you want to remove the annotation?")).set({

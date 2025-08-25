@@ -150,8 +150,12 @@ services:
       WEBSERVER_LOGLEVEL: DEBUG
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
       WEBSERVER_REMOTE_DEBUGGING_PORT: 3000
-      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS}
 
+
+  wb-auth:
+    volumes: *webserver_volumes_devel
+    environment:
+      <<: *webserver_environment_devel
 
   wb-api-server:
     volumes: *webserver_volumes_devel

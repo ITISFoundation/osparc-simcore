@@ -15,16 +15,16 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.callbacks_mapping import CallbacksMapping
-from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
-    to_simcore_runtime_docker_label_key,
-)
 from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion, ServiceRunID
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    to_simcore_runtime_docker_label_key,
+)
 from models_library.wallets import WalletInfo
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -82,6 +82,7 @@ def mock_env(
             "RABBIT_PORT": "5672",
             "RABBIT_USER": "admin",
             "RABBIT_SECURE": "false",
+            "REDIS_SETTINGS": '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}',
             "REGISTRY_AUTH": "false",
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
@@ -280,6 +281,7 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_PORT": "5672",
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
+                    "REDIS_SETTINGS": '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}',
                     "R_CLONE_OPTION_BUFFER_SIZE": "16M",
                     "R_CLONE_OPTION_RETRIES": "3",
                     "R_CLONE_OPTION_TRANSFERS": "5",

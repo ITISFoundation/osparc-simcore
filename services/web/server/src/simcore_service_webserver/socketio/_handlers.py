@@ -14,6 +14,7 @@ from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.products import ProductName
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.aiohttp.observer import emit
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import get_log_record_extra, log_context
@@ -22,7 +23,6 @@ from servicelib.request_keys import RQT_USERID_KEY
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
-from ..products.models import Product
 from ..resource_manager.user_sessions import managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user
@@ -52,9 +52,11 @@ def auth_user_factory(socket_id: SocketID):
             web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
         """
         app = request.app
-        user_id = UserID(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
+        user_id = TypeAdapter(UserID).validate_python(
+            request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID)
+        )
         client_session_id = request.query.get("client_session_id", None)
-        product: Product = products_web.get_current_product(request)
+        product = products_web.get_current_product(request)
 
         _logger.debug(
             "client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}"
@@ -92,10 +94,9 @@ async def _set_user_in_group_rooms(
 
     sio = get_socket_server(app)
     for gid in group_ids:
-        # NOTE socketio need to be upgraded that's why enter_room is not an awaitable
-        sio.enter_room(socket_id, SocketIORoomStr.from_group_id(gid))
+        await sio.enter_room(socket_id, SocketIORoomStr.from_group_id(gid))
 
-    sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
+    await sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
 
 
 #
@@ -165,7 +166,6 @@ async def connect(
 async def disconnect(socket_id: SocketID, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected."""
     async with contextlib.AsyncExitStack() as stack:
-
         # retrieve the socket session
         try:
             socketio_session = await stack.enter_async_context(
@@ -184,7 +184,6 @@ async def disconnect(socket_id: SocketID, app: web.Application) -> None:
 
         # session is wel formed, we can access its data
         try:
-
             user_id = socketio_session["user_id"]
             client_session_id = socketio_session["client_session_id"]
             product_name = socketio_session["product_name"]

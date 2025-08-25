@@ -8,14 +8,16 @@ from models_library.aiodocker_api import AioDockerServiceSpec
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.docker import (
-    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
     DockerLabelKey,
     DockerPlacementConstraint,
-    StandardSimcoreDockerLabels,
-    to_simcore_runtime_docker_label_key,
 )
 from models_library.resource_tracker import HardwareInfo
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.services_metadata_runtime import (
+    DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
+    SimcoreContainerLabels,
+    to_simcore_runtime_docker_label_key,
+)
 from pydantic import ByteSize, TypeAdapter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.efs_guardian import efs_manager
@@ -91,6 +93,7 @@ def _get_environment_variables(
     telemetry_enabled: bool,
 ) -> dict[str, str]:
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
+    redis_settings = app_settings.REDIS
     r_clone_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
@@ -163,6 +166,9 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_SECURE": f"{rabbit_settings.RABBIT_SECURE}",
+        "REDIS_SETTINGS": json_dumps(
+            model_dump_with_secrets(redis_settings, show_secrets=True)
+        ),
         "DY_DEPLOYMENT_REGISTRY_SETTINGS": (
             json_dumps(
                 model_dump_with_secrets(
@@ -452,22 +458,20 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
     )
 
-    assert (
-        scheduler_data.product_name is not None
-    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+    assert scheduler_data.product_name is not None, (
+        "ONLY for legacy. This function should not be called with product_name==None"
+    )  # nosec
 
-    standard_simcore_docker_labels: dict[DockerLabelKey, str] = (
-        StandardSimcoreDockerLabels(
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            node_id=scheduler_data.node_uuid,
-            product_name=scheduler_data.product_name,
-            simcore_user_agent=scheduler_data.request_simcore_user_agent,
-            swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
-            memory_limit=ByteSize(0),  # this should get overwritten
-            cpu_limit=0,  # this should get overwritten
-        ).to_simcore_runtime_docker_labels()
-    )
+    standard_simcore_docker_labels: dict[DockerLabelKey, str] = SimcoreContainerLabels(
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_id=scheduler_data.node_uuid,
+        product_name=scheduler_data.product_name,
+        simcore_user_agent=scheduler_data.request_simcore_user_agent,
+        swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+        memory_limit=ByteSize(0),  # this should get overwritten
+        cpu_limit=0,  # this should get overwritten
+    ).to_simcore_runtime_docker_labels()
 
     service_labels: dict[str, str] = (
         {

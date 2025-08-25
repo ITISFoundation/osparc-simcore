@@ -27,18 +27,14 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     this.base(arguments);
 
     this.setNode(node);
-
-    if (node.isDynamic()) {
-      const progressSequence = new osparc.data.model.NodeProgressSequence();
-      this.setProgressSequence(progressSequence);
-    }
   },
 
   properties: {
     node: {
       check: "osparc.data.model.Node",
       init: null,
-      nullable: false
+      nullable: false,
+      apply: "__applyNode",
     },
 
     progress: {
@@ -97,6 +93,13 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     hasOutputs: {
       check: "Boolean",
       init: false
+    },
+
+    lockState: {
+      check: "osparc.data.model.NodeLockState",
+      nullable: true,
+      init: null,
+      event: "changeLockState"
     }
   },
 
@@ -142,6 +145,24 @@ qx.Class.define("osparc.data.model.NodeStatus", {
   },
 
   members: {
+    __applyNode: function(node) {
+      const initNode = () => {
+        if (node.isDynamic()) {
+          const progressSequence = new osparc.data.model.NodeProgressSequence();
+          this.setProgressSequence(progressSequence);
+        }
+
+        const lockState = new osparc.data.model.NodeLockState();
+        this.setLockState(lockState);
+      };
+
+      if (node.getMetadata()) {
+        initNode();
+      } else {
+        node.addListenerOnce("changeMetadata", () => initNode(), this);
+      }
+    },
+
     __transformProgress: function(value) {
       const oldP = this.getProgress();
       if (this.getNode().isFilePicker() && oldP === 100 && value !== 0 && value !== 100) {
@@ -205,6 +226,9 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         } else {
           this.setModified(null);
         }
+      }
+      if ("lock_state" in state) {
+        this.getLockState().stateReceived(state.lock_state);
       }
     },
 

@@ -55,14 +55,16 @@ def model_classes_factory() -> Callable:
             POSTGRES_PASSWORD: str
 
             POSTGRES_DB: str
-            POSTGRES_MINSIZE: Annotated[int, Field(ge=1)] = 1
-            POSTGRES_MAXSIZE: Annotated[int, Field(ge=1)] = 50
+            POSTGRES_MINSIZE: Annotated[int, Field(ge=2)] = 2
+            POSTGRES_MAXSIZE: Annotated[int, Field(ge=2)] = 50
 
             POSTGRES_CLIENT_NAME: Annotated[
                 str | None,
                 Field(
                     validation_alias=AliasChoices(
-                        "HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"
+                        "POSTGRES_CLIENT_NAME",
+                        "HOST",
+                        "HOSTNAME",
                     ),
                 ),
             ] = None
@@ -198,7 +200,7 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MINSIZE": 2,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -213,7 +215,7 @@ def test_parse_from_individual_envs(
             "POSTGRES_PASSWORD": "shh",
             "POSTGRES_DB": "db",
             "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MINSIZE": 2,
             "POSTGRES_CLIENT_NAME": None,
         }
     }
@@ -260,7 +262,7 @@ def test_parse_compact_env(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MINSIZE": 2,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }
@@ -370,7 +372,7 @@ def test_parse_from_mixed_envs(
                 "POSTGRES_PASSWORD": "shh2",
                 "POSTGRES_DB": "db2",
                 "POSTGRES_MAXSIZE": 50,
-                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MINSIZE": 2,
                 "POSTGRES_CLIENT_NAME": None,
             }
         }

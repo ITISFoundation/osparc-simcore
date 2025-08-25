@@ -21,6 +21,7 @@ from servicelib.utils_secrets import generate_passcode
 from simcore_postgres_database.models.products import ProductLoginSettingsDict, products
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
+from simcore_service_webserver.login import _auth_service
 from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
 from simcore_service_webserver.login._twofa_service import (
     _do_create_2fa_code,
@@ -161,7 +162,8 @@ async def test_workflow_register_and_login_with_2fa(
     assert response.status == status.HTTP_200_OK
 
     # check email+password registered
-    user = await db.get_user({"email": user_email})
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
@@ -195,7 +197,8 @@ async def test_workflow_register_and_login_with_2fa(
     assert phone == user_phone_number
 
     # check phone still NOT in db (TODO: should be in database and unconfirmed)
-    user = await db.get_user({"email": user_email})
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] is None
 
@@ -211,7 +214,8 @@ async def test_workflow_register_and_login_with_2fa(
     )
     await assert_status(response, status.HTTP_200_OK)
     # check user has phone confirmed
-    user = await db.get_user({"email": user_email})
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
     assert user["status"] == UserStatus.ACTIVE.name
     assert user["phone"] == user_phone_number
 
@@ -252,7 +256,8 @@ async def test_workflow_register_and_login_with_2fa(
     await assert_status(response, status.HTTP_200_OK)
 
     # assert users is successfully registered
-    user = await db.get_user({"email": user_email})
+    user = await _auth_service.get_user_or_none(client.app, email=user_email)
+    assert user
     assert user["email"] == user_email
     assert user["phone"] == user_phone_number
     assert user["status"] == UserStatus.ACTIVE.value

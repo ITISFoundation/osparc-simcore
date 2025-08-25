@@ -12,6 +12,7 @@ from servicelib.aiohttp.application_setup import (
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 
+from .._meta import APP_NAME
 from ..constants import (
     APP_PUBLIC_CONFIG_PER_PRODUCT,
     APP_SETTINGS_KEY,
@@ -56,7 +57,7 @@ async def _setup_login_storage_ctx(app: web.Application):
     settings: PostgresSettings = get_db_plugin_settings(app)
 
     async with asyncpg.create_pool(
-        dsn=settings.dsn_with_query,
+        dsn=settings.dsn_with_query(f"{APP_NAME}-login", suffix="asyncpg"),
         min_size=settings.POSTGRES_MINSIZE,
         max_size=settings.POSTGRES_MAXSIZE,
         loop=asyncio.get_event_loop(),

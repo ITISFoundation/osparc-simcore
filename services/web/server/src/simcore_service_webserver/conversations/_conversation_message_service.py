@@ -11,15 +11,18 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
+from servicelib.redis import exclusive
+from simcore_service_webserver.groups import api as group_service
 
-# Import or define SocketMessageDict
+from ..products import products_service
+from ..redis import get_redis_lock_manager_client_sdk
 from ..users import users_service
-from . import _conversation_message_repository
-from ._conversation_service import _get_recipients
+from . import _conversation_message_repository, _conversation_service
 from ._socketio import (
     notify_conversation_message_created,
     notify_conversation_message_deleted,
@@ -28,12 +31,29 @@ from ._socketio import (
 
 _logger = logging.getLogger(__name__)
 
+# Redis lock key for conversation message operations
+CONVERSATION_MESSAGE_REDIS_LOCK_KEY = "conversation_message_update:{}"
+
+
+async def _get_recipients_from_product_support_group(
+    app: web.Application, product_name: ProductName
+) -> set[UserID]:
+    product = products_service.get_product(app, product_name=product_name)
+    _support_standard_group_id = product.support_standard_group_id
+    if _support_standard_group_id:
+        users = await group_service.list_group_members(
+            app, group_id=_support_standard_group_id
+        )
+        return {user.id for user in users}
+    return set()
+
 
 async def create_message(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     # Creation attributes
     content: str,
@@ -49,14 +69,102 @@ async def create_message(
         type_=type_,
     )
 
-    await notify_conversation_message_created(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        project_id=project_id,
-        conversation_message=created_message,
-    )
+    if project_id:
+        await notify_conversation_message_created(
+            app,
+            recipients=await _conversation_service.get_recipients_from_project(
+                app, project_id
+            ),
+            project_id=project_id,
+            conversation_message=created_message,
+        )
+    else:
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=_conversation.user_group_id
+        )
+        _product_group_users = await _get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_message_created(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            project_id=None,
+            conversation_message=created_message,
+        )
 
     return created_message
+
+
+async def create_support_message_with_first_check(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID | None,
+    conversation_id: ConversationID,
+    # Creation attributes
+    content: str,
+    type_: ConversationMessageType,
+) -> tuple[ConversationMessageGetDB, bool]:
+    """Create a message and check if it's the first one with Redis lock protection.
+
+    This function is protected by Redis exclusive lock because:
+    - the message creation and first message check must be kept in sync
+
+    Args:
+        app: The web application instance
+        user_id: ID of the user creating the message
+        project_id: ID of the project (optional)
+        conversation_id: ID of the conversation
+        content: Content of the message
+        type_: Type of the message
+
+    Returns:
+        Tuple containing the created message and whether it's the first message
+    """
+
+    @exclusive(
+        get_redis_lock_manager_client_sdk(app),
+        lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
+        blocking=True,
+        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
+    )
+    async def _create_support_message_and_check_if_it_is_first_message() -> (
+        tuple[ConversationMessageGetDB, bool]
+    ):
+        """This function is protected because
+        - the message creation and first message check must be kept in sync
+        """
+        created_message = await create_message(
+            app,
+            product_name=product_name,
+            user_id=user_id,
+            project_id=project_id,
+            conversation_id=conversation_id,
+            content=content,
+            type_=type_,
+        )
+        _, messages = await _conversation_message_repository.list_(
+            app,
+            conversation_id=conversation_id,
+            offset=0,
+            limit=1,
+            order_by=OrderBy(
+                field=IDStr("created"), direction=OrderDirection.ASC
+            ),  # NOTE: ASC - first/oldest message first
+        )
+
+        is_first_message = False
+        if messages:
+            first_message = messages[0]
+            is_first_message = first_message.message_id == created_message.message_id
+
+        return created_message, is_first_message
+
+    return await _create_support_message_and_check_if_it_is_first_message()
 
 
 async def get_message(
@@ -73,7 +181,8 @@ async def get_message(
 async def update_message(
     app: web.Application,
     *,
-    project_id: ProjectID,
+    product_name: ProductName,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
     # Update attributes
@@ -86,12 +195,31 @@ async def update_message(
         updates=updates,
     )
 
-    await notify_conversation_message_updated(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        project_id=project_id,
-        conversation_message=updated_message,
-    )
+    if project_id:
+        await notify_conversation_message_updated(
+            app,
+            recipients=await _conversation_service.get_recipients_from_project(
+                app, project_id
+            ),
+            project_id=project_id,
+            conversation_message=updated_message,
+        )
+    else:
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=_conversation.user_group_id
+        )
+        _product_group_users = await _get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_message_updated(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            project_id=None,
+            conversation_message=updated_message,
+        )
 
     return updated_message
 
@@ -99,8 +227,9 @@ async def update_message(
 async def delete_message(
     app: web.Application,
     *,
+    product_name: ProductName,
     user_id: UserID,
-    project_id: ProjectID,
+    project_id: ProjectID | None,
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> None:
@@ -112,14 +241,35 @@ async def delete_message(
 
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
-    await notify_conversation_message_deleted(
-        app,
-        recipients=await _get_recipients(app, project_id),
-        user_group_id=_user_group_id,
-        project_id=project_id,
-        conversation_id=conversation_id,
-        message_id=message_id,
-    )
+    if project_id:
+        await notify_conversation_message_deleted(
+            app,
+            recipients=await _conversation_service.get_recipients_from_project(
+                app, project_id
+            ),
+            user_group_id=_user_group_id,
+            project_id=project_id,
+            conversation_id=conversation_id,
+            message_id=message_id,
+        )
+    else:
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_id
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=_conversation.user_group_id
+        )
+        _product_group_users = await _get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_conversation_message_deleted(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            user_group_id=_user_group_id,
+            project_id=None,
+            conversation_id=conversation_id,
+            message_id=message_id,
+        )
 
 
 async def list_messages_for_conversation(
