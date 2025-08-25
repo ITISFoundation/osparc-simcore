@@ -123,12 +123,17 @@ def _create_error_redirect_with_logging(
 
 def _create_simple_error_redirect(
     request: web.Request,
-    err: Exception,
+    public_error: Exception,
     *,
     status_code: int,
 ) -> web.HTTPFound:
-    """Helper to create simple error redirect without logging"""
-    user_error_msg = f"Sorry, we cannot dispatch your study: {err}"
+    """Helper to create simple error redirect without logging
+
+    WARNING: note that the `public_error` is exposed as-is in the user-message
+    """
+    user_error_msg = user_message(
+        f"Unable to open your project: {public_error}", _version=1
+    )
     return _create_redirect_response_to_error_page(
         request.app,
         message=user_error_msg,
@@ -152,7 +157,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 message=user_message(
                     "Access is restricted to registered users.<br/><br/>"
                     "If you don't have an account, please contact support to request one.<br/><br/>",
-                    _version=1,
+                    _version=2,
                 ),
                 status_code=status.HTTP_401_UNAUTHORIZED,
             ) from err
@@ -184,8 +189,9 @@ def _handle_errors_with_error_page(handler: Handler):
                 request,
                 err,
                 message=user_message(
-                    "The link you provided is invalid because it doesn't contain any or invalid information related to data or a service."
-                    "Please check the link and make sure it is correct."
+                    "The link you provided is invalid because it doesn't contain valid information related to data or a service. "
+                    "Please check the link and make sure it is correct.",
+                    _version=1,
                 ),
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 tip="The link might be corrupted",
