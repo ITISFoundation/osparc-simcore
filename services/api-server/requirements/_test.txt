@@ -136,6 +136,8 @@ ecdsa==0.19.0
     #   sshpubkeys
 faker==36.1.1
     # via -r requirements/_test.in
+fakeredis==2.31.0
+    # via -r requirements/_test.in
 fastapi==0.116.1
     # via
     #   -c requirements/_base.txt
