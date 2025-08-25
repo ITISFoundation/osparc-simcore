@@ -207,12 +207,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             self.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
-        sidecars_client: SidecarsClient = await get_sidecars_client(self.app, node_uuid)
         await service_remove_sidecar_proxy_docker_networks_and_volumes(
             task_progress=task_progress,
             app=self.app,
             node_uuid=node_uuid,
-            sidecars_client=sidecars_client,
             swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
         )
 

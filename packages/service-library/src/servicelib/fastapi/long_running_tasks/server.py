@@ -6,7 +6,7 @@ The server only has to return a `TaskId` in the handler creating the long
 running task. The client will take care of recovering the result from it.
 """
 
-from ._dependencies import get_long_running_manager, get_long_running_manager_from_app
+from ._dependencies import get_long_running_manager
 from ._server import setup
 
 __all__: tuple[str, ...] = (

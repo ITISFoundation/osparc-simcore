@@ -209,7 +209,6 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     app: FastAPI,
     node_uuid: NodeID,
     swarm_stack_name: str,
-    sidecars_client: SidecarsClient,
     set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
@@ -221,8 +220,6 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await task_progress.update(
         message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
     )
-
-    await sidecars_client.cleanup_long_running_tasks(scheduler_data.endpoint)
 
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
@@ -397,7 +394,6 @@ async def attempt_pod_removal_and_data_saving(
         app,
         scheduler_data.node_uuid,
         settings.SWARM_STACK_NAME,
-        sidecars_client,
     )
 
     # remove sidecar's api client
