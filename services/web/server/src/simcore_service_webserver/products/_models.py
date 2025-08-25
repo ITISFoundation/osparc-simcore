@@ -143,6 +143,14 @@ class Product(BaseModel):
     support_standard_group_id: Annotated[
         int | None, Field(description="Support standard group ID, None if disabled")
     ] = None
+    support_assigned_fogbugz_person_id: Annotated[
+        int | None,
+        Field(description="Support assigned Fogbugz person ID, None if disabled"),
+    ] = None
+    support_assigned_fogbugz_project_id: Annotated[
+        int | None,
+        Field(description="Support assigned Fogbugz project ID, None if disabled"),
+    ] = None
 
     is_payment_enabled: Annotated[
         bool,
