@@ -17,13 +17,18 @@ from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..dynamic_scheduler import api as dynamic_scheduler_service
+from ..exception_handling import create_error_context_from_request
 from ..products import products_web
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
 from ._catalog import ValidService, validate_requested_service
-from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
+from ._constants import MSG_GUESTS_NOT_ALLOWED, MSG_UNEXPECTED_DISPATCH_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
-from ._errors import InvalidRedirectionParamsError, StudyDispatcherError
+from ._errors import (
+    GuestUserNotAllowedError,
+    InvalidRedirectionParamsError,
+    StudyDispatcherError,
+)
 from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
 from ._projects import (
     get_or_create_project_with_file,
@@ -92,6 +97,13 @@ def _handle_errors_with_error_page(handler: Handler):
             # NOTE: that response is a redirection that is reraised and not returned
             raise
 
+        except GuestUserNotAllowedError as err:
+            raise _create_redirect_response_to_error_page(
+                request.app,
+                message=MSG_GUESTS_NOT_ALLOWED,
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            ) from err
+
         except StudyDispatcherError as err:
             raise _create_redirect_response_to_error_page(
                 request.app,
@@ -99,22 +111,49 @@ def _handle_errors_with_error_page(handler: Handler):
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
             ) from err
 
-        except web.HTTPUnauthorized as err:
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=f"{err.text}. Please reload this page to login/register.",
-                status_code=err.status_code,
-            ) from err
-
         except web.HTTPUnprocessableEntity as err:
+            # Validation error in query parameters
+            error_code = create_error_code(err)
+            user_error_msg = compose_support_error_msg(
+                msg="Invalid query parameters in link", error_code=error_code
+            )
+
+            _logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_code=error_code,
+                    error_context=create_error_context_from_request(request),
+                    tip="The link might be corrupted",
+                )
+            )
+
             raise _create_redirect_response_to_error_page(
                 request.app,
-                message=f"Invalid parameters in link: {err.text}",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
+                message=user_error_msg,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             ) from err
 
         except web.HTTPClientError as err:
-            _logger.exception("Client error with status code %d", err.status_code)
+            error_code = create_error_code(err)
+            user_error_msg = compose_support_error_msg(
+                msg="Fatal error while redirecting request", error_code=error_code
+            )
+
+            _logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_code=error_code,
+                    error_context={
+                        **create_error_context_from_request(request),
+                        "reason": err.reason,
+                        "status": err.status,
+                    },
+                    tip="The link might be corrupted",
+                )
+            )
+
             raise _create_redirect_response_to_error_page(
                 request.app,
                 message=err.reason,
@@ -132,7 +171,7 @@ def _handle_errors_with_error_page(handler: Handler):
                     user_error_msg,
                     error=err,
                     error_code=error_code,
-                    error_context={"request": request},
+                    error_context=create_error_context_from_request(request),
                     tip="Unexpected failure while dispatching study",
                 )
             )
