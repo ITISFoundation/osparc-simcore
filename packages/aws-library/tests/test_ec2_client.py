@@ -711,7 +711,13 @@ async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
             "Error": {
                 "Code": "InsufficientInstanceCapacity",
                 "Message": "Insufficient capacity.",
-            }
+            },
+            "ResponseMetadata": {
+                "RequestId": "12345678-1234-1234-1234-123456789012",
+                "HTTPStatusCode": 400,
+                "HTTPHeaders": {},
+                "RetryAttempts": 0,
+            },
         }
         raise botocore.exceptions.ClientError(error_response, "RunInstances")
 
@@ -789,7 +795,13 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
                 "Error": {
                     "Code": "InsufficientInstanceCapacity",
                     "Message": "Insufficient capacity.",
-                }
+                },
+                "ResponseMetadata": {
+                    "RequestId": "12345678-1234-1234-1234-123456789012",
+                    "HTTPStatusCode": 400,
+                    "HTTPHeaders": {},
+                    "RetryAttempts": 0,
+                },
             }
             raise botocore.exceptions.ClientError(error_response, "RunInstances")
 
