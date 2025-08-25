@@ -82,9 +82,11 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         case "template":
         case "tutorial":
         case "hypertool":
-        case "function":
         case "tag":
           roleInfo = osparc.data.Roles.STUDY[id];
+          break;
+        case "function":
+          roleInfo = osparc.data.Roles.FUNCTION[id];
           break;
         case "service":
           roleInfo = osparc.data.Roles.SERVICES[id];

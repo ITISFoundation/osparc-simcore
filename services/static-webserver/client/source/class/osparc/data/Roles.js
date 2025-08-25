@@ -298,6 +298,10 @@ qx.Class.define("osparc.data.Roles", {
       return this.__createRolesLayout(osparc.data.Roles.STUDY);
     },
 
+    createRolesFunctionInfo: function() {
+      return this.__createRolesLayout(osparc.data.Roles.FUNCTION);
+    },
+
     createRolesServicesInfo: function() {
       return this.__createRolesLayout(osparc.data.Roles.SERVICES);
     },

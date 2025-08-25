@@ -250,9 +250,11 @@ qx.Class.define("osparc.share.Collaborators", {
         case "template":
         case "tutorial":
         case "hypertool":
-        case "function":
         case "tag":
           rolesLayout = osparc.data.Roles.createRolesStudyInfo();
+          break;
+        case "function":
+          rolesLayout = osparc.data.Roles.createRolesFunctionInfo();
           break;
         case "service":
           rolesLayout = osparc.data.Roles.createRolesServicesInfo();
@@ -362,7 +364,6 @@ qx.Class.define("osparc.share.Collaborators", {
                 "template",
                 "tutorial",
                 "hypertool",
-                "function",
               ].includes(this._resourceType) &&
               !osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, orgMember["gid"])
             ) {
@@ -391,7 +392,12 @@ qx.Class.define("osparc.share.Collaborators", {
     __getLeaveStudyButton: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (
-        ["study", "template", "tutorial", "hypertool"].includes(this._resourceType) &&
+        [
+          "study",
+          "template",
+          "tutorial",
+          "hypertool",
+        ].includes(this._resourceType) &&
         osparc.share.CollaboratorsStudy.canCollaboratorBeRemoved(this._serializedDataCopy, myGid)
       ) {
         const leaveText = this.tr("Leave") + " " + osparc.product.Utils.getStudyAlias({
