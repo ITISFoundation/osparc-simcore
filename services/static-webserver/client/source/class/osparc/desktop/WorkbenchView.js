@@ -61,7 +61,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __handleIframeStateChange: function(node, iframeLayout) {
-      if (iframeLayout.removeAll) {
+      if (iframeLayout.classname === "osparc.viewer.NodeViewer") {
+        iframeLayout._removeAll();
+      } else  {
         iframeLayout.removeAll();
       }
       if (node && node.getIFrame()) {
@@ -73,12 +75,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         } else if (src === null || src === "about:blank") {
           showPage = node.getLoadingPage();
         }
-        if (iframeLayout.add) {
-          iframeLayout.add(showPage, {
+        if (iframeLayout.classname === "osparc.viewer.NodeViewer") {
+          iframeLayout._add(showPage, {
             flex: 1
           });
-        } else if (iframeLayout._add) {
-          iframeLayout._add(showPage, {
+        } else {
+          iframeLayout.add(showPage, {
             flex: 1
           });
         }
