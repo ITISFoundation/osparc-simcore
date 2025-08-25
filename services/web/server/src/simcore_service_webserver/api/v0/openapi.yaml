@@ -3851,7 +3851,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: List Tasks
+      summary: Get Async Jobs
       description: Lists all long running tasks
       operationId: get_async_jobs
       responses:
@@ -3889,7 +3889,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Status
+      summary: Get Async Job Status
       description: Retrieves the status of a task
       operationId: get_async_job_status
       parameters:
@@ -3933,8 +3933,8 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
+      summary: Cancel Async Job
+      description: Cancels and removes a task
       operationId: cancel_async_job
       parameters:
       - name: task_id
@@ -3974,7 +3974,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Result
+      summary: Get Async Job Result
       description: Retrieves the result of a task
       operationId: get_async_job_result
       parameters:
@@ -4053,9 +4053,9 @@ paths:
     delete:
       tags:
       - long-running-tasks-legacy
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
-      operationId: cancel_and_delete_task
+      summary: Remove Task
+      description: Cancels and removes a task
+      operationId: remove_task
       parameters:
       - name: task_id
         in: path
