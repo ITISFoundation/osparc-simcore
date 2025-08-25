@@ -15,6 +15,7 @@ import aiodocker
 import docker
 import jsonschema
 import pytest
+import pytest_asyncio
 import tenacity
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -262,7 +263,7 @@ async def osparc_service(
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def sleeper_service(
     docker_registry: str, node_meta_schema: dict
 ) -> dict[str, Any]:
@@ -272,7 +273,7 @@ async def sleeper_service(
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def jupyter_service(
     docker_registry: str, node_meta_schema: dict
 ) -> dict[str, Any]:
@@ -285,12 +286,12 @@ async def jupyter_service(
     )
 
 
-@pytest.fixture(params=["2.0.7"])
+@pytest_asyncio.fixture(scope="session", loop_scope="session", params=["2.0.7"])
 def dy_static_file_server_version(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
@@ -306,7 +307,7 @@ async def dy_static_file_server_service(
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_dynamic_sidecar_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
@@ -322,7 +323,7 @@ async def dy_static_file_server_dynamic_sidecar_service(
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def dy_static_file_server_dynamic_sidecar_compose_spec_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
