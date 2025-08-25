@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import importlib.resources
-import json
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
@@ -134,11 +133,13 @@ def app_environment(
             "CLUSTERS_KEEPER_DASK_WORKER_SATURATION": f"{faker.pyfloat(min_value=0.1)}",
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "PRIMARY_EC2_INSTANCES_SUBNET_IDS": json_dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
+            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     random.choice(  # noqa: S311
                         ec2_instances
@@ -149,7 +150,7 @@ def app_environment(
                     ]  # NOTE: we use example with custom script
                 }
             ),
-            "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+            "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json_dumps(
                 {"osparc-tag": "the pytest tag is here"}
             ),
             "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": "",  # must be empty since we would need to add it to moto as well
@@ -159,7 +160,7 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME": faker.user_name(),
             "PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD": faker.password(),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
-            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
                         EC2InstanceBootSpecific.model_config["json_schema_extra"][
@@ -169,12 +170,14 @@ def app_environment(
                     for ec2_type_name in ec2_instances
                 }
             ),
-            "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "WORKERS_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_SUBNET_IDS": json_dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
             "WORKERS_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json_dumps(
                 {"osparc-tag": "the pytest worker tag value is here"}
             ),
         },
@@ -194,10 +197,10 @@ def mocked_primary_ec2_instances_envs(
         monkeypatch,
         {
             "PRIMARY_EC2_INSTANCES_KEY_NAME": "osparc-pytest",
-            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 [aws_security_group_id]
             ),
-            "PRIMARY_EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
+            "PRIMARY_EC2_INSTANCES_SUBNET_IDS": json_dumps([aws_subnet_id]),
         },
     )
     return app_environment | envs
