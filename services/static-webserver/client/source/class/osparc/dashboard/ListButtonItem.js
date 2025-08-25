@@ -244,7 +244,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _applyOwner: function(value, old) {
       const label = this.getChildControl("owner");
       if (osparc.utils.Resources.isFunction(this.getResourceData())) {
-        const canIWrite = Boolean(this.getResourceData()["accessRights"]["write"]);
+        // Functions don't have 'owner'
+        const canIWrite = osparc.data.model.Function.canIWrite(this.getResourceData()["accessRights"]);
         label.setValue(canIWrite ? "My Function" : "Read Only");
       } else {
         const user = this.__createOwner(value);
@@ -257,20 +258,15 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _applyAccessRights: function(value) {
       if (value && Object.keys(value).length) {
         const shareIcon = this.getChildControl("shared-icon");
-        if (this.isResourceType("function")) {
-          // in case of functions, the access rights are actually myAccessRights
-          osparc.dashboard.CardBase.populateMyAccessRightsIcon(shareIcon, value);
-        } else {
-          shareIcon.addListener("tap", e => {
-            e.stopPropagation();
-            this.openAccessRights();
-          }, this);
-          shareIcon.addListener("pointerdown", e => e.stopPropagation());
-          osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
+        shareIcon.addListener("tap", e => {
+          e.stopPropagation();
+          this.openAccessRights();
+        }, this);
+        shareIcon.addListener("pointerdown", e => e.stopPropagation());
+        osparc.dashboard.CardBase.populateShareIcon(shareIcon, value);
 
-          if (this.isResourceType("study")) {
-            this._setStudyPermissions(value);
-          }
+        if (this.isResourceType("study")) {
+          this._setStudyPermissions(value);
         }
       }
     },
