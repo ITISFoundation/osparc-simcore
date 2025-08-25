@@ -127,7 +127,8 @@ async def _get_self_container() -> str:
         response = await client.get("http://localhost/containers/json")
         for entry in response.json():
             if ip in json.dumps(entry):
-                return entry["Id"]
+                container_id: str = entry["Id"]
+                return container_id
 
     msg = "Could not determine self container ID"
     raise RuntimeError(msg)
