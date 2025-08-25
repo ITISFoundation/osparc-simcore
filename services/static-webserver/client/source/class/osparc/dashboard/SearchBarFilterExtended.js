@@ -106,6 +106,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           control = new qx.ui.form.SelectBox().set({
             minWidth: 150,
           });
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this.self().decorateListItem(control.getChildControl("atom"));
           const searchBarFilter = this.getChildControl("search-bar-filter");
           searchBarFilter._addAt(control, 3); //"search-icon", "active-filters", "text-field", "reset-button"
