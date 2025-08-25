@@ -47,7 +47,7 @@ async def store(
 
 @pytest.fixture
 async def client_long_running_manager(
-    use_in_memory_redis: RedisSettings, lrt_namespace: LRTNamespace
+    use_in_memory_redis: RedisSettings,
 ) -> AsyncIterable[ClientLongRunningManager]:
     manager = ClientLongRunningManager(redis_settings=use_in_memory_redis)
 
@@ -78,3 +78,6 @@ async def test_cleanup_namespace(
     # entris were removed
     assert await store.list_tasks_data() == []
     assert await store.list_tasks_to_remove() == {}
+
+    # ensore it does not raise errors if there is nothing to remove
+    await client_long_running_manager.cleanup_store(lrt_namespace)
