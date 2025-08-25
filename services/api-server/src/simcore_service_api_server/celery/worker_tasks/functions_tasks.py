@@ -1,6 +1,6 @@
-from celery import Task
+from celery import Task  # type: ignore[import-untyped]
 from celery_library.utils import get_app_server
-from fastapi import FastAPI  # type: ignore[import-untyped]
+from fastapi import FastAPI
 from models_library.functions import FunctionInputs, RegisteredFunction
 from models_library.projects_nodes_io import NodeID
 from servicelib.celery.models import TaskID
@@ -14,10 +14,9 @@ from ...api.dependencies.services import (
     get_job_service,
     get_solver_service,
     get_storage_service,
-    get_wb_api_rpc_client,
-    get_webserver_session,
 )
-from ...api.dependencies.webserver_http import get_session_cookie
+from ...api.dependencies.webserver_http import get_session_cookie, get_webserver_session
+from ...api.dependencies.webserver_rpc import get_wb_api_rpc_client
 from ...models.api_resources import JobLinks
 from ...models.schemas.jobs import JobPricingSpecification
 from ...services_http.director_v2 import DirectorV2Api
