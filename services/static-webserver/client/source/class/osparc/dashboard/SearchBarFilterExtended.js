@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         case "functions-button":
           control = this.self().createToolbarRadioButton(
             this.tr("Functions"),
-            "@FontAwesome5Solid/function/14",
+            "@MaterialIcons/functions/18",
             null,
             "right",
           );
@@ -174,15 +174,20 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       osparc.utils.Utils.hideBorder(resetButton);
 
       const radioGroup = new qx.ui.form.RadioGroup();
+      const contextButtons = [];
       const myProjectsButton = this.getChildControl("my-projects-button");
-      const templatesButton = this.getChildControl("templates-button");
-      const publicProjectsButton = this.getChildControl("public-projects-button");
-      const functionsButton = this.getChildControl("functions-button"); // OM only if enabled
-      radioGroup.add(myProjectsButton, templatesButton, publicProjectsButton, functionsButton);
       myProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS) : null, this);
+      contextButtons.push(myProjectsButton);
+      const templatesButton = this.getChildControl("templates-button");
       templatesButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES) : null, this);
+      contextButtons.push(templatesButton);
+      const publicProjectsButton = this.getChildControl("public-projects-button");
       publicProjectsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES) : null, this);
+      contextButtons.push(publicProjectsButton);
+      const functionsButton = this.getChildControl("functions-button"); // OM only if enabled
       functionsButton.addListener("changeValue", e => e.getData() ? this.setCurrentContext(osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS) : null, this);
+      contextButtons.push(functionsButton);
+      contextButtons.forEach(contextButton => radioGroup.add(contextButton));
 
       // Set initial state based on the provided initFilterData
       const activeFilters = this.getChildControl("search-bar-filter").getChildControl("active-filters");
