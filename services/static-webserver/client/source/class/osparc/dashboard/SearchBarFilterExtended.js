@@ -329,6 +329,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.__sharedWithMenu,
           this.__tagsMenu,
         ];
+        const contextDropDown = this.getChildControl("context-drop-down");
+        const popup = contextDropDown.getChildControl("popup");
+        if (popup.isVisible()) {
+          excludeElements.push(popup);
+        }
         for (let i = 0; i < excludeElements.length; i++) {
           if (excludeElements[i] && osparc.utils.Utils.isMouseOnElement(excludeElements[i], e)) {
             return;
