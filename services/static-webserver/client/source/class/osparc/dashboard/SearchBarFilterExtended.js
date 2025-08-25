@@ -63,11 +63,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
   },
 
   statics: {
-    createListItem: function(label, icon, model) {
-      const listItem = new qx.ui.form.ListItem(label, icon, model).set({
+    decorateListItem: function(listItem) {
+      listItem.set({
         gap: 8,
-        margin: 0,
+        backgroundColor: osparc.dashboard.SearchBarFilter.BG_COLOR,
       });
+    },
+
+    createListItem: function(label, icon, model) {
+      const listItem = new qx.ui.form.ListItem(label, icon, model);
+      this.self().decorateListItem(listItem);
       return listItem;
     },
   },
@@ -99,6 +104,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         }
         case "context-drop-down": {
           control = new qx.ui.form.SelectBox();
+          this.self().decorateListItem(control.getChildControl("atom"));
           const searchBarFilter = this.getChildControl("search-bar-filter");
           searchBarFilter._addAt(control, 3); //"search-icon", "active-filters", "text-field", "reset-button"
           break;
