@@ -1367,9 +1367,10 @@ async def is_node_id_present_in_any_project_workbench(
 async def _get_node_share_state(
     app: web.Application,
     *,
-    user_id: UserID,
     project_uuid: ProjectID,
     node_id: NodeID,
+    computational_pipeline_running: bool | None,
+    user_primrary_groupid: GroupID,
 ) -> NodeShareState:
     node = await _projects_nodes_repository.get(
         app, project_id=project_uuid, node_id=node_id
@@ -1405,11 +1406,11 @@ async def _get_node_share_state(
         return NodeShareState(locked=False)
 
     # if the service is computational and no pipeline is running it is not locked
-    if await director_v2_service.is_pipeline_running(app, user_id, project_uuid):
+    if computational_pipeline_running:
         return NodeShareState(
             locked=True,
             current_user_groupids=[
-                await users_service.get_user_primary_group_id(app, user_id)
+                user_primrary_groupid,
             ],
             status=NodeShareStatus.OPENED,
         )
@@ -1913,6 +1914,10 @@ async def add_project_states_for_user(
     )
 
     # compose the node states
+    is_pipeline_running = await director_v2_service.is_pipeline_running(
+        app, user_id, project["uuid"]
+    )
+    user_primary_group_id = await users_service.get_user_primary_group_id(app, user_id)
     for node_uuid, node in project["workbench"].items():
         assert isinstance(node_uuid, str)  # nosec
         assert isinstance(node, dict)  # nosec
@@ -1921,9 +1926,10 @@ async def add_project_states_for_user(
         with contextlib.suppress(NodeShareStateCannotBeComputedError):
             node_lock_state = await _get_node_share_state(
                 app,
-                user_id=user_id,
                 project_uuid=project["uuid"],
                 node_id=NodeID(node_uuid),
+                computational_pipeline_running=is_pipeline_running,
+                user_primrary_groupid=user_primary_group_id,
             )
         if NodeID(node_uuid) in computational_node_states:
             node_state = computational_node_states[NodeID(node_uuid)].model_copy(

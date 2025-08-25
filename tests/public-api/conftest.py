@@ -8,8 +8,9 @@ import json
 import logging
 import os
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from pprint import pformat
+from typing import Any
 
 import httpx
 import osparc
@@ -157,8 +158,10 @@ def registered_user(
 
 
 @pytest.fixture(scope="module")
-def services_registry(
-    docker_registry_image_injector: Callable,
+async def services_registry(
+    docker_registry_image_injector: Callable[
+        [str, str, str | None], Awaitable[dict[str, Any]]
+    ],
     registered_user: RegisteredUserDict,
     env_vars_for_docker_compose: dict[str, str],
 ) -> dict[ServiceNameStr, ServiceInfoDict]:
@@ -168,10 +171,10 @@ def services_registry(
     #
     user_email = registered_user["email"]
 
-    sleeper_service = docker_registry_image_injector(
-        source_image_repo="itisfoundation/sleeper",
-        source_image_tag="2.1.1",
-        owner_email=user_email,
+    sleeper_service = await docker_registry_image_injector(
+        "itisfoundation/sleeper",
+        "2.1.1",
+        user_email,
     )
 
     assert sleeper_service["image"]["tag"] == "2.1.1"
