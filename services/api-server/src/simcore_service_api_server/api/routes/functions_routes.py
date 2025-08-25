@@ -16,19 +16,29 @@ from models_library.api_schemas_api_server.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
 )
+from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobFilter
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from servicelib.celery.models import TaskFilter, TaskMetadata, TasksQueue
 from servicelib.fastapi.dependencies import get_reverse_url_mapper
+from servicelib.long_running_tasks.models import TaskGet
 
 from ..._service_function_jobs import FunctionJobService
 from ..._service_functions import FunctionService
+from ...celery.worker_tasks.functions_tasks import run_function as run_function_task
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.jobs import JobPricingSpecification
 from ...services_rpc.wb_api_server import WbApiRpcClient
-from ..dependencies.authentication import get_current_user_id, get_product_name
+from ..dependencies.authentication import (
+    Identity,
+    get_current_identity,
+    get_current_user_id,
+    get_product_name,
+)
+from ..dependencies.celery import ASYNC_JOB_CLIENT_NAME, get_task_manager
 from ..dependencies.services import (
     get_function_job_service,
     get_function_service,
@@ -304,7 +314,7 @@ async def validate_function_inputs(
 
 @function_router.post(
     "/{function_id:uuid}:run",
-    response_model=RegisteredFunctionJob,
+    response_model=TaskGet,
     responses={**_COMMON_FUNCTION_ERROR_RESPONSES},
     description=create_route_description(
         base="Run function",
@@ -313,16 +323,15 @@ async def validate_function_inputs(
 )
 async def run_function(  # noqa: PLR0913
     request: Request,
+    user_identity: Annotated[Identity, Depends(get_current_identity)],
     to_run_function: Annotated[RegisteredFunction, Depends(get_function)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
     function_inputs: FunctionInputs,
     function_service: Annotated[FunctionService, Depends(get_function_service)],
-    function_jobs_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
-    ],
     x_simcore_parent_project_uuid: Annotated[ProjectID | Literal["null"], Header()],
     x_simcore_parent_node_id: Annotated[NodeID | Literal["null"], Header()],
-) -> RegisteredFunctionJob:
+) -> TaskGet:
+    task_manager = get_task_manager(request.app)
     parent_project_uuid = (
         x_simcore_parent_project_uuid
         if isinstance(x_simcore_parent_project_uuid, ProjectID)
@@ -336,13 +345,36 @@ async def run_function(  # noqa: PLR0913
     pricing_spec = JobPricingSpecification.create_from_headers(request.headers)
     job_links = await function_service.get_function_job_links(to_run_function, url_for)
 
-    return await function_jobs_service.run_function(
+    job_filter = AsyncJobFilter(
+        user_id=user_identity.user_id,
+        product_name=user_identity.product_name,
+        client_name=ASYNC_JOB_CLIENT_NAME,
+    )
+    task_filter = TaskFilter.model_validate(job_filter.model_dump())
+    task_name = run_function_task.__name__
+
+    task_uuid = await task_manager.submit_task(
+        TaskMetadata(
+            name=task_name,
+            ephemeral=True,
+            queue=TasksQueue.API_WORKER_QUEUE,
+        ),
+        task_filter=task_filter,
+        user_identity=user_identity,
         function=to_run_function,
         function_inputs=function_inputs,
         pricing_spec=pricing_spec,
         job_links=job_links,
         x_simcore_parent_project_uuid=parent_project_uuid,
         x_simcore_parent_node_id=parent_node_id,
+    )
+
+    return TaskGet(
+        task_id=f"{task_uuid}",
+        task_name=task_name,
+        status_href=url_for("get_task_status", task_id=task_uuid),
+        result_href=url_for("get_task_result", task_id=task_uuid),
+        abort_href=url_for("cancel_task", task_id=task_uuid),
     )
 
 

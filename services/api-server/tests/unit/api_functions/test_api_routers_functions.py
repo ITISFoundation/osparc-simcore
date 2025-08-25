@@ -14,7 +14,9 @@ from uuid import UUID, uuid4
 import httpx
 import pytest
 import respx
+from celery import Task  # pylint: disable=no-name-in-module
 from faker import Faker
+from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.functions import (
@@ -25,6 +27,7 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredProjectFunction,
+    RegisteredProjectFunctionJob,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
@@ -32,14 +35,22 @@ from models_library.functions_errors import (
 )
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
+from pydantic import EmailStr
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
+from servicelib.celery.app_server import BaseAppServer
+from servicelib.celery.models import TaskID
 from servicelib.common_headers import (
     X_SIMCORE_PARENT_NODE_ID,
     X_SIMCORE_PARENT_PROJECT_UUID,
 )
+from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from simcore_service_api_server._meta import API_VTAG
+from simcore_service_api_server.api.dependencies.authentication import Identity
+from simcore_service_api_server.celery.worker_tasks import functions_tasks
+from simcore_service_api_server.models.api_resources import JobLinks
+from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 _faker = Faker()
 
@@ -379,48 +390,55 @@ async def test_run_map_function_not_allowed(
         )
 
 
-@pytest.mark.parametrize(
-    "parent_project_uuid, parent_node_uuid, expected_status_code",
-    [
-        (None, None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", None, status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (None, f"{_faker.uuid4()}", status.HTTP_422_UNPROCESSABLE_ENTITY),
-        (f"{_faker.uuid4()}", f"{_faker.uuid4()}", status.HTTP_200_OK),
-        ("null", "null", status.HTTP_200_OK),
-    ],
-)
 @pytest.mark.parametrize("capture", ["run_study_function_parent_info.json"])
-async def test_run_project_function_parent_info(
+async def test_run_project_function(
+    mocker: MockerFixture,
+    mocked_webserver_rpc_api: dict[str, MockType],
+    app: FastAPI,
     client: AsyncClient,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     mock_registered_project_function: RegisteredProjectFunction,
     mock_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
-    user_id: UserID,
+    user_identity: Identity,
+    user_email: EmailStr,
+    job_links: JobLinks,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_directorv2_rest_api_base: respx.MockRouter,
-    mocked_webserver_rpc_api: dict[str, MockType],
     create_respx_mock_from_capture,
     project_tests_dir: Path,
-    parent_project_uuid: str | None,
-    parent_node_uuid: str | None,
-    expected_status_code: int,
     capture: str,
 ) -> None:
+
+    def _get_app_server(celery_app: Any) -> FastAPI:
+        app_server = mocker.Mock(spec=BaseAppServer)
+        app_server.app = app
+        return app_server
+
+    mocker.patch.object(functions_tasks, "get_app_server", _get_app_server)
+
+    def _get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+        return mocker.MagicMock(spec=RabbitMQRPCClient)
+
+    mocker.patch.object(
+        functions_tasks, "get_rabbitmq_rpc_client", _get_rabbitmq_rpc_client
+    )
+
+    async def _get_wb_api_rpc_client(app: FastAPI) -> WbApiRpcClient:
+        wb_api_rpc_client = WbApiRpcClient(
+            _client=mocker.MagicMock(spec=RabbitMQRPCClient)
+        )
+        return wb_api_rpc_client
+
+    mocker.patch.object(
+        functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client
+    )
+
     def _default_side_effect(
         request: httpx.Request,
         path_params: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> Any:
-        if request.method == "POST" and request.url.path.endswith("/projects"):
-            if parent_project_uuid and parent_project_uuid != "null":
-                _parent_uuid = request.headers.get(X_SIMCORE_PARENT_PROJECT_UUID)
-                assert _parent_uuid is not None
-                assert parent_project_uuid == _parent_uuid
-            if parent_node_uuid and parent_node_uuid != "null":
-                _parent_node_uuid = request.headers.get(X_SIMCORE_PARENT_NODE_ID)
-                assert _parent_node_uuid is not None
-                assert parent_node_uuid == _parent_node_uuid
         return capture.response_body
 
     create_respx_mock_from_capture(
@@ -432,7 +450,7 @@ async def test_run_project_function_parent_info(
     mock_handler_in_functions_rpc_interface(
         "get_function_user_permissions",
         FunctionUserAccessRights(
-            user_id=user_id,
+            user_id=user_identity.user_id,
             execute=True,
             read=True,
             write=True,
@@ -448,26 +466,25 @@ async def test_run_project_function_parent_info(
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
         FunctionUserApiAccessRights(
-            user_id=user_id,
+            user_id=user_identity.user_id,
             execute_functions=True,
             write_functions=True,
             read_functions=True,
         ),
     )
 
-    headers = {}
-    if parent_project_uuid:
-        headers[X_SIMCORE_PARENT_PROJECT_UUID] = parent_project_uuid
-    if parent_node_uuid:
-        headers[X_SIMCORE_PARENT_NODE_ID] = parent_node_uuid
-
-    response = await client.post(
-        f"{API_VTAG}/functions/{mock_registered_project_function.uid}:run",
-        json={},
-        auth=auth,
-        headers=headers,
+    job = await functions_tasks.run_function(
+        task=MagicMock(spec=Task),
+        task_id=TaskID(_faker.uuid4()),
+        user_identity=user_identity,
+        function=mock_registered_project_function,
+        function_inputs={},
+        pricing_spec=None,
+        job_links=job_links,
+        x_simcore_parent_project_uuid=None,
+        x_simcore_parent_node_id=None,
     )
-    assert response.status_code == expected_status_code
+    assert isinstance(job, RegisteredProjectFunctionJob)
 
 
 @pytest.mark.parametrize(

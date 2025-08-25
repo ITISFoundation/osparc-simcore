@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import Annotated
+from typing import Annotated, Self
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from pydantic import (
@@ -7,8 +7,7 @@ from pydantic import (
     Field,
     PostgresDsn,
     SecretStr,
-    ValidationInfo,
-    field_validator,
+    model_validator,
 )
 from pydantic.config import JsonDict
 from pydantic_settings import SettingsConfigDict
@@ -50,13 +49,15 @@ class PostgresSettings(BaseCustomSettings):
         ),
     ] = None
 
-    @field_validator("POSTGRES_MAXSIZE")
-    @classmethod
-    def _check_size(cls, v, info: ValidationInfo):
-        if info.data["POSTGRES_MINSIZE"] > v:
-            msg = f"assert POSTGRES_MINSIZE={info.data['POSTGRES_MINSIZE']} <= POSTGRES_MAXSIZE={v}"
+    @model_validator(mode="after")
+    def validate_postgres_sizes(self) -> Self:
+        if self.POSTGRES_MINSIZE > self.POSTGRES_MAXSIZE:
+            msg = (
+                f"assert POSTGRES_MINSIZE={self.POSTGRES_MINSIZE} <= "
+                f"POSTGRES_MAXSIZE={self.POSTGRES_MAXSIZE}"
+            )
             raise ValueError(msg)
-        return v
+        return self
 
     @cached_property
     def dsn(self) -> str:
@@ -134,4 +135,5 @@ class PostgresSettings(BaseCustomSettings):
             }
         )
 
+    model_config = SettingsConfigDict(json_schema_extra=_update_json_schema_extra)
     model_config = SettingsConfigDict(json_schema_extra=_update_json_schema_extra)
