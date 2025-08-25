@@ -1,5 +1,5 @@
-from celery import (
-    Task,  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
+from celery import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
+    Task,
 )
 from celery_library.utils import get_app_server  # pylint: disable=no-name-in-module
 from fastapi import FastAPI
