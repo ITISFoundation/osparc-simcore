@@ -8103,26 +8103,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/RegisteredProjectFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredPythonCodeFunctionJob"
-                    },
-                    {
-                      "$ref": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  ],
-                  "discriminator": {
-                    "propertyName": "function_class",
-                    "mapping": {
-                      "PROJECT": "#/components/schemas/RegisteredProjectFunctionJob",
-                      "PYTHON_CODE": "#/components/schemas/RegisteredPythonCodeFunctionJob",
-                      "SOLVER": "#/components/schemas/RegisteredSolverFunctionJob"
-                    }
-                  },
-                  "title": "Response Run Function V0 Functions  Function Id  Run Post"
+                  "$ref": "#/components/schemas/TaskGet"
                 }
               }
             }
