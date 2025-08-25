@@ -42,3 +42,7 @@ PathToExport = Path
 
 class DataExportPost(InputSchema):
     paths: list[PathToExport]
+
+
+class SearchBodyParams(InputSchema):
+    name_pattern: str
