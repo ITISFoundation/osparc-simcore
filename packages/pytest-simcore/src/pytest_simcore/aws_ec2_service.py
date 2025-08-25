@@ -60,6 +60,7 @@ async def aws_vpc_id(
     print(f"<-- Deleted Vpc in AWS with {vpc_id=}")
 
 
+@pytest.fixture
 def create_subnet_cidr_block(faker: Faker) -> Callable[[], str]:
     def _() -> str:
         return faker.ipv4_public(network=True)

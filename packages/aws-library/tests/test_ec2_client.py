@@ -26,6 +26,7 @@ from aws_library.ec2._models import (
 )
 from faker import Faker
 from moto.server import ThreadedMotoServer
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
@@ -531,7 +532,8 @@ async def test_set_instance_tags(
 
     # now remove some, this should do nothing
     await simcore_ec2_api.remove_instances_tags(
-        created_instances, tag_keys=[AWSTagKey("whatever_i_dont_exist")]
+        created_instances,
+        tag_keys=[TypeAdapter(AWSTagKey).validate_python("whatever_i_dont_exist")],
     )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -589,7 +591,6 @@ async def test_launch_instances_with_multi_subnets(
     aws_security_group_id: str,
     aws_ami_id: str,
 ):
-    """Test that launch_instances uses multiple valid subnets correctly."""
     await _assert_no_instances_in_ec2(ec2_client)
 
     # Create additional valid subnets for testing
@@ -607,8 +608,6 @@ async def test_launch_instances_with_multi_subnets(
         subnet_ids=[aws_subnet_id, subnet2_id, subnet3_id],
         iam_instance_profile="",
     )
-
-    # TODO: simulate InsufficientInstanceCapacity on the first subnet only
 
     # This should succeed using one of the valid subnets
     instances = await simcore_ec2_api.launch_instances(
