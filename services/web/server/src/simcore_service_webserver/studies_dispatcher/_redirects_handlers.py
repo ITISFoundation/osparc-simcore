@@ -24,7 +24,7 @@ from ..products import products_web
 from ..utils import compose_support_error_msg
 from ..utils_aiohttp import create_redirect_to_page_response, get_api_base_url
 from ._catalog import ValidService, validate_requested_service
-from ._constants import MSG_GUESTS_NOT_ALLOWED, MSG_UNEXPECTED_DISPATCH_ERROR
+from ._constants import MSG_UNEXPECTED_DISPATCH_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
 from ._errors import (
     FileToLargeError,
@@ -92,6 +92,50 @@ def _create_service_info_from(service: ValidService) -> ServiceInfo:
     return ServiceInfo.model_construct(_fields_set=set(values_map.keys()), **values_map)
 
 
+def _create_error_redirect_with_logging(
+    request: web.Request,
+    err: Exception,
+    *,
+    message: str,
+    status_code: int,
+    tip: str | None = None,
+) -> web.HTTPFound:
+    """Helper to create error redirect with consistent logging"""
+    error_code = create_error_code(err)
+    user_error_msg = compose_support_error_msg(msg=message, error_code=error_code)
+
+    _logger.exception(
+        **create_troubleshootting_log_kwargs(
+            user_error_msg,
+            error=err,
+            error_code=error_code,
+            error_context=create_error_context_from_request(request),
+            tip=tip,
+        )
+    )
+
+    return _create_redirect_response_to_error_page(
+        request.app,
+        message=user_error_msg,
+        status_code=status_code,
+    )
+
+
+def _create_simple_error_redirect(
+    request: web.Request,
+    err: Exception,
+    *,
+    status_code: int,
+) -> web.HTTPFound:
+    """Helper to create simple error redirect without logging"""
+    user_error_msg = f"Sorry, we cannot dispatch your study: {err}"
+    return _create_redirect_response_to_error_page(
+        request.app,
+        message=user_error_msg,
+        status_code=status_code,
+    )
+
+
 def _handle_errors_with_error_page(handler: Handler):
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
@@ -105,29 +149,21 @@ def _handle_errors_with_error_page(handler: Handler):
         except GuestUserNotAllowedError as err:
             raise _create_redirect_response_to_error_page(
                 request.app,
-                message=MSG_GUESTS_NOT_ALLOWED,
+                message=user_message(
+                    "Access is restricted to registered users.<br/><br/>"
+                    "If you don't have an account, please contact support to request one.<br/><br/>",
+                    _version=1,
+                ),
                 status_code=status.HTTP_401_UNAUTHORIZED,
             ) from err
 
         except ProjectWorkbenchMismatchError as err:
-            error_code = create_error_code(err)
-
-            user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
-            )
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    user_error_msg,
-                    error=err,
-                    error_code=error_code,
-                    error_context=create_error_context_from_request(request),
-                    tip="project might be corrupted",
-                )
-            )
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=user_error_msg,
+            raise _create_error_redirect_with_logging(
+                request,
+                err,
+                message=MSG_UNEXPECTED_DISPATCH_ERROR,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                tip="project might be corrupted",
             ) from err
 
         except (
@@ -136,92 +172,48 @@ def _handle_errors_with_error_page(handler: Handler):
             IncompatibleServiceError,
             GuestUsersLimitError,
         ) as err:
-            user_error_msg = f"Sorry, we cannot dispatch your study: {err}"
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=user_error_msg,
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
+            raise _create_simple_error_redirect(
+                request,
+                err,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             ) from err
 
         except (InvalidRedirectionParamsError, web.HTTPUnprocessableEntity) as err:
             # Validation error in query parameters
-            error_code = create_error_code(err)
-            user_error_msg = compose_support_error_msg(
-                msg=user_message(
+            raise _create_error_redirect_with_logging(
+                request,
+                err,
+                message=user_message(
                     "The link you provided is invalid because it doesn't contain any or invalid information related to data or a service."
                     "Please check the link and make sure it is correct."
                 ),
-                error_code=error_code,
-            )
-
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    user_error_msg,
-                    error=err,
-                    error_code=error_code,
-                    error_context=create_error_context_from_request(request),
-                    tip="The link might be corrupted",
-                )
-            )
-
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=user_error_msg,
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                tip="The link might be corrupted",
             ) from err
 
         except web.HTTPClientError as err:
-            error_code = create_error_code(err)
-            user_error_msg = compose_support_error_msg(
-                msg="Fatal error while redirecting request", error_code=error_code
-            )
-
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    user_error_msg,
-                    error=err,
-                    error_code=error_code,
-                    error_context={
-                        **create_error_context_from_request(request),
-                        "reason": err.reason,
-                        "status": err.status,
-                    },
-                    tip="The link might be corrupted",
-                )
-            )
-
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=err.reason,
+            raise _create_error_redirect_with_logging(
+                request,
+                err,
+                message="Fatal error while redirecting request",
                 status_code=err.status_code,
+                tip="The link might be corrupted",
             ) from err
 
         except (ValidationError, web.HTTPServerError, Exception) as err:
-            error_code = create_error_code(err)
-
-            user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
-            )
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    user_error_msg,
-                    error=err,
-                    error_code=error_code,
-                    error_context=create_error_context_from_request(request),
-                    tip="Unexpected failure while dispatching study",
-                )
-            )
-            raise _create_redirect_response_to_error_page(
-                request.app,
-                message=user_error_msg,
+            raise _create_error_redirect_with_logging(
+                request,
+                err,
+                message=MSG_UNEXPECTED_DISPATCH_ERROR,
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                tip="Unexpected failure while dispatching study",
             ) from err
 
     return wrapper
 
 
 #
-# API Schemas
+# API ScheMAS
 #
 
 
