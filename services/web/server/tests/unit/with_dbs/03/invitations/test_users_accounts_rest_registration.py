@@ -595,6 +595,7 @@ async def test_approve_user_account_with_full_invitation_details(
     assert invitation_data["issuer"] == str(logged_user["id"])
     assert invitation_data["trial_account_days"] == 30
     assert invitation_data["extra_credits_in_usd"] == 100.0
+    assert invitation_data["product"] == product_name
     assert "invitation_url" in invitation_data
 
 
