@@ -10,7 +10,6 @@ from ._dependencies import get_long_running_manager, get_long_running_manager_fr
 from ._server import setup
 
 __all__: tuple[str, ...] = (
-    "get_long_running_manager_from_app",
     "get_long_running_manager",
     "setup",
 )
