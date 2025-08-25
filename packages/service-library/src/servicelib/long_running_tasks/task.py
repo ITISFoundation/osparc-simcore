@@ -11,6 +11,7 @@ from uuid import uuid4
 from common_library.async_tools import cancel_wait_task
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
+from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -50,6 +51,7 @@ _CANCEL_TASKS_CHECK_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(sec
 _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
 _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
+_PARALLEL_TASKS_CANCELLATION: Final[int] = 5
 
 AllowedErrrors: TypeAlias = tuple[type[BaseException], ...]
 
@@ -205,34 +207,40 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         await self._started_event_task_tasks_monitor.wait()
 
     async def teardown(self) -> None:
-        # ensure all created tasks are cancelled
-        for tracked_task in await self._tasks_data.list_tasks_data():
-            with suppress(TaskNotFoundError):
-                await self.remove_task(
-                    tracked_task.task_id,
-                    tracked_task.task_context,
-                    wait_for_removal=True,
-                )
+        # stop cancelled_tasks_removal
+        if self._task_cancelled_tasks_removal:
+            await cancel_wait_task(self._task_cancelled_tasks_removal)
 
-        for task in self._created_tasks.values():
-            _logger.warning(
-                "Task %s was not completed before shutdown, cancelling it",
-                task.get_name(),
+        # stopping only tasks that are handled by this manager
+        # otherwise it will cancel long running tasks that were running in diffierent processes
+        async def _remove_local_task(task_data: TaskData) -> None:
+            await self.remove_task(
+                task_data.task_id,
+                task_data.task_context,
+                wait_for_removal=False,
             )
-            await cancel_wait_task(task)
+            await self._attempt_to_remove_local_task(task_data.task_id)
 
-        # stale_tasks_monitor
+        tasks_to_remove = []
+        for task_id in self._created_tasks:
+            tracked_task = await self._tasks_data.get_task_data(task_id)
+            if tracked_task is None:
+                continue
+
+            tasks_to_remove.append(_remove_local_task(tracked_task))
+
+        await limited_gather(
+            *tasks_to_remove, log=_logger, limit=_PARALLEL_TASKS_CANCELLATION
+        )
+
+        # stop stale_tasks_monitor
         if self._task_stale_tasks_monitor:
             await cancel_wait_task(
                 self._task_stale_tasks_monitor,
                 max_delay=_MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT,
             )
 
-        # cancelled_tasks_removal
-        if self._task_cancelled_tasks_removal:
-            await cancel_wait_task(self._task_cancelled_tasks_removal)
-
-        # tasks_monitor
+        # stop tasks_monitor
         if self._task_tasks_monitor:
             await cancel_wait_task(self._task_tasks_monitor)
 
