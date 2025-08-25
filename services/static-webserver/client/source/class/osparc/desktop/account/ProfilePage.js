@@ -72,6 +72,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
+          "phone": data["phone"] || "-",
           "expirationDate": data["expirationDate"] || null,
         });
       }
@@ -124,11 +125,17 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true
       });
 
+      const phoneNumber = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Phone Number"),
+        readOnly: true
+      });
+
       const profileForm = this.__userProfileForm = new qx.ui.form.Form();
       profileForm.add(username, "Username", null, "username");
       profileForm.add(firstName, "First Name", null, "firstName");
       profileForm.add(lastName, "Last Name", null, "lastName");
       profileForm.add(email, "Email", null, "email");
+      profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
       const singleWithIcon = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithIcon(profileForm);
       box.add(singleWithIcon);
 
@@ -155,6 +162,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         "firstName": "",
         "lastName": "",
         "email": "",
+        "phone": "",
         "expirationDate": null,
       };
 
@@ -169,6 +177,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         }
       });
       controller.addTarget(lastName, "value", "lastName", true);
+      controller.addTarget(phoneNumber, "value", "phone", true);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
         converter: expirationDay => {
           if (expirationDay) {
