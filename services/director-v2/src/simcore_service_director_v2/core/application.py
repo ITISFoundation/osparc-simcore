@@ -34,6 +34,7 @@ from ..modules import (
     dynamic_services,
     dynamic_sidecar,
     instrumentation,
+    long_running_tasks,
     notifier,
     rabbitmq,
     redis,
@@ -220,6 +221,7 @@ def create_app(  # noqa: C901, PLR0912
         dynamic_sidecar.setup(app)
         socketio.setup(app)
         notifier.setup(app)
+        long_running_tasks.setup(app)
 
     if (
         settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
