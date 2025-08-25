@@ -1,0 +1,80 @@
+# pylint:disable=redefined-outer-name
+
+from collections.abc import AsyncIterable, Callable
+from contextlib import AbstractAsyncContextManager
+
+import pytest
+from pydantic import TypeAdapter
+from servicelib.long_running_tasks._redis_store import RedisStore
+from servicelib.long_running_tasks.client_long_running_manager import (
+    ClientLongRunningManager,
+)
+from servicelib.long_running_tasks.models import LRTNamespace, TaskData
+from servicelib.redis._client import RedisClientSDK
+from settings_library.redis import RedisDatabase, RedisSettings
+
+
+@pytest.fixture
+def task_data() -> TaskData:
+    return TypeAdapter(TaskData).validate_python(
+        TaskData.model_json_schema()["examples"][0]
+    )
+
+
+@pytest.fixture
+def lrt_namespace() -> LRTNamespace:
+    return "TEST-NAMESPACE"
+
+
+@pytest.fixture
+async def store(
+    use_in_memory_redis: RedisSettings,
+    get_redis_client_sdk: Callable[
+        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
+    ],
+    lrt_namespace: LRTNamespace,
+) -> AsyncIterable[RedisStore]:
+    store = RedisStore(redis_settings=use_in_memory_redis, namespace=lrt_namespace)
+
+    await store.setup()
+    yield store
+    await store.shutdown()
+
+    # triggers cleanup of all redis data
+    async with get_redis_client_sdk(RedisDatabase.LONG_RUNNING_TASKS):
+        pass
+
+
+@pytest.fixture
+async def client_long_running_manager(
+    use_in_memory_redis: RedisSettings, lrt_namespace: LRTNamespace
+) -> AsyncIterable[ClientLongRunningManager]:
+    manager = ClientLongRunningManager(redis_settings=use_in_memory_redis)
+
+    await manager.setup()
+    yield manager
+    await manager.shutdown()
+
+
+async def test_cleanup_namespace(
+    store: RedisStore,
+    task_data: TaskData,
+    client_long_running_manager: ClientLongRunningManager,
+    lrt_namespace: LRTNamespace,
+) -> None:
+    # create entries in both sides
+    await store.add_task_data(task_data.task_id, task_data)
+    await store.mark_task_for_removal(task_data.task_id, task_data.task_context)
+
+    # entries exit
+    assert await store.list_tasks_data() == [task_data]
+    assert await store.list_tasks_to_remove() == {
+        task_data.task_id: task_data.task_context
+    }
+
+    # removes
+    await client_long_running_manager.cleanup_store(lrt_namespace)
+
+    # entris were removed
+    assert await store.list_tasks_data() == []
+    assert await store.list_tasks_to_remove() == {}
