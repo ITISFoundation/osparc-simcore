@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name
+
 from collections.abc import Callable
 
 import pytest
@@ -52,12 +54,12 @@ def set_task_progress_return_value() -> None:
 @pytest.fixture
 def mock_task_manager_object(
     mocker: MockerFixture,
-    submit_task_return_value,
-    cancel_task_return_value,
-    get_task_result_return_value,
-    get_task_status_return_value,
-    list_tasks_return_value,
-    set_task_progress_return_value,
+    submit_task_return_value: TaskUUID,
+    cancel_task_return_value: None,
+    get_task_result_return_value: dict,
+    get_task_status_return_value: TaskStatus,
+    list_tasks_return_value: list[Task],
+    set_task_progress_return_value: None,
 ) -> MockType:
     """
     Returns a TaskManager mock with overridable return values for each method.
