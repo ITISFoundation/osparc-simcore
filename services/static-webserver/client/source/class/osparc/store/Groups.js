@@ -144,12 +144,17 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getAllMyGroupIds: function() {
-      return [
+      const allMyGroupIds = [
         this.getMyGroupId(),
-        ...this.getOrganizationIds().map(gId => parseInt(gId)),
-        this.getEveryoneProductGroup().getGroupId(),
-        this.getEveryoneGroup().getGroupId(),
-      ]
+        ...this.getOrganizationIds().map(gId => parseInt(gId))
+      ];
+      if (this.getEveryoneProductGroup()) {
+        allMyGroupIds.push(this.getEveryoneProductGroup().getGroupId());
+      }
+      if (this.getEveryoneGroup()) {
+        allMyGroupIds.push(this.getEveryoneGroup().getGroupId());
+      }
+      return allMyGroupIds;
     },
 
     getGroup: function(groupId) {
