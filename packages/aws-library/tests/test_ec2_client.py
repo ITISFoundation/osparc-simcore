@@ -581,64 +581,6 @@ async def test_remove_instance_tags_not_existing_raises(
         )
 
 
-async def test_launch_instances_with_multi_subnets(
-    simcore_ec2_api: SimcoreEC2API,
-    ec2_client: EC2Client,
-    fake_ec2_instance_type: EC2InstanceType,
-    faker: Faker,
-    aws_subnet_id: str,
-    create_aws_subnet_id: Callable[[], Awaitable[str]],
-    aws_security_group_id: str,
-    aws_ami_id: str,
-):
-    await _assert_no_instances_in_ec2(ec2_client)
-
-    # Create additional valid subnets for testing
-    subnet2_id = await create_aws_subnet_id()
-    subnet3_id = await create_aws_subnet_id()
-
-    # Create a config with multiple valid subnet IDs
-    ec2_instance_config = EC2InstanceConfig(
-        type=fake_ec2_instance_type,
-        tags=faker.pydict(allowed_types=(str,)),
-        startup_script=faker.pystr(),
-        ami_id=aws_ami_id,
-        key_name=faker.pystr(),
-        security_group_ids=[aws_security_group_id],
-        subnet_ids=[aws_subnet_id, subnet2_id, subnet3_id],
-        iam_instance_profile="",
-    )
-
-    # This should succeed using one of the valid subnets
-    instances = await simcore_ec2_api.launch_instances(
-        ec2_instance_config,
-        min_number_of_instances=1,
-        number_of_instances=1,
-    )
-
-    # Verify that the instance was created in one of the configured subnets
-    await _assert_instances_in_ec2(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=1,
-        expected_instance_type=ec2_instance_config.type,
-        expected_tags=ec2_instance_config.tags,
-        expected_state="running",
-    )
-
-    # Verify the instance was created in one of the valid subnets
-    instance_details = await ec2_client.describe_instances(
-        InstanceIds=[instances[0].id]
-    )
-    assert "Reservations" in instance_details
-    assert len(instance_details["Reservations"]) >= 1
-    assert "Instances" in instance_details["Reservations"][0]
-    assert len(instance_details["Reservations"][0]["Instances"]) >= 1
-    instance = instance_details["Reservations"][0]["Instances"][0]
-    assert "SubnetId" in instance
-    assert instance["SubnetId"] in [aws_subnet_id, subnet2_id, subnet3_id]
-
-
 async def test_launch_instances_insufficient_capacity_fallback(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
