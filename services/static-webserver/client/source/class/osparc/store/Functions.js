@@ -91,7 +91,29 @@ qx.Class.define("osparc.store.Functions", {
       return osparc.data.Resources.fetch("functions", "create", params);
     },
 
+    curateOrderBy: function(orderBy) {
+      const curatedOrderBy = JSON.parse(orderBy);
+      switch (curatedOrderBy.field) {
+        case "last_change_date":
+          curatedOrderBy.field = "modified_at";
+          break;
+        case "creation_date":
+          curatedOrderBy.field = "created_at";
+          break;
+        case "name":
+          // stays the same
+          break;
+        default:
+          // only those three are supported
+          curatedOrderBy.field = "modified_at";
+      }
+      return JSON.stringify(curatedOrderBy);
+    },
+
     fetchFunctionsPaginated: function(params, options) {
+      if ("orderBy" in params["url"]) {
+        params["url"]["orderBy"] = this.curateOrderBy(params["url"]["orderBy"]);
+      }
       return osparc.data.Resources.fetch("functions", "getPage", params, options)
         .then(response => {
           const functions = response["data"];
