@@ -95,7 +95,6 @@ async def _computational_pipeline_status_message_parser(
         rabbit_message.user_id,
         include_state=True,
     )
-    _logger.info("We got an update of pipeline status %s", rabbit_message.run_result)
     if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
         # the pipeline finished, the frontend needs to update all computational nodes
         computational_node_ids = (
