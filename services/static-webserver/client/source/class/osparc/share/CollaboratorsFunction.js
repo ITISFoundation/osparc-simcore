@@ -38,34 +38,6 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
       }
       return canWrite;
     },
-
-    canGroupsDelete: function(accessRights, gIds) {
-      let canWrite = false;
-      for (let i=0; i<gIds.length && !canWrite; i++) {
-        const gid = gIds[i];
-        canWrite = (gid in accessRights) ? accessRights[gid]["delete"] : false;
-      }
-      return canWrite;
-    },
-
-    __getDeleters: function(functionData) {
-      const deleters = [];
-      Object.entries(functionData["accessRights"]).forEach(([key, value]) => {
-        if (value["delete"]) {
-          deleters.push(key);
-        }
-      });
-      return deleters;
-    },
-
-    // checks that if the user to remove is an owner, there will still be another owner
-    canCollaboratorBeRemoved: function(functionData, gid) {
-      const ownerGids = this.__getDeleters(functionData);
-      if (ownerGids.includes(gid.toString())) {
-        return ownerGids.length > 1;
-      }
-      return true;
-    },
   },
 
   members: {
@@ -74,8 +46,8 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
         return;
       }
 
-      const readAccessRole = osparc.data.Roles.STUDY["read"];
-      const writeAccessRole = osparc.data.Roles.STUDY["write"];
+      const readAccessRole = osparc.data.Roles.FUNCTION["read"];
+      const writeAccessRole = osparc.data.Roles.FUNCTION["write"];
       if (!newAccessRights) {
         newAccessRights = this._resourceType === "function" ? writeAccessRole.accessRights : readAccessRole.accessRights;
       }
@@ -131,7 +103,7 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
     },
 
     _promoteToEditor: function(collaborator, item) {
-      const writeAccessRole = osparc.data.Roles.STUDY["write"];
+      const writeAccessRole = osparc.data.Roles.FUNCTION["write"];
       this.__make(
         collaborator["gid"],
         writeAccessRole.accessRights,
@@ -142,18 +114,11 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
     },
 
     _promoteToOwner: function(collaborator, item) {
-      const deleteAccessRole = osparc.data.Roles.STUDY["delete"];
-      this.__make(
-        collaborator["gid"],
-        deleteAccessRole.accessRights,
-        this.tr(`Successfully promoted to ${deleteAccessRole.label}`),
-        this.tr(`Something went wrong while promoting to ${deleteAccessRole.label}`),
-        item
-      );
+      osparc.FlashMessenger.logAs(this.tr("Operation not available"), "WARNING");
     },
 
     _demoteToUser: async function(collaborator, item) {
-      const readAccessRole = osparc.data.Roles.STUDY["read"];
+      const readAccessRole = osparc.data.Roles.FUNCTION["read"];
       const groupId = collaborator["gid"];
       const demoteToUser = (gid, itm) => {
         this.__make(
@@ -186,14 +151,7 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
     },
 
     _demoteToEditor: function(collaborator, item) {
-      const writeAccessRole = osparc.data.Roles.STUDY["write"];
-      this.__make(
-        collaborator["gid"],
-        writeAccessRole.accessRights,
-        this.tr(`Successfully demoted to ${writeAccessRole.label}`),
-        this.tr(`Something went wrong while demoting to ${writeAccessRole.label}`),
-        item
-      );
+      osparc.FlashMessenger.logAs(this.tr("Operation not available"), "WARNING");
     },
   }
 });
