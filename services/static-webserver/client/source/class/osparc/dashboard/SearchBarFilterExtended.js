@@ -329,6 +329,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           this.__sharedWithMenu,
           this.__tagsMenu,
         ];
+        // handle clicks on the drop down menu that might go out of bounds
         const contextDropDown = this.getChildControl("context-drop-down");
         const popup = contextDropDown.getChildControl("popup");
         if (popup.isVisible()) {
