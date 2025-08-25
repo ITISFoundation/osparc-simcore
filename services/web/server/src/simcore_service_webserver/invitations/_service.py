@@ -149,9 +149,9 @@ async def generate_invitation(
         app=app
     ).generate_invitation(params)
 
-    _tmp_url = URL(f"{invitation.invitation_url}")
+    _normalized_url = URL(f"{invitation.invitation_url}")
     invitation.invitation_url = HttpUrl(
-        f"{product_origin_url.with_path(_tmp_url.path).with_fragment(_tmp_url.raw_fragment)}"
+        f"{product_origin_url.with_path(_normalized_url.path).with_fragment(_normalized_url.raw_fragment)}"
     )
 
     return invitation
