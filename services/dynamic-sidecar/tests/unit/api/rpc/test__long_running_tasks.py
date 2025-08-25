@@ -6,9 +6,8 @@ import asyncio
 import json
 
 import pytest
-from async_asgi_testclient import TestClient
 from common_library.serialization import model_dump_with_secrets
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
@@ -17,21 +16,22 @@ from servicelib.fastapi.long_running_tasks.server import (
 )
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.task import TaskRegistry
+from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.rabbitmq.rpc_interfaces.dynamic_sidecar import long_running_tasks
 from settings_library.rabbit import RabbitSettings
-from simcore_service_dynamic_sidecar._meta import API_VTAG
+from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
 
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
 
 
-async def sleeping_forever(progress: TaskProgress) -> None:
+async def sleeping_very_long(progress: TaskProgress) -> None:
     _ = progress
-    while True:  # noqa: ASYNC110
-        await asyncio.sleep(1)
+    await asyncio.sleep(10_000)
 
 
-TaskRegistry.register(sleeping_forever)
+TaskRegistry.register(sleeping_very_long)
 
 
 @pytest.fixture
@@ -59,8 +59,10 @@ def _assert_long_running_tasks_count(
     )
 
 
-async def test_cleanup_long_running_tasks(test_client: TestClient) -> None:
-    app: FastAPI = test_client.application
+async def test_cleanup_long_running_tasks(
+    app: FastAPI, rpc_client: RabbitMQRPCClient
+) -> None:
+    settings: ApplicationSettings = app.state.settings
     long_running_manager = get_long_running_manager_from_app(app)
 
     _assert_long_running_tasks_count(long_running_manager, count=0)
@@ -68,12 +70,15 @@ async def test_cleanup_long_running_tasks(test_client: TestClient) -> None:
     await lrt_api.start_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
-        sleeping_forever.__name__,
+        sleeping_very_long.__name__,
     )
 
     _assert_long_running_tasks_count(long_running_manager, count=1)
 
-    response = await test_client.delete(f"/{API_VTAG}/long-running-tasks")
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response
+    result = await long_running_tasks.cleanup_local_long_running_tasks(
+        rpc_client,
+        node_id=settings.DY_SIDECAR_NODE_ID,
+    )
+    assert result is None
 
     _assert_long_running_tasks_count(long_running_manager, count=0)
