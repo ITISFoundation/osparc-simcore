@@ -1262,11 +1262,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __filterChanged: function(filterData) {
       let searchContext = null;
       let backToContext = null;
+      const isSearchContext = filterData && filterData.text;
       switch (this.getCurrentContext()) {
         case osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
-          if (filterData && filterData.text) {
+          if (isSearchContext) {
             searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
           } else {
             backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
@@ -1274,7 +1275,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
-          if (filterData && filterData.text) {
+          if (isSearchContext) {
             searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES;
           } else {
             backToContext = osparc.dashboard.StudyBrowser.CONTEXT.TEMPLATES;
@@ -1282,7 +1283,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
-          if (filterData && filterData.text) {
+          if (isSearchContext) {
             searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES;
           } else {
             backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES;
@@ -1290,14 +1291,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
-          if (filterData && filterData.text) {
+          if (isSearchContext) {
             searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS;
           } else {
             backToContext = osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS;
           }
           break;
         default:
-          if (filterData && filterData.text) {
+          if (isSearchContext) {
             searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
           } else {
             backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
