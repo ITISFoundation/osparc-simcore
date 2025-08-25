@@ -226,7 +226,7 @@ class FileQueryParams(FileParams):
 
     @field_validator("file_type")
     @classmethod
-    def ensure_extension_upper_and_dotless(cls, v):
+    def _ensure_extension_upper_and_dotless(cls, v):
         # NOTE: see filetype constraint-check
         if v and isinstance(v, str):
             w = urllib.parse.unquote(v)
@@ -253,7 +253,7 @@ class ViewerQueryParams(BaseModel):
 
     @field_validator("file_type")
     @classmethod
-    def ensure_extension_upper_and_dotless(cls, v):
+    def _ensure_extension_upper_and_dotless(cls, v):
         # NOTE: see filetype constraint-check
         if v and isinstance(v, str):
             w = urllib.parse.unquote(v)
