@@ -176,15 +176,16 @@ fastapi==0.116.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
-    #   fastapi-pagination
 fastapi-cli==0.0.8
     # via fastapi
 fastapi-cloud-cli==0.1.5
     # via fastapi-cli
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fastapi-pagination==0.14.0
-    # via -r requirements/_base.in
+fastapi-pagination==0.12.34
+    # via
+    #   -c requirements/./constraints.txt
+    #   -r requirements/_base.in
 faststream==0.5.33
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
