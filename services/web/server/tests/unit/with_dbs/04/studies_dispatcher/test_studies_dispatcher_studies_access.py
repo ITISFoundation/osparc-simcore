@@ -176,7 +176,7 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     """
     import simcore_service_webserver.projects._projects_service
 
-    mocker.patch.patch(
+    mocker.patch.object(
         simcore_service_webserver.projects._projects_service,
         "_get_project_share_state",
         return_value=ProjectShareState(
