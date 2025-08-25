@@ -103,7 +103,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           break;
         }
         case "context-drop-down": {
-          control = new qx.ui.form.SelectBox();
+          control = new qx.ui.form.SelectBox().set({
+            minWidth: 150,
+          });
           this.self().decorateListItem(control.getChildControl("atom"));
           const searchBarFilter = this.getChildControl("search-bar-filter");
           searchBarFilter._addAt(control, 3); //"search-icon", "active-filters", "text-field", "reset-button"
