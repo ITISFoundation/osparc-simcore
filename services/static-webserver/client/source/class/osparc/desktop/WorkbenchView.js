@@ -61,7 +61,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __handleIframeStateChange: function(node, iframeLayout) {
-      iframeLayout.removeAll();
+      if (iframeLayout.removeAll) {
+        iframeLayout.removeAll();
+      }
       if (node && node.getIFrame()) {
         const iFrame = node.getIFrame();
         const src = iFrame.getSource();
