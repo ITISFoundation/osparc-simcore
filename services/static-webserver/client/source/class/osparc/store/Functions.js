@@ -175,7 +175,7 @@ qx.Class.define("osparc.store.Functions", {
     removeCollaborator: function(functionData, gid) {
       const params = {
         url: {
-          "studyId": functionData["uuid"],
+          "functionId": functionData["uuid"],
           "gId": gid
         }
       };
