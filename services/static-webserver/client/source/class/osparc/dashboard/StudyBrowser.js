@@ -886,7 +886,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           requestParams.accessRights = "public";
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS:
-          delete requestParams.orderBy; // functions are not ordered yet
+          delete requestParams.orderBy; // functions do not support ordering yet
           requestParams.includeExtras = "true";
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS: {
