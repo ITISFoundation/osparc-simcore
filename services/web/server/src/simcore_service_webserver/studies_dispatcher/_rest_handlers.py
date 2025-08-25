@@ -1,6 +1,5 @@
-""" Handles requests to the Rest API
+"""Handles requests to the Rest API"""
 
-"""
 import logging
 from dataclasses import asdict
 
@@ -50,8 +49,8 @@ def _compose_service_only_dispatcher_prefix_url(
     request: web.Request, service_key: str, service_version: str
 ) -> HttpUrl:
     params = ViewerQueryParams(
-        viewer_key=ServiceKey(service_key),
-        viewer_version=ServiceVersion(service_version),
+        viewer_key=TypeAdapter(ServiceKey).validate_python(service_key),
+        viewer_version=TypeAdapter(ServiceVersion).validate_python(service_version),
     ).model_dump(exclude_none=True, exclude_unset=True)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
@@ -202,8 +201,3 @@ async def list_default_viewers(request: Request):
         )
     ]
     return envelope_json_response(viewers)
-
-
-rest_handler_functions = {
-    fun.__name__: fun for fun in [list_default_viewers, list_viewers]
-}

@@ -580,7 +580,7 @@ async def test_viewer_redirect_with_file_type_errors(client: TestClient):
     message, status_code = assert_error_in_fragment(resp)
 
     assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert "type" in message.lower()
+    assert "link" in message.lower()
 
 
 async def test_viewer_redirect_with_client_errors(client: TestClient):
