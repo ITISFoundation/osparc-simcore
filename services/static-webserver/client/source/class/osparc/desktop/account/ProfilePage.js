@@ -135,7 +135,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       profileForm.add(firstName, "First Name", null, "firstName");
       profileForm.add(lastName, "Last Name", null, "lastName");
       profileForm.add(email, "Email", null, "email");
-      profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
+      if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
+        profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
+      }
       const singleWithIcon = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithIcon(profileForm);
       box.add(singleWithIcon);
 
