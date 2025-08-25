@@ -397,23 +397,6 @@ async def test_post_disk_reserved_free(
     assert_responses(mock_response, response)
 
 
-async def test_delete_long_running_tasks(
-    thin_client: ThinSidecarsClient,
-    dynamic_sidecar_endpoint: AnyHttpUrl,
-    mock_request: MockRequestType,
-) -> None:
-    mock_response = Response(status.HTTP_204_NO_CONTENT)
-    mock_request(
-        "DELETE",
-        f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/long-running-tasks",
-        mock_response,
-        None,
-    )
-
-    response = await thin_client.delete_long_running_tasks(dynamic_sidecar_endpoint)
-    assert_responses(mock_response, response)
-
-
 async def test_post_containers_compose_spec(
     thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,

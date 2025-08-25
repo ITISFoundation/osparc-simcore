@@ -782,20 +782,6 @@
           }
         }
       }
-    },
-    "/v1/long-running-tasks": {
-      "delete": {
-        "tags": [
-          "long-running-tasks"
-        ],
-        "summary": "Removes locally started long-running-tasks",
-        "operationId": "cleanup_local_long_running_tasks_v1_long_running_tasks_delete",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
     }
   },
   "components": {
