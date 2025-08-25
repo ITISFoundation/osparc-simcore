@@ -91,12 +91,21 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       let control;
       switch (id) {
         case "search-bar-filter": {
-          control = new osparc.dashboard.SearchBarFilter(this.__resourceType);
+          control = new osparc.dashboard.SearchBarFilter(this.__resourceType).set({
+            showFilterMenu: false,
+          });
           const textField = control.getChildControl("text-field");
           textField.addListener("appear", () => {
             textField.focus();
             textField.activate();
           });
+          const resetButton = control.getChildControl("reset-button");
+          resetButton.set({
+            paddingRight: 2, // 10-8
+            opacity: 0.7,
+            backgroundColor: "transparent",
+          });
+          osparc.utils.Utils.hideBorder(resetButton);
           this._add(control);
           break;
         }
@@ -161,17 +170,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("search-bar-filter").set({
-        showFilterMenu: false,
-      });
-
-      const resetButton = this.getChildControl("search-bar-filter").getChildControl("reset-button");
-      resetButton.set({
-        paddingRight: 2, // 10-8
-        opacity: 0.7,
-        backgroundColor: "transparent",
-      });
-      osparc.utils.Utils.hideBorder(resetButton);
+      const searchBarFilter = this.getChildControl("search-bar-filter");
 
       const radioGroup = new qx.ui.form.RadioGroup();
       const contextButtons = [];
@@ -190,8 +189,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       contextButtons.forEach(contextButton => radioGroup.add(contextButton));
 
       // Set initial state based on the provided initFilterData
-      const activeFilters = this.getChildControl("search-bar-filter").getChildControl("active-filters");
-      const textField = this.getChildControl("search-bar-filter").getChildControl("text-field");
+      const activeFilters = searchBarFilter.getChildControl("active-filters");
+      const textField = searchBarFilter.getChildControl("text-field");
       if ("sharedWith" in this.__initFilterData && this.__initFilterData["sharedWith"]) {
         const sharedWithOptions = osparc.dashboard.SearchBarFilter.getSharedWithOptions(this.__resourceType);
         const optionsFound = sharedWithOptions.find(option => option.id === this.__initFilterData["sharedWith"]);
@@ -224,6 +223,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
         this.__filter("text", textField.getValue());
       }, this);
 
+      const resetButton = searchBarFilter.getChildControl("reset-button");
       resetButton.addListener("tap", () => {
         this.fireEvent("resetButtonPressed");
         this.exclude();
@@ -234,30 +234,33 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
       if (value === old) {
         return;
       }
+      const searchBarFilter = this.getChildControl("search-bar-filter");
+      const sharedWithButton = this.getChildControl("shared-with-button");
+      const tagsButton = this.getChildControl("tags-button");
       switch (value) {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           this.getChildControl("my-projects-button").setValue(true);
-          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in My projects"));
-          this.getChildControl("shared-with-button").setVisibility("visible");
-          this.getChildControl("tags-button").setVisibility("visible");
+          searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in My projects"));
+          sharedWithButton.setVisibility("visible");
+          tagsButton.setVisibility("visible");
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES:
           this.getChildControl("templates-button").setValue(true);
-          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
-          this.getChildControl("shared-with-button").setVisibility("excluded");
-          this.getChildControl("tags-button").setVisibility("visible");
+          searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Templates"));
+          sharedWithButton.setVisibility("excluded");
+          tagsButton.setVisibility("visible");
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
           this.getChildControl("public-projects-button").setValue(true);
-          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Public projects"));
-          this.getChildControl("shared-with-button").setVisibility("excluded");
-          this.getChildControl("tags-button").setVisibility("visible");
+          searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Public projects"));
+          sharedWithButton.setVisibility("excluded");
+          tagsButton.setVisibility("visible");
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           this.getChildControl("functions-button").setValue(true);
-          this.getChildControl("search-bar-filter").getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
-          this.getChildControl("shared-with-button").setVisibility("excluded");
-          this.getChildControl("tags-button").setVisibility("excluded");
+          searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Functions"));
+          sharedWithButton.setVisibility("excluded");
+          tagsButton.setVisibility("excluded");
       }
     },
 
