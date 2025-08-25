@@ -1,29 +1,17 @@
 from textwrap import dedent
-from typing import Annotated, cast
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
-from servicelib.long_running_tasks import lrt_api
-from servicelib.long_running_tasks.errors import TaskAlreadyRunningError
 from servicelib.long_running_tasks.models import TaskId
 
 from ...core.settings import ApplicationSettings
 from ...models.schemas.application_health import ApplicationHealth
 from ...models.schemas.containers import ContainersCreate
 from ...modules.inputs import InputsState
-from ...modules.long_running_tasks import (
-    task_containers_restart,
-    task_create_service_containers,
-    task_ports_inputs_pull,
-    task_ports_outputs_pull,
-    task_ports_outputs_push,
-    task_pull_user_servcices_docker_images,
-    task_restore_state,
-    task_runs_docker_compose_down,
-    task_save_state,
-)
+from ...services import containers_long_running_tasks
 from ._dependencies import (
     get_application_health,
     get_inputs_state,
@@ -46,17 +34,10 @@ async def pull_user_servcices_docker_images(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_pull_user_servcices_docker_images.__name__,
-            unique=True,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.pull_user_services_docker_images(
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace
+    )
 
 
 @router.post(
@@ -84,20 +65,14 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
     application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_create_service_containers.__name__,
-            unique=True,
-            settings=settings,
-            containers_create=containers_create,
-            application_health=application_health,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.create_service_containers_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        containers_create,
+        settings,
+        application_health,
+    )
 
 
 @router.post(
@@ -114,18 +89,10 @@ async def runs_docker_compose_down_task(
     ],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_runs_docker_compose_down.__name__,
-            unique=True,
-            settings=settings,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.runs_docker_compose_down_task(
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+    )
 
 
 @router.post(
@@ -142,18 +109,10 @@ async def state_restore_task(
     ],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_restore_state.__name__,
-            unique=True,
-            settings=settings,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.state_restore_task(
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+    )
 
 
 @router.post(
@@ -170,18 +129,10 @@ async def state_save_task(
     ],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_save_state.__name__,
-            unique=True,
-            settings=settings,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.state_save_task(
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+    )
 
 
 @router.post(
@@ -200,20 +151,14 @@ async def ports_inputs_pull_task(
     inputs_state: Annotated[InputsState, Depends(get_inputs_state)],
     port_keys: list[str] | None = None,
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_ports_inputs_pull.__name__,
-            unique=True,
-            port_keys=port_keys,
-            settings=settings,
-            inputs_pulling_enabled=inputs_state.inputs_pulling_enabled,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.ports_inputs_pull_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        settings,
+        inputs_state,
+        port_keys,
+    )
 
 
 @router.post(
@@ -230,18 +175,10 @@ async def ports_outputs_pull_task(
     ],
     port_keys: list[str] | None = None,
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_ports_outputs_pull.__name__,
-            unique=True,
-            port_keys=port_keys,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.ports_outputs_pull_task(
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
+    )
 
 
 @router.post(
@@ -257,17 +194,10 @@ async def ports_outputs_push_task(
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_ports_outputs_push.__name__,
-            unique=True,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.ports_outputs_push_task(
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace
+    )
 
 
 @router.post(
@@ -284,15 +214,7 @@ async def containers_restart_task(
     ],
     settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
-    assert request  # nosec
-
-    try:
-        return await lrt_api.start_task(
-            long_running_manager.rpc_client,
-            long_running_manager.lrt_namespace,
-            task_containers_restart.__name__,
-            unique=True,
-            settings=settings,
-        )
-    except TaskAlreadyRunningError as e:
-        return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
+    _ = request
+    return await containers_long_running_tasks.containers_restart_task(
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+    )
