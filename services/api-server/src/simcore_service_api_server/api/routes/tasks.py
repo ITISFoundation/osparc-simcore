@@ -1,8 +1,8 @@
 import logging
 from typing import Annotated, Any
 
-from celery.exceptions import (
-    CeleryError,  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
+from celery.exceptions import (  # type: ignore[import-untyped] # pylint: disable=no-name-in-module
+    CeleryError,
 )
 from common_library.error_codes import create_error_code
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
