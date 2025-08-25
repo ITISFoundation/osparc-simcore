@@ -403,7 +403,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
     else:
         # NOTE: if query is done right, this should never happen
-        raise InvalidRedirectionParamsError
+        raise InvalidRedirectionParamsError(query_params=query_params)
 
     # Adds auth cookies (login)
     await ensure_authentication(user, request, response)
