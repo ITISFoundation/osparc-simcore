@@ -117,6 +117,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> None:
     mocker.patch.object(SidecarsClient, "push_service_output_ports")
     mocker.patch.object(SidecarsClient, "save_service_state")
     mocker.patch.object(SidecarsClient, "stop_service")
+    mocker.patch.object(SidecarsClient, "cleanup_long_running_tasks")
 
 
 @pytest.fixture
