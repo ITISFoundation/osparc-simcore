@@ -623,7 +623,13 @@ async def test_launch_instances_insufficient_capacity_fallback(
                 "Error": {
                     "Code": "InsufficientInstanceCapacity",
                     "Message": "Insufficient capacity.",
-                }
+                },
+                "ResponseMetadata": {
+                    "RequestId": "12345678-1234-1234-1234-123456789012",
+                    "HTTPStatusCode": 400,
+                    "HTTPHeaders": {},
+                    "RetryAttempts": 0,
+                },
             }
             raise botocore.exceptions.ClientError(error_response, "RunInstances")
         # Second call (second subnet) - succeed normally
