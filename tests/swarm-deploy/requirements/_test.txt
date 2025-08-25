@@ -119,7 +119,7 @@ charset-normalizer==3.4.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   requests
-click==8.1.8
+click==8.2.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
@@ -633,7 +633,7 @@ requests==2.32.4
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker
     #   opentelemetry-exporter-otlp-proto-http
-rich==13.9.4
+rich==14.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
@@ -703,7 +703,7 @@ tqdm==4.67.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-typer==0.15.2
+typer==0.16.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
