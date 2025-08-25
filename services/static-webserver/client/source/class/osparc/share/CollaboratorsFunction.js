@@ -46,11 +46,12 @@ qx.Class.define("osparc.share.CollaboratorsFunction", {
         return;
       }
 
-      const readAccessRole = osparc.data.Roles.FUNCTION["read"];
-      const writeAccessRole = osparc.data.Roles.FUNCTION["write"];
       if (!newAccessRights) {
-        newAccessRights = this._resourceType === "function" ? writeAccessRole.accessRights : readAccessRole.accessRights;
+        // default access rights
+        const readAccessRole = osparc.data.Roles.FUNCTION["read"];
+        newAccessRights = readAccessRole.accessRights;
       }
+
       const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this._resourceType, {firstUpperCase: true});
       const newCollaborators = {};
       gids.forEach(gid => {
