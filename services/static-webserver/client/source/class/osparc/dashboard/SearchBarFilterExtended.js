@@ -257,7 +257,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilterExtended", {
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES:
           contextDropDown.setSelection([this.getChildControl("public-projects-button")]);
-          searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Public projects"));
+          searchBarFilter.getChildControl("text-field").setPlaceholder(this.tr("Search in Public Projects"));
           sharedWithButton.setVisibility("excluded");
           tagsButton.setVisibility("visible");
           break;
