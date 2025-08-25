@@ -4528,6 +4528,13 @@ paths:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           title: Viewer Key
+      - name: viewer_version
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Viewer Version
       - name: file_size
         in: query
         required: true
@@ -4554,12 +4561,6 @@ paths:
           - type: 'null'
           default: unknown
           title: File Name
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ServiceKeyVersion'
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data
