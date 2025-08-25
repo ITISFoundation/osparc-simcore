@@ -7,6 +7,8 @@ from typing import TypeAlias
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.user_messages import user_message
+from models_library.function_services_catalog._utils import ServiceNotFound
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceKey, ServiceVersion
@@ -25,9 +27,12 @@ from ._catalog import ValidService, validate_requested_service
 from ._constants import MSG_GUESTS_NOT_ALLOWED, MSG_UNEXPECTED_DISPATCH_ERROR
 from ._core import validate_requested_file, validate_requested_viewer
 from ._errors import (
+    FileToLargeError,
     GuestUserNotAllowedError,
+    GuestUsersLimitError,
+    IncompatibleServiceError,
     InvalidRedirectionParamsError,
-    StudyDispatcherError,
+    ProjectWorkbenchMismatchError,
 )
 from ._models import FileParams, ServiceInfo, ServiceParams, ViewerInfo
 from ._projects import (
@@ -104,18 +109,49 @@ def _handle_errors_with_error_page(handler: Handler):
                 status_code=status.HTTP_401_UNAUTHORIZED,
             ) from err
 
-        except StudyDispatcherError as err:
+        except ProjectWorkbenchMismatchError as err:
+            error_code = create_error_code(err)
+
+            user_error_msg = compose_support_error_msg(
+                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
+            )
+            _logger.exception(
+                **create_troubleshootting_log_kwargs(
+                    user_error_msg,
+                    error=err,
+                    error_code=error_code,
+                    error_context=create_error_context_from_request(request),
+                    tip="project might be corrupted",
+                )
+            )
             raise _create_redirect_response_to_error_page(
                 request.app,
-                message=f"Sorry, we cannot dispatch your study: {err}",
+                message=user_error_msg,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ) from err
+
+        except (
+            ServiceNotFound,
+            FileToLargeError,
+            IncompatibleServiceError,
+            GuestUsersLimitError,
+        ) as err:
+            user_error_msg = f"Sorry, we cannot dispatch your study: {err}"
+            raise _create_redirect_response_to_error_page(
+                request.app,
+                message=user_error_msg,
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,  # 422
             ) from err
 
-        except web.HTTPUnprocessableEntity as err:
+        except (InvalidRedirectionParamsError, web.HTTPUnprocessableEntity) as err:
             # Validation error in query parameters
             error_code = create_error_code(err)
             user_error_msg = compose_support_error_msg(
-                msg="Invalid query parameters in link", error_code=error_code
+                msg=user_message(
+                    "The link you provided is invalid because it doesn't contain any or invalid information related to data or a service."
+                    "Please check the link and make sure it is correct."
+                ),
+                error_code=error_code,
             )
 
             _logger.exception(
