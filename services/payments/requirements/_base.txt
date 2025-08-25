@@ -79,11 +79,12 @@ certifi==2024.8.30
     #   httpcore
     #   httpx
     #   requests
+    #   sentry-sdk
 cffi==1.17.1
     # via cryptography
 charset-normalizer==3.4.0
     # via requests
-click==8.1.7
+click==8.2.1
     # via
     #   rich-toolkit
     #   typer
@@ -117,12 +118,14 @@ exceptiongroup==1.2.2
     # via aio-pika
 fast-depends==2.4.12
     # via faststream
-fastapi==0.115.12
+fastapi==0.116.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi-lifespan-manager
-fastapi-cli==0.0.7
+fastapi-cli==0.0.8
     # via fastapi
+fastapi-cloud-cli==0.1.5
+    # via fastapi-cli
 fastapi-lifespan-manager==0.1.4
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 faststream==0.5.31
@@ -170,6 +173,7 @@ httpx==0.27.2
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi
+    #   fastapi-cloud-cli
 hyperframe==6.1.0
     # via h2
 idna==3.10
@@ -396,6 +400,7 @@ pydantic==2.11.7
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   fast-depends
     #   fastapi
+    #   fastapi-cloud-cli
     #   pydantic-extra-types
     #   pydantic-settings
 pydantic-core==2.33.2
@@ -506,14 +511,18 @@ referencing==0.35.1
     #   jsonschema-specifications
 requests==2.32.4
     # via opentelemetry-exporter-otlp-proto-http
-rich==13.9.4
+rich==14.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   rich-toolkit
     #   typer
-rich-toolkit==0.14.7
-    # via fastapi-cli
+rich-toolkit==0.15.0
+    # via
+    #   fastapi-cli
+    #   fastapi-cloud-cli
+rignore==0.6.4
+    # via fastapi-cloud-cli
 rpds-py==0.21.0
     # via
     #   jsonschema
@@ -535,6 +544,8 @@ rsa==4.9
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   python-jose
+sentry-sdk==2.35.0
+    # via fastapi-cloud-cli
 shellingham==1.5.4
     # via typer
 simple-websocket==1.1.0
@@ -565,7 +576,7 @@ sqlalchemy==1.4.54
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
-starlette==0.41.3
+starlette==0.47.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -590,12 +601,13 @@ toolz==1.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 tqdm==4.67.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typer==0.13.1
+typer==0.16.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi-cli
+    #   fastapi-cloud-cli
 types-python-dateutil==2.9.0.20241003
     # via arrow
 typing-extensions==4.14.1
@@ -613,6 +625,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
+    #   starlette
     #   typer
     #   typing-inspection
 typing-inspection==0.4.1
@@ -634,10 +647,12 @@ urllib3==2.5.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
+    #   sentry-sdk
 uvicorn==0.34.2
     # via
     #   fastapi
     #   fastapi-cli
+    #   fastapi-cloud-cli
 uvloop==0.21.0
     # via uvicorn
 watchfiles==1.0.0
