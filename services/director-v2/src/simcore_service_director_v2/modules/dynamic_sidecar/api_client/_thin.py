@@ -302,12 +302,3 @@ class ThinSidecarsClient(BaseThinClient):  # pylint: disable=too-many-public-met
     ) -> Response:
         url = self._get_url(dynamic_sidecar_endpoint, "disk/reserved:free")
         return await self.client.post(url)
-
-    @retry_on_errors()
-    @expect_status(status.HTTP_204_NO_CONTENT)
-    async def delete_long_running_tasks(
-        self,
-        dynamic_sidecar_endpoint: AnyHttpUrl,
-    ) -> Response:
-        url = self._get_url(dynamic_sidecar_endpoint, "long-running-tasks")
-        return await self.client.delete(url)

@@ -503,11 +503,6 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     ) -> None:
         await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
 
-    async def cleanup_long_running_tasks(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> None:
-        await self._thin_client.delete_long_running_tasks(dynamic_sidecar_endpoint)
-
 
 def _get_proxy_configuration(
     entrypoint_container_name: str, service_port: PortInt

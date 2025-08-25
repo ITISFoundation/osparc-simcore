@@ -206,12 +206,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         )
         await self._started_event_task_tasks_monitor.wait()
 
-    async def remove_local_running_tasks(self) -> None:
-        """
-        NOTE: background `_task_cancelled_tasks_removal` will be shutdown by this function
-        only invoke this externally before shutting down the process to ensure
-        proper cleanup of local tasks fron Redis (e.g. before closing a dynamic sidecar)
-        """
+    async def teardown(self) -> None:
         # stop cancelled_tasks_removal
         if self._task_cancelled_tasks_removal:
             await cancel_wait_task(self._task_cancelled_tasks_removal)
@@ -236,9 +231,6 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             log=_logger,
             limit=_PARALLEL_TASKS_CANCELLATION,
         )
-
-    async def teardown(self) -> None:
-        await self.remove_local_running_tasks()
 
         # stop stale_tasks_monitor
         if self._task_stale_tasks_monitor:
