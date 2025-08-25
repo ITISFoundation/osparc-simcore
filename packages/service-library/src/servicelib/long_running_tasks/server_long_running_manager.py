@@ -11,7 +11,7 @@ from .models import LRTNamespace, TaskContext
 from .task import TasksManager
 
 
-class BaseLongRunningManager(ABC):
+class ServerLongRunningManager(ABC):
     """
     Provides a commond inteface for aiohttp and fastapi services
     """

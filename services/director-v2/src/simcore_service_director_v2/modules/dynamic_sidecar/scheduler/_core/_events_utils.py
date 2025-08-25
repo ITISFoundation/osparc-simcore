@@ -35,6 +35,9 @@ from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
 )
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.modules.long_running_tasks import (
+    get_client_long_running_manager,
+)
 from tenacity import RetryError, TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -220,6 +223,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await task_progress.update(
         message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
     )
+
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
         swarm_stack_name=swarm_stack_name,
@@ -286,6 +290,16 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     )
     await task_progress.update(
         message="finished removing resources", percent=ProgressPercent(1)
+    )
+
+    await _cleanup_long_running_tasks(app, scheduler_data.node_uuid)
+
+
+async def _cleanup_long_running_tasks(app: FastAPI, node_id: NodeID) -> None:
+    clinet_long_running_manager = get_client_long_running_manager(app)
+
+    await clinet_long_running_manager.cleanup_store(
+        clinet_long_running_manager.get_sidecar_namespace(node_id)
     )
 
 
@@ -389,7 +403,10 @@ async def attempt_pod_removal_and_data_saving(
             raise
 
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
-        TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
+        TaskProgress.create(),
+        app,
+        scheduler_data.node_uuid,
+        settings.SWARM_STACK_NAME,
     )
 
     # remove sidecar's api client
