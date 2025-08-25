@@ -48,17 +48,6 @@ qx.Class.define("osparc.store.Groups", {
     },
   },
 
-  statics: {
-    curateOrderBy: function(orderBy) {
-      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
-      if (curatedOrderBy.field !== "name") {
-        // only "modified_at" and "name" supported
-        curatedOrderBy.field = "modified_at";
-      }
-      return curatedOrderBy;
-    },
-  },
-
   members: {
     groupsCached: null,
 
