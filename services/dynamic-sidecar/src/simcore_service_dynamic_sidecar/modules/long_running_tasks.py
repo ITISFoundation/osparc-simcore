@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
@@ -48,9 +49,9 @@ from ..core.settings import ApplicationSettings
 from ..core.utils import CommandResult
 from ..core.validation import parse_compose_spec
 from ..models.schemas.application_health import ApplicationHealth
-from ..models.schemas.containers import ContainersCreate
 from ..models.shared_store import SharedStore
 from ..modules import nodeports, user_services_preferences
+from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
@@ -488,11 +489,10 @@ async def task_ports_inputs_pull(
     app: FastAPI,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
+    inputs_state: InputsState,
     port_keys: list[str] | None,
-    *,
-    inputs_pulling_enabled: bool,
 ) -> int:
-    if not inputs_pulling_enabled:
+    if not inputs_state.inputs_pulling_enabled:
         _logger.info("Received request to pull inputs but was ignored")
         return 0
 
@@ -647,6 +647,7 @@ def setup_long_running_tasks(app: FastAPI) -> None:
         application_health: ApplicationHealth = app.state.application_health
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
         outputs_manager: OutputsManager = app.state.outputs_manager
+        inputs_state: InputsState = app.state.inputs_state
 
         task_context.update(
             {
@@ -680,6 +681,7 @@ def setup_long_running_tasks(app: FastAPI) -> None:
                     app=app,
                     settings=settings,
                     mounted_volumes=mounted_volumes,
+                    inputs_state=inputs_state,
                 ),
                 task_ports_outputs_pull: dict(
                     app=app,

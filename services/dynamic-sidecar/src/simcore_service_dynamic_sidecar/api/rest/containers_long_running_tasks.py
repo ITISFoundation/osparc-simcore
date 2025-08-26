@@ -2,15 +2,13 @@ from textwrap import dedent
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
+from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.long_running_tasks.models import TaskId
 
-from ...models.schemas.containers import ContainersCreate
-from ...modules.inputs import InputsState
 from ...services import containers_long_running_tasks
-from ._dependencies import get_inputs_state
 
 router = APIRouter()
 
@@ -134,15 +132,11 @@ async def ports_inputs_pull_task(
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
-    inputs_state: Annotated[InputsState, Depends(get_inputs_state)],
     port_keys: list[str] | None = None,
 ) -> TaskId:
     _ = request
     return await containers_long_running_tasks.ports_inputs_pull_task(
-        long_running_manager.rpc_client,
-        long_running_manager.lrt_namespace,
-        inputs_state,
-        port_keys,
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace, port_keys
     )
 
 

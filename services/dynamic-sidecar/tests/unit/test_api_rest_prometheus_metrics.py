@@ -12,6 +12,7 @@ from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI, status
 from httpx import ASGITransport, AsyncClient
+from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.callbacks_mapping import CallbacksMapping
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
@@ -24,7 +25,6 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.models.schemas.containers import (
     ContainersComposeSpec,
-    ContainersCreate,
 )
 from simcore_service_dynamic_sidecar.modules.prometheus_metrics import (
     _USER_SERVICES_NOT_STARTED,

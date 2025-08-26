@@ -1,12 +1,11 @@
 from typing import cast
 
+from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import TaskAlreadyRunningError
 from servicelib.long_running_tasks.models import LRTNamespace, TaskId
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
-from ..models.schemas.containers import ContainersCreate
-from ..modules.inputs import InputsState
 from ..modules.long_running_tasks import (
     task_containers_restart,
     task_create_service_containers,
@@ -100,7 +99,6 @@ async def state_save_task(
 async def ports_inputs_pull_task(
     rpc_client: RabbitMQRPCClient,
     lrt_namespace: LRTNamespace,
-    inputs_state: InputsState,
     port_keys: list[str] | None = None,
 ) -> TaskId:
     try:
@@ -110,7 +108,6 @@ async def ports_inputs_pull_task(
             task_ports_inputs_pull.__name__,
             unique=True,
             port_keys=port_keys,
-            inputs_pulling_enabled=inputs_state.inputs_pulling_enabled,
         )
     except TaskAlreadyRunningError as e:
         return _get_task_id_from_error(e)
