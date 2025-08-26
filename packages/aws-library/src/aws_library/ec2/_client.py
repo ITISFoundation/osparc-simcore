@@ -166,6 +166,7 @@ class SimcoreEC2API:
                     _logger.debug(
                         "Attempting to launch instances in subnet %s", subnet_id
                     )
+
                     instances = await self.client.run_instances(
                         ImageId=instance_config.ami_id,
                         MinCount=min_number_of_instances,
@@ -199,6 +200,16 @@ class SimcoreEC2API:
                     # If we get here, the launch succeeded
                     break
                 except botocore.exceptions.ClientError as exc:
+                    # AI says run_instances may raise the following errors:
+                    # InsufficientInstanceCapacity, when a subnet does not have enough capacity
+                    # InstanceLimitExceeded, when the AWS account has reached its limit of instances for this region
+                    # InvalidAMIID.NotFound, when the AMI ID does not exist
+                    # InvalidSubnetID.NotFound, when the subnet does not exist
+                    # InvalidGroupId.NotFound, when a security group does not exist
+                    # InvalidKeyPair.NotFound, when the key pair does not exist
+                    # UnauthorizedOperation, when the credentials do not have permissions to launch instances
+                    # InvalidInstanceType, when the instance type is not valid
+
                     error_code = exc.response.get("Error", {}).get("Code")
                     if error_code == "InsufficientInstanceCapacity":
                         _logger.warning(
