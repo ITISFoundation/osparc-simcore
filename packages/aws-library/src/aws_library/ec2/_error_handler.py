@@ -9,7 +9,6 @@ from ._errors import (
     EC2AccessError,
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
-    EC2InsufficientCapacityError,
     EC2NotConnectedError,
     EC2RuntimeError,
     EC2TimeoutError,
@@ -30,15 +29,13 @@ Self = TypeVar("Self", bound="SimcoreEC2API")
 def _map_botocore_client_exception(
     botocore_error: botocore_exc.ClientError,
     *args,  # pylint: disable=unused-argument # noqa: ARG001
-    **kwargs,
+    **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
 ) -> EC2AccessError:
     status_code = int(
         botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         or botocore_error.response.get("Error", {}).get("Code", -1)
     )
     operation_name = botocore_error.operation_name
-    error_code = botocore_error.response.get("Error", {}).get("Code")
-
     match status_code, operation_name:
         case 400, "StartInstances":
             return EC2InstanceNotFoundError()
@@ -49,12 +46,6 @@ def _map_botocore_client_exception(
         case 400, "DescribeInstanceTypes":
             return EC2InstanceTypeInvalidError()
         case _:
-            # Check for specific error codes regardless of HTTP status
-            if error_code == "InsufficientInstanceCapacity":
-                return EC2InsufficientCapacityError(
-                    subnet_id=kwargs.get("subnet_id", "unknown"),
-                    instance_type=kwargs.get("instance_type", "unknown"),
-                )
             return EC2AccessError(
                 operation_name=operation_name,
                 code=status_code,
