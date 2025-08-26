@@ -77,6 +77,10 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         });
       }
       this.__updateProfileBtn.setEnabled(false);
+
+      if (this.__sms2FAItem) {
+        this.__sms2FAItem.setEnabled(Boolean(data["phone"]));
+      }
     },
 
     __setDataToPrivacy: function(privacyData) {
@@ -415,6 +419,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         label: "Disabled"
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+        if (options.id === "SMS") {
+          this.__sms2FAItem = lItem;
+        }
         twoFAPreferenceSB.add(lItem);
       });
       const value = preferencesSettings.getTwoFAPreference();
