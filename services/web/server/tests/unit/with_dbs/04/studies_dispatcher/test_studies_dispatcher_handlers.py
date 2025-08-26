@@ -34,8 +34,10 @@ from servicelib.aiohttp import status
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
+from simcore_service_webserver.studies_dispatcher._controller.rest.nih_schemas import (
+    ServiceGet,
+)
 from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
-from simcore_service_webserver.studies_dispatcher._rest_handlers import ServiceGet
 from sqlalchemy.sql import text
 from yarl import URL
 
