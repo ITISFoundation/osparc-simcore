@@ -625,14 +625,8 @@ async def test_launch_instances_insufficient_capacity_fallback(
                     "Code": "InsufficientInstanceCapacity",
                     "Message": "Insufficient capacity.",
                 },
-                "ResponseMetadata": {
-                    "RequestId": "12345678-1234-1234-1234-123456789012",
-                    "HTTPStatusCode": 400,
-                    "HTTPHeaders": {},
-                    "RetryAttempts": 0,
-                },
             }
-            raise botocore.exceptions.ClientError(error_response, "RunInstances")
+            raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
         # Second call (second subnet) - succeed normally
         assert kwargs["NetworkInterfaces"][0]["SubnetId"] == subnet2_id
         return await original_run_instances(*args, **kwargs)
@@ -715,14 +709,8 @@ async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
                 "Code": "InsufficientInstanceCapacity",
                 "Message": "Insufficient capacity.",
             },
-            "ResponseMetadata": {
-                "RequestId": "12345678-1234-1234-1234-123456789012",
-                "HTTPStatusCode": 400,
-                "HTTPHeaders": {},
-                "RetryAttempts": 0,
-            },
         }
-        raise botocore.exceptions.ClientError(error_response, "RunInstances")
+        raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
 
     # Apply the mock and expect EC2InsufficientCapacityError
     mocker.patch.object(
@@ -798,14 +786,8 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
                 "Code": "InsufficientInstanceCapacity",
                 "Message": "Insufficient capacity.",
             },
-            "ResponseMetadata": {
-                "RequestId": "12345678-1234-1234-1234-123456789012",
-                "HTTPStatusCode": 400,
-                "HTTPHeaders": {},
-                "RetryAttempts": 0,
-            },
         }
-        raise botocore.exceptions.ClientError(error_response, "RunInstances")
+        raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
 
     # Apply the mock for the first call
     mocker.patch.object(

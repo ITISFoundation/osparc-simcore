@@ -96,6 +96,11 @@ class SimcoreEC2API:
         list_instances: list[EC2InstanceType] = []
         for instance in instance_types.get("InstanceTypes", []):
             with contextlib.suppress(KeyError):
+                assert "InstanceType" in instance  # nosec
+                assert "VCpuInfo" in instance  # nosec
+                assert "DefaultVCpus" in instance["VCpuInfo"]  # nosec
+                assert "MemoryInfo" in instance  # nosec
+                assert "SizeInMiB" in instance["MemoryInfo"]  # nosec
                 list_instances.append(
                     EC2InstanceType(
                         name=instance["InstanceType"],
