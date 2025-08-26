@@ -30,7 +30,7 @@ def on_worker_init(
 
         app_server.event_loop = loop
 
-        loop.run_until_complete(app_server.start_and_hold(startup_complete_event))
+        loop.run_until_complete(app_server.run_until_shutdown(startup_complete_event))
 
     thread = threading.Thread(
         group=None,

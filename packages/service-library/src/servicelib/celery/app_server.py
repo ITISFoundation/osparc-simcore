@@ -36,7 +36,7 @@ class BaseAppServer(ABC, Generic[T]):
         raise NotImplementedError
 
     @abstractmethod
-    async def start_and_hold(
+    async def run_until_shutdown(
         self,
         startup_completed_event: threading.Event,
     ) -> None:
