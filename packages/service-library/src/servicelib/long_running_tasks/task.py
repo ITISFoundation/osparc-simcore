@@ -354,15 +354,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                         _logger.exception(
                             **create_troubleshootting_log_kwargs(
                                 (
-                                    f"Execution of {task_id=} finished with error "
+                                    f"Execution of {task_id=} finished with an error "
                                     f"which could not be serialized"
                                 ),
                                 error=serialization_error,
-                                error_context={
-                                    "task_id": task_id,
-                                    "task_data": task_data,
-                                    "namespace": self.lrt_namespace,
-                                },
+                                tip="Check the error above for more details",
                             ),
                         )
                         result_field = ResultField(
