@@ -32,11 +32,54 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
   },
 
   members: {
-    __itiInput: null,
-    __verifyPhoneNumberBtn: null,
     __validateCodeField: null,
     __validateCodeBtn: null,
     __sendViaEmail: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "title":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("Two-Factor Authentication (2FA)"),
+            allowGrowX: true,
+            rich: true,
+            font: "text-16"
+          });
+          this.add(control);
+          break;
+        case "intro-text":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("A text message will be sent to your mobile phone for authentication each time you log in."),
+            rich: true,
+            wrap: true
+          });
+          this.add(control);
+          break;
+        case "phone-number-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          control.getContentElement().setStyles({
+            "overflow": "visible" // needed for countries dropdown menu
+          });
+          this.add(control);
+          break;
+        case "intl-tel-input":
+          control = new osparc.widget.IntlTelInput();
+          this.getChildControl("phone-number-layout").add(control, {
+            flex: 1
+          });
+          break;
+        case "verify-number-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Send SMS")).set({
+            appearance: "strong-button",
+            center: true,
+            minWidth: 80
+          });
+          this.getChildControl("phone-number-layout").add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
 
     _buildPage: function() {
       this.__buildVerificationLayout();
@@ -52,38 +95,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     },
 
     __buildVerificationLayout: function() {
-      const verificationInfoTitle = new qx.ui.basic.Label().set({
-        value: this.tr("Two-Factor Authentication (2FA)"),
-        allowGrowX: true,
-        rich: true,
-        font: "text-16"
-      });
-      this.add(verificationInfoTitle);
+      this.getChildControl("title");
+      this.getChildControl("intro-text");
 
-      const verificationInfoDesc = new qx.ui.basic.Label().set({
-        value: this.tr("A text message will be sent to your mobile phone for authentication each time you log in."),
-        rich: true,
-        wrap: true
-      });
-      this.add(verificationInfoDesc);
-
-      const phoneNumberVerifyLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      phoneNumberVerifyLayout.getContentElement().setStyles({
-        "overflow": "visible" // needed for countries dropdown menu
-      });
-
-      const itiInput = this.__itiInput = new osparc.widget.IntlTelInput();
-      phoneNumberVerifyLayout.add(itiInput, {
-        flex: 1
-      });
-
-      const verifyPhoneNumberBtn = this.__verifyPhoneNumberBtn = new osparc.ui.form.FetchButton(this.tr("Send SMS")).set({
-        appearance: "strong-button",
-        center: true,
-        minWidth: 80
-      });
-      phoneNumberVerifyLayout.add(verifyPhoneNumberBtn);
-      this.add(phoneNumberVerifyLayout);
+      this.getChildControl("intl-tel-input");
+      this.getChildControl("verify-number-button");
     },
 
     __createValidationLayout: function() {
@@ -116,21 +132,24 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     },
 
     __attachHandlers: function() {
-      this.__verifyPhoneNumberBtn.addListener("execute", () => this.__verifyPhoneNumber());
+      const verifyPhoneNumberBtn = this.getChildControl("verify-number-button");
+      verifyPhoneNumberBtn.addListener("execute", () => this.__verifyPhoneNumber());
       this.__validateCodeBtn.addListener("execute", () => this.__validateCodeRegister());
       this.__sendViaEmail.addListener("execute", () => this.__requestCodeViaEmail(), this);
     },
 
     __verifyPhoneNumber: function() {
-      this.__itiInput.verifyPhoneNumber();
-      const isValid = this.__itiInput.isValidNumber();
+      const itiInput = this.getChildControl("intl-tel-input");
+      const verifyPhoneNumberBtn = this.getChildControl("verify-number-button");
+      itiInput.verifyPhoneNumber();
+      const isValid = itiInput.isValidNumber();
       if (isValid) {
-        this.__itiInput.setEnabled(false);
-        this.__verifyPhoneNumberBtn.setFetching(true);
-        osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), this.__itiInput.getNumber())
+        itiInput.setEnabled(false);
+        verifyPhoneNumberBtn.setFetching(true);
+        osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), itiInput.getNumber())
           .then(resp => {
             osparc.FlashMessenger.logAs(resp.message, "INFO");
-            this.__verifyPhoneNumberBtn.setFetching(false);
+            verifyPhoneNumberBtn.setFetching(false);
             // enable, focus and listen to Enter
             this.__validateCodeField.setEnabled(true);
             this.__validateCodeField.focus();
@@ -139,8 +158,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           })
           .catch(err => {
             osparc.FlashMessenger.logError(err);
-            this.__verifyPhoneNumberBtn.setFetching(false);
-            this.__itiInput.setEnabled(true);
+            verifyPhoneNumberBtn.setFetching(false);
+            itiInput.setEnabled(true);
           });
       }
     },
@@ -169,7 +188,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       };
 
       const manager = osparc.auth.Manager.getInstance();
-      manager.validateCodeRegister(this.getUserEmail(), this.__itiInput.getNumber(), this.__validateCodeField.getValue(), loginFun, failFun, this);
+      const itiInput = this.getChildControl("intl-tel-input");
+      manager.validateCodeRegister(this.getUserEmail(), itiInput.getNumber(), this.__validateCodeField.getValue(), loginFun, failFun, this);
     },
 
     __requestCodeViaEmail: function() {
@@ -197,12 +217,14 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
     },
 
     __disableCommands: function() {
-      this.__verifyPhoneNumberBtn.setCommand(null);
+      const verifyPhoneNumberBtn = this.getChildControl("verify-number-button");
+      verifyPhoneNumberBtn.setCommand(null);
       this.__validateCodeBtn.setCommand(null);
     },
 
     _onAppear: function() {
-      this.__enableEnterCommand(this.__verifyPhoneNumberBtn);
+      const verifyPhoneNumberBtn = this.getChildControl("verify-number-button");
+      this.__enableEnterCommand(verifyPhoneNumberBtn);
     },
 
     _onDisappear: function() {
