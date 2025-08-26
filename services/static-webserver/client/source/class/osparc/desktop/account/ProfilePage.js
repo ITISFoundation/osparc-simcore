@@ -601,7 +601,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       });
       verifyPhoneNumberView.getChildControl("title").exclude();
       verifyPhoneNumberView.getChildControl("send-via-email-button").exclude();
-      osparc.ui.window.Window.popUpInWindow(verifyPhoneNumberView, this.tr("Update Phone Number"), 350, 135).set({
+      osparc.ui.window.Window.popUpInWindow(verifyPhoneNumberView, this.tr("Update Phone Number"), 330, 135).set({
         clickAwayClose: false,
         resizable: false,
         showClose: true
