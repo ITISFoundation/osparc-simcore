@@ -241,7 +241,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         FogbugzSettings | None,
         Field(
             json_schema_extra={"auto_default_from_env": True},
-            # NOTE: `bool` is to keep backwards compatibility
         ),
     ]
 
