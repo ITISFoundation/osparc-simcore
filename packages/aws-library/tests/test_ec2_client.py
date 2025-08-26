@@ -728,7 +728,7 @@ async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
 
     # Verify the error contains the expected information
     assert hasattr(exc_info.value, "instance_type")
-    assert exc_info.value.instance_type == fake_ec2_instance_type.name
+    assert exc_info.value.instance_type == fake_ec2_instance_type.name  # type: ignore
 
     # Verify no instances were created
     await _assert_no_instances_in_ec2(ec2_client)
