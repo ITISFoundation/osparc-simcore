@@ -65,7 +65,7 @@ from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
 from ....director_v0 import DirectorV0Client
-from ....long_running_tasks import get_client_long_running_manager
+from ....long_running_tasks import get_long_running_client_helper
 from ....osparc_variables._api_auth_rpc import delete_api_key_by_key
 from ...api_client import (
     SidecarsClient,
@@ -294,10 +294,10 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
 
 async def _cleanup_long_running_tasks(app: FastAPI, node_id: NodeID) -> None:
-    clinet_long_running_manager = get_client_long_running_manager(app)
+    long_running_client_helper = get_long_running_client_helper(app)
 
     sidecar_namespace = f"SIMCORE-SERVICE-DYNAMIC-SIDECAR-{node_id}"
-    await clinet_long_running_manager.cleanup_store(sidecar_namespace)
+    await long_running_client_helper.cleanup(sidecar_namespace)
 
 
 async def attempt_pod_removal_and_data_saving(

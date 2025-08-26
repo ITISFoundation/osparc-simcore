@@ -1,28 +1,28 @@
 from fastapi import FastAPI
-from servicelib.long_running_tasks.client_long_running_manager import (
-    ClientLongRunningManager,
+from servicelib.long_running_tasks.long_running_client_helper import (
+    LongRunningClientHelper,
 )
 
 
 def setup(app: FastAPI):
     async def _on_startup() -> None:
-        client_long_running_manager = app.state.client_long_running_manager = (
-            ClientLongRunningManager(redis_settings=app.state.settings.REDIS)
+        long_running_client_helper = app.state.long_running_client_helper = (
+            LongRunningClientHelper(redis_settings=app.state.settings.REDIS)
         )
-        await client_long_running_manager.setup()
+        await long_running_client_helper.setup()
 
     async def _on_shutdown() -> None:
-        client_long_running_manager: ClientLongRunningManager = (
-            app.state.client_long_running_manager
+        long_running_client_helper: LongRunningClientHelper = (
+            app.state.long_running_client_helper
         )
-        await client_long_running_manager.shutdown()
+        await long_running_client_helper.shutdown()
 
     app.add_event_handler("startup", _on_startup)
     app.add_event_handler("shutdown", _on_shutdown)
 
 
-def get_client_long_running_manager(app: FastAPI) -> ClientLongRunningManager:
+def get_long_running_client_helper(app: FastAPI) -> LongRunningClientHelper:
     assert isinstance(
-        app.state.client_long_running_manager, ClientLongRunningManager
+        app.state.long_running_client_helper, LongRunningClientHelper
     )  # nosec
-    return app.state.client_long_running_manager
+    return app.state.long_running_client_helper

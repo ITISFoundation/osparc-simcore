@@ -6,8 +6,8 @@ from contextlib import AbstractAsyncContextManager
 import pytest
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks._redis_store import RedisStore
-from servicelib.long_running_tasks.client_long_running_manager import (
-    ClientLongRunningManager,
+from servicelib.long_running_tasks.long_running_client_helper import (
+    LongRunningClientHelper,
 )
 from servicelib.long_running_tasks.models import LRTNamespace, TaskData
 from servicelib.redis._client import RedisClientSDK
@@ -46,20 +46,20 @@ async def store(
 
 
 @pytest.fixture
-async def client_long_running_manager(
+async def long_running_client_helper(
     use_in_memory_redis: RedisSettings,
-) -> AsyncIterable[ClientLongRunningManager]:
-    manager = ClientLongRunningManager(redis_settings=use_in_memory_redis)
+) -> AsyncIterable[LongRunningClientHelper]:
+    helper = LongRunningClientHelper(redis_settings=use_in_memory_redis)
 
-    await manager.setup()
-    yield manager
-    await manager.shutdown()
+    await helper.setup()
+    yield helper
+    await helper.shutdown()
 
 
 async def test_cleanup_namespace(
     store: RedisStore,
     task_data: TaskData,
-    client_long_running_manager: ClientLongRunningManager,
+    long_running_client_helper: LongRunningClientHelper,
     lrt_namespace: LRTNamespace,
 ) -> None:
     # create entries in both sides
@@ -73,11 +73,11 @@ async def test_cleanup_namespace(
     }
 
     # removes
-    await client_long_running_manager.cleanup_store(lrt_namespace)
+    await long_running_client_helper.cleanup(lrt_namespace)
 
     # entris were removed
     assert await store.list_tasks_data() == []
     assert await store.list_tasks_to_remove() == {}
 
     # ensore it does not raise errors if there is nothing to remove
-    await client_long_running_manager.cleanup_store(lrt_namespace)
+    await long_running_client_helper.cleanup(lrt_namespace)

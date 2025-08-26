@@ -9,7 +9,7 @@ from .models import LRTNamespace
 _logger = logging.getLogger(__name__)
 
 
-class ClientLongRunningManager:
+class LongRunningClientHelper:
     def __init__(self, redis_settings: RedisSettings):
         self.redis_settings = redis_settings
 
@@ -31,7 +31,7 @@ class ClientLongRunningManager:
         assert self._client  # nosec
         return self._client.redis
 
-    async def cleanup_store(self, lrt_namespace: LRTNamespace) -> None:
+    async def cleanup(self, lrt_namespace: LRTNamespace) -> None:
         """Cleanups all Redis keys for the given LRTNamespace"""
         keys_to_remove: list[str] = [
             x async for x in self._redis.scan_iter(f"{lrt_namespace}*")
