@@ -3851,7 +3851,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: List Tasks
+      summary: Get Async Jobs
       description: Lists all long running tasks
       operationId: get_async_jobs
       responses:
@@ -3889,7 +3889,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Status
+      summary: Get Async Job Status
       description: Retrieves the status of a task
       operationId: get_async_job_status
       parameters:
@@ -3933,8 +3933,8 @@ paths:
     delete:
       tags:
       - long-running-tasks
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
+      summary: Cancel Async Job
+      description: Cancels and removes a task
       operationId: cancel_async_job
       parameters:
       - name: task_id
@@ -3974,7 +3974,7 @@ paths:
     get:
       tags:
       - long-running-tasks
-      summary: Get Task Result
+      summary: Get Async Job Result
       description: Retrieves the result of a task
       operationId: get_async_job_result
       parameters:
@@ -4053,9 +4053,9 @@ paths:
     delete:
       tags:
       - long-running-tasks-legacy
-      summary: Cancel And Delete Task
-      description: Cancels and deletes a task
-      operationId: cancel_and_delete_task
+      summary: Remove Task
+      description: Cancels and removes a task
+      operationId: remove_task
       parameters:
       - name: task_id
         in: path
@@ -10506,9 +10506,9 @@ components:
         total:
           anyOf:
           - type: integer
+            minimum: 0
           - type: 'null'
           title: Total
-          description: Total items
         current_page:
           anyOf:
           - type: string
@@ -14650,28 +14650,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14679,6 +14671,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunRestGet]
     Page_ComputationCollectionRunTaskRestGet_:
       properties:
@@ -14688,28 +14681,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14717,6 +14702,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationCollectionRunTaskRestGet]
     Page_ComputationRunRestGet_:
       properties:
@@ -14726,28 +14712,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14755,6 +14733,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationRunRestGet]
     Page_ComputationTaskRestGet_:
       properties:
@@ -14764,28 +14743,20 @@ components:
           type: array
           title: Items
         total:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Total
         page:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Page
         size:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
+          type: integer
+          minimum: 1
           title: Size
         pages:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
+          type: integer
+          minimum: 0
           title: Pages
       type: object
       required:
@@ -14793,6 +14764,7 @@ components:
       - total
       - page
       - size
+      - pages
       title: Page[ComputationTaskRestGet]
     Page_ConversationMessageRestGet_:
       properties:

@@ -124,4 +124,4 @@ def test_extract_invalid_invitation_code(
     assert result.exit_code == os.EX_DATAERR
 
     # Verify error message is displayed via stderr
-    assert "Invalid code" in result.stdout
+    assert "Invalid code" in result.stderr

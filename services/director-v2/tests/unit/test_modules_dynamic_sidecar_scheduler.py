@@ -12,6 +12,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 import respx
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services_service import (
@@ -23,6 +25,7 @@ from pydantic import NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
@@ -54,10 +57,12 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._schedu
 # and ensure faster tests
 _TEST_SCHEDULER_INTERVAL_SECONDS: Final[NonNegativeFloat] = 0.1
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -128,7 +133,7 @@ def mock_env(
     use_in_memory_redis: RedisSettings,
     mock_exclusive: None,
     disable_postgres: None,
-    disable_rabbitmq: None,
+    rabbit_service: RabbitSettings,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,
@@ -146,6 +151,10 @@ def mock_env(
     monkeypatch.setenv("S3_REGION", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
+    monkeypatch.setenv(
+        "DIRECTOR_V2_RABBITMQ",
+        json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
+    )
 
 
 @pytest.fixture
@@ -166,7 +175,7 @@ def mocked_dynamic_scheduler_events(mocker: MockerFixture) -> None:
             scheduler_data: SchedulerData,  # noqa: ARG003
         ) -> None:
             message = f"{cls.__name__} action triggered"
-            log.warning(message)
+            _logger.warning(message)
 
     # replace REGISTERED EVENTS
     mocker.patch(

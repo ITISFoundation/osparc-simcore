@@ -7,7 +7,7 @@ class BaseLongRunningError(OsparcErrorMixin, Exception):
 
 class TaskNotRegisteredError(BaseLongRunningError):
     msg_template: str = (
-        "no task with task_name='{task_name}' was found in the task registry. "
+        "no task with task_name='{task_name}' was found in the task registry tasks={tasks}. "
         "Make sure it's registered before starting it."
     )
 
@@ -44,3 +44,10 @@ class GenericClientError(BaseLongRunningError):
     msg_template: str = (
         "Unexpected error while '{action}' for '{task_id}': status={status} body={body}"
     )
+
+
+class RPCTransferrableTaskError(Exception):
+    """
+    The message contains the task's exception serialized as string.
+    Decode it and raise to obtain the task's original exception.
+    """

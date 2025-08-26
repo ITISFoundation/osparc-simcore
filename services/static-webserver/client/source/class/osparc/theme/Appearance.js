@@ -450,6 +450,21 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "selectbox/arrow": {
+      style: () => ({
+        // keep the original source
+        source: osparc.theme.common.Image.URLS["arrow-down"],
+        // keep the original paddings
+        paddingRight: 0,
+        paddingLeft: 2,
+        paddingTop: -3,
+        // ensure the arrow has explicit size
+        width: 16,
+        height: 16,
+        scale: true,
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       PROGRESSBAR

@@ -27,6 +27,7 @@ from servicelib.long_running_tasks.models import TaskGet
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
 )
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
@@ -36,19 +37,21 @@ from tenacity.asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+pytest_simcore_core_services_selection = [
+    "rabbit",
+]
+
 API_PREFIX = "/" + api_version_prefix
 
 
 @pytest.fixture
 def app_environment(
     use_in_memory_redis: RedisSettings,
+    rabbit_settings: RabbitSettings,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    envs_plugins = setenvs_from_dict(
-        monkeypatch,
-        {},
-    )
+    envs_plugins = setenvs_from_dict(monkeypatch, {})
     return app_environment | envs_plugins
 
 

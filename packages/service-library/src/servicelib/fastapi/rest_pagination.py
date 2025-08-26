@@ -4,6 +4,7 @@ from fastapi import Query
 from fastapi_pagination.cursor import CursorPage  # type: ignore[import-not-found]
 from fastapi_pagination.customization import (  # type: ignore[import-not-found]
     CustomizedPage,
+    UseIncludeTotal,
     UseParamsFields,
 )
 from models_library.api_schemas_storage.storage_schemas import (
@@ -24,5 +25,8 @@ CustomizedPathsCursorPage = CustomizedPage[
             description="Page size",
         )
     ),
+    UseIncludeTotal(
+        include_total=False
+    ),  # make total field optional as S3 does not provide that
 ]
 CustomizedPathsCursorPageParams: TypeAlias = CustomizedPathsCursorPage.__params_type__  # type: ignore

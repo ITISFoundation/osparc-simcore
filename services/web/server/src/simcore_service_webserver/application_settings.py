@@ -40,6 +40,7 @@ from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .licenses.settings import LicensesSettings
 from .login.settings import LoginSettings
+from .long_running_tasks.settings import LongRunningTasksSettings
 from .payments.settings import PaymentsSettings
 from .projects.settings import ProjectsSettings
 from .resource_manager.settings import ResourceManagerSettings
@@ -263,6 +264,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             json_schema_extra={"auto_default_from_env": True},
             description="login plugin",
+        ),
+    ]
+
+    WEBSERVER_LONG_RUNNING_TASKS: Annotated[
+        LongRunningTasksSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="long running tasks plugin",
         ),
     ]
 
@@ -578,6 +587,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "WEBSERVER_SESSION": {"SESSION_COOKIE_MAX_AGE"},
                 "WEBSERVER_TRASH": {
                     "TRASH_RETENTION_DAYS",
+                },
+                "WEBSERVER_LONG_RUNNING_TASKS": {
+                    "LONG_RUNNING_TASKS_NAMESPACE_SUFFIX",
                 },
             },
             exclude_none=True,

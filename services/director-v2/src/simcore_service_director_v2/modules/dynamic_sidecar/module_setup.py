@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from servicelib.fastapi import long_running_tasks
-from servicelib.long_running_tasks.task import RedisNamespace
 
+from ..._meta import APP_NAME
 from ...core.settings import AppSettings
 from . import api_client, scheduler
-
-_LONG_RUNNING_TASKS_NAMESPACE: RedisNamespace = "director-v2"
 
 
 def setup(app: FastAPI) -> None:
@@ -15,7 +13,8 @@ def setup(app: FastAPI) -> None:
     long_running_tasks.server.setup(
         app,
         redis_settings=settings.REDIS,
-        redis_namespace=_LONG_RUNNING_TASKS_NAMESPACE,
+        rabbit_settings=settings.DIRECTOR_V2_RABBITMQ,
+        lrt_namespace=APP_NAME,
     )
 
     async def on_startup() -> None:
