@@ -99,7 +99,7 @@ qx.Class.define("osparc.store.StaticInfo", {
     },
 
     isUpdatePhoneNumberEnabled: function() {
-      return osparc.store.StaticsInfo.isDevFeaturesEnabled() && osparc.store.StaticsInfo.is2FARequired();
+      return osparc.store.StaticInfo.isDevFeaturesEnabled() && osparc.store.StaticInfo.is2FARequired();
     },
 
     getCountries: function() {
