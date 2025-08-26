@@ -54,7 +54,8 @@
     -webkit-overflow-scrolling: touch;
     /* osparc */
     background-color: #202426;
-    margin: 2px;
+    margin: 1px;
+    border-radius: 4px;
   }
     .iti__country-list--dropup {
       bottom: 100%;
