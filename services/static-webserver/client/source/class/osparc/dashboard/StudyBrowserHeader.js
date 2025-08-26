@@ -315,7 +315,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH: {
           this.__setIcon("@FontAwesome5Solid/trash/24");
           title.setValue(this.tr("Recently Deleted"));
-          const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+          const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
           description.set({
             value: this.tr(`Items here will be permanently deleted after ${trashDays} days.`),
             visibility: "visible",
