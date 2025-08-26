@@ -127,13 +127,20 @@ def upgrade():
         onupdate="CASCADE",
         ondelete="CASCADE",
     )
-    op.alter_column(
-        "file_meta_data",
-        "user_id",
-        existing_type=sa.VARCHAR(),
-        type_=sa.BigInteger(),
-        nullable=False,
+
+    # op.alter_column(
+    #     "file_meta_data",
+    #     "user_id",
+    #     existing_type=sa.VARCHAR(),
+    #     type_=sa.BigInteger(),
+    #     nullable=False,
+    #     postgresql_using="user_id::bigint",
+    # )
+    op.execute(
+        "ALTER TABLE file_meta_data ALTER COLUMN user_id TYPE BIGINT USING user_id::bigint"
     )
+    op.execute("ALTER TABLE file_meta_data ALTER COLUMN user_id SET NOT NULL")
+
     op.create_foreign_key(
         "fk_file_meta_data_user_id_users",
         "file_meta_data",
@@ -293,13 +300,19 @@ def downgrade():
     op.drop_constraint(
         "fk_file_meta_data_user_id_users", "file_meta_data", type_="foreignkey"
     )
-    op.alter_column(
-        "file_meta_data",
-        "user_id",
-        existing_type=sa.BigInteger(),
-        type_=sa.VARCHAR(),
-        nullable=True,
+    # op.alter_column(
+    #     "file_meta_data",
+    #     "user_id",
+    #     existing_type=sa.BigInteger(),
+    #     type_=sa.VARCHAR(),
+    #     nullable=True,
+    # )
+
+    op.execute(
+        "ALTER TABLE file_meta_data ALTER COLUMN user_id TYPE VARCHAR USING user_id::varchar"
     )
+    op.execute("ALTER TABLE file_meta_data ALTER COLUMN user_id DROP NOT NULL")
+
     op.drop_constraint("user_confirmation_fkey", "confirmations", type_="foreignkey")
     op.create_foreign_key(
         "user_confirmation_fkey",
