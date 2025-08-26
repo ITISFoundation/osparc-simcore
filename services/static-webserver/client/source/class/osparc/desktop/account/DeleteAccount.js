@@ -39,7 +39,7 @@ qx.Class.define("osparc.desktop.account.DeleteAccount", {
       switch (id) {
         case "intro-text": {
           const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-          const retentionDays = osparc.store.StaticInfo.getInstance().getAccountDeletionRetentionDays();
+          const retentionDays = osparc.store.StaticInfo.getAccountDeletionRetentionDays();
           const text = this.tr(`\
             This account will be <strong>deleted in ${retentionDays} days</strong>.<br>\
             During this period, if you want to recover it or delete your\
@@ -111,7 +111,7 @@ qx.Class.define("osparc.desktop.account.DeleteAccount", {
           password: form.getItem("password").getValue()
         }
       };
-      const retentionDays = osparc.store.StaticInfo.getInstance().getAccountDeletionRetentionDays();
+      const retentionDays = osparc.store.StaticInfo.getAccountDeletionRetentionDays();
 
       osparc.data.Resources.fetch("auth", "unregister", params)
         .then(() => {

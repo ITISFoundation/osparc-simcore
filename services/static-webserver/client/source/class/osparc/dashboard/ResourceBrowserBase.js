@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     this._resourcesInitialized = false;
 
-    this._showLoadingPage(this.tr("Starting") + " " + osparc.store.StaticInfo.getInstance().getDisplayName());
+    this._showLoadingPage(this.tr("Starting") + " " + osparc.store.StaticInfo.getDisplayName());
 
     const padding = osparc.dashboard.Dashboard.PADDING;
     const leftColumnWidth = this.self().SIDE_SPACER_WIDTH;

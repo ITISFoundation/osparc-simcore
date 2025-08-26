@@ -22,7 +22,7 @@ qx.Class.define("osparc.product.AboutProduct", {
   construct: function() {
     this.base(arguments, this.tr("About Product"));
 
-    const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+    const displayName = osparc.store.StaticInfo.getDisplayName();
     this.setCaption(this.tr("About ") + displayName);
 
     this.set({
@@ -139,7 +139,7 @@ qx.Class.define("osparc.product.AboutProduct", {
 
     __getMailTo: function() {
       const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
-      const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const productName = osparc.store.StaticInfo.getDisplayName();
       return osparc.store.Support.mailToLink(supportEmail, "Support " + productName, false);
     },
 

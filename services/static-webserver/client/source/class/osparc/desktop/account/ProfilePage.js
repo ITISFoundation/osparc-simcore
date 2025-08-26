@@ -38,11 +38,23 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     this._add(this.__createProfileUser());
     this._add(this.__createPrivacySection());
-    if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
+    if (osparc.store.StaticInfo.is2FARequired()) {
       this._add(this.__create2FASection());
     }
     this._add(this.__createPasswordSection());
     this._add(this.__createDeleteAccount());
+  },
+
+  statics: {
+    PROFILE: {
+      POS: {
+        USERNAME: 0,
+        FIRST_NAME: 1,
+        LAST_NAME: 2,
+        EMAIL: 3,
+        PHONE: 4,
+      },
+    },
   },
 
   members: {
@@ -95,11 +107,17 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
         const visibleIcon = "@FontAwesome5Solid/eye/12";
         const hiddenIcon = "@FontAwesome5Solid/eye-slash/12";
+        const createImage = source => {
+          return new qx.ui.basic.Image(source).set({
+            alignY: "middle",
+          });
+        }
+        const pos = this.self().PROFILE.POS;
         const widgets = {
-          0: this.__userPrivacyModel.getHideUsername() ? hiddenIcon : visibleIcon,
-          1: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
-          2: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
-          3: this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon,
+          [pos.USERNAME]: createImage(this.__userPrivacyModel.getHideUsername() ? hiddenIcon : visibleIcon),
+          [pos.FIRST_NAME]: createImage(this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon),
+          [pos.LAST_NAME]: createImage(this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon),
+          [pos.EMAIL]: createImage(this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon),
         };
         this.__userProfileRenderer.setWidgets(widgets);
       }
@@ -140,7 +158,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       profileForm.add(firstName, "First Name", null, "firstName");
       profileForm.add(lastName, "Last Name", null, "lastName");
       profileForm.add(email, "Email", null, "email");
-      if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
+      if (osparc.store.StaticInfo.is2FARequired()) {
         profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
       }
       const singleWithWidget = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithWidget(profileForm);

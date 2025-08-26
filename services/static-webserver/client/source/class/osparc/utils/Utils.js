@@ -190,8 +190,8 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     composeTabName: function() {
-      let newName = osparc.store.StaticInfo.getInstance().getDisplayName();
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      let newName = osparc.store.StaticInfo.getDisplayName();
+      const platformName = osparc.store.StaticInfo.getPlatformName();
       if (osparc.utils.Utils.isInZ43()) {
         newName += " Z43";
       }
@@ -523,7 +523,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     isDevelopmentPlatform: function() {
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      const platformName = osparc.store.StaticInfo.getPlatformName();
       return (["dev", "master"].includes(platformName));
     },
 
@@ -649,20 +649,20 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getReleaseTag: function() {
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const rData = osparc.store.StaticInfo.getReleaseData();
       const platformVersion = osparc.utils.LibVersions.getPlatformVersion();
       let text = (rData["tag"] && rData["tag"] !== "latest") ? rData["tag"] : platformVersion.version;
       return text;
     },
 
     getReleaseLink: function() {
-      const rData = osparc.store.StaticInfo.getInstance().getReleaseData();
+      const rData = osparc.store.StaticInfo.getReleaseData();
       return rData["url"] || osparc.utils.LibVersions.getVcsRefUrl();
     },
 
     createReleaseNotesLink: function() {
       let text = "osparc-simcore " + this.getReleaseTag();
-      const platformName = osparc.store.StaticInfo.getInstance().getPlatformName();
+      const platformName = osparc.store.StaticInfo.getPlatformName();
       text += platformName.length ? ` (${platformName})` : "";
       const url = this.self().getReleaseLink();
       const versionLink = new osparc.ui.basic.LinkLabel();
@@ -692,7 +692,7 @@ qx.Class.define("osparc.utils.Utils", {
 
     // used for showing it to Guest users
     createAccountMessage: function() {
-      const productName = osparc.store.StaticInfo.getInstance().getDisplayName();
+      const productName = osparc.store.StaticInfo.getDisplayName();
       const manuals = osparc.store.Support.getManuals();
       const manualLink = (manuals && manuals.length) ? manuals[0].url : "";
       let msg = "";

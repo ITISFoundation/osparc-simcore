@@ -46,10 +46,8 @@ qx.Class.define("osparc.ui.form.renderer.SingleWithWidget", {
 
       for (let i = 0; i < items.length; i++) {
         if (i in this.__widgets) {
-          const image = new qx.ui.basic.Image(this.__widgets[i]).set({
-            alignY: "middle",
-          });
-          this._add(image, {
+          const widget = this.__widgets[i];
+          this._add(widget, {
             row,
             column: 2,
           });

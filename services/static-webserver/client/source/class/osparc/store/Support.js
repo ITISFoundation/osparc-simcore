@@ -208,7 +208,7 @@ qx.Class.define("osparc.store.Support", {
       osparc.utils.Utils.setIdToWidget(createAccountWindow, "createAccountWindow");
       const vendor = osparc.store.VendorInfo.getInstance().getVendor();
       if ("invitation_url" in vendor) {
-        const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+        const displayName = osparc.store.StaticInfo.getDisplayName();
         let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
         message += "<br>";
         message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";

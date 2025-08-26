@@ -16,10 +16,9 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.store.StaticInfo", {
-  extend: qx.core.Object,
-  type: "singleton",
+  type: "static",
 
-  members: {
+  statics: {
     getValue: function(key) {
       const statics = osparc.store.Store.getInstance().get("statics");
       if (key in statics) {

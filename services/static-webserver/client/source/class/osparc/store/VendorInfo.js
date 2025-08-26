@@ -21,7 +21,7 @@ qx.Class.define("osparc.store.VendorInfo", {
 
   members: {
     __getFromStaticInfo: function(key, defaultValue) {
-      const staticValue = osparc.store.StaticInfo.getInstance().getValue(key);
+      const staticValue = osparc.store.StaticInfo.getValue(key);
       if (staticValue) {
         return staticValue;
       }
