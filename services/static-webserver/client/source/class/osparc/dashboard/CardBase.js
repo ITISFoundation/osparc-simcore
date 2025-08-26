@@ -226,11 +226,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneGroupIds = groupsStore.getEveryoneGroups();
+      const everyoneGroups = groupsStore.getEveryoneGroups();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
-      const groups = everyoneGroupIds.slice();
+      const groups = everyoneGroups.slice();
       groups.push(...Object.values(organizations));
       const sharedGrps = [];
       groups.forEach(group => {
@@ -268,7 +268,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
               break;
             }
             let sharedGrpLabel = sharedGrps[i].getLabel();
-            if (everyoneGroupIds.includes(sharedGrps[i])) {
+            if (everyoneGroups.includes(sharedGrps[i])) {
               sharedGrpLabel = "Public";
             }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
