@@ -10,8 +10,8 @@ from servicelib.aiohttp.requests_validation import parse_request_query_parameter
 from ....dynamic_scheduler import api as dynamic_scheduler_service
 from ....products import products_web
 from ....utils_aiohttp import create_redirect_to_page_response, get_api_base_url
+from ... import _service
 from ..._catalog import ValidService, validate_requested_service
-from ..._core import validate_requested_file, validate_requested_viewer
 from ..._errors import (
     InvalidRedirectionParamsError,
 )
@@ -95,7 +95,7 @@ async def get_redirection_to_viewer(request: web.Request):
         file_params = service_params = query_params
 
         # NOTE: Cannot check file_size in from HEAD in a AWS download link so file_size is just infomative
-        viewer: ViewerInfo = await validate_requested_viewer(
+        viewer: ViewerInfo = await _service.validate_requested_viewer(
             request.app,
             file_type=file_params.file_type,
             file_size=file_params.file_size,
@@ -164,7 +164,7 @@ async def get_redirection_to_viewer(request: web.Request):
     elif isinstance(query_params, FileQueryParams):
         file_params_ = query_params
 
-        validate_requested_file(
+        _service.validate_requested_file(
             app=request.app,
             file_type=file_params_.file_type,
             file_size=file_params_.file_size,

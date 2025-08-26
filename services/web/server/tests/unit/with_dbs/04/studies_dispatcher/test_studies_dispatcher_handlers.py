@@ -37,7 +37,7 @@ from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 from simcore_service_webserver.studies_dispatcher._controller.rest.nih_schemas import (
     ServiceGet,
 )
-from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
+from simcore_service_webserver.studies_dispatcher._models import ViewerInfo
 from sqlalchemy.sql import text
 from yarl import URL
 
