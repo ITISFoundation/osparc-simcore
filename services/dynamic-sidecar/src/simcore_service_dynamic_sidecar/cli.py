@@ -76,7 +76,12 @@ def state_save():
             settings: ApplicationSettings = app.state.settings
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
-            await task_save_state(TaskProgress.create(), settings, mounted_volumes, app)
+            await task_save_state(
+                TaskProgress.create(),
+                app=app,
+                settings=settings,
+                mounted_volumes=mounted_volumes,
+            )
 
     asyncio.run(_async_save_state())
     _print_highlight("state save finished successfully")
@@ -89,7 +94,9 @@ def outputs_push():
     async def _async_outputs_push() -> None:
         async with _initialized_app() as app:
             outputs_manager: OutputsManager = app.state.outputs_manager
-            await task_ports_outputs_push(TaskProgress.create(), outputs_manager, app)
+            await task_ports_outputs_push(
+                TaskProgress.create(), app=app, outputs_manager=outputs_manager
+            )
 
     asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")
