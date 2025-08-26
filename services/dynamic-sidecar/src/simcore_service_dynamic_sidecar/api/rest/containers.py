@@ -9,6 +9,7 @@ from common_library.json_serialization import json_loads
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Path as PathParam
 from fastapi import Query, Request, status
+from models_library.api_schemas_directorv2.dynamic_services import ContainersComposeSpec
 from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfo,
     ActivityInfoOrNone,
@@ -25,7 +26,6 @@ from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from ...core.docker_utils import docker_client
 from ...core.settings import ApplicationSettings
 from ...core.validation import parse_compose_spec
-from ...models.schemas.containers import ContainersComposeSpec
 from ...models.shared_store import SharedStore
 from ...services import containers
 from ._dependencies import get_container_restart_lock, get_settings, get_shared_store

@@ -107,5 +107,9 @@ class GetProjectInactivityResponse(BaseModel):
     model_config = ConfigDict(json_schema_extra={"example": {"is_inactive": "false"}})
 
 
+class ContainersComposeSpec(BaseModel):
+    docker_compose_yaml: str
+
+
 class ContainersCreate(BaseModel):
     metrics_params: CreateServiceMetricsAdditionalParams

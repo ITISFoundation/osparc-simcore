@@ -21,7 +21,10 @@ from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from httpx import ASGITransport, AsyncClient
-from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
+from models_library.api_schemas_directorv2.dynamic_services import (
+    ContainersComposeSpec,
+    ContainersCreate,
+)
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.api_schemas_long_running_tasks.base import (
     ProgressMessage,
@@ -41,9 +44,6 @@ from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.api.rest import containers_long_running_tasks
 from simcore_service_dynamic_sidecar.core.validation import InvalidComposeSpecError
-from simcore_service_dynamic_sidecar.models.schemas.containers import (
-    ContainersComposeSpec,
-)
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.inputs import enable_inputs_pulling
 from simcore_service_dynamic_sidecar.modules.outputs._context import OutputsContext

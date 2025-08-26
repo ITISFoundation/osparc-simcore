@@ -1,10 +1,10 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.api_schemas_directorv2.dynamic_services import ContainersComposeSpec
 
 from ..core.settings import ApplicationSettings
 from ..core.validation import ComposeSpecValidation, get_and_validate_compose_spec
-from ..models.schemas.containers import ContainersComposeSpec
 from ..models.shared_store import SharedStore
 from ..modules.mounted_fs import MountedVolumes
 

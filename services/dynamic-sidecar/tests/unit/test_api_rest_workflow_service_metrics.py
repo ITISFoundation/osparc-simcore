@@ -19,7 +19,10 @@ from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
-from models_library.api_schemas_directorv2.dynamic_services import ContainersCreate
+from models_library.api_schemas_directorv2.dynamic_services import (
+    ContainersComposeSpec,
+    ContainersCreate,
+)
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
@@ -42,9 +45,6 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.docker_utils import get_container_states
-from simcore_service_dynamic_sidecar.models.schemas.containers import (
-    ContainersComposeSpec,
-)
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from tenacity import AsyncRetrying, TryAgain
 from tenacity.stop import stop_after_delay
