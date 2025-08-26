@@ -331,11 +331,6 @@ def _create_product_and_user_data(
 
     # Extract UI information from product.vendor.ui (optional)
     ui_data = ProductUIData(
-        project_alias=(
-            product.vendor.get("ui", {}).get("project_alias") or "study"
-            if product.vendor
-            else "study"
-        ),
         logo_url=(
             product.vendor.get("ui", {}).get("logo_url") if product.vendor else None
         ),

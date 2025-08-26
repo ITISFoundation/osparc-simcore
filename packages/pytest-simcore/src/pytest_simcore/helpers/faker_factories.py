@@ -294,7 +294,6 @@ def random_product(
             ui=VendorUI(
                 logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
                 strong_color=fake.color(),
-                project_alias=fake.random_element(elements=["project", "study"]),
             ),
         ),
         "registration_email_template": registration_email_template,
