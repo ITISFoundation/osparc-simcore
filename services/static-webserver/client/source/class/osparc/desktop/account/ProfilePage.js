@@ -95,13 +95,13 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
         const visibleIcon = "@FontAwesome5Solid/eye/12";
         const hiddenIcon = "@FontAwesome5Solid/eye-slash/12";
-        const icons = {
+        const widgets = {
           0: this.__userPrivacyModel.getHideUsername() ? hiddenIcon : visibleIcon,
           1: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
           2: this.__userPrivacyModel.getHideFullname() ? hiddenIcon : visibleIcon,
           3: this.__userPrivacyModel.getHideEmail() ? hiddenIcon : visibleIcon,
         };
-        this.__userProfileRenderer.setIcons(icons);
+        this.__userProfileRenderer.setWidgets(widgets);
       }
       this.__updatePrivacyBtn.setEnabled(false);
     },
@@ -143,8 +143,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
         profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
       }
-      const singleWithIcon = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithIcon(profileForm);
-      box.add(singleWithIcon);
+      const singleWithWidget = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithWidget(profileForm);
+      box.add(singleWithWidget);
 
       const expirationLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
         paddingLeft: 16,

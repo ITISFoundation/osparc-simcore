@@ -15,24 +15,24 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.ui.form.renderer.SingleWithIcon", {
+qx.Class.define("osparc.ui.form.renderer.SingleWithWidget", {
   extend: qx.ui.form.renderer.Single,
 
-  construct: function(form, icons) {
-    if (icons) {
-      this.__icons = icons;
+  construct: function(form, widgets) {
+    if (widgets) {
+      this.__widgets = widgets;
     } else {
-      this.__icons = {};
+      this.__widgets = {};
     }
 
     this.base(arguments, form);
   },
 
   members: {
-    __icons: null,
+    __widgets: null,
 
-    setIcons: function(icons) {
-      this.__icons = icons;
+    setWidgets: function(widgets) {
+      this.__widgets = widgets;
 
       this._onFormChange();
     },
@@ -45,8 +45,8 @@ qx.Class.define("osparc.ui.form.renderer.SingleWithIcon", {
       let row = title === null ? 0 : 1;
 
       for (let i = 0; i < items.length; i++) {
-        if (i in this.__icons) {
-          const image = new qx.ui.basic.Image(this.__icons[i]).set({
+        if (i in this.__widgets) {
+          const image = new qx.ui.basic.Image(this.__widgets[i]).set({
             alignY: "middle",
           });
           this._add(image, {
