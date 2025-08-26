@@ -24,6 +24,12 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       check: "String",
       init: "foo@mymail.com",
       nullable: false
+    },
+
+    updatingNumber: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
     }
   },
 
@@ -136,7 +142,10 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       if (isValid) {
         itiInput.setEnabled(false);
         verifyPhoneNumberBtn.setFetching(true);
-        osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), itiInput.getNumber())
+        const promise = this.isUpdatingNumber() ?
+          osparc.auth.Manager.getInstance().updatePhoneNumber(itiInput.getNumber()) :
+          osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), itiInput.getNumber());
+        promise
           .then(resp => {
             osparc.FlashMessenger.logAs(resp.message, "INFO");
             verifyPhoneNumberBtn.setFetching(false);
@@ -183,7 +192,11 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
 
       const manager = osparc.auth.Manager.getInstance();
       const itiInput = this.getChildControl("intl-tel-input");
-      manager.validateCodeRegister(this.getUserEmail(), itiInput.getNumber(), validateCodeField.getValue(), loginFun, failFun, this);
+      if (this.isUpdatingNumber()) {
+        manager.validateCodeUpdatePhone(validateCodeField.getValue(), loginFun, failFun, this);
+      } else {
+        manager.validateCodeRegister(this.getUserEmail(), itiInput.getNumber(), validateCodeField.getValue(), loginFun, failFun, this);
+      }
     },
 
     __requestCodeViaEmail: function() {

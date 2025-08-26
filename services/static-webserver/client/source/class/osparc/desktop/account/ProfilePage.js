@@ -598,7 +598,8 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
 
     __openPhoneNumberUpdater: function() {
       const verifyPhoneNumberView = new osparc.auth.ui.VerifyPhoneNumberView().set({
-        userEmail: osparc.auth.Data.getInstance().getEmail()
+        userEmail: osparc.auth.Data.getInstance().getEmail(),
+        updatingNumber: true,
       });
       verifyPhoneNumberView.getChildControl("title").exclude();
       verifyPhoneNumberView.getChildControl("send-via-email-button").exclude();
