@@ -39,4 +39,11 @@ class EC2TooManyInstancesError(EC2AccessError):
 
 
 class EC2InsufficientCapacityError(EC2AccessError):
-    msg_template: str = "Insufficient capacity in {subnet_id} for {instance_type}"
+    msg_template: str = "Insufficient capacity in {subnet_ids} for {instance_type}"
+
+
+class EC2SubnetsNotEnoughIPsError(EC2AccessError):
+    msg_template: str = (
+        "Not enough free IPs in subnet(s) {subnet_ids} for {num_instances} instances"
+        ". Only {available_ips} IPs available."
+    )

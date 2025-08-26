@@ -13,12 +13,17 @@ from servicelib.logging_utils import log_context
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
-from types_aiobotocore_ec2.type_defs import FilterTypeDef, TagTypeDef
+from types_aiobotocore_ec2.type_defs import (
+    FilterTypeDef,
+    SubnetTypeDef,
+    TagTypeDef,
+)
 
 from ._error_handler import ec2_exception_handler
 from ._errors import (
     EC2InstanceNotFoundError,
     EC2InsufficientCapacityError,
+    EC2SubnetsNotEnoughIPsError,
 )
 from ._models import (
     AWSTagKey,
@@ -135,7 +140,10 @@ class SimcoreEC2API:
             max_total_number_of_instances -- The total maximum allowed number of instances for this given instance_config
 
         Raises:
-            EC2TooManyInstancesError:
+            EC2TooManyInstancesError: max_total_number_of_instances would be exceeded
+            EC2SubnetsNotEnoughIPsError: not enough IPs in the subnets
+            EC2InsufficientCapacityError: not enough capacity in the subnets
+
 
         Returns:
             The created instance data infos
@@ -144,7 +152,8 @@ class SimcoreEC2API:
         with log_context(
             _logger,
             logging.INFO,
-            msg=f"launch {number_of_instances} AWS instance(s) {instance_config.type.name} with {instance_config.tags=}",
+            msg=f"launch {number_of_instances} AWS instance(s) {instance_config.type.name}"
+            f" with {instance_config.tags=} in {instance_config.subnet_ids=}",
         ):
             # first check the max amount is not already reached
             await check_max_number_of_instances_not_exceeded(
@@ -154,25 +163,31 @@ class SimcoreEC2API:
                 max_total_number_of_instances=max_total_number_of_instances,
             )
 
-            subnet_descriptions = await self.client.describe_subnets(
+            # NOTE: checking subnets capacity is not strictly needed as AWS will do it for us
+            # but it gives us a chance to give early feedback to the user
+            # and avoid trying to launch instances in subnets that are already full
+            # and also allows to circumvent a moto bug that does not raise
+            # InsufficientInstanceCapacity when a subnet is full
+            subnets = await self.client.describe_subnets(
                 SubnetIds=instance_config.subnet_ids
             )
-            # check available IPs in subnets to give early feedback
-            subnet_id_to_available_ips: dict[str, int] = {}
-            for subnet in subnet_descriptions["Subnets"]:
-                if "SubnetId" in subnet and "AvailableIpAddressCount" in subnet:
-                    subnet_id_to_available_ips[subnet["SubnetId"]] = subnet[
-                        "AvailableIpAddressCount"
-                    ]
+            assert "Subnets" in subnets  # nosec
+            subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
+                subnet["SubnetId"]: subnet for subnet in subnets["Subnets"]
+            }
+            # preserve the order of instance_config.subnet_ids
+
+            subnet_id_to_available_ips: dict[str, int] = {
+                subnet_id: subnet_id_to_subnet_map[subnet_id]["AvailableIpAddressCount"]  # type: ignore
+                for subnet_id in instance_config.subnet_ids
+            }
+
             total_available_ips = sum(subnet_id_to_available_ips.values())
             if total_available_ips < min_number_of_instances:
-                raise EC2InsufficientCapacityError(
-                    subnet_id=", ".join(instance_config.subnet_ids),
+                raise EC2SubnetsNotEnoughIPsError(
+                    subnet_ids=instance_config.subnet_ids,
                     instance_type=instance_config.type.name,
-                    details=(
-                        f"Not enough available IPs in subnets {subnet_id_to_available_ips}. "
-                        f"Total available IPs={total_available_ips} < min required instances={min_number_of_instances}"
-                    ),
+                    available_ips=total_available_ips,
                 )
             # now let's not try to run instances in subnets that have not enough IPs
             subnet_ids_with_capacity = [
@@ -187,7 +202,6 @@ class SimcoreEC2API:
             ]
 
             # Try each subnet in order until one succeeds
-            last_error = None
             for subnet_id in subnet_ids_with_capacity:
                 try:
                     _logger.debug(
@@ -227,26 +241,12 @@ class SimcoreEC2API:
                     # If we get here, the launch succeeded
                     break
                 except botocore.exceptions.ClientError as exc:
-                    # AI says run_instances may raise the following errors:
-                    # InsufficientInstanceCapacity, when a subnet does not have enough capacity
-                    # InstanceLimitExceeded, when the AWS account has reached its limit of instances for this region
-                    # InvalidAMIID.NotFound, when the AMI ID does not exist
-                    # InvalidSubnetID.NotFound, when the subnet does not exist
-                    # InvalidGroupId.NotFound, when a security group does not exist
-                    # InvalidKeyPair.NotFound, when the key pair does not exist
-                    # UnauthorizedOperation, when the credentials do not have permissions to launch instances
-                    # InvalidInstanceType, when the instance type is not valid
-
                     error_code = exc.response.get("Error", {}).get("Code")
                     if error_code == "InsufficientInstanceCapacity":
                         _logger.warning(
                             "Insufficient capacity in subnet %s for instance type %s, trying next subnet",
                             subnet_id,
                             instance_config.type.name,
-                        )
-                        last_error = EC2InsufficientCapacityError(
-                            subnet_id=subnet_id,
-                            instance_type=instance_config.type.name,
                         )
                         continue
                     # For any other ClientError, re-raise to let the decorator handle it
@@ -258,10 +258,9 @@ class SimcoreEC2API:
                     "All subnets failed with insufficient capacity for instance type %s",
                     instance_config.type.name,
                 )
-                if last_error:
-                    raise last_error
+
                 raise EC2InsufficientCapacityError(
-                    subnet_id="all_configured_subnets",
+                    subnet_ids=instance_config.subnet_ids,
                     instance_type=instance_config.type.name,
                 )
             instance_ids = [i["InstanceId"] for i in instances["Instances"]]

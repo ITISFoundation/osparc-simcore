@@ -828,7 +828,7 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
     # Verify the error contains the expected information
     assert hasattr(exc_info.value, "instance_type")
     assert exc_info.value.instance_type == fake_ec2_instance_type.name  # type: ignore
-    assert exc_info.value.subnet_id == aws_subnet_id  # type: ignore
+    assert exc_info.value.subnet_ids == [aws_subnet_id]  # type: ignore
 
     # Verify still only 2 instances exist (no new ones were created)
     await _assert_instances_in_ec2(
