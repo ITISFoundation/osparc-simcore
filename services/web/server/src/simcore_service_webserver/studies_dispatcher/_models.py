@@ -1,6 +1,5 @@
 from typing import Annotated
 
-from aiopg.sa.result import RowProxy
 from models_library.services import ServiceKey, ServiceVersion
 from pydantic import BaseModel, Field, HttpUrl, PositiveInt, TypeAdapter
 
@@ -44,17 +43,6 @@ class ViewerInfo(ServiceInfo):
         ...,
         description="Name of the connection port, since it is service-dependent",
     )
-
-    @classmethod
-    def create_from_db(cls, row: RowProxy) -> "ViewerInfo":
-        return cls(
-            key=row["service_key"],
-            version=row["service_version"],
-            filetype=row["filetype"],
-            label=row["service_display_name"] or row["service_key"].split("/")[-1],
-            input_port_key=row["service_input_port"],
-            is_guest_allowed=row["is_guest_allowed"],
-        )
 
 
 class ServiceParams(BaseModel):
