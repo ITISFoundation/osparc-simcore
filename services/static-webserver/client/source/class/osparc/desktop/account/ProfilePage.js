@@ -54,6 +54,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __userPrivacyModel: null,
     __updatePrivacyBtn: null,
     __userProfileForm: null,
+    __sms2FAItem: null,
 
     __fetchProfile: function() {
       osparc.data.Resources.getOne("profile", {}, null, false)
