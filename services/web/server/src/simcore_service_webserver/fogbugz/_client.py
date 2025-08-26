@@ -128,7 +128,7 @@ class FogbugzRestClient:
             raise ValueError(msg)
 
         # Get the status from the found case
-        status = target_case.get("sStatus", "")
+        status: str = target_case.get("sStatus", "")
         if not status:
             msg = f"Status not found for case {case_id}"
             raise ValueError(msg)
