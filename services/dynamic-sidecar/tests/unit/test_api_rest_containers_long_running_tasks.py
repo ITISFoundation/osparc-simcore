@@ -199,7 +199,7 @@ async def app(app: FastAPI) -> AsyncIterable[FastAPI]:
     # this is only required for testing, in reality
     # this will be in a different process
     client_setup(app)
-    async with LifespanManager(app):
+    async with LifespanManager(app, startup_timeout=30, shutdown_timeout=30):
         _print_routes(app)
         yield app
 
