@@ -21,7 +21,9 @@ from pytest_simcore.helpers.playwright import (
     MINUTE,
     SECOND,
     RobustWebSocket,
+    SocketIOWaitNodeForOutputs,
     app_mode_trigger_next_app,
+    decode_socketio_42_message,
     expected_service_running,
     wait_for_service_running,
 )
@@ -165,7 +167,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
         # NOTE: Sometimes this iframe flicks and shows a white page. This wait will avoid it
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
 
-        with log_context(logging.INFO, "Configure selector"):
+        with log_context(logging.INFO, "Configure selector", logger=ctx.logger):
             assert (
                 page.get_by_test_id("settingsForm_" + node_ids[0]).count() == 0
             ), "service settings should not be visible"
@@ -185,22 +187,20 @@ def test_classic_ti_plan(  # noqa: PLR0915
                 electrode_id = "Electrode_" + selection[1]
                 electrode_selector_iframe.get_by_test_id(group_id).click()
                 electrode_selector_iframe.get_by_test_id(electrode_id).click()
-        # configuration done, push and wait for output
-        with (
-            log_context(logging.INFO, "Check outputs"),
-            page.expect_request(
-                lambda r: bool(
-                    re.search(_GET_NODE_OUTPUTS_REQUEST_PATTERN, r.url)
-                    and r.method.upper() == "GET"
-                )
-            ) as request_info,
-        ):
-            electrode_selector_iframe.get_by_test_id("FinishSetUp").click()
-            response = request_info.value.response()
-            assert response
-            assert response.ok, f"{response.json()}"
-            response_body = response.json()
-            ctx.logger.info("the following output was generated: %s", response_body)
+        # configuration done, push and wait for the 1 output
+        with log_context(logging.INFO, "Check outputs", logger=ctx.logger):
+            waiter = SocketIOWaitNodeForOutputs(
+                ctx.logger, expected_number_of_outputs=1, node_id=node_ids[0]
+            )
+            with log_in_and_out.expect_event(
+                "framereceived", waiter
+            ) as frame_received_event:
+                electrode_selector_iframe.get_by_test_id("FinishSetUp").click()
+            socket_io_message = decode_socketio_42_message(frame_received_event.value)
+            ctx.logger.info(
+                "the following output was generated: %s",
+                socket_io_message.obj["data"]["outputs"]["output_1"]["path"],
+            )
 
     with log_context(
         logging.INFO, "Classic TI step (2/%s)", expected_number_of_steps
