@@ -147,7 +147,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           osparc.auth.Manager.getInstance().verifyPhoneNumber(this.getUserEmail(), itiInput.getNumber());
         promise
           .then(resp => {
-            osparc.FlashMessenger.logAs(resp.message, "INFO");
+            const msg = (resp && resp.message) ? resp.message : "A verification code has been sent via SMS";
+            osparc.FlashMessenger.logAs(msg, "INFO");
             verifyPhoneNumberBtn.setFetching(false);
             // enable, focus and listen to Enter
             const validateCodeField = this.getChildControl("validate-code-field");
