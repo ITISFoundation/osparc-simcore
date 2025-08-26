@@ -147,7 +147,7 @@ async def _reset_on_error(
 
 
 async def task_pull_user_servcices_docker_images(
-    progress: TaskProgress, shared_store: SharedStore, app: FastAPI
+    progress: TaskProgress, app: FastAPI, shared_store: SharedStore
 ) -> None:
     assert shared_store.compose_spec  # nosec
 
@@ -160,11 +160,11 @@ async def task_pull_user_servcices_docker_images(
 
 async def task_create_service_containers(
     progress: TaskProgress,
-    settings: ApplicationSettings,
-    containers_create: ContainersCreate,
-    shared_store: SharedStore,
     app: FastAPI,
+    settings: ApplicationSettings,
+    shared_store: SharedStore,
     application_health: ApplicationHealth,
+    containers_create: ContainersCreate,
 ) -> list[str]:
     await progress.update(message="validating service spec", percent=0)
 
@@ -235,8 +235,8 @@ async def task_create_service_containers(
 async def task_runs_docker_compose_down(
     progress: TaskProgress,
     app: FastAPI,
-    shared_store: SharedStore,
     settings: ApplicationSettings,
+    shared_store: SharedStore,
     mounted_volumes: MountedVolumes,
 ) -> None:
     if shared_store.compose_spec is None:
@@ -367,9 +367,9 @@ async def _restore_state_folder(
 
 async def task_restore_state(
     progress: TaskProgress,
+    app: FastAPI,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
-    app: FastAPI,
 ) -> int:
     # NOTE: the legacy data format was a zip file
     # this method will maintain retro compatibility.
@@ -443,9 +443,9 @@ async def _save_state_folder(
 
 async def task_save_state(
     progress: TaskProgress,
+    app: FastAPI,
     settings: ApplicationSettings,
     mounted_volumes: MountedVolumes,
-    app: FastAPI,
 ) -> int:
     """
     Saves the states of the service.
@@ -485,10 +485,10 @@ async def task_save_state(
 
 async def task_ports_inputs_pull(
     progress: TaskProgress,
-    port_keys: list[str] | None,
-    mounted_volumes: MountedVolumes,
     app: FastAPI,
     settings: ApplicationSettings,
+    mounted_volumes: MountedVolumes,
+    port_keys: list[str] | None,
     *,
     inputs_pulling_enabled: bool,
 ) -> int:
@@ -538,9 +538,9 @@ async def task_ports_inputs_pull(
 
 async def task_ports_outputs_pull(
     progress: TaskProgress,
-    port_keys: list[str] | None,
-    mounted_volumes: MountedVolumes,
     app: FastAPI,
+    mounted_volumes: MountedVolumes,
+    port_keys: list[str] | None,
 ) -> int:
     await progress.update(message="starting outputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
@@ -574,7 +574,7 @@ async def task_ports_outputs_pull(
 
 
 async def task_ports_outputs_push(
-    progress: TaskProgress, outputs_manager: OutputsManager, app: FastAPI
+    progress: TaskProgress, app: FastAPI, outputs_manager: OutputsManager
 ) -> None:
     await progress.update(message="starting outputs pushing", percent=0.0)
     await post_sidecar_log_message(
@@ -643,38 +643,57 @@ def setup_long_running_tasks(app: FastAPI) -> None:
 
     async def on_startup() -> None:
         shared_store: SharedStore = app.state.shared_store
+        settings: ApplicationSettings = app.state.settings
+        application_health: ApplicationHealth = app.state.application_health
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
         outputs_manager: OutputsManager = app.state.outputs_manager
 
-        context_app_store: dict[str, Any] = {
-            "app": app,
-            "shared_store": shared_store,
-        }
-        context_app_store_volumes: dict[str, Any] = {
-            "app": app,
-            "shared_store": shared_store,
-            "mounted_volumes": mounted_volumes,
-        }
-        context_app_volumes: dict[str, Any] = {
-            "app": app,
-            "mounted_volumes": mounted_volumes,
-        }
-        context_app_outputs: dict[str, Any] = {
-            "app": app,
-            "outputs_manager": outputs_manager,
-        }
-
         task_context.update(
             {
-                task_pull_user_servcices_docker_images: context_app_store,
-                task_create_service_containers: context_app_store,
-                task_runs_docker_compose_down: context_app_store_volumes,
-                task_restore_state: context_app_volumes,
-                task_save_state: context_app_volumes,
-                task_ports_inputs_pull: context_app_volumes,
-                task_ports_outputs_pull: context_app_volumes,
-                task_ports_outputs_push: context_app_outputs,
-                task_containers_restart: context_app_store,
+                task_pull_user_servcices_docker_images: dict(
+                    shared_store=shared_store,
+                    app=app,
+                ),
+                task_create_service_containers: dict(
+                    app=app,
+                    settings=settings,
+                    shared_store=shared_store,
+                    application_health=application_health,
+                ),
+                task_runs_docker_compose_down: dict(
+                    app=app,
+                    settings=settings,
+                    shared_store=shared_store,
+                    mounted_volumes=mounted_volumes,
+                ),
+                task_restore_state: dict(
+                    app=app,
+                    settings=settings,
+                    mounted_volumes=mounted_volumes,
+                ),
+                task_save_state: dict(
+                    app=app,
+                    settings=settings,
+                    mounted_volumes=mounted_volumes,
+                ),
+                task_ports_inputs_pull: dict(
+                    app=app,
+                    settings=settings,
+                    mounted_volumes=mounted_volumes,
+                ),
+                task_ports_outputs_pull: dict(
+                    app=app,
+                    mounted_volumes=mounted_volumes,
+                ),
+                task_ports_outputs_push: dict(
+                    app=app,
+                    outputs_manager=outputs_manager,
+                ),
+                task_containers_restart: dict(
+                    app=app,
+                    settings=settings,
+                    shared_store=shared_store,
+                ),
             }
         )
 

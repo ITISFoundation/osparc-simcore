@@ -7,16 +7,10 @@ from servicelib.fastapi.long_running_tasks.server import get_long_running_manage
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.long_running_tasks.models import TaskId
 
-from ...core.settings import ApplicationSettings
-from ...models.schemas.application_health import ApplicationHealth
 from ...models.schemas.containers import ContainersCreate
 from ...modules.inputs import InputsState
 from ...services import containers_long_running_tasks
-from ._dependencies import (
-    get_application_health,
-    get_inputs_state,
-    get_settings,
-)
+from ._dependencies import get_inputs_state
 
 router = APIRouter()
 
@@ -62,16 +56,12 @@ async def create_service_containers_task(  # pylint: disable=too-many-arguments
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
-    application_health: Annotated[ApplicationHealth, Depends(get_application_health)],
 ) -> TaskId:
     _ = request
     return await containers_long_running_tasks.create_service_containers_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
         containers_create,
-        settings,
-        application_health,
     )
 
 
@@ -87,11 +77,10 @@ async def runs_docker_compose_down_task(
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
     _ = request
     return await containers_long_running_tasks.runs_docker_compose_down_task(
-        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
 
@@ -107,11 +96,10 @@ async def state_restore_task(
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
     _ = request
     return await containers_long_running_tasks.state_restore_task(
-        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
 
@@ -127,11 +115,10 @@ async def state_save_task(
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
     _ = request
     return await containers_long_running_tasks.state_save_task(
-        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
 
 
@@ -147,7 +134,6 @@ async def ports_inputs_pull_task(
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
     inputs_state: Annotated[InputsState, Depends(get_inputs_state)],
     port_keys: list[str] | None = None,
 ) -> TaskId:
@@ -155,7 +141,6 @@ async def ports_inputs_pull_task(
     return await containers_long_running_tasks.ports_inputs_pull_task(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
-        settings,
         inputs_state,
         port_keys,
     )
@@ -212,9 +197,8 @@ async def containers_restart_task(
     long_running_manager: Annotated[
         FastAPILongRunningManager, Depends(get_long_running_manager)
     ],
-    settings: Annotated[ApplicationSettings, Depends(get_settings)],
 ) -> TaskId:
     _ = request
     return await containers_long_running_tasks.containers_restart_task(
-        long_running_manager.rpc_client, long_running_manager.lrt_namespace, settings
+        long_running_manager.rpc_client, long_running_manager.lrt_namespace
     )
