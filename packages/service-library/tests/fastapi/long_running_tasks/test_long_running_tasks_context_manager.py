@@ -12,14 +12,21 @@ from httpx import AsyncClient
 from pydantic import AnyHttpUrl, PositiveFloat, TypeAdapter
 from servicelib.fastapi.long_running_tasks._context_manager import _ProgressManager
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import (
+    BaseClient,
+    HttpClient,
+    RPCClient,
+    periodic_task_result,
+)
 from servicelib.fastapi.long_running_tasks.client import setup as setup_client
 from servicelib.fastapi.long_running_tasks.server import get_long_running_manager
 from servicelib.fastapi.long_running_tasks.server import setup as setup_server
 from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks.errors import (
+    GenericClientError,
     TaskClientTimeoutError,
     TaskExceptionError,
+    TaskNotFoundError,
 )
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
@@ -41,10 +48,12 @@ TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 
 
 async def _assert_task_removed(
-    async_client: AsyncClient, task_id: TaskId, router_prefix: str
+    base_client: BaseClient, task_id: TaskId, router_prefix: str
 ) -> None:
-    result = await async_client.get(f"{router_prefix}/tasks/{task_id}")
-    assert result.status_code == status.HTTP_404_NOT_FOUND
+    with pytest.raises(
+        (GenericClientError, TaskNotFoundError), match=f"No task with {task_id} found"
+    ):
+        await base_client.get_task_status(task_id)
 
 
 async def a_test_task(progress: TaskProgress) -> int:
@@ -130,39 +139,66 @@ def mock_task_id() -> TaskId:
     return TypeAdapter(TaskId).validate_python("fake_task_id")
 
 
-async def test_task_result(
-    bg_task_app: FastAPI, async_client: AsyncClient, router_prefix: str
-) -> None:
-    result = await async_client.get("/api/success")
-    assert result.status_code == status.HTTP_200_OK, result.text
-    task_id = result.json()
+@pytest.fixture(params=[RPCClient.__name__, HttpClient.__name__])
+def base_client(
+    request: pytest.FixtureRequest, bg_task_app: FastAPI, async_client: AsyncClient
+) -> BaseClient:
+    match request.param:
+        case RPCClient.__name__:
+            long_running_manager: FastAPILongRunningManager = (
+                bg_task_app.state.long_running_manager
+            )
+            return RPCClient(
+                long_running_manager.rpc_client, long_running_manager.lrt_namespace
+            )
+        case HttpClient.__name__:
+            url = TypeAdapter(AnyHttpUrl).validate_python(
+                "http://backgroud.testserver.io/"
+            )
+            return HttpClient(
+                app=bg_task_app, async_client=async_client, base_url=f"{url}"
+            )
+        case _:
+            msg = f"Client {request.param} not implemented"
+            raise NotImplementedError(msg)
 
-    url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
-    client = Client(app=bg_task_app, async_client=async_client, base_url=url)
+
+async def _create_and_get_taskid(async_client: AsyncClient, *, endpoint: str) -> TaskId:
+    result = await async_client.get(f"/api/{endpoint}")
+    assert result.status_code == status.HTTP_200_OK, result.text
+    task_id: TaskId = result.json()
+    return task_id
+
+
+async def test_task_result(
+    async_client: AsyncClient,
+    base_client: BaseClient,
+    router_prefix: str,
+) -> None:
+    task_id = await _create_and_get_taskid(async_client, endpoint="success")
+
     async with periodic_task_result(
-        client,
+        base_client,
         task_id,
         task_timeout=10,
         status_poll_interval=TASK_SLEEP_INTERVAL / 3,
     ) as result:
         assert result == 42
 
-    await _assert_task_removed(async_client, task_id, router_prefix)
+    await _assert_task_removed(base_client, task_id, router_prefix)
 
 
 async def test_task_result_times_out(
-    bg_task_app: FastAPI, async_client: AsyncClient, router_prefix: str
+    async_client: AsyncClient,
+    base_client: BaseClient,
+    router_prefix: str,
 ) -> None:
-    result = await async_client.get("/api/success")
-    assert result.status_code == status.HTTP_200_OK, result.text
-    task_id = result.json()
+    task_id = await _create_and_get_taskid(async_client, endpoint="success")
 
-    url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
-    client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     timeout = TASK_SLEEP_INTERVAL / 10
     with pytest.raises(TaskClientTimeoutError) as exec_info:
         async with periodic_task_result(
-            client,
+            base_client,
             task_id,
             task_timeout=timeout,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
@@ -173,27 +209,26 @@ async def test_task_result_times_out(
         == f"Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
     )
 
-    await _assert_task_removed(async_client, task_id, router_prefix)
+    await _assert_task_removed(base_client, task_id, router_prefix)
 
 
 async def test_task_result_task_result_is_an_error(
-    bg_task_app: FastAPI, async_client: AsyncClient, router_prefix: str
+    bg_task_app: FastAPI,
+    async_client: AsyncClient,
+    base_client: BaseClient,
+    router_prefix: str,
 ) -> None:
-    result = await async_client.get("/api/failing")
-    assert result.status_code == status.HTTP_200_OK, result.text
-    task_id = result.json()
+    task_id = await _create_and_get_taskid(async_client, endpoint="failing")
 
-    url = TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io/")
-    client = Client(app=bg_task_app, async_client=async_client, base_url=url)
     with pytest.raises(TaskExceptionError, match="I am failing as requested"):
         async with periodic_task_result(
-            client,
+            base_client,
             task_id,
             task_timeout=10,
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
-    await _assert_task_removed(async_client, task_id, router_prefix)
+    await _assert_task_removed(base_client, task_id, router_prefix)
 
 
 @pytest.mark.parametrize("repeat", [1, 2, 10])

@@ -15,7 +15,7 @@ from ...long_running_tasks.models import (
     TaskId,
     TaskStatus,
 )
-from ._client import Client
+from ._client import BaseClient
 
 _logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class _ProgressManager:
 
 @asynccontextmanager
 async def periodic_task_result(
-    client: Client,
+    client: BaseClient,
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
@@ -132,7 +132,7 @@ async def periodic_task_result(
             create_troubleshootting_log_message(
                 user_error_msg=f"{task_id=} raised an exception",
                 error=e,
-                tip=f"Check the logs of the service responding to '{client.base_url}'",
+                tip=f"Check the logs of the service responding to '{client.external_reference}'",
             )
         )
         raise TaskExceptionError(task_id=task_id, exception=e, traceback="") from e
