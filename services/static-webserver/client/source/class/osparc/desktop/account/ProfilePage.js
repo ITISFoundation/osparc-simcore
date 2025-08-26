@@ -54,6 +54,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
     __userPrivacyModel: null,
     __updatePrivacyBtn: null,
     __userProfileForm: null,
+    __sms2FAItem: null,
 
     __fetchProfile: function() {
       osparc.data.Resources.getOne("profile", {}, null, false)
@@ -72,10 +73,15 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
           "firstName": data["first_name"] || "",
           "lastName": data["last_name"] || "",
           "email": data["login"],
+          "phone": data["phone"] || "-",
           "expirationDate": data["expirationDate"] || null,
         });
       }
       this.__updateProfileBtn.setEnabled(false);
+
+      if (this.__sms2FAItem) {
+        this.__sms2FAItem.setEnabled(Boolean(data["phone"]));
+      }
     },
 
     __setDataToPrivacy: function(privacyData) {
@@ -124,11 +130,19 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         readOnly: true
       });
 
+      const phoneNumber = new qx.ui.form.TextField().set({
+        placeholder: this.tr("Phone Number"),
+        readOnly: true
+      });
+
       const profileForm = this.__userProfileForm = new qx.ui.form.Form();
       profileForm.add(username, "Username", null, "username");
       profileForm.add(firstName, "First Name", null, "firstName");
       profileForm.add(lastName, "Last Name", null, "lastName");
       profileForm.add(email, "Email", null, "email");
+      if (osparc.store.StaticInfo.getInstance().is2FARequired()) {
+        profileForm.add(phoneNumber, "Phone Number", null, "phoneNumber");
+      }
       const singleWithIcon = this.__userProfileRenderer = new osparc.ui.form.renderer.SingleWithIcon(profileForm);
       box.add(singleWithIcon);
 
@@ -155,6 +169,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         "firstName": "",
         "lastName": "",
         "email": "",
+        "phone": "",
         "expirationDate": null,
       };
 
@@ -169,6 +184,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         }
       });
       controller.addTarget(lastName, "value", "lastName", true);
+      controller.addTarget(phoneNumber, "value", "phone", true);
       controller.addTarget(expirationDate, "value", "expirationDate", false, {
         converter: expirationDay => {
           if (expirationDay) {
@@ -404,6 +420,9 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         label: "Disabled"
       }].forEach(options => {
         const lItem = new qx.ui.form.ListItem(options.label, null, options.id);
+        if (options.id === "SMS") {
+          this.__sms2FAItem = lItem;
+        }
         twoFAPreferenceSB.add(lItem);
       });
       const value = preferencesSettings.getTwoFAPreference();

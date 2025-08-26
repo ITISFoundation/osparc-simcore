@@ -164,10 +164,13 @@ async def approve_user_account(request: web.Request) -> web.Response:
                 guest=approval_data.email,
                 trial_account_days=approval_data.invitation.trial_account_days,
                 extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
+                product=req_ctx.product_name,
             )
 
             invitation_result = await invitations_service.generate_invitation(
-                request.app, params=invitation_params
+                request.app,
+                params=invitation_params,
+                product_origin_url=request.url.origin(),
             )
 
             assert (  # nosec
