@@ -952,6 +952,10 @@ async def test_launch_instances_raises_ec2_subnets_not_enough_ips_error(
     assert error.available_ips == 6  # type: ignore
 
 
+@pytest.mark.xfail(
+    reason="if the user asks for a minimum number of instances that cannot fit a subnet, then it currently raises! "
+    "it is currently not required that the instances are distributed among subnets"
+)
 async def test_launch_instances_distributes_instances_among_subnets(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,

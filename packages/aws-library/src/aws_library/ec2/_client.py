@@ -189,6 +189,7 @@ class SimcoreEC2API:
                     instance_type=instance_config.type.name,
                     available_ips=total_available_ips,
                 )
+
             # now let's not try to run instances in subnets that have not enough IPs
             subnet_ids_with_capacity = [
                 subnet_id
