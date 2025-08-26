@@ -129,10 +129,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
         return;
       }
       const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneGroupIds = [
-        groupsStore.getEveryoneProductGroup().getGroupId(),
-        groupsStore.getEveryoneGroup().getGroupId(),
-      ];
+      const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
       const label = this.getChildControl("title");
       if (everyoneGroupIds.includes(this.getModel())) {
         label.setValue(this.tr("Public"));

@@ -434,16 +434,13 @@ qx.Class.define("osparc.share.Collaborators", {
       // reload list
       this.__collaboratorsModel.removeAll();
 
+      const usersStore = osparc.store.Users.getInstance();
       const groupsStore = osparc.store.Groups.getInstance();
-      const everyoneGIds = [
-        groupsStore.getEveryoneProductGroup().getGroupId(),
-        groupsStore.getEveryoneGroup().getGroupId()
-      ];
+      const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
+      const allGroups = groupsStore.getAllGroups();
+      const showOptions = this.__canIChangePermissions();
       const accessRights = this._serializedDataCopy["accessRights"];
       const collaboratorsList = [];
-      const showOptions = this.__canIChangePermissions();
-      const allGroups = groupsStore.getAllGroups();
-      const usersStore = osparc.store.Users.getInstance();
       for (let i=0; i<Object.keys(accessRights).length; i++) {
         const gid = parseInt(Object.keys(accessRights)[i]);
         let collab = null;
@@ -462,7 +459,7 @@ qx.Class.define("osparc.share.Collaborators", {
           };
           if (!("getUserId" in collab)) {
             // organization
-            if (everyoneGIds.includes(parseInt(gid))) {
+            if (everyoneGroupIds.includes(parseInt(gid))) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/globe/32";
             } else if (!collaborator["thumbnail"]) {
               collaborator["thumbnail"] = "@FontAwesome5Solid/users/26";
