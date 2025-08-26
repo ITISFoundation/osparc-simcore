@@ -57,7 +57,7 @@ qx.Class.define("osparc.dashboard.AppBrowser", {
             msg += "</br>";
             msg += this.tr("Please contact us:");
             msg += "</br>";
-            const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+            const supportEmail = osparc.store.VendorInfo.getSupportEmail();
             msg += supportEmail;
             osparc.FlashMessenger.getInstance().logAs(msg, "WARNING");
           }

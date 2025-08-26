@@ -176,7 +176,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
       expirationLayout.add(expirationDate);
       const infoLabel = this.tr("Please contact us via email:<br>");
       const infoExtension = new osparc.ui.hint.InfoHint(infoLabel);
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
       infoExtension.setHintText(infoLabel + supportEmail);
       expirationLayout.add(infoExtension);
       box.add(expirationLayout);

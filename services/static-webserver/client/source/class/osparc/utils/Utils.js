@@ -685,7 +685,7 @@ qx.Class.define("osparc.utils.Utils", {
       msg += "</br>";
       msg += qx.locale.Manager.tr("Please contact us via email:");
       msg += "</br>";
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
       msg += supportEmail;
       return msg;
     },
@@ -709,7 +709,7 @@ qx.Class.define("osparc.utils.Utils", {
       }
       msg += qx.locale.Manager.tr(", please send us an e-mail to create an account:");
       msg += "</br>";
-      const supportEmail = osparc.store.VendorInfo.getInstance().getSupportEmail();
+      const supportEmail = osparc.store.VendorInfo.getSupportEmail();
       const mailto = osparc.store.Support.mailToLink(supportEmail, "Request Account " + productName);
       msg += mailto;
       return msg;
