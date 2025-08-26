@@ -109,6 +109,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         const hiddenIcon = "@FontAwesome5Solid/eye-slash/12";
         const createImage = source => {
           return new qx.ui.basic.Image(source).set({
+            alignX: "center",
             alignY: "middle",
           });
         }
@@ -121,7 +122,7 @@ qx.Class.define("osparc.desktop.account.ProfilePage", {
         };
         if (osparc.store.StaticInfo.isUpdatePhoneNumberEnabled()) {
           const updatePhoneNumberButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
-            padding: [2, 6],
+            padding: [1, 5],
           });
           updatePhoneNumberButton.addListener("execute", this.__openPhoneNumberUpdater);
           widgets[pos.PHONE] = updatePhoneNumberButton;
