@@ -125,7 +125,7 @@ qx.Class.define("osparc.auth.Manager", {
       return osparc.data.Resources.fetch("profile", "phoneRegister", params);
     },
 
-    validateCodeUpdatePhone: function(code, loginCbk, failCbk, context) {
+    validateCodeUpdatePhoneNumber: function(code, loginCbk, failCbk, context) {
       const params = {
         data: {
           code

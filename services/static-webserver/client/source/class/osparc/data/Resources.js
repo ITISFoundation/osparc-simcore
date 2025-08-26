@@ -858,7 +858,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/me/phone:register"
           },
-          phoneResend: {
+          phoneResendCode: {
             method: "POST",
             url: statics.API + "/me/phone:resend"
           },

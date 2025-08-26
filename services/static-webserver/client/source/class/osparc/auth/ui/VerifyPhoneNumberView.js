@@ -198,7 +198,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
       const manager = osparc.auth.Manager.getInstance();
       const itiInput = this.getChildControl("intl-tel-input");
       if (this.isUpdatingNumber()) {
-        manager.validateCodeUpdatePhone(validateCodeField.getValue(), loginFun, failFun, this);
+        manager.validateCodeUpdatePhoneNumber(validateCodeField.getValue(), loginFun, failFun, this);
       } else {
         manager.validateCodeRegister(this.getUserEmail(), itiInput.getNumber(), validateCodeField.getValue(), loginFun, failFun, this);
       }
