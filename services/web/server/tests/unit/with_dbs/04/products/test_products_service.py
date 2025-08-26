@@ -37,6 +37,7 @@ def app(
 
 
 async def test_load_products(app: web.Application):
+    # TODO: add more products
     products = await _service.load_products(app)
     assert isinstance(products, list)
     assert all(isinstance(product, Product) for product in products)
