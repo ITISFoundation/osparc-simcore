@@ -300,7 +300,7 @@ qx.Class.define("osparc.dashboard.WorkspaceButtonItem", {
     },
 
     __trashWorkspaceRequested: function() {
-      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
       let msg = this.tr("Are you sure you want to delete the Workspace and all its content?");
       msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({

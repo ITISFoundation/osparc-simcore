@@ -4,7 +4,7 @@ qx.Class.define("osparc.store.Support", {
 
   statics: {
     getLicenseURL: function() {
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if (vendor) {
         if ("license_url" in vendor) {
           return vendor["license_url"];
@@ -16,7 +16,7 @@ qx.Class.define("osparc.store.Support", {
     },
 
     getManuals: function() {
-      return osparc.store.VendorInfo.getInstance().getManuals();
+      return osparc.store.VendorInfo.getManuals();
     },
 
     addSupportConversationsToMenu: function(menu) {
@@ -91,8 +91,8 @@ qx.Class.define("osparc.store.Support", {
     },
 
     addSupportButtonsToMenu: function(menu, menuButton) {
-      const issues = osparc.store.VendorInfo.getInstance().getIssues();
-      const supports = osparc.store.VendorInfo.getInstance().getSupports();
+      const issues = osparc.store.VendorInfo.getIssues();
+      const supports = osparc.store.VendorInfo.getSupports();
       if (menuButton) {
         menuButton.setVisibility(issues.length || supports.length ? "visible" : "excluded");
       }
@@ -206,9 +206,9 @@ qx.Class.define("osparc.store.Support", {
         maxWidth: 380
       });
       osparc.utils.Utils.setIdToWidget(createAccountWindow, "createAccountWindow");
-      const vendor = osparc.store.VendorInfo.getInstance().getVendor();
+      const vendor = osparc.store.VendorInfo.getVendor();
       if ("invitation_url" in vendor) {
-        const displayName = osparc.store.StaticInfo.getInstance().getDisplayName();
+        const displayName = osparc.store.StaticInfo.getDisplayName();
         let message = qx.locale.Manager.tr("Registration is currently only available with an invitation.");
         message += "<br>";
         message += qx.locale.Manager.tr("Please request access to ") + displayName + ":";
