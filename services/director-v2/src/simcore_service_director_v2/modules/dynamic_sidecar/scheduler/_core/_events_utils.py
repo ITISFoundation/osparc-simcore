@@ -35,9 +35,6 @@ from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
 )
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
-from simcore_service_director_v2.modules.long_running_tasks import (
-    get_client_long_running_manager,
-)
 from tenacity import RetryError, TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -68,6 +65,7 @@ from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
 from ....director_v0 import DirectorV0Client
+from ....long_running_tasks import get_client_long_running_manager
 from ....osparc_variables._api_auth_rpc import delete_api_key_by_key
 from ...api_client import (
     SidecarsClient,
@@ -298,9 +296,8 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 async def _cleanup_long_running_tasks(app: FastAPI, node_id: NodeID) -> None:
     clinet_long_running_manager = get_client_long_running_manager(app)
 
-    await clinet_long_running_manager.cleanup_store(
-        clinet_long_running_manager.get_sidecar_namespace(node_id)
-    )
+    sidecar_namespace = f"SIMCORE-SERVICE-DYNAMIC-SIDECAR-{node_id}"
+    await clinet_long_running_manager.cleanup_store(sidecar_namespace)
 
 
 async def attempt_pod_removal_and_data_saving(
