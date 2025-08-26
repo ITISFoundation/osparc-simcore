@@ -70,11 +70,16 @@ qx.Class.define("osparc.widget.IntlTelInput", {
 
   statics: {
     updateStyle: function(itiInput, checkIcon) {
+      const textColor = qx.theme.manager.Color.getInstance().resolve("text");
+      const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
       itiInput.a.style["width"] = checkIcon && checkIcon.isVisible() ? "185px" : "215px";
       itiInput.a.style["height"] = "26px";
       itiInput.a.style["borderWidth"] = "0px";
-      itiInput.a.style["backgroundColor"] = qx.theme.manager.Color.getInstance().resolve("input_background");
-      itiInput.a.style["color"] = qx.theme.manager.Color.getInstance().resolve("text");
+      itiInput.a.style["backgroundColor"] = bgColor;
+      itiInput.a.style["color"] = textColor;
+
+      document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);
+      document.documentElement.style.setProperty('--country-list-dropdown-text', textColor);
     }
   },
 
@@ -124,7 +129,8 @@ qx.Class.define("osparc.widget.IntlTelInput", {
             .then(data => callback(data.country_code))
             .catch(() => callback("ch"));
         },
-        preferredCountries: []
+        preferredCountries: [],
+        dropdownContainer: document.body,
       });
       const themeManager = qx.theme.manager.Meta.getInstance();
       themeManager.addListener("changeTheme", () => this.self().updateStyle(iti));
