@@ -95,6 +95,17 @@ async def register_function_job(
     return _decode_functionjob(created_function_job_db)
 
 
+async def patch_registered_function_job(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    registered_function_job: RegisteredFunctionJob,
+) -> RegisteredFunctionJob:
+    encoded_function_job = _encode_functionjob(registered_function_job)
+    return registered_function_job
+
+
 async def register_function_job_collection(
     app: web.Application,
     *,
@@ -675,13 +686,31 @@ def _encode_functionjob(
     if functionjob.function_class == FunctionClass.PROJECT:
         class_specific_data = FunctionJobClassSpecificData(
             {
-                "project_job_id": str(functionjob.project_job_id),
+                "project_job_id": (
+                    str(functionjob.project_job_id)
+                    if functionjob.project_job_id
+                    else None
+                ),
+                "job_creation_task_id": (
+                    str(functionjob.job_creation_task_id)
+                    if functionjob.job_creation_task_id
+                    else None
+                ),
             }
         )
     elif functionjob.function_class == FunctionClass.SOLVER:
         class_specific_data = FunctionJobClassSpecificData(
             {
-                "solver_job_id": str(functionjob.solver_job_id),
+                "solver_job_id": (
+                    str(functionjob.solver_job_id)
+                    if functionjob.solver_job_id
+                    else None
+                ),
+                "job_creation_task_id": (
+                    str(functionjob.job_creation_task_id)
+                    if functionjob.job_creation_task_id
+                    else None
+                ),
             }
         )
     else:
@@ -711,6 +740,9 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             project_job_id=functionjob_db.class_specific_data["project_job_id"],
+            job_creation_task_id=functionjob_db.class_specific_data[
+                "job_creation_task_id"
+            ],
             created_at=functionjob_db.created,
         )
 
@@ -723,6 +755,9 @@ def _decode_functionjob(
             inputs=functionjob_db.inputs,
             outputs=functionjob_db.outputs,
             solver_job_id=functionjob_db.class_specific_data["solver_job_id"],
+            job_creation_task_id=functionjob_db.class_specific_data[
+                "job_creation_task_id"
+            ],
             created_at=functionjob_db.created,
         )
 
