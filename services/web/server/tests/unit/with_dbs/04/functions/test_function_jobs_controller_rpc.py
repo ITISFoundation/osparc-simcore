@@ -2,16 +2,22 @@
 # pylint: disable=unused-argument
 
 import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
+from faker import Faker
 from models_library.api_schemas_webserver.functions import (
     ProjectFunction,
     ProjectFunctionJob,
 )
-from models_library.functions import FunctionJobCollection, FunctionJobStatus
+from models_library.functions import (
+    FunctionClass,
+    FunctionJobCollection,
+    FunctionJobStatus,
+    RegisteredProjectFunctionJob,
+)
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
     FunctionJobReadAccessDeniedError,
@@ -26,6 +32,9 @@ from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
 )
 
 pytest_simcore_core_services_selection = ["rabbit"]
+
+
+_faker = Faker()
 
 
 @pytest.mark.parametrize(
@@ -57,6 +66,7 @@ async def test_register_get_delete_function_job(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
 
     # Register the function job
@@ -183,6 +193,7 @@ async def test_list_function_jobs(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
 
     # Register the function job
@@ -244,6 +255,7 @@ async def test_list_function_jobs_filtering(
                 project_job_id=uuid4(),
                 inputs={"input1": "value1"},
                 outputs={"output1": "result1"},
+                job_creation_task_id=None,
             )
             # Register the function job
             first_registered_function_jobs.append(
@@ -262,6 +274,7 @@ async def test_list_function_jobs_filtering(
                 project_job_id=uuid4(),
                 inputs={"input1": "value1"},
                 outputs={"output1": "result1"},
+                job_creation_task_id=None,
             )
             # Register the function job
             second_registered_function_jobs.append(
@@ -381,6 +394,7 @@ async def test_find_cached_function_jobs(
             project_job_id=uuid4(),
             inputs={"input1": value if value < 4 else 1},
             outputs={"output1": "result1"},
+            job_creation_task_id=None,
         )
 
         # Register the function job
@@ -425,6 +439,70 @@ async def test_find_cached_function_jobs(
     "user_role",
     [UserRole.USER],
 )
+async def test_patch_registered_function_jobs(
+    client: TestClient,
+    rpc_client: RabbitMQRPCClient,
+    add_user_function_api_access_rights: None,
+    logged_user: UserInfoDict,
+    other_logged_user: UserInfoDict,
+    osparc_product_name: ProductName,
+    mock_function: ProjectFunction,
+    clean_functions: None,
+):
+
+    registered_function = await functions_rpc.register_function(
+        rabbitmq_rpc_client=rpc_client,
+        function=mock_function,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    function_job = ProjectFunctionJob(
+        function_uid=registered_function.uid,
+        title="Test Function Job",
+        description="A test function job",
+        project_job_id=None,
+        inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
+        outputs={"output1": "result1"},
+        job_creation_task_id=None,
+    )
+
+    # Register the function job
+    registered_job = await functions_rpc.register_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        function_job=function_job,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+    )
+
+    added_data = {"job_creation_task_id": f"{uuid4()}"}
+    registered_job_dict = registered_job.model_dump()
+    registered_job_dict.update(**added_data)
+    registered_job = RegisteredProjectFunctionJob.model_validate(registered_job_dict)
+
+    registered_job = await functions_rpc.patch_registered_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
+        registered_function_job=registered_job,
+    )
+    assert registered_job.function_class == FunctionClass.PROJECT
+    assert registered_job.job_creation_task_id == added_data["job_creation_task_id"]
+
+    added_data.update(project_job_id=f"{uuid4()}")
+
+    registered_job_dict = registered_job.model_dump()
+    registered_job_dict.update(**added_data)
+    registered_job = RegisteredProjectFunctionJob.model_validate(registered_job_dict)
+    assert registered_job.function_class == FunctionClass.PROJECT
+    assert registered_job.job_creation_task_id == added_data["job_creation_task_id"]
+    assert registered_job.project_job_id == UUID(added_data["project_job_id"])
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
 async def test_update_function_job_status(
     client: TestClient,
     rpc_client: RabbitMQRPCClient,
@@ -448,6 +526,7 @@ async def test_update_function_job_status(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
 
     # Register the function job
@@ -507,6 +586,7 @@ async def test_update_function_job_outputs(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs=None,
+        job_creation_task_id=None,
     )
 
     # Register the function job

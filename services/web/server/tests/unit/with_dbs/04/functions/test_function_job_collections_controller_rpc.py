@@ -60,6 +60,7 @@ async def test_function_job_collection(
         project_job_id=uuid4(),
         inputs={"input1": "value1"},
         outputs={"output1": "result1"},
+        job_creation_task_id=None,
     )
     # Register the function job
     function_job_ids = []
@@ -71,6 +72,7 @@ async def test_function_job_collection(
             project_job_id=uuid4(),
             inputs={"input1": "value1"},
             outputs={"output1": "result1"},
+            job_creation_task_id=None,
         )
         # Register the function job
         registered_job = await functions_rpc.register_function_job(
@@ -210,6 +212,7 @@ async def test_list_function_job_collections(
             project_job_id=uuid4(),
             inputs={"input1": "value1"},
             outputs={"output1": "result1"},
+            job_creation_task_id=None,
         )
         # Register the function job
         registered_job = await functions_rpc.register_function_job(
@@ -308,6 +311,7 @@ async def test_list_function_job_collections_filtered_function_id(
                 project_job_id=uuid4(),
                 inputs={"input1": "value1"},
                 outputs={"output1": "result1"},
+                job_creation_task_id=None,
             )
             # Register the function job
             registered_job = await functions_rpc.register_function_job(

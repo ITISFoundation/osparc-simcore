@@ -88,6 +88,27 @@ async def register_function_job(
     )
 
 
+@router.expose(
+    reraise_if_error_type=(
+        UnsupportedFunctionJobClassError,
+        FunctionJobsWriteApiAccessDeniedError,
+    )
+)
+async def patch_registered_function_job(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    registered_function_job: RegisteredFunctionJob,
+) -> RegisteredFunctionJob:
+    return await _functions_service.patch_registered_function_job(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        registered_function_job=registered_function_job,
+    )
+
+
 @router.expose(reraise_if_error_type=(FunctionJobCollectionsWriteApiAccessDeniedError,))
 async def register_function_job_collection(
     app: web.Application,
