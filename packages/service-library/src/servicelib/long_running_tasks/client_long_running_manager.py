@@ -36,7 +36,7 @@ class ClientLongRunningManager:
         keys_to_remove: list[str] = [
             x async for x in self._redis.scan_iter(f"{lrt_namespace}*")
         ]
-        _logger.info(
+        _logger.debug(
             "Removing keys='%s' from Redis for namespace '%s'",
             keys_to_remove,
             lrt_namespace,
