@@ -28,12 +28,12 @@ qx.Class.define("osparc.store.Groups", {
   properties: {
     everyoneGroup: {
       check: "osparc.data.model.Group",
-      init: {}
+      init: null // this will stay null for guest users
     },
 
     everyoneProductGroup: {
       check: "osparc.data.model.Group",
-      init: {}
+      init: null // this will stay null for guest users
     },
 
     organizations: {
@@ -45,17 +45,6 @@ qx.Class.define("osparc.store.Groups", {
     groupMe: {
       check: "osparc.data.model.Group",
       init: {}
-    },
-  },
-
-  statics: {
-    curateOrderBy: function(orderBy) {
-      const curatedOrderBy = osparc.utils.Utils.deepCloneObject(orderBy);
-      if (curatedOrderBy.field !== "name") {
-        // only "modified_at" and "name" supported
-        curatedOrderBy.field = "modified_at";
-      }
-      return curatedOrderBy;
     },
   },
 
@@ -131,10 +120,14 @@ qx.Class.define("osparc.store.Groups", {
       const allGroupsAndUsers = {};
 
       const groupEveryone = this.getEveryoneGroup();
-      allGroupsAndUsers[groupEveryone.getGroupId()] = groupEveryone;
+      if (groupEveryone) {
+        allGroupsAndUsers[groupEveryone.getGroupId()] = groupEveryone;
+      }
 
       const groupProductEveryone = this.getEveryoneProductGroup();
-      allGroupsAndUsers[groupProductEveryone.getGroupId()] = groupProductEveryone;
+      if (groupProductEveryone) {
+        allGroupsAndUsers[groupProductEveryone.getGroupId()] = groupProductEveryone;
+      }
 
       const groupMe = this.getGroupMe();
       allGroupsAndUsers[groupMe.getGroupId()] = groupMe;
@@ -155,12 +148,33 @@ qx.Class.define("osparc.store.Groups", {
     },
 
     getAllMyGroupIds: function() {
-      return [
+      const allMyGroupIds = [
         this.getMyGroupId(),
-        ...this.getOrganizationIds().map(gId => parseInt(gId)),
-        this.getEveryoneProductGroup().getGroupId(),
-        this.getEveryoneGroup().getGroupId(),
-      ]
+        ...this.getOrganizationIds().map(gId => parseInt(gId))
+      ];
+      if (this.getEveryoneProductGroup()) {
+        allMyGroupIds.push(this.getEveryoneProductGroup().getGroupId());
+      }
+      if (this.getEveryoneGroup()) {
+        allMyGroupIds.push(this.getEveryoneGroup().getGroupId());
+      }
+      return allMyGroupIds;
+    },
+
+    getEveryoneGroupIds: function() {
+      const everyoneGroupIds = this.getEveryoneGroups().map(g => g.getGroupId());
+      return everyoneGroupIds;
+    },
+
+    getEveryoneGroups: function() {
+      const everyoneGroups = [];
+      if (this.getEveryoneProductGroup()) {
+        everyoneGroups.push(this.getEveryoneProductGroup());
+      }
+      if (this.getEveryoneGroup()) {
+        everyoneGroups.push(this.getEveryoneGroup());
+      }
+      return everyoneGroups;
     },
 
     getGroup: function(groupId) {
@@ -183,12 +197,16 @@ qx.Class.define("osparc.store.Groups", {
       });
 
       const groupProductEveryone = this.getEveryoneProductGroup();
-      groupProductEveryone["collabType"] = 0;
-      groups.push(groupProductEveryone);
+      if (groupProductEveryone) {
+        groupProductEveryone["collabType"] = 0;
+        groups.push(groupProductEveryone);
+      }
 
       const groupEveryone = this.getEveryoneGroup();
-      groupEveryone["collabType"] = 0;
-      groups.push(groupEveryone);
+      if (groupEveryone) {
+        groupEveryone["collabType"] = 0;
+        groups.push(groupEveryone);
+      }
       const idx = groups.findIndex(group => group.getGroupId() === parseInt(groupId));
       if (idx > -1) {
         return groups[idx];

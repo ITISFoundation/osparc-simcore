@@ -148,10 +148,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
             return false;
           }
           case "shared-with-everyone": {
-            const everyoneGroupIds = [
-              groupsStore.getEveryoneProductGroup().getGroupId(),
-              groupsStore.getEveryoneGroup().getGroupId(),
-            ];
+            const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
             const found = Object.keys(checks).some(gId => everyoneGroupIds.includes(parseInt(gId)));
             // show those that are shared with "1" or product everyone's groupId
             return !found;
@@ -190,13 +187,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
       // Icon
       const groupsStore = osparc.store.Groups.getInstance();
-      const groupEveryone = groupsStore.getEveryoneGroup();
-      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
       const organizationIds = Object.keys(organizations).map(key => parseInt(key));
-      if (gids.includes(groupEveryone.getGroupId()) || gids.includes(groupProductEveryone.getGroupId())) {
+      if (gids.some(gid => everyoneGroupIds.includes(gid))) {
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ALL);
       } else if (organizationIds.filter(value => gids.includes(value)).length) { // find intersection
         shareIcon.setSource(osparc.dashboard.CardBase.SHARED_ORGS);
@@ -230,14 +226,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     addHintFromGids: function(icon, gids) {
       const groupsStore = osparc.store.Groups.getInstance();
-      const groupEveryone = groupsStore.getEveryoneGroup();
-      const groupProductEveryone = groupsStore.getEveryoneProductGroup();
+      const everyoneGroups = groupsStore.getEveryoneGroups();
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
-      const groups = [];
-      groups.push(groupEveryone);
-      groups.push(groupProductEveryone);
+      const groups = everyoneGroups.slice();
       groups.push(...Object.values(organizations));
       const sharedGrps = [];
       groups.forEach(group => {
@@ -275,7 +268,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
               break;
             }
             let sharedGrpLabel = sharedGrps[i].getLabel();
-            if ([groupEveryone, groupProductEveryone].includes(sharedGrps[i])) {
+            if (everyoneGroups.includes(sharedGrps[i])) {
               sharedGrpLabel = "Public";
             }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
