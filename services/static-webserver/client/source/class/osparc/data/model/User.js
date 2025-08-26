@@ -59,6 +59,7 @@ qx.Class.define("osparc.data.model.User", {
       firstName,
       lastName,
       email,
+      phoneNumber: userData["phone"] || null,
       thumbnail,
       label: userData["userName"] || description,
       description,
@@ -120,6 +121,13 @@ qx.Class.define("osparc.data.model.User", {
       nullable: true,
       init: null,
       event: "changeEmail",
+    },
+
+    phoneNumber: {
+      check: "String",
+      nullable: true,
+      init: null,
+      event: "changePhoneNumber"
     },
 
     thumbnail: {
