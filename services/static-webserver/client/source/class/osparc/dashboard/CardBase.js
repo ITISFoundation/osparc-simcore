@@ -230,7 +230,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const organizations = groupsStore.getOrganizations();
       const myGroupId = groupsStore.getMyGroupId();
 
-      const groups = everyoneGroupIds;
+      const groups = everyoneGroupIds.slice();
       groups.push(...Object.values(organizations));
       const sharedGrps = [];
       groups.forEach(group => {
@@ -268,7 +268,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
               break;
             }
             let sharedGrpLabel = sharedGrps[i].getLabel();
-            if ([groupEveryone, groupProductEveryone].includes(sharedGrps[i])) {
+            if (everyoneGroupIds.includes(sharedGrps[i])) {
               sharedGrpLabel = "Public";
             }
             if (!sharedGrpLabels.includes(sharedGrpLabel)) {
