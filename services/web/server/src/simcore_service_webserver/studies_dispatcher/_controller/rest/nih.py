@@ -11,8 +11,8 @@ from pydantic import (
 from ...._meta import API_VTAG
 from ....products import products_web
 from ....utils_aiohttp import envelope_json_response
+from ... import _service
 from ..._catalog import iter_latest_product_services
-from ..._core import list_viewers_info
 from .nih_schemas import ServiceGet, Viewer
 
 _logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ async def list_viewers(request: Request):
 
     viewers = [
         Viewer.create(request, viewer).model_dump()
-        for viewer in await list_viewers_info(request.app, file_type=file_type)
+        for viewer in await _service.list_viewers_info(request.app, file_type=file_type)
     ]
     return envelope_json_response(viewers)
 
@@ -58,7 +58,7 @@ async def list_default_viewers(request: Request):
 
     viewers = [
         Viewer.create(request, viewer).model_dump()
-        for viewer in await list_viewers_info(
+        for viewer in await _service.list_viewers_info(
             request.app, file_type=file_type, only_default=True
         )
     ]

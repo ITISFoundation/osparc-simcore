@@ -25,7 +25,7 @@ from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects._projects_service import get_project_for_user
 from ..projects.exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..utils import now_str
-from ._core import compose_uuid_from
+from . import _service
 from ._errors import ProjectWorkbenchMismatchError
 from ._models import FileParams, ServiceInfo, ViewerInfo
 from ._users import UserInfo
@@ -42,11 +42,11 @@ _FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_pyth
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
-    file_picker_id = compose_uuid_from(
+    file_picker_id = _service.compose_uuid_from(
         project_id,
         "4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343",
     )
-    viewer_id = compose_uuid_from(
+    viewer_id = _service.compose_uuid_from(
         project_id,
         "fc718e5a-bf07-4abe-b526-d9cafd34830c",
     )
@@ -265,7 +265,9 @@ async def get_or_create_project_with_file_and_service(
     #   - if user requests several times, the same project is reused
     #   - if user is not a guest, the project will be saved in it's account (desired?)
     #
-    project_uid: ProjectID = compose_uuid_from(user.id, viewer.footprint, download_link)
+    project_uid: ProjectID = _service.compose_uuid_from(
+        user.id, viewer.footprint, download_link
+    )
 
     # Ids are linked to produce a footprint (see viewer_project_exists)
     file_picker_id, service_id = _generate_nodeids(project_uid)
@@ -324,7 +326,7 @@ async def get_or_create_project_with_service(
     product_name: str,
     product_api_base_url: str,
 ) -> ProjectNodePair:
-    project_uid: ProjectID = compose_uuid_from(user.id, service_info.footprint)
+    project_uid: ProjectID = _service.compose_uuid_from(user.id, service_info.footprint)
     _, service_id = _generate_nodeids(project_uid)
 
     try:
@@ -362,7 +364,7 @@ async def get_or_create_project_with_file(
     product_name: str,
     product_api_base_url: str,
 ) -> ProjectNodePair:
-    project_uid: ProjectID = compose_uuid_from(user.id, file_params.footprint)
+    project_uid: ProjectID = _service.compose_uuid_from(user.id, file_params.footprint)
     file_picker_id, _ = _generate_nodeids(project_uid)
 
     if not await _project_exists(
