@@ -15,10 +15,6 @@ _logger = logging.getLogger(__name__)
 
 
 class FastAPIAppServer(BaseAppServer[FastAPI]):
-    def __init__(self, app: FastAPI):
-        super().__init__(app)
-        self._lifespan_manager: LifespanManager | None = None
-
     @property
     def task_manager(self) -> TaskManager:
         task_manager = self.app.state.task_manager
