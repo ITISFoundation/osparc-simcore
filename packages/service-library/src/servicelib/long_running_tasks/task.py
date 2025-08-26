@@ -31,6 +31,7 @@ from .errors import (
     TaskNotCompletedError,
     TaskNotFoundError,
     TaskNotRegisteredError,
+    TaskRaisedUnserializableError,
 )
 from .models import (
     LRTNamespace,
@@ -345,7 +346,32 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                                 },
                             ),
                         )
-                    result_field = ResultField(str_error=dumps(e))
+                    try:
+                        result_field = ResultField(str_error=dumps(e))
+                    except (
+                        Exception  # pylint:disable=broad-except
+                    ) as serialization_error:
+                        _logger.exception(
+                            **create_troubleshootting_log_kwargs(
+                                (
+                                    f"Execution of {task_id=} finished with error "
+                                    f"which could not be serialized"
+                                ),
+                                error=serialization_error,
+                                error_context={
+                                    "task_id": task_id,
+                                    "task_data": task_data,
+                                    "namespace": self.lrt_namespace,
+                                },
+                            ),
+                        )
+                        result_field = ResultField(
+                            str_error=dumps(
+                                TaskRaisedUnserializableError(
+                                    task_id=task_id, exception=serialization_error
+                                )
+                            )
+                        )
 
                 # update and store in Redis
                 updates = {"is_done": is_done, "result_field": task_data.result_field}

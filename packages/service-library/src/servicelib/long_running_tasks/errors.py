@@ -34,6 +34,12 @@ class TaskExceptionError(BaseLongRunningError):
     )
 
 
+class TaskRaisedUnserializableError(BaseLongRunningError):
+    msg_template: str = (
+        "Task {task_id} finished with an unserializable exception: '{exception}'\n{traceback}"
+    )
+
+
 class TaskClientTimeoutError(BaseLongRunningError):
     msg_template: str = (
         "Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
