@@ -13,13 +13,13 @@ from aiohttp.test_utils import make_mocked_request
 from models_library.utils.pydantic_tools_extension import parse_obj_or_none
 from pydantic import ByteSize, TypeAdapter
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
+from simcore_service_webserver.studies_dispatcher._controller_rest_redirects_schemas import (
+    FileQueryParams,
+    ServiceAndFileParams,
+)
 from simcore_service_webserver.studies_dispatcher._models import (
     FileParams,
     ServiceParams,
-)
-from simcore_service_webserver.studies_dispatcher._redirects_handlers import (
-    FileQueryParams,
-    ServiceAndFileParams,
 )
 from yarl import URL
 
@@ -79,9 +79,7 @@ def test_download_link_validators_2(file_and_service_params: dict[str, Any]):
     assert params.download_link
 
     assert params.download_link.host
-    assert params.download_link.host.endswith(
-        "s3.amazonaws.com"
-    )
+    assert params.download_link.host.endswith("s3.amazonaws.com")
 
     query = parse_qs(params.download_link.query)
     assert {"AWSAccessKeyId", "Signature", "Expires", "x-amz-request-payer"} == set(
