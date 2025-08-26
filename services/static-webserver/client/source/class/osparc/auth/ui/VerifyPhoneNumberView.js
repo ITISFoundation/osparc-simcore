@@ -46,7 +46,7 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
           break;
         case "intro-text":
           control = new qx.ui.basic.Label().set({
-            value: this.tr("A text message will be sent to your mobile phone for authentication each time you log in."),
+            value: this.tr("If SMS is your chosen 2FA method, you'll get a text message with a code on every login to authenticate your access."),
             rich: true,
             wrap: true
           });
