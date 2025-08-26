@@ -16,7 +16,6 @@ from models_library.functions import (
     FunctionClass,
     FunctionJobCollection,
     FunctionJobStatus,
-    RegisteredProjectFunctionJob,
 )
 from models_library.functions_errors import (
     FunctionJobIDNotFoundError,
@@ -476,24 +475,26 @@ async def test_patch_registered_function_jobs(
     )
 
     added_data = {"job_creation_task_id": f"{uuid4()}"}
-    registered_job_dict = registered_job.model_dump()
-    registered_job_dict.update(**added_data)
-    registered_job = RegisteredProjectFunctionJob.model_validate(registered_job_dict)
 
     registered_job = await functions_rpc.patch_registered_function_job(
         rabbitmq_rpc_client=rpc_client,
         user_id=logged_user["id"],
+        function_job_uuid=registered_job.uid,
         product_name=osparc_product_name,
-        registered_function_job=registered_job,
+        job_creation_task_id=added_data["job_creation_task_id"],
     )
     assert registered_job.function_class == FunctionClass.PROJECT
     assert registered_job.job_creation_task_id == added_data["job_creation_task_id"]
 
     added_data.update(project_job_id=f"{uuid4()}")
 
-    registered_job_dict = registered_job.model_dump()
-    registered_job_dict.update(**added_data)
-    registered_job = RegisteredProjectFunctionJob.model_validate(registered_job_dict)
+    registered_job = await functions_rpc.patch_registered_function_job(
+        rabbitmq_rpc_client=rpc_client,
+        user_id=logged_user["id"],
+        function_job_uuid=registered_job.uid,
+        product_name=osparc_product_name,
+        project_job_id=added_data["project_job_id"],
+    )
     assert registered_job.function_class == FunctionClass.PROJECT
     assert registered_job.job_creation_task_id == added_data["job_creation_task_id"]
     assert registered_job.project_job_id == UUID(added_data["project_job_id"])

@@ -27,6 +27,7 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredFunctionJobCollection,
     RegisteredFunctionJobDB,
+    RegisteredFunctionJobPatch,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
     RegisteredSolverFunction,
@@ -100,10 +101,26 @@ async def patch_registered_function_job(
     *,
     user_id: UserID,
     product_name: ProductName,
-    registered_function_job: RegisteredFunctionJob,
+    function_job_uuid: FunctionJobID,
+    registered_function_job_patch: RegisteredFunctionJobPatch,
 ) -> RegisteredFunctionJob:
-    encoded_function_job = _encode_functionjob(registered_function_job)
-    return registered_function_job
+    job = await _functions_repository.get_function_job(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_id=function_job_uuid,
+    )
+
+    await _functions_repository.patch_function_job(
+        app=app,
+        function_job_uuid=function_job_uuid,
+        user_id=user_id,
+        product_name=product_name,
+        title=title,
+        description=description,
+        class_specific_data=class_specific_data,
+    )
+    return _decode_functionjob(job)
 
 
 async def register_function_job_collection(
