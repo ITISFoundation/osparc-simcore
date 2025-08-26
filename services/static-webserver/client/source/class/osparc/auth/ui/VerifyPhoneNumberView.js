@@ -83,7 +83,8 @@ qx.Class.define("osparc.auth.ui.VerifyPhoneNumberView", {
         case "validate-code-field":
           control = new qx.ui.form.TextField().set({
             placeholder: this.tr("Type the SMS code"),
-            enabled: false
+            enabled: false,
+            height: 29, // to align it with the strong button next to it
           });
           control.addListener("input", e => this.getChildControl("validate-code-button").setEnabled(Boolean(e.getData())));
           this.getChildControl("validation-layout").add(control, {
