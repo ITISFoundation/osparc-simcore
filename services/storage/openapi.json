@@ -1442,14 +1442,14 @@
           "total": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Total",
-            "description": "Total items"
+            "title": "Total"
           },
           "current_page": {
             "anyOf": [

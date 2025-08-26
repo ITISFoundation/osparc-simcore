@@ -15,6 +15,7 @@ import aiodocker
 import docker
 import jsonschema
 import pytest
+import pytest_asyncio
 import tenacity
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -146,7 +147,7 @@ def wait_till_registry_is_responsive(url: str) -> bool:
 # ********************************************************* Services ***************************************
 
 
-def _pull_push_service(
+async def _pull_push_service(
     pull_key: str,
     tag: str,
     new_registry: str,
@@ -213,11 +214,13 @@ def _pull_push_service(
     assert image.tag(new_image_tag)
 
     # push the image to the new location
-    with log_context(
-        logging.INFO,
-        msg=f"Pushing {pull_key}:{tag}  -> {new_image_tag} ...",
-    ):
-        client.images.push(new_image_tag)
+    async with aiodocker.Docker() as client:
+        await client.images.push(new_image_tag)
+    # with log_context(
+    #     logging.INFO,
+    #     msg=f"Pushing {pull_key}:{tag}  -> {new_image_tag} ...",
+    # ):
+    #     client.images.push(new_image_tag)
 
     # return image io.simcore.* labels
     image_labels = dict(image.labels)
@@ -230,10 +233,10 @@ def _pull_push_service(
     }
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 def docker_registry_image_injector(
     docker_registry: str, node_meta_schema: dict
-) -> Callable[..., dict[str, Any]]:
+) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
     def inject_image(
         source_image_repo: str, source_image_tag: str, owner_email: str | None = None
     ):
@@ -249,29 +252,33 @@ def docker_registry_image_injector(
 
 
 @pytest.fixture
-def osparc_service(
+async def osparc_service(
     docker_registry: str, node_meta_schema: dict, service_repo: str, service_tag: str
 ) -> dict[str, Any]:
     """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
     NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         service_repo, service_tag, docker_registry, node_meta_schema
     )
 
 
-@pytest.fixture(scope="session")
-def sleeper_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def sleeper_service(
+    docker_registry: str, node_meta_schema: dict
+) -> dict[str, Any]:
     """Adds a itisfoundation/sleeper in docker registry"""
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema
     )
 
 
-@pytest.fixture(scope="session")
-def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def jupyter_service(
+    docker_registry: str, node_meta_schema: dict
+) -> dict[str, Any]:
     """Adds a itisfoundation/jupyter-base-notebook in docker registry"""
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
         "2.13.0",
         docker_registry,
@@ -279,20 +286,20 @@ def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, A
     )
 
 
-@pytest.fixture(scope="session", params=["2.0.7"])
+@pytest_asyncio.fixture(scope="session", loop_scope="session", params=["2.0.7"])
 def dy_static_file_server_version(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(scope="session")
-def dy_static_file_server_service(
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def dy_static_file_server_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/dy-static-file-server",
         dy_static_file_server_version,
         docker_registry,
@@ -300,15 +307,15 @@ def dy_static_file_server_service(
     )
 
 
-@pytest.fixture(scope="session")
-def dy_static_file_server_dynamic_sidecar_service(
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def dy_static_file_server_dynamic_sidecar_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server-dynamic-sidecar
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar",
         dy_static_file_server_version,
         docker_registry,
@@ -316,15 +323,15 @@ def dy_static_file_server_dynamic_sidecar_service(
     )
 
 
-@pytest.fixture(scope="session")
-def dy_static_file_server_dynamic_sidecar_compose_spec_service(
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def dy_static_file_server_dynamic_sidecar_compose_spec_service(
     docker_registry: str, node_meta_schema: dict, dy_static_file_server_version: str
 ) -> dict[str, Any]:
     """
     Adds the below service in docker registry
     itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec
     """
-    return _pull_push_service(
+    return await _pull_push_service(
         "itisfoundation/dy-static-file-server-dynamic-sidecar-compose-spec",
         dy_static_file_server_version,
         docker_registry,

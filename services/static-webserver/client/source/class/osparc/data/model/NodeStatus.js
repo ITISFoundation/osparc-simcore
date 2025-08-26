@@ -93,6 +93,13 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     hasOutputs: {
       check: "Boolean",
       init: false
+    },
+
+    lockState: {
+      check: "osparc.data.model.NodeLockState",
+      nullable: true,
+      init: null,
+      event: "changeLockState"
     }
   },
 
@@ -139,17 +146,20 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
   members: {
     __applyNode: function(node) {
-      const addNodeProgressSequence = () => {
+      const initNode = () => {
         if (node.isDynamic()) {
           const progressSequence = new osparc.data.model.NodeProgressSequence();
           this.setProgressSequence(progressSequence);
         }
+
+        const lockState = new osparc.data.model.NodeLockState();
+        this.setLockState(lockState);
       };
 
       if (node.getMetadata()) {
-        addNodeProgressSequence();
+        initNode();
       } else {
-        node.addListenerOnce("changeMetadata", () => addNodeProgressSequence(), this);
+        node.addListenerOnce("changeMetadata", () => initNode(), this);
       }
     },
 
@@ -216,6 +226,9 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         } else {
           this.setModified(null);
         }
+      }
+      if ("lock_state" in state) {
+        this.getLockState().stateReceived(state.lock_state);
       }
     },
 

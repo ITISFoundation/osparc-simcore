@@ -15,6 +15,8 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
 from pydantic import NonNegativeInt
+from pytest_mock import MockerFixture
+from servicelib.container_utils import run_command_in_container
 from simcore_service_agent.core.settings import ApplicationSettings
 from simcore_service_agent.services.backup import backup_volume
 from simcore_service_agent.services.docker_utils import get_volume_details
@@ -42,7 +44,7 @@ def volume_content(tmpdir: Path) -> Path:
 @pytest.fixture
 async def mock_container_with_data(
     volume_content: Path, monkeypatch: pytest.MonkeyPatch
-) -> AsyncIterable[None]:
+) -> AsyncIterable[str]:
     async with aiodocker.Docker() as client:
         container = await client.containers.run(
             config={
@@ -56,7 +58,7 @@ async def mock_container_with_data(
         container_name = container_inspect["Name"][1:]
         monkeypatch.setenv("HOSTNAME", container_name)
 
-        yield None
+        yield container_inspect["Id"]
 
         await container.delete(force=True)
 
@@ -68,8 +70,24 @@ def downlaoded_from_s3(tmpdir: Path) -> Path:
     return path
 
 
+@pytest.fixture
+async def mock__get_self_container_ip(
+    mock_container_with_data: str,
+    mocker: MockerFixture,
+) -> None:
+    container_ip = await run_command_in_container(
+        mock_container_with_data, command="hostname -i"
+    )
+
+    mocker.patch(
+        "simcore_service_agent.services.backup._get_self_container_ip",
+        return_value=container_ip.strip(),
+    )
+
+
 async def test_backup_volume(
-    mock_container_with_data: None,
+    mock_container_with_data: str,
+    mock__get_self_container_ip: None,
     volume_content: Path,
     project_id: ProjectID,
     swarm_stack_name: str,
