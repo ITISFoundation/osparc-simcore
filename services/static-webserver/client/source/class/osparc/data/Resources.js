@@ -855,15 +855,15 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/me"
           },
           phoneRegister: {
-            method: "PATCH",
+            method: "POST",
             url: statics.API + "/me/phone:register"
           },
           phoneResend: {
-            method: "PATCH",
+            method: "POST",
             url: statics.API + "/me/phone:resend"
           },
           phoneConfirm: {
-            method: "PATCH",
+            method: "POST",
             url: statics.API + "/me/phone:confirm"
           },
         }
