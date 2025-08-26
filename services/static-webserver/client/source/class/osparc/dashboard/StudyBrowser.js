@@ -642,7 +642,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _trashFolderRequested: function(folderId) {
-      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
       let msg = this.tr("Are you sure you want to delete the Folder and all its content?");
       msg += "<br><br>" + this.tr("It will be permanently deleted after ") + trashDays + " days.";
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
@@ -2365,7 +2365,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         msg += ` '${studyNames[0]}'?`;
       }
-      const trashDays = osparc.store.StaticInfo.getInstance().getTrashRetentionDays();
+      const trashDays = osparc.store.StaticInfo.getTrashRetentionDays();
       msg += "<br><br>" + (studyNames.length > 1 ? "They" : "It") + this.tr(` will be permanently deleted after ${trashDays} days.`);
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Delete"),

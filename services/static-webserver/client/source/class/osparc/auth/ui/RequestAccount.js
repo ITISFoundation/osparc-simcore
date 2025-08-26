@@ -127,7 +127,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         required: true
       });
       doubleSpaced.push(country);
-      const countries = osparc.store.StaticInfo.getInstance().getCountries();
+      const countries = osparc.store.StaticInfo.getCountries();
       countries.forEach(c => {
         const cItem = new qx.ui.form.ListItem(c.name, null, c.alpha2).set({
           rich: true
