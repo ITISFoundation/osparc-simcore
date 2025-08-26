@@ -1,7 +1,6 @@
 import logging
 
 import redis.asyncio as aioredis
-from models_library.projects_nodes_io import NodeID
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis._client import RedisClientSDK
@@ -31,10 +30,6 @@ class ClientLongRunningManager:
     def _redis(self) -> aioredis.Redis:
         assert self._client  # nosec
         return self._client.redis
-
-    @classmethod
-    def get_sidecar_namespace(cls, node_id: NodeID) -> LRTNamespace:
-        return f"SIMCORE-SERVICE-DYNAMIC-SIDECAR-{node_id}"
 
     async def cleanup_store(self, lrt_namespace: LRTNamespace) -> None:
         """Cleanups all Redis keys for the given LRTNamespace"""
