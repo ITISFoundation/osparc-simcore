@@ -5,7 +5,6 @@ from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.user_messages import user_message
 from models_library.function_services_catalog._utils import ServiceNotFound
-from pydantic import ValidationError
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
 from servicelib.logging_errors import create_troubleshootting_log_kwargs
@@ -93,7 +92,7 @@ def _create_simple_error_redirect(
 
 def handle_errors_with_error_page(handler: Handler):
     @functools.wraps(handler)
-    async def wrapper(request: web.Request) -> web.StreamResponse:
+    async def _wrapper(request: web.Request) -> web.StreamResponse:
         try:
             return await handler(request)
 
@@ -156,7 +155,7 @@ def handle_errors_with_error_page(handler: Handler):
                 tip="The link might be corrupted",
             ) from err
 
-        except (ValidationError, web.HTTPServerError, Exception) as err:
+        except Exception as err:
             raise _create_error_redirect_with_logging(
                 request,
                 err,
@@ -165,4 +164,4 @@ def handle_errors_with_error_page(handler: Handler):
                 tip="Unexpected failure while dispatching study",
             ) from err
 
-    return wrapper
+    return _wrapper
