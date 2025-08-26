@@ -11,7 +11,6 @@ from models_library.users import UserID
 from pydantic import Field
 from servicelib.aiohttp.requests_validation import parse_request_body_as
 from servicelib.request_keys import RQT_USERID_KEY
-from yarl import URL
 
 from .._meta import API_VTAG as VTAG
 from ..constants import RQ_PRODUCT_KEY
@@ -53,13 +52,11 @@ async def generate_invitation(request: web.Request):
             extra_credits_in_usd=body.extra_credits_in_usd,
             product=req_ctx.product_name,
         ),
+        request.url,
     )
     assert request.url.host  # nosec
     assert generated.product == req_ctx.product_name  # nosec
     assert generated.guest == body.guest  # nosec
-
-    url = URL(f"{generated.invitation_url}")
-    invitation_link = request.url.with_path(url.path).with_fragment(url.raw_fragment)
 
     invitation = InvitationGenerated(
         product_name=generated.product,
@@ -68,6 +65,6 @@ async def generate_invitation(request: web.Request):
         trial_account_days=generated.trial_account_days,
         extra_credits_in_usd=generated.extra_credits_in_usd,
         created=generated.created,
-        invitation_link=f"{invitation_link}",  # type: ignore[arg-type]
+        invitation_link=generated.invitation_url,
     )
     return envelope_json_response(invitation.model_dump(exclude_none=True))
