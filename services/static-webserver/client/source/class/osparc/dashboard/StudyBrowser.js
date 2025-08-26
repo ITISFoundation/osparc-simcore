@@ -323,10 +323,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               templates.forEach(template => template["resourceType"] = "template");
               // For now, filtered in the frontend
               const groupsStore = osparc.store.Groups.getInstance();
-              const everyoneGid = groupsStore.getEveryoneGroup().getGroupId();
-              const productEveryoneGid = groupsStore.getEveryoneProductGroup().getGroupId();
+              const everyoneGroupIds = groupsStore.getEveryoneGroupIds();
               const filteredTemplates = templates.filter(template => {
-                const publicAccess = everyoneGid in template["accessRights"] || productEveryoneGid in template["accessRights"];
+                const templateGroupIds = Object.keys(template["accessRights"]);
+                const publicAccess = templateGroupIds.some(gid => everyoneGroupIds.includes(parseInt(gid)));
                 if ([
                   osparc.dashboard.StudyBrowser.CONTEXT.PUBLIC_TEMPLATES,
                   osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
