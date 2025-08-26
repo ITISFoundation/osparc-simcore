@@ -47,6 +47,7 @@ def create_app_lifespan(
     app_lifespan.add(_settings_lifespan)
 
     # - postgres
+    # NOTE: for now we will remove
     app_lifespan.add(postgres_database_lifespan)
     app_lifespan.add(postgres_lifespan)
 

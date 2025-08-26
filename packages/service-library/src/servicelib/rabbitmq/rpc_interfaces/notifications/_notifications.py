@@ -17,7 +17,7 @@ async def send_notification(
 ) -> None:
     await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("send_notification"),
+        TypeAdapter(RPCMethodName).validate_python(send_notification.__name__),
         timeout_s=_DEFAULT_TIMEOUT_S,
         notification=notification,
     )

@@ -26,6 +26,11 @@ async def send_email_notification(
     notification: Notification,
 ) -> None:
     _ = task, task_id
+
+    #
+    # NOTE: task can be used to provide progress
+    #
+
     assert isinstance(notification.channel, EmailChannel)  # nosec
 
     _logger.info("Sending email notification to %s", notification.channel.to_addr)
